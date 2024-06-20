@@ -1,5 +1,6 @@
 package com.kmkbe.modules.user.service;
 
+import com.kmkbe.core.annotation.TrackExecutionTime;
 import com.kmkbe.modules.user.entity.Customer;
 import com.kmkbe.modules.user.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,6 +16,7 @@ public class CustomerService {
 
     private final CustomerRepository customerRepository;
 
+    @TrackExecutionTime
     public List<Customer> getAllCustomers() {
         return customerRepository.findAll();
     }
