@@ -1,9 +1,13 @@
-package com.kmkbe.modules.user.entity;
+package com.kmkbe.modules.customer.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.OffsetDateTime;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 
@@ -13,15 +17,15 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 @Table(name = "customer", schema = "public")
-public class Customer {
+public class Customer implements UserDetails {
 
     @Id
     @Column(nullable = false, updatable = false)
     @SequenceGenerator(
             name = "primary_sequence",
             sequenceName = "primary_sequence",
-            allocationSize = 1,
-            initialValue = 10000
+            allocationSize = 1
+            //initialValue = 10000
     )
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
@@ -82,4 +86,39 @@ public class Customer {
 
     @Column
     private OffsetDateTime dtmUpd;
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of();
+    }
+
+    @Override
+    public String getPassword() {
+        return custPin;
+    }
+
+    @Override
+    public String getUsername() {
+        return custEmail;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
 }

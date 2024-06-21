@@ -1,7 +1,7 @@
-package com.kmkbe.modules.user.controller;
+package com.kmkbe.modules.customer.controller;
 
-import com.kmkbe.modules.user.entity.Customer;
-import com.kmkbe.modules.user.service.CustomerService;
+import com.kmkbe.modules.customer.entity.Customer;
+import com.kmkbe.modules.customer.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;

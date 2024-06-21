@@ -1,8 +1,9 @@
-package com.kmkbe.modules.user.entity;
+package com.kmkbe.modules.customer.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -19,8 +20,8 @@ public class CustomerCompany {
     @SequenceGenerator(
             name = "primary_sequence",
             sequenceName = "primary_sequence",
-            allocationSize = 1,
-            initialValue = 10000
+            allocationSize = 1
+            //initialValue = 10000
     )
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
@@ -84,6 +85,9 @@ public class CustomerCompany {
 
     @Column
     private OffsetDateTime staySince;
+
+    @Column(precision = 7, scale = 2)
+    private BigDecimal stayLength;
 
     @Column(length = 50)
     private String usrCrt;

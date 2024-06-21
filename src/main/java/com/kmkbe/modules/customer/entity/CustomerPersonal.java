@@ -1,4 +1,4 @@
-package com.kmkbe.modules.user.entity;
+package com.kmkbe.modules.customer.entity;
 
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -22,8 +22,8 @@ public class CustomerPersonal {
     @SequenceGenerator(
             name = "primary_sequence",
             sequenceName = "primary_sequence",
-            allocationSize = 1,
-            initialValue = 10000
+            allocationSize = 1
+            //initialValue = 10000
     )
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
