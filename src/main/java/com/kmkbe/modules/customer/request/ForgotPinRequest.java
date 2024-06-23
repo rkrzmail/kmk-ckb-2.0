@@ -1,7 +1,8 @@
 package com.kmkbe.modules.customer.request;
 
-public record VerifyOtpRequest(
+public record ForgotPinRequest(
         String email,
-        String otpCode
+        String pin
 ) {
+
 }

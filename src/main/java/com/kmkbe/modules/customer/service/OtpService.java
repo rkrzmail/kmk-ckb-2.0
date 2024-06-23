@@ -5,10 +5,13 @@ import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.entity.OtpLog;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.repository.OtpRepository;
+import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
+import com.kmkbe.modules.customer.response.RequestOtpResponse;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +21,6 @@ import java.text.DecimalFormat;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Random;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -27,21 +29,22 @@ public class OtpService {
     private final OtpRepository otpRepository;
     private final CustomerRepository customerRepository;
     private final EmailService emailService;
+    private final CustomerService customerService;
 
-    public OtpLog create(String custName, String mobilePhone, String email) {
+    public void create(Customer customer) {
         final OffsetDateTime now = OffsetDateTime.now();
         final OtpLog otpLog = new OtpLog();
-        otpLog.setEmail(email);
-        otpLog.setMobilePhone(mobilePhone);
+        otpLog.setEmail(customer.getCustEmail());
+        otpLog.setMobilePhone(customer.getCustMobilePhone());
         otpLog.setGeneratedDate(now);
         otpLog.setExpiredDate(now.plusMinutes(5000));
-        otpLog.setUsrCrt(custName);
+        otpLog.setUsrCrt(customer.getCustName());
         otpLog.setDtmCrt(now);
         otpLog.setIsUsed(false);
         otpLog.setOtpCode(genOtp());
 
         otpRepository.save(otpLog);
-        return otpLog;
+        emailService.sendOtp(customer, otpLog.getOtpCode());
     }
 
     @Transactional
@@ -49,15 +52,12 @@ public class OtpService {
         final FindCustomerOtp findCustomerOtp = new FindCustomerOtp(
                 customerRepository,
                 otpRepository,
-                UUID.fromString(verifyOtpRequest.custCode()),
+                verifyOtpRequest.email(),
                 verifyOtpRequest.otpCode()
         );
 
         final Customer customer = findCustomerOtp.getCustomer();
-        customer.setIsEmailValid(true);
-        customer.setIsActive(true);
-        customer.setUsrUpd(customer.getCustName());
-        customer.setDtmUpd(OffsetDateTime.now());
+        customerService.activated(customer);
 
         final OtpLog otp = findCustomerOtp.getOtpLog();
         if (OffsetDateTime.now().isAfter(otp.getExpiredDate())) {
@@ -69,55 +69,95 @@ public class OtpService {
         otp.setDtmUpd(OffsetDateTime.now());
 
         otpRepository.save(otp);
-        customerRepository.save(customer);
-
         return customer;
     }
 
-    public void resendSignUp(String custCode) {
+    public String resend(String email) {
         final FindCustomerOtp findCustomerOtp = new FindCustomerOtp(
                 customerRepository,
                 otpRepository,
-                UUID.fromString(custCode)
+                email
+        );
+
+        emailService.sendOtp(findCustomerOtp.getCustomer(), genOtp());
+
+        return "Otp Send";
+    }
+
+    public RequestOtpResponse sendForgotPin(String email) {
+        final Optional<Customer> find = customerRepository.findByCustEmail(email);
+        if (find.isEmpty()) {
+            throw new EntityNotFoundException("Customer not found");
+        }
+
+        final Customer cust = find.get();
+        create(cust);
+
+        return new RequestOtpResponse(cust.getCustEmail());
+    }
+
+    @Transactional
+    public String verifyForgotPin(VerifyOtpRequest request) {
+        final FindCustomerOtp findCustomerOtp = new FindCustomerOtp(
+                customerRepository,
+                otpRepository,
+                request.email(),
+                request.otpCode()
         );
 
         final Customer customer = findCustomerOtp.getCustomer();
-        emailService.sendOtp(customer, genOtp());
+        final OtpLog otp = findCustomerOtp.getOtpLog();
+
+        if (OffsetDateTime.now().isAfter(otp.getExpiredDate())) {
+            throw new IllegalStateException("Otp is Expired");
+        }
+
+        otp.setIsUsed(true);
+        otp.setUsrUpd(customer.getCustName());
+        otp.setDtmUpd(OffsetDateTime.now());
+        otpRepository.save(otp);
+
+        return "Otp Verified";
     }
 
+    private String genOtp() {
+        return new DecimalFormat("0000").format(new Random().nextInt(9999));
+    }
 
     private static class FindCustomerOtp {
         private final CustomerRepository customerRepository;
         private final OtpRepository otpRepository;
 
+        @Getter
         private Customer customer;
+        @Getter
         private OtpLog otpLog;
 
         public FindCustomerOtp(
                 @NonNull CustomerRepository customerRepository,
                 @NonNull OtpRepository otpRepository,
-                @NonNull UUID custCode,
+                @NonNull String email,
                 @Nullable String otpCode
         ) {
             this.customerRepository = customerRepository;
             this.otpRepository = otpRepository;
-            fetch(custCode, otpCode);
+            fetch(email, otpCode);
         }
 
         public FindCustomerOtp(
                 @NonNull CustomerRepository customerRepository,
                 @NonNull OtpRepository otpRepository,
-                @NonNull UUID custCode
+                @NonNull String email
         ) {
             this.customerRepository = customerRepository;
             this.otpRepository = otpRepository;
-            fetch(custCode, null);
+            fetch(email, null);
         }
 
-        private void fetch(UUID custCode, @Nullable String otpCode) {
-            final Optional<Customer> findCust = customerRepository.findByCustCode(custCode);
+        private void fetch(String email, @Nullable String otpCode) {
+            final Optional<Customer> findCust = customerRepository.findByCustEmailOrderByCustIdDesc(email);
             if (findCust.isEmpty()) {
-                throw new EntityNotFoundException("Customer doesn't exists");
+                throw new EntityNotFoundException("User doesn't exists");
             }
 
             this.customer = findCust.get();
@@ -129,7 +169,7 @@ public class OtpService {
                 );
 
                 if (findOtp.isEmpty()) {
-                    throw new IllegalStateException("Otp not valid");
+                    throw new IllegalStateException("Otp not valid, try to check email to entry right Otp");
                 }
 
                 this.otpLog = findOtp.get();
@@ -138,16 +178,5 @@ public class OtpService {
             }
         }
 
-        public Customer getCustomer() {
-            return customer;
-        }
-
-        public OtpLog getOtpLog() {
-            return otpLog;
-        }
-    }
-
-    private String genOtp() {
-        return new DecimalFormat("0000").format(new Random().nextInt(9999));
     }
 }

@@ -1,23 +1,28 @@
 package com.kmkbe.modules.customer.service;
 
+import com.kmkbe.core.service.JwtService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.constant.CustomerIdType;
 import com.kmkbe.modules.customer.constant.CustomerType;
 import com.kmkbe.modules.customer.entity.*;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.repository.LoginLogRepository;
+import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.response.LoginResponse;
-import com.kmkbe.modules.customer.response.SignUpResponse;
+import com.kmkbe.modules.customer.response.RequestOtpResponse;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.security.SignatureException;
 import java.time.*;
 import java.util.Optional;
 import java.util.UUID;
@@ -32,10 +37,10 @@ public class AuthService {
     private final OtpService otpService;
     private final EmailService emailService;
     private final BCryptPasswordEncoder bcryptEncoder;
+    private final JwtService jwtService;
 
     @Transactional
-    public SignUpResponse signUp(SignUpRequest request) {
-        int a = 0;
+    public RequestOtpResponse signUp(SignUpRequest request) {
         final Customer cust = new Customer();
         cust.setCustCode(UUID.randomUUID());
         cust.setCustName(request.getName());
@@ -126,34 +131,85 @@ public class AuthService {
             }
         }
 
-        final UUID result = customerService.create(cust);
-        final OtpLog otpLog = otpService.create(request.getName(), request.getMobilePhone(), request.getEmail());
-        emailService.sendOtp(cust, otpLog.getOtpCode());
-        return new SignUpResponse(result);
+        customerService.create(cust);
+        otpService.create(cust);
+
+        return new RequestOtpResponse(cust.getCustEmail());
     }
 
     public LoginResponse login(LoginRequest request) {
-        final Optional<Customer> findCust = customerRepository.findByCustEmailAndCustPin(request.email(), request.pin());
+        final Optional<Customer> findCust = customerRepository.findByCustEmail(request.email());
         if (findCust.isEmpty()) {
             throw new EntityNotFoundException("User not found");
         }
 
         final Customer cust = findCust.get();
         if (!bcryptEncoder.matches(request.pin(), cust.getCustPin())) {
-            throw new EntityNotFoundException("Invalid pin");
+            throw new EntityNotFoundException("Email or pin is invalid, try to entry right email and pin");
         }
+
+        if (!cust.getIsActive()) {
+            throw new IllegalStateException("Your account is not activated yet");
+        }
+
 
         final LoginLog loginLog = new LoginLog();
         loginLog.setCustCode(cust.getCustCode());
         loginLog.setLoginLogCode(UUID.randomUUID());
         loginLog.setLoginDate(OffsetDateTime.now());
-        loginLog.setLoginRole("");
+        loginLog.setLoginRole("Customer"); // need to change
+        loginLog.setIsLogout(false);
         loginLogRepository.save(loginLog);
 
-        return new LoginResponse("");
+        return new LoginResponse(
+                jwtService.generateToken(cust),
+                jwtService.getExpirationTime()
+        );
     }
 
-    public void logout() {
+    public String logout() throws SignatureException, IllegalStateException {
+        final Authentication authentication = getAuthentication();
+        if (authentication == null) {
+            throw new IllegalStateException("User has logged out");
+        }
 
+        final Customer cust = authenticatedCustomer(authentication);
+        final Optional<LoginLog> find = loginLogRepository.findTopByCustCode(cust.getCustCode());
+        if (find.isEmpty()) {
+            throw new EntityNotFoundException("User not found");
+        }
+
+        final LoginLog loginLog = find.get();
+        loginLog.setIsLogout(true);
+        loginLog.setLogoutDate(OffsetDateTime.now());
+        loginLog.setUsrLogout(OffsetDateTime.now());
+        loginLogRepository.save(loginLog);
+
+        return "Logout Successfully";
+    }
+
+    public String forgotPin(ForgotPinRequest request) {
+        final Optional<Customer> find = customerRepository.findByCustEmail(request.email());
+        if (find.isEmpty()) {
+            throw new EntityNotFoundException("User not found");
+        }
+
+        final Customer cust = find.get();
+        cust.setCustPin(bcryptEncoder.encode(request.pin()));
+        customerRepository.save(cust);
+
+        return "Pin updated";
+    }
+
+    public Customer authenticatedCustomer(Authentication authentication) throws SignatureException {
+        if (authentication != null && authentication.isAuthenticated()) {
+            return (Customer) authentication.getPrincipal();
+        }
+
+        throw new SignatureException();
+    }
+
+    public Authentication getAuthentication() {
+        return SecurityContextHolder.getContext().getAuthentication();
     }
 }

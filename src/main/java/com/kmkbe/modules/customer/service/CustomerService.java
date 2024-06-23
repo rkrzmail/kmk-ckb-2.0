@@ -9,9 +9,12 @@ import com.kmkbe.modules.customer.repository.CustomerPersonalRepository;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SignatureException;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -78,5 +81,13 @@ public class CustomerService {
         customerCompanyRepository.save(company);
 
         return company.getCustCode();
+    }
+
+    public void activated(Customer customer) {
+        customer.setIsEmailValid(true);
+        customer.setIsActive(true);
+        customer.setUsrUpd(customer.getCustName());
+        customer.setDtmUpd(OffsetDateTime.now());
+        customerRepository.save(customer);
     }
 }

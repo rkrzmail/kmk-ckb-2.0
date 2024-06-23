@@ -1,6 +1,6 @@
 package com.kmkbe.modules.customer.controller;
 
-import com.kmkbe.modules.customer.request.SignUpRequest;
+import com.kmkbe.modules.customer.request.RequestOtpRequest;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
 import com.kmkbe.modules.customer.service.OtpService;
 import lombok.RequiredArgsConstructor;
@@ -18,9 +18,18 @@ public class OtpController {
         return ResponseEntity.ok().body(otpService.verifySignUp(request));
     }
 
-    @PostMapping("/resend/sign-up")
-    public ResponseEntity<Object> resendSignUp(@RequestBody String custCode) {
-        otpService.resendSignUp(custCode);
-        return ResponseEntity.ok().body("Resend Success");
+    @PutMapping("/verify/forgot-pin")
+    public ResponseEntity<Object> verifyForgotPin(@RequestBody VerifyOtpRequest request) {
+        return ResponseEntity.ok().body(otpService.verifyForgotPin(request));
+    }
+
+    @PostMapping("/send/forgot-pin")
+    public ResponseEntity<Object> sendForgotPin(@RequestBody RequestOtpRequest request) {
+        return ResponseEntity.ok().body(otpService.sendForgotPin(request.email()));
+    }
+
+    @PostMapping("/resend")
+    public String resendSignUp(@RequestBody RequestOtpRequest request) {
+        return otpService.resend(request.email());
     }
 }

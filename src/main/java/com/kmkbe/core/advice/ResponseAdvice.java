@@ -4,6 +4,7 @@ import com.kmkbe.core.annotation.IgnoreResponseBinding;
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.core.service.ResponseService;
 import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.springframework.core.MethodParameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -20,7 +21,10 @@ public class ResponseAdvice implements ResponseBodyAdvice<Object> {
     private final ResponseService responseService;
 
     @Override
-    public boolean supports(MethodParameter returnType, Class<? extends HttpMessageConverter<?>> converterType) {
+    public boolean supports(
+            @NonNull MethodParameter returnType,
+            @NonNull Class<? extends HttpMessageConverter<?>> converterType
+    ) {
         return true;
     }
 
@@ -28,10 +32,10 @@ public class ResponseAdvice implements ResponseBodyAdvice<Object> {
     public Object beforeBodyWrite(
             Object body,
             MethodParameter returnType,
-            MediaType selectedContentType,
-            Class<? extends HttpMessageConverter<?>> selectedConverterType,
-            ServerHttpRequest request,
-            ServerHttpResponse response
+            @NonNull MediaType selectedContentType,
+            @NonNull Class<? extends HttpMessageConverter<?>> selectedConverterType,
+            @NonNull ServerHttpRequest request,
+            @NonNull ServerHttpResponse response
     ) {
         if (returnType.getContainingClass().isAnnotationPresent(RestController.class)) {
             if (

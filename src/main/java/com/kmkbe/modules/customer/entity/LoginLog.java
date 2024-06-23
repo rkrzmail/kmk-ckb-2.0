@@ -44,7 +44,7 @@ public class LoginLog {
     @Column(nullable = false)
     private OffsetDateTime loginDate;
 
-    @Column(nullable = false)
+    @Column
     private Boolean isLogout;
 
     @Column
