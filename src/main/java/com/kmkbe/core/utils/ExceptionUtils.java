@@ -1,27 +1,29 @@
-package com.kmkbe.core.advice;
+package com.kmkbe.core.utils;
 
 import com.kmkbe.core.model.CommonResult;
-import com.kmkbe.core.model.ExceptionResult;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.PropertyValueException;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.AuthenticationException;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.nio.file.AccessDeniedException;
 import java.security.SignatureException;
 
-@RestControllerAdvice
-public class ExceptionAdvice {
+@Slf4j
+public class ExceptionUtils {
 
-    @ExceptionHandler(Exception.class)
-    public CommonResult handleException(Exception exception) {
+    public static ResponseEntity<CommonResult<Object>> handleException(
+            Exception exception,
+            WebRequest request
+    ) {
         ProblemDetail detail = null;
         exception.printStackTrace();
 
@@ -50,6 +52,11 @@ public class ExceptionAdvice {
             detail.setProperty("description", "Expired Session");
         }
 
+        if (exception instanceof IllegalArgumentException) {
+            detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+            detail.setProperty("description", "Invalid Argument Provide, Try To Complete Field");
+        }
+
         if (
                 exception instanceof IllegalStateException
                         || exception instanceof EntityNotFoundException
@@ -75,52 +82,14 @@ public class ExceptionAdvice {
             desc = detail.getProperties().get("description").toString();
         }
 
-        CommonResult result = new CommonResult();
+        CommonResult<Object> result = new CommonResult<>();
         result.setIsSuccess(false);
         result.setCode(detail.getStatus());
         result.setMessage(desc);
+        result.setData(null);
         //result.setDetails(exception);
 
-        return result;
-    }
-
-    @ExceptionHandler(BadCredentialsException.class)
-    public CommonResult handleBadCredentials(BadCredentialsException exception) {
-        return handleException(exception);
-    }
-
-    @ExceptionHandler(AccountStatusException.class)
-    public CommonResult handleAccountStatus(AccountStatusException exception) {
-        return handleException(exception);
-    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public CommonResult handleAccessDenied(AccessDeniedException exception) {
-        return handleException(exception);
-    }
-
-    @ExceptionHandler(SignatureException.class)
-    public CommonResult handleSignature(SignatureException exception) {
-        return handleException(exception);
-    }
-
-    @ExceptionHandler(ExpiredJwtException.class)
-    public CommonResult handleExpiredJwt(ExpiredJwtException exception) {
-        return handleException(exception);
-    }
-
-    @ExceptionHandler(EntityNotFoundException.class)
-    public CommonResult handleEntityNotFound(EntityNotFoundException exception) {
-        return handleException(exception);
-    }
-
-    @ExceptionHandler(IllegalStateException.class)
-    public CommonResult handleIllegalState(IllegalStateException exception) {
-        return handleException(exception);
-    }
-
-    @ExceptionHandler(PropertyValueException.class)
-    public CommonResult handlePropertyValue(PropertyValueException exception) {
-        return handleException(exception);
+        log.error(exception.getMessage(), exception);
+        return new ResponseEntity<>(result, null, HttpStatusCode.valueOf(detail.getStatus()));
     }
 }

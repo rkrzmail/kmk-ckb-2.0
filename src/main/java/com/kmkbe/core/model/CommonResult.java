@@ -1,12 +1,41 @@
 package com.kmkbe.core.model;
 
+import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Getter
 @Setter
-public class CommonResult {
-    private Boolean isSuccess;
-    private Integer code;
-    private String message;
+@Data
+@NoArgsConstructor
+public class CommonResult<T> {
+    protected Boolean isSuccess;
+    protected Integer code;
+    protected String message;
+    protected T data;
+
+    public CommonResult<T> success(T data) {
+        this.isSuccess = true;
+        this.code = 200;
+        this.message = "Success";
+        this.data = data;
+        return this;
+    }
+
+    public CommonResult<T> success(T data, String message) {
+        this.isSuccess = true;
+        this.code = 200;
+        this.message = message;
+        this.data = data;
+        return this;
+    }
+
+    public CommonResult<T> fail(Integer code, String message) {
+        this.isSuccess = false;
+        this.code = code;
+        this.message = message;
+        this.data = null;
+        return this;
+    }
 }

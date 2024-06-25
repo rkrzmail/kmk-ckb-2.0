@@ -12,6 +12,7 @@ import com.kmkbe.modules.customer.request.LoginRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.response.LoginResponse;
 import com.kmkbe.modules.customer.response.RequestOtpResponse;
+import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -209,6 +210,7 @@ public class AuthService {
         throw new SignatureException();
     }
 
+    @Nullable
     public Authentication getAuthentication() {
         return SecurityContextHolder.getContext().getAuthentication();
     }

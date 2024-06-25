@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.controller;
 import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.customer.service.CustomerService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -16,9 +17,12 @@ import java.security.SignatureException;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/customer")
+@RequestMapping("/api/v1/customer")
+@Tag(
+        name = "Customer",
+        description = "Customer Endpoints"
+)
 @RequiredArgsConstructor
-@Validated
 public class CustomerController {
     private final CustomerService customerService;
     private final AuthService authService;
