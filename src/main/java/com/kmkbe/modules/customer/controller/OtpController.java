@@ -1,9 +1,14 @@
 package com.kmkbe.modules.customer.controller;
 
+import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.request.RequestOtpRequest;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
+import com.kmkbe.modules.customer.response.LoginResponse;
+import com.kmkbe.modules.customer.response.RequestOtpResponse;
 import com.kmkbe.modules.customer.service.OtpService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,22 +24,22 @@ public class OtpController {
     private final OtpService otpService;
 
     @PutMapping("/verify/sign-up")
-    public ResponseEntity<Object> verifySignUp(@RequestBody VerifyOtpRequest request) {
-        return ResponseEntity.ok().body(otpService.verifySignUp(request));
+    public CommonResult<Customer> verifySignUp(@RequestBody VerifyOtpRequest request) throws Exception {
+        return new CommonResult<Customer>().success(otpService.verifySignUp(request));
     }
 
     @PutMapping("/verify/forgot-pin")
-    public ResponseEntity<Object> verifyForgotPin(@RequestBody VerifyOtpRequest request) {
-        return ResponseEntity.ok().body(otpService.verifyForgotPin(request));
+    public CommonResult<String> verifyForgotPin(@RequestBody VerifyOtpRequest request) throws Exception {
+        return new CommonResult<String>().success(otpService.verifyForgotPin(request));
     }
 
     @PostMapping("/send/forgot-pin")
-    public ResponseEntity<Object> sendForgotPin(@RequestBody RequestOtpRequest request) {
-        return ResponseEntity.ok().body(otpService.sendForgotPin(request.email()));
+    public CommonResult<RequestOtpResponse> sendForgotPin(@RequestBody RequestOtpRequest request) throws MessagingException {
+        return new CommonResult<RequestOtpResponse>().success(otpService.sendForgotPin(request.email()));
     }
 
     @PostMapping("/resend")
-    public String resendSignUp(@RequestBody RequestOtpRequest request) {
-        return otpService.resend(request.email());
+    public CommonResult<String> resendOtp(@RequestBody RequestOtpRequest request) throws MessagingException {
+        return new CommonResult<String>().success(otpService.resend(request.email()));
     }
 }

@@ -38,6 +38,12 @@ public class AuthController {
         return new CommonResult<LoginResponse>().success(authService.login(request));
     }
 
+    @PutMapping("/forgot-pin")
+    public CommonResult<Object> forgotPin(@RequestBody ForgotPinRequest request) {
+        final String message = authService.forgotPin(request);
+        return new CommonResult<>().success(null, message);
+    }
+
     @DeleteMapping("/sign-out")
     public CommonResult<Object> signOut(
             Authentication authentication,
@@ -48,12 +54,4 @@ public class AuthController {
         logoutHandler.logout(request, response, authentication);
         return new CommonResult<>().success(new Object(), result);
     }
-
-
-    @PutMapping("/forgot-pin")
-    public CommonResult<Object> forgotPin(@RequestBody ForgotPinRequest request) {
-        final String message = authService.forgotPin(request);
-        return new CommonResult<>().success(new Object(), message);
-    }
-
 }

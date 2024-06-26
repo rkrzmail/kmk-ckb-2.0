@@ -9,6 +9,7 @@ import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
 import com.kmkbe.modules.customer.response.RequestOtpResponse;
 import jakarta.annotation.Nullable;
+import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
@@ -31,7 +32,7 @@ public class OtpService {
     private final EmailService emailService;
     private final CustomerService customerService;
 
-    public void create(Customer customer) {
+    public void create(@NonNull Customer customer, @NonNull OtpType type) throws MessagingException {
         final OffsetDateTime now = OffsetDateTime.now();
         final OtpLog otpLog = new OtpLog();
         otpLog.setEmail(customer.getCustEmail());
@@ -44,11 +45,16 @@ public class OtpService {
         otpLog.setOtpCode(genOtp());
 
         otpRepository.save(otpLog);
-        emailService.sendOtp(customer, otpLog.getOtpCode());
+
+        if (type == OtpType.SIGNUP) {
+            emailService.sendOtp(customer, otpLog.getOtpCode());
+        } else if (type == OtpType.CHANGE_PIN) {
+            emailService.sendOtpChangePin(customer, otpLog.getOtpCode());
+        }
     }
 
     @Transactional
-    public Customer verifySignUp(VerifyOtpRequest verifyOtpRequest) {
+    public Customer verifySignUp(VerifyOtpRequest verifyOtpRequest) throws MessagingException {
         final FindCustomerOtp findCustomerOtp = new FindCustomerOtp(
                 customerRepository,
                 otpRepository,
@@ -58,6 +64,7 @@ public class OtpService {
 
         final Customer customer = findCustomerOtp.getCustomer();
         customerService.activated(customer);
+        emailService.sendNotificationActive(customer);
 
         final OtpLog otp = findCustomerOtp.getOtpLog();
         if (OffsetDateTime.now().isAfter(otp.getExpiredDate())) {
@@ -72,7 +79,7 @@ public class OtpService {
         return customer;
     }
 
-    public String resend(String email) {
+    public String resend(String email) throws MessagingException {
         final FindCustomerOtp findCustomerOtp = new FindCustomerOtp(
                 customerRepository,
                 otpRepository,
@@ -84,14 +91,14 @@ public class OtpService {
         return "Otp Send";
     }
 
-    public RequestOtpResponse sendForgotPin(String email) {
+    public RequestOtpResponse sendForgotPin(String email) throws MessagingException {
         final Optional<Customer> find = customerRepository.findByCustEmail(email);
         if (find.isEmpty()) {
             throw new EntityNotFoundException("Customer not found");
         }
 
         final Customer cust = find.get();
-        create(cust);
+        create(cust, OtpType.CHANGE_PIN);
 
         return new RequestOtpResponse(cust.getCustEmail());
     }
@@ -122,6 +129,10 @@ public class OtpService {
 
     private String genOtp() {
         return new DecimalFormat("0000").format(new Random().nextInt(9999));
+    }
+
+    public static enum OtpType {
+        SIGNUP, CHANGE_PIN
     }
 
     private static class FindCustomerOtp {

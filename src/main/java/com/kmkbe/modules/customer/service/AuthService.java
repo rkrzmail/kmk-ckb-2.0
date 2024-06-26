@@ -13,6 +13,7 @@ import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.response.LoginResponse;
 import com.kmkbe.modules.customer.response.RequestOtpResponse;
 import jakarta.annotation.Nullable;
+import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
@@ -41,7 +42,7 @@ public class AuthService {
     private final JwtService jwtService;
 
     @Transactional
-    public RequestOtpResponse signUp(SignUpRequest request) {
+    public RequestOtpResponse signUp(SignUpRequest request) throws MessagingException {
         final Customer cust = new Customer();
         cust.setCustCode(UUID.randomUUID());
         cust.setCustName(request.getName());
@@ -133,7 +134,7 @@ public class AuthService {
         }
 
         customerService.create(cust);
-        otpService.create(cust);
+        otpService.create(cust, OtpService.OtpType.SIGNUP);
 
         return new RequestOtpResponse(cust.getCustEmail());
     }
