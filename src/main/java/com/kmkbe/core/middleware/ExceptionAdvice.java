@@ -3,6 +3,7 @@ package com.kmkbe.core.middleware;
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.core.utils.ExceptionUtils;
 import io.jsonwebtoken.ExpiredJwtException;
+import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
 import org.hibernate.PropertyValueException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
@@ -149,6 +150,14 @@ public class ExceptionAdvice {
 
     @ExceptionHandler(HttpClientErrorException.class)
     public ResponseEntity<CommonResult<Object>> handleHttpClientError(
+            HttpServerErrorException exception,
+            WebRequest request
+    ) {
+        return ExceptionUtils.handleException(exception, request);
+    }
+
+    @ExceptionHandler(MessagingException.class)
+    public ResponseEntity<CommonResult<Object>> handleMessaging(
             HttpServerErrorException exception,
             WebRequest request
     ) {

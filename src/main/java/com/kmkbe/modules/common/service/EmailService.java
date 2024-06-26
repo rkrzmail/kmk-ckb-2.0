@@ -8,71 +8,69 @@ import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.InputStreamSource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.thymeleaf.TemplateEngine;
-import org.thymeleaf.context.Context;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
+import java.util.Map;
 
 @Service
 @AllArgsConstructor
 public class EmailService {
-    private static final String CSUL_LOGO_IMAGE = "static/images/csul_logo.png";
-    private final EmailTemplateRepository emailTemplateRepository;
+    private static final String EMAIL_FROM = "CSUL.Finance@csul.co.id";
     private static final int EMAIL_PRIORITY = 2;
-    private final static Logger LOGGER = LoggerFactory.getLogger(EmailService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(EmailService.class);
+
+    private static final String M_CUST_NEW_OTP = "M_CUST_NEW_OTP";
+    private static final String M_CUST_CHANGE_OTP = "M_CUST_CHANGE_OTP";
+    private static final String M_CUST_ACTIVE = "M_CUST_ACTIVE";
+
+
+    private final EmailTemplateRepository emailTemplateRepository;
     private final JavaMailSender mailSender;
-    private final TemplateEngine templateEngine;
 
     @Async
-    public void send(EmailTemplate template) {
-        try {
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            mimeMessageTemplate(mimeMessage, template);
-
-            mailSender.send(mimeMessage);
-        } catch (MessagingException e) {
-            e.printStackTrace();
-            LOGGER.error("failed to send email", e);
-            throw new IllegalStateException("failed to send email");
-        }
+    public void sendOtp(Customer customer, String otpCode) throws MessagingException {
+        send(customer, Map.of("otp_code", otpCode), M_CUST_NEW_OTP);
     }
 
     @Async
-    public void sendOtp(Customer customer, String otpCode) {
-        try {
-            final String templateCode = "MOTP1";
-            final EmailTemplate template = emailTemplateRepository
-                    .findByEmailTemplateCodeAndIsActive(templateCode, true);
-            template.setMailTo(customer.getCustEmail());
+    public void sendOtpChangePin(Customer customer, String otpCode) throws MessagingException {
+        send(customer, Map.of("otp_code", otpCode), M_CUST_CHANGE_OTP);
+    }
 
-            final Context context = new Context();
-            context.setVariable("name", customer.getCustName());
-            context.setVariable("email", customer.getCustEmail());
-            context.setVariable("id_no", customer.getCustIdNo());
-            context.setVariable("otp_code", otpCode);
-            context.setVariable("csul_logo", CSUL_LOGO_IMAGE);
+    @Async
+    public void sendNotificationActive(Customer customer) throws MessagingException {
+        send(customer, null, M_CUST_ACTIVE);
+    }
 
-            final String body = templateEngine.process(template.getBodyMail(), context);
-            template.setBodyMail(body);
+    private void send(
+            final Customer customer,
+            final Map<String, Object> additionalArgs,
+            final String templateCode
+    ) throws MessagingException {
+        final EmailTemplate template = emailTemplateRepository
+                .findByEmailTemplateCodeAndIsActive(templateCode, true);
+        template.setMailTo(customer.getCustEmail());
 
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            mimeMessageTemplate(mimeMessage, template);
+        String body = template.getBodyMail();
+        body = body.replace("{name}", customer.getCustName());
+        body = body.replace("{email}", customer.getCustEmail());
+        body = body.replace("{id_no}", customer.getCustIdNo());
 
-            mailSender.send(mimeMessage);
-        } catch (MessagingException e) {
-            e.printStackTrace();
-            throw new IllegalStateException("failed to send email");
+        if (additionalArgs != null && additionalArgs.get("otp_code") != null) {
+            body = body.replace("{otp_code}", additionalArgs.get("otp_code").toString());
+        } else {
+            body = body.replace("{otp_code}", "");
         }
+
+        template.setBodyMail(body);
+
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        mimeMessageTemplate(mimeMessage, template);
+
+        mailSender.send(mimeMessage);
     }
 
     private MimeMessageHelper mimeMessageTemplate(MimeMessage mimeMessage, EmailTemplate template) throws MessagingException {
@@ -80,10 +78,12 @@ public class EmailService {
     }
 
     private MimeMessageHelper mimeMessageTemplate(MimeMessage mimeMessage, EmailTemplate template, boolean multipart) throws MessagingException {
-        MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, multipart, "utf-8");
+        final MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, multipart, "utf-8");
+        boolean isHtml = template.getBodyMail().contains("html");
+        helper.setFrom(EMAIL_FROM);
         helper.setTo(template.getMailTo());
         helper.setSubject(template.getSubjectMail());
-        helper.setText(template.getBodyMail(), true);
+        helper.setText(template.getBodyMail(), isHtml);
 
         if (template.getMailCc() != null && !template.getMailCc().isEmpty()) {
             helper.setCc(template.getMailCc().split(";"));
