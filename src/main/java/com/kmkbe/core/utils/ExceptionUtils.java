@@ -28,8 +28,8 @@ public class ExceptionUtils {
         exception.printStackTrace();
 
         if (exception instanceof BadCredentialsException) {
-            detail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
-            detail.setProperty("description", "The username or pin is incorrect");
+            detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+            detail.setProperty("description", "The email or pin is incorrect");
         }
 
         if (exception instanceof AccountStatusException) {

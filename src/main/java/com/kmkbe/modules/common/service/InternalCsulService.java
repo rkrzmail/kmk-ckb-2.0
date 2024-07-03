@@ -1,6 +1,6 @@
 package com.kmkbe.modules.common.service;
 
-import com.kmkbe.core.config.AppCacheConfig;
+import com.kmkbe.core.config.RedisConfig;
 import com.kmkbe.modules.common.request.CsulLoginRequest;
 import com.kmkbe.modules.common.response.BaseCsulResponse;
 import com.kmkbe.modules.common.response.CsulMailResponse;
@@ -60,7 +60,7 @@ public class InternalCsulService {
     public BaseCsulResponse<String> requestAuthJwt() throws SignatureException, ParseException {
         isAuthenticated();
 
-        final Cache cache = cacheManager.getCache(AppCacheConfig.CSUL_CACHE_NAME);
+        final Cache cache = cacheManager.getCache(RedisConfig.CSUL_CACHE_NAME);
         if (cache != null && cache.get(RESPONSE_TOKEN_CACHE_KEY) != null) {
             @SuppressWarnings("unchecked")
             BaseCsulResponse<String> loadedCache = (BaseCsulResponse<String>) cache.get(RESPONSE_TOKEN_CACHE_KEY).get();
@@ -105,7 +105,7 @@ public class InternalCsulService {
     public CsulMailResponse fetchEmailInfo() throws SignatureException, ParseException {
         isAuthenticated();
 
-        final Cache cache = cacheManager.getCache(AppCacheConfig.CSUL_CACHE_NAME);
+        final Cache cache = cacheManager.getCache(RedisConfig.CSUL_CACHE_NAME);
         String token;
         if (cache == null || cache.get(TOKEN_CACHE_KEY) == null || cache.get(TOKEN_CACHE_KEY).get() == null) {
             requestAuthJwt();

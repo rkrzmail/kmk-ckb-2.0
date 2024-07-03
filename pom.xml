@@ -28,38 +28,14 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
+        <lombok.version>1.18.32</lombok.version>
     </properties>
     <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-jpa</artifactId>
-        </dependency>
+        <!-- Core -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-aop</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-database-postgresql</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -70,18 +46,27 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-configuration-processor</artifactId>
+            <version>3.2.4</version>
+            <optional>true</optional>
+        </dependency>
+        <!-- Core -->
+
+        <!-- Datasource -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-mongodb</artifactId>
+        </dependency>
+        <!-- Datasource -->
 
         <!-- API Doc -->
-        <!--		<dependency>-->
-        <!--			<groupId>io.springfox</groupId>-->
-        <!--			<artifactId>springfox-swagger2</artifactId>-->
-        <!--			<version>3.0.0</version>-->
-        <!--		</dependency>-->
-        <!--		<dependency>-->
-        <!--			<groupId>io.springfox</groupId>-->
-        <!--			<artifactId>springfox-swagger-ui</artifactId>-->
-        <!--			<version>3.0.0</version>-->
-        <!--		</dependency>-->
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
@@ -89,23 +74,11 @@
         </dependency>
         <!-- API Doc -->
 
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <version>3.2.4</version>
-            <optional>true</optional>
-        </dependency>
-
         <!-- Dev Tools -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
-        <!--        <dependency>-->
-        <!--            <groupId>de.codecentric</groupId>-->
-        <!--            <artifactId>spring-boot-admin-starter-server</artifactId>-->
-        <!--            <version>3.3.2</version>-->
-        <!--        </dependency>-->
         <dependency>
             <groupId>de.codecentric</groupId>
             <artifactId>spring-boot-admin-starter-client</artifactId>
@@ -125,9 +98,13 @@
             <artifactId>spring-boot-starter-cache</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.github.ben-manes.caffeine</groupId>
-            <artifactId>caffeine</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-redis</artifactId>
         </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.github.ben-manes.caffeine</groupId>-->
+<!--            <artifactId>caffeine</artifactId>-->
+<!--        </dependency>-->
         <!-- Caching -->
 
         <!-- Mail -->
@@ -139,7 +116,6 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
         </dependency>
-
         <!-- Mail -->
 
         <!-- Security -->
@@ -164,6 +140,31 @@
         </dependency>
         <!-- Security -->
 
+        <!-- Utils -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-database-postgresql</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.mapstruct</groupId>
+            <artifactId>mapstruct</artifactId>
+            <version>${org.mapstruct.version}</version>
+        </dependency>
+        <!-- Utils -->
+
     </dependencies>
 
     <build>
@@ -180,37 +181,33 @@
                     </excludes>
                 </configuration>
             </plugin>
-            <!--			<plugin>-->
-            <!--				<groupId>org.apache.maven.plugins</groupId>-->
-            <!--				<artifactId>maven-compiler-plugin</artifactId>-->
-            <!--				<version>3.8.0</version>-->
-            <!--				<configuration>-->
-            <!--					<source>21</source>-->
-            <!--					<target>21</target>-->
-            <!--					<encoding>UTF-8</encoding>-->
-            <!--					<annotationProcessorPaths>-->
-            <!--						<path>-->
-            <!--							<groupId>org.springframework.boot</groupId>-->
-            <!--							<artifactId>spring-boot-configuration-processor</artifactId>-->
-            <!--							<version>3.2.4</version>-->
-            <!--						</path>-->
-            <!--						<path>-->
-            <!--							<groupId>org.projectlombok</groupId>-->
-            <!--							<artifactId>lombok</artifactId>-->
-            <!--						</path>-->
-            <!--					</annotationProcessorPaths>-->
-            <!--				</configuration>-->
-            <!--			</plugin>-->
-            <!--			<plugin>-->
-            <!--				<groupId>org.flywaydb</groupId>-->
-            <!--				<artifactId>flyway-maven-plugin</artifactId>-->
-            <!--				<version>6.5.7</version>-->
-            <!--				<configuration>-->
-            <!--					<url>jdbc:h2:file:./test</url>-->
-            <!--					<user>sa</user>-->
-            <!--					<password></password>-->
-            <!--				</configuration>-->
-            <!--			</plugin>-->
+            <plugin>
+                <!--                <groupId>org.apache.maven.plugins</groupId>-->
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.1</version>
+                <configuration>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.mapstruct</groupId>
+                            <artifactId>mapstruct-processor</artifactId>
+                            <version>${org.mapstruct.version}</version>
+                        </path>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                            <version>${lombok.version}</version>
+                        </path>
+                        <dependency>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok-mapstruct-binding</artifactId>
+                            <version>0.2.0</version>
+                        </dependency>
+                    </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
     <profiles>

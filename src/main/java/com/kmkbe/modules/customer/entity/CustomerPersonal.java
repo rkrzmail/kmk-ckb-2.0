@@ -31,7 +31,7 @@ public class CustomerPersonal {
     )
     private Long custPersonalCode;
 
-    @Column(nullable = false)
+    @Column(name = "cust_code", nullable = false)
     private UUID custCode;
 
     @Column(length = 50)
@@ -111,4 +111,14 @@ public class CustomerPersonal {
 
     @Column(nullable = false)
     private OffsetDateTime dtmUpd;
+
+    @OneToOne
+    @JoinColumn(
+            name = "cust_code",
+            referencedColumnName = "cust_code",
+            insertable = false,
+            updatable = false
+    )
+    private Customer customer;
+
 }

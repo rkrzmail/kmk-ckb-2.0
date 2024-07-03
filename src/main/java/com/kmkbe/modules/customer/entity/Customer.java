@@ -33,7 +33,7 @@ public class Customer implements UserDetails {
     )
     private Long custId;
 
-    @Column(nullable = false)
+    @Column(name="cust_code", nullable = false)
     private UUID custCode;
 
     @Column(length = 20)
@@ -86,6 +86,12 @@ public class Customer implements UserDetails {
 
     @Column
     private OffsetDateTime dtmUpd;
+
+    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.ALL}, mappedBy = "customer")
+    private CustomerPersonal customerPersonal;
+
+    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.ALL}, mappedBy = "customer")
+    private CustomerCompany customerCompany;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

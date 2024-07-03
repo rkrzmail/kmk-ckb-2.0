@@ -4,13 +4,11 @@ import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.request.RequestOtpRequest;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
-import com.kmkbe.modules.customer.response.LoginResponse;
-import com.kmkbe.modules.customer.response.RequestOtpResponse;
+import com.kmkbe.modules.customer.dto.RequestOtpDto;
 import com.kmkbe.modules.customer.service.OtpService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.mail.MessagingException;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -34,8 +32,8 @@ public class OtpController {
     }
 
     @PostMapping("/send/forgot-pin")
-    public CommonResult<RequestOtpResponse> sendForgotPin(@RequestBody RequestOtpRequest request) throws MessagingException {
-        return new CommonResult<RequestOtpResponse>().success(otpService.sendForgotPin(request.email()));
+    public CommonResult<RequestOtpDto> sendForgotPin(@RequestBody RequestOtpRequest request) throws MessagingException {
+        return new CommonResult<RequestOtpDto>().success(otpService.sendForgotPin(request.email()));
     }
 
     @PostMapping("/resend")

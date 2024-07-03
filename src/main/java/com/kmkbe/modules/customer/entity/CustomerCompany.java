@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
@@ -13,7 +14,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Entity
 @Table(name = "customer_company", schema = "public")
-public class CustomerCompany {
+public class CustomerCompany implements Serializable {
 
     @Id
     @Column(nullable = false, updatable = false)
@@ -29,7 +30,7 @@ public class CustomerCompany {
     )
     private Long custCompanyCode;
 
-    @Column(nullable = false)
+    @Column(name = "cust_code", nullable = false)
     private UUID custCode;
 
     @Column(length = 50)
@@ -100,4 +101,14 @@ public class CustomerCompany {
 
     @Column(nullable = false)
     private OffsetDateTime dtmUpd;
+
+    @OneToOne
+    @JoinColumn(
+            name = "cust_code",
+            referencedColumnName = "cust_code",
+            insertable = false,
+            updatable = false
+
+    )
+    private Customer customer;
 }

@@ -5,23 +5,32 @@ import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.constant.CustomerIdType;
 import com.kmkbe.modules.customer.constant.CustomerType;
 import com.kmkbe.modules.customer.entity.*;
+import com.kmkbe.modules.customer.mapper.CustomerMapper;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.repository.LoginLogRepository;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
-import com.kmkbe.modules.customer.response.LoginResponse;
-import com.kmkbe.modules.customer.response.RequestOtpResponse;
+import com.kmkbe.modules.customer.dto.LoginDto;
+import com.kmkbe.modules.customer.dto.RequestOtpDto;
 import jakarta.annotation.Nullable;
 import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Service;
+import com.kmkbe.modules.customer.dto.CustomerDto;
 
 import java.math.BigDecimal;
 import java.security.SignatureException;
@@ -40,9 +49,11 @@ public class AuthService {
     private final EmailService emailService;
     private final BCryptPasswordEncoder bcryptEncoder;
     private final JwtService jwtService;
+    private final SecurityContextLogoutHandler logoutHandler;
+    private final AuthenticationManager authenticationManager;
 
     @Transactional
-    public RequestOtpResponse signUp(SignUpRequest request) throws MessagingException {
+    public RequestOtpDto signUp(SignUpRequest request) throws MessagingException {
         final Customer cust = new Customer();
         cust.setCustCode(UUID.randomUUID());
         cust.setCustName(request.getName());
@@ -136,10 +147,11 @@ public class AuthService {
         customerService.create(cust);
         otpService.create(cust, OtpService.OtpType.SIGNUP);
 
-        return new RequestOtpResponse(cust.getCustEmail());
+        return new RequestOtpDto(cust.getCustEmail());
     }
 
-    public LoginResponse login(LoginRequest request) {
+    @Transactional
+    public LoginDto login(LoginRequest request) {
         final Optional<Customer> findCust = customerRepository.findByCustEmail(request.email());
         if (findCust.isEmpty()) {
             throw new EntityNotFoundException("User not found");
@@ -147,13 +159,19 @@ public class AuthService {
 
         final Customer cust = findCust.get();
         if (!bcryptEncoder.matches(request.pin(), cust.getCustPin())) {
-            throw new EntityNotFoundException("Email or pin is invalid, try to entry right email and pin");
+            throw new BadCredentialsException("Email or pin is invalid, try to entry right email and pin");
         }
 
         if (!cust.getIsActive()) {
             throw new IllegalStateException("Your account is not activated yet");
         }
 
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.email(),
+                        request.pin()
+                )
+        );
 
         final LoginLog loginLog = new LoginLog();
         loginLog.setCustCode(cust.getCustCode());
@@ -163,19 +181,25 @@ public class AuthService {
         loginLog.setIsLogout(false);
         loginLogRepository.save(loginLog);
 
-        return new LoginResponse(
+        return new LoginDto(
                 jwtService.generateToken(cust),
                 jwtService.getExpirationTime()
         );
     }
 
-    public String logout() throws SignatureException, IllegalStateException {
-        final Authentication authentication = getAuthentication();
+    @Transactional
+    public String logout(
+            Authentication authentication,
+            HttpServletRequest request,
+            HttpServletResponse response
+    ) throws SignatureException, IllegalStateException {
         if (authentication == null) {
             throw new IllegalStateException("User has logged out");
         }
 
-        final Customer cust = authenticatedCustomer(authentication);
+        logoutHandler.logout(request, response, authentication);
+
+        final Customer cust = CustomerMapper.INSTANCE.custEntityFromDto(authenticatedCustomer(authentication));
         final Optional<LoginLog> find = loginLogRepository.findTopByCustCode(cust.getCustCode());
         if (find.isEmpty()) {
             throw new EntityNotFoundException("User not found");
@@ -203,9 +227,10 @@ public class AuthService {
         return "Pin updated";
     }
 
-    public Customer authenticatedCustomer(Authentication authentication) throws SignatureException {
-        if (authentication != null && authentication.isAuthenticated()) {
-            return (Customer) authentication.getPrincipal();
+    public CustomerDto authenticatedCustomer(Authentication authentication) throws SignatureException {
+        if (!(authentication instanceof AnonymousAuthenticationToken)) {
+            Customer cust = (Customer) authentication.getPrincipal();
+            return CustomerMapper.INSTANCE.custDtoFromEntity(cust);
         }
 
         throw new SignatureException();

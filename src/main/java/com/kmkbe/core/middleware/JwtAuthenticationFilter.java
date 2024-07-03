@@ -1,4 +1,4 @@
-package com.kmkbe.core.component;
+package com.kmkbe.core.middleware;
 
 import com.kmkbe.core.service.JwtService;
 import jakarta.servlet.FilterChain;
@@ -13,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
@@ -23,6 +24,26 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+    public static final String[] ENDPOINTS_WHITELIST = {
+            "/api/v1/auth/sign-in",
+            "/api/v1/auth/sign-up",
+            "/api/v1/auth/forgot-pin",
+            "/api/v1/otp/**",
+            "/error/**",
+
+            // api doc
+            "/v1/api-docs",
+            "/v1/api-docs/**",
+            "/swagger-ui.html",
+            "/swagger-ui/**",
+            "/swagger-resources/**",
+            "/configuration/**",
+            "/webjars/**",
+            "/actuator/**",
+            "/instances/**",
+            "/actuator/**",
+    };
+
     private final HandlerExceptionResolver handlerExceptionResolver;
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
@@ -33,16 +54,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        final String authHeader = request.getHeader("Authorization");
-        final String bearer = "Bearer ";
-
-        if (authHeader == null || !authHeader.startsWith(bearer)) {
-            filterChain.doFilter(request, response);
-            return;
+        for (String endpoint : ENDPOINTS_WHITELIST) {
+            if (new AntPathRequestMatcher(endpoint).matches(request)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
         }
 
         try {
-            final String jwt = authHeader.substring(bearer.length());
+            final String authHeader = request.getHeader("Authorization");
+            final String jwt = authHeader.substring("Bearer ".length());
             final String username = jwtService.extractUsername(jwt);
             final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 

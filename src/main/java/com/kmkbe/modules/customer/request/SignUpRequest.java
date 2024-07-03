@@ -3,7 +3,7 @@ package com.kmkbe.modules.customer.request;
 import com.kmkbe.modules.customer.constant.CompanyModel;
 import com.kmkbe.modules.customer.constant.CustomerModel;
 import com.kmkbe.modules.customer.constant.CustomerType;
-import jakarta.annotation.Nullable;
+
 import lombok.*;
 
 import java.time.OffsetDateTime;
@@ -23,11 +23,7 @@ public class SignUpRequest {
     private String mobilePhone;
     private String pin;
     private Boolean isAgreeTc;
-
-    @Nullable
     private Company company;
-
-    @Nullable
     private Personal personal;
 
     @Getter

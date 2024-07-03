@@ -1,10 +1,9 @@
-package com.kmkbe.modules.customer.response;
+package com.kmkbe.modules.customer.dto;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import lombok.Data;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-public record LoginResponse(
+public record LoginDto(
         String token,
         Long expiresIn
 ) {

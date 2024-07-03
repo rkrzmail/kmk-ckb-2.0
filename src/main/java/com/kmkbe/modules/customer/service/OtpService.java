@@ -5,9 +5,8 @@ import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.entity.OtpLog;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.repository.OtpRepository;
-import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
-import com.kmkbe.modules.customer.response.RequestOtpResponse;
+import com.kmkbe.modules.customer.dto.RequestOtpDto;
 import jakarta.annotation.Nullable;
 import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
@@ -91,7 +90,7 @@ public class OtpService {
         return "Otp Send";
     }
 
-    public RequestOtpResponse sendForgotPin(String email) throws MessagingException {
+    public RequestOtpDto sendForgotPin(String email) throws MessagingException {
         final Optional<Customer> find = customerRepository.findByCustEmail(email);
         if (find.isEmpty()) {
             throw new EntityNotFoundException("Customer not found");
@@ -100,7 +99,7 @@ public class OtpService {
         final Customer cust = find.get();
         create(cust, OtpType.CHANGE_PIN);
 
-        return new RequestOtpResponse(cust.getCustEmail());
+        return new RequestOtpDto(cust.getCustEmail());
     }
 
     @Transactional
