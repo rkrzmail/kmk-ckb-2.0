@@ -3,7 +3,8 @@ package com.kmkbe.core.model;
 import lombok.*;
 import org.bson.Document;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
+import java.util.Date;
 import java.util.Map;
 
 @Getter
@@ -24,7 +25,7 @@ public class HttpLoggerPayload {
         doc.put("request", request);
         doc.put("response", response);
         doc.put("controller", controller);
-        doc.put("timestamp", LocalDateTime.now());
+        doc.put("timestamp", Date.from(Instant.now()));
         return doc;
     }
 }

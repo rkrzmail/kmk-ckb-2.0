@@ -19,23 +19,20 @@ import java.util.UUID;
 @Entity
 @Table(name = "login_log", schema = "public")
 public class LoginLog {
-    @Id
-    @Column(nullable = false, updatable = false)
-    @SequenceGenerator(
-            name = "primary_sequence",
-            sequenceName = "primary_sequence",
-            allocationSize = 1
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "primary_sequence"
+
+    @Column(
+            nullable = false,
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
     )
     private Long loginLogId;
 
+    @Id
     @Column(nullable = false)
     private UUID loginLogCode;
 
-    @Column(nullable = false)
+    @Column(name = "cust_code", nullable = false)
     private UUID custCode;
 
     @Column(nullable = false, length = 50)
@@ -53,4 +50,12 @@ public class LoginLog {
     @Column
     private OffsetDateTime usrLogout;
 
+    @ManyToOne
+    @JoinColumn(
+            name = "cust_code",
+            referencedColumnName = "cust_code",
+            insertable = false,
+            updatable = false
+    )
+    private Customer customer;
 }

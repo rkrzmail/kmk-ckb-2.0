@@ -3,7 +3,8 @@ package com.kmkbe.modules.common.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.OffsetDateTime;
+import java.util.Date;
+import java.util.List;
 
 @NoArgsConstructor
 @Getter
@@ -13,21 +14,16 @@ import java.time.OffsetDateTime;
 @Table(name = "general_setting_hdr", schema = "public")
 public class GeneralSettingHdr {
 
-    @Id
-    @Column(nullable = false, updatable = false)
-    @SequenceGenerator(
-            name = "primary_sequence",
-            sequenceName = "primary_sequence",
-            allocationSize = 1
-            //initialValue = 10000
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "primary_sequence"
+    @Column(
+            nullable = false,
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
     )
     private Long gsHdrId;
 
-    @Column(nullable = false, length = 20)
+    @Id
+    @Column(name = "gs_hdr_code", nullable = false, length = 20)
     private String gsHdrCode;
 
     @Column(nullable = false, length = 100)
@@ -40,11 +36,14 @@ public class GeneralSettingHdr {
     private String usrCrt;
 
     @Column(nullable = false)
-    private OffsetDateTime dtmCrt;
+    private Date dtmCrt;
 
     @Column(nullable = false, length = 50)
     private String usrUpd;
 
     @Column
-    private OffsetDateTime dtmUpd;
+    private Date dtmUpd;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "generalSettingHdr")
+    private List<GeneralSettingDtl> generalSettingDtl;
 }

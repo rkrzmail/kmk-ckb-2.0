@@ -1,7 +1,6 @@
 package com.kmkbe.modules.customer.service;
 
 import com.kmkbe.core.service.JwtService;
-import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.constant.CustomerIdType;
 import com.kmkbe.modules.customer.constant.CustomerType;
 import com.kmkbe.modules.customer.entity.*;
@@ -35,8 +34,7 @@ import com.kmkbe.modules.customer.dto.CustomerDto;
 import java.math.BigDecimal;
 import java.security.SignatureException;
 import java.time.*;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @AllArgsConstructor
@@ -46,7 +44,6 @@ public class AuthService {
     private final CustomerRepository customerRepository;
     private final CustomerService customerService;
     private final OtpService otpService;
-    private final EmailService emailService;
     private final BCryptPasswordEncoder bcryptEncoder;
     private final JwtService jwtService;
     private final SecurityContextLogoutHandler logoutHandler;
@@ -63,6 +60,7 @@ public class AuthService {
         cust.setCustMobilePhone(request.getMobilePhone());
         cust.setAgreeTc(request.getIsAgreeTc());
         cust.setCustPin(request.getPin());
+        cust.setDtmUpd(OffsetDateTime.now());
 
         if (request.getCustomerNo() != null && !request.getCustomerNo().isEmpty()) {
             cust.setCustNo(request.getCustomerNo());
@@ -145,9 +143,13 @@ public class AuthService {
         }
 
         customerService.create(cust);
-        otpService.create(cust, OtpService.OtpType.SIGNUP);
+        final OtpLog otpLog = otpService.create(cust, OtpService.OtpType.SIGNUP);
 
-        return new RequestOtpDto(cust.getCustEmail());
+        return new RequestOtpDto(
+                otpService.genRequestId(cust, otpLog),
+                cust.getCustEmail(),
+                otpLog.getExpiredDate()
+        );
     }
 
     @Transactional

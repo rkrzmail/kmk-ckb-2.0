@@ -16,19 +16,17 @@ import java.util.UUID;
 @Table(name = "customer_company", schema = "public")
 public class CustomerCompany implements Serializable {
 
+    @Column(
+            nullable = false,
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
+    )
+    private Long custCompanyId;
+
     @Id
-    @Column(nullable = false, updatable = false)
-    @SequenceGenerator(
-            name = "primary_sequence",
-            sequenceName = "primary_sequence",
-            allocationSize = 1
-            //initialValue = 10000
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "primary_sequence"
-    )
-    private Long custCompanyCode;
+    @Column(name = "cust_company_code", nullable = false)
+    private UUID custCompanyCode;
 
     @Column(name = "cust_code", nullable = false)
     private UUID custCode;
@@ -108,7 +106,6 @@ public class CustomerCompany implements Serializable {
             referencedColumnName = "cust_code",
             insertable = false,
             updatable = false
-
     )
     private Customer customer;
 }

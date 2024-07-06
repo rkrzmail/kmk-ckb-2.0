@@ -3,7 +3,7 @@ package com.kmkbe.modules.common.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.OffsetDateTime;
+import java.util.Date;
 
 @NoArgsConstructor
 @Getter
@@ -13,20 +13,15 @@ import java.time.OffsetDateTime;
 @Table(name = "email_template", schema = "public")
 public class EmailTemplate {
 
-    @Id
-    @Column(nullable = false, updatable = false)
-    @SequenceGenerator(
-            name = "primary_sequence",
-            sequenceName = "primary_sequence",
-            allocationSize = 1
-            //initialValue = 10000
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "primary_sequence"
+    @Column(
+            nullable = false,
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
     )
     private Long emailTemplateId;
 
+    @Id
     @Column(nullable = false, length = 20)
     private String emailTemplateCode;
 
@@ -52,12 +47,12 @@ public class EmailTemplate {
     private String usrCrt;
 
     @Column(nullable = false)
-    private OffsetDateTime dtmCrt;
+    private Date dtmCrt;
 
     @Column(length = 50)
     private String usrUpd;
 
     @Column
-    private OffsetDateTime dtmUpd;
+    private Date dtmUpd;
 
 }

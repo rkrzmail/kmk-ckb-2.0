@@ -22,8 +22,8 @@ public class OtpController {
     private final OtpService otpService;
 
     @PutMapping("/verify/sign-up")
-    public CommonResult<Customer> verifySignUp(@RequestBody VerifyOtpRequest request) throws Exception {
-        return new CommonResult<Customer>().success(otpService.verifySignUp(request));
+    public CommonResult<Object> verifySignUp(@RequestBody VerifyOtpRequest request) throws Exception {
+        return new CommonResult<Object>().success(null, otpService.verifySignUp(request));
     }
 
     @PutMapping("/verify/forgot-pin")
@@ -36,8 +36,19 @@ public class OtpController {
         return new CommonResult<RequestOtpDto>().success(otpService.sendForgotPin(request.email()));
     }
 
-    @PostMapping("/resend")
-    public CommonResult<String> resendOtp(@RequestBody RequestOtpRequest request) throws MessagingException {
-        return new CommonResult<String>().success(otpService.resend(request.email()));
+    @PostMapping("/resend/sign-up")
+    public CommonResult<Object> resendSignUpOtp(@RequestBody RequestOtpRequest request) throws MessagingException {
+        return new CommonResult<>().success(
+                null,
+                otpService.resend(request, OtpService.OtpType.SIGNUP)
+        );
+    }
+
+    @PostMapping("/resend/forgot-pin")
+    public CommonResult<Object> resendForgotPinOtp(@RequestBody RequestOtpRequest request) throws MessagingException {
+        return new CommonResult<>().success(
+                null,
+                otpService.resend(request, OtpService.OtpType.CHANGE_PIN)
+        );
     }
 }

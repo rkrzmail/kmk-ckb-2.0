@@ -19,21 +19,16 @@ import java.util.UUID;
 @Table(name = "customer", schema = "public")
 public class Customer implements UserDetails {
 
-    @Id
-    @Column(nullable = false, updatable = false)
-    @SequenceGenerator(
-            name = "primary_sequence",
-            sequenceName = "primary_sequence",
-            allocationSize = 1
-            //initialValue = 10000
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "primary_sequence"
+    @Column(
+            nullable = false,
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
     )
     private Long custId;
 
-    @Column(name="cust_code", nullable = false)
+    @Id
+    @Column(name = "cust_code", nullable = false)
     private UUID custCode;
 
     @Column(length = 20)
@@ -55,25 +50,25 @@ public class Customer implements UserDetails {
     private String custEmail;
 
     @Column
-    private Boolean isEmailValid;
+    private Boolean isEmailValid = false;
 
     @Column(length = 20)
     private String custMobilePhone;
 
     @Column
-    private Boolean isPhoneValid;
+    private Boolean isPhoneValid = false;
 
     @Column
-    private Boolean isWaActive;
+    private Boolean isWaActive = false;
 
     @Column(length = 250)
     private String custPin;
 
     @Column
-    private Boolean agreeTc;
+    private Boolean agreeTc = false;
 
     @Column
-    private Boolean isActive;
+    private Boolean isActive = false;
 
     @Column(length = 50)
     private String usrCrt;
@@ -92,6 +87,9 @@ public class Customer implements UserDetails {
 
     @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.ALL}, mappedBy = "customer")
     private CustomerCompany customerCompany;
+
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "customer")
+    private List<LoginLog> loginLogs;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

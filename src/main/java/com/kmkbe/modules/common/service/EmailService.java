@@ -1,22 +1,26 @@
 package com.kmkbe.modules.common.service;
 
+import com.kmkbe.core.config.MailConfig;
 import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.common.entity.EmailTemplate;
 import com.kmkbe.modules.common.repository.EmailTemplateRepository;
+import com.kmkbe.modules.internal.dto.InternalMailDto;
+import com.kmkbe.modules.internal.service.InternalService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.AllArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.security.SignatureException;
 import java.util.Map;
 
 @Service
-@AllArgsConstructor
 public class EmailService {
     private static final String EMAIL_FROM = "CSUL.Finance@csul.co.id";
     private static final int EMAIL_PRIORITY = 2;
@@ -26,9 +30,24 @@ public class EmailService {
     private static final String M_CUST_CHANGE_OTP = "M_CUST_CHANGE_OTP";
     private static final String M_CUST_ACTIVE = "M_CUST_ACTIVE";
 
-
     private final EmailTemplateRepository emailTemplateRepository;
     private final JavaMailSender mailSender;
+
+    public EmailService(
+            EmailTemplateRepository emailTemplateRepository,
+            InternalService internalService,
+            MailConfig mailConfig
+    ) throws SignatureException {
+        this.emailTemplateRepository = emailTemplateRepository;
+
+        final InternalMailDto internalMail = internalService.fetchEmailInfo();
+        this.mailSender = mailConfig.javaMailSender(
+                internalMail.getServerUrl(),
+                internalMail.getPort(),
+                internalMail.getUsername(),
+                internalMail.getPassword()
+        );
+    }
 
     @Async
     public void sendOtp(Customer customer, String otpCode) throws MessagingException {
@@ -89,7 +108,7 @@ public class EmailService {
             helper.setCc(template.getMailCc().split(";"));
         }
         if (template.getMailBcc() != null && !template.getMailBcc().isEmpty()) {
-            helper.setBcc(template.getMailCc().split(";"));
+            helper.setBcc(template.getMailBcc().split(";"));
         }
 
         helper.setPriority(EMAIL_PRIORITY);

@@ -27,8 +27,8 @@ public class AuthController {
     private final AuthService authService;
 
     @PostMapping("/sign-up")
-    public CommonResult<RequestOtpDto> signUp(@RequestBody SignUpRequest request) throws Exception {
-        return new CommonResult<RequestOtpDto>().success(authService.signUp(request));
+    public CommonResult<Object> signUp(@RequestBody SignUpRequest request) throws Exception {
+        return new CommonResult<>().success(authService.signUp(request));
     }
 
     @PostMapping("/sign-in")

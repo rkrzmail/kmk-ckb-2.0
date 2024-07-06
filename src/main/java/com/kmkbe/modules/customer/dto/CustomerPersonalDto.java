@@ -1,7 +1,7 @@
 package com.kmkbe.modules.customer.dto;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import jakarta.persistence.Column;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,6 +36,9 @@ public class CustomerPersonalDto {
     private String area;
     private String phone;
     private String ownershipStatus;
+
+    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private OffsetDateTime staySince;
+
     private BigDecimal stayLength;
 }

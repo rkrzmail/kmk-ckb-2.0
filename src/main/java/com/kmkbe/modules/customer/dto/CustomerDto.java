@@ -1,12 +1,12 @@
 package com.kmkbe.modules.customer.dto;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import jakarta.persistence.Column;
-import lombok.Builder;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -29,4 +29,5 @@ public class CustomerDto {
     private Boolean isActive;
     private CustomerPersonalDto customerPersonal;
     private CustomerCompanyDto customerCompany;
+    private OffsetDateTime dtmCrt;
 }

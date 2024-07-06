@@ -1,4 +1,4 @@
-package com.kmkbe.modules.common.response;
+package com.kmkbe.modules.internal.dto;
 
 import lombok.*;
 
@@ -6,7 +6,7 @@ import lombok.*;
 @Setter
 @Data
 @Builder
-public class CsulMailResponse {
+public class InternalMailDto {
     private final String serverUrl;
     private final Integer port;
     private final String username;

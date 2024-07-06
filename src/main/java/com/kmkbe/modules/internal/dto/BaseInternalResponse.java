@@ -1,12 +1,13 @@
-package com.kmkbe.modules.common.response;
+package com.kmkbe.modules.internal.dto;
 
 import lombok.*;
 
+@AllArgsConstructor
 @NoArgsConstructor
 @Getter
 @Setter
 @Data
-public class BaseCsulResponse<T> {
+public class BaseInternalResponse<T> {
     private CsulHeaderResult header;
     private T data;
 

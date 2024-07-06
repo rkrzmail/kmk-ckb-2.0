@@ -3,7 +3,7 @@ package com.kmkbe.modules.common.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.OffsetDateTime;
+import java.util.Date;
 
 @NoArgsConstructor
 @Getter
@@ -12,22 +12,21 @@ import java.time.OffsetDateTime;
 @Entity
 @Table(name = "general_setting_dtl", schema = "public")
 public class GeneralSettingDtl {
-    @Id
-    @Column(nullable = false, updatable = false)
-    @SequenceGenerator(
-            name = "primary_sequence",
-            sequenceName = "primary_sequence",
-            allocationSize = 1
-            //initialValue = 10000
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "primary_sequence"
+
+    @Column(
+            nullable = false,
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
     )
     private Long gsDtlId;
 
-    @Column(length = 100)
+    @Id
+    @Column(name = "gs_dtl_code", length = 100, nullable = false)
     private String gsDtlCode;
+
+    @Column(name = "gs_hdr_code", nullable = false, length = 20)
+    private String gsHdrCode;
 
     @Column(length = 250)
     private String gsDtlValue;
@@ -39,12 +38,20 @@ public class GeneralSettingDtl {
     private String usrCrt;
 
     @Column(nullable = false)
-    private OffsetDateTime dtmCrt;
+    private Date dtmCrt;
 
     @Column(nullable = false, length = 50)
     private String usrUpd;
 
     @Column
-    private OffsetDateTime dtmUpd;
+    private Date dtmUpd;
 
+    @ManyToOne
+    @JoinColumn(
+            name = "gs_hdr_code",
+            referencedColumnName = "gs_hdr_code",
+            insertable = false,
+            updatable = false
+    )
+    private GeneralSettingHdr generalSettingHdr;
 }

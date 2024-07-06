@@ -1,12 +1,10 @@
 package com.kmkbe.core.config;
 
-import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
+import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -17,12 +15,20 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.client.RestTemplate;
 
-import java.util.Properties;
+import java.util.TimeZone;
 
 @Configuration
 @RequiredArgsConstructor
 public class AppConfig {
+
+    private static final int GMAIL_SMTP_PORT = 587;
+
     private final CustomerRepository customerRepository;
+
+    @PostConstruct
+    public void init() {
+        TimeZone.setDefault(TimeZone.getTimeZone("Asia/Jakarta"));
+    }
 
     @Bean
     UserDetailsService userDetailsService() {
@@ -57,26 +63,4 @@ public class AppConfig {
     public RestTemplate provideRestTemplate() {
         return new RestTemplate();
     }
-
-    /*@Bean
-    public JavaMailSender javaMailSender() {
-        JavaMailSenderImpl mailSender = new JavaMailSenderImpl();
-        return mailSender;
-    }*/
-
-   /* @Bean
-    public AuthService authService() {
-        return new AuthService();
-    }*/
-
-   /* @Bean
-    public UserDetailsService userDetails() {
-        UserDetails user = User.builder()
-                .username("user")
-                .password(bCryptEncoder().encode("123456"))
-                .roles("CUSTOMER")
-                .build();
-
-        return new InMemoryUserDetailsManager(user);
-    }*/
 }

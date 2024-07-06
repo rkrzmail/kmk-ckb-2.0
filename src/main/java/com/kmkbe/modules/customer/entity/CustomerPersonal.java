@@ -17,19 +17,18 @@ import java.util.UUID;
 @Entity
 @Table(name = "customer_personal", schema = "public")
 public class CustomerPersonal {
+
+    @Column(
+            nullable = false,
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
+    )
+    private Long custPersonalId;
+
     @Id
-    @Column(nullable = false, updatable = false)
-    @SequenceGenerator(
-            name = "primary_sequence",
-            sequenceName = "primary_sequence",
-            allocationSize = 1
-            //initialValue = 10000
-    )
-    @GeneratedValue(
-            strategy = GenerationType.SEQUENCE,
-            generator = "primary_sequence"
-    )
-    private Long custPersonalCode;
+    @Column(nullable = false)
+    private UUID custPersonalCode;
 
     @Column(name = "cust_code", nullable = false)
     private UUID custCode;
