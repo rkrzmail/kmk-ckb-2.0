@@ -10,7 +10,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 import org.testng.annotations.Test;
 
 import java.util.LinkedHashMap;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

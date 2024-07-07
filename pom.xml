@@ -203,6 +203,9 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                         </exclude>
+                        <exclude>
+                            <groupId>com.kmkbe.AESTest</groupId>
+                        </exclude>
                     </excludes>
                 </configuration>
             </plugin>

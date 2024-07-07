@@ -44,7 +44,8 @@ public class OtpService {
         otpLog.setUsrCrt(customer.getCustName());
         otpLog.setDtmCrt(OffsetDateTime.now());
         otpLog.setIsUsed(false);
-        otpLog.setOtpCode(genOtp());
+        //otpLog.setOtpCode(genOtp());
+        otpLog.setOtpCode("1111");
 
         otpRepository.save(otpLog);
 

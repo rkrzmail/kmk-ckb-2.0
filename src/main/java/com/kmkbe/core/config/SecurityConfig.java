@@ -50,7 +50,8 @@ public class SecurityConfig {
     public SecurityFilterChain whitelistFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .cors(AbstractHttpConfigurer::disable)
+                //.cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .exceptionHandling(e -> e
                         .authenticationEntryPoint(unauthorizedEntryPoint)
                 )

@@ -8,19 +8,25 @@ import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import io.swagger.v3.oas.models.servers.Server;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import javax.crypto.SecretKey;
 import java.util.List;
 
 @Configuration
+@Slf4j
 public class OpenApiConfig {
 
     @Bean
     public OpenAPI provideOpenAPI() {
+        String homeURL = ServletUriComponentsBuilder.fromCurrentContextPath().toUriString();
+        log.info("OpenApiConfig homeURL: {}", homeURL);
+
         Server server = new Server();
-        server.setUrl("http://localhost:8080");
+        //server.setUrl("http://localhost:8080");
+        server.setUrl("https://kmk.nikitagenerator.com");
         server.setDescription("Local Server");
 
         Contact contact = new Contact();
@@ -36,13 +42,13 @@ public class OpenApiConfig {
 
         return new OpenAPI()
                 .info(info)
-                .addSecurityItem(new SecurityRequirement().addList("JavaInUseSecurityScheme"))
+                .addSecurityItem(new SecurityRequirement().addList("Bearer"))
                 .components(new Components()
                         .addSecuritySchemes(
-                                "JavaInUseSecurityScheme",
+                                "Bearer",
                                 new SecurityScheme()
                                         .name("bearerAuth")
-                                        .description("JWT auth description")
+                                        .description("JWT Auth")
                                         .type(SecurityScheme.Type.HTTP)
                                         .in(SecurityScheme.In.HEADER)
                                         .scheme("bearer")

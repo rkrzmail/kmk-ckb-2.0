@@ -11,17 +11,17 @@ import java.util.concurrent.TimeUnit;
 
 @Component
 @RequiredArgsConstructor
-public class RedisUtils<T> {
+public class RedisUtils {
 
-    private final RedisTemplate<String, T> redisTemplate;
-    private final ValueOperations<String, T> valueOperations;
-    private final ListOperations<String, T> listOperations;
+    private final RedisTemplate<String, Object> redisTemplate;
+    private final ValueOperations<String, Object> valueOperations;
+    private final ListOperations<String, Object> listOperations;
 
-    public void putValue(String key, T value) {
+    public void putValue(String key, Object value) {
         valueOperations.set(key, value);
     }
 
-    public T getValue(String key) {
+    public Object getValue(String key) {
         return valueOperations.get(key);
     }
 
@@ -29,11 +29,11 @@ public class RedisUtils<T> {
         redisTemplate.expire(key, timeout, unit);
     }
 
-    public List<T> getValueFromList(String key) {
+    public List<Object> getValueFromList(String key) {
         return listOperations.range(key, 0, -1);
     }
 
-    public void addValueToList(String key, T value) {
+    public void addValueToList(String key, Object value) {
         listOperations.rightPush(key, value);
     }
 }

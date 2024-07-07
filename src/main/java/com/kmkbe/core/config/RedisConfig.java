@@ -14,7 +14,9 @@ import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.connection.lettuce.LettucePoolingClientConfiguration;
+import org.springframework.data.redis.core.ListOperations;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.data.redis.repository.configuration.EnableRedisRepositories;
 import org.springframework.data.redis.serializer.*;
 
@@ -117,4 +119,15 @@ public class RedisConfig {
                 .entryTtl(duration)
                 .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new GenericJackson2JsonRedisSerializer()));
     }
+
+    @Bean
+    public ValueOperations<String, Object> valueOperations() {
+        return redisTemplate().opsForValue();
+    }
+
+    @Bean
+    public ListOperations<String, Object> listOperations() {
+        return redisTemplate().opsForList();
+    }
+
 }

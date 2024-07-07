@@ -42,6 +42,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/actuator/**",
             "/instances/**",
             "/actuator/**",
+
+            // swagger
+            "/api/v1/api-docs",
+            "/api/v1/api-docs/**",
+            "/api/v1/swagger-ui.html",
+            "/api/v1/swagger-ui/**",
+            "/api/v1/swagger-resources/**",
+            "/api/v1/configuration/**",
+            "/api/v1/webjars/**",
+            "/api/v1/actuator/**",
+            "/api/v1/instances/**",
+            "/api/v1/actuator/**",
     };
 
     private final HandlerExceptionResolver handlerExceptionResolver;
@@ -61,8 +73,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
+        final String authHeader = request.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         try {
-            final String authHeader = request.getHeader("Authorization");
             final String jwt = authHeader.substring("Bearer ".length());
             final String username = jwtService.extractUsername(jwt);
             final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
