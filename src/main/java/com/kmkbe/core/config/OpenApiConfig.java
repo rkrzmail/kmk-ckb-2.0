@@ -11,6 +11,7 @@ import io.swagger.v3.oas.models.servers.Server;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import javax.crypto.SecretKey;
 import java.util.List;
 
 @Configuration
@@ -40,10 +41,13 @@ public class OpenApiConfig {
                         .addSecuritySchemes(
                                 "JavaInUseSecurityScheme",
                                 new SecurityScheme()
-                                        .name("JavaInUseSecurityScheme")
+                                        .name("bearerAuth")
+                                        .description("JWT auth description")
                                         .type(SecurityScheme.Type.HTTP)
+                                        .in(SecurityScheme.In.HEADER)
                                         .scheme("bearer")
                                         .bearerFormat("JWT")
+
                         )
                 )
                 .servers(List.of(server));

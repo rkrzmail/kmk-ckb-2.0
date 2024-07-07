@@ -100,7 +100,7 @@ public class CustomerCompany implements Serializable {
     @Column(nullable = false)
     private OffsetDateTime dtmUpd;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "cust_code",
             referencedColumnName = "cust_code",

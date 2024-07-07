@@ -52,55 +52,61 @@ public class InternalService {
         //this.cacheManager = cacheManager;
     }
 
-    public BaseInternalResponse<String> fetchAuthJwt() throws SignatureException {
-        //isAuthenticated();
+    public BaseInternalResponse<String> fetchAuthJwt() {
+        try {
+            final String url = siscaUrlWhiteList + "/auth/req-jwt";
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setBasicAuth(authHeaderUsername, authHeaderPassword);
 
-        final String url = siscaUrlWhiteList + "/auth/req-jwt";
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setBasicAuth(authHeaderUsername, authHeaderPassword);
+            final HttpEntity<InternalAuthRequest> request = new HttpEntity<>(
+                    new InternalAuthRequest(
+                            authHeaderUsername,
+                            DateTimeUtils.nowMilliSeconds()
+                    ),
+                    headers
+            );
 
-        final HttpEntity<InternalAuthRequest> request = new HttpEntity<>(
-                new InternalAuthRequest(
-                        authHeaderUsername,
-                        DateTimeUtils.nowMilliSeconds()
-                ),
-                headers
-        );
+            final ResponseEntity<BaseInternalResponse<String>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    request,
+                    new ParameterizedTypeReference<>() {
+                    }
+            );
 
-        final ResponseEntity<BaseInternalResponse<String>> response = restTemplate.exchange(
-                url,
-                HttpMethod.POST,
-                request,
-                new ParameterizedTypeReference<>() {
-                }
-        );
-
-        return response.getBody();
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("fetchAuthJwt: {}", e.getMessage());
+            throw e;
+        }
     }
 
-    public InternalMailDto fetchEmailInfo() throws SignatureException {
-        //isAuthenticated();
+    public InternalMailDto fetchEmailInfo() {
+        try {
+            final BaseInternalResponse<String> tokenResponse = fetchAuthJwt();
 
-        final BaseInternalResponse<String> tokenResponse = fetchAuthJwt();
+            final String url = siscaUrlWhiteList + "/authconfig/mail/appinfo";
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(tokenResponse.getData());
 
-        final String url = siscaUrlWhiteList + "/authconfig/mail/appinfo";
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setBearerAuth(tokenResponse.getData());
+            final HttpEntity<Object> request = new HttpEntity<>(
+                    null,
+                    headers
+            );
 
-        final HttpEntity<Object> request = new HttpEntity<>(
-                null,
-                headers
-        );
+            final ResponseEntity<InternalMailDto> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    request,
+                    new ParameterizedTypeReference<>() {
+                    }
+            );
 
-        final ResponseEntity<InternalMailDto> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                request,
-                new ParameterizedTypeReference<>() {
-                }
-        );
-
-        return response.getBody();
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("fetchEmailInfo: {}", e.getMessage());
+            throw e;
+        }
     }
 
     /**
@@ -110,53 +116,45 @@ public class InternalService {
      * @throws SignatureException kmk jwt validation
      * @throws ParseException     parse exception
      */
-    public BaseInternalResponse<InternalUserDto> validateActiveDirectory(ActiveDirectoryRequest params) throws SignatureException, JsonProcessingException {
-        isAuthenticated();
+    public BaseInternalResponse<InternalUserDto> validateActiveDirectory(ActiveDirectoryRequest params) throws JsonProcessingException {
+        try {
+            final BaseInternalResponse<String> tokenResponse = fetchAuthJwt();
 
-        final BaseInternalResponse<String> tokenResponse = fetchAuthJwt();
+            final String url = siscaUrlWhiteList + "/activedirectory/validation";
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+            headers.setBearerAuth(tokenResponse.getData());
 
-        final String url = siscaUrlWhiteList + "/activedirectory/validation";
-        final HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        headers.setBearerAuth(tokenResponse.getData());
+            final Map<String, String> obj = new HashMap<>();
+            obj.put("Key", AESUtils.encrypt(JsonUtils.jsonToStr(params)));
 
-        final Map<String, String> obj = new HashMap<>();
-        obj.put("Key", AESUtils.encrypt(JsonUtils.jsonToStr(params)));
-
-        final HttpEntity<Object> request = new HttpEntity<>(
-                obj,
-                headers
-        );
-
-        final ResponseEntity<Object> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                request,
-                new ParameterizedTypeReference<>() {
-                }
-        );
-
-        if (
-                response.getBody() instanceof BaseInternalResponse<?> data
-                        && data.getData() instanceof InternalUserDto user
-        ) {
-            return new BaseInternalResponse<>(
-                    data.getHeader(),
-                    user
+            final HttpEntity<Object> request = new HttpEntity<>(
+                    obj,
+                    headers
             );
-        }
 
-        throw new IllegalStateException("Failed to login, try again");
-    }
+            final ResponseEntity<Object> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    request,
+                    new ParameterizedTypeReference<>() {
+                    }
+            );
 
-    private void isAuthenticated() throws SignatureException {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null) {
-            throw new SignatureException();
-        }
+            if (
+                    response.getBody() instanceof BaseInternalResponse<?> data
+                            && data.getData() instanceof InternalUserDto user
+            ) {
+                return new BaseInternalResponse<>(
+                        data.getHeader(),
+                        user
+                );
+            }
 
-        if (authentication instanceof AnonymousAuthenticationToken || !authentication.isAuthenticated()) {
-            throw new SignatureException();
+            throw new IllegalStateException("Failed to login, try again");
+        } catch (Exception e) {
+            log.error("validateActiveDirectory: {}", e.getMessage());
+            throw e;
         }
     }
 }

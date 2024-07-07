@@ -1,13 +1,12 @@
 package com.kmkbe;
 
 
-import jakarta.annotation.PostConstruct;
+import com.kmkbe.core.config.RsaKeyConfigProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 
-import java.util.TimeZone;
-
-
+@EnableConfigurationProperties(RsaKeyConfigProperties.class)
 @SpringBootApplication
 public class KmkbeApplication {
 

@@ -29,7 +29,7 @@ public class ObjectMapperConfig {
                 .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
                 .disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
                 .disable(DeserializationFeature.READ_DATE_TIMESTAMPS_AS_NANOSECONDS)
-                .setSerializationInclusion(JsonInclude.Include.NON_NULL)
+                //.setSerializationInclusion(JsonInclude.Include.NON_NULL) // this will ignore all null values for output
                 .registerModule(simpleModule);
     }
 }

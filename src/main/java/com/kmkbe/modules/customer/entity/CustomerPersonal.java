@@ -111,7 +111,7 @@ public class CustomerPersonal {
     @Column(nullable = false)
     private OffsetDateTime dtmUpd;
 
-    @OneToOne
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "cust_code",
             referencedColumnName = "cust_code",

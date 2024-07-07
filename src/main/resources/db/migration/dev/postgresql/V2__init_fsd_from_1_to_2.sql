@@ -228,7 +228,6 @@ VALUES
 </head>
 <body>
     <p>Hi <span>{name}</span></p>
-    <p>Selamat akun anda telah terdaftar dengan detail informasi:</p>
     <br/>
     <p>
         Selamat akun anda telah berhasil di aktifasi,

@@ -8,6 +8,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 
@@ -82,14 +83,17 @@ public class Customer implements UserDetails {
     @Column
     private OffsetDateTime dtmUpd;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.ALL}, mappedBy = "customer")
+    @OneToOne(cascade = {CascadeType.ALL}, mappedBy = "customer")
     private CustomerPersonal customerPersonal;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = {CascadeType.ALL}, mappedBy = "customer")
+    @OneToOne(cascade = {CascadeType.ALL}, mappedBy = "customer")
     private CustomerCompany customerCompany;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "customer")
-    private List<LoginLog> loginLogs;
+    @OneToMany(cascade = {CascadeType.ALL}, mappedBy = "customer")
+    private Set<LoginLog> loginLogs;
+
+    @OneToMany(cascade = {CascadeType.ALL}, mappedBy = "customer")
+    private Set<ChangePasswordLog> changePasswordLogs;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

@@ -1,4 +1,4 @@
-package com.kmkbe.core.middleware;
+package com.kmkbe.core.callback;
 
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.core.utils.ExceptionUtils;
@@ -31,7 +31,7 @@ public class ExceptionAdvice {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<CommonResult<Object>> handleException(
-            BadCredentialsException exception,
+            Exception exception,
             WebRequest request
     ) {
         return ExceptionUtils.handleException(exception, request);

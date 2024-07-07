@@ -32,7 +32,7 @@ public class LoginLog {
     @Column(nullable = false)
     private UUID loginLogCode;
 
-    @Column(name = "cust_code", nullable = false)
+    @Column(name = "cust_code")
     private UUID custCode;
 
     @Column(nullable = false, length = 50)
@@ -50,7 +50,7 @@ public class LoginLog {
     @Column
     private OffsetDateTime usrLogout;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(
             name = "cust_code",
             referencedColumnName = "cust_code",

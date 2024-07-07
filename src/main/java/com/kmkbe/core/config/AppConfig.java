@@ -5,6 +5,7 @@ import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -12,7 +13,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.TimeZone;
@@ -21,13 +21,18 @@ import java.util.TimeZone;
 @RequiredArgsConstructor
 public class AppConfig {
 
-    private static final int GMAIL_SMTP_PORT = 587;
-
+    @Lazy
     private final CustomerRepository customerRepository;
 
     @PostConstruct
     public void init() {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Jakarta"));
+    }
+
+    @Bean
+    @Lazy
+    public RestTemplate provideRestTemplate() {
+        return new RestTemplate();
     }
 
     @Bean
@@ -37,17 +42,7 @@ public class AppConfig {
     }
 
     @Bean
-    public BCryptPasswordEncoder bCryptEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    @Bean
-    public SecurityContextLogoutHandler securityContextLogoutHandler() {
-        return new SecurityContextLogoutHandler();
-    }
-
-    @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+    public AuthenticationManager authenticationManager(@Lazy AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
@@ -60,7 +55,7 @@ public class AppConfig {
     }
 
     @Bean
-    public RestTemplate provideRestTemplate() {
-        return new RestTemplate();
+    public BCryptPasswordEncoder bCryptEncoder() {
+        return new BCryptPasswordEncoder();
     }
 }

@@ -62,7 +62,7 @@ public class ExceptionUtils {
                         || exception instanceof EntityNotFoundException
                         || exception instanceof PropertyValueException
         ) {
-            detail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.getMessage());
+            detail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
             detail.setProperty("description", exception.getMessage());
         }
 

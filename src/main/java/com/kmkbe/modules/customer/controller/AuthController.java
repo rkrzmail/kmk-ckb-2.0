@@ -5,13 +5,13 @@ import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.dto.LoginDto;
-import com.kmkbe.modules.customer.dto.RequestOtpDto;
 import com.kmkbe.modules.customer.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
@@ -25,6 +25,7 @@ import java.security.SignatureException;
 @RequiredArgsConstructor
 public class AuthController {
     private final AuthService authService;
+    private final SecurityContextLogoutHandler logoutHandler;
 
     @PostMapping("/sign-up")
     public CommonResult<Object> signUp(@RequestBody SignUpRequest request) throws Exception {
@@ -33,7 +34,7 @@ public class AuthController {
 
     @PostMapping("/sign-in")
     public CommonResult<LoginDto> signIn(@RequestBody LoginRequest request) {
-        return new CommonResult<LoginDto>().success(authService.login(request));
+        return new CommonResult<LoginDto>().success(authService.signIn(request));
     }
 
     @PutMapping("/forgot-pin")
@@ -48,9 +49,11 @@ public class AuthController {
             HttpServletRequest request,
             HttpServletResponse response
     ) throws SignatureException, IllegalStateException {
+        final String result = authService.logout(authentication, request, response);
+        logoutHandler.logout(request, response, authentication);
         return new CommonResult<>().success(
                 null,
-                authService.logout(authentication, request, response)
+                result
         );
     }
 }

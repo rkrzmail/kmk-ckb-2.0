@@ -32,10 +32,14 @@ public class CommonResult<T> {
     }
 
     public CommonResult<T> fail(Integer code, String message) {
+        return fail(code, message, null);
+    }
+
+    public CommonResult<T> fail(Integer code, String message, T data) {
         this.isSuccess = false;
         this.code = code;
         this.message = message;
-        this.data = null;
+        this.data = data;
         return this;
     }
 }
