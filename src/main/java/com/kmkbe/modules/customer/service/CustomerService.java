@@ -57,7 +57,7 @@ public class CustomerService {
 
     public void createPersonal(Customer cust, SignUpRequest.Personal personalReq) {
         final boolean userExists = customerPersonalRepository
-                .findByCustCode(cust.getCustCode())
+                .findByCustCode(cust)
                 .isPresent();
 
         if (userExists) {
@@ -66,7 +66,7 @@ public class CustomerService {
 
         final CustomerPersonal personal = new CustomerPersonal();
         {
-            personal.setCustCode(cust.getCustCode());
+            personal.setCustCode(cust);
             personal.setBirthplace(personalReq.getBirthPlace());
             personal.setBirthdate(personalReq.getBirthDate());
             personal.setGender(personalReq.getGender());
@@ -99,7 +99,7 @@ public class CustomerService {
 
     public void createCompany(Customer cust, SignUpRequest.Company companyReq) {
         final boolean userExists = customerCompanyRepository
-                .findByCustCode(cust.getCustCode())
+                .findByCustCode(cust)
                 .isPresent();
 
         if (userExists) {
@@ -108,7 +108,7 @@ public class CustomerService {
 
         final CustomerCompany company = new CustomerCompany();
         {
-            company.setCustCode(cust.getCustCode());
+            company.setCustCode(cust);
             company.setCustCompanyType(companyReq.getCompanyType());
             company.setCompanyModel(companyReq.getCompanyModel().name());
             company.setIdentityType(companyReq.getIdentityType());

@@ -1,26 +1,31 @@
 package com.kmkbe.modules.customer.entity;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
+import com.kmkbe.modules.common.entity.ErrorLog;
+import com.kmkbe.modules.common.entity.FormVisitLog;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
-@NoArgsConstructor
 @Getter
 @Setter
-@AllArgsConstructor
 @Entity
-@Table(name = "login_log", schema = "public")
+@Table(name = "login_log")
 public class LoginLog {
+    @Id
+    @Column(name = "login_log_code", nullable = false)
+    private UUID loginLogCode;
 
+    @ColumnDefault("nextval('login_log_login_log_id_seq'::regclass)")
     @Column(
+            name = "login_log_id",
             nullable = false,
             columnDefinition = "serial",
             insertable = false,
@@ -28,34 +33,35 @@ public class LoginLog {
     )
     private Long loginLogId;
 
-    @Id
-    @Column(nullable = false)
-    private UUID loginLogCode;
-
-    @Column(name = "cust_code")
-    private UUID custCode;
-
-    @Column(nullable = false, length = 50)
+    @Size(max = 50)
+    @NotNull
+    @Column(name = "login_role", nullable = false, length = 50)
     private String loginRole;
 
-    @Column(nullable = false)
-    private OffsetDateTime loginDate;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cust_code", nullable = false)
+    private Customer custCode;
 
-    @Column
-    private Boolean isLogout;
+    @NotNull
+    @Column(name = "login_date", nullable = false)
+    private Instant loginDate;
 
-    @Column
-    private OffsetDateTime logoutDate;
+    @NotNull
+    @ColumnDefault("false")
+    @Column(name = "is_logout", nullable = false)
+    private Boolean isLogout = false;
 
-    @Column
-    private OffsetDateTime usrLogout;
+    @Column(name = "logout_date")
+    private Instant logoutDate;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-            name = "cust_code",
-            referencedColumnName = "cust_code",
-            insertable = false,
-            updatable = false
-    )
-    private Customer customer;
+    @Column(name = "usr_logout")
+    private Instant usrLogout;
+
+    @OneToMany(mappedBy = "loginLogCode")
+    private Set<ErrorLog> errorLogs = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "loginLogCode")
+    private Set<FormVisitLog> formVisitLogs = new LinkedHashSet<>();
+
 }

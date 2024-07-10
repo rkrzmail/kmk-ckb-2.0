@@ -15,7 +15,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 public class CustomerCompanyDto {
-    private UUID custCode;
+    //private UUID custCode;
     private String custCompanyType;
     private String companyModel;
     private String identityType;

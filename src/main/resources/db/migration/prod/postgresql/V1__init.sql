@@ -95,7 +95,7 @@ CREATE TABLE login_log
     login_log_id   BIGSERIAL             NOT NULL,
     login_log_code UUID                  NOT NULL PRIMARY KEY,
     login_role     VARCHAR(50)           NOT NULL,
-    cust_code      UUID                  NOT NULL,
+    cust_code      UUID                  NULL,
     login_date     TIMESTAMP             NOT NULL,
     is_logout      BOOLEAN DEFAULT FALSE NOT NULL,
     logout_date    TIMESTAMP             NULL,
@@ -119,7 +119,7 @@ DROP TABLE IF EXISTS otp_log CASCADE;
 CREATE TABLE otp_log
 (
     otp_log_id     BIGSERIAL PRIMARY KEY,
-    otp_code       VARCHAR(10) UNIQUE                  NOT NULL,
+    otp_code       VARCHAR(10)                         NOT NULL,
     mobile_phone   VARCHAR(20)                         NOT NULL,
     email          VARCHAR(50)                         NOT NULL,
     generated_date TIMESTAMP                           NOT NULL,
@@ -128,7 +128,8 @@ CREATE TABLE otp_log
     usr_crt        VARCHAR(50)                         NOT NULL,
     dtm_crt        TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
     usr_upd        VARCHAR(50)                         NULL,
-    dtm_upd        TIMESTAMP                           NULL
+    dtm_upd        TIMESTAMP                           NULL,
+    UNIQUE (otp_code, email, mobile_phone)
 );
 
 DROP TABLE IF EXISTS email_template CASCADE;

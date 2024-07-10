@@ -1,6 +1,7 @@
 package com.kmkbe.modules.customer.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -30,8 +31,10 @@ public class ChangePasswordLog {
     )
     private Long changePasswordId;
 
-    @Column(name = "cust_code", nullable = false)
-    private UUID custCode;
+    @NotNull
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cust_code", nullable = false)
+    private Customer custCode;
 
     @Column(nullable = false, length = 250)
     private String oldPin;
@@ -44,14 +47,4 @@ public class ChangePasswordLog {
 
     @Column(nullable = false)
     private OffsetDateTime dtmCrt;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-            name = "cust_code",
-            referencedColumnName = "cust_code",
-            nullable = false,
-            insertable = false,
-            updatable = false
-    )
-    private Customer customer;
 }

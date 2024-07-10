@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.service.JwtService;
 import com.kmkbe.modules.customer.constant.CustomerIdType;
 import com.kmkbe.modules.customer.constant.CustomerType;
+import com.kmkbe.modules.customer.constant.LoginRole;
 import com.kmkbe.modules.customer.entity.*;
 import com.kmkbe.modules.customer.mapper.CustomerMapper;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
@@ -117,7 +118,7 @@ public class AuthService {
 
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            loginLogService.create(cust);
+            loginLogService.create(cust, LoginRole.Customer);
 
             return new LoginDto(
                     jwtService.generateToken(cust),

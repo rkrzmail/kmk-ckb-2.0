@@ -1,15 +1,15 @@
 package com.kmkbe.modules.customer.entity;
 
+import com.kmkbe.modules.kredit.entity.FinancingHdr;
+import com.kmkbe.modules.kredit.entity.Invoice;
+import com.kmkbe.modules.kredit.entity.LegalFile;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.OffsetDateTime;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 
 @NoArgsConstructor
@@ -83,17 +83,26 @@ public class Customer implements UserDetails {
     @Column
     private OffsetDateTime dtmUpd;
 
-    @OneToOne(cascade = {CascadeType.ALL}, mappedBy = "customer")
-    private CustomerPersonal customerPersonal;
+    @OneToOne(mappedBy = "custCode")
+    private CustomerPersonal personal;
 
-    @OneToOne(cascade = {CascadeType.ALL}, mappedBy = "customer")
-    private CustomerCompany customerCompany;
+    @OneToOne(mappedBy = "custCode")
+    private CustomerCompany company;
 
-    @OneToMany(cascade = {CascadeType.ALL}, mappedBy = "customer")
+    @OneToMany(mappedBy = "custCode")
     private Set<LoginLog> loginLogs;
 
-    @OneToMany(cascade = {CascadeType.ALL}, mappedBy = "customer")
+    @OneToMany(mappedBy = "custCode")
     private Set<ChangePasswordLog> changePasswordLogs;
+
+    @OneToMany(mappedBy = "custCode")
+    private Set<Invoice> invoices = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "custCode")
+    private Set<LegalFile> legalFiles = new LinkedHashSet<>();
+
+    @OneToMany(mappedBy = "custCode")
+    private Set<FinancingHdr> financingHdrs = new LinkedHashSet<>();
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

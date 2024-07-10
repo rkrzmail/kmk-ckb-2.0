@@ -15,7 +15,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 public class CustomerPersonalDto {
-    private UUID custCode;
+    //private UUID custCode;
     private String birthplace;
     private OffsetDateTime birthdate;
     private String gender;

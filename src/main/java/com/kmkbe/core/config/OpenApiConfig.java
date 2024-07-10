@@ -21,13 +21,13 @@ public class OpenApiConfig {
 
     @Bean
     public OpenAPI provideOpenAPI() {
-        String homeURL = ServletUriComponentsBuilder.fromCurrentContextPath().toUriString();
-        log.info("OpenApiConfig homeURL: {}", homeURL);
+        /*String homeURL = ServletUriComponentsBuilder.fromCurrentContextPath().toUriString();
+        log.info("OpenApiConfig homeURL: {}", homeURL);*/
 
         Server server = new Server();
         //server.setUrl("http://localhost:8080");
         server.setUrl("https://kmk.nikitagenerator.com");
-        server.setDescription("Local Server");
+        server.setDescription("Server");
 
         Contact contact = new Contact();
         contact.setName("NikitaGenerator");

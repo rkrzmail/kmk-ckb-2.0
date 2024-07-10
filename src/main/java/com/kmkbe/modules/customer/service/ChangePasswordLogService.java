@@ -18,7 +18,7 @@ public class ChangePasswordLogService {
     public void create(Customer cust, String oldPin, String newPin) {
         try {
             ChangePasswordLog changePasswordLog = new ChangePasswordLog();
-            changePasswordLog.setCustCode(cust.getCustCode());
+            changePasswordLog.setCustCode(cust);
             changePasswordLog.setOldPin(oldPin);
             changePasswordLog.setNewPin(newPin);
             changePasswordLog.setUsrCrt(cust.getCustName());

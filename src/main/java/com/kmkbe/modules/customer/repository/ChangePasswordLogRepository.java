@@ -11,5 +11,5 @@ import java.util.UUID;
 
 @Repository
 public interface ChangePasswordLogRepository extends JpaRepository<ChangePasswordLog, Long> {
-    Optional<List<ChangePasswordLog>> findAllByCustCode(UUID custCode);
+    Optional<List<ChangePasswordLog>> findAllByCustCode(Customer cust);
 }

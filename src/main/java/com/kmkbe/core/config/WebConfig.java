@@ -13,6 +13,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
@@ -44,7 +45,7 @@ public class WebConfig implements WebMvcConfigurer {
         return new ConcurrentTaskExecutor(Executors.newFixedThreadPool(5));
     }
 
-    @Bean
+   /* @Bean
     public CorsFilter corsFilter() {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
 
@@ -58,5 +59,13 @@ public class WebConfig implements WebMvcConfigurer {
         source.registerCorsConfiguration("/api/v1/**", config);
         source.registerCorsConfiguration("/api/v1/api-docs", config);
         return new CorsFilter(source);
+    }*/
+
+    @Override
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                /*.allowedHeaders("*")
+                .allowedOrigins("*")*/
+                .allowedMethods("HEAD", "GET", "PUT", "POST", "DELETE", "PATCH");
     }
 }

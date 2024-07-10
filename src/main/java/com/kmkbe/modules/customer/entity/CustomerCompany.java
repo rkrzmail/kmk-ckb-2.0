@@ -1,6 +1,7 @@
 package com.kmkbe.modules.customer.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.io.Serializable;
@@ -28,8 +29,10 @@ public class CustomerCompany implements Serializable {
     @Column(name = "cust_company_code", nullable = false)
     private UUID custCompanyCode;
 
-    @Column(name = "cust_code", nullable = false)
-    private UUID custCode;
+    @NotNull
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "cust_code", nullable = false)
+    private Customer custCode;
 
     @Column(length = 50)
     private String custCompanyType;
@@ -99,13 +102,4 @@ public class CustomerCompany implements Serializable {
 
     @Column(nullable = false)
     private OffsetDateTime dtmUpd;
-
-    @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(
-            name = "cust_code",
-            referencedColumnName = "cust_code",
-            insertable = false,
-            updatable = false
-    )
-    private Customer customer;
 }
