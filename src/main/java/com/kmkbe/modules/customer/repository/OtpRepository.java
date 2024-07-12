@@ -1,14 +1,26 @@
 package com.kmkbe.modules.customer.repository;
 
 import com.kmkbe.modules.customer.entity.OtpLog;
+import jakarta.persistence.TemporalType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Temporal;
 import org.springframework.stereotype.Repository;
 
+import java.time.OffsetDateTime;
 import java.util.Optional;
 
 @Repository
 public interface OtpRepository extends JpaRepository<OtpLog, Long> {
     Optional<OtpLog> findTopByEmailAndOtpCode(String email, String code);
 
+    OtpLog findTopByEmail(String email);
+
     OtpLog findByEmail(String email);
+
+    @Query(
+            value = "select count(*) from otp_log where email = ?1 and date(dtm_crt) = current_date",
+            nativeQuery = true
+    )
+    Long countTodayRequestByEmail(String email);
 }

@@ -40,13 +40,12 @@ public class OtpService {
         otpLog.setEmail(customer.getCustEmail());
         otpLog.setMobilePhone(customer.getCustMobilePhone());
         otpLog.setGeneratedDate(now);
-        otpLog.setExpiredDate(now.plusMinutes(5000));
+        otpLog.setExpiredDate(now.plusMinutes(5));
         otpLog.setUsrCrt(customer.getCustName());
         otpLog.setDtmCrt(OffsetDateTime.now());
         otpLog.setIsUsed(false);
         //otpLog.setOtpCode(genOtp());
         otpLog.setOtpCode("1111");
-
         otpRepository.save(otpLog);
 
         if (type == OtpType.SIGNUP) {
@@ -97,7 +96,7 @@ public class OtpService {
         return new RequestOtpDto(
                 genRequestId(cust, otpLog),
                 cust.getCustEmail(),
-                OffsetDateTime.now()
+                otpLog.getExpiredDate()
         );
     }
 
@@ -130,7 +129,7 @@ public class OtpService {
         return "Otp verified, try to enter new pin";
     }
 
-    public String resend(RequestOtpRequest request, OtpType type) throws MessagingException {
+    public RequestOtpDto resend(RequestOtpRequest request, OtpType type) throws MessagingException {
         final FindCustomerOtp findCustomerOtp = new FindCustomerOtp(
                 customerRepository,
                 otpRepository,
@@ -138,9 +137,14 @@ public class OtpService {
                 type
         );
 
-        emailService.sendOtp(findCustomerOtp.getCustomer(), genOtp());
+        final Customer cust = findCustomerOtp.getCustomer();
+        final OtpLog otpLog = create(cust, type);
 
-        return "Resend Otp " + type.toString() + " Successfully";
+        return new RequestOtpDto(
+                genRequestId(cust, otpLog),
+                cust.getCustEmail(),
+                otpLog.getExpiredDate()
+        );
     }
 
     private String genOtp() {
@@ -203,6 +207,11 @@ public class OtpService {
 
             this.customer = findCust.get();
 
+            final Long todayRequest = otpRepository.countTodayRequestByEmail(customer.getCustEmail());
+            if (todayRequest > 5) {
+                throw new IllegalStateException("Request limit exceeded for today, try again tomorrow");
+            }
+
             if (otpCode != null && !otpCode.isEmpty()) {
                 final Optional<OtpLog> findOtp = otpRepository.findTopByEmailAndOtpCode(
                         customer.getCustEmail(),
@@ -218,7 +227,7 @@ public class OtpService {
                     throw new IllegalStateException("Otp for " + type.toString() + " already used");
                 }
             } else {
-                this.otpLog = otpRepository.findByEmail(this.customer.getCustEmail());
+                this.otpLog = otpRepository.findTopByEmail(this.customer.getCustEmail());
             }
         }
     }

@@ -1,6 +1,7 @@
 package com.kmkbe.modules;
 
 import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.modules.customer.repository.OtpRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -21,6 +22,7 @@ public class TestingController {
     private final CacheManager cacheManager;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ListOperations<String, Object> listOperations;
+    private final OtpRepository otpRepository;
 
     @GetMapping("/get")
     public CommonResult<Object> get() {
@@ -56,5 +58,11 @@ public class TestingController {
         }
 
         return new CommonResult<>().success(null, "failed, cache null");
+    }
+
+    @GetMapping("/count")
+    public CommonResult<Object> testingCount() {
+        var a = otpRepository.countTodayRequestByEmail("khesaalvandik123@gmail.com");
+        return new CommonResult<>().success(a);
     }
 }

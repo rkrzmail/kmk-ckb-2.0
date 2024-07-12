@@ -57,9 +57,13 @@ public class ExceptionUtils {
             detail.setProperty("description", "Invalid Argument Provide, Try To Complete Field");
         }
 
+        if (exception instanceof IllegalStateException) {
+            detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+            detail.setProperty("description", exception.getMessage());
+        }
+
         if (
-                exception instanceof IllegalStateException
-                        || exception instanceof EntityNotFoundException
+                exception instanceof EntityNotFoundException
                         || exception instanceof PropertyValueException
         ) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());

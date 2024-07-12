@@ -37,18 +37,12 @@ public class OtpController {
     }
 
     @PostMapping("/resend/sign-up")
-    public CommonResult<Object> resendSignUpOtp(@RequestBody RequestOtpRequest request) throws MessagingException {
-        return new CommonResult<>().success(
-                null,
-                otpService.resend(request, OtpService.OtpType.SIGNUP)
-        );
+    public CommonResult<RequestOtpDto> resendSignUpOtp(@RequestBody RequestOtpRequest request) throws MessagingException {
+        return new CommonResult<RequestOtpDto>().success(otpService.resend(request, OtpService.OtpType.SIGNUP));
     }
 
     @PostMapping("/resend/forgot-pin")
-    public CommonResult<Object> resendForgotPinOtp(@RequestBody RequestOtpRequest request) throws MessagingException {
-        return new CommonResult<>().success(
-                null,
-                otpService.resend(request, OtpService.OtpType.CHANGE_PIN)
-        );
+    public CommonResult<RequestOtpDto> resendForgotPinOtp(@RequestBody RequestOtpRequest request) throws MessagingException {
+        return new CommonResult<RequestOtpDto>().success(otpService.resend(request, OtpService.OtpType.CHANGE_PIN));
     }
 }
