@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -99,8 +98,8 @@ public class CustomerPersonal {
     @Column
     private OffsetDateTime staySince;
 
-    @Column(precision = 7, scale = 2)
-    private BigDecimal stayLength;
+    @Column // precision = 7, scale = 2
+    private Double stayLength;
 
     @Column(length = 50)
     private String usrCrt;

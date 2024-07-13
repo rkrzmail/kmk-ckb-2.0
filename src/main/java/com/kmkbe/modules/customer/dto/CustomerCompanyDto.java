@@ -34,5 +34,5 @@ public class CustomerCompanyDto {
     private String phone;
     private String ownershipStatus;
     private OffsetDateTime staySince;
-    private BigDecimal stayLength;
+    private Double stayLength;
 }

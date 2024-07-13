@@ -1,0 +1,99 @@
+package com.kmkbe.modules.loan_submission.entity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
+import lombok.Getter;
+import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
+
+import java.time.Instant;
+
+@Getter
+@Setter
+@Entity
+@Table(name = "product")
+public class Product {
+    @Id
+    @ColumnDefault("nextval('product_product_id_seq'::regclass)")
+    @Column(name = "product_id", nullable = false)
+    private Long productId;
+
+    @Size(max = 3)
+    @NotNull
+    @Column(name = "branch_code", nullable = false, length = 3)
+    private String branchCode;
+
+    @Size(max = 100)
+    @NotNull
+    @Column(name = "product_name", nullable = false, length = 100)
+    private String productName;
+
+    @NotNull
+    @Column(name = "effective_date", nullable = false)
+    private Instant effectiveDate;
+
+    @NotNull
+    @Column(name = "ntf_from", nullable = false) //, precision = 17, scale = 2
+    private Double ntfFrom;
+
+    @NotNull
+    @Column(name = "ntf_to", nullable = false) // , precision = 17, scale = 2
+    private Double ntfTo;
+
+    @NotNull
+    @Column(name = "effective_rate", nullable = false) // , precision = 5, scale = 2
+    private Double effectiveRate;
+
+    @NotNull
+    @Column(name = "provision_rate", nullable = false) // , precision = 5, scale = 2
+    private Double provisionRate;
+
+    @NotNull
+    @Column(name = "survey_fee", nullable = false) // , precision = 17, scale = 2
+    private Double surveyFee;
+
+    @NotNull
+    @Column(name = "legal_fee", nullable = false) // , precision = 17, scale = 2
+    private Double legalFee;
+
+    @NotNull
+    @Column(name = "admin_limit_fee", nullable = false) // , precision = 17, scale = 2
+    private Double adminLimitFee;
+
+    @NotNull
+    @Column(name = "admin_rate", nullable = false) // , precision = 5, scale = 2
+    private Double adminRate;
+
+    @NotNull
+    @Column(name = "insurance_rate", nullable = false) // , precision = 5, scale = 2
+    private Double insuranceRate;
+
+    @NotNull
+    @Column(name = "others_fee", nullable = false) //, precision = 17, scale = 2
+    private Double othersFee;
+
+    @NotNull
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive = false;
+
+    @Size(max = 50)
+    @NotNull
+    @Column(name = "usr_crt", nullable = false, length = 50)
+    private String usrCrt;
+
+    @NotNull
+    @Column(name = "dtm_crt", nullable = false)
+    private Instant dtmCrt;
+
+    @Size(max = 50)
+    @Column(name = "usr_upd", length = 50)
+    private String usrUpd;
+
+    @Column(name = "dtm_upd")
+    private Instant dtmUpd;
+
+}

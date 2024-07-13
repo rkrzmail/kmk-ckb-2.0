@@ -11,7 +11,6 @@ import io.swagger.v3.oas.models.servers.Server;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 
@@ -25,8 +24,8 @@ public class OpenApiConfig {
         log.info("OpenApiConfig homeURL: {}", homeURL);*/
 
         Server server = new Server();
-        //server.setUrl("http://localhost:8080");
-        server.setUrl("https://kmk.nikitagenerator.com");
+        server.setUrl("http://localhost:8080");
+        //server.setUrl("https://kmk.nikitagenerator.com");
         server.setDescription("Server");
 
         Contact contact = new Contact();

@@ -1,8 +1,8 @@
 package com.kmkbe.modules.customer.entity;
 
-import com.kmkbe.modules.kredit.entity.FinancingHdr;
-import com.kmkbe.modules.kredit.entity.Invoice;
-import com.kmkbe.modules.kredit.entity.LegalFile;
+import com.kmkbe.modules.loan_submission.entity.FinancingHdr;
+import com.kmkbe.modules.loan_submission.entity.Invoice;
+import com.kmkbe.modules.loan_submission.entity.LegalFile;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;

@@ -13,9 +13,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -88,10 +86,10 @@ public class CustomerService {
             personal.setPhone(personalReq.getPhone());
             personal.setOwnershipStatus(personalReq.getOwnershipStatus());
             personal.setStaySince(personalReq.getStaySince());
-            personal.setStayLength(new BigDecimal((Duration.between(
-                    personalReq.getStaySince(),
-                    OffsetDateTime.now()
-            ).toMinutes() / 1440)));
+            personal.setStayLength((double) (Duration.between(
+                                personalReq.getStaySince(),
+                                OffsetDateTime.now()
+                        ).toMinutes() / 1440));
         }
 
         customerPersonalRepository.save(personal);
@@ -133,7 +131,7 @@ public class CustomerService {
                     OffsetDateTime.now()
             ).toMinutes() / 1440;
 
-            company.setStayLength(new BigDecimal(differenceDays));
+            company.setStayLength((double) differenceDays);
         }
 
         customerCompanyRepository.save(company);

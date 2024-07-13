@@ -4,7 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.utils.AESUtils;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.JsonUtils;
-import com.kmkbe.modules.internal.request.ActiveDirectoryRequest;
+import com.kmkbe.modules.external.request.ActiveDirectoryRequest;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.testng.annotations.Test;

@@ -4,8 +4,8 @@ import com.kmkbe.core.config.MailConfig;
 import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.common.entity.EmailTemplate;
 import com.kmkbe.modules.common.repository.EmailTemplateRepository;
-import com.kmkbe.modules.internal.dto.InternalMailDto;
-import com.kmkbe.modules.internal.service.InternalService;
+import com.kmkbe.modules.external.dto.CsulMailDto;
+import com.kmkbe.modules.external.service.CsulConfigService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +29,7 @@ public class EmailService {
     private static final String M_CUST_ACTIVE = "M_CUST_ACTIVE";
 
     private final EmailTemplateRepository emailTemplateRepository;
-    private final InternalService internalService;
+    private final CsulConfigService csulConfigService;
     private final MailConfig mailConfig;
 
     @Value("${testing.mail.host}")
@@ -47,11 +47,11 @@ public class EmailService {
 
     public EmailService(
             EmailTemplateRepository emailTemplateRepository,
-            InternalService internalService,
+            CsulConfigService csulConfigService,
             MailConfig mailConfig
     ) {
         this.emailTemplateRepository = emailTemplateRepository;
-        this.internalService = internalService;
+        this.csulConfigService = csulConfigService;
         this.mailConfig = mailConfig;
     }
 
@@ -75,7 +75,7 @@ public class EmailService {
             final Map<String, Object> additionalArgs,
             final String templateCode
     ) throws MessagingException {
-        final InternalMailDto internalMail = internalService.fetchEmailInfo();
+        final CsulMailDto internalMail = csulConfigService.fetchEmailInfo();
         JavaMailSender mailSender = mailConfig.javaMailSender(
                 internalMail.getServerUrl(),
                 internalMail.getPort(),

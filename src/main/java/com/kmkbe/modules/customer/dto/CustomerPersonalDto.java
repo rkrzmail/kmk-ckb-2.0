@@ -6,9 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Getter
@@ -40,5 +38,5 @@ public class CustomerPersonalDto {
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
     private OffsetDateTime staySince;
 
-    private BigDecimal stayLength;
+    private Double stayLength;
 }
