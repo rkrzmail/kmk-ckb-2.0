@@ -8,8 +8,6 @@ import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
-import java.util.LinkedHashSet;
-import java.util.Set;
 
 @Getter
 @Setter
@@ -65,7 +63,7 @@ public class MstFileType {
     @Column(name = "dtm_upd")
     private Instant dtmUpd;
 
-    @OneToMany(mappedBy = "fileTypeCode")
-    private Set<LegalFile> legalFiles = new LinkedHashSet<>();
+    @OneToOne(mappedBy = "fileTypeCode")
+    private LegalFile legalFile;
 
 }

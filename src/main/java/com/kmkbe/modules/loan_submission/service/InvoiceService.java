@@ -2,17 +2,14 @@ package com.kmkbe.modules.loan_submission.service;
 
 import com.kmkbe.core.model.PaginationResult;
 import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.mapper.CustomerMapper;
 import com.kmkbe.modules.customer.service.AuthService;
-import com.kmkbe.modules.external.service.MSTLoanService;
-import com.kmkbe.modules.loan_submission.dto.EstimatedDisburseDto;
+import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.dto.InvoiceDto;
+import com.kmkbe.modules.loan_submission.entity.Bouwheer;
 import com.kmkbe.modules.loan_submission.entity.Invoice;
-import com.kmkbe.modules.loan_submission.entity.Product;
 import com.kmkbe.modules.loan_submission.mapper.InvoiceMapper;
 import com.kmkbe.modules.loan_submission.repository.InvoiceRepository;
-import com.kmkbe.modules.loan_submission.repository.ProductRepository;
-import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
+import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.InvoiceListRequest;
 import com.kmkbe.modules.loan_submission.spec.InvoiceSpec;
 import lombok.RequiredArgsConstructor;
@@ -22,28 +19,68 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
+import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
-    private final ProductRepository productRepository;
-    private final MSTLoanService mstLoanService;
     private final AuthService authService;
 
-    public PaginationResult<InvoiceDto> fetchActiveInvoice(
+    public void create(
+            Customer customer,
+            Bouwheer bouwheer,
+            CreateSimulationRequest request
+    ) throws Exception {
+        try {
+            final List<Invoice> invoices = request.getInvoices()
+                    .stream()
+                    .map((posted) -> {
+                        invoiceRepository.findByCustCodeAndBouwheerInvNoAndCustInvNo(
+                                customer,
+                                posted.bouwheerInvoiceNo(),
+                                posted.customerInvoiceNo()
+                        ).ifPresent(invoiceRepository::delete);
+
+                        final Invoice invoice = new Invoice();
+                        {
+                            invoice.setInvoiceCode(UUID.randomUUID());
+                            invoice.setCustCode(customer);
+                            invoice.setBouwheerCode(bouwheer);
+                            invoice.setBouwheerInvNo(posted.bouwheerInvoiceNo());
+                            invoice.setCustInvNo(posted.customerInvoiceNo());
+                            invoice.setInvoiceDescription(posted.invoiceDescription());
+                            invoice.setInvoiceDate(posted.invoiceDate().toInstant());
+                            invoice.setInvoiceDueDate(posted.invoiceDueDate().toInstant());
+                            invoice.setInvoiceAmt(posted.invoiceAmount());
+                            invoice.setUsrCrt(customer.getCustName());
+                            invoice.setDtmCrt(Instant.now());
+                            invoiceRepository.save(invoice);
+                        }
+
+                        return invoice;
+                    }).collect(Collectors.toCollection(ArrayList::new));
+
+            invoiceRepository.saveAll(invoices);
+        } catch (Exception e) {
+            log.error("create, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public PaginationResult<InvoiceDto> fetchInvoice(
             Authentication authentication,
             InvoiceListRequest request
     ) throws Exception {
         try {
-            final Customer cust = CustomerMapper.INSTANCE.custEntityFromDto(authService.authenticatedCustomer(authentication));
+            final Customer customer = CustomerUtils.authenticateCustomer(authentication);
             final Page<Invoice> invoicesPagination = invoiceRepository.findByCustCode(
-                    cust,
+                    customer,
                     InvoiceSpec.list(request),
                     PageRequest.of(request.getPageNo(), request.getPageSize())
             );
@@ -61,43 +98,8 @@ public class InvoiceService {
 
             return dto;
         } catch (Exception e) {
-            log.error("fetchActiveInvoice, error {}", e.getMessage());
+            log.error("fetchInvoice, error {}", e.getMessage());
             throw e;
         }
-    }
-
-    public EstimatedDisburseDto calculateDisburse(CalculateSimulationRequest request) {
-        try {
-            final Double ntfResult = BigDecimal.valueOf((request.getDisbursePercentage() / 100) * request.getTotalInvoiceAmount())
-                    .setScale(2, RoundingMode.DOWN)
-                    .doubleValue();
-            final Optional<Product> findProduct = productRepository.findNtfRange(ntfResult);
-
-            if (findProduct.isEmpty()) {
-                return null;
-            }
-
-            return getEstimatedDisburseDto(findProduct, ntfResult);
-        } catch (Exception e) {
-            log.error("calculateDisburse, error {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    private static EstimatedDisburseDto getEstimatedDisburseDto(Optional<Product> findProduct, Double ntfResult) {
-        final Product product = findProduct.get();
-        final Double serviceFee = product.getSurveyFee() + product.getLegalFee() + product.getAdminLimitFee() + product.getOthersFee();
-        final EstimatedDisburseDto dto = new EstimatedDisburseDto();
-
-        final double estimateDisburse = BigDecimal.valueOf(ntfResult - serviceFee)
-                .setScale(2, RoundingMode.CEILING)
-                .doubleValue();
-
-        dto.setProductId(product.getProductId());
-        dto.setFinancingAmount(BigDecimal.valueOf(ntfResult));
-        dto.setServiceFeeAmount(BigDecimal.valueOf(serviceFee));
-        dto.setEstimatedDisburseAmount(BigDecimal.valueOf(estimateDisburse));
-
-        return dto;
     }
 }

@@ -5,11 +5,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.math.BigDecimal;
+
 @Getter
 @Setter
 @NoArgsConstructor
 @ToString
 public class CalculateSimulationRequest {
-    private Long totalInvoiceAmount;
+    private BigDecimal totalInvoiceAmount;
     private Double disbursePercentage;
 }

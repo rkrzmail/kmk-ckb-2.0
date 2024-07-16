@@ -5,6 +5,7 @@ import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.PropertyValueException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
@@ -73,6 +74,15 @@ public class ExceptionUtils {
         if (exception instanceof NoHandlerFoundException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
             detail.setProperty("description", exception.getMessage());
+        }
+
+        if (exception instanceof DataIntegrityViolationException) {
+            detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+            if (exception.getCause() instanceof PropertyValueException) {
+                //((PropertyValueException) exception.getCause()).getPropertyName()
+            }
+
+            detail.setProperty("description", "Something wrong with data constraints");
         }
 
         if (detail == null) {

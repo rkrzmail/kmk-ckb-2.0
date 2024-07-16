@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -20,8 +20,8 @@ public class CustomerCompanyDto {
     private String companyModel;
     private String identityType;
     private String identityNo;
-    private OffsetDateTime identityIssuedDate;
-    private OffsetDateTime identityExpiredDate;
+    private Instant identityIssuedDate;
+    private Instant identityExpiredDate;
     private String companyAddress;
     private String rt;
     private String rw;
@@ -33,6 +33,6 @@ public class CustomerCompanyDto {
     private String area;
     private String phone;
     private String ownershipStatus;
-    private OffsetDateTime staySince;
+    private Instant staySince;
     private Double stayLength;
 }

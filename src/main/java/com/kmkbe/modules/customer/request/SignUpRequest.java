@@ -6,7 +6,7 @@ import com.kmkbe.modules.customer.constant.CustomerType;
 
 import lombok.*;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -40,7 +40,7 @@ public class SignUpRequest {
         private String area;
         private String phone;
         private String ownershipStatus;
-        private OffsetDateTime staySince;
+        private Instant staySince;
     }
 
     @Getter
@@ -52,8 +52,8 @@ public class SignUpRequest {
         private CompanyModel companyModel;
         private String identityType;
         private String identityNo;
-        private OffsetDateTime identityIssuedDate;
-        private OffsetDateTime identityExpiredDate;
+        private Instant identityIssuedDate;
+        private Instant identityExpiredDate;
         private String companyAddress;
     }
 
@@ -63,11 +63,11 @@ public class SignUpRequest {
     @ToString
     public static class Personal extends AddressDetail {
         private String birthPlace;
-        private OffsetDateTime birthDate;
+        private Instant birthDate;
         private String gender;
         private String identityType;
         private String identityNo;
-        private OffsetDateTime expiredDate;
+        private Instant expiredDate;
         private String motherMaidenName;
         private String maritalStatus;
         private CustomerModel customerModel;

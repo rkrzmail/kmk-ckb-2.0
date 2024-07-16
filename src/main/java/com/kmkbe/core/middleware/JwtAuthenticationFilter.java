@@ -54,6 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/actuator/**",
             "/api/v1/instances/**",
             "/api/v1/actuator/**",
+            "/api/v1/uploads/**"
     };
 
     private final HandlerExceptionResolver handlerExceptionResolver;

@@ -22,7 +22,13 @@ public class Invoice {
 
     @NotNull
     @ColumnDefault("nextval('invoice_invoice_id_seq'::regclass)")
-    @Column(name = "invoice_id", nullable = false)
+    @Column(
+            name = "invoice_id",
+            nullable = false,
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
+    )
     private Long invoiceId;
 
     @NotNull

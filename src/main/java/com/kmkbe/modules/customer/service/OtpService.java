@@ -1,13 +1,13 @@
 package com.kmkbe.modules.customer.service;
 
 import com.kmkbe.modules.common.service.EmailService;
+import com.kmkbe.modules.customer.dto.RequestOtpDto;
 import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.entity.OtpLog;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.repository.OtpRepository;
 import com.kmkbe.modules.customer.request.RequestOtpRequest;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
-import com.kmkbe.modules.customer.dto.RequestOtpDto;
 import jakarta.annotation.Nullable;
 import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
@@ -20,7 +20,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
-import java.time.OffsetDateTime;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.Random;
 
@@ -35,14 +36,14 @@ public class OtpService {
     private final BCryptPasswordEncoder bcryptEncoder;
 
     public OtpLog create(@NonNull Customer customer, @NonNull OtpType type) throws MessagingException {
-        final OffsetDateTime now = OffsetDateTime.now();
+        final Instant now = Instant.now();
         final OtpLog otpLog = new OtpLog();
         otpLog.setEmail(customer.getCustEmail());
         otpLog.setMobilePhone(customer.getCustMobilePhone());
         otpLog.setGeneratedDate(now);
-        otpLog.setExpiredDate(now.plusMinutes(5));
+        otpLog.setExpiredDate(now.plus(5, ChronoUnit.MINUTES));
         otpLog.setUsrCrt(customer.getCustName());
-        otpLog.setDtmCrt(OffsetDateTime.now());
+        otpLog.setDtmCrt(Instant.now());
         otpLog.setIsUsed(false);
         //otpLog.setOtpCode(genOtp());
         otpLog.setOtpCode("1111");
@@ -72,13 +73,13 @@ public class OtpService {
         emailService.sendNotificationActive(customer);
 
         final OtpLog otp = findCustomerOtp.getOtpLog();
-        if (OffsetDateTime.now().isAfter(otp.getExpiredDate())) {
+        if (Instant.now().isAfter(otp.getExpiredDate())) {
             throw new IllegalStateException("Otp is Expired");
         }
 
         otp.setIsUsed(true);
         otp.setUsrUpd(customer.getCustName());
-        otp.setDtmUpd(OffsetDateTime.now());
+        otp.setDtmUpd(Instant.now());
 
         otpRepository.save(otp);
         return "Sign up successfully, try to login now";
@@ -117,13 +118,13 @@ public class OtpService {
             throw new IllegalStateException("Request id not valid, try to enter valid requestId");
         }
 
-        if (OffsetDateTime.now().isAfter(otp.getExpiredDate())) {
+        if (Instant.now().isAfter(otp.getExpiredDate())) {
             throw new IllegalStateException("Otp is expired, try to resend again");
         }
 
         otp.setIsUsed(true);
         otp.setUsrUpd(customer.getCustName());
-        otp.setDtmUpd(OffsetDateTime.now());
+        otp.setDtmUpd(Instant.now());
         otpRepository.save(otp);
 
         return "Otp verified, try to enter new pin";

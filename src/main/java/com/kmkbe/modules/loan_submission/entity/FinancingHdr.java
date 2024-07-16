@@ -24,7 +24,13 @@ public class FinancingHdr {
 
     @NotNull
     @ColumnDefault("nextval('financing_hdr_financing_hdr_id_seq'::regclass)")
-    @Column(name = "financing_hdr_id", nullable = false)
+    @Column(
+            name = "financing_hdr_id",
+            nullable = false,
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
+    )
     private Long financingHdrId;
 
     @NotNull
@@ -113,19 +119,19 @@ public class FinancingHdr {
 
     @NotNull
     @Column(name = "admin_fee_percentage", nullable = false) // , precision = 5, scale = 2
-    private Double adminFeePercentage;
+    private Double adminFeePercentage = 0.0;
 
     @NotNull
     @Column(name = "admin_fee_amt", nullable = false) // , precision = 17, scale = 2
-    private Double adminFeeAmt;
+    private Double adminFeeAmt = 0.0;
 
     @NotNull
     @Column(name = "insurance_fee_percentage", nullable = false) // , precision = 5, scale = 2
-    private Double insuranceFeePercentage;
+    private Double insuranceFeePercentage = 0.0;
 
     @NotNull
     @Column(name = "insurance_fee_amt", nullable = false) // , precision = 17, scale = 2
-    private Double insuranceFeeAmt;
+    private Double insuranceFeeAmt = 0.0;
 
     @NotNull
     @Column(name = "others_fee_amt", nullable = false) // , precision = 17, scale = 2
@@ -141,7 +147,7 @@ public class FinancingHdr {
 
     @NotNull
     @Column(name = "disburse_date", nullable = false) // , precision = 17, scale = 2
-    private Double disburseDate;
+    private Instant disburseDate;
 
     @NotNull
     @Column(name = "financing_due_date", nullable = false)

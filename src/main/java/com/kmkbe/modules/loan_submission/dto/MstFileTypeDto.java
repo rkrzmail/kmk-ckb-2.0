@@ -6,8 +6,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
-
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Getter
 @Setter
@@ -19,8 +17,5 @@ public class MstFileTypeDto {
     private FileAllocationType fileAllocation;
     private Boolean isMandatory;
     private Long maxSizeMb;
-    private String usrCrt;
-    private Instant dtmCrt;
-    private String usrUpd;
-    private Instant dtmUpd;
+    private LegalFileDto legalFile;
 }

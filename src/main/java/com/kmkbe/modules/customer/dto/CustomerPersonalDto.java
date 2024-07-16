@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Getter
@@ -15,11 +15,11 @@ import java.time.OffsetDateTime;
 public class CustomerPersonalDto {
     //private UUID custCode;
     private String birthplace;
-    private OffsetDateTime birthdate;
+    private Instant birthdate;
     private String gender;
     private String identityType;
     private String identityNo;
-    private OffsetDateTime expiredDate;
+    private Instant expiredDate;
     private String motherMaidenName;
     private String maritalStatus;
     private String custModel;
@@ -36,7 +36,7 @@ public class CustomerPersonalDto {
     private String ownershipStatus;
 
     @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
-    private OffsetDateTime staySince;
+    private Instant staySince;
 
     private Double stayLength;
 }

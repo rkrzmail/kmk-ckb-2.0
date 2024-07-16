@@ -9,13 +9,8 @@ import org.springframework.http.converter.HttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ConcurrentTaskExecutor;
-import org.springframework.web.cors.CorsConfiguration;
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.filter.CorsFilter;
-import org.springframework.web.servlet.config.annotation.AsyncSupportConfigurer;
-import org.springframework.web.servlet.config.annotation.CorsRegistry;
-import org.springframework.web.servlet.config.annotation.EnableWebMvc;
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+import org.springframework.web.servlet.config.annotation.*;
+import org.springframework.web.servlet.resource.PathResourceResolver;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -45,27 +40,21 @@ public class WebConfig implements WebMvcConfigurer {
         return new ConcurrentTaskExecutor(Executors.newFixedThreadPool(5));
     }
 
-   /* @Bean
-    public CorsFilter corsFilter() {
-        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-
-        // Allow anyone and anything access. Probably ok for Swagger spec
-        CorsConfiguration config = new CorsConfiguration();
-        config.setAllowCredentials(true);
-        config.addAllowedOrigin("*");
-        config.addAllowedHeader("*");
-        config.addAllowedMethod("*");
-
-        source.registerCorsConfiguration("/api/v1/**", config);
-        source.registerCorsConfiguration("/api/v1/api-docs", config);
-        return new CorsFilter(source);
-    }*/
-
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/**")
                 /*.allowedHeaders("*")
                 .allowedOrigins("*")*/
+                //.allowedHeaders("*")
                 .allowedMethods("HEAD", "GET", "PUT", "POST", "DELETE", "PATCH");
+    }
+
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:/uploads/")
+                .setCachePeriod(3600)
+                .resourceChain(true)
+                .addResolver(new PathResourceResolver());
     }
 }

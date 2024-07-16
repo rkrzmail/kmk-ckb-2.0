@@ -1,7 +1,5 @@
 package com.kmkbe.core.middleware;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.model.HttpLoggerPayload;
 import com.kmkbe.core.service.LoggingService;
 import com.kmkbe.core.utils.JsonUtils;
@@ -11,26 +9,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import lombok.NonNull;
-import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.AbstractRequestLoggingFilter;
-import org.springframework.web.method.HandlerMethod;
-import org.springframework.web.servlet.HandlerExecutionChain;
-import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
-import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import org.springframework.web.util.ContentCachingRequestWrapper;
 import org.springframework.web.util.WebUtils;
 
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 @Component
 public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
@@ -55,6 +45,11 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
             @NonNull FilterChain filterChain
     )
             throws ServletException, IOException {
+
+       /* if (request.getHeader("Content-Type") != null && request.getHeader("Content-Type").contains("multipart/form-data")) {
+            filterChain.doFilter(request, response);
+            return;
+        }*/
 
         // check if this is the first request
         boolean isFirstRequest = !isAsyncDispatch(request);

@@ -1,5 +1,6 @@
 package com.kmkbe.core.utils;
 
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
@@ -7,7 +8,20 @@ import java.time.format.DateTimeFormatter;
 
 public class DateTimeUtils {
     public static final ZoneId JAKARTA_ZONE = ZoneId.of("Asia/Jakarta");
+
     public static final String STANDARD_PATTERN = "yyyy-MM-dd HH:mm:ss";
+
+    public static final SimpleDateFormat SDF_STANDARD_DATE = new SimpleDateFormat("yyyy-MM-dd");
+
+    public static final SimpleDateFormat SDF_STANDARD_RESPONSE_DATE = new SimpleDateFormat("dd/MM/yyyy");
+
+    public static final DateTimeFormatter ISO_8601_FORMATTER = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd'T'HH:mm:ssxxx")
+            .withZone(ZoneId.of("UTC"));
+
+    public static final DateTimeFormatter STANDARD_FORMATTER = DateTimeFormatter
+            .ofPattern("yyyy-MM-dd HH:mm:ss")
+            .withZone(ZoneId.of("Asia/Jakarta"));
 
     public static OffsetDateTime now() {
         return toZone(Instant.now(), JAKARTA_ZONE);

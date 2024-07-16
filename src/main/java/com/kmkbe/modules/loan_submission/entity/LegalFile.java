@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
@@ -16,8 +15,24 @@ import java.time.Instant;
 @Table(name = "legal_file")
 public class LegalFile {
     @Id
-    @ColumnDefault("nextval('legal_file_file_id_seq'::regclass)")
-    @Column(name = "file_id", nullable = false)
+    //@ColumnDefault("nextval('legal_file_file_id_seq'::regclass)")
+    @SequenceGenerator(
+            name = "legal_file_file_id_seq",
+            sequenceName = "legal_file_file_id_seq",
+            allocationSize = 1
+            //initialValue = 10000
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "legal_file_file_id_seq"
+    )
+    @Column(
+            name = "file_id",
+            nullable = false,
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
+    )
     private Long fileId;
 
     @NotNull
@@ -26,7 +41,7 @@ public class LegalFile {
     private Customer custCode;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "file_type_code", nullable = false)
     private MstFileType fileTypeCode;
 

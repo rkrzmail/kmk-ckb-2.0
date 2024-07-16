@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -39,7 +39,7 @@ public class CustomerPersonal {
     private String birthplace;
 
     @Column
-    private OffsetDateTime birthdate;
+    private Instant birthdate;
 
     @Column(length = 10)
     private String gender;
@@ -51,7 +51,7 @@ public class CustomerPersonal {
     private String identityNo;
 
     @Column
-    private OffsetDateTime expiredDate;
+    private Instant expiredDate;
 
     @Column(length = 50)
     private String motherMaidenName;
@@ -96,7 +96,7 @@ public class CustomerPersonal {
     private String ownershipStatus;
 
     @Column
-    private OffsetDateTime staySince;
+    private Instant staySince;
 
     @Column // precision = 7, scale = 2
     private Double stayLength;
@@ -105,11 +105,11 @@ public class CustomerPersonal {
     private String usrCrt;
 
     @Column(nullable = false)
-    private OffsetDateTime dtmCrt;
+    private Instant dtmCrt;
 
     @Column(length = 50)
     private String usrUpd;
 
     @Column(nullable = false)
-    private OffsetDateTime dtmUpd;
+    private Instant dtmUpd;
 }

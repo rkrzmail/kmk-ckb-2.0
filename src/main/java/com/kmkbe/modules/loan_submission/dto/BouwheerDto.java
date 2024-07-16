@@ -1,8 +1,15 @@
 package com.kmkbe.modules.loan_submission.dto;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+
 import java.time.Instant;
 import java.util.UUID;
 
+@Getter
+@Setter
+@RequiredArgsConstructor
 public class BouwheerDto {
     private UUID bouwheerCode;
     private String bouwheerName;

@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 @Service
 @Slf4j
@@ -22,7 +22,7 @@ public class ChangePasswordLogService {
             changePasswordLog.setOldPin(oldPin);
             changePasswordLog.setNewPin(newPin);
             changePasswordLog.setUsrCrt(cust.getCustName());
-            changePasswordLog.setDtmCrt(OffsetDateTime.now());
+            changePasswordLog.setDtmCrt(Instant.now());
             changePasswordLogRepository.save(changePasswordLog);
         } catch (Exception e) {
             log.error("ChangePasswordLogService create: {}", e.getMessage());

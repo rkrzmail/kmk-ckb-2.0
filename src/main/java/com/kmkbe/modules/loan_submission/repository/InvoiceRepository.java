@@ -8,9 +8,18 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
+import java.util.Optional;
 import java.util.UUID;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, UUID>, JpaSpecificationExecutor<Invoice> {
+    Long countByCustCode(Customer customer);
+
+    Optional<Invoice> findByCustCodeAndBouwheerInvNoAndCustInvNo(
+            Customer customer,
+            String bouwheerInvNo,
+            String custInvNo
+    );
+
     Page<Invoice> findByCustCode(
             Customer cust,
             Specification<Invoice> spec,

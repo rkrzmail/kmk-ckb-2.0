@@ -21,7 +21,13 @@ public class FinancingDtl {
 
     @NotNull
     @ColumnDefault("nextval('financing_dtl_financing_dtl_id_seq'::regclass)")
-    @Column(name = "financing_dtl_id", nullable = false)
+    @Column(
+            name = "financing_dtl_id",
+            nullable = false,
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
+    )
     private Long financingDtlId;
 
     @NotNull

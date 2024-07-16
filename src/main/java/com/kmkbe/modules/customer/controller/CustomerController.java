@@ -2,8 +2,11 @@ package com.kmkbe.modules.customer.controller;
 
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.modules.customer.dto.CustomerDto;
+import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.customer.service.CustomerService;
+import com.kmkbe.modules.customer.utils.CustomerUtils;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -24,17 +27,21 @@ public class CustomerController {
     private final AuthService authService;
 
     @GetMapping
-    public CommonResult<CustomerDto> getAllCustomers(
+    public CommonResult<CustomerDto> profile(
             Authentication authentication
     ) throws SignatureException, BadCredentialsException, IllegalStateException {
-        return new CommonResult<CustomerDto>().success(authService.authenticatedCustomer(authentication));
+        return new CommonResult<CustomerDto>().success(
+                CustomerUtils.authenticateCustomerDto(authentication)
+        );
     }
 
-    @PutMapping("/{custCode}")
-    public CommonResult<Object> updateCustomer(
+    @PutMapping
+    public CommonResult<CustomerDto> updateCustomer(
             Authentication authentication,
-            @PathVariable String custCode
-    ) {
-        return new CommonResult<>().success(null);
+            @RequestBody UpdateCustomerRequest request
+    ) throws Exception {
+        return new CommonResult<CustomerDto>().success(
+                customerService.update(authentication, request)
+        );
     }
 }

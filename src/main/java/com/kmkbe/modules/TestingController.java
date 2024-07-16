@@ -1,6 +1,7 @@
 package com.kmkbe.modules;
 
 import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.modules.customer.repository.OtpRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
@@ -23,6 +24,7 @@ public class TestingController {
     private final RedisTemplate<String, Object> redisTemplate;
     private final ListOperations<String, Object> listOperations;
     private final OtpRepository otpRepository;
+    private final FileStorageService fileStorageService;
 
     @GetMapping("/get")
     public CommonResult<Object> get() {
@@ -60,9 +62,8 @@ public class TestingController {
         return new CommonResult<>().success(null, "failed, cache null");
     }
 
-    @GetMapping("/count")
+    @GetMapping("/load-img")
     public CommonResult<Object> testingCount() {
-        var a = otpRepository.countTodayRequestByEmail("khesaalvandik123@gmail.com");
-        return new CommonResult<>().success(a);
+        return new CommonResult<>().success(fileStorageService.load("Banner Jawa Tengah.jpg"));
     }
 }

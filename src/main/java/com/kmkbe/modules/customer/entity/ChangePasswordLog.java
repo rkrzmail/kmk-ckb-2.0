@@ -7,8 +7,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
+import java.time.Instant;
 
 @Getter
 @Setter
@@ -21,13 +20,13 @@ public class ChangePasswordLog {
     @Id
     @Column(nullable = false, updatable = false)
     @SequenceGenerator(
-            name = "primary_sequence",
-            sequenceName = "primary_sequence",
+            name = "change_password_log_change_password_id_seq",
+            sequenceName = "change_password_log_change_password_id_seq",
             allocationSize = 1
     )
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
-            generator = "primary_sequence"
+            generator = "change_password_log_change_password_id_seq"
     )
     private Long changePasswordId;
 
@@ -46,5 +45,5 @@ public class ChangePasswordLog {
     private String usrCrt;
 
     @Column(nullable = false)
-    private OffsetDateTime dtmCrt;
+    private Instant dtmCrt;
 }

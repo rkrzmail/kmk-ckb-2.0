@@ -1,20 +1,28 @@
 package com.kmkbe.modules.customer.service;
 
 import com.kmkbe.core.annotation.TrackExecutionTime;
+import com.kmkbe.modules.customer.constant.CustomerType;
+import com.kmkbe.modules.customer.dto.CustomerDto;
 import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.entity.CustomerCompany;
 import com.kmkbe.modules.customer.entity.CustomerPersonal;
+import com.kmkbe.modules.customer.mapper.CustomerMapper;
 import com.kmkbe.modules.customer.repository.CustomerCompanyRepository;
 import com.kmkbe.modules.customer.repository.CustomerPersonalRepository;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.request.SignUpRequest;
+import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
+import com.kmkbe.modules.customer.utils.CustomerUtils;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.security.SignatureException;
 import java.time.Duration;
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -46,7 +54,7 @@ public class CustomerService {
         customer.setIsEmailValid(false);
         customer.setIsActive(false);
         customer.setUsrCrt(customer.getCustName());
-        customer.setDtmCrt(OffsetDateTime.now());
+        customer.setDtmCrt(Instant.now());
 
         customerRepository.save(customer);
 
@@ -87,9 +95,9 @@ public class CustomerService {
             personal.setOwnershipStatus(personalReq.getOwnershipStatus());
             personal.setStaySince(personalReq.getStaySince());
             personal.setStayLength((double) (Duration.between(
-                                personalReq.getStaySince(),
-                                OffsetDateTime.now()
-                        ).toMinutes() / 1440));
+                    personalReq.getStaySince(),
+                    Instant.now()
+            ).toMinutes() / 1440));
         }
 
         customerPersonalRepository.save(personal);
@@ -128,7 +136,7 @@ public class CustomerService {
 
             final long differenceDays = Duration.between(
                     companyReq.getStaySince(),
-                    OffsetDateTime.now()
+                    Instant.now()
             ).toMinutes() / 1440;
 
             company.setStayLength((double) differenceDays);
@@ -141,7 +149,54 @@ public class CustomerService {
         customer.setIsEmailValid(true);
         customer.setIsActive(true);
         customer.setUsrUpd(customer.getCustName());
-        customer.setDtmUpd(OffsetDateTime.now());
+        customer.setDtmUpd(Instant.now());
         customerRepository.save(customer);
+    }
+
+    @Transactional
+    public CustomerDto update(Authentication authentication, UpdateCustomerRequest request) throws SignatureException {
+        try {
+            final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+            customer.setCustTypeCode(CustomerType.Company.name()); //DUMMY
+            customerRepository.save(customer);
+
+            CustomerCompany company = customer.getCompany();
+            if (company == null) {
+                company = new CustomerCompany();
+            }
+
+            company.setCustCode(customer);
+            company.setCustCompanyType(request.getCustCompanyType());
+            company.setCompanyModel(request.getCustModel());
+            company.setIdentityType(request.getIdentityType());
+            company.setIdentityNo(request.getIdentityNo());
+            company.setIdentityIssuedDate(request.getIdentityIssuedDate().toInstant());
+            company.setIdentityExpiredDate(request.getIdentityExpiredDate().toInstant());
+            company.setCompanyAddress(request.getCompanyAddress());
+            company.setKelurahan(request.getKelurahan());
+            company.setKecamatan(request.getKecamatan());
+            company.setCity(request.getCity());
+            company.setProvince(request.getProvince());
+            company.setZipcode(request.getZipCode());
+            company.setArea(request.getArea());
+            company.setRt(request.getRt());
+            company.setRw(request.getRw());
+            company.setPhone(request.getPhone());
+            company.setOwnershipStatus(request.getOwnershipStatus());
+            company.setStaySince(request.getStaySince().toInstant());
+
+            final long differenceDays = Duration.between(
+                    request.getStaySince().toInstant(),
+                    Instant.now()
+            ).toMinutes() / 1440;
+
+            company.setStayLength((double) differenceDays);
+            customerCompanyRepository.save(company);
+
+            return CustomerMapper.INSTANCE.custDtoFromEntity(customer);
+        } catch (Exception e) {
+            log.error("update, error {}", e.getMessage());
+            throw e;
+        }
     }
 }

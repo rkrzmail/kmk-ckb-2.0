@@ -4,14 +4,15 @@ import com.kmkbe.core.service.JwtService;
 import com.kmkbe.modules.customer.constant.CustomerIdType;
 import com.kmkbe.modules.customer.constant.CustomerType;
 import com.kmkbe.modules.customer.constant.LoginRole;
-import com.kmkbe.modules.customer.entity.*;
-import com.kmkbe.modules.customer.mapper.CustomerMapper;
+import com.kmkbe.modules.customer.dto.LoginDto;
+import com.kmkbe.modules.customer.dto.RequestOtpDto;
+import com.kmkbe.modules.customer.entity.Customer;
+import com.kmkbe.modules.customer.entity.OtpLog;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
-import com.kmkbe.modules.customer.dto.LoginDto;
-import com.kmkbe.modules.customer.dto.RequestOtpDto;
+import com.kmkbe.modules.customer.utils.CustomerUtils;
 import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -19,20 +20,18 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.stereotype.Service;
-import com.kmkbe.modules.customer.dto.CustomerDto;
 
 import java.security.SignatureException;
-import java.time.*;
-import java.util.*;
+import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @AllArgsConstructor
@@ -60,7 +59,7 @@ public class AuthService {
             cust.setCustMobilePhone(request.getMobilePhone());
             cust.setAgreeTc(request.getIsAgreeTc());
             cust.setCustPin(request.getPin());
-            cust.setDtmUpd(OffsetDateTime.now());
+            cust.setDtmUpd(Instant.now());
 
             if (request.getCustomerNo() != null && !request.getCustomerNo().isEmpty()) {
                 cust.setCustNo(request.getCustomerNo());
@@ -141,7 +140,7 @@ public class AuthService {
                 throw new IllegalStateException("User has logged out");
             }
 
-            final Customer cust = CustomerMapper.INSTANCE.custEntityFromDto(authenticatedCustomer(authentication));
+            final Customer cust = CustomerUtils.authenticateCustomer(authentication);
             loginLogService.logout(cust);
 
             return "Logout Successfully";
@@ -172,14 +171,5 @@ public class AuthService {
             log.error("AuthService forgotPin: {}", e.getMessage());
             throw e;
         }
-    }
-
-    public CustomerDto authenticatedCustomer(Authentication authentication) throws SignatureException {
-        if (!(authentication instanceof AnonymousAuthenticationToken)) {
-            Customer cust = (Customer) authentication.getPrincipal();
-            return CustomerMapper.INSTANCE.custDtoFromEntity(cust);
-        }
-
-        throw new SignatureException();
     }
 }

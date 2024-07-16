@@ -3,7 +3,7 @@ package com.kmkbe.modules.customer.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 
 
 @NoArgsConstructor
@@ -17,14 +17,14 @@ public class OtpLog {
     @Id
     @Column(nullable = false, updatable = false)
     @SequenceGenerator(
-            name = "primary_sequence",
-            sequenceName = "primary_sequence",
+            name = "otp_log_otp_log_id_seq",
+            sequenceName = "otp_log_otp_log_id_seq",
             allocationSize = 1
             //initialValue = 10000
     )
     @GeneratedValue(
             strategy = GenerationType.SEQUENCE,
-            generator = "primary_sequence"
+            generator = "otp_log_otp_log_id_seq"
     )
     private Long otpLogId;
 
@@ -38,10 +38,10 @@ public class OtpLog {
     private String email;
 
     @Column(nullable = false)
-    private OffsetDateTime generatedDate;
+    private Instant generatedDate;
 
     @Column(nullable = false)
-    private OffsetDateTime expiredDate;
+    private Instant expiredDate;
 
     @Column(nullable = false)
     private Boolean isUsed;
@@ -50,11 +50,11 @@ public class OtpLog {
     private String usrCrt;
 
     @Column
-    private OffsetDateTime dtmCrt;
+    private Instant dtmCrt;
 
     @Column(length = 50)
     private String usrUpd;
 
     @Column
-    private OffsetDateTime dtmUpd;
+    private Instant dtmUpd;
 }

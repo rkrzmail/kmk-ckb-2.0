@@ -20,7 +20,6 @@ import java.util.TimeZone;
 @Configuration
 @RequiredArgsConstructor
 public class AppConfig {
-
     @Lazy
     private final CustomerRepository customerRepository;
 

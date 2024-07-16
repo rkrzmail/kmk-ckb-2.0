@@ -1,17 +1,19 @@
 package com.kmkbe.core.config;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.kmkbe.core.converter.OffsetDateTimeSerializer;
+import com.kmkbe.core.converter.DateDeserializer;
+import com.kmkbe.core.converter.DateSerializer;
+import com.kmkbe.core.converter.TemporalDateTimeSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 import java.time.OffsetDateTime;
+import java.util.Date;
 
 @Configuration
 public class ObjectMapperConfig {
@@ -20,7 +22,9 @@ public class ObjectMapperConfig {
     @Primary
     public ObjectMapper objectMapper() {
         SimpleModule simpleModule = new SimpleModule();
-        simpleModule.addSerializer(OffsetDateTime.class, new OffsetDateTimeSerializer());
+        simpleModule.addSerializer(OffsetDateTime.class, new TemporalDateTimeSerializer());
+        simpleModule.addSerializer(Date.class, new DateSerializer());
+        simpleModule.addDeserializer(Date.class, new DateDeserializer());
 
         return new ObjectMapper()
                 .registerModule(new JavaTimeModule())
