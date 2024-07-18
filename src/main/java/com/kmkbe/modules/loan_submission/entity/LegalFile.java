@@ -41,7 +41,7 @@ public class LegalFile {
     private Customer custCode;
 
     @NotNull
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "file_type_code", nullable = false)
     private MstFileType fileTypeCode;
 

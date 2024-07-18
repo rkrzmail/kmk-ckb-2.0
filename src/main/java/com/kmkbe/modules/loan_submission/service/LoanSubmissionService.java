@@ -1,22 +1,30 @@
 package com.kmkbe.modules.loan_submission.service;
 
+import com.kmkbe.core.exception.LoanDocMandatoryException;
+import com.kmkbe.core.utils.CommonFormattingUtils;
+import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.modules.common.model.LoanDisburseEmailPayload;
+import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.external.dto.PostedInvoiceDto;
 import com.kmkbe.modules.external.service.MSTLoanService;
-import com.kmkbe.modules.loan_submission.dto.DisbursePercentageDto;
-import com.kmkbe.modules.loan_submission.dto.EstimatedDisburseDto;
+import com.kmkbe.modules.loan_submission.dto.*;
 import com.kmkbe.modules.loan_submission.entity.Bouwheer;
 import com.kmkbe.modules.loan_submission.entity.Product;
+import com.kmkbe.modules.loan_submission.model.PostedInvoicePayload;
+import com.kmkbe.modules.loan_submission.model.SimulationDisburseResult;
 import com.kmkbe.modules.loan_submission.repository.BouwheerRepository;
 import com.kmkbe.modules.loan_submission.repository.ProductRepository;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
+import com.kmkbe.modules.loan_submission.request.CreateLoanApplicationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -29,11 +37,13 @@ import java.util.*;
 public class LoanSubmissionService {
     private final ProductRepository productRepository;
     private final BouwheerRepository bouwheerRepository;
+    private final BCryptPasswordEncoder bcryptEncoder;
 
     private final MSTLoanService mstLoanService;
     private final InvoiceService invoiceService;
     private final FinancingService financingService;
-    private final AuthService authService;
+    private final MstFileTypeService mstFileTypeService;
+    private final EmailService emailService;
 
     public List<PostedInvoiceDto> fetchActiveInvoice(Authentication authentication) {
         try {
@@ -94,10 +104,12 @@ public class LoanSubmissionService {
             }
 
             final Product product = findProduct.get();
-            final BigDecimal serviceFee = BigDecimal.valueOf(product.getSurveyFee()
-                    + product.getLegalFee()
-                    + product.getAdminLimitFee()
-                    + product.getOthersFee());
+            final BigDecimal serviceFee = BigDecimal.valueOf(
+                    product.getSurveyFee()
+                            + product.getLegalFee()
+                            + product.getAdminLimitFee()
+                            + product.getOthersFee()
+            );
             final BigDecimal estimateDisburse = ntfResult.subtract(serviceFee);
 
             return EstimatedDisburseDto.builder()
@@ -113,24 +125,24 @@ public class LoanSubmissionService {
     }
 
     @Transactional
-    public void createSimulation(
+    public CreatedSimulationDto createSimulation(
             Authentication authentication,
             CreateSimulationRequest request
     ) throws Exception {
         try {
-            final String bouwheerCode = request.getInvoices().getFirst().bouwheerCode();
+            final String bouwheerCode = request.getInvoices().getFirst().getBouwheerCode();
             final Customer customer = CustomerUtils.authenticateCustomer(authentication);
             final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode)).get();
-            final Product product = productRepository.findById(request.getProductId()).get();
+            final Product product = productRepository.findById(request.getProductId()).orElseThrow();
 
             final double totalInvoiceAmount = request.getInvoices()
                     .stream()
-                    .mapToDouble(CreateSimulationRequest.CreatePostedInvoice::invoiceAmount)
+                    .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
                     .sum();
 
             final Date maxInvoiceDueDate = request.getInvoices()
                     .stream()
-                    .map(CreateSimulationRequest.CreatePostedInvoice::invoiceDueDate)
+                    .map(PostedInvoicePayload::getInvoiceDueDate)
                     .max(Date::compareTo)
                     .get();
 
@@ -141,20 +153,99 @@ public class LoanSubmissionService {
             }
 
             final EstimatedDisburseDto calculateDisburse = calculateDisburse(simulation);
+            final List<InvoiceDto> invoices = invoiceService.createBulk(customer, bouwheer, request);
 
-            request.setDisburse(
-                    new CreateSimulationRequest.SimulationDisburse(
-                            calculateDisburse.getFinancingAmount(),
-                            calculateDisburse.getEstimatedDisburseAmount(),
-                            maxInvoiceDueDate,
-                            totalInvoiceAmount
-                    )
+            final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
+                    .financingAmount(calculateDisburse.getFinancingAmount())
+                    .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
+                    .maxInvoiceDate(maxInvoiceDueDate)
+                    .totalInvoiceAmount(totalInvoiceAmount)
+                    .createdInvoices(invoices)
+                    .build();
+
+            final UUID financingHdrCode = financingService.create(
+                    customer,
+                    bouwheer,
+                    product,
+                    request,
+                    simulationDisburseResult
             );
 
-            financingService.create(customer, bouwheer, product, request);
-            invoiceService.create(customer, bouwheer, request);
+            return CreatedSimulationDto.builder()
+                    .productId(request.getProductId())
+                    .financingHdrCode(financingHdrCode)
+                    .invoices(invoices)
+                    .build();
         } catch (Exception e) {
             log.error("createSimulation, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public void createLoanSubmission(
+            Authentication authentication,
+            CreateLoanApplicationRequest request
+    ) throws Exception {
+        try {
+            final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+            if (!bcryptEncoder.matches(request.getPin(), customer.getCustPin())) {
+                throw new BadCredentialsException("Pin is invalid, try to entry right pin");
+            }
+
+            mstFileTypeService.getAllMandatory()
+                    .forEach(mstFileType -> {
+                        if (
+                                request.getDocuments()
+                                        .stream()
+                                        .noneMatch(document -> document.getFileTypeCode().equals(mstFileType.getFileTypeCode()))
+                        ) {
+                            throw new LoanDocMandatoryException("Mandatory file: " + mstFileType.getFileTypeDesc() + " is not present, try to attach the file");
+                        }
+                    });
+
+            final FinancingHdrDto createdFinancing = financingService.getByCode(request.getFinancingHdrCode());
+            final List<LoanDisburseEmailPayload.InvoicePayload> invoices = createdFinancing.getDetails()
+                    .stream()
+                    .map((item) ->
+                            LoanDisburseEmailPayload.InvoicePayload.builder()
+                                    .seq(item.getInvoiceSeqno())
+                                    .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
+                                    .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+                                    .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
+                                    .description(item.getInvoice().getInvoiceDescription())
+                                    .bouwheerName(createdFinancing.getBouwheer().getBouwheerName())
+                                    .build()
+                    ).toList();
+
+            final double totalFeeAmt =
+                    createdFinancing.getAdminFeeAmt()
+                            + createdFinancing.getLegalFeeAmtNett()
+                            + createdFinancing.getInsuranceFeeAmt()
+                            + createdFinancing.getOthersFeeAmt()
+                            + createdFinancing.getProvisionFeeAmt()
+                            + createdFinancing.getSurveyFeeAmtNett();
+
+            emailService.sendNotificationLoanDisbursement(
+                    customer,
+                    LoanDisburseEmailPayload.builder()
+                            .financingCode(createdFinancing.getFinancingHdrCode().toString())
+                            .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
+                            .companyName(createdFinancing.getBouwheer().getBouwheerName())
+                            .phoneNumber(createdFinancing.getCustomer().getCustMobilePhone())
+                            .tenor(createdFinancing.getTenor())
+                            .financingCode(createdFinancing.getFinancingHdrCode().toString())
+                            .financingDueDate(DateTimeUtils.formatToDate(createdFinancing.getFinancingDueDate()))
+                            .retention(CommonFormattingUtils.formatAmount(createdFinancing.getRetention()))
+                            .financingAmt(CommonFormattingUtils.formatAmount(createdFinancing.getFinancingAmt()))
+                            .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+                            .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getTotalInvoiceAmt()))
+                            .disburseAmt(CommonFormattingUtils.formatAmount(createdFinancing.getDisburseAmt()))
+                            .invoices(invoices)
+                            .build()
+            );
+
+        } catch (Exception e) {
+            log.error("createLoanSubmission, error {}", e.getMessage());
             throw e;
         }
     }

@@ -9,6 +9,7 @@ import com.kmkbe.modules.customer.service.AuthService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
@@ -28,17 +29,23 @@ public class AuthController {
     private final SecurityContextLogoutHandler logoutHandler;
 
     @PostMapping("/sign-up")
-    public CommonResult<Object> signUp(@RequestBody SignUpRequest request) throws Exception {
+    public CommonResult<Object> signUp(
+            @Valid @RequestBody SignUpRequest request
+    ) throws Exception {
         return new CommonResult<>().success(authService.signUp(request));
     }
 
     @PostMapping("/sign-in")
-    public CommonResult<LoginDto> signIn(@RequestBody LoginRequest request) {
+    public CommonResult<LoginDto> signIn(
+            @Valid @RequestBody LoginRequest request
+    ) {
         return new CommonResult<LoginDto>().success(authService.signIn(request));
     }
 
     @PutMapping("/forgot-pin")
-    public CommonResult<Object> forgotPin(@RequestBody ForgotPinRequest request) {
+    public CommonResult<Object> forgotPin(
+            @Valid @RequestBody ForgotPinRequest request
+    ) {
         final String message = authService.forgotPin(request);
         return new CommonResult<>().success(null, message);
     }
@@ -55,5 +62,12 @@ public class AuthController {
                 null,
                 result
         );
+    }
+
+    @PostMapping("/refesh-token")
+    public CommonResult<LoginDto> refreshToken(
+            @Valid @RequestBody LoginRequest request
+    ) {
+        return new CommonResult<LoginDto>().success(authService.signIn(request));
     }
 }

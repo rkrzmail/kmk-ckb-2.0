@@ -33,19 +33,19 @@ public class Customer implements UserDetails {
     private UUID custCode;
 
     @Column(length = 20)
-    private String custNo;
+    private String custNo = "";
 
     @Column(length = 500)
     private String custName;
 
     @Column(length = 50)
-    private String custTypeCode;
+    private String custTypeCode= "";
 
     @Column(length = 4)
-    private String custIdTypeCode;
+    private String custIdTypeCode= "";
 
     @Column(length = 20)
-    private String custIdNo;
+    private String custIdNo= "";
 
     @Column(length = 100)
     private String custEmail;
@@ -54,7 +54,7 @@ public class Customer implements UserDetails {
     private Boolean isEmailValid = false;
 
     @Column(length = 20)
-    private String custMobilePhone;
+    private String custMobilePhone= "";
 
     @Column
     private Boolean isPhoneValid = false;
@@ -72,7 +72,7 @@ public class Customer implements UserDetails {
     private Boolean isActive = false;
 
     @Column(length = 50)
-    private String usrCrt;
+    private String usrCrt= "SYSTEM";
 
     @Column
     private Instant dtmCrt;

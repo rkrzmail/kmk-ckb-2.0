@@ -172,4 +172,22 @@ public class AuthService {
             throw e;
         }
     }
+
+    public LoginDto refreshToken(LoginRequest request) throws Exception {
+        final Customer cust = customerRepository.findByCustEmail(request.email()).orElseThrow();
+
+        Authentication reauthenticate = authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(
+                        request.email(),
+                        request.pin()
+                )
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(reauthenticate);
+
+        return new LoginDto(
+                jwtService.generateToken(cust),
+                jwtService.getExpirationTime()
+        );
+    }
 }

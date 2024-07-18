@@ -107,10 +107,10 @@
             <version>5.1.2</version>
             <type>jar</type>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.github.ben-manes.caffeine</groupId>-->
-<!--            <artifactId>caffeine</artifactId>-->
-<!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.github.ben-manes.caffeine</groupId>-->
+        <!--            <artifactId>caffeine</artifactId>-->
+        <!--        </dependency>-->
         <!-- Caching -->
 
         <!-- Mail -->
@@ -188,6 +188,10 @@
             <version>RELEASE</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-validation</artifactId>
+        </dependency>
         <!-- Utils -->
 
     </dependencies>
@@ -238,15 +242,15 @@
             </plugin>
         </plugins>
     </build>
-<!--    <profiles>-->
-<!--        <profile>-->
-<!--            <id>dev</id>-->
-<!--            <activation>-->
-<!--                <activeByDefault>true</activeByDefault>-->
-<!--            </activation>-->
-<!--        </profile>-->
-<!--        <profile>-->
-<!--            <id>prod</id>-->
-<!--        </profile>-->
-<!--    </profiles>-->
+    <!--    <profiles>-->
+    <!--        <profile>-->
+    <!--            <id>dev</id>-->
+    <!--            <activation>-->
+    <!--                <activeByDefault>true</activeByDefault>-->
+    <!--            </activation>-->
+    <!--        </profile>-->
+    <!--        <profile>-->
+    <!--            <id>prod</id>-->
+    <!--        </profile>-->
+    <!--    </profiles>-->
 </project>

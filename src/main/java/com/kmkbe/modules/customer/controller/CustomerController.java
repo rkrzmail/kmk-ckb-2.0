@@ -6,8 +6,8 @@ import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.customer.service.CustomerService;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
-import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -35,10 +35,10 @@ public class CustomerController {
         );
     }
 
-    @PutMapping
+    @PutMapping("")
     public CommonResult<CustomerDto> updateCustomer(
             Authentication authentication,
-            @RequestBody UpdateCustomerRequest request
+            @Valid @RequestBody UpdateCustomerRequest request
     ) throws Exception {
         return new CommonResult<CustomerDto>().success(
                 customerService.update(authentication, request)

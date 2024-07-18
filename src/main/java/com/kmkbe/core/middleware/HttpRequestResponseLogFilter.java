@@ -1,25 +1,18 @@
 package com.kmkbe.core.middleware;
 
-import com.kmkbe.core.model.HttpLoggerPayload;
 import com.kmkbe.core.service.LoggingService;
-import com.kmkbe.core.utils.JsonUtils;
+import com.kmkbe.core.utils.HttpUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.servlet.http.HttpSession;
 import lombok.NonNull;
 import org.springframework.context.ApplicationContext;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.AbstractRequestLoggingFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
-import org.springframework.web.util.WebUtils;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.util.HashMap;
 import java.util.Map;
 
 @Component
@@ -32,7 +25,7 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
         setIncludeQueryString(true);
         setIncludeHeaders(true);
         setIncludePayload(true);
-        setMaxPayloadLength(50000);
+        setMaxPayloadLength(HttpUtils.DEFAULT_MAX_PAYLOAD_LENGTH);
 
         this.loggingService = loggingService;
         this.applicationContext = applicationContext;
@@ -46,10 +39,10 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
     )
             throws ServletException, IOException {
 
-       /* if (request.getHeader("Content-Type") != null && request.getHeader("Content-Type").contains("multipart/form-data")) {
+        if (request.getHeader("Content-Type") != null && request.getHeader("Content-Type").contains("multipart/form-data")) {
             filterChain.doFilter(request, response);
             return;
-        }*/
+        }
 
         // check if this is the first request
         boolean isFirstRequest = !isAsyncDispatch(request);
@@ -75,20 +68,22 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
         try {
             // do processing
             filterChain.doFilter(requestToUse, responseToUse);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
         } finally {
+            final Map<String, Object> requestLog = HttpUtils.createRequestLog(requestToUse, getMaxPayloadLength());
+            final Map<String, Object> responseLog = HttpUtils.createResponseLog(responseToUse, getMaxPayloadLength());
+
             // when required, print response after processing
             if (shouldLog && !isAsyncStarted(requestToUse)) {
-                logger.info(createResponseLog(responseToUse));
+                logger.info(responseLog);
             }
-
-            final Map<String, Object> requestLog = createRequestLog(requestToUse);
-            final Map<String, Object> responseLog = createResponseLog(responseToUse);
 
             if (requestLog.get("payload") == null) {
                 requestLog.put("payload", ((HttpServletRequestCopier) requestToUse).getPayload());
             }
 
-            loggingService.create(
+            /*loggingService.create(
                     HttpLoggerPayload.builder()
                             .uri(request.getRequestURI())
                             .statusCode(response.getStatus())
@@ -96,7 +91,7 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
                             .request(requestLog)
                             .response(responseLog)
                             .build()
-            );
+            );*/
         }
     }
 
@@ -114,95 +109,5 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
     @Override
     protected void afterRequest(HttpServletRequest request, String message) {
         logger.info(message);
-    }
-
-    protected Map<String, Object> createRequestLog(HttpServletRequest request) {
-        final Map<String, Object> result = new HashMap<>();
-
-        String queryString = null,
-                client = null,
-                sessionId = null,
-                user = null;
-
-        String payload = null;
-        HttpHeaders headers = null;
-
-        if (isIncludeQueryString()) {
-            queryString = request.getQueryString();
-        }
-
-        if (isIncludeClientInfo()) {
-            client = request.getRemoteAddr();
-
-            HttpSession session = request.getSession(false);
-            if (session != null) {
-                sessionId = session.getId();
-            }
-
-            user = request.getRemoteUser();
-        }
-
-        if (isIncludeHeaders()) {
-            headers = new ServletServerHttpRequest(request).getHeaders();
-        }
-
-        if (isIncludePayload()) {
-            HttpServletRequestCopier wrapper = WebUtils.getNativeRequest(request, HttpServletRequestCopier.class);
-            if (wrapper != null) {
-                byte[] buf = wrapper.getContentAsByteArray();
-                if (buf.length > 0) {
-                    int length = Math.min(buf.length, getMaxPayloadLength());
-                    try {
-                        payload = new String(buf, 0, length, wrapper.getCharacterEncoding());
-                    } catch (UnsupportedEncodingException ignored) {
-                    }
-                }
-            }
-        }
-
-        result.put("queryString", queryString);
-        result.put("headers", headers);
-        result.put("payload", JsonUtils.strToJson(payload));
-        result.put("client", client);
-        result.put("sessionId", sessionId);
-        result.put("user", user);
-
-        return result;
-    }
-
-    protected Map<String, Object> createResponseLog(HttpServletResponse response) {
-        final Map<String, Object> result = new HashMap<>();
-
-        int statusCode = response.getStatus();
-        String contentType = response.getContentType(),
-                payload = null;
-
-        boolean isIncludePayload = isIncludePayload();
-
-        if ("application/octet-stream".equals(response.getContentType())) {
-            isIncludePayload = false;
-        } else if ("image/gif".equals(response.getContentType())) {
-            isIncludePayload = false;
-        }
-
-        if (isIncludePayload) {
-            HttpServletResponseCopier wrapper = WebUtils.getNativeResponse(response, HttpServletResponseCopier.class);
-            if (wrapper != null) {
-                byte[] buf = wrapper.getContentAsByteArray();
-                if (buf.length > 0) {
-                    int length = Math.min(buf.length, getMaxPayloadLength());
-                    try {
-                        payload = new String(buf, 0, length, wrapper.getCharacterEncoding());
-                    } catch (UnsupportedEncodingException ignored) {
-                    }
-                }
-            }
-        }
-
-        result.put("statusCode", statusCode);
-        result.put("contentType", contentType);
-        result.put("payload", JsonUtils.strToJson(payload));
-
-        return result;
     }
 }

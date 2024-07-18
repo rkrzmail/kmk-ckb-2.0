@@ -12,7 +12,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
-import java.time.OffsetDateTime;
+import java.time.temporal.TemporalAccessor;
 import java.util.Date;
 
 @Configuration
@@ -22,7 +22,7 @@ public class ObjectMapperConfig {
     @Primary
     public ObjectMapper objectMapper() {
         SimpleModule simpleModule = new SimpleModule();
-        simpleModule.addSerializer(OffsetDateTime.class, new TemporalDateTimeSerializer());
+        simpleModule.addSerializer(TemporalAccessor.class, new TemporalDateTimeSerializer());
         simpleModule.addSerializer(Date.class, new DateSerializer());
         simpleModule.addDeserializer(Date.class, new DateDeserializer());
 

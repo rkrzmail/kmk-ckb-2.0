@@ -16,5 +16,7 @@ public interface FileTypeMapper {
     @Mapping(ignore = true, target = "legalFile")
     MstFileTypeDto mstFileToDto(MstFileType mstFileType);
 
+    @Mapping(ignore = true, target = "fileUrl")
+    @Mapping(ignore = true, target = "uploadedDate")
     LegalFileDto legalFileToDto(LegalFile legalFile);
 }

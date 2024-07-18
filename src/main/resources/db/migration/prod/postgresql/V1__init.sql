@@ -289,6 +289,13 @@ VALUES
 </body>
 </html>', true, 'SYSTEM', NOW());
 
+-- dummy user
+INSERT INTO customer (cust_id, cust_code, cust_no, cust_name, cust_type_code, cust_id_type_code, cust_id_no, cust_email, is_email_valid, cust_mobile_phone, is_phone_valid, is_wa_active, cust_pin, agree_tc, is_active, usr_crt, dtm_crt, usr_upd, dtm_upd) VALUES (1, 'c2aef1bb-77b0-471b-9ff2-19a2048e7055', null, 'Khesa', 'Company', 'KTP', '123456789', 'khesaalvandik123@gmail.com', true, '085156032859', false, false, '$2a$10$vlBCMyUepdrvrJVTI9R4ouFgPi0OjNTCqkYp4p8u5NC0tTX1f/oZy', true, true, 'Khesa', '2024-07-10 04:12:35.685794', 'Khesa', '2024-07-10 04:13:00.558354');
+INSERT INTO customer (cust_id, cust_code, cust_no, cust_name, cust_type_code, cust_id_type_code, cust_id_no, cust_email, is_email_valid, cust_mobile_phone, is_phone_valid, is_wa_active, cust_pin, agree_tc, is_active, usr_crt, dtm_crt, usr_upd, dtm_upd) VALUES (2, '96caf29e-ef9f-4db6-8056-990b9324ffb3', null, 'kamren rider wizrd', 'Company', 'KTP', '12345678', 'samvah.27@gmail.com', true, '12345656', false, false, '$2a$10$aqjlHoSuchQ3uObuZQNSNO.sEyE1xG4zwpxFJElPTh9IoLn95h.6.', true, true, 'kamren rider wizrd', '2024-07-10 04:15:10.472041', 'kamren rider wizrd', '2024-07-10 04:55:42.640760');
+
+
+
+
 --DROP TABLE IF EXISTS fly_way;
 --CREATE TABLE fly_way
 --(

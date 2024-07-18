@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 import java.util.LinkedHashSet;
@@ -22,11 +21,8 @@ public class FinancingHdr {
     @Column(name = "financing_hdr_code", nullable = false)
     private UUID financingHdrCode;
 
-    @NotNull
-    @ColumnDefault("nextval('financing_hdr_financing_hdr_id_seq'::regclass)")
     @Column(
             name = "financing_hdr_id",
-            nullable = false,
             columnDefinition = "serial",
             insertable = false,
             updatable = false
@@ -115,7 +111,7 @@ public class FinancingHdr {
 
     @NotNull
     @Column(name = "admin_limit_amt", nullable = false) // , precision = 17, scale = 2
-    private Double adminLimitAmt;
+    private Double adminLimitAmt = 0.0;
 
     @NotNull
     @Column(name = "admin_fee_percentage", nullable = false) // , precision = 5, scale = 2

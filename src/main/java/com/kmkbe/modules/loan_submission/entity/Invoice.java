@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -20,29 +19,29 @@ public class Invoice {
     @Column(name = "invoice_code", nullable = false)
     private UUID invoiceCode;
 
-    @NotNull
-    @ColumnDefault("nextval('invoice_invoice_id_seq'::regclass)")
     @Column(
             name = "invoice_id",
-            nullable = false,
             columnDefinition = "serial",
             insertable = false,
             updatable = false
     )
     private Long invoiceId;
 
-    @NotNull
+    @NotNull(message = "custCode cannot be null")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "cust_code", nullable = false)
     private Customer custCode;
 
-    @NotNull
+    @NotNull(message = "bouwheerCode cannot be null")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "bouwheer_code", nullable = false)
     private Bouwheer bouwheerCode;
 
+    @OneToOne(mappedBy = "invoiceCode", cascade = CascadeType.ALL)
+    private FinancingDtl financingDtl;
+
     @Size(max = 50)
-    @NotNull
+    @NotNull(message = "bouwheerInvNo cannot be null")
     @Column(name = "bouwheer_inv_no", nullable = false, length = 50)
     private String bouwheerInvNo;
 

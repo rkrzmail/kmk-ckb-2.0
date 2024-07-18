@@ -3,23 +3,25 @@ package com.kmkbe.modules.loan_submission.controller;
 
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.modules.external.dto.PostedInvoiceDto;
-import com.kmkbe.modules.loan_submission.dto.DisbursePercentageDto;
-import com.kmkbe.modules.loan_submission.dto.DocumentTemplateFinancingDto;
-import com.kmkbe.modules.loan_submission.dto.EstimatedDisburseDto;
-import com.kmkbe.modules.loan_submission.dto.MstFileTypeDto;
+import com.kmkbe.modules.loan_submission.dto.*;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
+import com.kmkbe.modules.loan_submission.request.CreateLoanApplicationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
+@Validated
 @RestController
 @RequestMapping("/api/v1/loan-submissions")
 @Tag(
@@ -29,8 +31,21 @@ import java.util.List;
 @RequiredArgsConstructor
 public class LoanSubmissionController {
     private final LoanSubmissionService loanSubmissionService;
-
     private final DocumentService documentService;
+
+    @PostMapping("/create")
+    public CommonResult<Object> submitLoanSubmission(
+            Authentication authentication,
+            @Valid @RequestBody CreateLoanApplicationRequest request
+    ) throws Exception {
+        loanSubmissionService.createLoanSubmission(
+                authentication,
+                request
+        );
+
+        return new CommonResult<>()
+                .success(null, "Loan Application create successfully");
+    }
 
     @GetMapping("/invoices")
     public CommonResult<List<PostedInvoiceDto>> getActiveInvoices(
@@ -59,12 +74,14 @@ public class LoanSubmissionController {
     }
 
     @PostMapping("/simulations/create")
-    public CommonResult<Object> createSimulation(
+    public CommonResult<CreatedSimulationDto> createSimulation(
             Authentication authentication,
-            @RequestBody CreateSimulationRequest request
+            @Valid @RequestBody CreateSimulationRequest request
     ) throws Exception {
-        loanSubmissionService.createSimulation(authentication, request);
-        return new CommonResult<>().success(null, "Simulation Created Successfully");
+        return new CommonResult<CreatedSimulationDto>().success(
+                loanSubmissionService.createSimulation(authentication, request),
+                "Simulation Created Successfully"
+        );
     }
 
     @GetMapping("/documents/template-financing")
@@ -78,24 +95,38 @@ public class LoanSubmissionController {
 
     @GetMapping("/documents/requirement")
     public CommonResult<List<MstFileTypeDto>> getDocumentRequirement(
+            HttpServletRequest httpServletRequest,
             Authentication authentication
     ) throws Exception {
         return new CommonResult<List<MstFileTypeDto>>().success(
-                documentService.fetchAllLoanDocumentRequirement(authentication)
+                documentService.fetchAllLoanDocumentRequirement(httpServletRequest, authentication)
         );
     }
 
     @PostMapping(path = "/documents/requirement/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public CommonResult<Object> uploadDocument(
+    public CommonResult<LegalFileDto> uploadDocument(
+            HttpServletRequest httpServletRequest,
             Authentication authentication,
-            @RequestPart("file") MultipartFile file,
-            @RequestParam("fileTypeCode") String fileTypeCode
+            @Valid @RequestPart MultipartFile file,
+            @Valid @RequestParam("fileTypeCode") String fileTypeCode
     ) throws Exception {
-        documentService.uploadLoanDocument(
-                authentication,
-                file,
-                fileTypeCode
+        return new CommonResult<LegalFileDto>().success(
+                documentService.uploadLoanDocument(
+                        httpServletRequest,
+                        authentication,
+                        file,
+                        fileTypeCode
+                ),
+                "File Upload Successfully"
         );
-        return new CommonResult<>().success(null, "Uploaded Successfully");
+    }
+
+    @DeleteMapping(path = "/documents/requirement/{id}")
+    public CommonResult<Object> deleteDocument(
+            Authentication authentication,
+            @PathVariable("id") Long id
+    ) throws Exception {
+        documentService.delete(id);
+        return new CommonResult<>().success(null, "Delete Successfully");
     }
 }

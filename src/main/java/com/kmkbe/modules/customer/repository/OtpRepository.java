@@ -1,13 +1,10 @@
 package com.kmkbe.modules.customer.repository;
 
 import com.kmkbe.modules.customer.entity.OtpLog;
-import jakarta.persistence.TemporalType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.jpa.repository.Temporal;
 import org.springframework.stereotype.Repository;
 
-import java.time.OffsetDateTime;
 import java.util.Optional;
 
 @Repository

@@ -5,9 +5,9 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -19,9 +19,12 @@ public class MstFileType {
     @Column(name = "file_type_code", nullable = false, length = 20)
     private String fileTypeCode;
 
-    @NotNull
-    @ColumnDefault("nextval('mst_file_type_file_type_id_seq'::regclass)")
-    @Column(name = "file_type_id", nullable = false)
+    @Column(
+            name = "file_type_id",
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
+    )
     private Long fileTypeId;
 
     @Size(max = 100)
@@ -63,7 +66,7 @@ public class MstFileType {
     @Column(name = "dtm_upd")
     private Instant dtmUpd;
 
-    @OneToOne(mappedBy = "fileTypeCode")
-    private LegalFile legalFile;
+    @OneToMany(mappedBy = "fileTypeCode")
+    private Set<LegalFile> legalFiles;
 
 }

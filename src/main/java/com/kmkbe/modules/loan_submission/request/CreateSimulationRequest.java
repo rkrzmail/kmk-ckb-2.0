@@ -1,45 +1,21 @@
 package com.kmkbe.modules.loan_submission.request;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import com.kmkbe.modules.loan_submission.model.PostedInvoicePayload;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
-import java.math.BigDecimal;
-import java.util.Date;
 import java.util.List;
 
-@Getter
-@Setter
-@NoArgsConstructor
-@ToString
+@Data
 public class CreateSimulationRequest {
+    @NotNull(message = "Product id is required")
     private Long productId;
+
+    @NotNull(message = "Disburse percentage is required")
     private Double disbursePercentage;
-    private List<CreatePostedInvoice> invoices;
 
-    @JsonIgnore
-    private SimulationDisburse disburse;
-
-    public record SimulationDisburse(
-            BigDecimal financingAmount,
-            BigDecimal estimatedDisburseAmount,
-            Date maxInvoiceDate,
-            Double totalInvoiceAmount
-    ) {
-    }
-
-    public record CreatePostedInvoice(
-            String bouwheerCode,
-            String bouwheerName,
-            String customerInvoiceNo,
-            String bouwheerInvoiceNo,
-            String invoiceDescription,
-            String currencyCode,
-            Date invoiceDate,
-            Date invoiceDueDate,
-            Double invoiceAmount
-    ) {
-    }
+    @NotNull(message = "Invoices is required, Please select at least 1 invoice")
+    @NotEmpty(message = "Invoices is required, Please select at least 1 invoice")
+    private List<PostedInvoicePayload> invoices;
 }

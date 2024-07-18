@@ -12,7 +12,7 @@ public class TemporalDateTimeSerializer extends JsonSerializer<TemporalAccessor>
     @Override
     public void serialize(TemporalAccessor value, JsonGenerator jsonGenerator, SerializerProvider serializerProvider) throws IOException {
         if (value != null) {
-            jsonGenerator.writeString(DateTimeUtils.STANDARD_FORMATTER.format(value));
+            jsonGenerator.writeString(DateTimeUtils.DTF_DATE_TIME_STANDARD_FORMATTER.format(value));
         }
     }
 }

@@ -266,3 +266,257 @@ CREATE TABLE financing_dtl
     CONSTRAINT fk_financing_dtl_to_financing_hdr FOREIGN KEY (financing_hdr_code) REFERENCES financing_hdr (financing_hdr_code)
     -- ,CONSTRAINT fk_invoice_to_bouwheer FOREIGN KEY (bouwheer_inv_no) REFERENCES invoice (bouwheer_inv_no)
 );
+
+insert into
+    mst_file_type (file_type_code, file_type_name, file_type_desc, file_allocation, is_mandatory, max_size_mb, usr_crt,
+                   dtm_crt)
+values
+    ('DOC001', 'Akta Penyesuaian Anggaran Dasar.PDF', 'Akta Penyesuaian Anggaran Dasar terhadap UU 40/2007', 'Financing', false,
+     20, 'SYSTEM', current_timestamp);
+
+
+insert into
+    mst_file_type (file_type_code, file_type_name, file_type_desc, file_allocation, is_mandatory, max_size_mb, usr_crt,
+                   dtm_crt)
+values
+    ('DOC002', 'Akta Perubahan Maksud dan Tujuan Persero.PDF', 'Akta Perubahan Maksud dan Tujuan Persero', 'Financing', false,
+     20, 'SYSTEM', current_timestamp);
+
+insert into
+    mst_file_type (file_type_code, file_type_name, file_type_desc, file_allocation, is_mandatory, max_size_mb, usr_crt,
+                   dtm_crt)
+values
+    ('DOC003', 'Akta Perubahan Susunan Pengurus Perseroan.PDF', 'Akta Perubahan Terakhir mengenai Perubahan Susunan Pengurus Perseroan', 'Financing', false,
+     20, 'SYSTEM', current_timestamp);
+
+insert into
+    mst_file_type (file_type_code, file_type_name, file_type_desc, file_allocation, is_mandatory, max_size_mb, usr_crt,
+                   dtm_crt)
+values
+    ('DOC004', 'Rekening Koran.PDF', 'Rekening Koran', 'Financing', false,
+     20, 'SYSTEM', current_timestamp);
+
+insert into
+    mst_file_type (file_type_code, file_type_name, file_type_desc, file_allocation, is_mandatory, max_size_mb, usr_crt,
+                   dtm_crt)
+values
+    ('DOC005', 'Form Aplikasi Pembiayaan.PDF', 'Form Aplikasi Pembiayaan', 'Financing', true,
+     20, 'SYSTEM', current_timestamp);
+
+insert into
+    mst_file_type (file_type_code, file_type_name, file_type_desc, file_allocation, is_mandatory, max_size_mb, usr_crt,
+                   dtm_crt)
+values
+    ('DOC006', '', 'Surat Instruksi Transfer', 'Financing', true,
+     20, 'SYSTEM', current_timestamp);
+
+INSERT INTO
+    email_template
+(email_template_code, subject_mail, body_mail, is_active, usr_crt, dtm_crt)
+VALUES
+    ('M_CUST_LOAN', 'Pengajuan Dana Sakti Anda Disetujui', '<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .tbl {
+            border-collapse: collapse;
+        }
+
+        .tbl th {
+            background-color: #083B82;
+            color: #fff;
+            padding: 0.5rem 0.7rem;
+            font-weight: 700;
+            font-size: 0.8em;
+        }
+
+        .tbl td {
+            padding: 0.5rem 0.7rem;
+            font-weight: 400;
+        }
+
+        .tbl-center td {
+            text-align: center;
+        }
+
+        .tbl tr:nth-child(even) {
+            background-color: #E7ECFF;
+        }
+
+        .br {
+            border: 0.5px solid #000;
+        }
+
+        .primary {
+            font-weight: bold;
+            background-color: #083B82;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <p style="line-height: 5px;">Selamat!</p>
+    <p style="line-height: 5px;">Pengajuan anda untuk {financingCode} telah disetujui!</p>
+    <br>
+    <table>
+        <tr>
+            <td>
+                Nama Perusahaan
+            </td>
+            <td>:</td>
+            <td>
+                {companyName}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Email
+            </td>
+            <td>:</td>
+            <td>
+                {email}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                No. Hp
+            </td>
+            <td>:</td>
+            <td>
+                {phoneNumber}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Tanggal Pengajuan
+            </td>
+            <td>:</td>
+            <td>
+                {applicationDate}
+            </td>
+        </tr>
+    </table>
+    <br>
+    <table class="tbl tbl-center">
+        <thead>
+            <tr>
+                <th>No. Invoice</th>
+                <th>Deskripsi</th>
+                <th>Pemberi Kerja</th>
+
+                <th>Tanggal Invoice</th>
+                <th>Tanggal Jatuh Tempo</th>
+                <th>Nilai Tagihan</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- <td>{invoices}</td> -->
+            <tr>
+                <td>1</td>
+                <td>Beli</td>
+                <td>PT. Suka</td>
+                <td>20/05/2024</td>
+                <td>25/05/2024</td>
+                <td>Rp. 100.000.000</td>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td>Beli</td>
+                <td>PT. Suka</td>
+                <td>20/05/2024</td>
+                <td>25/05/2024</td>
+                <td>Rp. 100.000.000</td>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td>Beli</td>
+                <td>PT. Suka</td>
+                <td>20/05/2024</td>
+                <td>25/05/2024</td>
+                <td>Rp. 100.000.000</td>
+            </tr>
+            <tr>
+                <td>1</td>
+                <td>Beli</td>
+                <td>PT. Suka</td>
+                <td>20/05/2024</td>
+                <td>25/05/2024</td>
+                <td>Rp. 100.000.000</td>
+            </tr>
+        </tbody>
+    </table>
+    <br>
+    <p>Adapun rincian dari pengajuan ini sebagai berikut:</p>
+    <table class="tbl br text-left">
+        <tr>
+            <td>
+                Nilai Transaksi
+            </td>
+            <td>
+                {invoiceAmt}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Retensi
+            </td>
+            <td>
+                {retention}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Nilai Pembiayaan
+            </td>
+            <td>
+                {financingAmt}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Nilai Layaan
+            </td>
+            <td>
+                {totalFeeAmt}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Tenor
+            </td>
+            <td>
+                {tenor}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Jatuh Tempo
+            </td>
+            <td>
+                {financingDueDate}
+            </td>
+        </tr>
+        <tr class="primary">
+            <td>
+                Total Pencairan
+            </td>
+            <td>
+                {disburseAmt}
+            </td>
+        </tr>
+    </table>
+    <p>
+        Demikian informasi ini disampaikan terima kasih atas kepercayaan Anda.
+    </p>
+    <br />
+    <p>Hormat Kami,</p>
+    <p style="color: rgb(14, 193, 14); font-weight: bold">PT. Candra Sakti Utama Leasing</p>
+    <img src="https://www.csulfinance.com/cfind/source/images/logo.png" />
+</body>
+
+</html>', true, 'SYSTEM', NOW());

@@ -34,16 +34,16 @@ public class CustomerCompany implements Serializable {
     private Customer custCode;
 
     @Column(length = 50)
-    private String custCompanyType;
+    private String custCompanyType = "";
 
     @Column(length = 200)
-    private String companyModel;
+    private String companyModel = "";
 
     @Column(length = 50)
-    private String identityType;
+    private String identityType = "";
 
     @Column(length = 50)
-    private String identityNo;
+    private String identityNo = "";
 
     @Column
     private Instant identityIssuedDate;
@@ -52,37 +52,37 @@ public class CustomerCompany implements Serializable {
     private Instant identityExpiredDate;
 
     @Column(length = 1000)
-    private String companyAddress;
+    private String companyAddress = "";
 
     @Column(length = 5)
-    private String rt;
+    private String rt = "";
 
     @Column(length = 5)
-    private String rw;
+    private String rw = "";
 
     @Column(length = 50)
-    private String kelurahan;
+    private String kelurahan = "";
 
     @Column(length = 50)
-    private String kecamatan;
+    private String kecamatan = "";
 
     @Column(length = 50)
-    private String city;
+    private String city = "";
 
     @Column(length = 50)
-    private String province;
+    private String province = "";
 
     @Column(length = 10)
-    private String zipcode;
+    private String zipcode = "";
 
     @Column(length = 5)
-    private String area;
+    private String area = "";
 
     @Column(length = 20)
-    private String phone;
+    private String phone = "";
 
     @Column(length = 50)
-    private String ownershipStatus;
+    private String ownershipStatus = "";
 
     @Column
     private Instant staySince;
@@ -99,6 +99,5 @@ public class CustomerCompany implements Serializable {
     @Column(length = 50)
     private String usrUpd;
 
-    @Column(nullable = false)
     private Instant dtmUpd;
 }

@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
@@ -16,7 +15,15 @@ import java.time.Instant;
 @Table(name = "error_log")
 public class ErrorLog {
     @Id
-    @ColumnDefault("nextval('error_log_error_log_id_seq'::regclass)")
+    @SequenceGenerator(
+            name = "error_log_error_log_id_seq",
+            sequenceName = "error_log_error_log_id_seq",
+            allocationSize = 1
+    )
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "error_log_error_log_id_seq"
+    )
     @Column(name = "error_log_id", nullable = false)
     private Long errorLogId;
 

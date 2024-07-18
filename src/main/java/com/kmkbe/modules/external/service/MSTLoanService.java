@@ -10,6 +10,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -48,35 +50,35 @@ public class MSTLoanService {
                 PostedInvoiceDto.builder()
                         .bouwheerCode(bouwheer.getBouwheerCode().toString())
                         .bouwheerName(bouwheer.getBouwheerName())
-                        .currencyCode("Rp")
+                        .currencyCode("IDR")
                         .customerInvoiceNo("INV-001")
                         .bouwheerInvoiceNo("INV-B001")
                         .invoiceDescription("10 Mineral Water Aqua Galon")
                         .invoiceDate(Date.from(Instant.now().plus(10, ChronoUnit.DAYS)))
                         .invoiceDueDate(Date.from(Instant.now().plus(11, ChronoUnit.DAYS)))
-                        .invoiceAmount(1_000_000.0)
+                        .invoiceAmount(BigDecimal.valueOf(10_000_000.0).setScale(2, RoundingMode.CEILING))
                         .build(),
                 PostedInvoiceDto.builder()
                         .bouwheerCode(bouwheer.getBouwheerCode().toString())
                         .bouwheerName(bouwheer.getBouwheerName())
-                        .currencyCode("Rp")
+                        .currencyCode("IDR")
                         .customerInvoiceNo("INV-002")
                         .bouwheerInvoiceNo("INV-B002")
                         .invoiceDescription("15 Mineral Water Aqua Galon")
                         .invoiceDate(Date.from(Instant.now().plus(9, ChronoUnit.DAYS)))
                         .invoiceDueDate(Date.from(Instant.now().plus(10, ChronoUnit.DAYS)))
-                        .invoiceAmount(1_500_000.0)
+                        .invoiceAmount(BigDecimal.valueOf(15_000_000.0).setScale(2, RoundingMode.CEILING))
                         .build(),
                 PostedInvoiceDto.builder()
                         .bouwheerCode(bouwheer.getBouwheerCode().toString())
                         .bouwheerName(bouwheer.getBouwheerName())
-                        .currencyCode("Rp")
+                        .currencyCode("IDR")
                         .customerInvoiceNo("INV-003")
                         .bouwheerInvoiceNo("INV-B003")
                         .invoiceDescription("20 Mineral Water Aqua Galon")
                         .invoiceDate(Date.from(Instant.now().plus(8, ChronoUnit.DAYS)))
                         .invoiceDueDate(Date.from(Instant.now().plus(9, ChronoUnit.DAYS)))
-                        .invoiceAmount(2_000_000.0)
+                        .invoiceAmount(BigDecimal.valueOf(20_000_000.0).setScale(2, RoundingMode.CEILING))
                         .build()
         );
 

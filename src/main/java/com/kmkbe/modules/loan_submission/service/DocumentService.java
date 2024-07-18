@@ -1,14 +1,19 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.kmkbe.core.service.FileStorageService;
+import com.kmkbe.core.utils.FileUtils;
+import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.dto.DocumentTemplateFinancingDto;
 import com.kmkbe.modules.loan_submission.dto.LegalFileDto;
 import com.kmkbe.modules.loan_submission.dto.MstFileTypeDto;
+import com.kmkbe.modules.loan_submission.entity.LegalFile;
 import com.kmkbe.modules.loan_submission.entity.MstFileType;
 import com.kmkbe.modules.loan_submission.mapper.FileTypeMapper;
 import com.kmkbe.modules.loan_submission.repository.MstFileTypeRepository;
+import io.netty.util.internal.StringUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,23 +52,29 @@ public class DocumentService {
         }
     }
 
-    public List<MstFileTypeDto> fetchAllLoanDocumentRequirement(Authentication authentication) throws Exception {
+    public List<MstFileTypeDto> fetchAllLoanDocumentRequirement(HttpServletRequest httpServletRequest, Authentication authentication) throws Exception {
         try {
             return mstFileTypeRepository.findAll()
                     .stream()
                     .map((file) -> {
                         MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
-                        LegalFileDto legalFileDto = null;
+                        LegalFile legalFile = null;
                         try {
-                            legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(
-                                    legalFileService.fetchByCust(CustomerUtils.authenticateCustomer(authentication), file)
-                            );
+                            legalFile = legalFileService.fetchByCust(CustomerUtils.authenticateCustomer(authentication), file);
                         } catch (SignatureException ignored) {
                         }
 
-                        if (legalFileDto != null) {
-                            legalFileDto.setFileUrl(file.getLegalFile().getFilePath());
-                            legalFileDto.setUploadedDate(file.getLegalFile().getDtmCrt());
+                        if (legalFile != null) {
+                            LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
+                            legalFileDto.setUploadedDate(legalFile.getDtmUpd());
+                            legalFileDto.setFileUrl(
+                                    UriUtils.getBaseUrl(httpServletRequest)
+                                            //+ "/api/v1"
+                                            + legalFile.getFilePath()
+                                            + "/"
+                                            + legalFile.getFileName()
+                            );
+
                             dto.setLegalFile(legalFileDto);
                         }
 
@@ -77,7 +88,8 @@ public class DocumentService {
     }
 
     @Transactional
-    public void uploadLoanDocument(
+    public LegalFileDto uploadLoanDocument(
+            HttpServletRequest httpServletRequest,
             Authentication authentication,
             MultipartFile file,
             String fileTypeCode
@@ -86,21 +98,52 @@ public class DocumentService {
         try {
             final Customer customer = CustomerUtils.authenticateCustomer(authentication);
             final MstFileType mstFileType = mstFileTypeRepository.findByFileTypeCode(fileTypeCode).orElseThrow();
+            final LegalFile existingFile = legalFileService.fetchByCust(CustomerUtils.authenticateCustomer(authentication), mstFileType);
             code = customer.getCustName();
 
-            final String uploadedPath = fileStorageService.save(file, code);
-            legalFileService.create(
+            String requireExt = FileUtils.getFileNameExtension(mstFileType.getFileTypeName());
+            if (!StringUtil.isNullOrEmpty(requireExt)) {
+                requireExt = requireExt.toLowerCase();
+            }
+
+            final String uploadDir = customer.getCustCode() + "/loan_submission";
+            final String uploadName = mstFileType.getFileTypeCode() + "_" + file.getOriginalFilename();
+            final String uploadedPath = fileStorageService.save(
+                    file,
+                    uploadDir,
+                    uploadName,//,
+                    requireExt
+            );
+
+            LegalFileDto dto = legalFileService.create(
+                    httpServletRequest,
                     customer,
                     mstFileType,
                     file,
-                    uploadedPath
+                    FileUtils.getFilePathFromFullPath(uploadedPath),
+                    uploadName
             );
+
+            if (existingFile != null) {
+                fileStorageService.delete(existingFile.getFilePath() + "/" + existingFile.getFileName(), "");
+            }
+
+            return dto;
         } catch (Exception e) {
             if (code != null) {
                 fileStorageService.delete(file.getOriginalFilename(), code);
             }
 
             log.error("uploadLoanDocument, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public void delete(Long id) {
+        try {
+            legalFileService.delete(id);
+        } catch (Exception e) {
+            log.error("deteleLegalFile, error {}", e.getMessage());
             throw e;
         }
     }

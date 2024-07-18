@@ -12,6 +12,8 @@ import java.time.Instant;
 @Setter
 @NoArgsConstructor
 public class LegalFileDto {
+    private Long fileId;
     private String fileUrl;
+    private String fileName;
     private Instant uploadedDate;
 }

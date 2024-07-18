@@ -1,9 +1,11 @@
 package com.kmkbe.modules.common.service;
 
 import com.kmkbe.core.config.MailConfig;
-import com.kmkbe.modules.customer.entity.Customer;
+import com.kmkbe.core.utils.JsonUtils;
 import com.kmkbe.modules.common.entity.EmailTemplate;
+import com.kmkbe.modules.common.model.LoanDisburseEmailPayload;
 import com.kmkbe.modules.common.repository.EmailTemplateRepository;
+import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.external.dto.CsulMailDto;
 import com.kmkbe.modules.external.service.CsulConfigService;
 import jakarta.mail.MessagingException;
@@ -27,6 +29,7 @@ public class EmailService {
     private static final String M_CUST_NEW_OTP = "M_CUST_NEW_OTP";
     private static final String M_CUST_CHANGE_OTP = "M_CUST_CHANGE_OTP";
     private static final String M_CUST_ACTIVE = "M_CUST_ACTIVE";
+    private static final String M_CUST_LOAN = "M_CUST_LOAN";
 
     private final EmailTemplateRepository emailTemplateRepository;
     private final CsulConfigService csulConfigService;
@@ -70,6 +73,20 @@ public class EmailService {
         send(customer, null, M_CUST_ACTIVE);
     }
 
+    @Async
+    public void sendNotificationLoanDisbursement(
+            final Customer customer,
+            LoanDisburseEmailPayload payload
+    ) throws MessagingException {
+        final Map<String, Object> payloadArgs = JsonUtils.objectToJson(payload);
+        if (payloadArgs != null) {
+            payloadArgs.remove("invoices");
+            payloadArgs.put("invoices", LoanDisburseEmailPayload.InvoicePayload.toHtmlListBody(payload.getInvoices()));
+        }
+
+        send(customer, payloadArgs, M_CUST_LOAN);
+    }
+
     private void send(
             final Customer customer,
             final Map<String, Object> additionalArgs,
@@ -98,6 +115,12 @@ public class EmailService {
             body = body.replace("{otp_code}", "");
         }
 
+        if (additionalArgs != null) {
+            for (Map.Entry<String, Object> entry : additionalArgs.entrySet()) {
+                body = body.replace("{" + entry.getKey() + "}", entry.getValue().toString());
+            }
+        }
+
         template.setBodyMail(body);
 
         MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -105,7 +128,7 @@ public class EmailService {
 
         int attempts = 0;
         boolean success = false;
-        for (int i = 0; i < MAX_SENT_FAIL_ATTEMPTS; i++) {
+       /* for (int i = 0; i < MAX_SENT_FAIL_ATTEMPTS; i++) {
             try {
                 mailSender.send(mimeMessage);
                 success = true;
@@ -114,7 +137,7 @@ public class EmailService {
                 log.error("EmailService Failed to send email to {} due to {}", customer.getCustEmail(), e.getMessage());
                 log.error("EmailService try attempts: {}", attempts);
             }
-        }
+        }*/
 
         // for testing purpose only
         if (!success) {

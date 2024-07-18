@@ -5,7 +5,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -19,11 +18,8 @@ public class FinancingDtl {
     @Column(name = "financing_dtl_code", nullable = false)
     private UUID financingDtlCode;
 
-    @NotNull
-    @ColumnDefault("nextval('financing_dtl_financing_dtl_id_seq'::regclass)")
     @Column(
             name = "financing_dtl_id",
-            nullable = false,
             columnDefinition = "serial",
             insertable = false,
             updatable = false
@@ -34,6 +30,11 @@ public class FinancingDtl {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "financing_hdr_code", nullable = false)
     private FinancingHdr financingHdrCode;
+
+    @NotNull
+    @OneToOne(cascade = CascadeType.ALL)
+    @JoinColumn(name = "invoice_code", referencedColumnName = "invoice_code")
+    private Invoice invoiceCode;
 
     @Size(max = 50)
     @NotNull

@@ -9,5 +9,8 @@ import org.mapstruct.factory.Mappers;
 public interface InvoiceMapper {
     InvoiceMapper INSTANCE = Mappers.getMapper(InvoiceMapper.class);
 
+    //@Mapping(target = "bouwheer", ignore = true)
     InvoiceDto dtoFromEntity(Invoice invoice);
+
+    Invoice entityFromDto(InvoiceDto invoiceDto);
 }

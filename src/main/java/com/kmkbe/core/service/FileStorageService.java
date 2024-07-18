@@ -1,5 +1,8 @@
 package com.kmkbe.core.service;
 
+import com.kmkbe.core.utils.FileUtils;
+import io.netty.util.internal.StringUtil;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -16,22 +19,18 @@ import java.nio.file.StandardCopyOption;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class FileStorageService {
     private final Path root = Paths.get("uploads");
 
-    public FileStorageService() {
-        init();
+    public String save(MultipartFile file, String uploadDir, String name) throws Exception {
+        return save(file, uploadDir, name, null);
     }
 
-    private void init() {
-        try {
-            Files.createDirectories(root);
-        } catch (IOException e) {
-            throw new RuntimeException("Could not initialize folder for upload!");
-        }
-    }
-
-    public String save(MultipartFile file, String code) throws Exception {
+    /**
+     * @return full path of uploaded file
+     */
+    public String save(final MultipartFile file, String uploadDir, String name, String extValidation) throws Exception {
         try {
             if (file == null) {
                 throw new Exception("File cannot be null");
@@ -41,28 +40,41 @@ public class FileStorageService {
                 throw new Exception("File cannot be null");
             }
 
-            Path uniquePath = Paths.get(code, file.getOriginalFilename());
-            Path fileDestination = root.resolve(
-                            Paths.get(file.getOriginalFilename())
-                    )
+            String ext = FileUtils.getUploadFileExtension(file);
+            if (StringUtil.isNullOrEmpty(ext)) {
+                throw new Exception("File format or extension is not valid, try to upload valid file. Uploaded File: " + name);
+            }
+
+            if (ext.equals(ext.toUpperCase())) {
+                ext = ext.toLowerCase();
+            }
+
+            if (extValidation != null && !ext.equalsIgnoreCase(extValidation)) {
+                throw new Exception("File extension is not valid, expected: " + extValidation + " but got: " + ext);
+            }
+
+            String fileNameExt = FileUtils.getFileNameExtension(name);
+            if (StringUtil.isNullOrEmpty(fileNameExt)) {
+                throw new Exception("File format or extension is not valid, try to upload valid file. Uploaded File: " + name);
+            }
+            if (fileNameExt.equals(fileNameExt.toUpperCase())) {
+                name = name.substring(0, name.lastIndexOf(".")) + "." + ext;
+            }
+
+            Path uploadPath = root.resolve(uploadDir);
+            if (!uploadPath.toFile().exists()) {
+                Files.createDirectories(uploadPath);
+            }
+
+            Path fileDestination = uploadPath.resolve(Paths.get(name))
                     .normalize()
                     .toAbsolutePath();
 
-            if (!fileDestination.getParent().equals(root.toAbsolutePath())) {
-                throw new RuntimeException("Cannot store file outside current directory.");
-            }
-
-           /* File transferFile = new File(code + "/" + file.getOriginalFilename());
-            if (!transferFile.exists()) {
-                boolean make = transferFile.mkdirs();
-                if (make) {
-                    file.transferTo(transferFile);
-                }
-            }*/
-
             try (InputStream inputStream = file.getInputStream()) {
                 Files.copy(inputStream, fileDestination, StandardCopyOption.REPLACE_EXISTING);
-                return fileDestination.toFile().getAbsolutePath();
+                return "/uploads/" + uploadDir + "/" + name;
+            } catch (Exception e) {
+                throw new RuntimeException("Could not store the file. Error: " + e.getMessage());
             }
 
         } catch (Exception e) {
@@ -87,8 +99,13 @@ public class FileStorageService {
 
     public boolean delete(String filename, String code) {
         try {
-            Path file = root.resolve(code).resolve(filename);
-            return Files.deleteIfExists(file);
+            if (filename.startsWith("/uploads/")) {
+                filename = filename.replace("/uploads/", "");
+            }
+            
+            Path file = root.resolve(filename);
+            boolean res = Files.deleteIfExists(file);
+            return res;
         } catch (IOException e) {
             throw new RuntimeException("Error: " + e.getMessage());
         }

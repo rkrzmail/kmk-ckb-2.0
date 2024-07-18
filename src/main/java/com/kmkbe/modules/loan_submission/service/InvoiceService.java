@@ -2,7 +2,6 @@ package com.kmkbe.modules.loan_submission.service;
 
 import com.kmkbe.core.model.PaginationResult;
 import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.dto.InvoiceDto;
 import com.kmkbe.modules.loan_submission.entity.Bouwheer;
@@ -30,21 +29,24 @@ import java.util.stream.Collectors;
 @Slf4j
 public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
-    private final AuthService authService;
 
-    public void create(
+    public void create() throws Exception {
+        throw new Exception("Api Not Implemented");
+    }
+
+    public List<InvoiceDto> createBulk(
             Customer customer,
             Bouwheer bouwheer,
             CreateSimulationRequest request
     ) throws Exception {
         try {
-            final List<Invoice> invoices = request.getInvoices()
+            List<Invoice> invoices = request.getInvoices()
                     .stream()
                     .map((posted) -> {
                         invoiceRepository.findByCustCodeAndBouwheerInvNoAndCustInvNo(
                                 customer,
-                                posted.bouwheerInvoiceNo(),
-                                posted.customerInvoiceNo()
+                                posted.getBouwheerInvoiceNo(),
+                                posted.getCustomerInvoiceNo()
                         ).ifPresent(invoiceRepository::delete);
 
                         final Invoice invoice = new Invoice();
@@ -52,12 +54,12 @@ public class InvoiceService {
                             invoice.setInvoiceCode(UUID.randomUUID());
                             invoice.setCustCode(customer);
                             invoice.setBouwheerCode(bouwheer);
-                            invoice.setBouwheerInvNo(posted.bouwheerInvoiceNo());
-                            invoice.setCustInvNo(posted.customerInvoiceNo());
-                            invoice.setInvoiceDescription(posted.invoiceDescription());
-                            invoice.setInvoiceDate(posted.invoiceDate().toInstant());
-                            invoice.setInvoiceDueDate(posted.invoiceDueDate().toInstant());
-                            invoice.setInvoiceAmt(posted.invoiceAmount());
+                            invoice.setBouwheerInvNo(posted.getBouwheerInvoiceNo());
+                            invoice.setCustInvNo(posted.getCustomerInvoiceNo());
+                            invoice.setInvoiceDescription(posted.getInvoiceDescription());
+                            invoice.setInvoiceDate(posted.getInvoiceDate().toInstant());
+                            invoice.setInvoiceDueDate(posted.getInvoiceDueDate().toInstant());
+                            invoice.setInvoiceAmt(posted.getInvoiceAmount().doubleValue());
                             invoice.setUsrCrt(customer.getCustName());
                             invoice.setDtmCrt(Instant.now());
                             invoiceRepository.save(invoice);
@@ -66,14 +68,16 @@ public class InvoiceService {
                         return invoice;
                     }).collect(Collectors.toCollection(ArrayList::new));
 
-            invoiceRepository.saveAll(invoices);
+            //invoices = invoiceRepository.saveAll(invoices);
+
+            return invoices.stream().map(InvoiceMapper.INSTANCE::dtoFromEntity).collect(Collectors.toList());
         } catch (Exception e) {
             log.error("create, error {}", e.getMessage());
             throw e;
         }
     }
 
-    public PaginationResult<InvoiceDto> fetchInvoice(
+    public PaginationResult<InvoiceDto> getPaginate(
             Authentication authentication,
             InvoiceListRequest request
     ) throws Exception {

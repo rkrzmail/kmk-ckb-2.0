@@ -1,5 +1,6 @@
 package com.kmkbe.core.utils;
 
+import com.kmkbe.core.exception.LoanDocMandatoryException;
 import com.kmkbe.core.model.CommonResult;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,6 +18,8 @@ import org.springframework.web.servlet.NoHandlerFoundException;
 
 import java.nio.file.AccessDeniedException;
 import java.security.SignatureException;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
 @Slf4j
 public class ExceptionUtils {
@@ -26,7 +29,11 @@ public class ExceptionUtils {
             WebRequest request
     ) {
         ProblemDetail detail = null;
-        exception.printStackTrace();
+
+        if (exception instanceof LoanDocMandatoryException) {
+            detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
+            detail.setProperty("description", exception.getMessage());
+        }
 
         if (exception instanceof BadCredentialsException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
@@ -79,15 +86,19 @@ public class ExceptionUtils {
         if (exception instanceof DataIntegrityViolationException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
             if (exception.getCause() instanceof PropertyValueException) {
-                //((PropertyValueException) exception.getCause()).getPropertyName()
+                detail.setProperty("description", "Non null value invoke null, property: " + ((PropertyValueException) exception.getCause()).getPropertyName());
+            } else {
+                detail.setProperty("description", exception.getMessage());
             }
+        }
 
-            detail.setProperty("description", "Something wrong with data constraints");
+        if (exception instanceof NoSuchElementException) {
+            detail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
+            detail.setProperty("description", exception.getMessage());
         }
 
         if (detail == null) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
-            //detail.setProperty("description", "Unknown Internal Server Error");
             detail.setProperty("description", exception.getMessage());
         }
 
@@ -100,8 +111,7 @@ public class ExceptionUtils {
         result.setIsSuccess(false);
         result.setCode(detail.getStatus());
         result.setMessage(desc);
-        result.setData(null);
-        //result.setDetails(exception);
+        result.setData(Map.of("details", exception.getStackTrace()));
 
         log.error(exception.getMessage(), exception);
         return new ResponseEntity<>(result, null, HttpStatusCode.valueOf(detail.getStatus()));

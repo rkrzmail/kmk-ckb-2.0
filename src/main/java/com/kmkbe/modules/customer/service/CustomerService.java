@@ -20,6 +20,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.security.SignatureException;
 import java.time.Duration;
 import java.time.Instant;
@@ -134,12 +136,12 @@ public class CustomerService {
             company.setOwnershipStatus(companyReq.getOwnershipStatus());
             company.setStaySince(companyReq.getStaySince());
 
-            final long differenceDays = Duration.between(
+            final double differenceDays = Duration.between(
                     companyReq.getStaySince(),
                     Instant.now()
-            ).toMinutes() / 1440;
+            ).toMinutes() / 1440.0;
 
-            company.setStayLength((double) differenceDays);
+            company.setStayLength(BigDecimal.valueOf(differenceDays).setScale(2, RoundingMode.CEILING).doubleValue());
         }
 
         customerCompanyRepository.save(company);
@@ -157,12 +159,24 @@ public class CustomerService {
     public CustomerDto update(Authentication authentication, UpdateCustomerRequest request) throws SignatureException {
         try {
             final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+            customer.setCustName(request.getName());
             customer.setCustTypeCode(CustomerType.Company.name()); //DUMMY
             customerRepository.save(customer);
 
-            CustomerCompany company = customer.getCompany();
-            if (company == null) {
+            CustomerCompany company;
+            if (customer.getCompany() != null) {
+                company = customerCompanyRepository.findById(customer.getCompany().getCustCompanyCode())
+                        .orElse(null);
+                if (company == null) {
+                    company = new CustomerCompany();
+                    company.setCustCompanyCode(UUID.randomUUID());
+                } else {
+                    company.setDtmUpd(Instant.now());
+                    company.setUsrUpd(customer.getCustName());
+                }
+            } else {
                 company = new CustomerCompany();
+                company.setCustCompanyCode(UUID.randomUUID());
             }
 
             company.setCustCode(customer);
@@ -176,7 +190,6 @@ public class CustomerService {
             company.setKelurahan(request.getKelurahan());
             company.setKecamatan(request.getKecamatan());
             company.setCity(request.getCity());
-            company.setProvince(request.getProvince());
             company.setZipcode(request.getZipCode());
             company.setArea(request.getArea());
             company.setRt(request.getRt());
@@ -185,15 +198,19 @@ public class CustomerService {
             company.setOwnershipStatus(request.getOwnershipStatus());
             company.setStaySince(request.getStaySince().toInstant());
 
-            final long differenceDays = Duration.between(
+            final double differenceDays = Duration.between(
                     request.getStaySince().toInstant(),
                     Instant.now()
-            ).toMinutes() / 1440;
+            ).toMinutes() / 1440.0;
 
-            company.setStayLength((double) differenceDays);
+            company.setStayLength(BigDecimal.valueOf(differenceDays).setScale(1, RoundingMode.UP).doubleValue());
+            company.setDtmCrt(Instant.now());
+            company.setUsrCrt(customer.getCustName());
             customerCompanyRepository.save(company);
 
-            return CustomerMapper.INSTANCE.custDtoFromEntity(customer);
+            CustomerDto result = CustomerMapper.INSTANCE.custDtoFromEntity(customer);
+            result.setCustomerCompany(CustomerMapper.INSTANCE.companyDtoFromEntity(company));
+            return result;
         } catch (Exception e) {
             log.error("update, error {}", e.getMessage());
             throw e;
