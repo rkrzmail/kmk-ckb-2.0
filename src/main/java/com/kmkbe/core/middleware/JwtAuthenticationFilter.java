@@ -7,6 +7,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,16 +25,25 @@ import java.io.IOException;
 @Component
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    @Value("${spring.profiles.active}")
+    private String profileActives;
+
     public static final String[] ENDPOINTS_WHITELIST = {
             "/api/v1/auth/sign-in",
             "/api/v1/auth/sign-up",
             "/api/v1/auth/forgot-pin",
             "/api/v1/otp/**",
+            "/api/v1/error/**",
             "/error/**",
 
-            // api doc
-            "/v1/api-docs",
-            "/v1/api-docs/**",
+            "/api/v1/uploads/**",
+            "/uploads/**",
+            "/api/v1/testing/**"
+    };
+
+    public static final String[] ENDPOINTS_SWAGGERS = {
+            "/api/v1/actuator/**",
             "/swagger-ui.html",
             "/swagger-ui/**",
             "/swagger-resources/**",
@@ -43,19 +53,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/instances/**",
             "/actuator/**",
 
-            // swagger
-            "/api/v1/api-docs",
             "/api/v1/api-docs/**",
-            "/api/v1/swagger-ui.html",
             "/api/v1/swagger-ui/**",
             "/api/v1/swagger-resources/**",
             "/api/v1/configuration/**",
             "/api/v1/webjars/**",
-            "/api/v1/actuator/**",
             "/api/v1/instances/**",
-            "/api/v1/actuator/**",
-            "/api/v1/uploads/**",
-            "/uploads/**"
     };
 
     private final HandlerExceptionResolver handlerExceptionResolver;
@@ -72,6 +75,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (new AntPathRequestMatcher(endpoint).matches(request)) {
                 filterChain.doFilter(request, response);
                 return;
+            }
+        }
+
+        if (profileActives.equals("dev")) {
+            for (String endpoint : ENDPOINTS_SWAGGERS) {
+                if (new AntPathRequestMatcher(endpoint).matches(request)) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
             }
         }
 

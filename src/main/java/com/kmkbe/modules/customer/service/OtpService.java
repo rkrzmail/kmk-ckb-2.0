@@ -64,7 +64,7 @@ public class OtpService {
                 customerRepository,
                 otpRepository,
                 verifyOtpRequest.email(),
-                verifyOtpRequest.otpCode(),
+                verifyOtpRequest.otp(),
                 OtpType.SIGNUP
         );
 
@@ -107,7 +107,7 @@ public class OtpService {
                 customerRepository,
                 otpRepository,
                 request.email(),
-                request.otpCode(),
+                request.otp(),
                 OtpType.CHANGE_PIN
         );
 

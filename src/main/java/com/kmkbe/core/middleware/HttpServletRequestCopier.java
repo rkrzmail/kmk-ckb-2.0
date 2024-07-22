@@ -1,23 +1,16 @@
 package com.kmkbe.core.middleware;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonMappingException;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kmkbe.core.utils.JsonUtils;
+import com.kmkbe.core.utils.ObjectUtils;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
-import lombok.Getter;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
 import java.util.Map;
 
 public class HttpServletRequestCopier extends HttpServletRequestWrapper {
@@ -42,7 +35,7 @@ public class HttpServletRequestCopier extends HttpServletRequestWrapper {
         try {
             final byte[] bytes = getContentAsByteArray();
             final int read = inputStream.read(bytes, 0, bytes.length);
-            return JsonUtils.strToJson(new String(bytes, StandardCharsets.UTF_8));
+            return ObjectUtils.strToJson(new String(bytes, StandardCharsets.UTF_8));
         } catch (IOException e) {
             return null;
         }

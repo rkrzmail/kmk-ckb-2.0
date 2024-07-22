@@ -3,7 +3,7 @@ package com.kmkbe.modules.external.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.utils.AESUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.core.utils.JsonUtils;
+import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.external.dto.BaseCsulDto;
 import com.kmkbe.modules.external.dto.CsulUserDto;
 import com.kmkbe.modules.external.request.ActiveDirectoryRequest;
@@ -70,7 +70,6 @@ public class CsulAuthService {
      * internal user login
      *
      * @return BaseInternalResponse<InternalUserDto>
-     *
      */
     public BaseCsulDto<CsulUserDto> validateActiveDirectory(ActiveDirectoryRequest params) throws JsonProcessingException {
         try {
@@ -81,7 +80,7 @@ public class CsulAuthService {
             headers.setBearerAuth(tokenResponse.getData());
 
             final Map<String, String> obj = new HashMap<>();
-            obj.put("Key", AESUtils.encrypt(JsonUtils.jsonToStr(params)));
+            obj.put("Key", AESUtils.encrypt(ObjectUtils.jsonToStr(params)));
 
             final HttpEntity<Object> request = new HttpEntity<>(
                     obj,

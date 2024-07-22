@@ -2,10 +2,7 @@ package com.kmkbe.modules.customer.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -14,6 +11,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "customer_personal", schema = "public")
 public class CustomerPersonal {
@@ -35,11 +33,11 @@ public class CustomerPersonal {
     @JoinColumn(name = "cust_code", nullable = false)
     private Customer custCode;
 
-    @Column(length = 50)
-    private String birthplace;
+    @Column(name = "birthplace", length = 50)
+    private String birthPlace;
 
-    @Column
-    private Instant birthdate;
+    @Column(name = "birthdate")
+    private Instant birthDate;
 
     @Column(length = 10)
     private String gender;
@@ -83,8 +81,8 @@ public class CustomerPersonal {
     @Column(length = 50)
     private String province;
 
-    @Column(length = 10)
-    private String zipcode;
+    @Column(name = "zipcode", length = 10)
+    private String zipCode;
 
     @Column(length = 5)
     private String area;

@@ -3,6 +3,7 @@ package com.kmkbe.core.utils;
 import com.kmkbe.core.exception.LoanDocMandatoryException;
 import com.kmkbe.core.model.CommonResult;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.hibernate.PropertyValueException;
@@ -33,41 +34,49 @@ public class ExceptionUtils {
         if (exception instanceof LoanDocMandatoryException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
             detail.setProperty("description", exception.getMessage());
+            detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof BadCredentialsException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
             detail.setProperty("description", "The email or pin is incorrect");
+            detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof AccountStatusException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.getMessage());
             detail.setProperty("description", "The account is inactive");
+            detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof AccessDeniedException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, exception.getMessage());
             detail.setProperty("description", "The account is not permit to access this resource");
+            detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof SignatureException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
             detail.setProperty("description", "Invalid Login Session");
+            detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof ExpiredJwtException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
             detail.setProperty("description", "Expired Session");
+            detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof IllegalArgumentException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
             detail.setProperty("description", "Invalid Argument Provide, Try To Complete Field");
+            detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof IllegalStateException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
             detail.setProperty("description", exception.getMessage());
+            detail.setDetail(exception.getMessage());
         }
 
         if (
@@ -76,17 +85,20 @@ public class ExceptionUtils {
         ) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
             detail.setProperty("description", exception.getMessage());
+            detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof NoHandlerFoundException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
             detail.setProperty("description", exception.getMessage());
+            detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof DataIntegrityViolationException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
             if (exception.getCause() instanceof PropertyValueException) {
                 detail.setProperty("description", "Non null value invoke null, property: " + ((PropertyValueException) exception.getCause()).getPropertyName());
+                detail.setDetail(exception.getMessage());
             } else {
                 detail.setProperty("description", exception.getMessage());
             }
@@ -111,7 +123,12 @@ public class ExceptionUtils {
         result.setIsSuccess(false);
         result.setCode(detail.getStatus());
         result.setMessage(desc);
-        result.setData(Map.of("details", exception.getStackTrace()));
+        if (!StringUtil.isNullOrEmpty(detail.getDetail())) {
+            result.setData(Map.of("details", detail.getDetail()));
+        } else {
+            result.setData(Map.of("details", exception.getStackTrace()));
+        }
+
 
         log.error(exception.getMessage(), exception);
         return new ResponseEntity<>(result, null, HttpStatusCode.valueOf(detail.getStatus()));

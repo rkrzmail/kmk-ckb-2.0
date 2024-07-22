@@ -3,6 +3,7 @@ package com.kmkbe.modules;
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.modules.customer.repository.OtpRepository;
+import com.kmkbe.modules.customer.service.CustomerSeederService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -13,18 +14,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @RestController
 @RequiredArgsConstructor
-@RequestMapping("/api/testing")
+@RequestMapping("/api/v1/testing")
 public class TestingController {
     private final CacheManager cacheManager;
     private final RedisTemplate<String, Object> redisTemplate;
     private final ListOperations<String, Object> listOperations;
     private final OtpRepository otpRepository;
     private final FileStorageService fileStorageService;
+    private final CustomerSeederService seederService;
 
     @GetMapping("/get")
     public CommonResult<Object> get() {
@@ -53,12 +54,7 @@ public class TestingController {
 
     @GetMapping("/add")
     public CommonResult<Object> add() {
-        Cache cache = cacheManager.getCache("refreshToken");
-        if (cache != null) {
-            cache.put("khesatoken", UUID.randomUUID().toString());
-            return new CommonResult<>().success(null, "ok");
-        }
-
+        seederService.seed();
         return new CommonResult<>().success(null, "failed, cache null");
     }
 

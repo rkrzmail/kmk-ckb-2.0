@@ -55,7 +55,7 @@ public class HttpUtils {
 
         result.put("queryString", queryString);
         result.put("headers", headers);
-        result.put("payload", JsonUtils.strToJson(payload));
+        result.put("payload", ObjectUtils.strToJson(payload));
         result.put("client", client);
         result.put("sessionId", sessionId);
         result.put("user", user);
@@ -92,7 +92,7 @@ public class HttpUtils {
 
         result.put("statusCode", statusCode);
         result.put("contentType", contentType);
-        result.put("payload", JsonUtils.strToJson(payload));
+        result.put("payload", ObjectUtils.strToJson(payload));
 
         return result;
     }

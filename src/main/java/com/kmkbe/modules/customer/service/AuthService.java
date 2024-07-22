@@ -40,6 +40,8 @@ public class AuthService {
 
     private final CustomerRepository customerRepository;
     private final CustomerService customerService;
+    private final CustomerCompanyService companyService;
+    private final CustomerPersonalService personalService;
     private final OtpService otpService;
     private final JwtService jwtService;
     private final LoginLogService loginLogService;
@@ -68,12 +70,12 @@ public class AuthService {
             if (request.getCustomerType() == CustomerType.Company) {
                 cust.setCustIdTypeCode(CustomerIdType.NPWP.name());
                 if (request.getCompany() != null) {
-                    customerService.createCompany(cust, request.getCompany());
+                    companyService.create(cust, request.getCompany());
                 }
             } else if (request.getCustomerType() == CustomerType.Personal) {
                 cust.setCustIdTypeCode(CustomerIdType.KTP.name());
                 if (request.getPersonal() != null) {
-                    customerService.createPersonal(cust, request.getPersonal());
+                    personalService.create(cust, request.getPersonal());
                 }
             }
 

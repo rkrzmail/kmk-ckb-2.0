@@ -1,7 +1,7 @@
 package com.kmkbe.modules.common.service;
 
 import com.kmkbe.core.config.MailConfig;
-import com.kmkbe.core.utils.JsonUtils;
+import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.common.entity.EmailTemplate;
 import com.kmkbe.modules.common.model.LoanDisburseEmailPayload;
 import com.kmkbe.modules.common.repository.EmailTemplateRepository;
@@ -78,7 +78,7 @@ public class EmailService {
             final Customer customer,
             LoanDisburseEmailPayload payload
     ) throws MessagingException {
-        final Map<String, Object> payloadArgs = JsonUtils.objectToJson(payload);
+        final Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
         if (payloadArgs != null) {
             payloadArgs.remove("invoices");
             payloadArgs.put("invoices", LoanDisburseEmailPayload.InvoicePayload.toHtmlListBody(payload.getInvoices()));

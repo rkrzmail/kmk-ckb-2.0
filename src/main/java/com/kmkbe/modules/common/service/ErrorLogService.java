@@ -1,7 +1,7 @@
 package com.kmkbe.modules.common.service;
 
 import com.kmkbe.core.utils.HttpUtils;
-import com.kmkbe.core.utils.JsonUtils;
+import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.common.entity.ErrorLog;
 import com.kmkbe.modules.common.repository.ErrorLogRepository;
 import io.netty.util.internal.StringUtil;
@@ -37,7 +37,7 @@ public class ErrorLogService {
             errorLog.setErrorMsg(throwable.getMessage());
             errorLog.setPageUrl(servletRequest.getRequestURI());
             errorLog.setMethodName(thrownElement.getMethodName());
-            errorLog.setRequestParam(JsonUtils.jsonToStr(HttpUtils.createRequestLog(servletRequest, HttpUtils.DEFAULT_MAX_PAYLOAD_LENGTH)));
+            errorLog.setRequestParam(ObjectUtils.jsonToStr(HttpUtils.createRequestLog(servletRequest, HttpUtils.DEFAULT_MAX_PAYLOAD_LENGTH)));
             errorLog.setUsrCrt("SYSTEM");
             errorLog.setDtmCrt(Instant.now());
             errorLogRepository.save(errorLog);

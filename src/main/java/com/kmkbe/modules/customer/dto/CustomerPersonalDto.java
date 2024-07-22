@@ -1,42 +1,37 @@
 package com.kmkbe.modules.customer.dto;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.util.Date;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Getter
 @Setter
 @NoArgsConstructor
 public class CustomerPersonalDto {
-    //private UUID custCode;
-    private String birthplace;
-    private Instant birthdate;
+    private String birthPlace;
+    private Date birthDate;
     private String gender;
     private String identityType;
     private String identityNo;
-    private Instant expiredDate;
+    private Date expiredDate;
     private String motherMaidenName;
     private String maritalStatus;
     private String custModel;
     private String legalAddress;
-    private String rt;
+    /*private String rt;
     private String rw;
     private String kelurahan;
     private String kecamatan;
     private String city;
     private String province;
-    private String zipcode;
-    private String area;
+    private String zipCode;
+    private String area;*/
     private String phone;
     private String ownershipStatus;
-
-    @JsonFormat(pattern="yyyy-MM-dd HH:mm:ss")
-    private Instant staySince;
-
+    private Date staySince;
     private Double stayLength;
 }

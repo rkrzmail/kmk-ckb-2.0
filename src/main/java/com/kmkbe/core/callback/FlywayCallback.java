@@ -21,12 +21,13 @@ public class FlywayCallback implements Callback {
 
     @Override
     public void handle(Event event, Context context) {
+        //log.info("event, {}", event);
         if (event == Event.BEFORE_EACH_MIGRATE) {
-            log.info("before each migrate running {}", context.getStatement());
+            // log.info("before each migrate running {}", context.getStatement());
         } else if (event == Event.AFTER_EACH_MIGRATE) {
-            log.info("after each migrate running {}", context.getStatement());
+            // log.info("after each migrate running {}", context.getStatement());
         } else {
-            log.info("unknown event {}", event);
+            // log.info("unknown event {}", event);
         }
     }
 

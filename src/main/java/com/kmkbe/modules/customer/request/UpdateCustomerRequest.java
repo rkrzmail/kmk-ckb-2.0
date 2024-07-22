@@ -1,7 +1,10 @@
 package com.kmkbe.modules.customer.request;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 
 import java.util.Date;
 
@@ -10,66 +13,125 @@ import java.util.Date;
 @NoArgsConstructor
 @ToString
 public class UpdateCustomerRequest {
-    @NotNull(message = "Jenis Debitur is required, key: custType")
-    private String custType;
+    @NotNull(message = "Nama is required, key: custName")
+    private String custName;
 
-    @NotNull(message = "Nama is required, key: name")
-    private String name;
+    @NotNull(message = "Email is required, key: custEmail")
+    private String custEmail;
 
-    @NotNull(message = "Tipe Perusahaan is required, key: custCompanyType")
-    private String custCompanyType;
+    @NotNull(message = "Tipe Debitur is required, key: custTypeCode")
+    private String custTypeCode;
 
-    @NotNull(message = "Email is required, key: email")
-    private String email;
+    @NotNull(message = "Detail Alamat is required, key: address")
+    private UpdateAddressRequest address;
+    
+    private UpdateCompanyRequest company;
+    private UpdatePersonalRequest personal;
 
-    @NotNull(message = "Jenis Identitas is required, key: identityType")
-    private String identityType;
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @ToString
+    public static class UpdateCompanyRequest extends CommonField {
+        @NotNull(message = "Tipe Perusahaan is required, key: custCompanyType")
+        private String custCompanyType;
 
-    @NotNull(message = "No. Identitas is required, key: identityNo")
-    private String identityNo;
+        @NotNull(message = "Model Debitur is required, key: companyModel")
+        private String companyModel;
 
-    @NotNull(message = "Tanggal Terbit Identitas is required, key: identityIssuedDate")
-    private Date identityIssuedDate;
+        @NotNull(message = "Jenis Identitas is required, key: identityType")
+        private String identityType;
 
-    @NotNull(message = "Tanggal Kadaluarsa Identitas is required, key: identityExpiredDate")
-    private Date identityExpiredDate;
+        @NotNull(message = "NPWP is required, key: identityType")
+        private String identityNo;
 
-    @NotNull(message = "NPWP is required, key: npwp")
-    private String npwp;
+        @NotNull(message = "Tanggal Terbit Identitas is required, key: identityIssuedDate")
+        private Date identityIssuedDate;
 
-    @NotNull(message = "Model Debitur is required, key: custModel")
-    private String custModel;
+        @NotNull(message = "Tanggal Kadaluarsa Identitas is required, key: identityExpiredDate")
+        private Date identityExpiredDate;
 
-    @NotNull(message = "Alamat Kantor is required, key: companyAddress")
-    private String companyAddress;
+        @NotNull(message = "Alamat Kantor is required, key: companyAddress")
+        private String companyAddress;
+    }
 
-    @NotNull(message = "RT is required, key: rt")
-    private String rt;
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @ToString
+    public static class UpdatePersonalRequest extends CommonField {
+        @NotNull(message = "Tempat Lahir is required, key: birthplace")
+        private String birthPlace;
 
-    @NotNull(message = "RW is required, key: rw")
-    private String rw;
+        @NotNull(message = "Tanggal Lahir is required, key: birthdate")
+        private Date birthDate;
 
-    @NotNull(message = "Kode Pos is required, key: zipCode")
-    private String zipCode;
+        @NotNull(message = "Jenis Kelamin is required, key: gender")
+        private String gender;
 
-    @NotNull(message = "Kelurahan is required, key: kelurahan")
-    private String kelurahan;
+        @NotNull(message = "Jenis Identitas is required, key: identityType")
+        private String identityType;
 
-    @NotNull(message = "Kecamatan is required, key: kecamatan")
-    private String kecamatan;
+        @NotNull(message = "Jenis Identitas is required, key: identityType")
+        private String identityNo;
 
-    @NotNull(message = "Kota is required, key: city")
-    private String city;
+        private Date expiredDate;
 
-    @NotNull(message = "Area is required, key: area")
-    private String area;
+        @NotNull(message = "Ibu Kandung is required, key: motherMaidenName")
+        private String motherMaidenName;
 
-    @NotNull(message = "Telepon is required, key: phone")
-    private String phone;
+        @NotNull(message = "Status Perkawinan is required, key: maritalStatus")
+        private String maritalStatus;
 
-    @NotNull(message = "Kepemilikan Rumah is required, key: ownershipStatus")
-    private String ownershipStatus;
+        @NotNull(message = "Model Debitur is required, key: custModel")
+        private String custModel;
 
-    @NotNull(message = "Tinggal Sejak is required, key: staySince")
-    private Date staySince;
+        @NotNull(message = "Alamat Rumah is required, key: legalAddress")
+        private String legalAddress;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @ToString
+    private static class CommonField {
+        @NotNull(message = "Telepon is required, key: phone")
+        private String phone;
+
+        @NotNull(message = "Kepemilikan Rumah is required, key: ownershipStatus")
+        private String ownershipStatus;
+
+        @NotNull(message = "Tinggal Sejak is required, key: staySince")
+        private Date staySince;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @ToString
+    public static class UpdateAddressRequest {
+        @NotNull(message = "RT is required, key: rt")
+        private String rt;
+
+        @NotNull(message = "RW is required, key: rw")
+        private String rw;
+
+        @NotNull(message = "Kode Pos is required, key: zipCode")
+        private String zipCode;
+
+        @NotNull(message = "Kelurahan is required, key: kelurahan")
+        private String kelurahan;
+
+        @NotNull(message = "Kecamatan is required, key: kecamatan")
+        private String kecamatan;
+
+        @NotNull(message = "Kota is required, key: city")
+        private String city;
+
+        @NotNull(message = "Area is required, key: area")
+        private String area;
+
+        @NotNull(message = "Provinsi is required, key: province")
+        private String province;
+    }
 }

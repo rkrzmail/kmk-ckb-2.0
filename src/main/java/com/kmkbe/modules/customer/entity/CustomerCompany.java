@@ -12,6 +12,7 @@ import java.util.UUID;
 @Getter
 @Setter
 @AllArgsConstructor
+@Builder
 @Entity
 @Table(name = "customer_company", schema = "public")
 public class CustomerCompany implements Serializable {
@@ -30,7 +31,7 @@ public class CustomerCompany implements Serializable {
 
     @NotNull
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "cust_code", nullable = false)
+    @JoinColumn(name = "cust_code", nullable = false, updatable = false)
     private Customer custCode;
 
     @Column(length = 50)
@@ -72,8 +73,8 @@ public class CustomerCompany implements Serializable {
     @Column(length = 50)
     private String province = "";
 
-    @Column(length = 10)
-    private String zipcode = "";
+    @Column(name = "zipcode", length = 10)
+    private String zipCode = "";
 
     @Column(length = 5)
     private String area = "";
