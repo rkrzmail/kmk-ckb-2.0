@@ -61,6 +61,7 @@ public class CustomerService {
             //customer.setCustEmail(request.getCustEmail());
             customer.setCustName(request.getCustName());
             customer.setCustTypeCode(request.getCustTypeCode());
+            customer.setCustIdNo(request.getCustIdNo());
             customer = customerRepository.save(customer);
             return customer;
         } catch (Exception e) {

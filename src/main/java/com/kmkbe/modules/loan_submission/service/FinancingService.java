@@ -4,10 +4,9 @@ import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.loan_submission.constant.FinancingStatus;
 import com.kmkbe.modules.loan_submission.dto.FinancingHdrDto;
-import com.kmkbe.modules.loan_submission.entity.Bouwheer;
-import com.kmkbe.modules.loan_submission.entity.FinancingHdr;
-import com.kmkbe.modules.loan_submission.entity.Product;
+import com.kmkbe.modules.loan_submission.entity.*;
 import com.kmkbe.modules.loan_submission.mapper.FinancingMapper;
+import com.kmkbe.modules.loan_submission.mapper.InvoiceMapper;
 import com.kmkbe.modules.loan_submission.model.PostedInvoicePayload;
 import com.kmkbe.modules.loan_submission.model.SimulationDisburseResult;
 import com.kmkbe.modules.loan_submission.repository.FinancingDtlRepository;
@@ -19,7 +18,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -95,7 +97,7 @@ public class FinancingService {
                 header = financingHdrRepository.save(header);
             }
 
-          /*  final FinancingHdr copyHeader = header;
+            final FinancingHdr copyHeader = header;
             final Set<FinancingDtl> details = IntStream.range(0, request.getInvoices().size())
                     .mapToObj((index) -> {
                         final FinancingDtl detail = new FinancingDtl();
@@ -125,7 +127,7 @@ public class FinancingService {
                     })
                     .collect(Collectors.toSet());
 
-            header.setFinancingDtls(details);*/
+            header.setFinancingDtls(details);
             return header.getFinancingHdrCode();
         } catch (Exception e) {
             log.error("create, error {}", e.getMessage());

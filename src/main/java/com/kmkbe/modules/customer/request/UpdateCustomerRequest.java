@@ -22,9 +22,12 @@ public class UpdateCustomerRequest {
     @NotNull(message = "Tipe Debitur is required, key: custTypeCode")
     private String custTypeCode;
 
+    @NotNull(message = "KTP/NPWP is required, key: custIdNo")
+    private String custIdNo;
+
     @NotNull(message = "Detail Alamat is required, key: address")
     private UpdateAddressRequest address;
-    
+
     private UpdateCompanyRequest company;
     private UpdatePersonalRequest personal;
 

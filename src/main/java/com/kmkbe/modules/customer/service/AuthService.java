@@ -11,6 +11,7 @@ import com.kmkbe.modules.customer.entity.OtpLog;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
+import com.kmkbe.modules.customer.request.RefreshTokenRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import jakarta.mail.MessagingException;
@@ -25,6 +26,8 @@ import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +40,6 @@ import java.util.UUID;
 @AllArgsConstructor
 @Slf4j
 public class AuthService {
-
     private final CustomerRepository customerRepository;
     private final CustomerService customerService;
     private final CustomerCompanyService companyService;
@@ -48,6 +50,7 @@ public class AuthService {
     private final ChangePasswordLogService changePasswordLogService;
     private final BCryptPasswordEncoder bcryptEncoder;
     private final AuthenticationManager authenticationManager;
+    private final UserDetailsService userDetailsService;
 
     @Transactional
     public RequestOtpDto signUp(SignUpRequest request) throws MessagingException {
@@ -123,6 +126,7 @@ public class AuthService {
 
             return new LoginDto(
                     jwtService.generateToken(cust),
+                    jwtService.generateRefreshToken(cust),
                     jwtService.getExpirationTime()
             );
         } catch (Exception e) {
@@ -175,21 +179,22 @@ public class AuthService {
         }
     }
 
-    public LoginDto refreshToken(LoginRequest request) throws Exception {
-        final Customer cust = customerRepository.findByCustEmail(request.email()).orElseThrow();
+    public LoginDto refreshToken(RefreshTokenRequest request) throws Exception {
+        try {
+            final String username = jwtService.extractUsername(request.refreshToken());
+            final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+            if (jwtService.isTokenValid(request.refreshToken(), userDetails)) {
+                return new LoginDto(
+                        jwtService.generateToken(userDetails),
+                        jwtService.generateRefreshToken(userDetails),
+                        jwtService.getExpirationTime()
+                );
+            }
 
-        Authentication reauthenticate = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.email(),
-                        request.pin()
-                )
-        );
-
-        SecurityContextHolder.getContext().setAuthentication(reauthenticate);
-
-        return new LoginDto(
-                jwtService.generateToken(cust),
-                jwtService.getExpirationTime()
-        );
+            throw new IllegalStateException("Refresh token are expired or invalid, try to login again");
+        } catch (Exception e) {
+            log.error("AuthService refreshToken: {}", e.getMessage());
+            throw e;
+        }
     }
 }

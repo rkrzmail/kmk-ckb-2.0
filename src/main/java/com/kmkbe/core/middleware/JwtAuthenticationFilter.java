@@ -1,6 +1,7 @@
 package com.kmkbe.core.middleware;
 
 import com.kmkbe.core.service.JwtService;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,6 +9,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -18,7 +20,6 @@ import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
-
 
 import java.io.IOException;
 
@@ -33,6 +34,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/auth/sign-in",
             "/api/v1/auth/sign-up",
             "/api/v1/auth/forgot-pin",
+            "/api/v1/auth/refresh-token",
             "/api/v1/otp/**",
             "/api/v1/error/**",
             "/error/**",
@@ -118,8 +120,33 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             filterChain.doFilter(request, response);
+        } catch (ExpiredJwtException e) {
+            /*String isRefreshToken = request.getHeader("isRefreshToken");
+            String requestURL = request.getRequestURL().toString();
+
+            if (isRefreshToken != null && isRefreshToken.equals("true") && requestURL.contains("refresh-token")) {
+                allowForRefreshToken(e, request);
+            } else {
+                request.setAttribute("exception", e);
+            }*/
+            request.setAttribute("exception", e);
+            filterChain.doFilter(request, response);
+        } catch (BadCredentialsException ex) {
+            request.setAttribute("exception", ex);
+            filterChain.doFilter(request, response);
         } catch (Exception e) {
+            logger.error("failed on set user authentication, {}", e);
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
+    }
+
+    private void allowForRefreshToken(ExpiredJwtException ex, HttpServletRequest request) {
+        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
+                null,
+                null,
+                null
+        );
+        SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+        request.setAttribute("claims", ex.getClaims());
     }
 }

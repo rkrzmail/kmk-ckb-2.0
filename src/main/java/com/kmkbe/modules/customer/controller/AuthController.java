@@ -1,11 +1,14 @@
 package com.kmkbe.modules.customer.controller;
 
 import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.core.service.JwtService;
+import com.kmkbe.modules.customer.dto.LoginDto;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
+import com.kmkbe.modules.customer.request.RefreshTokenRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
-import com.kmkbe.modules.customer.dto.LoginDto;
 import com.kmkbe.modules.customer.service.AuthService;
+import io.jsonwebtoken.impl.DefaultClaims;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -16,6 +19,8 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
+import java.util.HashMap;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -27,6 +32,7 @@ import java.security.SignatureException;
 public class AuthController {
     private final AuthService authService;
     private final SecurityContextLogoutHandler logoutHandler;
+    private final JwtService jwtService;
 
     @PostMapping("/sign-up")
     public CommonResult<Object> signUp(
@@ -64,10 +70,27 @@ public class AuthController {
         );
     }
 
-    @PostMapping("/refesh-token")
+    /* Unsecure refresh token */
+   /* @PostMapping("/refresh-token")
+    public CommonResult<RefreshTokenDto> refreshToken(HttpServletRequest request) {
+        // claims object was passing in header from middleware (JwtAuthenticationFilter)
+        DefaultClaims claims = (DefaultClaims) request.getAttribute("claims");
+        Map<String, Object> expectedMap = new HashMap<>(claims);
+        String token = jwtService.generateRefreshToken(expectedMap, expectedMap.get("sub").toString());
+        return new CommonResult<RefreshTokenDto>().success(
+                new RefreshTokenDto(
+                        token,
+                        jwtService.getRefreshTokenExpirationTime()
+                )
+        );
+    }*/
+
+    @PostMapping("/refresh-token")
     public CommonResult<LoginDto> refreshToken(
-            @Valid @RequestBody LoginRequest request
-    ) {
-        return new CommonResult<LoginDto>().success(authService.signIn(request));
+            @Valid @RequestBody RefreshTokenRequest request
+    ) throws Exception {
+        return new CommonResult<LoginDto>().success(
+                authService.refreshToken(request)
+        );
     }
 }

@@ -32,9 +32,6 @@ import java.util.UUID;
 @Slf4j
 @RequiredArgsConstructor
 public class CustomerSeederService {
-    private static final String EMAIL_COMPANY = "fathimalhasni@gmail.com";
-    private static final String EMAIL_PERSONAL = "fatimah.zahra@csul.co.id";
-
     private final CustomerRepository customerRepository;
     private final CustomerCompanyRepository companyRepository;
     private final CustomerPersonalRepository personalRepository;
@@ -42,15 +39,17 @@ public class CustomerSeederService {
 
     @Transactional
     public void seed() {
+        final String emailCompany = "khesa@nikitagenerator.com";
+        final String emailPersonal = "vandikalvandi@gmail.com";
         try {
-            Optional<Customer> findCompany = customerRepository.findByCustEmail(EMAIL_COMPANY);
+            Optional<Customer> findCompany = customerRepository.findByCustEmail(emailCompany);
             if (findCompany.isEmpty()) {
-                seedCustomerCompany();
+                seedCustomerCompany(emailCompany);
             }
 
-            Optional<Customer> findPersonal = customerRepository.findByCustEmail(EMAIL_PERSONAL);
+            Optional<Customer> findPersonal = customerRepository.findByCustEmail(emailPersonal);
             if (findPersonal.isEmpty()) {
-                seedCustomerPersonal();
+                seedCustomerPersonal(emailPersonal);
             }
 
         } catch (Exception e) {
@@ -88,10 +87,10 @@ public class CustomerSeederService {
         }
     }
 
-    private void seedCustomerPersonal() throws ParseException {
+    private void seedCustomerPersonal(String email) throws ParseException {
         try {
             Map<String, Object> staySinceLength = staySinceLength();
-            Customer customer = seedCustomer(CustomerType.Personal, "fatimah.zahra@csul.co.id");
+            Customer customer = seedCustomer(CustomerType.Personal, email);
             CustomerPersonal personal = CustomerPersonal.builder()
                     .custPersonalCode(UUID.randomUUID())
                     .custCode(customer)
@@ -129,10 +128,10 @@ public class CustomerSeederService {
         }
     }
 
-    private void seedCustomerCompany() throws ParseException {
+    private void seedCustomerCompany(String email) throws ParseException {
         try {
             Map<String, Object> staySinceLength = staySinceLength();
-            Customer customer = seedCustomer(CustomerType.Company, "fathimalhasni@gmail.com");
+            Customer customer = seedCustomer(CustomerType.Company, email);
             CustomerCompany company = CustomerCompany.builder()
                     .custCompanyCode(UUID.randomUUID())
                     .custCode(customer)
