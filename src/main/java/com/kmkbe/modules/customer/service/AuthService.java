@@ -55,11 +55,18 @@ public class AuthService {
     @Transactional
     public RequestOtpDto signUp(SignUpRequest request) throws MessagingException {
         try {
+            CustomerType type;
+            if (request.getCustomerType().equalsIgnoreCase("perusahaan")) {
+                type = CustomerType.Company;
+            } else {
+                type = CustomerType.Personal;
+            }
+
             final Customer cust = new Customer();
             cust.setCustCode(UUID.randomUUID());
             cust.setCustName(request.getName());
             cust.setCustEmail(request.getEmail());
-            cust.setCustTypeCode(request.getCustomerType().name());
+            cust.setCustTypeCode(type.name());
             cust.setCustIdNo(request.getCustomerIdNo());
             cust.setCustMobilePhone(request.getMobilePhone());
             cust.setAgreeTc(request.getIsAgreeTc());
@@ -70,15 +77,15 @@ public class AuthService {
                 cust.setCustNo(request.getCustomerNo());
             }
 
-            if (request.getCustomerType() == CustomerType.Company) {
+            if (type == CustomerType.Company) {
                 cust.setCustIdTypeCode(CustomerIdType.NPWP.name());
                 if (request.getCompany() != null) {
                     companyService.create(cust, request.getCompany());
                 }
-            } else if (request.getCustomerType() == CustomerType.Personal) {
+            } else {
                 cust.setCustIdTypeCode(CustomerIdType.KTP.name());
                 if (request.getPersonal() != null) {
-                    personalService.create(cust, request.getPersonal());
+                    //personalService.create(cust, request.getPersonal());
                 }
             }
 

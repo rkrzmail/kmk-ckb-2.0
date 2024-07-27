@@ -59,8 +59,12 @@ public class CustomerService {
         try {
             Customer customer = CustomerUtils.authenticateCustomer(authentication);
             //customer.setCustEmail(request.getCustEmail());
+            if (!customer.getCustTypeCode().equalsIgnoreCase(request.getCustTypeCode())) {
+                throw new IllegalArgumentException("Can't update customerTypeCode, please ensure valid payload");
+            }
+
             customer.setCustName(request.getCustName());
-            customer.setCustTypeCode(request.getCustTypeCode());
+            //customer.setCustTypeCode(request.getCustTypeCode());
             customer.setCustIdNo(request.getCustIdNo());
             customer = customerRepository.save(customer);
             return customer;

@@ -16,7 +16,7 @@ import java.time.Instant;
 public class SignUpRequest {
 
     private String name;
-    private CustomerType customerType;
+    private String customerType;
     private String customerIdNo;
     private String customerNo; // Kode Confins R3 (external req)
     private String email;

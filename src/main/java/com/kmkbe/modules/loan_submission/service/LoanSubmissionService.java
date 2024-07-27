@@ -192,7 +192,7 @@ public class LoanSubmissionService {
                 throw new BadCredentialsException("Pin is invalid, try to entry right pin");
             }
 
-            mstFileTypeService.getAllMandatory()
+            mstFileTypeService.getAll()
                     .forEach(mstFileType -> {
                         if (
                                 request.getDocuments()

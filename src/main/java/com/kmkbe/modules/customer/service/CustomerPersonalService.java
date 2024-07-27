@@ -10,7 +10,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -71,12 +73,17 @@ public class CustomerPersonalService {
             UpdateCustomerRequest.UpdateAddressRequest addressRequest
     ) {
         try {
-            Optional<CustomerPersonal> find = customerPersonalRepository.findByCustCode(customer);
+            final Optional<CustomerPersonal> find = customerPersonalRepository.findByCustCode(customer);
+            final CustomerPersonal personal = find.orElseGet(CustomerPersonal::new);
             if (find.isEmpty()) {
-                return null;
+                personal.setCustPersonalCode(UUID.randomUUID());
+                personal.setUsrCrt(customer.getCustName());
+                personal.setDtmCrt(Instant.now());
+            } else {
+                personal.setUsrUpd(customer.getCustName());
+                personal.setDtmUpd(Instant.now());
             }
 
-            CustomerPersonal personal = find.get();
             personal.setCustCode(customer);
             personal.setBirthPlace(request.getBirthPlace());
             personal.setBirthDate(request.getBirthDate().toInstant());

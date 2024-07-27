@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -73,12 +74,17 @@ public class CustomerCompanyService {
             UpdateCustomerRequest.UpdateAddressRequest addressRequest
     ) {
         try {
-            Optional<CustomerCompany> findCompany = customerCompanyRepository.findByCustCode(customer);
-            if (findCompany.isEmpty()) {
-                return null;
+            final Optional<CustomerCompany> find = customerCompanyRepository.findByCustCode(customer);
+            final CustomerCompany company = find.orElseGet(CustomerCompany::new);
+            if (find.isEmpty()) {
+                company.setCustCompanyCode(UUID.randomUUID());
+                company.setUsrCrt(customer.getCustName());
+                company.setDtmCrt(Instant.now());
+            } else {
+                company.setUsrUpd(customer.getCustName());
+                company.setDtmUpd(Instant.now());
             }
 
-            final CustomerCompany company = findCompany.get();
             company.setCustCode(customer);
             company.setCustCompanyType(request.getCustCompanyType());
             company.setCompanyModel(request.getCompanyModel());

@@ -92,13 +92,13 @@ public class EmailService {
             final Map<String, Object> additionalArgs,
             final String templateCode
     ) throws MessagingException {
-        final CsulMailDto internalMail = csulConfigService.fetchEmailInfo();
+        /*final CsulMailDto internalMail = csulConfigService.fetchEmailInfo();
         JavaMailSender mailSender = mailConfig.javaMailSender(
                 internalMail.getServerUrl(),
                 internalMail.getPort(),
                 internalMail.getUsername(),
                 internalMail.getPassword()
-        );
+        );*/
 
         final EmailTemplate template = emailTemplateRepository
                 .findByEmailTemplateCodeAndIsActive(templateCode, true);
@@ -123,12 +123,13 @@ public class EmailService {
 
         template.setBodyMail(body);
 
+        JavaMailSender mailSender = testingMailSender();
         MimeMessage mimeMessage = mailSender.createMimeMessage();
         mimeMessageTemplate(mimeMessage, template);
 
-        int attempts = 0;
+       /* int attempts = 0;
         boolean success = false;
-       /* for (int i = 0; i < MAX_SENT_FAIL_ATTEMPTS; i++) {
+        for (int i = 0; i < MAX_SENT_FAIL_ATTEMPTS; i++) {
             try {
                 mailSender.send(mimeMessage);
                 success = true;
@@ -140,11 +141,14 @@ public class EmailService {
         }*/
 
         // for testing purpose only
-        if (!success) {
+        /*if (!success) {
             log.info("EmailService send email with testing mail sender");
             mailSender = testingMailSender();
             mailSender.send(mimeMessage);
-        }
+        }*/
+        log.info("EmailService send email with testing mail sender");
+        mailSender = testingMailSender();
+        mailSender.send(mimeMessage);
     }
 
     // only for testing purpose and if failed to send using intenal mail
