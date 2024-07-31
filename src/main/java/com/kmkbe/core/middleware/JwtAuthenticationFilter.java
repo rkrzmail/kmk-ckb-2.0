@@ -1,6 +1,8 @@
 package com.kmkbe.core.middleware;
 
+import com.kmkbe.core.model.JwtSimulasiModel;
 import com.kmkbe.core.service.JwtService;
+import com.kmkbe.core.service.JwtSimulasiService;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -65,6 +67,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final HandlerExceptionResolver handlerExceptionResolver;
     private final JwtService jwtService;
+    private final JwtSimulasiService jwtSimulasiService;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -88,6 +91,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         }
+
+        if (new AntPathRequestMatcher("/api/v1/api-simulasi/**").matches(request)) {
+            //https://dev1-danasakti.csulfinance.com/simulasi?token=
+            String jwtToken = request.getParameter("token");//getparameter
+            JwtSimulasiModel jwtSimulasiModel = jwtSimulasiService.extractToken(jwtToken);
+
+            if (jwtSimulasiModel.getBouwheerCode() != ""){ //if jwtsimulasi ok
+                filterChain.doFilter(request, response);
+                return;
+            }
+        }
+
 
         final String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
