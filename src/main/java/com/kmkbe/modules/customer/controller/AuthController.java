@@ -3,15 +3,21 @@ package com.kmkbe.modules.customer.controller;
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.core.service.JwtService;
 import com.kmkbe.modules.customer.dto.LoginDto;
+import com.kmkbe.modules.customer.dto.RequestOtpDto;
+import com.kmkbe.modules.customer.entity.Customer;
+import com.kmkbe.modules.customer.entity.OtpLog;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
 import com.kmkbe.modules.customer.request.RefreshTokenRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.service.AuthService;
+import com.kmkbe.modules.customer.service.CustomerService;
+import com.kmkbe.modules.customer.service.OtpService;
 import io.jsonwebtoken.impl.DefaultClaims;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -32,13 +38,24 @@ import java.util.Map;
 public class AuthController {
     private final AuthService authService;
     private final SecurityContextLogoutHandler logoutHandler;
-    private final JwtService jwtService;
+    private final CustomerService customerService;
+    private final OtpService otpService;
 
+    @Transactional
     @PostMapping("/sign-up")
-    public CommonResult<Object> signUp(
+    public CommonResult<RequestOtpDto> signUp(
             @Valid @RequestBody SignUpRequest request
     ) throws Exception {
-        return new CommonResult<>().success(authService.signUp(request));
+        final Customer cust = customerService.create(request);
+        final OtpLog otpLog = otpService.create(cust, OtpService.OtpType.SIGNUP);
+        
+        return new CommonResult<RequestOtpDto>().success(
+                new RequestOtpDto(
+                        otpService.genRequestId(cust, otpLog),
+                        cust.getCustEmail(),
+                        otpLog.getExpiredDate()
+                )
+        );
     }
 
     @PostMapping("/sign-in")

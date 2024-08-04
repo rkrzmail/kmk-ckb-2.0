@@ -2,8 +2,9 @@ package com.kmkbe.core.middleware;
 
 import com.kmkbe.core.model.JwtSimulasiModel;
 import com.kmkbe.core.service.JwtService;
-import com.kmkbe.core.service.JwtSimulasiService;
+import com.kmkbe.core.service.JwtLoanSubmissionService;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.netty.util.internal.StringUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +33,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Value("${spring.profiles.active}")
     private String profileActives;
 
+    @Value("${security.api.key}")
+    private String apiKey;
+
+    public static final String[] ENDPOINTS_WHITELIST_LOAN_SUBMISSION = {
+            "/api/v1/loan-submissions/invoices",
+            "/api/v1/loan-submissions/simulations/percentage",
+            "/api/v1/loan-submissions/simulations/calculate",
+    };
+
     public static final String[] ENDPOINTS_WHITELIST = {
             "/api/v1/auth/sign-in",
             "/api/v1/auth/sign-up",
@@ -39,11 +49,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/auth/refresh-token",
             "/api/v1/otp/**",
             "/api/v1/error/**",
-            "/error/**",
-
             "/api/v1/uploads/**",
+            "/api/v1/testing/**",
             "/uploads/**",
-            "/api/v1/testing/**"
+            "/error/**",
     };
 
     public static final String[] ENDPOINTS_SWAGGERS = {
@@ -67,7 +76,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final HandlerExceptionResolver handlerExceptionResolver;
     private final JwtService jwtService;
-    private final JwtSimulasiService jwtSimulasiService;
+    private final JwtLoanSubmissionService jwtLoanSubmissionService;
     private final UserDetailsService userDetailsService;
 
     @Override
@@ -76,6 +85,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+        //determine whitelist endpoints
         for (String endpoint : ENDPOINTS_WHITELIST) {
             if (new AntPathRequestMatcher(endpoint).matches(request)) {
                 filterChain.doFilter(request, response);
@@ -83,6 +93,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
+        //determine dev env should has access freely
         if (profileActives.equals("dev")) {
             for (String endpoint : ENDPOINTS_SWAGGERS) {
                 if (new AntPathRequestMatcher(endpoint).matches(request)) {
@@ -92,17 +103,19 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        if (new AntPathRequestMatcher("/api/v1/api-simulasi/**").matches(request)) {
-            //https://dev1-danasakti.csulfinance.com/simulasi?token=
-            String jwtToken = request.getParameter("token");//getparameter
-            JwtSimulasiModel jwtSimulasiModel = jwtSimulasiService.extractToken(jwtToken);
-
-            if (jwtSimulasiModel.getBouwheerCode() != ""){ //if jwtsimulasi ok
-                filterChain.doFilter(request, response);
-                return;
+        //determine loan-submission whitelist when token integrate valid
+        final String loanSubmissionBypassToken = request.getParameter("token");
+        if (!StringUtil.isNullOrEmpty(loanSubmissionBypassToken) && new AntPathRequestMatcher("/api/v1/loan-submissions/**").matches(request)) {
+            for (String loanUrl : ENDPOINTS_WHITELIST_LOAN_SUBMISSION) {
+                if (new AntPathRequestMatcher(loanUrl).matches(request)) {
+                    JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(loanSubmissionBypassToken);
+                    if (!StringUtil.isNullOrEmpty(jwtSimulasiModel.getBouwheerCode())) {
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
+                }
             }
         }
-
 
         final String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
@@ -135,8 +148,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             filterChain.doFilter(request, response);
-        } catch (ExpiredJwtException e) {
-            /*String isRefreshToken = request.getHeader("isRefreshToken");
+        } catch (ExpiredJwtException | BadCredentialsException e) {
+            request.setAttribute("exception", e);
+            filterChain.doFilter(request, response);
+        } catch (Exception e) {
+            logger.error("failed on set user authentication, {}", e);
+            handlerExceptionResolver.resolveException(request, response, null, e);
+        }
+    }
+
+    private void notSecureRefreshToken() {
+         /*String isRefreshToken = request.getHeader("isRefreshToken");
             String requestURL = request.getRequestURL().toString();
 
             if (isRefreshToken != null && isRefreshToken.equals("true") && requestURL.contains("refresh-token")) {
@@ -144,15 +166,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             } else {
                 request.setAttribute("exception", e);
             }*/
-            request.setAttribute("exception", e);
-            filterChain.doFilter(request, response);
-        } catch (BadCredentialsException ex) {
-            request.setAttribute("exception", ex);
-            filterChain.doFilter(request, response);
-        } catch (Exception e) {
-            logger.error("failed on set user authentication, {}", e);
-            handlerExceptionResolver.resolveException(request, response, null, e);
-        }
     }
 
     private void allowForRefreshToken(ExpiredJwtException ex, HttpServletRequest request) {

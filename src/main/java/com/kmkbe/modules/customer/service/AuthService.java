@@ -1,6 +1,7 @@
 package com.kmkbe.modules.customer.service;
 
 import com.kmkbe.core.service.JwtService;
+import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.modules.customer.constant.CustomerIdType;
 import com.kmkbe.modules.customer.constant.CustomerType;
 import com.kmkbe.modules.customer.constant.LoginRole;
@@ -53,60 +54,13 @@ public class AuthService {
     private final UserDetailsService userDetailsService;
 
     @Transactional
-    public RequestOtpDto signUp(SignUpRequest request) throws MessagingException {
-        try {
-            CustomerType type;
-            if (request.getCustomerType().equalsIgnoreCase("perusahaan")) {
-                type = CustomerType.Company;
-            } else {
-                type = CustomerType.Personal;
-            }
-
-            final Customer cust = new Customer();
-            cust.setCustCode(UUID.randomUUID());
-            cust.setCustName(request.getName());
-            cust.setCustEmail(request.getEmail());
-            cust.setCustTypeCode(type.name());
-            cust.setCustIdNo(request.getCustomerIdNo());
-            cust.setCustMobilePhone(request.getMobilePhone());
-            cust.setAgreeTc(request.getIsAgreeTc());
-            cust.setCustPin(request.getPin());
-            cust.setDtmUpd(Instant.now());
-
-            if (request.getCustomerNo() != null && !request.getCustomerNo().isEmpty()) {
-                cust.setCustNo(request.getCustomerNo());
-            }
-
-            if (type == CustomerType.Company) {
-                cust.setCustIdTypeCode(CustomerIdType.NPWP.name());
-                if (request.getCompany() != null) {
-                    companyService.create(cust, request.getCompany());
-                }
-            } else {
-                cust.setCustIdTypeCode(CustomerIdType.KTP.name());
-                if (request.getPersonal() != null) {
-                    //personalService.create(cust, request.getPersonal());
-                }
-            }
-
-            customerService.create(cust);
-            final OtpLog otpLog = otpService.create(cust, OtpService.OtpType.SIGNUP);
-
-            return new RequestOtpDto(
-                    otpService.genRequestId(cust, otpLog),
-                    cust.getCustEmail(),
-                    otpLog.getExpiredDate()
-            );
-        } catch (Exception e) {
-            log.error("AuthService signUp: {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    @Transactional
     public LoginDto signIn(LoginRequest request) {
         try {
-            final Optional<Customer> findCust = customerRepository.findByCustEmail(request.email());
+            if (!CommonFormattingUtils.isEmailValid(request.email().toLowerCase())) {
+                throw new IllegalStateException("Email is invalid, try to entry right email");
+            }
+
+            final Optional<Customer> findCust = customerRepository.findByCustEmail(request.email().toLowerCase());
             if (findCust.isEmpty()) {
                 throw new EntityNotFoundException("User not found");
             }
@@ -122,7 +76,7 @@ public class AuthService {
 
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            request.email(),
+                            request.email().toLowerCase(),
                             request.pin()
                     )
             );

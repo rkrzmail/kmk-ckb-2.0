@@ -6,10 +6,11 @@ import java.io.Serializable;
 import java.util.Collection;
 
 public interface JwtSimulasiModel extends Serializable {
-
     String getBouwheerCode();
-    String getVendorCode();
-    String getSignature();
-    String getCreatedDateString();
 
+    String getVendorCode();
+
+    String getSignature();
+
+    String getCreatedDateString();
 }

@@ -214,7 +214,7 @@ public class OtpService {
             }
 
             if (otpCode != null && !otpCode.isEmpty()) {
-                final Optional<OtpLog> findOtp = otpRepository.findTopByEmailAndOtpCode(
+                final Optional<OtpLog> findOtp = otpRepository.findTopByEmailAndOtpCodeOrderByDtmCrtDesc(
                         customer.getCustEmail(),
                         otpCode
                 );

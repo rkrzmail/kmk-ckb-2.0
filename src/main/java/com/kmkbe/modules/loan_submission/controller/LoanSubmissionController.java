@@ -33,6 +33,12 @@ public class LoanSubmissionController {
     private final LoanSubmissionService loanSubmissionService;
     private final DocumentService documentService;
 
+    @GetMapping
+    public CommonResult<Object> externalRequest() {
+        return new CommonResult<>()
+                .success(null, "Bouwheer has validated");
+    }
+
     @PostMapping("/create")
     public CommonResult<Object> submitLoanSubmission(
             Authentication authentication,

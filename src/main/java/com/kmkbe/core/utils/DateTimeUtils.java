@@ -11,12 +11,17 @@ public class DateTimeUtils {
     public static final String DATE_TIME_STANDARD_PATTERN = "yyyy-MM-dd HH:mm:ss";
     public static final String DATE_STANDARD_PATTERN = "yyyy-MM-dd";
     public static final String DATE_RESPONSE_STANDARD_PATTERN = "dd/MM/yyyy";
+    public static final String DATE_TIME_RESPONSE_STANDARD_PATTERN = "dd/MM/yyyy HH:mm";
 
     public static final ZoneId JAKARTA_ZONE = ZoneId.of("Asia/Jakarta");
+
+    public static final SimpleDateFormat SDF_STANDARD_DATE_TIME = new SimpleDateFormat(DATE_TIME_STANDARD_PATTERN);
 
     public static final SimpleDateFormat SDF_STANDARD_DATE = new SimpleDateFormat(DATE_STANDARD_PATTERN);
 
     public static final SimpleDateFormat SDF_STANDARD_RESPONSE_DATE = new SimpleDateFormat(DATE_RESPONSE_STANDARD_PATTERN);
+
+    public static final SimpleDateFormat SDF_STANDARD_RESPONSE_DATE_TIME = new SimpleDateFormat(DATE_TIME_RESPONSE_STANDARD_PATTERN);
 
     public static final DateTimeFormatter ISO_8601_FORMATTER = DateTimeFormatter
             .ofPattern("yyyy-MM-dd'T'HH:mm:ssxxx")
@@ -64,6 +69,10 @@ public class DateTimeUtils {
 
     public static String formatToDate(Instant instant) {
         return DTF_DATE_RESPONSE_STANDARD_FORMATTER.format(instant);
+    }
+
+    public static String formatToDateTime(Instant instant) {
+        return DTF_DATE_TIME_STANDARD_FORMATTER.format(instant);
     }
 
     static Instant getInstantFromMicros(long microsSinceEpoch) {

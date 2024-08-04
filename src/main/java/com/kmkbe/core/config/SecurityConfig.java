@@ -57,6 +57,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(JwtAuthenticationFilter.ENDPOINTS_WHITELIST).permitAll()
+                        .requestMatchers(JwtAuthenticationFilter.ENDPOINTS_WHITELIST_LOAN_SUBMISSION).permitAll()
                         .dispatcherTypeMatchers(DispatcherType.ASYNC).permitAll()
                 )
                 .authorizeHttpRequests(auth -> auth
