@@ -25,7 +25,7 @@ import java.time.Duration;
 @Configuration
 @EnableRedisRepositories
 public class RedisConfig {
-    public static final String CSUL_CACHE_NAME = "csul_jwt_key";
+    public static final String CSUL_CACHE_NAME = "kmk";
 
     @Value("${spring.data.redis.host}")
     private String host;
@@ -39,11 +39,11 @@ public class RedisConfig {
     @Value("${spring.data.redis.password}")
     private String password;
 
-    @Value("${spring.data.redis.timeout}")
-    private long timeout;
+    /*@Value("${spring.data.redis.timeout}")
+    private long timeout;*/
 
-    @Value("${spring.data.redis.lettuce.shutdown-timeout}")
-    private long shutDownTimeout;
+    /*@Value("${spring.data.redis.lettuce.shutdown-timeout}")
+    private long shutDownTimeout;*/
 
     @Value("${spring.data.redis.lettuce.pool.max-idle}")
     private int maxIdle;
@@ -79,8 +79,8 @@ public class RedisConfig {
         configuration.setPassword(RedisPassword.of(password));
 
         LettuceClientConfiguration clientConfig = LettucePoolingClientConfiguration.builder()
-                .commandTimeout(Duration.ofMillis(timeout))
-                .shutdownTimeout(Duration.ofMillis(shutDownTimeout))
+                //.commandTimeout(Duration.ofMillis(timeout))
+                //.shutdownTimeout(Duration.ofMillis(shutDownTimeout))
                 .poolConfig(genericObjectPoolConfig)
                 .build();
 
@@ -93,7 +93,6 @@ public class RedisConfig {
 
         return RedisCacheManager.builder(redisConnectionFactory())
                 .cacheDefaults(cacheConfig)
-                .withCacheConfiguration("testing", defaultCacheConfig(Duration.ofMinutes(5)))
                 .withCacheConfiguration("refreshToken", defaultCacheConfig(Duration.ofMinutes(5)))
                 .build();
     }

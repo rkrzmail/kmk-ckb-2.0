@@ -1,4 +1,4 @@
-package com.kmkbe.modules.external.service;
+package com.kmkbe.modules.remote.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

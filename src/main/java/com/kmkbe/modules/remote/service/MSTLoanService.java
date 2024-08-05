@@ -1,6 +1,6 @@
-package com.kmkbe.modules.external.service;
+package com.kmkbe.modules.remote.service;
 
-import com.kmkbe.modules.external.dto.PostedInvoiceDto;
+import com.kmkbe.modules.remote.dto.PostedInvoiceDto;
 import com.kmkbe.modules.loan_submission.dto.BouwheerDto;
 import com.kmkbe.modules.loan_submission.mapper.BouwheerMapper;
 import com.kmkbe.modules.loan_submission.repository.BouwheerRepository;

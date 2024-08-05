@@ -2,11 +2,12 @@ package com.kmkbe.modules.loan_submission.controller;
 
 
 import com.kmkbe.core.model.CommonResult;
-import com.kmkbe.modules.external.dto.PostedInvoiceDto;
+import com.kmkbe.modules.remote.dto.PostedInvoiceDto;
 import com.kmkbe.modules.loan_submission.dto.*;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateLoanApplicationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
+import com.kmkbe.modules.loan_submission.request.RemoteBouwheerRequest;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,7 +35,7 @@ public class LoanSubmissionController {
     private final DocumentService documentService;
 
     @GetMapping
-    public CommonResult<Object> externalRequest() {
+    public CommonResult<Object> remoteHandler(@Valid RemoteBouwheerRequest request) {
         return new CommonResult<>()
                 .success(null, "Bouwheer has validated");
     }

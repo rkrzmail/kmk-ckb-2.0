@@ -6,9 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
+import java.util.*;
 
 public class ObjectUtils {
     public static LinkedHashMap<String, Object> strToJson(String value) {
@@ -51,7 +49,13 @@ public class ObjectUtils {
             for (Field field : fields) {
                 field.setAccessible(true);
                 if (entry.getKey().equals(field.getName())) {
-                    field.set(object, entry.getValue());
+                    if (field.getType().isAssignableFrom(UUID.class)) {
+                        field.set(object, UUID.fromString(entry.getValue().toString()));
+                    } else if (field.getType().isAssignableFrom(Long.class)) {
+                        field.set(object, new Date((Long) entry.getValue()));
+                    } else {
+                        field.set(object, entry.getValue());
+                    }
                     break;
                 }
             }

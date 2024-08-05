@@ -1,13 +1,13 @@
-package com.kmkbe.modules.external.service;
+package com.kmkbe.modules.remote.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.utils.AESUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
-import com.kmkbe.modules.external.dto.BaseCsulDto;
-import com.kmkbe.modules.external.dto.CsulUserDto;
-import com.kmkbe.modules.external.request.ActiveDirectoryRequest;
-import com.kmkbe.modules.external.request.CsulAuthRequest;
+import com.kmkbe.modules.remote.dto.BaseCsulDto;
+import com.kmkbe.modules.remote.dto.CsulUserDto;
+import com.kmkbe.modules.remote.request.ActiveDirectoryRequest;
+import com.kmkbe.modules.remote.request.CsulAuthRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;

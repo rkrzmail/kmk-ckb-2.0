@@ -1,7 +1,6 @@
 package com.kmkbe.modules.customer.controller;
 
 import com.kmkbe.core.model.CommonResult;
-import com.kmkbe.core.service.JwtService;
 import com.kmkbe.modules.customer.dto.LoginDto;
 import com.kmkbe.modules.customer.dto.RequestOtpDto;
 import com.kmkbe.modules.customer.entity.Customer;
@@ -13,7 +12,6 @@ import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.customer.service.CustomerService;
 import com.kmkbe.modules.customer.service.OtpService;
-import io.jsonwebtoken.impl.DefaultClaims;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -25,8 +23,6 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
-import java.util.HashMap;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -48,7 +44,7 @@ public class AuthController {
     ) throws Exception {
         final Customer cust = customerService.create(request);
         final OtpLog otpLog = otpService.create(cust, OtpService.OtpType.SIGNUP);
-        
+
         return new CommonResult<RequestOtpDto>().success(
                 new RequestOtpDto(
                         otpService.genRequestId(cust, otpLog),
@@ -79,7 +75,7 @@ public class AuthController {
             HttpServletRequest request,
             HttpServletResponse response
     ) throws SignatureException, IllegalStateException {
-        final String result = authService.logout(authentication, request, response);
+        final String result = authService.logout(authentication);
         logoutHandler.logout(request, response, authentication);
         return new CommonResult<>().success(
                 null,

@@ -2,6 +2,7 @@ package com.kmkbe.modules;
 
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.core.service.FileStorageService;
+import com.kmkbe.core.utils.RedisUtils;
 import com.kmkbe.modules.customer.repository.OtpRepository;
 import com.kmkbe.modules.customer.service.CustomerSeederService;
 import lombok.RequiredArgsConstructor;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @RestController
@@ -26,15 +28,25 @@ public class TestingController {
     private final OtpRepository otpRepository;
     private final FileStorageService fileStorageService;
     private final CustomerSeederService seederService;
+    private final RedisUtils redisUtils;
 
     @GetMapping("/get")
     public CommonResult<Object> get() {
-        Cache cache = cacheManager.getCache("refreshToken");
+        //var a = redisUtils.getValue("khesatoken");
+       /* Cache cache = cacheManager.getCache("refreshToken");
         if (cache != null) {
             String res = cache.get("khesatoken", Object.class).toString();
             return new CommonResult<>().success(res, "ok");
+        }*/
+
+        //refreshTokenService.create(UUID.randomUUID(), "1111");
+
+        List<Object> list = new ArrayList<>();
+        List<String> keys = redisUtils.getAllKeys();
+        for (String key : keys) {
+            list.add(redisUtils.getValue(key));
         }
-        return new CommonResult<>().success(null, "ok");
+        return new CommonResult<>().success(list, "ok");
     }
 
     @GetMapping("/getAll")
@@ -54,7 +66,8 @@ public class TestingController {
 
     @GetMapping("/add")
     public CommonResult<Object> add() {
-        seederService.seed();
+        redisUtils.putValue("khesatoken", "1111");
+        //seederService.seed();
         return new CommonResult<>().success(null, "failed, cache null");
     }
 

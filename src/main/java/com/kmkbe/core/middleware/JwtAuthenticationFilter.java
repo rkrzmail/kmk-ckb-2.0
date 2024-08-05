@@ -37,6 +37,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String apiKey;
 
     public static final String[] ENDPOINTS_WHITELIST_LOAN_SUBMISSION = {
+            "/api/v1/loan-submissions",
             "/api/v1/loan-submissions/invoices",
             "/api/v1/loan-submissions/simulations/percentage",
             "/api/v1/loan-submissions/simulations/calculate",
@@ -93,28 +94,32 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        //determine dev env should has access freely
-        if (profileActives.equals("dev")) {
-            for (String endpoint : ENDPOINTS_SWAGGERS) {
-                if (new AntPathRequestMatcher(endpoint).matches(request)) {
-                    filterChain.doFilter(request, response);
-                    return;
-                }
-            }
-        }
-
         //determine loan-submission whitelist when token integrate valid
         final String loanSubmissionBypassToken = request.getParameter("token");
-        if (!StringUtil.isNullOrEmpty(loanSubmissionBypassToken) && new AntPathRequestMatcher("/api/v1/loan-submissions/**").matches(request)) {
+        boolean invalidBouwheer = false;
+        if (
+                !StringUtil.isNullOrEmpty(loanSubmissionBypassToken)
+                        && new AntPathRequestMatcher("/api/v1/loan-submissions/**").matches(request)
+        ) {
             for (String loanUrl : ENDPOINTS_WHITELIST_LOAN_SUBMISSION) {
                 if (new AntPathRequestMatcher(loanUrl).matches(request)) {
                     JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(loanSubmissionBypassToken);
+                    if (jwtSimulasiModel == null) {
+                        invalidBouwheer = true;
+                        break;
+                    }
+
                     if (!StringUtil.isNullOrEmpty(jwtSimulasiModel.getBouwheerCode())) {
                         filterChain.doFilter(request, response);
                         return;
                     }
                 }
             }
+        }
+
+        if (invalidBouwheer) {
+            handlerExceptionResolver.resolveException(request, response, null, new Exception("External request need passing an valid token"));
+            return;
         }
 
         final String authHeader = request.getHeader("Authorization");

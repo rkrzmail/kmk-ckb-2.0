@@ -1,4 +1,4 @@
-package com.kmkbe.modules.external.request;
+package com.kmkbe.modules.remote.request;
 
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;

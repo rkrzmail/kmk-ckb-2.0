@@ -1,7 +1,7 @@
-package com.kmkbe.modules.external.service;
+package com.kmkbe.modules.remote.service;
 
-import com.kmkbe.modules.external.dto.BaseCsulDto;
-import com.kmkbe.modules.external.dto.CsulMailDto;
+import com.kmkbe.modules.remote.dto.BaseCsulDto;
+import com.kmkbe.modules.remote.dto.CsulMailDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;

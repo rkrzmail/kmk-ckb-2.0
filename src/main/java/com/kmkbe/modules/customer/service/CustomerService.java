@@ -1,5 +1,6 @@
 package com.kmkbe.modules.customer.service;
 
+import com.kmkbe.core.exception.AuthenticationException;
 import com.kmkbe.modules.customer.constant.CustomerIdType;
 import com.kmkbe.modules.customer.constant.CustomerType;
 import com.kmkbe.modules.customer.entity.Customer;
@@ -25,7 +26,7 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final BCryptPasswordEncoder bcryptEncoder;
 
-    public Customer create(SignUpRequest request) throws Exception {
+    public Customer create(SignUpRequest request) throws AuthenticationException {
         try {
             final CustomerType type;
             if (request.getCustomerType().equalsIgnoreCase("perusahaan")) {
@@ -45,7 +46,7 @@ public class CustomerService {
 
             if (find.isPresent()) {
                 if (find.get().getIsActive()) {
-                    throw new IllegalStateException("Email already taken");
+                    throw AuthenticationException.alreadyRegistered();
                 } else {
                     customerRepository.delete(find.get());
                 }
@@ -87,9 +88,11 @@ public class CustomerService {
             customer.setUsrCrt(customer.getCustName());
             customer.setDtmCrt(Instant.now());
             return customerRepository.save(customer);
-        } catch (Exception e) {
+        } catch (AuthenticationException e) {
             log.error("create, error {}", e.getMessage());
             throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 

@@ -1,77 +1,68 @@
 package com.kmkbe.modules.customer.service;
 
+import com.kmkbe.core.exception.AuthenticationException;
 import com.kmkbe.core.service.JwtService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
-import com.kmkbe.modules.customer.constant.CustomerIdType;
-import com.kmkbe.modules.customer.constant.CustomerType;
 import com.kmkbe.modules.customer.constant.LoginRole;
 import com.kmkbe.modules.customer.dto.LoginDto;
-import com.kmkbe.modules.customer.dto.RequestOtpDto;
 import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.entity.OtpLog;
+import com.kmkbe.modules.customer.model.RefreshToken;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
 import com.kmkbe.modules.customer.request.RefreshTokenRequest;
-import com.kmkbe.modules.customer.request.SignUpRequest;
+import com.kmkbe.modules.customer.service.refresh_token.IRefreshTokenServices;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
-import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
-import java.time.Instant;
 import java.util.Optional;
-import java.util.UUID;
 
 @Service
-@AllArgsConstructor
 @Slf4j
+@RequiredArgsConstructor
 public class AuthService {
     private final CustomerRepository customerRepository;
-    private final CustomerService customerService;
-    private final CustomerCompanyService companyService;
-    private final CustomerPersonalService personalService;
     private final OtpService otpService;
     private final JwtService jwtService;
     private final LoginLogService loginLogService;
     private final ChangePasswordLogService changePasswordLogService;
     private final BCryptPasswordEncoder bcryptEncoder;
     private final AuthenticationManager authenticationManager;
-    private final UserDetailsService userDetailsService;
+
+    @Qualifier("DbRefreshTokenServices")
+    //@Qualifier("CacheRefreshTokenServices")
+    private final IRefreshTokenServices refreshTokenServices;
 
     @Transactional
     public LoginDto signIn(LoginRequest request) {
         try {
             if (!CommonFormattingUtils.isEmailValid(request.email().toLowerCase())) {
-                throw new IllegalStateException("Email is invalid, try to entry right email");
+                throw AuthenticationException.invalidEmail();
             }
 
             final Optional<Customer> findCust = customerRepository.findByCustEmail(request.email().toLowerCase());
             if (findCust.isEmpty()) {
-                throw new EntityNotFoundException("User not found");
+                throw AuthenticationException.notRegistered();
             }
 
             final Customer cust = findCust.get();
             if (!bcryptEncoder.matches(request.pin(), cust.getCustPin())) {
-                throw new BadCredentialsException("Email or pin is invalid, try to entry right email and pin");
+                throw AuthenticationException.invalidPin();
             }
 
             if (!cust.getIsActive()) {
-                throw new IllegalStateException("Your account is not activated yet");
+                throw AuthenticationException.notActive();
             }
 
             Authentication authentication = authenticationManager.authenticate(
@@ -85,23 +76,21 @@ public class AuthService {
 
             loginLogService.create(cust, LoginRole.Customer);
 
+            final RefreshToken refreshTokenResult = refreshTokenServices.create(cust);
+
             return new LoginDto(
                     jwtService.generateToken(cust),
-                    jwtService.generateRefreshToken(cust),
+                    refreshTokenResult.getRefreshToken().toString(),
                     jwtService.getExpirationTime()
             );
-        } catch (Exception e) {
+        } catch (AuthenticationException e) {
             log.error("AuthService signIn: {}", e.getMessage());
             throw e;
         }
     }
 
     @Transactional
-    public String logout(
-            Authentication authentication,
-            HttpServletRequest request,
-            HttpServletResponse response
-    ) throws SignatureException {
+    public String logout(Authentication authentication) throws SignatureException {
         try {
             if (authentication == null) {
                 throw new IllegalStateException("User has logged out");
@@ -140,19 +129,23 @@ public class AuthService {
         }
     }
 
+    @Transactional
     public LoginDto refreshToken(RefreshTokenRequest request) throws Exception {
         try {
-            final String username = jwtService.extractUsername(request.refreshToken());
-            final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
-            if (jwtService.isTokenValid(request.refreshToken(), userDetails)) {
-                return new LoginDto(
-                        jwtService.generateToken(userDetails),
-                        jwtService.generateRefreshToken(userDetails),
-                        jwtService.getExpirationTime()
-                );
-            }
+            final RefreshToken payload = refreshTokenServices.verify(request.refreshToken());
+            refreshTokenServices.invalidate(payload.getRefreshToken().toString());
 
-            throw new IllegalStateException("Refresh token are expired or invalid, try to login again");
+            final Customer customer = customerRepository
+                    .findByCustCode(payload.getCustCode())
+                    .orElseThrow(() -> new IllegalStateException("Invalid Refresh Token, Entire Customer doesn't exists. Try to login again."));
+
+            final RefreshToken refreshTokenResult = refreshTokenServices.create(customer);
+
+            return new LoginDto(
+                    jwtService.generateToken(customer),
+                    refreshTokenResult.getRefreshToken().toString(),
+                    jwtService.getExpirationTime()
+            );
         } catch (Exception e) {
             log.error("AuthService refreshToken: {}", e.getMessage());
             throw e;

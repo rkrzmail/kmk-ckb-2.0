@@ -1,4 +1,4 @@
-package com.kmkbe.modules.external.dto;
+package com.kmkbe.modules.remote.dto;
 
 import lombok.*;
 
