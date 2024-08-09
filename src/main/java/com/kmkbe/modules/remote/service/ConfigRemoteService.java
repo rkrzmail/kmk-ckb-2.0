@@ -1,6 +1,6 @@
 package com.kmkbe.modules.remote.service;
 
-import com.kmkbe.modules.remote.dto.BaseRemoteResponseDto;
+import com.kmkbe.modules.remote.dto.BaseLdapRemoteResponseDto;
 import com.kmkbe.modules.remote.dto.MailRemoteDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,7 +33,7 @@ public class ConfigRemoteService {
 
     public MailRemoteDto fetchEmailInfo() {
         try {
-            final BaseRemoteResponseDto<String> tokenResponse = authRemoteService.fetchAuthJwt();
+            final BaseLdapRemoteResponseDto<String> tokenResponse = authRemoteService.fetchAuthJwt();
 
             final String url = siscaUrlWhiteList + "/authconfig/mail/appinfo";
             final HttpHeaders headers = new HttpHeaders();

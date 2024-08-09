@@ -1,5 +1,7 @@
 package com.kmkbe.core.config;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kmkbe.core.converter.ObjectToUrlEncodedConverter;
 import com.kmkbe.core.factory.CustomClientHttpRequestFactory;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import jakarta.annotation.PostConstruct;
@@ -31,8 +33,10 @@ public class AppConfig {
 
     @Bean
     @Lazy
-    public RestTemplate restTemplate() {
-        return new RestTemplate();
+    public RestTemplate restTemplate(ObjectMapper objectMapper) {
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.getMessageConverters().add(new ObjectToUrlEncodedConverter(objectMapper));
+        return restTemplate;
     }
 
     @Bean(name = "restTemplateByPassSSL")

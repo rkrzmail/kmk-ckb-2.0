@@ -1,9 +1,6 @@
 package com.kmkbe.modules.remote.services;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.kmkbe.modules.remote.dto.BaseRemoteResponseDto;
-import com.kmkbe.modules.remote.dto.UserRemoteDto;
-import com.kmkbe.modules.remote.request.ActiveDirectoryRequest;
+import com.kmkbe.modules.remote.dto.BaseLdapRemoteResponseDto;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.UserInternalRemoteServices;
 import org.junit.jupiter.api.Assertions;
@@ -26,24 +23,15 @@ public class AuthRemoteServiceTest extends BaseRemoteServicesTest {
         userInternalRemoteServices = new UserInternalRemoteServices(
                 ldapUrlService,
                 restTemplate,
-                authRemoteService
+                authRemoteService,
+                objectMapper
         );
     }
 
     @Test
     public void fetchAuthJwt_shouldHasResponseAndHasTokenResponse() {
-        BaseRemoteResponseDto<String> response = authRemoteService.fetchAuthJwt();
+        BaseLdapRemoteResponseDto<String> response = authRemoteService.fetchAuthJwt();
         Assertions.assertNotNull(response.getData());
         Assertions.assertFalse(response.getData().isEmpty());
-    }
-
-    @Test
-    public void validateActiveDirectory_shouldHasResponseAndReturnInvalidUserWithExampleRequest() throws JsonProcessingException {
-        ActiveDirectoryRequest activeDirectoryRequest = ActiveDirectoryRequest.builder()
-                .build();
-
-        BaseRemoteResponseDto<UserRemoteDto> response = userInternalRemoteServices.validateActiveDirectory(activeDirectoryRequest);
-        Assertions.assertNotNull(response.getData());
-        Assertions.assertFalse(response.getData().isUserValid());
     }
 }

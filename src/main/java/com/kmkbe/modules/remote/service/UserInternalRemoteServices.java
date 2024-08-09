@@ -1,11 +1,12 @@
 package com.kmkbe.modules.remote.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.service.LdapUrlService;
 import com.kmkbe.core.utils.AESUtils;
 import com.kmkbe.core.utils.ObjectUtils;
-import com.kmkbe.modules.remote.dto.BaseRemoteResponseDto;
-import com.kmkbe.modules.remote.dto.UserRemoteDto;
+import com.kmkbe.modules.remote.dto.BaseLdapRemoteResponseDto;
+import com.kmkbe.modules.remote.dto.UserInternalRemoteDto;
 import com.kmkbe.modules.remote.request.ActiveDirectoryRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,14 +33,16 @@ public class UserInternalRemoteServices {
     @Lazy
     private final AuthRemoteService authRemoteService;
 
+    private final ObjectMapper objectMapper;
+
     /**
      * internal user login
      *
      * @return BaseInternalResponse<InternalUserDto>
      */
-    public BaseRemoteResponseDto<UserRemoteDto> validateActiveDirectory(ActiveDirectoryRequest params) throws JsonProcessingException {
+    public BaseLdapRemoteResponseDto<UserInternalRemoteDto> validateActiveDirectory(ActiveDirectoryRequest params) throws JsonProcessingException {
         try {
-            final BaseRemoteResponseDto<String> tokenResponse = authRemoteService.fetchAuthJwt();
+            final BaseLdapRemoteResponseDto<String> tokenResponse = authRemoteService.fetchAuthJwt();
             final HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
             headers.setBearerAuth(tokenResponse.getData());
@@ -52,7 +55,7 @@ public class UserInternalRemoteServices {
                     headers
             );
 
-            final ResponseEntity<Object> response = restTemplate.exchange(
+            final ResponseEntity<BaseLdapRemoteResponseDto<UserInternalRemoteDto>> response = restTemplate.exchange(
                     ldapUrlService.activeDirectory_validation(),
                     HttpMethod.POST,
                     request,
@@ -60,17 +63,7 @@ public class UserInternalRemoteServices {
                     }
             );
 
-            if (
-                    response.getBody() instanceof BaseRemoteResponseDto<?> data
-                            && data.getData() instanceof UserRemoteDto user
-            ) {
-                return new BaseRemoteResponseDto<>(
-                        data.getHeader(),
-                        user
-                );
-            }
-
-            throw new IllegalStateException("Failed to login, try again");
+            return response.getBody();
         } catch (HttpClientErrorException httpClientErrorException) {
             return httpClientErrorException.getResponseBodyAs(new ParameterizedTypeReference<>() {
             });

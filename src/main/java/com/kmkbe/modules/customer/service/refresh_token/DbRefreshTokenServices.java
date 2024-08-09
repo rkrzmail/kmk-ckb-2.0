@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.service.refresh_token;
 import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.model.RefreshToken;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
@@ -89,17 +90,24 @@ public class DbRefreshTokenServices implements IRefreshTokenServices {
     }
 
     private Optional<RefreshToken> findBy(String column, String value) {
-        return Optional.ofNullable(jdbcTemplate.queryForObject(
-                "select cust_code, refresh_token, expired_date, issued_date from public._refresh_token where " + column + " = ? order by id desc limit 1",
-                (rs, rowNum) -> {
-                    RefreshToken refreshToken = new RefreshToken();
-                    refreshToken.setCustCode(rs.getObject("cust_code", UUID.class));
-                    refreshToken.setRefreshToken(rs.getObject("refresh_token", UUID.class));
-                    refreshToken.setExpiredDate(rs.getTimestamp("expired_date"));
-                    refreshToken.setIssuedDate(rs.getTimestamp("issued_date"));
-                    return refreshToken;
-                },
-                value
-        ));
+        try {
+            return Optional.ofNullable(jdbcTemplate.queryForObject(
+                    "select cust_code, refresh_token, expired_date, issued_date from public._refresh_token where " + column + " = ? order by id desc limit 1",
+                    (rs, rowNum) -> {
+                        RefreshToken refreshToken = new RefreshToken();
+                        refreshToken.setCustCode(rs.getObject("cust_code", UUID.class));
+                        refreshToken.setRefreshToken(rs.getObject("refresh_token", UUID.class));
+                        refreshToken.setExpiredDate(rs.getTimestamp("expired_date"));
+                        refreshToken.setIssuedDate(rs.getTimestamp("issued_date"));
+                        return refreshToken;
+                    },
+                    value
+            ));
+        } catch (EmptyResultDataAccessException emptyResultDataAccessException) {
+            return Optional.empty();
+        } catch (Exception e) {
+            log.error("findBy, error {}", e.getMessage());
+            throw e;
+        }
     }
 }

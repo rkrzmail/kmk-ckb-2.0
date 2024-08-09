@@ -69,7 +69,7 @@ public class LoanSubmissionController {
     @GetMapping("/invoices")
     public CommonResult<List<PostedInvoiceDto>> getActiveInvoices(
             Authentication authentication
-    ) throws Exception {
+    ) {
         return new CommonResult<List<PostedInvoiceDto>>()
                 .success(loanSubmissionService.fetchActiveInvoice(authentication));
     }

@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.context.request.WebRequest;
@@ -107,6 +108,11 @@ public class ExceptionUtils {
         if (exception instanceof NoSuchElementException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
             detail.setProperty("description", exception.getMessage());
+        }
+
+        if (exception instanceof HttpMessageNotReadableException) {
+            detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, "Required request body is missing");
+            detail.setProperty("description", "Required request body is missing");
         }
 
         if (detail == null) {

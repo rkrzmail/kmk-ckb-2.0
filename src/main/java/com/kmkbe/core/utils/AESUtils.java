@@ -10,6 +10,8 @@ import java.util.Base64;
 @Slf4j
 public class AESUtils {
     public static final String EXAMPLE_ENCRYPT_AES = "Q2gri3deVD5Uam0kFODrYB1KCO8QFhRJXZeWEaoIyWxZU8cXkllqPcU0lyKi3ED/4N-wb/oPL4UKv8/111TEhZYugkRLit-AW0FtnBOiLww=";
+    public static final String EXAMPLE_ENCRYPT_SUPER_ADMIN = "iF03HU84UUOVW2kvtD/xrvBdzwfvyhDqfsguFslk7AOYgQIdHCwbHR716Lh4dHimHG1a0/33KNBSZ9kXhGPNCCs92C8rLtZGtSd2hEAXaww=";
+
     private static final String KEY = "aXty08csul99hjkl";
 
     public static String decrypt(String encryptedValue) {

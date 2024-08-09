@@ -2,7 +2,7 @@ package com.kmkbe.modules.remote.service;
 
 import com.kmkbe.core.service.LdapUrlService;
 import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.modules.remote.dto.BaseRemoteResponseDto;
+import com.kmkbe.modules.remote.dto.BaseLdapRemoteResponseDto;
 import com.kmkbe.modules.remote.request.CsulAuthRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +25,7 @@ public class AuthRemoteService {
     @Lazy
     private final RestTemplate restTemplate;
 
-    public BaseRemoteResponseDto<String> fetchAuthJwt() {
+    public BaseLdapRemoteResponseDto<String> fetchAuthJwt() {
         try {
             final HttpHeaders headers = new HttpHeaders();
             headers.setBasicAuth(ldapUrlService.authHeaderUsername, ldapUrlService.authHeaderPassword);
@@ -38,7 +38,7 @@ public class AuthRemoteService {
                     headers
             );
 
-            final ResponseEntity<BaseRemoteResponseDto<String>> response = restTemplate.exchange(
+            final ResponseEntity<BaseLdapRemoteResponseDto<String>> response = restTemplate.exchange(
                     ldapUrlService.auth_requestJwt(),
                     HttpMethod.POST,
                     request,
