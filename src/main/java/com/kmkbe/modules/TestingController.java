@@ -2,9 +2,12 @@ package com.kmkbe.modules;
 
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.core.service.FileStorageService;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.RedisUtils;
 import com.kmkbe.modules.customer.repository.OtpRepository;
 import com.kmkbe.modules.customer.service.CustomerSeederService;
+import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
+import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -15,7 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Date;
 import java.util.stream.Collectors;
 
 @RestController
@@ -29,6 +32,7 @@ public class TestingController {
     private final FileStorageService fileStorageService;
     private final CustomerSeederService seederService;
     private final RedisUtils redisUtils;
+    private final CustomerRemoteService customerRemoteService;
 
     @GetMapping("/get")
     public CommonResult<Object> get() {
@@ -41,12 +45,25 @@ public class TestingController {
 
         //refreshTokenService.create(UUID.randomUUID(), "1111");
 
-        List<Object> list = new ArrayList<>();
+        /*List<Object> list = new ArrayList<>();
         List<String> keys = redisUtils.getAllKeys();
         for (String key : keys) {
             list.add(redisUtils.getValue(key));
-        }
-        return new CommonResult<>().success(list, "ok");
+        }*/
+
+        var a = customerRemoteService.validateExisting(
+                ExistingCustomerRequest.builder()
+                        .args(ExistingCustomerRequest.Args.builder()
+                                .key("IdNo")
+                                .operator("EQ")
+                                .value("010002509057000")
+                                .build()
+                        )
+                        .includeProperties(new ArrayList<>())
+                        .requestDateTime(DateTimeUtils.SDF_STANDARD_DATE.format(new Date()))
+                        .build()
+        );
+        return new CommonResult<>().success(a, "ok");
     }
 
     @GetMapping("/getAll")

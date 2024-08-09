@@ -1,13 +1,13 @@
 package com.kmkbe.core.utils;
 
+import lombok.extern.slf4j.Slf4j;
+
 import javax.crypto.Cipher;
-import javax.crypto.KeyGenerator;
-import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 
+@Slf4j
 public class AESUtils {
     public static final String EXAMPLE_ENCRYPT_AES = "Q2gri3deVD5Uam0kFODrYB1KCO8QFhRJXZeWEaoIyWxZU8cXkllqPcU0lyKi3ED/4N-wb/oPL4UKv8/111TEhZYugkRLit-AW0FtnBOiLww=";
     private static final String KEY = "aXty08csul99hjkl";
@@ -26,8 +26,7 @@ public class AESUtils {
 
             return new String(decryptedBytes, StandardCharsets.UTF_8);
         } catch (Exception e) {
-            e.printStackTrace();
-
+            log.error("decrypt error: {}", e.getMessage());
             return null;
         }
     }
@@ -41,7 +40,7 @@ public class AESUtils {
 
             return Base64.getEncoder().encodeToString(encryptedBytes);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("encrypt error: {}", e.getMessage());
             return null;
         }
     }

@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.exception.AuthenticationException;
 import com.kmkbe.core.service.JwtService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
+import com.kmkbe.modules.common.service.LoginLogService;
 import com.kmkbe.modules.customer.constant.LoginRole;
 import com.kmkbe.modules.customer.dto.LoginDto;
 import com.kmkbe.modules.customer.entity.Customer;

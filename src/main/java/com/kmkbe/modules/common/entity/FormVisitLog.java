@@ -1,6 +1,5 @@
 package com.kmkbe.modules.common.entity;
 
-import com.kmkbe.modules.customer.entity.LoginLog;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

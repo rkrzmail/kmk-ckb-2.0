@@ -6,7 +6,7 @@ import lombok.*;
 @Setter
 @Data
 @Builder
-public class CsulMailDto {
+public class MailRemoteDto {
     private final String serverUrl;
     private final Integer port;
     private final String username;

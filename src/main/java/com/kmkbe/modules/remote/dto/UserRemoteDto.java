@@ -7,7 +7,7 @@ import lombok.*;
 @Setter
 @Data
 @Builder
-public class CsulUserDto {
+public class UserRemoteDto {
     private boolean userValid;
     private String sn;
     private String username;

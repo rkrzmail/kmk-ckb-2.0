@@ -1,7 +1,7 @@
 package com.kmkbe.modules.remote.service;
 
-import com.kmkbe.modules.remote.dto.BaseCsulDto;
-import com.kmkbe.modules.remote.dto.CsulMailDto;
+import com.kmkbe.modules.remote.dto.BaseRemoteResponseDto;
+import com.kmkbe.modules.remote.dto.MailRemoteDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -15,7 +15,7 @@ import org.springframework.web.client.RestTemplate;
 
 @Service
 @Slf4j
-public class CsulConfigService {
+public class ConfigRemoteService {
     @Value("${csul.sisca.v1.internal}")
     private String siscaUrlInternal;
 
@@ -23,17 +23,17 @@ public class CsulConfigService {
     private String siscaUrlWhiteList;
 
     private final RestTemplate restTemplate;
-    private final CsulAuthService csulAuthService;
+    private final AuthRemoteService authRemoteService;
 
-    public CsulConfigService(RestTemplate restTemplate, CsulAuthService csulAuthService) {
+    public ConfigRemoteService(RestTemplate restTemplate, AuthRemoteService authRemoteService) {
         this.restTemplate = restTemplate;
         //this.cacheManager = cacheManager;
-        this.csulAuthService = csulAuthService;
+        this.authRemoteService = authRemoteService;
     }
 
-    public CsulMailDto fetchEmailInfo() {
+    public MailRemoteDto fetchEmailInfo() {
         try {
-            final BaseCsulDto<String> tokenResponse = csulAuthService.fetchAuthJwt();
+            final BaseRemoteResponseDto<String> tokenResponse = authRemoteService.fetchAuthJwt();
 
             final String url = siscaUrlWhiteList + "/authconfig/mail/appinfo";
             final HttpHeaders headers = new HttpHeaders();
@@ -44,7 +44,7 @@ public class CsulConfigService {
                     headers
             );
 
-            final ResponseEntity<CsulMailDto> response = restTemplate.exchange(
+            final ResponseEntity<MailRemoteDto> response = restTemplate.exchange(
                     url,
                     HttpMethod.GET,
                     request,

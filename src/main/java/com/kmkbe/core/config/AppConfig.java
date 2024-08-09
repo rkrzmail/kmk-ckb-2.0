@@ -1,5 +1,6 @@
 package com.kmkbe.core.config;
 
+import com.kmkbe.core.factory.CustomClientHttpRequestFactory;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -30,8 +31,14 @@ public class AppConfig {
 
     @Bean
     @Lazy
-    public RestTemplate provideRestTemplate() {
+    public RestTemplate restTemplate() {
         return new RestTemplate();
+    }
+
+    @Bean(name = "restTemplateByPassSSL")
+    @Lazy
+    public RestTemplate restTemplateByPassSSL() {
+        return new RestTemplate(new CustomClientHttpRequestFactory());
     }
 
     @Bean

@@ -1,8 +1,8 @@
 package com.kmkbe.core.middleware;
 
 import com.kmkbe.core.model.JwtSimulasiModel;
-import com.kmkbe.core.service.JwtService;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
+import com.kmkbe.core.service.JwtService;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.FilterChain;
@@ -39,8 +39,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public static final String[] ENDPOINTS_WHITELIST_LOAN_SUBMISSION = {
             "/api/v1/loan-submissions",
             "/api/v1/loan-submissions/invoices",
+            "/api/v1/loan-submissions/importance-notes",
             "/api/v1/loan-submissions/simulations/percentage",
-            "/api/v1/loan-submissions/simulations/calculate",
+            "/api/v1/loan-submissions/simulations/calculate"
     };
 
     public static final String[] ENDPOINTS_WHITELIST = {
@@ -99,20 +100,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         boolean invalidBouwheer = false;
         if (
                 !StringUtil.isNullOrEmpty(loanSubmissionBypassToken)
-                        && new AntPathRequestMatcher("/api/v1/loan-submissions/**").matches(request)
+                        && new AntPathRequestMatcher("/api/v1/loan-submissions").matches(request)
         ) {
-            for (String loanUrl : ENDPOINTS_WHITELIST_LOAN_SUBMISSION) {
-                if (new AntPathRequestMatcher(loanUrl).matches(request)) {
-                    JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(loanSubmissionBypassToken);
-                    if (jwtSimulasiModel == null) {
-                        invalidBouwheer = true;
-                        break;
-                    }
-
-                    if (!StringUtil.isNullOrEmpty(jwtSimulasiModel.getBouwheerCode())) {
-                        filterChain.doFilter(request, response);
-                        return;
-                    }
+            if (new AntPathRequestMatcher("/api/v1/loan-submissions/**").matches(request)) {
+                JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(loanSubmissionBypassToken);
+                if (jwtSimulasiModel == null) {
+                    invalidBouwheer = true;
+                } else if (!StringUtil.isNullOrEmpty(jwtSimulasiModel.getBouwheerCode())) {
+                    filterChain.doFilter(request, response);
+                    return;
+                }
+            }
+        } else {
+            for (String endpoint : ENDPOINTS_WHITELIST_LOAN_SUBMISSION) {
+                if (new AntPathRequestMatcher(endpoint).matches(request)) {
+                    filterChain.doFilter(request, response);
+                    return;
                 }
             }
         }

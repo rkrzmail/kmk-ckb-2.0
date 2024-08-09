@@ -208,7 +208,7 @@
                             <artifactId>lombok</artifactId>
                         </exclude>
                         <exclude>
-                            <groupId>com.kmkbe.AESTest</groupId>
+                            <groupId>com.kmkbe.core.AESTest</groupId>
                         </exclude>
                     </excludes>
                 </configuration>

@@ -1,7 +1,6 @@
-package com.kmkbe.modules.customer.entity;
+package com.kmkbe.modules.common.entity;
 
-import com.kmkbe.modules.common.entity.ErrorLog;
-import com.kmkbe.modules.common.entity.FormVisitLog;
+import com.kmkbe.modules.customer.entity.Customer;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

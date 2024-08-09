@@ -1,4 +1,4 @@
-package com.kmkbe;
+package com.kmkbe.core;
 
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.customer.dto.AddressDto;

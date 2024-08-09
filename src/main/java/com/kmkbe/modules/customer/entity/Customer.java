@@ -1,5 +1,6 @@
 package com.kmkbe.modules.customer.entity;
 
+import com.kmkbe.modules.common.entity.LoginLog;
 import com.kmkbe.modules.loan_submission.entity.FinancingHdr;
 import com.kmkbe.modules.loan_submission.entity.Invoice;
 import com.kmkbe.modules.loan_submission.entity.LegalFile;

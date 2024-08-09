@@ -6,7 +6,7 @@ import com.kmkbe.modules.common.entity.EmailTemplate;
 import com.kmkbe.modules.common.model.LoanDisburseEmailPayload;
 import com.kmkbe.modules.common.repository.EmailTemplateRepository;
 import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.remote.service.CsulConfigService;
+import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +31,7 @@ public class EmailService {
     private static final String M_CUST_LOAN = "M_CUST_LOAN";
 
     private final EmailTemplateRepository emailTemplateRepository;
-    private final CsulConfigService csulConfigService;
+    private final ConfigRemoteService configRemoteService;
     private final MailConfig mailConfig;
 
     @Value("${testing.mail.host}")
@@ -49,11 +49,11 @@ public class EmailService {
 
     public EmailService(
             EmailTemplateRepository emailTemplateRepository,
-            CsulConfigService csulConfigService,
+            ConfigRemoteService configRemoteService,
             MailConfig mailConfig
     ) {
         this.emailTemplateRepository = emailTemplateRepository;
-        this.csulConfigService = csulConfigService;
+        this.configRemoteService = configRemoteService;
         this.mailConfig = mailConfig;
     }
 

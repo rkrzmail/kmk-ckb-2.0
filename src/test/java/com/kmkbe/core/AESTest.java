@@ -1,10 +1,10 @@
-package com.kmkbe;
+package com.kmkbe.core;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.utils.AESUtils;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.ObjectUtils;
-import com.kmkbe.modules.external.request.ActiveDirectoryRequest;
+import com.kmkbe.modules.remote.request.ActiveDirectoryRequest;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.testng.annotations.Test;
@@ -19,7 +19,9 @@ public class AESTest {
 
     @Test
     void encryption() throws JsonProcessingException {
-        ActiveDirectoryRequest params = new ActiveDirectoryRequest();
+        ActiveDirectoryRequest params =  ActiveDirectoryRequest.builder()
+                .build();
+
         LinkedHashMap<String, Object> json = ObjectUtils.objectToJson(params);
         String encrypt = AESUtils.encrypt(ObjectUtils.jsonToStr(json));
 
@@ -29,7 +31,7 @@ public class AESTest {
 
     @Test
     void decryption() throws JsonProcessingException {
-        ActiveDirectoryRequest params = new ActiveDirectoryRequest();
+        ActiveDirectoryRequest params = ActiveDirectoryRequest.builder().build();
         LinkedHashMap<String, Object> json = ObjectUtils.objectToJson(params);
         String encrypt = AESUtils.encrypt(ObjectUtils.jsonToStr(json));
 

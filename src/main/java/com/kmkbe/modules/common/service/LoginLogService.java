@@ -1,9 +1,9 @@
-package com.kmkbe.modules.customer.service;
+package com.kmkbe.modules.common.service;
 
 import com.kmkbe.modules.customer.constant.LoginRole;
 import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.entity.LoginLog;
-import com.kmkbe.modules.customer.repository.LoginLogRepository;
+import com.kmkbe.modules.common.entity.LoginLog;
+import com.kmkbe.modules.common.repository.LoginLogRepository;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

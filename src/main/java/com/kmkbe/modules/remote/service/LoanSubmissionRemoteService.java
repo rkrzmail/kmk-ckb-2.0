@@ -19,7 +19,7 @@ import java.util.*;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class MSTLoanService {
+public class LoanSubmissionRemoteService {
     private final BouwheerRepository bouwheerRepository;
     private final RestTemplate restTemplate;
 

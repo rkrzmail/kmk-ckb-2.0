@@ -2,12 +2,9 @@ package com.kmkbe.modules.loan_submission.controller;
 
 
 import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.modules.loan_submission.request.*;
 import com.kmkbe.modules.remote.dto.PostedInvoiceDto;
 import com.kmkbe.modules.loan_submission.dto.*;
-import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
-import com.kmkbe.modules.loan_submission.request.CreateLoanApplicationRequest;
-import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
-import com.kmkbe.modules.loan_submission.request.RemoteBouwheerRequest;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -35,9 +32,24 @@ public class LoanSubmissionController {
     private final DocumentService documentService;
 
     @GetMapping
-    public CommonResult<Object> remoteHandler(@Valid RemoteBouwheerRequest request) {
+    public CommonResult<Object> getExternalIntegration(
+            @Valid RemoteBouwheerRequest request
+    ) {
         return new CommonResult<>()
-                .success(null, "Bouwheer has validated");
+                .success(loanSubmissionService.externalIntegrationSimulation(request), "Bouwheer has validated");
+    }
+
+    @GetMapping("/importance-notes")
+    public CommonResult<ImportantNotesDto> getImportantNotes() {
+        return new CommonResult<ImportantNotesDto>()
+                .success(loanSubmissionService.importanceNotes());
+    }
+
+    @PostMapping("/importance-notes")
+    public CommonResult<Object> saveImportantNotes(
+            @Valid @RequestBody SaveImportantNotesRequest request
+    ) {
+        return new CommonResult<>().success(loanSubmissionService.saveImportantNotes(request));
     }
 
     @PostMapping("/create")

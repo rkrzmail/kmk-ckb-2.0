@@ -7,7 +7,7 @@ import lombok.*;
 @Getter
 @Setter
 @Data
-public class BaseCsulDto<T> {
+public class BaseRemoteResponseDto<T> {
     private CsulHeaderResult header;
     private T data;
 
