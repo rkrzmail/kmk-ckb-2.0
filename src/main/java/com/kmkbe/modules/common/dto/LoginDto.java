@@ -1,4 +1,4 @@
-package com.kmkbe.modules.customer.dto;
+package com.kmkbe.modules.common.dto;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 

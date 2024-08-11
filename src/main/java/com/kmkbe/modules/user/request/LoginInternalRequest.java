@@ -9,9 +9,9 @@ import lombok.*;
 @NoArgsConstructor
 @ToString
 public class LoginInternalRequest {
-    @NotNull(message = "Email or Username cannot be null")
-    @NotEmpty(message = "Email or Username cannot be empty")
-    private String emailOrUsername;
+    @NotNull(message = "Username cannot be null")
+    @NotEmpty(message = "Username cannot be empty")
+    private String username;
 
     @NotNull(message = "Password cannot be null")
     @NotEmpty(message = "Password cannot be empty")

@@ -1,17 +1,16 @@
 package com.kmkbe.modules.user.controller;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.modules.user.dto.UserDto;
-import com.kmkbe.modules.user.request.LoginInternalRequest;
 import com.kmkbe.modules.user.services.UserInternalServices;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.security.SignatureException;
 
 @RestController
 @RequestMapping("/api/v1/internal/user")
@@ -23,12 +22,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserInternalController {
     private final UserInternalServices userInternalServices;
 
-    @PostMapping("/sign-in")
-    public CommonResult<UserDto> signIn(
-            @Valid @RequestBody LoginInternalRequest request
-    ) throws JsonProcessingException {
+    @GetMapping
+    public CommonResult<UserDto> getProfile(
+            Authentication authentication
+    ) throws SignatureException {
         return new CommonResult<UserDto>().success(
-                userInternalServices.signIn(request)
+                userInternalServices.profile(authentication)
         );
     }
+
 }

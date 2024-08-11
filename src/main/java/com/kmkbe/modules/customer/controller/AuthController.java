@@ -1,13 +1,13 @@
 package com.kmkbe.modules.customer.controller;
 
 import com.kmkbe.core.model.CommonResult;
-import com.kmkbe.modules.customer.dto.LoginDto;
+import com.kmkbe.modules.common.dto.LoginDto;
 import com.kmkbe.modules.customer.dto.RequestOtpDto;
 import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.entity.OtpLog;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
-import com.kmkbe.modules.customer.request.RefreshTokenRequest;
+import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.customer.service.CustomerService;

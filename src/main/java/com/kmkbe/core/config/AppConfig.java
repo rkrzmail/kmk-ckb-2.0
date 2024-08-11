@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.converter.ObjectToUrlEncodedConverter;
 import com.kmkbe.core.factory.CustomClientHttpRequestFactory;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
+import com.kmkbe.modules.user.repository.MstUserRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -25,6 +26,10 @@ import java.util.TimeZone;
 public class AppConfig {
     @Lazy
     private final CustomerRepository customerRepository;
+
+    @Lazy
+    private final MstUserRepository internalUserRepository;
+
 
     @PostConstruct
     public void init() {
@@ -48,6 +53,12 @@ public class AppConfig {
     @Bean
     UserDetailsService userDetailsService() {
         return username -> customerRepository.findByCustEmail(username)
+                .orElseThrow(() -> new UsernameNotFoundException("User not found"));
+    }
+
+    @Bean("internalUserDetailService")
+    UserDetailsService internalUserDetailsService() {
+        return username -> internalUserRepository.findByUsername(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found"));
     }
 

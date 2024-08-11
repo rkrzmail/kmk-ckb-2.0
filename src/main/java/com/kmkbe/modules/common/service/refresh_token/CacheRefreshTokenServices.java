@@ -1,8 +1,7 @@
-package com.kmkbe.modules.customer.service.refresh_token;
+package com.kmkbe.modules.common.service.refresh_token;
 
 import com.kmkbe.core.utils.RedisUtils;
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.model.RefreshToken;
+import com.kmkbe.modules.common.model.RefreshToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -19,9 +18,9 @@ public class CacheRefreshTokenServices implements IRefreshTokenServices {
     private final RedisUtils<RefreshToken> redisUtil;
 
     @Override
-    public RefreshToken create(Customer customer) {
+    public RefreshToken create(IRefreshTokenServices.User user) {
         try {
-            final RefreshToken payload = defaultPayload(customer);
+            final RefreshToken payload = defaultPayload(user);
             redisUtil.putValue(payload.getRefreshToken().toString(), payload, TimeUnit.DAYS.toMillis(2));
             return payload;
         } catch (Exception e) {
@@ -49,7 +48,7 @@ public class CacheRefreshTokenServices implements IRefreshTokenServices {
                 Map<String, Object> obj = (Map<String, Object>) value;
 
                 RefreshToken token = new RefreshToken();
-                token.setCustCode(UUID.fromString(obj.get("custCode").toString()));
+                token.setUserCode(UUID.fromString(obj.get("userCode").toString()));
                 token.setRefreshToken(UUID.fromString(obj.get("refreshToken").toString()));
                 token.setExpiredDate(new Date((Long) obj.get("expiredDate")));
                 token.setIssuedDate(new Date((Long) obj.get("issuedDate")));

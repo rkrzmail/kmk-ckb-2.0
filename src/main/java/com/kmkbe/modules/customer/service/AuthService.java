@@ -5,14 +5,14 @@ import com.kmkbe.core.service.JwtService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.modules.common.service.LoginLogService;
 import com.kmkbe.modules.customer.constant.LoginRole;
-import com.kmkbe.modules.customer.dto.LoginDto;
+import com.kmkbe.modules.common.dto.LoginDto;
 import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.model.RefreshToken;
+import com.kmkbe.modules.common.model.RefreshToken;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
-import com.kmkbe.modules.customer.request.RefreshTokenRequest;
-import com.kmkbe.modules.customer.service.refresh_token.IRefreshTokenServices;
+import com.kmkbe.modules.common.request.RefreshTokenRequest;
+import com.kmkbe.modules.common.service.refresh_token.IRefreshTokenServices;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -77,7 +77,11 @@ public class AuthService {
 
             loginLogService.create(cust, LoginRole.Customer);
 
-            final RefreshToken refreshTokenResult = refreshTokenServices.create(cust);
+            final RefreshToken refreshTokenResult = refreshTokenServices.create(
+                    IRefreshTokenServices.User.builder()
+                            .userCode(cust.getCustCode())
+                            .build()
+            );
 
             return new LoginDto(
                     jwtService.generateToken(cust),
@@ -137,10 +141,14 @@ public class AuthService {
             refreshTokenServices.invalidate(payload.getRefreshToken().toString());
 
             final Customer customer = customerRepository
-                    .findByCustCode(payload.getCustCode())
+                    .findByCustCode(payload.getUserCode())
                     .orElseThrow(() -> new IllegalStateException("Invalid Refresh Token, Entire Customer doesn't exists. Try to login again."));
 
-            final RefreshToken refreshTokenResult = refreshTokenServices.create(customer);
+            final RefreshToken refreshTokenResult = refreshTokenServices.create(
+                    IRefreshTokenServices.User.builder()
+                            .userCode(customer.getCustCode())
+                            .build()
+            );
 
             return new LoginDto(
                     jwtService.generateToken(customer),

@@ -8,6 +8,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface MstUserRepository extends JpaRepository<MstUser, UUID> {
+    Optional<MstUser> findByUserCode(UUID userCode);
+
     Optional<MstUser> findByUsername(String username);
 
     Optional<MstUser> findByEmployeeCode(MstEmployee employee);

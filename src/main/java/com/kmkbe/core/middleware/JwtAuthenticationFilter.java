@@ -11,6 +11,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -55,7 +56,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             //"/api/v1/testing/**",
 
             // internal
-            "/api/v1/internal/user/**",
+            //"/api/v1/internal/user/**",
+            "/api/v1/internal/auth/**",
+            //"/api/v1/internal/auth/refresh-token",
 
             "/uploads/**",
             "/error/**",
@@ -84,6 +87,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final JwtLoanSubmissionService jwtLoanSubmissionService;
     private final UserDetailsService userDetailsService;
+
+    @Qualifier("internalUserDetailService")
+    private final UserDetailsService internalUserDetailsService;
 
     @Override
     protected void doFilterInternal(
@@ -141,21 +147,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
             if (username != null && authentication == null) {
-                final UserDetails userDetails = userDetailsService.loadUserByUsername(username);
+                UserDetails user;
+                try {
+                    user = userDetailsService.loadUserByUsername(username);
+                } catch (Exception e) {
+                    user = internalUserDetailsService.loadUserByUsername(username);
+                }
 
-                if (jwtService.isTokenValid(jwt, userDetails)) {
-                    final UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                            userDetails,
-                            null,
-                            userDetails.getAuthorities()
-                    );
-
-                    authToken.setDetails(
-                            new WebAuthenticationDetailsSource()
-                                    .buildDetails(request)
-                    );
-
-                    SecurityContextHolder.getContext().setAuthentication(authToken);
+                if (jwtService.isTokenValid(jwt, user)) {
+                    authenticate(user, request);
                 }
             }
 
@@ -167,6 +167,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             logger.error("failed on set user authentication, {}", e);
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
+    }
+
+    private void authenticate(UserDetails userDetails, @NonNull HttpServletRequest request) {
+        final UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+                userDetails,
+                null,
+                userDetails.getAuthorities()
+        );
+
+        authToken.setDetails(
+                new WebAuthenticationDetailsSource()
+                        .buildDetails(request)
+        );
+
+        SecurityContextHolder.getContext().setAuthentication(authToken);
     }
 
     private void notSecureRefreshToken() {
