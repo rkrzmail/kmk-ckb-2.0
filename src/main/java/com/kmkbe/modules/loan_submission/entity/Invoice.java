@@ -66,6 +66,9 @@ public class Invoice {
     @Column(name = "invoice_amt", nullable = false) // , precision = 17, scale = 2
     private Double invoiceAmt;
 
+    @Column(name = "status")
+    private String status;
+
     @Size(max = 50)
     @NotNull
     @Column(name = "usr_crt") // , nullable = false, length = 50

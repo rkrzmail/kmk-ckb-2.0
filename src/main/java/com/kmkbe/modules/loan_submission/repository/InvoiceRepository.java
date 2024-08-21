@@ -12,6 +12,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, UUID>, JpaSpecificationExecutor<Invoice> {
+    Optional<Invoice> findByBouwheerInvNo(String bouwheerInvNo);
+
     Long countByCustCode(Customer customer);
 
     Optional<Invoice> findByCustCodeAndBouwheerInvNoAndCustInvNo(

@@ -15,7 +15,7 @@ import java.time.Instant;
 
 public class CustomerUtils {
     public static Customer authenticateCustomer(Authentication authentication) throws SignatureException {
-        if (!(authentication instanceof AnonymousAuthenticationToken)) {
+        if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
             return (Customer) authentication.getPrincipal();
         }
 

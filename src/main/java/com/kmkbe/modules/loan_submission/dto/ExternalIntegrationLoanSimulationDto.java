@@ -10,6 +10,7 @@ import java.util.Date;
 @Getter
 @Builder
 public class ExternalIntegrationLoanSimulationDto {
+    private String vendorCode;
     private String bouwheerCode;
     private Boolean alreadyAcceptImportantNotes;
     private Date dtmCrt;

@@ -74,8 +74,11 @@ public class HttpUtils {
         String payload = null;
 
         if (
-                response.getContentType().equals("application/octet-stream")
-                        || response.getContentType().equals("application/json")
+                response.getContentType() != null
+                        && (
+                                response.getContentType().equals("application/octet-stream")
+                                        || response.getContentType().equals("application/json")
+                )
         ) {
             HttpServletResponseCopier wrapper = WebUtils.getNativeResponse(response, HttpServletResponseCopier.class);
             if (wrapper != null) {

@@ -21,6 +21,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -30,8 +31,23 @@ import java.util.stream.Collectors;
 public class InvoiceService {
     private final InvoiceRepository invoiceRepository;
 
-    public void create() throws Exception {
-        throw new Exception("Api Not Implemented");
+    public Invoice byBouwheerInvoiceNo(String bouwheerInvoiceNo) throws Exception {
+        try {
+            Optional<Invoice> find = invoiceRepository.findByBouwheerInvNo(bouwheerInvoiceNo);
+            return find.orElse(null);
+        } catch (Exception e) {
+            log.error("byBouwheerInvoiceNo, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public void create(Invoice invoice) throws Exception {
+        try {
+            invoiceRepository.save(invoice);
+        } catch (Exception e) {
+            log.error("create, error {}", e.getMessage());
+            throw e;
+        }
     }
 
     public List<InvoiceDto> createBulk(
@@ -72,7 +88,7 @@ public class InvoiceService {
 
             return invoices.stream().map(InvoiceMapper.INSTANCE::dtoFromEntity).collect(Collectors.toList());
         } catch (Exception e) {
-            log.error("create, error {}", e.getMessage());
+            log.error("createBulk, error {}", e.getMessage());
             throw e;
         }
     }

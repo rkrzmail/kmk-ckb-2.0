@@ -1,6 +1,6 @@
 package com.kmkbe.modules.remote.service;
 
-import com.kmkbe.core.service.ConfinsUrlService;
+import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.modules.remote.dto.CustomerRemoteDto;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ import org.springframework.web.client.RestTemplate;
 @RequiredArgsConstructor
 public class CustomerRemoteService {
     private final RestTemplate restTemplate;
-    private final ConfinsUrlService confinsUrlService;
+    private final BaseRemoteService baseRemoteService;
 
     /**
      * <p>current usecase CustomerSignUp</p>
@@ -23,17 +23,14 @@ public class CustomerRemoteService {
      */
     public CustomerRemoteDto validateExisting(ExistingCustomerRequest params) {
         try {
-            final HttpHeaders headers = new HttpHeaders();
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.set("AdInsKey", "QXMwZjF0VWVOc1BOTER4T2xKcGZhbnkvSk5kS3dYR2M3NVI3WGJLTDlCOFNZUz0=");
-
+            final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
             final HttpEntity<ExistingCustomerRequest> requestArgs = new HttpEntity<>(
                     params,
                     headers
             );
 
             final ResponseEntity<CustomerRemoteDto> response = restTemplate.exchange(
-                    confinsUrlService.CustObj_GetListKeyValueActiveByCode(),
+                    baseRemoteService.CustObj_GetListKeyValueActiveByCode(),
                     HttpMethod.POST,
                     requestArgs,
                     new ParameterizedTypeReference<>() {

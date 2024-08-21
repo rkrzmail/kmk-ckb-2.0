@@ -3,7 +3,7 @@ package com.kmkbe.modules.remote.service;
 import com.kmkbe.core.service.LdapUrlService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.remote.dto.BaseLdapRemoteResponseDto;
-import com.kmkbe.modules.remote.request.CsulAuthRequest;
+import com.kmkbe.modules.remote.request.JwtAuthRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
@@ -30,8 +30,8 @@ public class AuthRemoteService {
             final HttpHeaders headers = new HttpHeaders();
             headers.setBasicAuth(ldapUrlService.authHeaderUsername, ldapUrlService.authHeaderPassword);
 
-            final HttpEntity<CsulAuthRequest> request = new HttpEntity<>(
-                    new CsulAuthRequest(
+            final HttpEntity<JwtAuthRequest> request = new HttpEntity<>(
+                    new JwtAuthRequest(
                             ldapUrlService.authHeaderUsername,
                             DateTimeUtils.nowMilliSeconds()
                     ),

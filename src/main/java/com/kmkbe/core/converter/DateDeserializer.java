@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.kmkbe.core.utils.DateTimeUtils;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.Date;
 
 public class DateDeserializer extends JsonDeserializer<Date> {
@@ -18,7 +19,13 @@ public class DateDeserializer extends JsonDeserializer<Date> {
             var a = DateTimeUtils.SDF_STANDARD_DATE.format(format);
             return DateTimeUtils.SDF_STANDARD_DATE.parse(a);
         } catch (Exception e) {
-            throw new RuntimeException("Please entry a date value in format in dd/MM/yyyy");
+            try {
+                Date format = DateTimeUtils.SDF_STANDARD_DATE.parse(date);
+                var a = DateTimeUtils.SDF_STANDARD_DATE.format(format);
+                return DateTimeUtils.SDF_STANDARD_DATE.parse(a);
+            } catch (ParseException ex) {
+                throw new RuntimeException("Please entry a date value in format in dd/MM/yyyy or yyyy-MM-dd");
+            }
         }
     }
 }

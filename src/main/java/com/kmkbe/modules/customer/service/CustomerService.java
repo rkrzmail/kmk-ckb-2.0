@@ -85,6 +85,11 @@ public class CustomerService {
             customer.setCustPin(encodePin);
             customer.setIsEmailValid(false);
             customer.setIsActive(false);
+
+            if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
+                customer.setCustExternalCode(request.getVendorCode());
+            }
+
             customer.setUsrCrt(customer.getCustName());
             customer.setDtmCrt(Instant.now());
             return customerRepository.save(customer);

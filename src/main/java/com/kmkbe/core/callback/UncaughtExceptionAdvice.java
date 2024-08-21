@@ -1,34 +1,73 @@
 package com.kmkbe.core.callback;
 
-import com.kmkbe.core.model.CommonResult;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-import org.springframework.web.context.request.WebRequest;
 
 /**
  * <h4>Catch all uncaught exception</h2>
  */
+//@Order(Ordered.HIGHEST_PRECEDENCE)
 @RestControllerAdvice
-@Order
 @Slf4j
-public class UncaughtExceptionAdvice {
-    @ExceptionHandler
-    ResponseEntity<CommonResult<Object>> handleUncaughtException(WebRequest request, RuntimeException e) {
-        if (AnnotatedElementUtils.findMergedAnnotation(e.getClass(), ResponseStatus.class) != null) throw e;
-        log.warn("Handling uncaught controller exception for {}", request, e);
-
+public class UncaughtExceptionAdvice {//extends ResponseEntityExceptionHandler
+    /*@Override
+    public ResponseEntity<Object> handleMethodArgumentNotValid(
+            @NonNull MethodArgumentNotValidException ex,
+            @NonNull HttpHeaders headers,
+            @NonNull HttpStatusCode status,
+            @NonNull WebRequest request
+    ) {
         CommonResult<Object> result = new CommonResult<>();
         result.setIsSuccess(false);
-        result.setCode(HttpStatus.INTERNAL_SERVER_ERROR.value());
-        result.setMessage(e.getMessage());
-        result.setData(e.getCause());
+        result.setCode(HttpStatus.BAD_REQUEST.value());
+        result.setMessage(ex.getMessage());
 
-        return new ResponseEntity<>(result, null, HttpStatus.INTERNAL_SERVER_ERROR);
+        //return super.handleMethodArgumentNotValid(ex, headers, status, request);
+        return new ResponseEntity<>(
+                result,
+                null,
+                HttpStatusCode.valueOf(result.getCode())
+        );
     }
+
+    @Override
+    public ResponseEntity<Object> handleMethodValidationException(
+            @NonNull MethodValidationException ex,
+            @NonNull HttpHeaders headers,
+            @NonNull HttpStatus status,
+            @NonNull WebRequest request
+    ) {
+        CommonResult<Object> result = new CommonResult<>();
+        result.setIsSuccess(false);
+        result.setCode(HttpStatus.BAD_REQUEST.value());
+        result.setMessage(ex.getMessage());
+
+        //return super.handleMethodArgumentNotValid(ex, headers, status, request);
+        return new ResponseEntity<>(
+                result,
+                null,
+                HttpStatusCode.valueOf(result.getCode())
+        );
+    }
+
+
+    @Override
+    public ResponseEntity<Object> handleHandlerMethodValidationException(
+            HandlerMethodValidationException ex,
+            HttpHeaders headers,
+            HttpStatusCode status,
+            WebRequest request
+    ) {
+        CommonResult<Object> result = new CommonResult<>();
+        result.setIsSuccess(false);
+        result.setCode(HttpStatus.BAD_REQUEST.value());
+        result.setMessage(ex.getMessage());
+
+        //return super.handleMethodArgumentNotValid(ex, headers, status, request);
+        return new ResponseEntity<>(
+                result,
+                null,
+                HttpStatusCode.valueOf(result.getCode())
+        );
+    }*/
 }

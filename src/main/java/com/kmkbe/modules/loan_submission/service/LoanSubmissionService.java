@@ -7,16 +7,20 @@ import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.model.LoanDisburseEmailPayload;
 import com.kmkbe.modules.common.service.EmailService;
+import com.kmkbe.modules.customer.dto.CustomerDto;
 import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.dto.*;
 import com.kmkbe.modules.loan_submission.entity.Bouwheer;
+import com.kmkbe.modules.loan_submission.entity.Invoice;
 import com.kmkbe.modules.loan_submission.entity.Product;
 import com.kmkbe.modules.loan_submission.model.PostedInvoicePayload;
 import com.kmkbe.modules.loan_submission.model.SimulationDisburseResult;
 import com.kmkbe.modules.loan_submission.repository.BouwheerRepository;
 import com.kmkbe.modules.loan_submission.repository.ProductRepository;
 import com.kmkbe.modules.loan_submission.request.*;
+import com.kmkbe.modules.remote.dto.InquiryInvoiceRemoteDto;
+import com.kmkbe.modules.remote.dto.InquiryVendorRemoteDto;
 import com.kmkbe.modules.remote.dto.PostedInvoiceDto;
 import com.kmkbe.modules.remote.service.LoanSubmissionRemoteService;
 import jakarta.transaction.Transactional;
@@ -31,6 +35,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 @Service
@@ -49,10 +54,72 @@ public class LoanSubmissionService {
     private final MstFileTypeService mstFileTypeService;
     private final EmailService emailService;
 
-    public List<PostedInvoiceDto> fetchActiveInvoice(Authentication authentication) {
+    public List<PostedInvoiceDto> fetchActiveInvoice(
+            Authentication authentication,
+            String mstToken
+    ) throws Exception {
         try {
+            String vendorCode = null;
+            JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(mstToken);
+            if (jwtSimulasiModel != null) {
+                vendorCode = jwtSimulasiModel.getVendorCode();
+            }
 
-            return loanSubmissionRemoteService.fetchListOfPostedInvoice(authentication);
+            if (vendorCode == null) {
+                CustomerDto cust = CustomerUtils.authenticateCustomerDto(authentication);
+                vendorCode = cust.getCustExternalCode();
+            }
+
+            if (vendorCode == null) {
+                throw new IllegalStateException("Invalid given credentials by session or by external authentication");
+            }
+
+            InquiryVendorRemoteDto inquiryVendorRemote = loanSubmissionRemoteService.inquiryVendor(vendorCode).getData();
+            InquiryInvoiceRemoteDto inquiryInvoiceRemote = loanSubmissionRemoteService.inquiryInvoice(vendorCode).getData();
+
+            if (inquiryVendorRemote == null || inquiryInvoiceRemote == null) {
+                return new ArrayList<>();
+            }
+
+            if (inquiryInvoiceRemote.getBlacklistStatus()) {
+            }
+
+            Bouwheer bouwheer = bouwheerRepository.findFirstByOrderByBouwheerId().orElse(null);
+
+            final SimpleDateFormat sdfNoSeperator = new SimpleDateFormat("yyyyMMdd");
+            List<PostedInvoiceDto> result = new ArrayList<>();
+            for (int i = 0; i < inquiryInvoiceRemote.getRow().size(); i++) {
+                Invoice existingInv = invoiceService.byBouwheerInvoiceNo(
+                        inquiryInvoiceRemote.getRow().get(i).getAccountingDocument()
+                );
+
+                if (existingInv != null) {
+                    continue;
+                }
+
+                Date invDate, invDueDate;
+                try {
+                    invDate = DateTimeUtils.SDF_STANDARD_DATE.parse(inquiryInvoiceRemote.getRow().get(i).getPostingDate());
+                    invDueDate = DateTimeUtils.SDF_STANDARD_DATE.parse(inquiryInvoiceRemote.getRow().get(i).getNetDueDate());
+                } catch (Exception e) {
+                    invDate = sdfNoSeperator.parse(inquiryInvoiceRemote.getRow().get(i).getPostingDate());
+                    invDueDate = sdfNoSeperator.parse(inquiryInvoiceRemote.getRow().get(i).getNetDueDate());
+                }
+
+                result.add(PostedInvoiceDto.builder()
+                        .bouwheerCode(bouwheer != null ? bouwheer.getBouwheerCode().toString() : UUID.randomUUID().toString())
+                        .bouwheerName(bouwheer != null ? bouwheer.getBouwheerName() : "PT. Truckindo Utama")
+                        .customerInvoiceNo(null)
+                        .bouwheerInvoiceNo(inquiryInvoiceRemote.getRow().get(i).getAccountingDocument())
+                        .invoiceDate(invDate)
+                        .invoiceDueDate(invDueDate)
+                        .invoiceAmount(BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim())))
+                        .invoiceDescription(inquiryInvoiceRemote.getRow().get(i).getDescription())
+                        .currencyCode(inquiryInvoiceRemote.getRow().get(i).getCurrency())
+                        .build());
+            }
+
+            return result;
         } catch (Exception e) {
             log.error("fetchActiveInvoice, error {}", e.getMessage());
             throw e;
@@ -117,8 +184,38 @@ public class LoanSubmissionService {
         try {
             final String bouwheerCode = request.getInvoices().getFirst().getBouwheerCode();
             final Customer customer = CustomerUtils.authenticateCustomer(authentication);
-            final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode)).get();
             final Product product = productRepository.findById(request.getProductId()).orElseThrow();
+
+            Bouwheer bouwheer;
+            Optional<Bouwheer> findBouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode));
+            if (findBouwheer.isEmpty()) {
+                bouwheer = new Bouwheer();
+                bouwheer.setBouwheerCode(UUID.randomUUID());
+                bouwheer.setBouwheerName("PT. Truckindo Utama");
+                bouwheer.setLegalAddress("");
+                bouwheer.setRt("");
+                bouwheer.setRw("");
+                bouwheer.setKelurahan("");
+                bouwheer.setKecamatan("");
+                bouwheer.setCity("");
+                bouwheer.setProvince("");
+                bouwheer.setZipcode("");
+                bouwheer.setArea("");
+                bouwheer.setPhone("");
+                bouwheer.setPicName("");
+                bouwheer.setPicEmail("");
+                bouwheer.setPicMobilePhone("");
+                bouwheer.setTermOfPayment(0L);
+                bouwheer.setGracePeriod(0L);
+                bouwheer.setAesKey("");
+                bouwheer.setSecretKey("");
+                bouwheer.setApiKey("");
+                bouwheer.setIsActive(true);
+                bouwheer = bouwheerRepository.save(bouwheer);
+            } else {
+                bouwheer = findBouwheer.get();
+            }
+
 
             final double totalInvoiceAmount = request.getInvoices()
                     .stream()
@@ -238,9 +335,9 @@ public class LoanSubmissionService {
     public ExternalIntegrationLoanSimulationDto externalIntegrationSimulation(RemoteBouwheerRequest request) {
         try {
             JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(request.getToken());
-
             Optional<ExternalIntegrationLoanSimulationDto> find = findExternalIntegrationByBouwheerCode(jwtSimulasiModel.getBouwheerCode());
             return find.orElseGet(() -> ExternalIntegrationLoanSimulationDto.builder()
+                    .vendorCode(jwtSimulasiModel.getVendorCode())
                     .bouwheerCode(jwtSimulasiModel.getBouwheerCode())
                     .alreadyAcceptImportantNotes(false)
                     .build());
@@ -286,7 +383,8 @@ public class LoanSubmissionService {
             Optional<ExternalIntegrationLoanSimulationDto> find = findExternalIntegrationByBouwheerCode(jwtSimulasiModel.getBouwheerCode());
             if (find.isEmpty()) {
                 jdbcTemplate.update(
-                        "insert into _loan_important_notes (bouwheer_code, already_accept_important_notes, dtm_crt) values (?, ?, ?)",
+                        "insert into _loan_important_notes (vendor_code, bouwheer_code, already_accept_important_notes, dtm_crt) values (?, ?, ?, ?)",
+                        jwtSimulasiModel.getVendorCode(),
                         jwtSimulasiModel.getBouwheerCode(),
                         true,
                         new Date()
@@ -320,6 +418,7 @@ public class LoanSubmissionService {
                                 create table public._loan_important_notes
                                 (
                                     id                          int generated by default as identity primary key,
+                                    vendor_code                 varchar(255)                  not null,
                                     bouwheer_code               varchar(255)                  not null,
                                     already_accept_important_notes boolean default false not null,
                                     dtm_crt                     timestamp             not null
@@ -334,8 +433,9 @@ public class LoanSubmissionService {
         try {
             initTblImportantNotes();
             ExternalIntegrationLoanSimulationDto result = jdbcTemplate.queryForObject(
-                    "select bouwheer_code, already_accept_important_notes, dtm_crt from public._loan_important_notes where bouwheer_code = ? order by id desc limit 1",
+                    "select vendor_code, bouwheer_code, already_accept_important_notes, dtm_crt from public._loan_important_notes where bouwheer_code = ? order by id desc limit 1",
                     (rs, rowNum) -> ExternalIntegrationLoanSimulationDto.builder()
+                            .vendorCode(rs.getString("vendor_code"))
                             .bouwheerCode(rs.getString("bouwheer_code"))
                             .alreadyAcceptImportantNotes(rs.getBoolean("already_accept_important_notes"))
                             .dtmCrt(rs.getTimestamp("dtm_crt"))

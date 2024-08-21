@@ -1,5 +1,6 @@
 package com.kmkbe.core.callback;
 
+import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.core.utils.ExceptionUtils;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -30,7 +31,7 @@ import java.util.stream.Collectors;
 public class ExceptionAdvice {
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<CommonResult<Object>> handleException(
+    public ResponseEntity<CommonResult<Object>> handle(
             Exception exception,
             WebRequest request
     ) {
@@ -142,7 +143,7 @@ public class ExceptionAdvice {
 
     @ExceptionHandler(NoHandlerFoundException.class)
     public ResponseEntity<CommonResult<Object>> handleNoHandlerFound(
-            HttpServerErrorException exception,
+            NoHandlerFoundException exception,
             WebRequest request
     ) {
         return ExceptionUtils.handleException(exception, request);
@@ -150,7 +151,7 @@ public class ExceptionAdvice {
 
     @ExceptionHandler(HttpClientErrorException.class)
     public ResponseEntity<CommonResult<Object>> handleHttpClientError(
-            HttpServerErrorException exception,
+            HttpClientErrorException exception,
             WebRequest request
     ) {
         return ExceptionUtils.handleException(exception, request);
@@ -158,7 +159,15 @@ public class ExceptionAdvice {
 
     @ExceptionHandler(MessagingException.class)
     public ResponseEntity<CommonResult<Object>> handleMessaging(
-            HttpServerErrorException exception,
+            MessagingException exception,
+            WebRequest request
+    ) {
+        return ExceptionUtils.handleException(exception, request);
+    }
+
+    @ExceptionHandler(IllegalApiKeyException.class)
+    public ResponseEntity<CommonResult<Object>> handleIllegalApi(
+            IllegalApiKeyException exception,
             WebRequest request
     ) {
         return ExceptionUtils.handleException(exception, request);

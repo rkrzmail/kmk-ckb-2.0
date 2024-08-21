@@ -7,7 +7,6 @@ import jakarta.xml.bind.DatatypeConverter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -29,13 +28,13 @@ public class JwtLoanSubmissionService {
         byte[] payloadBytes = Base64.getUrlDecoder().decode(splitter(token, 0));
         String payloadStr = new String(payloadBytes, StandardCharsets.UTF_8);
 
-       /* try {
-            if (!validateSecret(token, payloadStr)) {
+        try {
+            if (!validateSecret(token)) {
                 return null;
             }
         } catch (Exception e) {
             return null;
-        }*/
+        }
 
         final Map<String, Object> payloadObj = ObjectUtils.strToJson(payloadStr);
         if (payloadObj != null && payloadObj.get("BouwheerCode") != null && payloadObj.get("VendorCode") != null) {
@@ -80,41 +79,13 @@ public class JwtLoanSubmissionService {
         return null;
     }
 
-    public boolean validateSecret(String token, String payloadStr) throws NoSuchAlgorithmException {
-        final String payloadManualEncoded = Base64.getUrlEncoder().encodeToString(payloadStr.getBytes()).trim();
-        final String base64UrlEncodedPayload = splitter(token, 0);
-        if (payloadManualEncoded.trim().equals(base64UrlEncodedPayload.trim())) {
-            log.error("base64UrlEncodedPayload: {}", "same as manual encoded");
-        }
-
-        String mb0 = DigestUtils
-                .md5DigestAsHex((base64UrlEncodedPayload + "." + "DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH".toLowerCase()).getBytes());
-        String mb00 = Base64.getUrlEncoder().encodeToString(mb0.getBytes());
-
-        String mb01 = DigestUtils
-                .md5DigestAsHex((base64UrlEncodedPayload + "." + "DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH".toUpperCase()).getBytes());
-        String mb001 = Base64.getUrlEncoder().encodeToString(mb01.getBytes());
-
-        String mb1 = DigestUtils
-                .md5DigestAsHex((payloadManualEncoded + "." + "DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH".toLowerCase()).getBytes());
-        String mb11 = Base64.getUrlEncoder().encodeToString(mb1.getBytes());
-
-        String mb2 = DigestUtils
-                .md5DigestAsHex((payloadManualEncoded + "." + "DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH".toUpperCase()).getBytes());
-        String mb22 = Base64.getUrlEncoder().encodeToString(mb2.getBytes());
-
+    public boolean validateSecret(String token) throws NoSuchAlgorithmException {
         final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-        messageDigest.update((payloadManualEncoded + "." + "DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH").getBytes());
+        messageDigest.update((splitter(token, 0) + "." + "DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH").getBytes());
         byte[] digest = messageDigest.digest();
 
-        //sample generated: NPyzGDA6R6mdwl47ksXeKRfrecGDjLcVoyIszAJDXrg
-        String myHash = DatatypeConverter
-                .printHexBinary(digest);
-        String digestStr = Base64.getUrlEncoder().encodeToString(digest);
-        String encrypted = splitter(token, 1);
-        String e1 = new String(Base64.getUrlDecoder().decode(encrypted));
-
-        return digestStr.equals(splitter(token, 1));
+        String myHash = DatatypeConverter.printHexBinary(digest);
+        return myHash.equalsIgnoreCase(splitter(token, 1));
     }
 
     private String splitter(String token, int index) {

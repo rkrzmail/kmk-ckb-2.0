@@ -21,6 +21,7 @@ import java.time.Instant;
 @NoArgsConstructor
 @ToString
 public class SignUpRequest {
+    private String vendorCode;
 
     @NotNull(message = "Nama cannot be null")
     @NotEmpty(message = "Nama cannot be empty")

@@ -70,6 +70,12 @@ public class Customer implements UserDetails {
     @Column
     private Boolean agreeTc = false;
 
+    @Column(name = "agree_legal_share")
+    private Boolean agreeLegalShare = false;
+
+    @Column(name = "cust_external_code")
+    private String custExternalCode;
+
     @Column
     private Boolean isActive = false;
 

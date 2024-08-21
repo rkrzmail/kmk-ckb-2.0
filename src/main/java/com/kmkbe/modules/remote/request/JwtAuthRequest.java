@@ -1,6 +1,6 @@
 package com.kmkbe.modules.remote.request;
 
-public record CsulAuthRequest(
+public record JwtAuthRequest(
         String loginID,
         Long requestTimestamp
 ) {

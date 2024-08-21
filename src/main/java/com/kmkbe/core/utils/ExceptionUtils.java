@@ -1,5 +1,6 @@
 package com.kmkbe.core.utils;
 
+import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.exception.LoanDocMandatoryException;
 import com.kmkbe.core.model.CommonResult;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -35,7 +36,7 @@ public class ExceptionUtils {
         if (exception instanceof LoanDocMandatoryException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
             detail.setProperty("description", exception.getMessage());
-            detail.setDetail(exception.getMessage());
+            //detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof BadCredentialsException) {
@@ -58,7 +59,7 @@ public class ExceptionUtils {
 
         if (exception instanceof SignatureException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
-            detail.setProperty("description", "Invalid Login Session");
+            //detail.setProperty("description", "Invalid Credentials");
             detail.setDetail(exception.getMessage());
         }
 
@@ -77,7 +78,7 @@ public class ExceptionUtils {
         if (exception instanceof IllegalStateException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
             detail.setProperty("description", exception.getMessage());
-            detail.setDetail(exception.getMessage());
+            //detail.setDetail(exception.getMessage());
         }
 
         if (
@@ -86,20 +87,26 @@ public class ExceptionUtils {
         ) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
             detail.setProperty("description", exception.getMessage());
-            detail.setDetail(exception.getMessage());
+            //detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof NoHandlerFoundException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, exception.getMessage());
             detail.setProperty("description", exception.getMessage());
-            detail.setDetail(exception.getMessage());
+            //detail.setDetail(exception.getMessage());
+        }
+
+        if (exception instanceof IllegalApiKeyException) {
+            detail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
+            detail.setProperty("description", exception.getMessage());
+            //detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof DataIntegrityViolationException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
             if (exception.getCause() instanceof PropertyValueException) {
                 detail.setProperty("description", "Non null value invoke null, property: " + ((PropertyValueException) exception.getCause()).getPropertyName());
-                detail.setDetail(exception.getMessage());
+                //detail.setDetail(exception.getMessage());
             } else {
                 detail.setProperty("description", exception.getMessage());
             }
@@ -132,7 +139,7 @@ public class ExceptionUtils {
         if (!StringUtil.isNullOrEmpty(detail.getDetail())) {
             result.setData(Map.of("details", detail.getDetail()));
         } else {
-            result.setData(Map.of("details", exception.getStackTrace()));
+            //result.setData(Map.of("details", exception.getStackTrace()));
         }
 
 

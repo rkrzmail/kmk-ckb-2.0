@@ -21,11 +21,13 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 @Component
 @RequiredArgsConstructor
@@ -34,8 +36,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Value("${spring.profiles.active}")
     private String profileActives;
 
-    @Value("${security.api.key}")
-    private String apiKey;
+    /*@Value("${security.api.key}")
+    private String apiKey;*/
+
+    public static final String[] ENDPOINTS_WHITELIST_FINANCING = {
+            "/api/v1/financing/invoice-paid"
+    };
 
     public static final String[] ENDPOINTS_WHITELIST_LOAN_SUBMISSION = {
             "/api/v1/loan-submissions",
@@ -105,12 +111,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
 
-        //determine loan-submission whitelist when token integrate valid
-        final String loanSubmissionBypassToken = request.getParameter("token");
+        final String authHeader = request.getHeader("Authorization");
+        final String loanSubmissionBypassToken = request.getParameter("token"); //determine loan-submission whitelist when token integrate valid
+
         boolean invalidBouwheer = false;
         if (
                 !StringUtil.isNullOrEmpty(loanSubmissionBypassToken)
-                        && new AntPathRequestMatcher("/api/v1/loan-submissions").matches(request)
+                        //&& new AntPathRequestMatcher("/api/v1/loan-submissions").matches(request)
+                        && new OrRequestMatcher(
+                        new AntPathRequestMatcher("/api/v1/loan-submissions"),
+                        new AntPathRequestMatcher("/api/v1/loan-submissions/invoices"),
+                        new AntPathRequestMatcher("/api/v1/loan-submissions/importance-notes"),
+                        new AntPathRequestMatcher("/api/v1/loan-submissions/simulations/percentage"),
+                        new AntPathRequestMatcher("/api/v1/loan-submissions/simulations/calculate")
+                ).matches(request)
         ) {
             if (new AntPathRequestMatcher("/api/v1/loan-submissions/**").matches(request)) {
                 JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(loanSubmissionBypassToken);
@@ -122,10 +136,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 }
             }
         } else {
-            for (String endpoint : ENDPOINTS_WHITELIST_LOAN_SUBMISSION) {
-                if (new AntPathRequestMatcher(endpoint).matches(request)) {
-                    filterChain.doFilter(request, response);
-                    return;
+            if (authHeader == null) {
+                for (String endpoint : ENDPOINTS_WHITELIST_LOAN_SUBMISSION) {
+                    if (new AntPathRequestMatcher(endpoint).matches(request)) {
+                        filterChain.doFilter(request, response);
+                        return;
+                    }
                 }
             }
         }
@@ -135,7 +151,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
-        final String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;

@@ -7,5 +7,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface BouwheerRepository extends JpaRepository<Bouwheer, UUID> {
+    Optional<Bouwheer> findFirstByOrderByBouwheerId();
+
     Optional<Bouwheer> findByBouwheerCode(UUID code);
 }

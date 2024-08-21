@@ -120,6 +120,12 @@ public class Bouwheer {
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = false;
 
+    @Column(name = "secret_key")
+    private String secretKey;
+
+    @Column(name = "api_key")
+    private String apiKey;
+
     @Size(max = 50)
     @NotNull
     @Column(name = "usr_crt", nullable = false, length = 50)

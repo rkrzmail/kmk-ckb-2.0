@@ -26,6 +26,8 @@ public class CustomerDto {
     private Boolean isPhoneValid;
     private Boolean isWaActive;
     private Boolean agreeTc;
+    private Boolean agreeLegalShare;
+    private String custExternalCode;
     private Boolean isActive;
     private Instant dtmCrt;
 
