@@ -7,6 +7,7 @@ import com.kmkbe.modules.remote.dto.AreaRemoteDto;
 import com.kmkbe.modules.remote.dto.BaseMstRemoteResponseDto;
 import com.kmkbe.modules.remote.dto.InputOptionsRemoteDto;
 import com.kmkbe.modules.remote.request.*;
+import io.netty.util.internal.StringUtil;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -62,22 +64,25 @@ public class MstRemoteService {
     }
 
     public BaseMstRemoteResponseDto<AreaRemoteDto> areaByCriteria(
-            AreaRequest request
+            AreaRemoteRequest request
     ) throws JsonProcessingException {
         try {
-            PropCriteriaGenericTypeRequest propCriteria = PropCriteriaGenericTypeRequest.builder()
-                    .zipCodeProp(request.getArea())
-                    .value(request.getValue())
-                    .build();
+            PropCriteriaGenericTypeRequest propCriteria = null;
+            if (
+                    request.getArea() != null
+                            && !StringUtil.isNullOrEmpty(request.getValue())
+            ) {
+                propCriteria = PropCriteriaGenericTypeRequest.builder()
+                        .zipCodeProp(request.getArea())
+                        .value(request.getValue().toUpperCase())
+                        .build();
+            }
 
-            CriteriaGenericTypeRequest<PropCriteriaGenericTypeRequest> criteria = CriteriaGenericTypeRequest.<PropCriteriaGenericTypeRequest>builder()
-                    .queryString(CriteriaGenericTypeRequest.QueryString.builder().name("lookupZipcode").build())
-                    .criteria(List.of(propCriteria))
-                    .build();
-
-            AreaCriteriaRequest criteriaRequest = AreaCriteriaRequest.builder()
-                    .queryString(criteria.getQueryString())
-                    .criteria(List.of(criteria))
+            AreaCriteriaRemoteRequest criteriaRequest = AreaCriteriaRemoteRequest.builder()
+                    .queryString(CriteriaGenericTypeRemoteRequest.QueryString.zipCode())
+                    .criteria(propCriteria != null ? List.of(propCriteria) : new ArrayList<>())
+                    .pageNo(request.getPageNo())
+                    .rowPerPage(request.getRowPerPage())
                     .build();
 
             final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
@@ -87,7 +92,7 @@ public class MstRemoteService {
             );
 
             final ResponseEntity<BaseMstRemoteResponseDto<AreaRemoteDto>> response = restTemplate.exchange(
-                    baseRemoteService.Generic_GetPagingObjectBySQL(),
+                    baseRemoteService.Fou_Generic_GetPagingObjectBySQL(),
                     HttpMethod.POST,
                     requestArgs,
                     new ParameterizedTypeReference<>() {

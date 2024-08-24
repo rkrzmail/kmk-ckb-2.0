@@ -1,5 +1,6 @@
 package com.kmkbe.modules.remote.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -9,30 +10,30 @@ import lombok.Setter;
 @Getter
 @Setter
 public class AreaRemoteDto {
-    @JsonProperty("AreaCode1")
+    @JsonAlias("AreaCode1")
     public String areaCode1;
 
-    @JsonProperty("AreaCode2")
+    @JsonAlias("AreaCode2")
     public String areaCode2;
 
-    @JsonProperty("Zipcode")
+    @JsonAlias("Zipcode")
     public String zipcode;
 
-    @JsonProperty("City")
+    @JsonAlias("City")
     public String city;
 
-    @JsonProperty("Province")
+    @JsonAlias("Province")
     public String province;
 
-    @JsonProperty("RefZipcodeId")
+    @JsonAlias("RefZipcodeId")
     public Integer refZipcodeId;
 
-    @JsonProperty("IsActive")
+    @JsonAlias("IsActive")
     public Boolean isActive;
 
-    @JsonProperty("SubZipcode")
+    @JsonAlias("SubZipcode")
     public String subZipcode;
 
-    @JsonProperty("PhnArea")
+    @JsonAlias("PhnArea")
     public String phnArea;
 }

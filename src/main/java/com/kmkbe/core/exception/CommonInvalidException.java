@@ -1,13 +1,15 @@
 package com.kmkbe.core.exception;
 
+import io.netty.util.internal.StringUtil;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Getter
 @Builder
-public class AuthenticationException extends RuntimeException {
+public class CommonInvalidException extends RuntimeException {
     private String title;
     private String headerMessage;
     private String message;
@@ -21,25 +23,34 @@ public class AuthenticationException extends RuntimeException {
     }
 
     public Map<String, Object> getPayload() {
-        return Map.of(
-                "title", title,
-                "headerMessage", headerMessage,
-                "message", message,
-                "action", action
-        );
+        Map<String, Object> result = new HashMap<>(Map.of(
+                "title", title
+        ));
+
+        if (!StringUtil.isNullOrEmpty(headerMessage)) {
+            result.put("headerMessage", headerMessage);
+        }
+
+        result.put("message", message);
+
+        if (action != null) {
+            result.put("action", action);
+        }
+
+        return result;
     }
 
-    public static AuthenticationException invalidEmail() {
-        return AuthenticationException.builder()
+    public static CommonInvalidException invalidEmail() {
+        return CommonInvalidException.builder()
                 .title("Format Email tidak valid")
                 .message("Masukkan email dengan format yg valid")
-                .action(AuthenticationException.Action.builder().title("Kembali").uri("/auth/sign-in").build())
+                .action(CommonInvalidException.Action.builder().title("Kembali").uri("/auth/sign-in").build())
                 .headerMessage("Email is invalid")
                 .build();
     }
 
-    public static AuthenticationException notRegistered() {
-        return AuthenticationException.builder()
+    public static CommonInvalidException notRegistered() {
+        return CommonInvalidException.builder()
                 .title("Email anda belum terdaftar")
                 .message("Saat ini email anda belum terdaftar, silahkan lakukan daftar untuk melanjutkan proses")
                 .action(Action.builder().title("Daftar").uri("/auth/sign-up").build())
@@ -47,8 +58,8 @@ public class AuthenticationException extends RuntimeException {
                 .build();
     }
 
-    public static AuthenticationException alreadyRegistered() {
-        return AuthenticationException.builder()
+    public static CommonInvalidException alreadyRegistered() {
+        return CommonInvalidException.builder()
                 .title("Email anda telah terdaftar")
                 .message("Saat ini email anda sudah terdaftar, silahkan Login untuk melanjutkan proses")
                 .action(Action.builder().title("Login").uri("/auth/sign-in").build())
@@ -56,8 +67,8 @@ public class AuthenticationException extends RuntimeException {
                 .build();
     }
 
-    public static AuthenticationException invalidPin() {
-        return AuthenticationException.builder()
+    public static CommonInvalidException invalidPin() {
+        return CommonInvalidException.builder()
                 .title("Email atau Pin tidak valid")
                 .message("Email atau Pin salah, silahkan masukkan email dan pin yang valid")
                 .action(Action.builder().title("Kemabli").uri("/auth/sign-in").build())
@@ -65,8 +76,8 @@ public class AuthenticationException extends RuntimeException {
                 .build();
     }
 
-    public static AuthenticationException notActive() {
-        return AuthenticationException.builder()
+    public static CommonInvalidException notActive() {
+        return CommonInvalidException.builder()
                 .title("Akun anda belum di konfirmasi Aktif")
                 .message("Lanjutkan pendaftaran dengan data yg sama lalu konfirmasi dengan kode OTP yang dikirimkan ke email anda")
                 .action(Action.builder().title("Daftar").uri("/auth/sign-up").build())
@@ -74,8 +85,8 @@ public class AuthenticationException extends RuntimeException {
                 .build();
     }
 
-    public static AuthenticationException blacklist() {
-        return AuthenticationException.builder()
+    public static CommonInvalidException blacklist() {
+        return CommonInvalidException.builder()
                 .title("Perusaahaan anda terdapat di data blacklist")
                 .message("Pada saat ini anda berada di daftar blacklist PT. Trakindo Utama, sehingga anda belum dapat menggunakan Dana Sakti")
                 .action(Action.builder().title("Kembali").uri("/auth/sign-in").build())
@@ -83,8 +94,8 @@ public class AuthenticationException extends RuntimeException {
                 .build();
     }
 
-    public static AuthenticationException invalidInternalUser() {
-        return AuthenticationException.builder()
+    public static CommonInvalidException invalidInternalUser() {
+        return CommonInvalidException.builder()
                 .title("Email atau Password tidak valid")
                 .message("Email atau Password salah, silahkan masukkan email dan password yang valid")
                 .action(Action.builder().title("Kemabli").uri("/internal/auth/sign-in").build())

@@ -1,6 +1,6 @@
 package com.kmkbe.modules.customer.service;
 
-import com.kmkbe.core.exception.AuthenticationException;
+import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.service.JwtService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.modules.common.service.LoginLogService;
@@ -49,21 +49,21 @@ public class AuthService {
     public LoginDto signIn(LoginRequest request) {
         try {
             if (!CommonFormattingUtils.isEmailValid(request.email().toLowerCase())) {
-                throw AuthenticationException.invalidEmail();
+                throw CommonInvalidException.invalidEmail();
             }
 
             final Optional<Customer> findCust = customerRepository.findByCustEmail(request.email().toLowerCase());
             if (findCust.isEmpty()) {
-                throw AuthenticationException.notRegistered();
+                throw CommonInvalidException.notRegistered();
             }
 
             final Customer cust = findCust.get();
             if (!bcryptEncoder.matches(request.pin(), cust.getCustPin())) {
-                throw AuthenticationException.invalidPin();
+                throw CommonInvalidException.invalidPin();
             }
 
             if (!cust.getIsActive()) {
-                throw AuthenticationException.notActive();
+                throw CommonInvalidException.notActive();
             }
 
             Authentication authentication = authenticationManager.authenticate(
@@ -88,7 +88,7 @@ public class AuthService {
                     refreshTokenResult.getRefreshToken().toString(),
                     jwtService.getExpirationTime()
             );
-        } catch (AuthenticationException e) {
+        } catch (CommonInvalidException e) {
             log.error("AuthService signIn: {}", e.getMessage());
             throw e;
         }

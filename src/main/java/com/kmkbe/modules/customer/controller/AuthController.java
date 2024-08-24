@@ -1,5 +1,6 @@
 package com.kmkbe.modules.customer.controller;
 
+import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.modules.common.dto.LoginDto;
 import com.kmkbe.modules.customer.dto.RequestOtpDto;
@@ -12,6 +13,8 @@ import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.customer.service.CustomerService;
 import com.kmkbe.modules.customer.service.OtpService;
+import com.kmkbe.modules.remote.dto.InquiryVendorRemoteDto;
+import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -36,13 +39,26 @@ public class AuthController {
     private final SecurityContextLogoutHandler logoutHandler;
     private final CustomerService customerService;
     private final OtpService otpService;
+    private final CustomerRemoteService customerRemoteService;
 
     @Transactional
     @PostMapping("/sign-up")
     public CommonResult<RequestOtpDto> signUp(
             @Valid @RequestBody SignUpRequest request
     ) throws Exception {
-        final Customer cust = customerService.create(request);
+        final InquiryVendorRemoteDto vendor;
+        try {
+            vendor = customerRemoteService.inquiryVendor(request.getVendorCode()).getData();
+        } catch (Exception e) {
+            throw CommonInvalidException.builder()
+                    .title("Perusahaan Tidak Ditemukan")
+                    .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
+                            "Dana Sakti. Harap melakukan pengecekan ulang " +
+                            "dengan pihak PT. Trakindo Utama.")
+                    .build();
+        }
+
+        final Customer cust = customerService.create(request, vendor);
         final OtpLog otpLog = otpService.create(cust, OtpService.OtpType.SIGNUP);
 
         return new CommonResult<RequestOtpDto>().success(

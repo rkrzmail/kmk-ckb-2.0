@@ -3,7 +3,7 @@ package com.kmkbe.modules.loan_submission.controller;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
-import com.kmkbe.modules.loan_submission.service.FinancingService;
+import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -24,7 +24,7 @@ import org.springframework.web.bind.annotation.RestController;
 )
 @RequiredArgsConstructor
 public class FinancingController {
-    private final FinancingService financingService;
+    private final FinancingHdrService financingHdrService;
 
     @PostMapping("/invoice-paid")
     public CommonResult<Object> invoicePaid(

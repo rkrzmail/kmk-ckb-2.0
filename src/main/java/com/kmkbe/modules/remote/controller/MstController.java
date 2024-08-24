@@ -6,13 +6,11 @@ import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.modules.remote.dto.AreaRemoteDto;
 import com.kmkbe.modules.remote.dto.BaseMstRemoteResponseDto;
 import com.kmkbe.modules.remote.dto.InputOptionsRemoteDto;
-import com.kmkbe.modules.remote.request.AreaRequest;
+import com.kmkbe.modules.remote.request.AreaRemoteRequest;
 import com.kmkbe.modules.remote.request.PropCriteriaGenericTypeRequest;
 import com.kmkbe.modules.remote.request.RefMasterRequest;
 import com.kmkbe.modules.remote.service.MstRemoteService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -59,17 +57,17 @@ public class MstController {
 
     @GetMapping("/area")
     public CommonResult<List<AreaRemoteDto>> getArea(
-            @RequestParam()
-            @NotNull(message = "area is required")
+            /*@RequestParam()
+            @NotNull(message = "area is required")*/
             PropCriteriaGenericTypeRequest.AreaPropName area,
 
-            @RequestParam
+            /*@RequestParam
             @NotNull(message = "value is required")
-            @NotEmpty(message = "value shouldn't be empty")
+            @NotEmpty(message = "value shouldn't be empty")*/
             String value
     ) throws JsonProcessingException {
         BaseMstRemoteResponseDto<AreaRemoteDto> result = mstRemoteService.areaByCriteria(
-                AreaRequest.builder()
+                AreaRemoteRequest.builder()
                         .area(area)
                         .value(value)
                         .build()

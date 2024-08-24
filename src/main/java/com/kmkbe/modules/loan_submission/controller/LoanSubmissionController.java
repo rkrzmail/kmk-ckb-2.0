@@ -1,12 +1,15 @@
 package com.kmkbe.modules.loan_submission.controller;
 
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.model.CommonResult;
-import com.kmkbe.modules.loan_submission.request.*;
-import com.kmkbe.modules.remote.dto.PostedInvoiceDto;
+import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.dto.*;
+import com.kmkbe.modules.loan_submission.request.*;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
+import com.kmkbe.modules.loan_submission.service.SessionLoanSubmissionService;
+import com.kmkbe.modules.remote.dto.PostedInvoiceDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -17,6 +20,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.security.SignatureException;
 import java.util.List;
 
 @Validated
@@ -30,13 +34,22 @@ import java.util.List;
 public class LoanSubmissionController {
     private final LoanSubmissionService loanSubmissionService;
     private final DocumentService documentService;
+    private final SessionLoanSubmissionService sessionLoanSubmissionService;
 
     @GetMapping
     public CommonResult<Object> getExternalIntegration(
-            @Valid RemoteBouwheerRequest request
-    ) {
+            Authentication authentication,
+            String token
+    ) throws JsonProcessingException, SignatureException {
+        if (token != null && token.isEmpty()) {
+            return new CommonResult<>().success(null, "Successfully");
+        }
+
         return new CommonResult<>()
-                .success(loanSubmissionService.externalIntegrationSimulation(request), "Bouwheer has validated");
+                .success(
+                        loanSubmissionService.externalIntegrationSimulation(authentication, token),
+                        "Bouwheer has validated"
+                );
     }
 
     @GetMapping("/importance-notes")
@@ -48,7 +61,7 @@ public class LoanSubmissionController {
     @PostMapping("/importance-notes")
     public CommonResult<Object> saveImportantNotes(
             @Valid @RequestBody SaveImportantNotesRequest request
-    ) {
+    ) throws SignatureException, JsonProcessingException {
         return new CommonResult<>().success(loanSubmissionService.saveImportantNotes(request));
     }
 
@@ -72,8 +85,8 @@ public class LoanSubmissionController {
             String token
     ) throws Exception {
         return new CommonResult<List<PostedInvoiceDto>>().success(
-                        loanSubmissionService.fetchActiveInvoice(authentication, token)
-                );
+                loanSubmissionService.fetchActiveInvoice(authentication, token)
+        );
     }
 
     @GetMapping("/simulations/percentage")
@@ -102,6 +115,40 @@ public class LoanSubmissionController {
         return new CommonResult<CreatedSimulationDto>().success(
                 loanSubmissionService.createSimulation(authentication, request),
                 "Simulation Created Successfully"
+        );
+    }
+
+    @GetMapping("/simulations/history")
+    public CommonResult<SimulationHistDto> getSimulationHistory(
+            Authentication authentication
+    ) throws Exception {
+        return new CommonResult<SimulationHistDto>().success(
+                loanSubmissionService.lastSimulationHistory(authentication)
+        );
+    }
+
+    @GetMapping("/session/history")
+    public CommonResult<LoanSubmissionSessionDto> getSimulationSession(
+            Authentication authentication
+    ) throws SignatureException {
+        return new CommonResult<LoanSubmissionSessionDto>().success(
+                sessionLoanSubmissionService.findLastByCust(
+                        CustomerUtils.authenticateCustomer(authentication)
+                ).orElse(null)
+        );
+    }
+
+    @PostMapping("/session/history")
+    public CommonResult<LoanSubmissionSessionDto> createSimulationSession(
+            Authentication authentication,
+            @Valid @RequestBody CreateSessionLoanSubmissionRequest createSessionLoanSubmissionRequest
+    ) throws SignatureException {
+        return new CommonResult<LoanSubmissionSessionDto>().success(
+                sessionLoanSubmissionService.create(
+                        authentication,
+                        createSessionLoanSubmissionRequest.getLastStep(),
+                        createSessionLoanSubmissionRequest.getSession()
+                )
         );
     }
 

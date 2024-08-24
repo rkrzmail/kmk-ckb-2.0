@@ -7,7 +7,7 @@ import com.kmkbe.core.utils.AESUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.remote.dto.BaseLdapRemoteResponseDto;
 import com.kmkbe.modules.remote.dto.UserInternalRemoteDto;
-import com.kmkbe.modules.remote.request.ActiveDirectoryRequest;
+import com.kmkbe.modules.remote.request.ActiveDirectoryRemoteRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
@@ -23,7 +23,7 @@ import java.util.Map;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class UserInternalRemoteServices {
+public class UserInternalRemoteService {
     @Lazy
     private final LdapUrlService ldapUrlService;
 
@@ -40,7 +40,7 @@ public class UserInternalRemoteServices {
      *
      * @return BaseInternalResponse<InternalUserDto>
      */
-    public BaseLdapRemoteResponseDto<UserInternalRemoteDto> validateActiveDirectory(ActiveDirectoryRequest params) throws JsonProcessingException {
+    public BaseLdapRemoteResponseDto<UserInternalRemoteDto> validateActiveDirectory(ActiveDirectoryRemoteRequest params) throws JsonProcessingException {
         try {
             final BaseLdapRemoteResponseDto<String> tokenResponse = authRemoteService.fetchAuthJwt();
             final HttpHeaders headers = new HttpHeaders();

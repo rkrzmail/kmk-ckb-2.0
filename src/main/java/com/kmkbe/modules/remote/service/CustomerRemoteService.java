@@ -1,8 +1,13 @@
 package com.kmkbe.modules.remote.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.core.utils.ObjectUtils;
+import com.kmkbe.modules.remote.dto.BaseSimpleRemoteResponseDto;
 import com.kmkbe.modules.remote.dto.CustomerRemoteDto;
+import com.kmkbe.modules.remote.dto.InquiryVendorRemoteDto;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
+import com.kmkbe.modules.remote.request.InquiryRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -40,6 +45,32 @@ public class CustomerRemoteService {
             return response.getBody();
         } catch (Exception e) {
             log.error("validateExistingCustomer, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto> inquiryVendor(
+            String vendorCode
+    ) throws JsonProcessingException {
+        try {
+            final HttpEntity<String> requestArgs = new HttpEntity<>(
+                    ObjectUtils.jsonToStr(InquiryRequest.builder()
+                            .vendorCode(vendorCode)
+                            .build()),
+                    baseRemoteService.apiKeyHeaders()
+            );
+
+            final ResponseEntity<BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto>> response = restTemplate.exchange(
+                    BaseRemoteService. BASE_URL_MST + "/vendor/byVendorId",
+                    HttpMethod.POST,
+                    requestArgs,
+                    new ParameterizedTypeReference<>() {
+                    }
+            );
+
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("inquiryVendor, error {}", e.getMessage());
             throw e;
         }
     }

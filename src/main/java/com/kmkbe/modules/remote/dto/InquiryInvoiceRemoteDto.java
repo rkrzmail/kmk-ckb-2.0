@@ -20,6 +20,9 @@ public class InquiryInvoiceRemoteDto {
     @JsonProperty("identity_type")
     private String identityType;
 
+    @JsonProperty("document_status")
+    private String documentStatus; // 01/02/03
+
     @JsonProperty("data_vendor_eproc")
     private Boolean dataVendorEproc;
 

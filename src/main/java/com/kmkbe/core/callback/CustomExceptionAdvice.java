@@ -1,7 +1,7 @@
 package com.kmkbe.core.callback;
 
 import com.kmkbe.core.exception.LoanDocMandatoryException;
-import com.kmkbe.core.exception.AuthenticationException;
+import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.model.CommonResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,9 +25,9 @@ public class CustomExceptionAdvice {
         );
     }
 
-    @ExceptionHandler(AuthenticationException.class)
+    @ExceptionHandler(CommonInvalidException.class)
     public ResponseEntity<CommonResult<Object>> handleLoginException(
-            AuthenticationException exception
+            CommonInvalidException exception
     ) {
         return new ResponseEntity<>(
                 new CommonResult<>().fail(

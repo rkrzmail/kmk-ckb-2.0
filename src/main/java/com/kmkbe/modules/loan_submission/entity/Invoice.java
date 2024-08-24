@@ -29,15 +29,25 @@ public class Invoice {
 
     @NotNull(message = "custCode cannot be null")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "cust_code", nullable = false)
-    private Customer custCode;
+    @JoinColumn(
+            name = "cust_code",
+            referencedColumnName = "cust_code",
+            nullable = false,
+            updatable = false
+    )
+    private Customer customer;
 
     @NotNull(message = "bouwheerCode cannot be null")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "bouwheer_code", nullable = false)
-    private Bouwheer bouwheerCode;
+    @JoinColumn(
+            name = "bouwheer_code",
+            referencedColumnName = "bouwheer_code",
+            nullable = false,
+            updatable = false
+    )
+    private Bouwheer bouwheer;
 
-    @OneToOne(mappedBy = "invoiceCode", cascade = CascadeType.ALL)
+    @OneToOne(mappedBy = "invoice", cascade = CascadeType.ALL)
     private FinancingDtl financingDtl;
 
     @Size(max = 50)

@@ -8,7 +8,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -31,13 +30,23 @@ public class FinancingHdr {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "cust_code", nullable = false)
-    private Customer custCode;
+    @JoinColumn(
+            name = "cust_code",
+            referencedColumnName = "cust_code",
+            nullable = false,
+            updatable = false
+    )
+    private Customer customer;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "bouwheer_code", nullable = false)
-    private Bouwheer bouwheerCode;
+    @JoinColumn(
+            name = "bouwheer_code",
+            referencedColumnName = "bouwheer_code",
+            nullable = false,
+            updatable = false
+    )
+    private Bouwheer bouwheer;
 
     @NotNull
     @Column(name = "financing_date", nullable = false)
@@ -156,6 +165,17 @@ public class FinancingHdr {
 
     @Size(max = 50)
     @NotNull
+    @Column(name = "financing_step", nullable = false, length = 50)
+    private String financingStep;
+
+    @OneToMany(mappedBy = "financingHdr")
+    private Set<FinancingDtl> financingDtls;
+
+    @OneToMany(mappedBy = "financingHdr")
+    private Set<SimulationHist> simulationHistories;
+
+    @Size(max = 50)
+    @NotNull
     @Column(name = "usr_crt", nullable = false, length = 50)
     private String usrCrt;
 
@@ -169,8 +189,4 @@ public class FinancingHdr {
 
     @Column(name = "dtm_upd")
     private Instant dtmUpd;
-
-    @OneToMany(mappedBy = "financingHdrCode")
-    private Set<FinancingDtl> financingDtls = new LinkedHashSet<>();
-
 }

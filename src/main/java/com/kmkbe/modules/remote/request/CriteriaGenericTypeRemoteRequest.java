@@ -1,6 +1,7 @@
 package com.kmkbe.modules.remote.request;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
@@ -11,7 +12,7 @@ import java.util.List;
 
 @Getter
 @SuperBuilder
-public class CriteriaGenericTypeRequest<T> {
+public class CriteriaGenericTypeRemoteRequest<T> {
     @Builder.Default
     @JsonProperty("includeCount")
     private Boolean includeCount = true;
@@ -27,8 +28,9 @@ public class CriteriaGenericTypeRequest<T> {
     @JsonProperty("queryString")
     private QueryString queryString;
 
+    @Builder.Default
     @JsonProperty("rowVersion")
-    private String rowVersion;
+    private String rowVersion = "";
 
     @JsonProperty("integrationObj")
     private Object integrationObj;
@@ -37,11 +39,13 @@ public class CriteriaGenericTypeRequest<T> {
     @JsonProperty("joinType")
     private String joinType = "INNER";
 
+    @Builder.Default
     @JsonProperty("pageNo")
-    private Integer pageNo;
+    private Integer pageNo = 1;
 
+    @Builder.Default
     @JsonProperty("rowPerPage")
-    private Integer rowPerPage;
+    private Integer rowPerPage = 10;
 
     @JsonProperty("orderBy")
     private Object orderBy;
@@ -60,5 +64,18 @@ public class CriteriaGenericTypeRequest<T> {
         @JsonProperty("name")
         private String name;
 
+        @JsonInclude(JsonInclude.Include.NON_NULL)
+        private List<String> whereQuery;
+
+        public static QueryString zipCode() {
+            return QueryString.builder().name("lookupZipcode").build();
+        }
+
+        public static QueryString inquiryCwr() {
+            return QueryString.builder()
+                    .name("searhCwrInquiry")
+                    .whereQuery(List.of("FACTORING"))
+                    .build();
+        }
     }
 }

@@ -6,8 +6,8 @@ import lombok.experimental.SuperBuilder;
 
 @Getter
 @SuperBuilder
-public class AreaCriteriaRequest
-        extends CriteriaGenericTypeRequest<CriteriaGenericTypeRequest<PropCriteriaGenericTypeRequest>> {
+public class AreaCriteriaRemoteRequest
+        extends CriteriaGenericTypeRemoteRequest<PropCriteriaGenericTypeRequest> {
 /*
     @Override
     public QueryString getQueryString() {

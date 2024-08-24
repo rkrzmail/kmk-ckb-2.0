@@ -14,15 +14,15 @@ import java.util.UUID;
 public interface InvoiceRepository extends JpaRepository<Invoice, UUID>, JpaSpecificationExecutor<Invoice> {
     Optional<Invoice> findByBouwheerInvNo(String bouwheerInvNo);
 
-    Long countByCustCode(Customer customer);
+    Long countByCustomer(Customer customer);
 
-    Optional<Invoice> findByCustCodeAndBouwheerInvNoAndCustInvNo(
+    Optional<Invoice> findByCustomerAndBouwheerInvNoAndCustInvNo(
             Customer customer,
             String bouwheerInvNo,
             String custInvNo
     );
 
-    Page<Invoice> findByCustCode(
+    Page<Invoice> findByCustomer(
             Customer cust,
             Specification<Invoice> spec,
             Pageable pageable

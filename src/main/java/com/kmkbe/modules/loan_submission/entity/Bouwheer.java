@@ -142,10 +142,10 @@ public class Bouwheer {
     @Column(name = "dtm_upd")
     private Instant dtmUpd;
 
-    @OneToMany(mappedBy = "bouwheerCode")
+    @OneToMany(mappedBy = "bouwheer")
     private Set<FinancingHdr> financingHdrs = new LinkedHashSet<>();
 
-    @OneToMany(mappedBy = "bouwheerCode")
+    @OneToMany(mappedBy = "bouwheer")
     private Set<Invoice> invoices = new LinkedHashSet<>();
 
 }

@@ -1,7 +1,7 @@
 package com.kmkbe.modules.user.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.kmkbe.core.exception.AuthenticationException;
+import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.service.JwtService;
 import com.kmkbe.modules.common.dto.LoginDto;
 import com.kmkbe.modules.common.model.RefreshToken;
@@ -9,8 +9,8 @@ import com.kmkbe.modules.common.service.refresh_token.IRefreshTokenServices;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.remote.dto.BaseLdapRemoteResponseDto;
 import com.kmkbe.modules.remote.dto.UserInternalRemoteDto;
-import com.kmkbe.modules.remote.request.ActiveDirectoryRequest;
-import com.kmkbe.modules.remote.service.UserInternalRemoteServices;
+import com.kmkbe.modules.remote.request.ActiveDirectoryRemoteRequest;
+import com.kmkbe.modules.remote.service.UserInternalRemoteService;
 import com.kmkbe.modules.user.entity.MstEmployee;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstEmployeeRepository;
@@ -31,7 +31,7 @@ import java.util.Optional;
 public class AuthInternalServices {
     private final MstUserRepository mstUserRepository;
     private final MstEmployeeRepository mstEmployeeRepository;
-    private final UserInternalRemoteServices userInternalRemoteServices;
+    private final UserInternalRemoteService userInternalRemoteService;
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
@@ -48,11 +48,11 @@ public class AuthInternalServices {
             if (findUser.isEmpty()) {
                 MstEmployee findEmployee = mstEmployeeRepository
                         .findByEmail(request.getUsername())
-                        .orElseThrow(AuthenticationException::invalidInternalUser);
+                        .orElseThrow(CommonInvalidException::invalidInternalUser);
 
                 user = mstUserRepository
                         .findByEmployeeCode(findEmployee)
-                        .orElseThrow(AuthenticationException::invalidInternalUser);
+                        .orElseThrow(CommonInvalidException::invalidInternalUser);
             } else {
                 user = findUser.get();
             }
@@ -69,8 +69,8 @@ public class AuthInternalServices {
 
             }*/
 
-            BaseLdapRemoteResponseDto<UserInternalRemoteDto> userResponse = userInternalRemoteServices.validateActiveDirectory(
-                    ActiveDirectoryRequest.builder()
+            BaseLdapRemoteResponseDto<UserInternalRemoteDto> userResponse = userInternalRemoteService.validateActiveDirectory(
+                    ActiveDirectoryRemoteRequest.builder()
                             .loginID(user.getUsername())
                             .password(request.getPassword())
                             .build()
@@ -99,7 +99,7 @@ public class AuthInternalServices {
                 );
             }
 
-            throw AuthenticationException.invalidInternalUser();
+            throw CommonInvalidException.invalidInternalUser();
         } catch (Exception e) {
             log.error("signIn, error {}", e.getMessage());
             throw e;

@@ -1,9 +1,6 @@
 package com.kmkbe.modules.customer.entity;
 
 import com.kmkbe.modules.common.entity.LoginLog;
-import com.kmkbe.modules.loan_submission.entity.FinancingHdr;
-import com.kmkbe.modules.loan_submission.entity.Invoice;
-import com.kmkbe.modules.loan_submission.entity.LegalFile;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -21,7 +18,6 @@ import java.util.*;
 @Builder
 @Table(name = "customer", schema = "public")
 public class Customer implements UserDetails {
-
     @Column(
             nullable = false,
             columnDefinition = "serial",
@@ -103,14 +99,14 @@ public class Customer implements UserDetails {
     @OneToMany(mappedBy = "custCode")
     private Set<ChangePasswordLog> changePasswordLogs;
 
-    @OneToMany(mappedBy = "custCode")
-    private Set<Invoice> invoices = new LinkedHashSet<>();
+    /*@OneToMany(mappedBy = "custCode")
+    private Set<Invoice> invoices = new LinkedHashSet<>();*/
 
-    @OneToMany(mappedBy = "custCode")
-    private Set<LegalFile> legalFiles = new LinkedHashSet<>();
+    /*@OneToMany(mappedBy = "custCode")
+    private Set<LegalFile> legalFiles = new LinkedHashSet<>();*/
 
-    @OneToMany(mappedBy = "custCode")
-    private Set<FinancingHdr> financingHdrs = new LinkedHashSet<>();
+    /*@OneToMany(mappedBy = "customer")
+    private Set<FinancingHdr> financingHdrs = new LinkedHashSet<>();*/
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

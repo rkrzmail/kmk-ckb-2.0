@@ -5,8 +5,6 @@ import com.kmkbe.core.converter.ToLowerCaseDeserializer;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.modules.customer.constant.CompanyModel;
 import com.kmkbe.modules.customer.constant.CustomerModel;
-import com.kmkbe.modules.customer.constant.CustomerType;
-
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -21,6 +19,8 @@ import java.time.Instant;
 @NoArgsConstructor
 @ToString
 public class SignUpRequest {
+    @NotNull(message = "vendorCode cannot be null")
+    @NotEmpty(message = "vendorCode cannot be empty")
     private String vendorCode;
 
     @NotNull(message = "Nama cannot be null")

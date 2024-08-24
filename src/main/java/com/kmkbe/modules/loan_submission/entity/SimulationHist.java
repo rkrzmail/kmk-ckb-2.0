@@ -3,28 +3,34 @@ package com.kmkbe.modules.loan_submission.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Getter
 @Setter
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Entity
-@Table(name = "financing_dtl")
-public class FinancingDtl {
+@Table(name = "simulation_hist", schema = "public")
+public class SimulationHist {
+    @Builder.Default
     @Id
-    @Column(name = "financing_dtl_code", nullable = false)
-    private UUID financingDtlCode;
+    @Column(name = "simulation_hist_code", nullable = false)
+    private UUID simulationHistCode = UUID.randomUUID();
 
+    @NotNull
     @Column(
-            name = "financing_dtl_id",
+            name = "simulation_hist_id",
+            nullable = false,
             columnDefinition = "serial",
             insertable = false,
             updatable = false
     )
-    private Long financingDtlId;
+    private Long simulationHistId;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -37,29 +43,26 @@ public class FinancingDtl {
     private FinancingHdr financingHdr;
 
     @NotNull
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(
-            name = "invoice_code",
-            referencedColumnName = "invoice_code",
-            nullable = false,
-            updatable = false
-    )
-    private Invoice invoice;
-
-    @Size(max = 50)
-    @NotNull
-    @Column(name = "bouwheer_inv_no", nullable = false, length = 50)
-    private String bouwheerInvNo;
+    @Column(name = "total_invoice_amt", nullable = false)
+    private Double totalInvoiceAmt;
 
     @NotNull
-    @Column(name = "invoice_seqno", nullable = false)
-    private Long invoiceSeqno;
+    @Column(name = "retention", nullable = false)
+    private Double retention;
 
-    @Column(name = "paid_to_cust_date")
-    private Instant paidToCustDate;
+    @NotNull
+    @Column(name = "admin_amt", nullable = false)
+    private Double adminAmt;
 
-    @Column(name = "bouwheer_paid_date")
-    private Instant bouwheerPaidDate;
+    @NotNull
+    @Column(name = "financing_amt", nullable = false)
+    private Double financingAmt;
+
+    @Builder.Default
+    @NotNull
+    @ColumnDefault("false")
+    @Column(name = "is_used", nullable = false)
+    private Boolean isUsed = false;
 
     @Size(max = 50)
     @NotNull

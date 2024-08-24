@@ -30,7 +30,12 @@ public class CustomerPersonal {
 
     @NotNull
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "cust_code", nullable = false)
+    @JoinColumn(
+            name = "cust_code",
+            referencedColumnName = "cust_code",
+            nullable = false,
+            updatable = false
+    )
     private Customer custCode;
 
     @Column(name = "birthplace", length = 50)

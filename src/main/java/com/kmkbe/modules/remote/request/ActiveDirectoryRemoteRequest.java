@@ -10,7 +10,7 @@ import lombok.*;
 @Builder
 @JsonPropertyOrder({"LoginID", "Password", "ApplicationScheme"})
 @JsonNaming(PropertyNamingStrategies.UpperCamelCaseStrategy.class)
-public class ActiveDirectoryRequest {
+public class ActiveDirectoryRemoteRequest {
     @Builder.Default
     @JsonProperty("LoginID")
     private String loginID = "csul.staging";

@@ -1,5 +1,6 @@
 package com.kmkbe.modules.remote.dto;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
@@ -11,7 +12,7 @@ import lombok.*;
 public class BaseSimpleRemoteResponseDto<T> {
     private String status;
 
-    @JsonProperty("status_code")
+    @JsonAlias({"status_code", "statusCode"})
     private Integer statusCode;
 
     private String message;

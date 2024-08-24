@@ -31,7 +31,12 @@ public class CustomerCompany implements Serializable {
 
     @NotNull
     @OneToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "cust_code", nullable = false, updatable = false)
+    @JoinColumn(
+            name = "cust_code",
+            referencedColumnName = "cust_code",
+            nullable = false,
+            updatable = false
+    )
     private Customer custCode;
 
     @Column(length = 50)

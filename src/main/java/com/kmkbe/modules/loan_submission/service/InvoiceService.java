@@ -59,7 +59,7 @@ public class InvoiceService {
             List<Invoice> invoices = request.getInvoices()
                     .stream()
                     .map((posted) -> {
-                        invoiceRepository.findByCustCodeAndBouwheerInvNoAndCustInvNo(
+                        invoiceRepository.findByCustomerAndBouwheerInvNoAndCustInvNo(
                                 customer,
                                 posted.getBouwheerInvoiceNo(),
                                 posted.getCustomerInvoiceNo()
@@ -68,8 +68,8 @@ public class InvoiceService {
                         final Invoice invoice = new Invoice();
                         {
                             invoice.setInvoiceCode(UUID.randomUUID());
-                            invoice.setCustCode(customer);
-                            invoice.setBouwheerCode(bouwheer);
+                            invoice.setCustomer(customer);
+                            invoice.setBouwheer(bouwheer);
                             invoice.setBouwheerInvNo(posted.getBouwheerInvoiceNo());
                             invoice.setCustInvNo(posted.getCustomerInvoiceNo());
                             invoice.setInvoiceDescription(posted.getInvoiceDescription());
@@ -99,7 +99,7 @@ public class InvoiceService {
     ) throws Exception {
         try {
             final Customer customer = CustomerUtils.authenticateCustomer(authentication);
-            final Page<Invoice> invoicesPagination = invoiceRepository.findByCustCode(
+            final Page<Invoice> invoicesPagination = invoiceRepository.findByCustomer(
                     customer,
                     InvoiceSpec.list(request),
                     PageRequest.of(request.getPageNo(), request.getPageSize())
@@ -119,6 +119,15 @@ public class InvoiceService {
             return dto;
         } catch (Exception e) {
             log.error("fetchInvoice, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public void delete(Invoice invoice) {
+        try {
+            invoiceRepository.delete(invoice);
+        } catch (Exception e) {
+            log.error("delete, error {}", e.getMessage());
             throw e;
         }
     }

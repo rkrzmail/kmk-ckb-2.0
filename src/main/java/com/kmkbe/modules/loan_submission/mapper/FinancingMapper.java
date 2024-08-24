@@ -16,11 +16,15 @@ public interface FinancingMapper {
 
     @Mapping(target = "customer", ignore = true)
     @Mapping(target = "bouwheer", ignore = true)
+    FinancingHdr hdrEntityFromDto(FinancingHdrDto financingHdrDto);
+
+    @Mapping(target = "customer", ignore = true)
+    @Mapping(target = "bouwheer", ignore = true)
     @Mapping(source = "financingDtls", target = "details")
     FinancingHdrDto hdrDtoFromEntity(FinancingHdr financingHdr);
 
-    @Mapping(source = "invoiceCode", target = "invoice")
+    @Mapping(source = "invoice", target = "invoice")
     FinancingDtlDto dtlDtoFromEntity(FinancingDtl financingDtl);
-    
+
     List<FinancingDtlDto> dtlsDtoFromEntities(List<FinancingDtl> financingDtls);
 }

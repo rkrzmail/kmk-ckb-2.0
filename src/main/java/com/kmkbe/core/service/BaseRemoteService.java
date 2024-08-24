@@ -13,6 +13,8 @@ import org.springframework.web.client.RestTemplate;
 @Service
 @Slf4j
 public class BaseRemoteService {
+    public static final String BASE_URL_MST = "https://6mn45m67ybarmii47vg4cc22240ltnmj.lambda-url.ap-southeast-1.on.aws/v1";
+
     @Value("${csul.confins.fou.v1}")
     public String confinsFouBaseUrl;
 
@@ -53,8 +55,12 @@ public class BaseRemoteService {
         return confinsFouBaseUrl + "/RefMaster/GetListActiveRefMasterWithMappingCodeAll";
     }
 
-    public String Generic_GetPagingObjectBySQL() {
+    public String Mou_Generic_GetPagingObjectBySQL() {
         return confinsMouBaseUrl + "/Generic/GetPagingObjectBySQL";
+    }
+
+    public String Fou_Generic_GetPagingObjectBySQL() {
+        return confinsFouBaseUrl + "/Generic/GetPagingObjectBySQL";
     }
 
     public HttpHeaders adInsKeyHeaders() {

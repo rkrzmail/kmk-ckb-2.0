@@ -1,6 +1,6 @@
 package com.kmkbe.modules.customer.service;
 
-import com.kmkbe.core.exception.AuthenticationException;
+import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.modules.customer.constant.CustomerIdType;
 import com.kmkbe.modules.customer.constant.CustomerType;
 import com.kmkbe.modules.customer.entity.Customer;
@@ -8,6 +8,7 @@ import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
+import com.kmkbe.modules.remote.dto.InquiryVendorRemoteDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -26,7 +27,10 @@ public class CustomerService {
     private final CustomerRepository customerRepository;
     private final BCryptPasswordEncoder bcryptEncoder;
 
-    public Customer create(SignUpRequest request) throws AuthenticationException {
+    public Customer create(
+            SignUpRequest request,
+            InquiryVendorRemoteDto vendor
+    ) throws CommonInvalidException {
         try {
             final CustomerType type;
             if (request.getCustomerType().equalsIgnoreCase("perusahaan")) {
@@ -46,7 +50,7 @@ public class CustomerService {
 
             if (find.isPresent()) {
                 if (find.get().getIsActive()) {
-                    throw AuthenticationException.alreadyRegistered();
+                    throw CommonInvalidException.alreadyRegistered();
                 } else {
                     customerRepository.delete(find.get());
                 }
@@ -93,7 +97,7 @@ public class CustomerService {
             customer.setUsrCrt(customer.getCustName());
             customer.setDtmCrt(Instant.now());
             return customerRepository.save(customer);
-        } catch (AuthenticationException e) {
+        } catch (CommonInvalidException e) {
             log.error("create, error {}", e.getMessage());
             throw e;
         } catch (Exception e) {

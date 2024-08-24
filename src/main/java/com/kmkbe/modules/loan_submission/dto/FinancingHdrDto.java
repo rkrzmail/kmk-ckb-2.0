@@ -19,7 +19,6 @@ import java.util.UUID;
 @NoArgsConstructor
 public class FinancingHdrDto implements Serializable {
     private UUID financingHdrCode;
-    private Long financingHdrId;
     private Instant financingDate;
     private String currencyCode;
     private Long invoiceQty;
@@ -48,10 +47,7 @@ public class FinancingHdrDto implements Serializable {
     private Instant disburseDate;
     private Instant financingDueDate;
     private String financingStatus;
-    private String usrCrt;
     private Instant dtmCrt;
-    private String usrUpd;
-    private Instant dtmUpd;
     private Customer customer;
     private Bouwheer bouwheer;
     private List<FinancingDtlDto> details;

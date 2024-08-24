@@ -12,6 +12,8 @@ import com.kmkbe.modules.loan_submission.entity.LegalFile;
 import com.kmkbe.modules.loan_submission.entity.MstFileType;
 import com.kmkbe.modules.loan_submission.mapper.FileTypeMapper;
 import com.kmkbe.modules.loan_submission.repository.MstFileTypeRepository;
+import com.kmkbe.modules.remote.dto.InquiryVendorRemoteDto;
+import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -33,6 +35,7 @@ public class DocumentService {
     private final MstFileTypeRepository mstFileTypeRepository;
     private final FileStorageService fileStorageService;
     private final LegalFileService legalFileService;
+    private final CustomerRemoteService customerRemoteService;
 
     public List<DocumentTemplateFinancingDto> fetchDocumentTemplateFinancing() throws Exception {
         try {
@@ -52,8 +55,27 @@ public class DocumentService {
         }
     }
 
-    public List<MstFileTypeDto> fetchAllLoanDocumentRequirement(HttpServletRequest httpServletRequest, Authentication authentication) throws Exception {
+    public List<MstFileTypeDto> fetchAllLoanDocumentRequirement(
+            HttpServletRequest httpServletRequest,
+            Authentication authentication
+    ) throws SignatureException {
         try {
+            final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+            InquiryVendorRemoteDto vendor = null;
+            try {
+                vendor = customerRemoteService.inquiryVendor(customer.getCustExternalCode()).getData();
+            } catch (Exception ignored) {
+
+            }
+
+            if (vendor != null) {
+                vendor.getAktaPerubahanLink();
+                vendor.getAktaPendirianLink();
+                vendor.getPengesahanKemenkumhamLink();
+                vendor.getPkpLink();
+            }
+
+
             return mstFileTypeRepository.findAll()
                     .stream()
                     .map((file) -> {

@@ -18,26 +18,26 @@ public class FinancingInvoicePaidRequest {
     @NotEmpty(message = "BouwheerCode shouldn't be empty")
     @JsonProperty("BouwheerCode")
     @JsonAlias("bouwheerCode")
-    public String bouwheerCode;
+    private String bouwheerCode;
 
     @NotNull(message = "VendorCode is required")
     @NotEmpty(message = "VendorCode shouldn't be empty")
     @JsonProperty("vendorCode")
     @JsonAlias("VendorCode")
-    public String vendorCode;
+    private String vendorCode;
 
     @NotNull(message = "FinancingCode is required")
     @NotEmpty(message = "FinancingCode shouldn't be empty")
     @JsonProperty("financingCode")
     @JsonAlias("FinancingCode")
-    public String financingCode;
+    private String financingCode;
 
     @Valid
     @NotNull(message = "InvoicePaid is required")
     @NotEmpty(message = "InvoicePaid shouldn't be empty")
     @JsonProperty("invoicePaid")
     @JsonAlias("InvoicePaid")
-    public List<InvoicePaid> invoicePaid;
+    private List<InvoicePaid> invoicePaid;
 
 
     @Getter
@@ -47,34 +47,34 @@ public class FinancingInvoicePaidRequest {
         @NotEmpty(message = "InvoiceNo in InvoicePaid shouldn't be empty")
         @JsonProperty("invoiceNo")
         @JsonAlias("InvoiceNo")
-        public String invoiceNo;
+        private String invoiceNo;
 
         @NotNull(message = "PoNo in InvoicePaid is required")
         @NotEmpty(message = "PoNo in InvoicePaid shouldn't be empty")
         @JsonProperty("poNo")
         @JsonAlias("PoNo")
-        public String poNo;
+        private String poNo;
 
         @NotNull(message = "ClearingNo in InvoicePaid is required")
         @NotEmpty(message = "ClearingNo in InvoicePaid shouldn't be empty")
         @JsonProperty("clearingNo")
         @JsonAlias("ClearingNo")
-        public String clearingNo;
+        private String clearingNo;
 
         @NotNull(message = "ClearingDate in InvoicePaid is required")
         @JsonProperty("clearingDate")
         @JsonAlias("ClearingDate")
-        public Date clearingDate;
+        private Date clearingDate;
 
         @NotNull(message = "PostingDate in InvoicePaid is required")
         @JsonProperty("postingDate")
         @JsonAlias("PostingDate")
-        public Date postingDate;
+        private Date postingDate;
 
         @NotNull(message = "InvoiceAmount in InvoicePaid is required")
         @JsonProperty("invoiceAmount")
         @JsonAlias("InvoiceAmount")
-        public Integer invoiceAmount;
+        private Integer invoiceAmount;
     }
 
 }

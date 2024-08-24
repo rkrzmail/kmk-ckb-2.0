@@ -9,8 +9,9 @@ import lombok.Getter;
 @Getter
 @Builder
 public class PropCriteriaGenericTypeRequest {
+    @Builder.Default
     @JsonProperty("DataType")
-    private String dataType;
+    private String dataType = "";
 
     @Builder.Default
     private Integer high = 0;
@@ -24,6 +25,10 @@ public class PropCriteriaGenericTypeRequest {
     @JsonProperty("propName")
     @JsonInclude(value = JsonInclude.Include.NON_NULL)
     private AreaPropName zipCodeProp;
+
+    @JsonProperty("propName")
+    @JsonInclude(value = JsonInclude.Include.NON_NULL)
+    private CwrPropName cwrPropName;
 
     @Builder.Default
     private RestrictionType restriction = RestrictionType.Like;
@@ -40,6 +45,17 @@ public class PropCriteriaGenericTypeRequest {
         private final String value;
 
         AreaPropName(String value) {
+            this.value = value;
+        }
+    }
+
+    public enum CwrPropName {
+        cwrNo("C.CWR_NO");
+
+        @JsonValue
+        private final String value;
+
+        CwrPropName(String value) {
             this.value = value;
         }
     }
