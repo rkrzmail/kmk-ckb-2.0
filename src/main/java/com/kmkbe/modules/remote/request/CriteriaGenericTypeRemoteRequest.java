@@ -77,5 +77,12 @@ public class CriteriaGenericTypeRemoteRequest<T> {
                     .whereQuery(List.of("FACTORING"))
                     .build();
         }
+
+        public static QueryString inquiryAgreement() {
+            return QueryString.builder()
+                    .name("SearchAppDataInquiry")
+                    .whereQuery(List.of("FCTR"))
+                    .build();
+        }
     }
 }

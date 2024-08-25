@@ -18,4 +18,14 @@ public class PostedInvoiceDto {
     private Date invoiceDate;
     private Date invoiceDueDate;
     private BigDecimal invoiceAmount;
+    private AmountConverter amountConverter;
+
+    @Getter
+    @Builder
+    public static class AmountConverter {
+        private BigDecimal base;
+        private String fromCurrencyCode;
+        private String toCurrencyCode;
+        private BigDecimal amount;
+    }
 }

@@ -2,7 +2,7 @@ package com.kmkbe.modules.user.controller;
 
 import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.modules.user.dto.UserDto;
-import com.kmkbe.modules.user.services.UserInternalServices;
+import com.kmkbe.modules.user.service.UserInternalServices;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;

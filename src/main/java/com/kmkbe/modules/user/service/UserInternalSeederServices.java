@@ -1,4 +1,4 @@
-package com.kmkbe.modules.user.services;
+package com.kmkbe.modules.user.service;
 
 import com.kmkbe.modules.user.entity.*;
 import com.kmkbe.modules.user.repository.*;

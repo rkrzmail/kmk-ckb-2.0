@@ -60,6 +60,17 @@ public class PropCriteriaGenericTypeRequest {
         }
     }
 
+    public enum AgreementPropName {
+        agreementNo("AGR.AGRMNT_NO");
+
+        @JsonValue
+        private final String value;
+
+        AgreementPropName(String value) {
+            this.value = value;
+        }
+    }
+
     public enum RestrictionType {
         Eq,
         Like

@@ -1,4 +1,4 @@
-package com.kmkbe.modules.user.services;
+package com.kmkbe.modules.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.exception.CommonInvalidException;

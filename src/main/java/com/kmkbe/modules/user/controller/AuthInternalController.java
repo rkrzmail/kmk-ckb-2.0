@@ -5,7 +5,7 @@ import com.kmkbe.core.model.CommonResult;
 import com.kmkbe.modules.common.dto.LoginDto;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.user.request.LoginInternalRequest;
-import com.kmkbe.modules.user.services.AuthInternalServices;
+import com.kmkbe.modules.user.service.AuthInternalServices;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

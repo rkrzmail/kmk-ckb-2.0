@@ -1,4 +1,4 @@
-package com.kmkbe.modules.user.services;
+package com.kmkbe.modules.user.service;
 
 import com.kmkbe.modules.user.dto.UserDto;
 import com.kmkbe.modules.user.dto.UserRoleFormDto;

@@ -25,10 +25,7 @@ import com.kmkbe.modules.remote.dto.InquiryInvoiceRemoteDto;
 import com.kmkbe.modules.remote.dto.InquiryVendorRemoteDto;
 import com.kmkbe.modules.remote.dto.PostedInvoiceDto;
 import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
-import com.kmkbe.modules.remote.service.CustomerRemoteService;
-import com.kmkbe.modules.remote.service.FinancingRemoteService;
-import com.kmkbe.modules.remote.service.InvoiceRemoteDto;
-import com.kmkbe.modules.remote.service.LoanSubmissionRemoteService;
+import com.kmkbe.modules.remote.service.*;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -61,6 +58,7 @@ public class LoanSubmissionService {
     private final FinancingRemoteService financingRemoteService;
     private final CustomerRemoteService customerRemoteService;
     private final InvoiceRemoteDto invoiceRemoteDto;
+    private final CurrencyRemoteService currencyRemoteService;
 
     private final InvoiceService invoiceService;
     private final FinancingHdrService financingHdrService;
@@ -136,6 +134,7 @@ public class LoanSubmissionService {
             }
 
             final SimpleDateFormat sdfNoSeperator = new SimpleDateFormat("yyyyMMdd");
+            double baseUsdToIdr = currencyRemoteService.fetchIdrFrom("usd");
 
             List<PostedInvoiceDto> result = new ArrayList<>();
             for (int i = 0; i < inquiryInvoiceRemote.getRow().size(); i++) {
@@ -160,6 +159,17 @@ public class LoanSubmissionService {
                     invDueDate = sdfNoSeperator.parse(inquiryInvoiceRemote.getRow().get(i).getNetDueDate());
                 }
 
+                BigDecimal invoiceAmount = BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim()));
+                String currency = inquiryInvoiceRemote.getRow().get(i).getCurrency();
+                if (
+                        !currency.equalsIgnoreCase("idr")
+                                && !currency.equalsIgnoreCase("rupiah")
+                                && !currency.equalsIgnoreCase("rp")
+                ) {
+                    invoiceAmount = invoiceAmount.multiply(BigDecimal.valueOf(baseUsdToIdr));
+                    currency = "IDR";
+                }
+
                 result.add(PostedInvoiceDto.builder()
                         .bouwheerCode(vendorTokenExtractor.getBouwheerCode().toString())
                         .bouwheerName(vendorTokenExtractor.getBouwheerName())
@@ -167,9 +177,15 @@ public class LoanSubmissionService {
                         .bouwheerInvoiceNo(inquiryInvoiceRemote.getRow().get(i).getAccountingDocument())
                         .invoiceDate(invDate)
                         .invoiceDueDate(invDueDate)
-                        .invoiceAmount(BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim())))
+                        .invoiceAmount(invoiceAmount)
                         .invoiceDescription(inquiryInvoiceRemote.getRow().get(i).getDescription())
-                        .currencyCode(inquiryInvoiceRemote.getRow().get(i).getCurrency())
+                        .currencyCode(currency)
+                        .amountConverter(PostedInvoiceDto.AmountConverter.builder()
+                                .base(BigDecimal.valueOf(baseUsdToIdr))
+                                .fromCurrencyCode(inquiryInvoiceRemote.getRow().get(i).getCurrency())
+                                .toCurrencyCode("IDR")
+                                .amount(BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim())))
+                                .build())
                         .build());
             }
 
@@ -417,12 +433,14 @@ public class LoanSubmissionService {
             String token
     ) throws JsonProcessingException, SignatureException {
         try {
-            if (
-                    token.equals("1")
-                            || token.equals("2")
-                            || token.equals("3")
-            ) {
-                token = "eyJCb3V3aGVlckNvZGUiOiJiOGVlODViMC0wYjExLTQ5MDMtYWYxZS0xOWFkZGI2NTM0NjIiLCJDcmVhdGVkRGF0ZVN0cmluZyI6IjIwMjQtMDgtMjEgMTU6MDQ6MzIiLCJWZW5kb3JDb2RlIjoiMDAwMTAwMDAwNiJ9.CEC649B96AB33D8736A6838302CF4213";
+            if (token != null) {
+                if (
+                        token.equals("1")
+                                || token.equals("2")
+                                || token.equals("3")
+                ) {
+                    token = "eyJCb3V3aGVlckNvZGUiOiJiOGVlODViMC0wYjExLTQ5MDMtYWYxZS0xOWFkZGI2NTM0NjIiLCJDcmVhdGVkRGF0ZVN0cmluZyI6IjIwMjQtMDgtMjEgMTU6MDQ6MzIiLCJWZW5kb3JDb2RlIjoiMDAwMTAwMDAwNiJ9.CEC649B96AB33D8736A6838302CF4213";
+                }
             }
 
             VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, token);
