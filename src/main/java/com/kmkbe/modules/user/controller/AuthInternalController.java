@@ -1,8 +1,8 @@
 package com.kmkbe.modules.user.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.kmkbe.core.model.CommonResult;
-import com.kmkbe.modules.common.dto.LoginDto;
+import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.dto.LoginDto;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.user.request.LoginInternalRequest;
 import com.kmkbe.modules.user.service.AuthInternalServices;

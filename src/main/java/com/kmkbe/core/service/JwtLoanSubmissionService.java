@@ -1,6 +1,6 @@
 package com.kmkbe.core.service;
 
-import com.kmkbe.core.model.JwtSimulasiModel;
+import com.kmkbe.core.domain.model.JwtSimulasiModel;
 import com.kmkbe.core.utils.ObjectUtils;
 import io.netty.util.internal.StringUtil;
 import jakarta.xml.bind.DatatypeConverter;

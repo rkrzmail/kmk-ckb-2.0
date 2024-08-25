@@ -1,0 +1,13 @@
+package com.kmkbe.core.domain.mapper;
+
+import com.kmkbe.core.domain.dto.ProductDto;
+import com.kmkbe.core.domain.entity.Product;
+import org.mapstruct.Mapper;
+import org.mapstruct.factory.Mappers;
+
+@Mapper
+public interface ProductMapper {
+    ProductMapper INSTANCE = Mappers.getMapper(ProductMapper.class);
+
+    ProductDto entityToDto(Product product);
+}

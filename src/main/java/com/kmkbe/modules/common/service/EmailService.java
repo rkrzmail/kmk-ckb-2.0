@@ -1,11 +1,11 @@
 package com.kmkbe.modules.common.service;
 
 import com.kmkbe.core.config.MailConfig;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.entity.EmailTemplate;
+import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
+import com.kmkbe.core.domain.repository.EmailTemplateRepository;
 import com.kmkbe.core.utils.ObjectUtils;
-import com.kmkbe.modules.common.entity.EmailTemplate;
-import com.kmkbe.modules.common.model.LoanDisburseEmailPayload;
-import com.kmkbe.modules.common.repository.EmailTemplateRepository;
-import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -16,6 +16,7 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Map;
 
 @Service
@@ -29,6 +30,7 @@ public class EmailService {
     private static final String M_CUST_CHANGE_OTP = "M_CUST_CHANGE_OTP";
     private static final String M_CUST_ACTIVE = "M_CUST_ACTIVE";
     private static final String M_CUST_LOAN = "M_CUST_LOAN";
+    private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";
 
     private final EmailTemplateRepository emailTemplateRepository;
     private final ConfigRemoteService configRemoteService;
@@ -58,39 +60,82 @@ public class EmailService {
     }
 
     @Async
-    public void sendOtp(Customer customer, String otpCode) throws MessagingException {
-        send(customer, Map.of("otp_code", otpCode), M_CUST_NEW_OTP);
+    public void sendOtp(Customer customer, String otpCode) throws Exception {
+        Map<String, Object> obj = new HashMap<>();
+        obj.put("name", customer.getCustName());
+        obj.put("otp_code", otpCode);
+        obj.put("id_no", customer.getCustIdNo());
+
+        send(customer.getCustEmail(), obj, M_CUST_NEW_OTP);
     }
 
     @Async
-    public void sendOtpChangePin(Customer customer, String otpCode) throws MessagingException {
-        send(customer, Map.of("otp_code", otpCode), M_CUST_CHANGE_OTP);
+    public void sendOtpChangePin(Customer customer, String otpCode) throws Exception {
+        Map<String, Object> obj = new HashMap<>();
+        obj.put("name", customer.getCustName());
+        obj.put("otp_code", otpCode);
+        obj.put("id_no", customer.getCustIdNo());
+
+        send(customer.getCustEmail(), obj, M_CUST_CHANGE_OTP);
     }
 
     @Async
-    public void sendNotificationActive(Customer customer) throws MessagingException {
-        send(customer, null, M_CUST_ACTIVE);
+    public void sendNotificationActive(Customer customer) throws Exception {
+        Map<String, Object> obj = new HashMap<>();
+        obj.put("name", customer.getCustName());
+        obj.put("id_no", customer.getCustIdNo());
+
+        send(customer.getCustEmail(), obj, M_CUST_ACTIVE);
     }
 
     @Async
     public void sendNotificationLoanDisbursement(
             final Customer customer,
             LoanDisburseEmailPayload payload
-    ) throws MessagingException {
-        final Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
+    ) throws Exception {
+        Map<String, Object> args = new HashMap<>();
+        Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
         if (payloadArgs != null) {
             payloadArgs.remove("invoices");
             payloadArgs.put("invoices", LoanDisburseEmailPayload.InvoicePayload.toHtmlListBody(payload.getInvoices()));
         }
 
-        send(customer, payloadArgs, M_CUST_LOAN);
+        args.put("name", customer.getCustName());
+        args.put("id_no", customer.getCustIdNo());
+        args.put("additionalArgs", payloadArgs);
+
+        send(customer.getCustEmail(), args, M_CUST_LOAN);
+    }
+
+    @Async
+    public void sendNotificationBranchAssign(
+            String email,
+            String bouwheerName,
+            LoanDisburseEmailPayload payload
+    ) throws Exception {
+        Map<String, Object> args = new HashMap<>();
+        Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
+
+        if (payloadArgs != null) {
+            payloadArgs.remove("invoices");
+            payloadArgs.put("invoices", LoanDisburseEmailPayload.InvoicePayload.toHtmlListBody(payload.getInvoices()));
+        }
+
+        args.put("additionalArgs", payloadArgs);
+        args.put("bouwheerName", bouwheerName);
+
+        final EmailTemplate template = emailTemplateRepository
+                .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN, true);
+        template.setMailTo(email);
+
+        send(args, template);
     }
 
     private void send(
-            final Customer customer,
-            final Map<String, Object> additionalArgs,
+            final String email,
+            final Map<String, Object> args,
             final String templateCode
-    ) throws MessagingException {
+    ) throws Exception {
         /*final CsulMailDto internalMail = csulConfigService.fetchEmailInfo();
         JavaMailSender mailSender = mailConfig.javaMailSender(
                 internalMail.getServerUrl(),
@@ -101,26 +146,50 @@ public class EmailService {
 
         final EmailTemplate template = emailTemplateRepository
                 .findByEmailTemplateCodeAndIsActive(templateCode, true);
-        template.setMailTo(customer.getCustEmail());
+        template.setMailTo(email);
+        template.setBodyMail(mappingBody(template.getBodyMail(), args));
 
-        String body = template.getBodyMail();
-        body = body.replace("{name}", customer.getCustName());
-        body = body.replace("{email}", customer.getCustEmail());
-        body = body.replace("{id_no}", customer.getCustIdNo());
+        JavaMailSender mailSender = testingMailSender();
+        MimeMessage mimeMessage = mailSender.createMimeMessage();
+        mimeMessageTemplate(mimeMessage, template);
 
-        if (additionalArgs != null && additionalArgs.get("otp_code") != null) {
-            body = body.replace("{otp_code}", additionalArgs.get("otp_code").toString());
-        } else {
-            body = body.replace("{otp_code}", "");
-        }
-
-        if (additionalArgs != null) {
-            for (Map.Entry<String, Object> entry : additionalArgs.entrySet()) {
-                body = body.replace("{" + entry.getKey() + "}", entry.getValue().toString());
+       /* int attempts = 0;
+        boolean success = false;
+        for (int i = 0; i < MAX_SENT_FAIL_ATTEMPTS; i++) {
+            try {
+                mailSender.send(mimeMessage);
+                success = true;
+            } catch (Exception e) {
+                attempts++;
+                log.error("EmailService Failed to send email to {} due to {}", customer.getCustEmail(), e.getMessage());
+                log.error("EmailService try attempts: {}", attempts);
             }
-        }
+        }*/
 
-        template.setBodyMail(body);
+        // for testing purpose only
+        /*if (!success) {
+            log.info("EmailService send email with testing mail sender");
+            mailSender = testingMailSender();
+            mailSender.send(mimeMessage);
+        }*/
+
+        log.info("EmailService send email with testing mail sender");
+        mailSender = testingMailSender();
+        mailSender.send(mimeMessage);
+    }
+
+    private void send(
+            final Map<String, Object> args,
+            final EmailTemplate template
+    ) throws Exception {
+        /*final CsulMailDto internalMail = csulConfigService.fetchEmailInfo();
+        JavaMailSender mailSender = mailConfig.javaMailSender(
+                internalMail.getServerUrl(),
+                internalMail.getPort(),
+                internalMail.getUsername(),
+                internalMail.getPassword()
+        );*/
+        template.setBodyMail(mappingBody(template.getBodyMail(), args));
 
         JavaMailSender mailSender = testingMailSender();
         MimeMessage mimeMessage = mailSender.createMimeMessage();
@@ -148,6 +217,35 @@ public class EmailService {
         log.info("EmailService send email with testing mail sender");
         mailSender = testingMailSender();
         mailSender.send(mimeMessage);
+    }
+
+    private String mappingBody(String bodyMail, final Map<String, Object> args) {
+        String body = bodyMail;
+        if (args.get("name") != null) {
+            body = body.replace("{name}", args.get("name").toString());
+        } else {
+            body = body.replace("{name}", "");
+        }
+
+        if (args.get("id_no") != null) {
+            body = body.replace("{id_no}", args.get("id_no").toString());
+        } else {
+            body = body.replace("{id_no}", "");
+        }
+
+        if (args.get("otp_code") != null) {
+            body = body.replace("{otp_code}", args.get("otp_code").toString());
+        } else {
+            body = body.replace("{otp_code}", "");
+        }
+
+        if (args.get("additionalArgs") != null) {
+            for (Map.Entry<?, ?> entry : ((Map<?, ?>) args.get("additionalArgs")).entrySet()) {
+                body = body.replace("{" + entry.getKey() + "}", entry.getValue().toString());
+            }
+        }
+
+        return body;
     }
 
     // only for testing purpose and if failed to send using intenal mail

@@ -1,7 +1,7 @@
 package com.kmkbe.modules.common.service.refresh_token;
 
 import com.kmkbe.core.utils.RedisUtils;
-import com.kmkbe.modules.common.model.RefreshToken;
+import com.kmkbe.core.domain.model.RefreshToken;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,7 +1,7 @@
 package com.kmkbe.modules.remote.service;
 
-import com.kmkbe.modules.remote.dto.BaseLdapRemoteResponseDto;
-import com.kmkbe.modules.remote.dto.MailRemoteDto;
+import com.kmkbe.core.domain.dto.BaseLdapRemoteResponseDto;
+import com.kmkbe.core.domain.dto.MailRemoteDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;

@@ -2,7 +2,7 @@ package com.kmkbe.core.callback;
 
 import com.kmkbe.core.exception.LoanDocMandatoryException;
 import com.kmkbe.core.exception.CommonInvalidException;
-import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.core.domain.model.CommonResult;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;

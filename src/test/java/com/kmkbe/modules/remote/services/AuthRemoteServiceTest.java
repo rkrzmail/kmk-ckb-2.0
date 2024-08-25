@@ -1,6 +1,6 @@
 package com.kmkbe.modules.remote.services;
 
-import com.kmkbe.modules.remote.dto.BaseLdapRemoteResponseDto;
+import com.kmkbe.core.domain.dto.BaseLdapRemoteResponseDto;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;

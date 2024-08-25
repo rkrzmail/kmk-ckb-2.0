@@ -1,8 +1,8 @@
 package com.kmkbe.core;
 
 import com.kmkbe.core.utils.ObjectUtils;
-import com.kmkbe.modules.customer.dto.AddressDto;
-import com.kmkbe.modules.customer.entity.CustomerCompany;
+import com.kmkbe.core.domain.dto.AddressDto;
+import com.kmkbe.core.domain.entity.CustomerCompany;
 import org.junit.runner.RunWith;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.testng.annotations.Test;

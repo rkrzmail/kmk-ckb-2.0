@@ -1,8 +1,10 @@
 package com.kmkbe.modules.loan_submission.service;
 
-import com.kmkbe.modules.customer.entity.Customer;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.kmkbe.core.utils.ObjectUtils;
+import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
-import com.kmkbe.modules.loan_submission.dto.LoanSubmissionSessionDto;
+import com.kmkbe.core.domain.dto.LoanSubmissionSessionDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -10,7 +12,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
-import java.util.Date;
+import java.sql.Timestamp;
+import java.time.Instant;
 import java.util.Optional;
 
 @Service
@@ -40,8 +43,8 @@ public class SessionLoanSubmissionService {
                                     cust_code uuid not null,
                                     last_step int default 0 not null,
                                     session json null,
-                                    dtm_crt                     timestamp             not null,
-                                    dtm_upd                     timestamp             null
+                                    dtm_crt                     timestamp default now()          not null,
+                                    dtm_upd                     timestamp default now()          not  null
                                 );
                             """;
 
@@ -53,7 +56,7 @@ public class SessionLoanSubmissionService {
             Authentication authentication,
             int lastStep,
             Object jsonSession
-    ) throws SignatureException {
+    ) throws SignatureException, JsonProcessingException {
         try {
             Customer customer = CustomerUtils.authenticateCustomer(authentication);
             Optional<LoanSubmissionSessionDto> find = findLastByCust(customer);
@@ -64,15 +67,15 @@ public class SessionLoanSubmissionService {
                         "insert into public._loan_submission_session (cust_code, last_step, session, dtm_crt) values (?, ?, ?, ?)",
                         customer.getCustCode(),
                         lastStep,
-                        jsonSession,
-                        new Date()
+                        ObjectUtils.jsonToStr(jsonSession),
+                        Timestamp.from(Instant.now())
                 );
             } else {
                 jdbcTemplate.update(
                         "update public._loan_submission_session set last_step = ?, session = ?, dtm_upd = ? where cust_code = ?",
                         lastStep,
-                        jsonSession,
-                        new Date(),
+                        ObjectUtils.jsonToStr(jsonSession),
+                        Timestamp.from(Instant.now()),
                         customer.getCustCode()
                 );
             }
@@ -89,12 +92,12 @@ public class SessionLoanSubmissionService {
     public Optional<LoanSubmissionSessionDto> findLastByCust(Customer customer) {
         try {
             LoanSubmissionSessionDto result = jdbcTemplate.queryForObject(
-                    "select cust_code, last_step, session, dtm_crt from public._loan_submission_session where cust_code = ? order by id desc limit 1",
+                    "select cust_code, last_step, session, dtm_crt, dtm_upd from public._loan_submission_session where cust_code = ? order by id desc limit 1",
                     (rs, rowNum) -> LoanSubmissionSessionDto.builder()
                             .lastStep(rs.getInt("last_step"))
-                            .dtmCrt(rs.getTimestamp("dtm_crt"))
-                            .dtmCrt(rs.getTimestamp("dtm_upd"))
-                            .session(rs.getObject("session"))
+                            .dtmCrt(Instant.ofEpochMilli(rs.getTimestamp("dtm_crt").getTime()))
+                            .dtmUpd(rs.getTimestamp("dtm_upd") != null ? Instant.ofEpochMilli(rs.getTimestamp("dtm_upd").getTime()) : null)
+                            .session(ObjectUtils.strToJson(rs.getString("session")))
                             .build(),
                     customer.getCustCode()
             );

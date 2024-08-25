@@ -1,6 +1,5 @@
 package com.kmkbe.modules.remote.request;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Builder;
@@ -22,13 +21,7 @@ public class PropCriteriaGenericTypeRequest {
     @Builder.Default
     private Integer low = 0;
 
-    @JsonProperty("propName")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    private AreaPropName zipCodeProp;
-
-    @JsonProperty("propName")
-    @JsonInclude(value = JsonInclude.Include.NON_NULL)
-    private CwrPropName cwrPropName;
+    private Object propName;
 
     @Builder.Default
     private RestrictionType restriction = RestrictionType.Like;
@@ -39,7 +32,8 @@ public class PropCriteriaGenericTypeRequest {
         kecamatan("RZ.AREA_CODE_1"),
         kelurahan("RZ.AREA_CODE_2"),
         kota("RZ.CITY"),
-        zipCode("RZ.ZIPCODE");
+        zipCode("RZ.ZIPCODE"),
+        province("RZ.PROVINCE");
 
         @JsonValue
         private final String value;

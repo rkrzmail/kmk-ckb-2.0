@@ -1,9 +1,9 @@
 package com.kmkbe.modules.customer.utils;
 
 import com.kmkbe.core.constants.CommonConstants;
-import com.kmkbe.modules.customer.dto.CustomerDto;
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.mapper.CustomerMapper;
+import com.kmkbe.core.domain.dto.CustomerDto;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.mapper.CustomerMapper;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 

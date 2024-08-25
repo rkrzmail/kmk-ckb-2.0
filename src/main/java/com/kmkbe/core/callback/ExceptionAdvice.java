@@ -1,7 +1,7 @@
 package com.kmkbe.core.callback;
 
 import com.kmkbe.core.exception.IllegalApiKeyException;
-import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.utils.ExceptionUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.mail.MessagingException;

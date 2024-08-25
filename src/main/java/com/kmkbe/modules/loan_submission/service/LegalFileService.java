@@ -3,12 +3,12 @@ package com.kmkbe.modules.loan_submission.service;
 
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.UriUtils;
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.loan_submission.dto.LegalFileDto;
-import com.kmkbe.modules.loan_submission.entity.LegalFile;
-import com.kmkbe.modules.loan_submission.entity.MstFileType;
-import com.kmkbe.modules.loan_submission.mapper.FileTypeMapper;
-import com.kmkbe.modules.loan_submission.repository.LegalFileRepository;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.dto.LegalFileDto;
+import com.kmkbe.core.domain.entity.LegalFile;
+import com.kmkbe.core.domain.entity.MstFileType;
+import com.kmkbe.core.domain.mapper.FileTypeMapper;
+import com.kmkbe.core.domain.repository.LegalFileRepository;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

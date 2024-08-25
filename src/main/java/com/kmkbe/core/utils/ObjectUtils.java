@@ -1,5 +1,6 @@
 package com.kmkbe.core.utils;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -39,7 +40,12 @@ public class ObjectUtils {
     }
 
     public static String jsonToStr(Object object) throws JsonProcessingException {
+        return jsonToStr(object, true);
+    }
+
+    public static String jsonToStr(Object object, boolean includeNonNull) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
+        mapper.setSerializationInclusion(includeNonNull ? JsonInclude.Include.ALWAYS : JsonInclude.Include.NON_NULL);
         return mapper.writeValueAsString(object);
     }
 

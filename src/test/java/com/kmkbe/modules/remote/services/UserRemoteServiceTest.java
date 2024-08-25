@@ -1,8 +1,8 @@
 package com.kmkbe.modules.remote.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.kmkbe.modules.remote.dto.BaseLdapRemoteResponseDto;
-import com.kmkbe.modules.remote.dto.UserInternalRemoteDto;
+import com.kmkbe.core.domain.dto.BaseLdapRemoteResponseDto;
+import com.kmkbe.core.domain.dto.UserInternalRemoteDto;
 import com.kmkbe.modules.remote.request.ActiveDirectoryRemoteRequest;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.UserInternalRemoteService;

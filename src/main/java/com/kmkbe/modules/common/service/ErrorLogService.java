@@ -2,8 +2,8 @@ package com.kmkbe.modules.common.service;
 
 import com.kmkbe.core.utils.HttpUtils;
 import com.kmkbe.core.utils.ObjectUtils;
-import com.kmkbe.modules.common.entity.ErrorLog;
-import com.kmkbe.modules.common.repository.ErrorLogRepository;
+import com.kmkbe.core.domain.entity.ErrorLog;
+import com.kmkbe.core.domain.repository.ErrorLogRepository;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

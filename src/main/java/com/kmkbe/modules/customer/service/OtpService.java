@@ -1,15 +1,14 @@
 package com.kmkbe.modules.customer.service;
 
+import com.kmkbe.core.domain.dto.RequestOtpDto;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.entity.OtpLog;
+import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.core.domain.repository.OtpRepository;
 import com.kmkbe.modules.common.service.EmailService;
-import com.kmkbe.modules.customer.dto.RequestOtpDto;
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.entity.OtpLog;
-import com.kmkbe.modules.customer.repository.CustomerRepository;
-import com.kmkbe.modules.customer.repository.OtpRepository;
 import com.kmkbe.modules.customer.request.RequestOtpRequest;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
 import jakarta.annotation.Nullable;
-import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
@@ -35,7 +34,7 @@ public class OtpService {
     private final CustomerService customerService;
     private final BCryptPasswordEncoder bcryptEncoder;
 
-    public OtpLog create(@NonNull Customer customer, @NonNull OtpType type) throws MessagingException {
+    public OtpLog create(@NonNull Customer customer, @NonNull OtpType type) throws Exception {
         final Instant now = Instant.now();
         final OtpLog otpLog = new OtpLog();
         otpLog.setEmail(customer.getCustEmail());
@@ -59,7 +58,7 @@ public class OtpService {
     }
 
     @Transactional
-    public String verifySignUp(VerifyOtpRequest verifyOtpRequest) throws MessagingException {
+    public String verifySignUp(VerifyOtpRequest verifyOtpRequest) throws Exception {
         final FindCustomerOtp findCustomerOtp = new FindCustomerOtp(
                 customerRepository,
                 otpRepository,
@@ -82,10 +81,10 @@ public class OtpService {
         otp.setDtmUpd(Instant.now());
 
         otpRepository.save(otp);
-        return "Sign up successfully, try to login now";
+        return "Sign up successfully";
     }
 
-    public RequestOtpDto sendForgotPin(String email) throws MessagingException {
+    public RequestOtpDto sendForgotPin(String email) throws Exception {
         final Optional<Customer> find = customerRepository.findByCustEmail(email);
         if (find.isEmpty()) {
             throw new EntityNotFoundException("Customer not found, enter an valid email");
@@ -130,7 +129,7 @@ public class OtpService {
         return "Otp verified, try to enter new pin";
     }
 
-    public RequestOtpDto resend(RequestOtpRequest request, OtpType type) throws MessagingException {
+    public RequestOtpDto resend(RequestOtpRequest request, OtpType type) throws Exception {
         final FindCustomerOtp findCustomerOtp = new FindCustomerOtp(
                 customerRepository,
                 otpRepository,

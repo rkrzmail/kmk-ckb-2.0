@@ -1,8 +1,8 @@
 package com.kmkbe.modules.customer.services;
 
-import com.kmkbe.modules.customer.entity.OtpLog;
-import com.kmkbe.modules.customer.repository.CustomerRepository;
-import com.kmkbe.modules.customer.repository.OtpRepository;
+import com.kmkbe.core.domain.entity.OtpLog;
+import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.core.domain.repository.OtpRepository;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
 import com.kmkbe.modules.customer.service.OtpService;
 import org.assertj.core.api.Assertions;
@@ -46,7 +46,7 @@ public class OtpServicesTest {
     @Test
     @DisplayName("Should return valid otp with expiration time validation")
     void verifyForgotPinTest() {
-        VerifyOtpRequest verifyOtpRequest = new VerifyOtpRequest("", "vandikalvandi@gmail.com", "1111");
+        VerifyOtpRequest verifyOtpRequest = new VerifyOtpRequest("", "vandikalvandi@gmail.com", "1111", "123456");
         String result = otpService.verifyForgotPin(verifyOtpRequest);
         Assertions.assertThat(result).isEqualTo("Otp verified, try to enter new pin");
     }

@@ -2,7 +2,7 @@ package com.kmkbe.modules.remote.service;
 
 import com.kmkbe.core.service.LdapUrlService;
 import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.modules.remote.dto.BaseLdapRemoteResponseDto;
+import com.kmkbe.core.domain.dto.BaseLdapRemoteResponseDto;
 import com.kmkbe.modules.remote.request.JwtAuthRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

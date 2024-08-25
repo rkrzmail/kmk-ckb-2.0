@@ -1,6 +1,6 @@
 package com.kmkbe.core.middleware;
 
-import com.kmkbe.core.model.JwtSimulasiModel;
+import com.kmkbe.core.domain.model.JwtSimulasiModel;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.service.JwtService;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -27,7 +27,6 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
-import java.util.Arrays;
 
 @Component
 @RequiredArgsConstructor

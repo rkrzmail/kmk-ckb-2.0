@@ -1,6 +1,6 @@
 package com.kmkbe.modules.loan_submission.request;
 
-import com.kmkbe.modules.loan_submission.model.PostedInvoicePayload;
+import com.kmkbe.core.domain.model.PostedInvoicePayload;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

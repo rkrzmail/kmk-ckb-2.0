@@ -1,14 +1,14 @@
 package com.kmkbe.modules.loan_submission.service;
 
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.loan_submission.dto.InvoiceDto;
-import com.kmkbe.modules.loan_submission.entity.Bouwheer;
-import com.kmkbe.modules.loan_submission.entity.FinancingDtl;
-import com.kmkbe.modules.loan_submission.entity.FinancingHdr;
-import com.kmkbe.modules.loan_submission.entity.Invoice;
-import com.kmkbe.modules.loan_submission.mapper.InvoiceMapper;
-import com.kmkbe.modules.loan_submission.model.PostedInvoicePayload;
-import com.kmkbe.modules.loan_submission.repository.FinancingDtlRepository;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.dto.InvoiceDto;
+import com.kmkbe.core.domain.entity.Bouwheer;
+import com.kmkbe.core.domain.entity.FinancingDtl;
+import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.Invoice;
+import com.kmkbe.core.domain.mapper.InvoiceMapper;
+import com.kmkbe.core.domain.model.PostedInvoicePayload;
+import com.kmkbe.core.domain.repository.FinancingDtlRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

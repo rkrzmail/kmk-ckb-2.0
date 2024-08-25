@@ -1,16 +1,16 @@
 package com.kmkbe.modules.loan_submission.service;
 
-import com.kmkbe.core.model.PaginationResult;
-import com.kmkbe.modules.customer.entity.Customer;
+import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
-import com.kmkbe.modules.loan_submission.dto.InvoiceDto;
-import com.kmkbe.modules.loan_submission.entity.Bouwheer;
-import com.kmkbe.modules.loan_submission.entity.Invoice;
-import com.kmkbe.modules.loan_submission.mapper.InvoiceMapper;
-import com.kmkbe.modules.loan_submission.repository.InvoiceRepository;
+import com.kmkbe.core.domain.dto.InvoiceDto;
+import com.kmkbe.core.domain.entity.Bouwheer;
+import com.kmkbe.core.domain.entity.Invoice;
+import com.kmkbe.core.domain.mapper.InvoiceMapper;
+import com.kmkbe.core.domain.repository.InvoiceRepository;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
-import com.kmkbe.modules.loan_submission.request.InvoiceListRequest;
-import com.kmkbe.modules.loan_submission.spec.InvoiceSpec;
+import com.kmkbe.core.domain.request.InvoiceListRequest;
+import com.kmkbe.core.domain.spec.InvoiceSpec;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

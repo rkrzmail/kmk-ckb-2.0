@@ -2,7 +2,7 @@ package com.kmkbe.core.utils;
 
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.exception.LoanDocMandatoryException;
-import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.core.domain.model.CommonResult;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityNotFoundException;

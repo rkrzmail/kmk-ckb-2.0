@@ -1,23 +1,27 @@
 package com.kmkbe.modules.loan_submission.service;
 
+import com.kmkbe.core.domain.constant.FinancingStatus;
+import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
+import com.kmkbe.core.domain.dto.FinancingHdrDto;
+import com.kmkbe.core.domain.dto.PaidInvoiceDto;
+import com.kmkbe.core.domain.entity.Bouwheer;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.core.domain.mapper.FinancingMapper;
+import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.model.PostedInvoicePayload;
+import com.kmkbe.core.domain.model.SimulationDisburseResult;
+import com.kmkbe.core.domain.repository.FinancingHdrRepository;
+import com.kmkbe.core.domain.repository.InvoiceRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.loan_submission.constant.FinancingStatus;
-import com.kmkbe.modules.loan_submission.dto.FinancingHdrDto;
-import com.kmkbe.modules.loan_submission.entity.Bouwheer;
-import com.kmkbe.modules.loan_submission.entity.FinancingHdr;
-import com.kmkbe.modules.loan_submission.entity.Product;
-import com.kmkbe.modules.loan_submission.mapper.FinancingMapper;
-import com.kmkbe.modules.loan_submission.model.PostedInvoicePayload;
-import com.kmkbe.modules.loan_submission.model.SimulationDisburseResult;
-import com.kmkbe.modules.loan_submission.repository.FinancingHdrRepository;
-import com.kmkbe.modules.loan_submission.repository.InvoiceRepository;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.UUID;
 
 @Service
@@ -132,6 +136,34 @@ public class FinancingHdrService {
             financingHdrRepository.delete(financingHdr);
         } catch (Exception e) {
             log.error("delete, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public PaginationResult<PaidInvoiceDto> paidInvoice() {
+        try {
+            return PaginationResult.<PaidInvoiceDto>builder()
+                    .currentPage(1)
+                    .totalData(0L)
+                    .totalPage(1)
+                    .list(new ArrayList<>())
+                    .build();
+        } catch (Exception e) {
+            log.error("paidInvoice, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public PaginationResult<DisburseInvoiceDto> disburseInvoice() {
+        try {
+            return PaginationResult.<DisburseInvoiceDto>builder()
+                    .currentPage(1)
+                    .totalData(0L)
+                    .totalPage(1)
+                    .list(new ArrayList<>())
+                    .build();
+        } catch (Exception e) {
+            log.error("disburseInvoice, error {}", e.getMessage());
             throw e;
         }
     }

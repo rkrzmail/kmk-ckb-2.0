@@ -3,8 +3,8 @@ package com.kmkbe.modules.remote.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.core.utils.ObjectUtils;
-import com.kmkbe.modules.remote.dto.BaseMstRemoteResponseDto;
-import com.kmkbe.modules.remote.dto.InquiryCwrRemoteDto;
+import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
+import com.kmkbe.core.domain.dto.InquiryCwrRemoteDto;
 import com.kmkbe.modules.remote.request.CriteriaGenericTypeRemoteRequest;
 import com.kmkbe.modules.remote.request.InquiryCwrCriteriaRemoteRequest;
 import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
@@ -33,7 +33,7 @@ public class CwrRemoteService {
     ) throws JsonProcessingException {
         try {
             PropCriteriaGenericTypeRequest propCriteria = PropCriteriaGenericTypeRequest.builder()
-                    .cwrPropName(request.getName())
+                    .propName(request.getName())
                     .value(request.getCwrNo())
                     .build();
 

@@ -1,8 +1,8 @@
 package com.kmkbe.modules.customer.service;
 
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.entity.CustomerCompany;
-import com.kmkbe.modules.customer.repository.CustomerCompanyRepository;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.entity.CustomerCompany;
+import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
@@ -40,6 +40,7 @@ public class CustomerCompanyService {
 
             final CustomerCompany company = new CustomerCompany();
             {
+                company.setCustCompanyCode(UUID.randomUUID());
                 company.setCustCode(customer);
                 company.setCustCompanyType(companyReq.getCompanyType());
                 company.setCompanyModel(companyReq.getCompanyModel().name());
@@ -60,6 +61,8 @@ public class CustomerCompanyService {
                 company.setOwnershipStatus(companyReq.getOwnershipStatus());
                 company.setStaySince(companyReq.getStaySince());
                 company.setStayLength(CustomerUtils.calculateStayLength(companyReq.getStaySince()));
+                company.setUsrCrt(customer.getCustName());
+                company.setDtmCrt(Instant.now());
             }
 
             customerCompanyRepository.save(company);
@@ -106,8 +109,7 @@ public class CustomerCompanyService {
             company.setOwnershipStatus(request.getOwnershipStatus());
             company.setStaySince(request.getStaySince().toInstant());
             company.setStayLength(CustomerUtils.calculateStayLength(request.getStaySince().toInstant()));
-            company.setDtmUpd(Instant.now());
-            company.setUsrUpd(customer.getCustName());
+
             return customerCompanyRepository.save(company);
         } catch (Exception e) {
             log.error("update: {}", e.getMessage());

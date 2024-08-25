@@ -1,7 +1,10 @@
 package com.kmkbe.modules.loan_submission.controller;
 
+import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
+import com.kmkbe.core.domain.dto.PaidInvoiceDto;
+import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.exception.IllegalApiKeyException;
-import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -10,10 +13,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Validated
 @RestController
@@ -25,6 +25,20 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class FinancingController {
     private final FinancingHdrService financingHdrService;
+
+    @GetMapping("/invoices/paid")
+    public CommonResult<PaginationResult<PaidInvoiceDto>> getInvoicePaid() {
+        return new CommonResult<PaginationResult<PaidInvoiceDto>>().success(
+                financingHdrService.paidInvoice()
+        );
+    }
+
+    @GetMapping("/invoices/disbursement")
+    public CommonResult<PaginationResult<DisburseInvoiceDto>> getDisbursement() {
+        return new CommonResult<PaginationResult<DisburseInvoiceDto>>().success(
+                financingHdrService.disburseInvoice()
+        );
+    }
 
     @PostMapping("/invoice-paid")
     public CommonResult<Object> invoicePaid(
@@ -38,7 +52,6 @@ public class FinancingController {
                 //throw new Exception("Invalid ApiKey");
                 throw new IllegalApiKeyException();
             }
-
 
             return new CommonResult<>().success(null);
         } catch (Exception e) {

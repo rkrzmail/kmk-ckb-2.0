@@ -1,10 +1,10 @@
 package com.kmkbe.modules;
 
-import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.RedisUtils;
-import com.kmkbe.modules.customer.repository.OtpRepository;
+import com.kmkbe.core.domain.repository.OtpRepository;
 import com.kmkbe.modules.customer.service.CustomerSeederService;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;

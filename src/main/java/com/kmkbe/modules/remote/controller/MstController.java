@@ -1,19 +1,23 @@
 package com.kmkbe.modules.remote.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.core.domain.dto.AreaRemoteDto;
+import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
+import com.kmkbe.core.domain.dto.InputOptionsRemoteDto;
+import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.service.BaseRemoteService;
-import com.kmkbe.modules.remote.dto.AreaRemoteDto;
-import com.kmkbe.modules.remote.dto.BaseMstRemoteResponseDto;
-import com.kmkbe.modules.remote.dto.InputOptionsRemoteDto;
 import com.kmkbe.modules.remote.request.AreaRemoteRequest;
 import com.kmkbe.modules.remote.request.PropCriteriaGenericTypeRequest;
 import com.kmkbe.modules.remote.request.RefMasterRequest;
 import com.kmkbe.modules.remote.service.MstRemoteService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.apache.commons.lang3.EnumUtils;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
 
@@ -59,16 +63,21 @@ public class MstController {
     public CommonResult<List<AreaRemoteDto>> getArea(
             /*@RequestParam()
             @NotNull(message = "area is required")*/
-            PropCriteriaGenericTypeRequest.AreaPropName area,
+            String area,
 
             /*@RequestParam
             @NotNull(message = "value is required")
             @NotEmpty(message = "value shouldn't be empty")*/
             String value
     ) throws JsonProcessingException {
+        PropCriteriaGenericTypeRequest.AreaPropName areaProp = null;
+        if (EnumUtils.isValidEnum(PropCriteriaGenericTypeRequest.AreaPropName.class, area)) {
+            areaProp = PropCriteriaGenericTypeRequest.AreaPropName.valueOf(area);
+        }
+
         BaseMstRemoteResponseDto<AreaRemoteDto> result = mstRemoteService.areaByCriteria(
                 AreaRemoteRequest.builder()
-                        .area(area)
+                        .area(areaProp)
                         .value(value)
                         .build()
         );

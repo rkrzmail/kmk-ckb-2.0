@@ -1,6 +1,6 @@
 package com.kmkbe.modules.common.service.refresh_token;
 
-import com.kmkbe.modules.common.model.RefreshToken;
+import com.kmkbe.core.domain.model.RefreshToken;
 import lombok.Builder;
 import lombok.Getter;
 

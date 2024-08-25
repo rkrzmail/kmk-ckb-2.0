@@ -1,19 +1,19 @@
 package com.kmkbe.modules.customer.controller;
 
 import com.kmkbe.core.exception.CommonInvalidException;
-import com.kmkbe.core.model.CommonResult;
-import com.kmkbe.modules.common.dto.LoginDto;
-import com.kmkbe.modules.customer.dto.RequestOtpDto;
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.entity.OtpLog;
+import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.dto.LoginDto;
+import com.kmkbe.core.domain.constant.CompanyModel;
+import com.kmkbe.core.domain.constant.CustomerType;
+import com.kmkbe.core.domain.dto.RequestOtpDto;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.entity.OtpLog;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
-import com.kmkbe.modules.customer.service.AuthService;
-import com.kmkbe.modules.customer.service.CustomerService;
-import com.kmkbe.modules.customer.service.OtpService;
-import com.kmkbe.modules.remote.dto.InquiryVendorRemoteDto;
+import com.kmkbe.modules.customer.service.*;
+import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,6 +26,7 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
+import java.time.Instant;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -38,6 +39,8 @@ public class AuthController {
     private final AuthService authService;
     private final SecurityContextLogoutHandler logoutHandler;
     private final CustomerService customerService;
+    private final CustomerCompanyService customerCompanyService;
+    private final CustomerPersonalService customerPersonalService;
     private final OtpService otpService;
     private final CustomerRemoteService customerRemoteService;
 
@@ -58,7 +61,52 @@ public class AuthController {
                     .build();
         }
 
-        final Customer cust = customerService.create(request, vendor);
+        final CustomerType type;
+        if (request.getCustomerType().equalsIgnoreCase("perusahaan")) {
+            type = CustomerType.Company;
+            String address = "";
+            if (
+                    vendor.getVendorBuilding() != null
+                            && !vendor.getVendorBuilding().isEmpty()
+            ) {
+                address = vendor.getVendorBuilding().getFirst().getAddressInfo();
+            }
+
+            request.setCompany(
+                    SignUpRequest.Company.builder()
+                            .companyModel(CompanyModel.PT)
+                            .companyType("Perseroan Terbatas")
+                            .identityType("AKTA")
+                            .identityNo(request.getCustomerIdNo())
+                            .identityIssuedDate(Instant.now())
+                            .identityExpiredDate(Instant.now())
+                            .companyAddress(address)
+                            .rt("")
+                            .rw("")
+                            .kelurahan("")
+                            .kecamatan("")
+                            .city("")
+                            .province("")
+                            .zipCode("")
+                            .area("")
+                            .phone("")
+                            .ownershipStatus("")
+                            .staySince(Instant.now())
+                            .build()
+            );
+        } else if (request.getCustomerType().equalsIgnoreCase("perorangan")) {
+            type = CustomerType.Personal;
+        } else {
+            throw new Exception("Tipe Debitur is not valid or is not in list");
+        }
+
+        final Customer cust = customerService.create(request, vendor, type);
+        if (type == CustomerType.Company) {
+            customerCompanyService.create(cust, request.getCompany());
+        } else {
+            customerPersonalService.create(cust, request.getPersonal());
+        }
+
         final OtpLog otpLog = otpService.create(cust, OtpService.OtpType.SIGNUP);
 
         return new CommonResult<RequestOtpDto>().success(

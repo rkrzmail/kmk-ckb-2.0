@@ -2,7 +2,7 @@ package com.kmkbe.modules.remote.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.service.BaseRemoteService;
-import com.kmkbe.modules.remote.dto.BaseSimpleRemoteResponseDto;
+import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
 import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
 import lombok.RequiredArgsConstructor;

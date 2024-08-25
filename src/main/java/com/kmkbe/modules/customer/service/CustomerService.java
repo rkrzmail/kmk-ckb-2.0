@@ -1,14 +1,14 @@
 package com.kmkbe.modules.customer.service;
 
 import com.kmkbe.core.exception.CommonInvalidException;
-import com.kmkbe.modules.customer.constant.CustomerIdType;
-import com.kmkbe.modules.customer.constant.CustomerType;
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.repository.CustomerRepository;
+import com.kmkbe.core.domain.constant.CustomerIdType;
+import com.kmkbe.core.domain.constant.CustomerType;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
-import com.kmkbe.modules.remote.dto.InquiryVendorRemoteDto;
+import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -29,18 +29,10 @@ public class CustomerService {
 
     public Customer create(
             SignUpRequest request,
-            InquiryVendorRemoteDto vendor
+            InquiryVendorRemoteDto vendor,
+            CustomerType type
     ) throws CommonInvalidException {
         try {
-            final CustomerType type;
-            if (request.getCustomerType().equalsIgnoreCase("perusahaan")) {
-                type = CustomerType.Company;
-            } else if (request.getCustomerType().equalsIgnoreCase("perorangan")) {
-                type = CustomerType.Personal;
-            } else {
-                throw new Exception("Tipe Debitur is not valid or is not in list");
-            }
-
             if (!request.getIsAgreeTc()) {
                 throw new Exception("Setujui Syarat dan Ketentuan for sign up");
             }

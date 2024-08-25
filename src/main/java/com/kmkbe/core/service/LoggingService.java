@@ -1,6 +1,6 @@
 package com.kmkbe.core.service;
 
-import com.kmkbe.core.model.HttpLoggerPayload;
+import com.kmkbe.core.domain.model.HttpLoggerPayload;
 import com.mongodb.client.MongoCollection;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;

@@ -1,11 +1,11 @@
 package com.kmkbe.modules.loan_submission.service;
 
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.loan_submission.dto.SimulationHistDto;
-import com.kmkbe.modules.loan_submission.entity.FinancingHdr;
-import com.kmkbe.modules.loan_submission.entity.SimulationHist;
-import com.kmkbe.modules.loan_submission.mapper.SimulationHistoryMapper;
-import com.kmkbe.modules.loan_submission.repository.SimulationHistRepository;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.dto.SimulationHistDto;
+import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.SimulationHist;
+import com.kmkbe.core.domain.mapper.SimulationHistoryMapper;
+import com.kmkbe.core.domain.repository.SimulationHistRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

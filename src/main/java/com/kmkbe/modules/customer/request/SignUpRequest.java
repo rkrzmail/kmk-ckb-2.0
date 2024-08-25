@@ -1,14 +1,16 @@
 package com.kmkbe.modules.customer.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.kmkbe.core.converter.ToLowerCaseDeserializer;
 import com.kmkbe.core.utils.CommonFormattingUtils;
-import com.kmkbe.modules.customer.constant.CompanyModel;
-import com.kmkbe.modules.customer.constant.CustomerModel;
+import com.kmkbe.core.domain.constant.CompanyModel;
+import com.kmkbe.core.domain.constant.CustomerModel;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.validator.constraints.Length;
 
 import java.time.Instant;
@@ -56,9 +58,13 @@ public class SignUpRequest {
     @NotNull(message = "Setujui Syarat & Ketentuan cannot be null")
     private Boolean isAgreeTc;
 
+    @JsonIgnore
     private Company company;
+
+    @JsonIgnore
     private Personal personal;
 
+    @SuperBuilder
     @Getter
     @AllArgsConstructor
     @NoArgsConstructor
@@ -76,6 +82,7 @@ public class SignUpRequest {
         private Instant staySince;
     }
 
+    @SuperBuilder
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor
@@ -90,6 +97,7 @@ public class SignUpRequest {
         private String companyAddress;
     }
 
+    @SuperBuilder
     @Getter
     @NoArgsConstructor
     @AllArgsConstructor

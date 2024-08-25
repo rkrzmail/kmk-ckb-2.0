@@ -3,8 +3,8 @@ package com.kmkbe.modules.remote.services;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.core.utils.ObjectUtils;
-import com.kmkbe.modules.remote.dto.BaseMstRemoteResponseDto;
-import com.kmkbe.modules.remote.dto.InputOptionsRemoteDto;
+import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
+import com.kmkbe.core.domain.dto.InputOptionsRemoteDto;
 import com.kmkbe.modules.remote.request.RefMasterRequest;
 import com.kmkbe.modules.remote.service.MstRemoteService;
 import org.junit.jupiter.api.Assertions;
@@ -23,6 +23,7 @@ public class MstRemoteServiceTest extends BaseRemoteServicesTest {
         super.setupBeforeEach();
 
         mstRemoteService = new MstRemoteService(
+                objectMapper,
                 restTemplateByPassSSL,
                 baseRemoteService
         );

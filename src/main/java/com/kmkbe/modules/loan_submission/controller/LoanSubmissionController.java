@@ -2,14 +2,14 @@ package com.kmkbe.modules.loan_submission.controller;
 
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
-import com.kmkbe.modules.loan_submission.dto.*;
 import com.kmkbe.modules.loan_submission.request.*;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
 import com.kmkbe.modules.loan_submission.service.SessionLoanSubmissionService;
-import com.kmkbe.modules.remote.dto.PostedInvoiceDto;
+import com.kmkbe.core.domain.dto.PostedInvoiceDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -122,8 +122,9 @@ public class LoanSubmissionController {
     public CommonResult<SimulationHistDto> getSimulationHistory(
             Authentication authentication
     ) throws Exception {
+        //loanSubmissionService.lastSimulationHistory(authentication)
         return new CommonResult<SimulationHistDto>().success(
-                loanSubmissionService.lastSimulationHistory(authentication)
+                null
         );
     }
 
@@ -142,7 +143,7 @@ public class LoanSubmissionController {
     public CommonResult<LoanSubmissionSessionDto> createSimulationSession(
             Authentication authentication,
             @Valid @RequestBody CreateSessionLoanSubmissionRequest createSessionLoanSubmissionRequest
-    ) throws SignatureException {
+    ) throws SignatureException, JsonProcessingException {
         return new CommonResult<LoanSubmissionSessionDto>().success(
                 sessionLoanSubmissionService.create(
                         authentication,

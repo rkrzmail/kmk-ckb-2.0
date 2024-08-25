@@ -1,8 +1,8 @@
 package com.kmkbe.modules.customer.service;
 
-import com.kmkbe.modules.customer.entity.ChangePasswordLog;
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.repository.ChangePasswordLogRepository;
+import com.kmkbe.core.domain.entity.ChangePasswordLog;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.repository.ChangePasswordLogRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

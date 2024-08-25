@@ -1,7 +1,7 @@
 package com.kmkbe.core.callback;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kmkbe.core.model.CommonResult;
+import com.kmkbe.core.domain.model.CommonResult;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

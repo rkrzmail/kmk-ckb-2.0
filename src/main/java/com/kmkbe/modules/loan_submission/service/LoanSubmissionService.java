@@ -1,30 +1,27 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.kmkbe.core.domain.constant.FinancingStatus;
+import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.core.domain.entity.*;
+import com.kmkbe.core.domain.model.JwtSimulasiModel;
+import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
+import com.kmkbe.core.domain.model.PostedInvoicePayload;
+import com.kmkbe.core.domain.model.SimulationDisburseResult;
+import com.kmkbe.core.domain.repository.BouwheerRepository;
+import com.kmkbe.core.domain.repository.ProductRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.exception.LoanDocMandatoryException;
-import com.kmkbe.core.model.JwtSimulasiModel;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
-import com.kmkbe.modules.common.model.LoanDisburseEmailPayload;
 import com.kmkbe.modules.common.service.EmailService;
-import com.kmkbe.modules.customer.dto.CustomerDto;
-import com.kmkbe.modules.customer.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
-import com.kmkbe.modules.loan_submission.constant.FinancingStatus;
-import com.kmkbe.modules.loan_submission.dto.*;
-import com.kmkbe.modules.loan_submission.entity.*;
-import com.kmkbe.modules.loan_submission.model.PostedInvoicePayload;
-import com.kmkbe.modules.loan_submission.model.SimulationDisburseResult;
-import com.kmkbe.modules.loan_submission.repository.BouwheerRepository;
-import com.kmkbe.modules.loan_submission.repository.ProductRepository;
-import com.kmkbe.modules.loan_submission.request.*;
-import com.kmkbe.modules.remote.dto.InquiryInvoiceRemoteDto;
-import com.kmkbe.modules.remote.dto.InquiryVendorRemoteDto;
-import com.kmkbe.modules.remote.dto.PostedInvoiceDto;
-import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
+import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
+import com.kmkbe.modules.loan_submission.request.CreateLoanApplicationRequest;
+import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
+import com.kmkbe.modules.loan_submission.request.SaveImportantNotesRequest;
 import com.kmkbe.modules.remote.service.*;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
@@ -397,12 +394,6 @@ public class LoanSubmissionService {
                             + createdFinancing.getProvisionFeeAmt()
                             + createdFinancing.getSurveyFeeAmtNett();
 
-            financingRemoteService.postedSubmission(
-                    FinancingSubmissionRequest.builder()
-                            .vendorCode(customer.getCustExternalCode())
-                            .build()
-            );
-
             emailService.sendNotificationLoanDisbursement(
                     customer,
                     LoanDisburseEmailPayload.builder()
@@ -630,13 +621,15 @@ public class LoanSubmissionService {
                 String token
         ) throws SignatureException {
             JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(token);
-            bouwheerCode = jwtSimulasiModel != null ? UUID.fromString(jwtSimulasiModel.getBouwheerCode()) : UUID.randomUUID();
+            UUID bc = jwtSimulasiModel != null ? UUID.fromString(jwtSimulasiModel.getBouwheerCode()) : UUID.randomUUID();
 
-            Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(bouwheerCode).orElse(null);
+            Bouwheer bouwheer = bouwheerRepository.findFirstByBouwheerName("PT. Truck Indo").orElse(null);
             if (bouwheer != null) {
+                bouwheerCode = bouwheer.getBouwheerCode();
                 bouwheerName = bouwheer.getBouwheerName();
             } else {
-                bouwheerName = "PT. Truckindo Utama";
+                bouwheerName = "PT. Truck Indo";
+                bouwheerCode = bc;
             }
 
             if (jwtSimulasiModel != null) {

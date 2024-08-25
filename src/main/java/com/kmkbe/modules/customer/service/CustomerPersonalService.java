@@ -1,8 +1,8 @@
 package com.kmkbe.modules.customer.service;
 
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.entity.CustomerPersonal;
-import com.kmkbe.modules.customer.repository.CustomerPersonalRepository;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.entity.CustomerPersonal;
+import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
@@ -39,6 +39,7 @@ public class CustomerPersonalService {
 
         final CustomerPersonal personal = new CustomerPersonal();
         {
+            personal.setCustPersonalCode(UUID.randomUUID());
             personal.setCustCode(cust);
             personal.setBirthPlace(personalReq.getBirthPlace());
             personal.setBirthDate(personalReq.getBirthDate());

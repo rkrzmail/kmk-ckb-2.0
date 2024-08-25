@@ -1,10 +1,10 @@
 package com.kmkbe.modules.loan_submission.service;
 
-import com.kmkbe.core.model.PaginationResult;
-import com.kmkbe.modules.loan_submission.dto.ProductDto;
-import com.kmkbe.modules.loan_submission.entity.Product;
-import com.kmkbe.modules.loan_submission.mapper.ProductMapper;
-import com.kmkbe.modules.loan_submission.repository.ProductRepository;
+import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.dto.ProductDto;
+import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.core.domain.mapper.ProductMapper;
+import com.kmkbe.core.domain.repository.ProductRepository;
 import com.kmkbe.modules.loan_submission.request.ProductListRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

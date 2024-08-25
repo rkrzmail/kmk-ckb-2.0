@@ -1,9 +1,9 @@
 package com.kmkbe.modules.loan_submission.controller;
 
 
-import com.kmkbe.core.model.CommonResult;
-import com.kmkbe.core.model.PaginationResult;
-import com.kmkbe.modules.loan_submission.dto.ProductDto;
+import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.dto.ProductDto;
 import com.kmkbe.modules.loan_submission.request.ProductListRequest;
 import com.kmkbe.modules.loan_submission.service.ProductService;
 import io.swagger.v3.oas.annotations.tags.Tag;

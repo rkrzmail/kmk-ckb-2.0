@@ -1,12 +1,12 @@
 package com.kmkbe.modules.customer.controller;
 
-import com.kmkbe.core.model.CommonResult;
-import com.kmkbe.modules.customer.constant.CustomerType;
-import com.kmkbe.modules.customer.dto.CustomerDto;
-import com.kmkbe.modules.customer.entity.Customer;
-import com.kmkbe.modules.customer.entity.CustomerCompany;
-import com.kmkbe.modules.customer.entity.CustomerPersonal;
-import com.kmkbe.modules.customer.mapper.CustomerMapper;
+import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.constant.CustomerType;
+import com.kmkbe.core.domain.dto.CustomerDto;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.entity.CustomerCompany;
+import com.kmkbe.core.domain.entity.CustomerPersonal;
+import com.kmkbe.core.domain.mapper.CustomerMapper;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.customer.service.CustomerCompanyService;
