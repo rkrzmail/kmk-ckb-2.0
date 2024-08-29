@@ -16,10 +16,12 @@ import java.time.Instant;
 public class CustomerUtils {
     public static Customer authenticateCustomer(Authentication authentication) throws SignatureException {
         if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
-            return (Customer) authentication.getPrincipal();
+            if(authentication.getPrincipal() instanceof Customer) {
+                return (Customer) authentication.getPrincipal();
+            }
         }
 
-        throw new SignatureException();
+        throw new SignatureException("You are not authorized to access this resource");
     }
 
     public static CustomerDto authenticateCustomerDto(Authentication authentication) throws SignatureException {

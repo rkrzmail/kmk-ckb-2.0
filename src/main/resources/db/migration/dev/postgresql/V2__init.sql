@@ -148,7 +148,7 @@ CREATE TABLE legal_file
 (
     file_id        BIGSERIAL PRIMARY KEY,
     cust_code      UUID          NOT NULL,
-    file_type_code VARCHAR(20)   NOT NULL,
+    file_type_code VARCHAR(20)   NULL,
     file_name      VARCHAR(500)  NOT NULL,
     file_path      VARCHAR(8000) NOT NULL,
     content_type   VARCHAR(500)  NOT NULL,

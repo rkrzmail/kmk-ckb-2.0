@@ -89,12 +89,14 @@ public class SignUpRequest {
     @ToString
     public static class Company extends AddressDetail {
         private String companyType;
-        private CompanyModel companyModel;
+        private String companyModel;
         private String identityType;
         private String identityNo;
         private Instant identityIssuedDate;
         private Instant identityExpiredDate;
         private String companyAddress;
+        private String custIdNo;
+
     }
 
     @SuperBuilder

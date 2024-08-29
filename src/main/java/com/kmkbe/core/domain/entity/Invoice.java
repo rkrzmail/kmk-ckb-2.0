@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.time.Instant;
+import java.util.Date;
 import java.util.UUID;
 
 @Getter
@@ -77,6 +78,12 @@ public class Invoice {
 
     @Column(name = "status")
     private String status;
+
+    @Column(name = "po_number")
+    private String poNumber;
+
+    @Column(name = "posting_date")
+    private Date postingDate;
 
     @Size(max = 50)
     @NotNull

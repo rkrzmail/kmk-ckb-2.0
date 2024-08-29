@@ -2,10 +2,15 @@ package com.kmkbe.core.service;
 
 import com.kmkbe.core.utils.FileUtils;
 import io.netty.util.internal.StringUtil;
+import jakarta.servlet.ServletContext;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,6 +26,8 @@ import java.nio.file.StandardCopyOption;
 @Slf4j
 @RequiredArgsConstructor
 public class FileStorageService {
+    private final ServletContext context;
+
     private final Path root = Paths.get("uploads");
 
     public String save(MultipartFile file, String uploadDir, String name) throws Exception {
@@ -30,7 +37,12 @@ public class FileStorageService {
     /**
      * @return full path of uploaded file
      */
-    public String save(final MultipartFile file, String uploadDir, String name, String extValidation) throws Exception {
+    public String save(
+            final MultipartFile file,
+            String uploadDir,
+            String name,
+            String extValidation
+    ) throws Exception {
         try {
             if (file == null) {
                 throw new Exception("File cannot be null");
@@ -102,12 +114,47 @@ public class FileStorageService {
             if (filename.startsWith("/uploads/")) {
                 filename = filename.replace("/uploads/", "");
             }
-            
+
             Path file = root.resolve(filename);
             boolean res = Files.deleteIfExists(file);
             return res;
         } catch (IOException e) {
             throw new RuntimeException("Error: " + e.getMessage());
+        }
+    }
+
+    public ResponseEntity<Resource> downloadUploadFile(
+            HttpServletRequest httpServletRequest,
+            String filePath,
+            String fileName
+    ) {
+        String filePathStr = filePath + "/" + fileName;
+        if (filePathStr.contains("uploads")) {
+            filePathStr = filePathStr.replace("/uploads/", "");
+        }
+
+        try {
+            Path paths = Paths.get("uploads", filePathStr);
+            Resource resource = new UrlResource(paths.toUri());
+            String contentType = httpServletRequest
+                    .getServletContext()
+                    .getMimeType(resource.getFile().getAbsolutePath());
+
+            if (resource.exists()) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .header(
+                                HttpHeaders.CONTENT_DISPOSITION,
+                                "attachment; filename=\"" + resource.getFilename() + "\""
+                        )
+                        .body(resource);
+            } else {
+                throw new RuntimeException("File not found ");
+            }
+        } catch (MalformedURLException ex) {
+            throw new RuntimeException("File not found ");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 }

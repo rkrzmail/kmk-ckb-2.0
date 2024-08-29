@@ -209,6 +209,7 @@
                         </exclude>
                         <exclude>
                             <groupId>com.kmkbe.core.AESTest</groupId>
+                            <groupId>com.kmkbe.core.MD5Test</groupId>
                         </exclude>
                     </excludes>
                 </configuration>

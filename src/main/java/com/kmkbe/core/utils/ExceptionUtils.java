@@ -59,8 +59,13 @@ public class ExceptionUtils {
 
         if (exception instanceof SignatureException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
-            //detail.setProperty("description", "Invalid Credentials");
-            detail.setDetail(exception.getMessage());
+            if (!StringUtil.isNullOrEmpty(exception.getMessage())) {
+                detail.setProperty("description", exception.getMessage());
+            } else {
+                detail.setProperty("description", "Invalid Credentials");
+            }
+
+            //detail.setDetail(exception.getMessage());
         }
 
         if (exception instanceof ExpiredJwtException) {

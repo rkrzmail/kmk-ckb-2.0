@@ -71,7 +71,7 @@ public class CommonInvalidException extends RuntimeException {
         return CommonInvalidException.builder()
                 .title("Email atau Pin tidak valid")
                 .message("Email atau Pin salah, silahkan masukkan email dan pin yang valid")
-                .action(Action.builder().title("Kemabli").uri("/auth/sign-in").build())
+                .action(Action.builder().title("Kembali").uri("/auth/sign-in").build())
                 .headerMessage("Invalid Email or Pin")
                 .build();
     }
@@ -100,6 +100,13 @@ public class CommonInvalidException extends RuntimeException {
                 .message("Email atau Password salah, silahkan masukkan email dan password yang valid")
                 .action(Action.builder().title("Kemabli").uri("/internal/auth/sign-in").build())
                 .headerMessage("Invalid Email or Password")
+                .build();
+    }
+
+    public static CommonInvalidException cannotAccessResource() {
+        return CommonInvalidException.builder()
+                .title("Tidak ada akses")
+                .message("Anda tidak memiliki akses untuk mengakses sumber ini")
                 .build();
     }
 }

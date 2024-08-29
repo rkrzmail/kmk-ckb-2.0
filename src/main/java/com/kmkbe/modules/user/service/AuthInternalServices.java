@@ -110,7 +110,7 @@ public class AuthInternalServices {
     public LoginDto refreshToken(RefreshTokenRequest request) throws Exception {
         try {
             final RefreshToken payload = refreshTokenServices.verify(request.refreshToken());
-            refreshTokenServices.invalidate(payload.getRefreshToken().toString());
+            //refreshTokenServices.invalidate(payload.getRefreshToken().toString());
 
             MstUser user = mstUserRepository.findByUserCode(payload.getUserCode())
                     .orElseThrow(() -> new IllegalStateException("Invalid Refresh Token, Entire Internal User doesn't exists. Try to login again."));

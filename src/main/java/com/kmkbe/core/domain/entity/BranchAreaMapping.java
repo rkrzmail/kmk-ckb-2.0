@@ -1,9 +1,7 @@
 package com.kmkbe.core.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.kmkbe.modules.user.entity.MstBranch;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
@@ -18,40 +16,40 @@ import java.time.Instant;
 @Table(name = "branch_area_mapping", schema = "public")
 public class BranchAreaMapping {
     @Id
-    @Size(max = 3)
-    @Column(name = "branch_code", nullable = false, length = 3)
-    private String branchCode;
-
-    @Column(
-            name = "branch_area_mapping_id",
-            columnDefinition = "serial",
-            nullable = false,
-            insertable = false,
-            updatable = false
-    )
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "branch_area_mapping_id_gen")
+    @SequenceGenerator(name = "branch_area_mapping_id_gen", sequenceName = "branch_area_mapping_branch_area_mapping_id_seq", allocationSize = 1)
+    @Column(name = "branch_area_mapping_id", nullable = false)
     private Long branchAreaMappingId;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+            name = "branch_code",
+            referencedColumnName = "branch_code",
+            nullable = false
+    )
+    private MstBranch mstBranch;
+
     @Size(max = 50)
-    @NotNull(message = "area null")
+    @NotNull
     @Column(name = "area", nullable = false, length = 50)
     private String area;
 
     @Size(max = 50)
-    @NotNull(message = "province null")
+    @NotNull
     @Column(name = "province", nullable = false, length = 50)
     private String province;
 
     @Size(max = 50)
-    @NotNull(message = "city null")
+    @NotNull
     @Column(name = "city", nullable = false, length = 50)
     private String city;
 
-    @NotNull(message = "is active null")
+    @NotNull
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = false;
 
     @Size(max = 50)
-    @NotNull(message = "usr crt null")
+    @NotNull
     @Column(name = "usr_crt", nullable = false, length = 50)
     private String usrCrt;
 
@@ -66,4 +64,5 @@ public class BranchAreaMapping {
 
     @Column(name = "dtm_upd")
     private Instant dtmUpd;
+
 }

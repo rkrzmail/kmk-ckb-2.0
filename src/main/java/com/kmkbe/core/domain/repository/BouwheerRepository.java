@@ -12,4 +12,8 @@ public interface BouwheerRepository extends JpaRepository<Bouwheer, UUID> {
     Optional<Bouwheer> findFirstByBouwheerName(String name);
 
     Optional<Bouwheer> findByBouwheerCode(UUID code);
+
+    default Bouwheer findFirstByBouwheerName(){
+        return findFirstByBouwheerName("PT. Trakindo Utama").orElse(null);
+    }
 }

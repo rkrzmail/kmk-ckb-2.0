@@ -9,16 +9,18 @@ import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.modules.remote.request.AreaRemoteRequest;
 import com.kmkbe.modules.remote.request.PropCriteriaGenericTypeRequest;
 import com.kmkbe.modules.remote.request.RefMasterRequest;
+import com.kmkbe.modules.remote.request.ZipCodeRequest;
 import com.kmkbe.modules.remote.service.MstRemoteService;
+import io.netty.util.internal.StringUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.EnumUtils;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Validated
@@ -50,7 +52,7 @@ public class MstController {
         }
 
 
-        BaseMstRemoteResponseDto<InputOptionsRemoteDto> result = mstRemoteService.refMasterInputOption(
+        BaseMstRemoteResponseDto<List<InputOptionsRemoteDto>> result = mstRemoteService.refMasterInputOption(
                 name,
                 modelDebiturMappingCode
         );
@@ -61,27 +63,41 @@ public class MstController {
 
     @GetMapping("/area")
     public CommonResult<List<AreaRemoteDto>> getArea(
-            /*@RequestParam()
-            @NotNull(message = "area is required")*/
-            String area,
-
-            /*@RequestParam
-            @NotNull(message = "value is required")
-            @NotEmpty(message = "value shouldn't be empty")*/
-            String value
+            ZipCodeRequest request
     ) throws JsonProcessingException {
-        PropCriteriaGenericTypeRequest.AreaPropName areaProp = null;
-        if (EnumUtils.isValidEnum(PropCriteriaGenericTypeRequest.AreaPropName.class, area)) {
-            areaProp = PropCriteriaGenericTypeRequest.AreaPropName.valueOf(area);
+        List<AreaRemoteRequest> requests = new ArrayList<>();
+
+        if (!StringUtil.isNullOrEmpty(request.getCity())) {
+            requests.add(AreaRemoteRequest.builder()
+                    .type(PropCriteriaGenericTypeRequest.AreaPropName.kota)
+                    .value(request.getCity())
+                    .build());
+        }
+        if (!StringUtil.isNullOrEmpty(request.getKecamatan())) {
+            requests.add(AreaRemoteRequest.builder()
+                    .type(PropCriteriaGenericTypeRequest.AreaPropName.kecamatan)
+                    .value(request.getKecamatan())
+                    .build());
+        }
+        if (!StringUtil.isNullOrEmpty(request.getKelurahan())) {
+            requests.add(AreaRemoteRequest.builder()
+                    .type(PropCriteriaGenericTypeRequest.AreaPropName.kelurahan)
+                    .value(request.getKelurahan())
+                    .build());
+        }
+        if (!StringUtil.isNullOrEmpty(request.getZipCode())) {
+            requests.add(AreaRemoteRequest.builder()
+                    .type(PropCriteriaGenericTypeRequest.AreaPropName.zipCode)
+                    .value(request.getZipCode())
+                    .build());
         }
 
-        BaseMstRemoteResponseDto<AreaRemoteDto> result = mstRemoteService.areaByCriteria(
-                AreaRemoteRequest.builder()
-                        .area(areaProp)
-                        .value(value)
-                        .build()
+        BaseMstRemoteResponseDto<List<AreaRemoteDto>> result2 = mstRemoteService.areaQuery(
+                request.getPageNo(),
+                request.getRowPerPage(),
+                requests
         );
 
-        return new CommonResult<List<AreaRemoteDto>>().success(result.getData());
+        return new CommonResult<List<AreaRemoteDto>>().success(result2.getData());
     }
 }

@@ -28,7 +28,7 @@ public class CwrRemoteService {
     private final RestTemplate restTemplate;
     private final BaseRemoteService baseRemoteService;
 
-    public BaseMstRemoteResponseDto<InquiryCwrRemoteDto> inquiryCwr(
+    public BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> inquiryCwr(
             InquiryCwrRemoteRequest request
     ) throws JsonProcessingException {
         try {
@@ -48,7 +48,7 @@ public class CwrRemoteService {
                     headers
             );
 
-            final ResponseEntity<BaseMstRemoteResponseDto<InquiryCwrRemoteDto>> response = restTemplate.exchange(
+            final ResponseEntity<BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>>> response = restTemplate.exchange(
                     baseRemoteService.Fou_Generic_GetPagingObjectBySQL(),
                     HttpMethod.POST,
                     requestArgs,

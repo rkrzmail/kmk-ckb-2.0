@@ -2,9 +2,9 @@ package com.kmkbe.modules.loan_submission.controller;
 
 import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
 import com.kmkbe.core.domain.dto.PaidInvoiceDto;
+import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.exception.IllegalApiKeyException;
-import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,6 +26,31 @@ import org.springframework.web.bind.annotation.*;
 public class FinancingController {
     private final FinancingHdrService financingHdrService;
 
+    @PostMapping("/invoice-paid")
+    public CommonResult<Object> invoicePaid(
+            Authentication authentication,
+            HttpServletRequest httpServletRequest,
+            @Valid @RequestBody FinancingInvoicePaidRequest request
+    ) throws Exception {
+        try {
+            String providedApiKey = httpServletRequest.getHeader("ApiKey");
+            if (!providedApiKey.equals("$2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC")) {
+                //throw new Exception("Invalid ApiKey");
+                throw new IllegalApiKeyException();
+            }
+
+            financingHdrService.paidFinancing(
+                    authentication,
+                    request,
+                    providedApiKey
+            );
+
+            return new CommonResult<>().success(null, "Success Submitted");
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
     @GetMapping("/invoices/paid")
     public CommonResult<PaginationResult<PaidInvoiceDto>> getInvoicePaid() {
         return new CommonResult<PaginationResult<PaidInvoiceDto>>().success(
@@ -40,22 +65,13 @@ public class FinancingController {
         );
     }
 
-    @PostMapping("/invoice-paid")
-    public CommonResult<Object> invoicePaid(
-            Authentication authentication,
-            HttpServletRequest httpServletRequest,
-            @Valid @RequestBody FinancingInvoicePaidRequest request
-    ) throws Exception {
-        try {
-            String providedApiKey = httpServletRequest.getHeader("ApiKey");
-            if (!providedApiKey.equals("$2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC")) {
-                //throw new Exception("Invalid ApiKey");
-                throw new IllegalApiKeyException();
-            }
-
-            return new CommonResult<>().success(null);
-        } catch (Exception e) {
-            throw e;
-        }
+    @GetMapping("/approvals/status")
+    public CommonResult<Object> updateApproval(
+            @RequestParam("apiKey") String apiKey
+    ) {
+        //http://localhost:8443/api/v1/financing/approvals/status?apiKey=$2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC
+        return new CommonResult<>().success(
+                null
+        );
     }
 }

@@ -1,6 +1,7 @@
 package com.kmkbe.modules.common.service;
 
 import com.kmkbe.core.config.MailConfig;
+import com.kmkbe.core.domain.dto.MailRemoteDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.EmailTemplate;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
@@ -60,7 +61,7 @@ public class EmailService {
     }
 
     @Async
-    public void sendOtp(Customer customer, String otpCode) throws Exception {
+    public void sendOtp(Customer customer, String otpCode) {
         Map<String, Object> obj = new HashMap<>();
         obj.put("name", customer.getCustName());
         obj.put("otp_code", otpCode);
@@ -70,7 +71,7 @@ public class EmailService {
     }
 
     @Async
-    public void sendOtpChangePin(Customer customer, String otpCode) throws Exception {
+    public void sendOtpChangePin(Customer customer, String otpCode) {
         Map<String, Object> obj = new HashMap<>();
         obj.put("name", customer.getCustName());
         obj.put("otp_code", otpCode);
@@ -80,7 +81,7 @@ public class EmailService {
     }
 
     @Async
-    public void sendNotificationActive(Customer customer) throws Exception {
+    public void sendNotificationActive(Customer customer) {
         Map<String, Object> obj = new HashMap<>();
         obj.put("name", customer.getCustName());
         obj.put("id_no", customer.getCustIdNo());
@@ -92,7 +93,7 @@ public class EmailService {
     public void sendNotificationLoanDisbursement(
             final Customer customer,
             LoanDisburseEmailPayload payload
-    ) throws Exception {
+    ) {
         Map<String, Object> args = new HashMap<>();
         Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
         if (payloadArgs != null) {
@@ -112,7 +113,7 @@ public class EmailService {
             String email,
             String bouwheerName,
             LoanDisburseEmailPayload payload
-    ) throws Exception {
+    ) {
         Map<String, Object> args = new HashMap<>();
         Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
 
@@ -135,91 +136,45 @@ public class EmailService {
             final String email,
             final Map<String, Object> args,
             final String templateCode
-    ) throws Exception {
-        /*final CsulMailDto internalMail = csulConfigService.fetchEmailInfo();
-        JavaMailSender mailSender = mailConfig.javaMailSender(
-                internalMail.getServerUrl(),
-                internalMail.getPort(),
-                internalMail.getUsername(),
-                internalMail.getPassword()
-        );*/
-
+    ) {
         final EmailTemplate template = emailTemplateRepository
                 .findByEmailTemplateCodeAndIsActive(templateCode, true);
-        template.setMailTo(email);
-        template.setBodyMail(mappingBody(template.getBodyMail(), args));
+        {
+            template.setMailTo(email);
+            template.setBodyMail(mappingBody(template.getBodyMail(), args));
+        }
 
-        JavaMailSender mailSender = testingMailSender();
-        MimeMessage mimeMessage = mailSender.createMimeMessage();
-        mimeMessageTemplate(mimeMessage, template);
-
-       /* int attempts = 0;
-        boolean success = false;
-        for (int i = 0; i < MAX_SENT_FAIL_ATTEMPTS; i++) {
-            try {
-                mailSender.send(mimeMessage);
-                success = true;
-            } catch (Exception e) {
-                attempts++;
-                log.error("EmailService Failed to send email to {} due to {}", customer.getCustEmail(), e.getMessage());
-                log.error("EmailService try attempts: {}", attempts);
-            }
-        }*/
-
-        // for testing purpose only
-        /*if (!success) {
-            log.info("EmailService send email with testing mail sender");
-            mailSender = testingMailSender();
-            mailSender.send(mimeMessage);
-        }*/
-
-        log.info("EmailService send email with testing mail sender");
-        mailSender = testingMailSender();
-        mailSender.send(mimeMessage);
+        sendMailMessage(
+                template,
+                email
+        );
     }
 
     private void send(
             final Map<String, Object> args,
             final EmailTemplate template
-    ) throws Exception {
-        /*final CsulMailDto internalMail = csulConfigService.fetchEmailInfo();
-        JavaMailSender mailSender = mailConfig.javaMailSender(
+    ) {
+        template.setBodyMail(mappingBody(template.getBodyMail(), args));
+        sendMailMessage(
+                template,
+                template.getMailTo()
+        );
+    }
+
+    private JavaMailSender csulMailSender(){
+        final MailRemoteDto internalMail = configRemoteService.fetchEmailInfo();
+        return mailConfig.javaMailSender(
                 internalMail.getServerUrl(),
                 internalMail.getPort(),
                 internalMail.getUsername(),
                 internalMail.getPassword()
-        );*/
-        template.setBodyMail(mappingBody(template.getBodyMail(), args));
-
-        JavaMailSender mailSender = testingMailSender();
-        MimeMessage mimeMessage = mailSender.createMimeMessage();
-        mimeMessageTemplate(mimeMessage, template);
-
-       /* int attempts = 0;
-        boolean success = false;
-        for (int i = 0; i < MAX_SENT_FAIL_ATTEMPTS; i++) {
-            try {
-                mailSender.send(mimeMessage);
-                success = true;
-            } catch (Exception e) {
-                attempts++;
-                log.error("EmailService Failed to send email to {} due to {}", customer.getCustEmail(), e.getMessage());
-                log.error("EmailService try attempts: {}", attempts);
-            }
-        }*/
-
-        // for testing purpose only
-        /*if (!success) {
-            log.info("EmailService send email with testing mail sender");
-            mailSender = testingMailSender();
-            mailSender.send(mimeMessage);
-        }*/
-        log.info("EmailService send email with testing mail sender");
-        mailSender = testingMailSender();
-        mailSender.send(mimeMessage);
+        );
     }
 
-    private String mappingBody(String bodyMail, final Map<String, Object> args) {
+    private String mappingBody(
+            String bodyMail,
+            final Map<String, Object> args
+    ) {
         String body = bodyMail;
         if (args.get("name") != null) {
             body = body.replace("{name}", args.get("name").toString());
@@ -258,11 +213,18 @@ public class EmailService {
         );
     }
 
-    private MimeMessageHelper mimeMessageTemplate(MimeMessage mimeMessage, EmailTemplate template) throws MessagingException {
+    private MimeMessageHelper mimeMessageTemplate(
+            MimeMessage mimeMessage,
+            EmailTemplate template
+    ) throws MessagingException {
         return mimeMessageTemplate(mimeMessage, template, false);
     }
 
-    private MimeMessageHelper mimeMessageTemplate(MimeMessage mimeMessage, EmailTemplate template, boolean multipart) throws MessagingException {
+    private MimeMessageHelper mimeMessageTemplate(
+            MimeMessage mimeMessage,
+            EmailTemplate template,
+            boolean multipart
+    ) throws MessagingException {
         final MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, multipart, "utf-8");
         final boolean isHtml = template.getBodyMail().contains("html");
 
@@ -281,5 +243,45 @@ public class EmailService {
         helper.setPriority(EMAIL_PRIORITY);
 
         return helper;
+    }
+
+    private boolean sendMailMessage(
+            EmailTemplate template,
+            String email
+    ) {
+        try {
+            //JavaMailSender mailSender = testingMailSender();
+            JavaMailSender mailSender = csulMailSender();
+            MimeMessage mimeMessage = mailSender.createMimeMessage();
+            mimeMessageTemplate(mimeMessage, template);
+
+            int attempts = 0;
+            boolean success = false;
+            for (int i = 0; i < MAX_SENT_FAIL_ATTEMPTS; i++) {
+                try {
+                    mailSender.send(mimeMessage);
+                    success = true;
+                } catch (Exception e) {
+                    attempts++;
+                    log.error("EmailService Failed to send email to {} due to {}", email, e.getMessage());
+                    log.error("EmailService try attempts: {}", attempts);
+                }
+
+                if (success) {
+                    break;
+                }
+            }
+
+            if (!success) {
+                log.info("EmailService send email with testing mail sender");
+                mailSender = testingMailSender();
+                mailSender.send(mimeMessage);
+            }
+
+            return true;
+        } catch (Exception e) {
+            log.error("sendMailMessage, error {}", e.getMessage());
+            return false;
+        }
     }
 }

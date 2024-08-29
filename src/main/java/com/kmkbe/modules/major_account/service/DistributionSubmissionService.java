@@ -1,25 +1,30 @@
 package com.kmkbe.modules.major_account.service;
 
-import com.kmkbe.core.domain.dto.DetailDistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
-import com.kmkbe.core.domain.dto.PostedInvoiceDto;
 import com.kmkbe.core.domain.dto.StatusLabelDto;
-import com.kmkbe.core.domain.entity.FinancingDtl;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.FinancingDtlRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.InvoiceRepository;
-import com.kmkbe.core.domain.request.InvoiceListRequest;
+import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.common.service.EmailService;
-import com.kmkbe.modules.major_account.request.DistributionListRequest;
+import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
+import com.kmkbe.modules.major_account.request.AssignInvoiceToBranchRequest;
+import com.kmkbe.modules.user.entity.MstBranch;
+import com.kmkbe.modules.user.entity.MstUser;
+import com.kmkbe.modules.user.repository.MstBranchRepository;
+import com.kmkbe.modules.user.utils.UserInternalUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.security.SignatureException;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -32,23 +37,52 @@ public class DistributionSubmissionService {
     private final InvoiceRepository invoiceRepository;
     private final FinancingDtlRepository financingDtlRepository;
     private final EmailService emailService;
+    private final MstBranchRepository mstBranchRepository;
+    private final FinancingHdrService financingHdrService;
 
     public PaginationResult<DistributionSubmissionDto> submissionDistribution(
-            DistributionListRequest request
+            PaginationRequest request
     ) {
         try {
-            final Page<FinancingHdr> paginationFinancing = financingHdrRepository.findAll(
-                    PageRequest.of(request.getPageNo(), request.getPageSize())
+            int pageNo = 0, pageSize = 10;
+
+            if (request.getPageNo() != null) {
+                pageNo = request.getPageNo();
+            }
+
+            if (request.getPageSize() != null) {
+                pageSize = request.getPageSize();
+            }
+
+            if (pageNo > 0) {
+                pageNo = pageNo - 1;
+            }
+
+            final Page<FinancingHdr> paginationFinancing = financingHdrRepository.findAllByRawOrder(
+                    PageRequest.of(pageNo, pageSize)
+                    //FinancingHdrSpec.bySearchBy(request.getSearchBy(), request.getSearchValue())
             );
 
             final List<DistributionSubmissionDto> list = paginationFinancing.getContent()
                     .stream()
+                    /*.filter((e) -> e.getFinancingStatus().equalsIgnoreCase("inprocess")
+                            || e.getFinancingStatus().equalsIgnoreCase("signing")
+                            || e.getFinancingStatus().equalsIgnoreCase("signed")
+                            || e.getFinancingStatus().equalsIgnoreCase("live")
+                            || e.getFinancingStatus().equalsIgnoreCase("golive")
+                            || e.getFinancingStatus().equalsIgnoreCase("new")
+                    )*/
                     .map((e) -> {
-                        String city;
-                        if (e.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
-                            city = e.getCustomer().getCompany().getCity();
-                        } else {
-                            city = e.getCustomer().getPersonal().getCity();
+                        String city = "";
+
+                        if (e.getCustomer() != null) {
+                            if (e.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
+                                city = e.getCustomer().getCompany().getCity();
+                            } else {
+                                if (e.getCustomer().getPersonal() != null) {
+                                    city = e.getCustomer().getPersonal().getCity();
+                                }
+                            }
                         }
 
                         boolean isNewCust = financingHdrRepository.countByCustomerAndFinancingStatus(e.getCustomer(), "PAID") == 0;
@@ -69,7 +103,7 @@ public class DistributionSubmissionService {
                             label = "Aktif";
                         } else {
                             color = "#FF5C5C";
-                            label = "Selesai";
+                            label = e.getFinancingStatus();
                         }
 
                         return DistributionSubmissionDto.builder()
@@ -86,12 +120,13 @@ public class DistributionSubmissionService {
                                         .statusLabel(label)
                                         .color(color)
                                         .build())
+                                .dtmCrt(e.getDtmCrt())
                                 .build();
                     })
                     .toList();
 
             return PaginationResult.<DistributionSubmissionDto>builder()
-                    .currentPage(request.getPageNo())
+                    .currentPage(pageNo + 1)
                     .totalData(paginationFinancing.getTotalElements())
                     .totalPage(paginationFinancing.getTotalPages())
                     .list(list)
@@ -102,88 +137,34 @@ public class DistributionSubmissionService {
         }
     }
 
-    public DetailDistributionSubmissionDto detailSubmissionDistribution(String financingHdrCode) {
+    public void assignSubmission(
+            Authentication authentication,
+            AssignInvoiceToBranchRequest request
+    ) throws SignatureException {
         try {
-            FinancingHdr financingHdr = financingHdrByCode(financingHdrCode);
 
-            final String address;
-            if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
-                address = financingHdr.getCustomer().getCompany().getCompanyAddress();
-            } else {
-                address = financingHdr.getCustomer().getPersonal().getLegalAddress();
+            final UUID financingHdrCode;
+            try {
+                financingHdrCode = UUID.fromString(request.getFinancingHdrCode());
+            } catch (IllegalArgumentException ignored) {
+                throw new IllegalStateException("Invalid given financingHdrCode");
             }
 
-            return DetailDistributionSubmissionDto.builder()
-                    .financingHdrCode(financingHdr.getFinancingHdrCode())
-                    .custName(financingHdr.getCustomer().getCustName())
-                    .custIdTypeCode(financingHdr.getCustomer().getCustIdTypeCode())
-                    .custIdNo(financingHdr.getCustomer().getCustIdNo())
-                    .email(financingHdr.getCustomer().getCustEmail())
-                    .custTypeCode(financingHdr.getCustomer().getCustTypeCode())
-                    .address(address)
-                    .plafond(DetailDistributionSubmissionDto.PlafondDto.builder()
-                            .plafond(BigDecimal.valueOf(0))
-                            .totalPlafond(BigDecimal.valueOf(0))
-                            .availablePlafond(BigDecimal.valueOf(0))
-                            .build())
-                    .build();
-        } catch (Exception e) {
-            log.error("detailSubmissionDistribution: error {}", e.getMessage());
-            throw e;
-        }
-    }
+            MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
+            MstBranch mstBranch = mstBranchRepository.findByBranchCode(request.getBranchCode())
+                    .orElseThrow(() -> new IllegalStateException("Branch Not Found with given argument"));
+            FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
+                    .orElseThrow(() -> new IllegalStateException("Financing Not Found with given argument"));
 
-    public PaginationResult<PostedInvoiceDto> invoiceSubmission(
-            String financingHdrCode,
-            InvoiceListRequest request
-    ) {
-        try {
-            final FinancingHdr financingHdr = financingHdrByCode(financingHdrCode);
-            final Page<FinancingDtl> financingDtls = financingDtlRepository.findByFinancingHdr(
-                    financingHdr,
-                    PageRequest.of(request.getPageNo(), request.getPageSize())
-            );
-
-            final List<PostedInvoiceDto> postedInvoice = financingDtls
-                    .stream()
-                    .map((e) ->
-                            PostedInvoiceDto.builder()
-                                    .bouwheerCode(e.getFinancingHdr().getBouwheer().getBouwheerCode().toString())
-                                    .bouwheerName(e.getFinancingHdr().getBouwheer().getBouwheerName())
-                                    .customerInvoiceNo(e.getInvoice().getCustInvNo())
-                                    .bouwheerInvoiceNo(e.getInvoice().getBouwheerInvNo())
-                                    .invoiceDate(Date.from(e.getInvoice().getInvoiceDate()))
-                                    .invoiceDueDate(Date.from(e.getInvoice().getInvoiceDueDate()))
-                                    .invoiceAmount(BigDecimal.valueOf(e.getInvoice().getInvoiceAmt()))
-                                    .invoiceDescription(e.getInvoice().getInvoiceDescription())
-                                    .currencyCode("IDR").build()
-                    )
-                    .toList();
-
-            return PaginationResult.<PostedInvoiceDto>builder()
-                    .currentPage(request.getPageNo())
-                    .totalData(financingDtls.getTotalElements())
-                    .totalPage(financingDtls.getTotalPages())
-                    .list(postedInvoice)
-                    .build();
-        } catch (Exception e) {
-            log.error("invoiceSubmission: error {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    public void assignSubmission() {
-        try {
-
+            financingHdr.setFinancingStatus("INPROCESS");
+            financingHdr.setFinancingStep("ASSIGNMENT");
+            financingHdr.setMstBranch(mstBranch);
+            financingHdr.setDtmUpd(Instant.now());
+            financingHdr.setUsrUpd(authenticateUser.getUsername());
+            financingHdrRepository.save(financingHdr);
         } catch (Exception e) {
             log.error("assignSubmission: error {}", e.getMessage());
             throw e;
         }
-    }
-
-    private FinancingHdr financingHdrByCode(String financingHdrCode) {
-        return financingHdrRepository
-                .findByFinancingHdrCode(UUID.fromString(financingHdrCode))
-                .orElseThrow(() -> new IllegalStateException("Invalid given financingHdrCode"));
     }
 }

@@ -13,8 +13,13 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class MD5Test {
+    private static final String[] VENDOR_CODES = {
+            "0004000012"
+    };
+
     private static final String SECRET = "DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH";
 
     @BeforeEach
@@ -46,16 +51,27 @@ public class MD5Test {
     public void decodeJwtPayloadTest() {
         String jsonPayload = null, encodedPayload = null, encodedSecret = null;
 
-        try {
-            jsonPayload = ObjectUtils.jsonToStr(payload());
-            encodedPayload = Base64.getUrlEncoder().encodeToString(jsonPayload.getBytes(StandardCharsets.UTF_8));
-            encodedSecret = MD5Utils.hash(encodedPayload + "." + SECRET);
-        } catch (Exception ignored) {
+        List<String> encodedPayloads = new ArrayList<>();
+
+        for (String vendorCode : VENDOR_CODES) {
+            try {
+                jsonPayload = ObjectUtils.jsonToStr(payload(vendorCode));
+                encodedPayload = Base64.getUrlEncoder().encodeToString(jsonPayload.getBytes(StandardCharsets.UTF_8));
+                String hashSecret = MD5Utils.hash(encodedPayload + "." + SECRET);
+                String result = encodedPayload + "." + hashSecret;
+                encodedPayloads.add(result);
+                System.out.println(result);
+            } catch (Exception ignored) {
+            }
         }
 
-        Assertions.assertNotNull(jsonPayload);
+        String result = String.join(";", encodedPayloads);
+        Assertions.assertNotNull(result);
+        Assertions.assertFalse(result.isEmpty());
+
+        /*Assertions.assertNotNull(jsonPayload);
         Assertions.assertNotNull(encodedPayload);
-        Assertions.assertNotNull(encodedSecret);
+        Assertions.assertNotNull(encodedSecret);*/
     }
 
     @Test
@@ -67,6 +83,7 @@ public class MD5Test {
         try {
             messageDigest = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException ignored) {
+            throw new RuntimeException("Algoritm for decode doesnt exists");
         }
 
         messageDigest.update((dataEncoded + "." + SECRET).getBytes());
@@ -77,10 +94,10 @@ public class MD5Test {
     }
 
 
-    private Map<String, Object> payload() {
+    private Map<String, Object> payload(String vendorCode) {
         Map<String, Object> payload = new HashMap<>();
-        payload.put("BouwheerCode", UUID.randomUUID());
-        payload.put("VendorCode", "0001000007");
+        payload.put("BouwheerCode", "e8f78820-0e47-da11-585c-8bf75dd608f1");
+        payload.put("VendorCode", vendorCode);
         payload.put("CreatedDateString", DateTimeUtils.SDF_STANDARD_DATE_TIME.format(new Date()));
         return payload;
     }

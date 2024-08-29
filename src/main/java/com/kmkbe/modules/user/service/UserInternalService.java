@@ -20,7 +20,7 @@ import java.util.Optional;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class UserInternalServices {
+public class UserInternalService {
     private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
     private final MstUserRepository mstUserRepository;
 

@@ -1,11 +1,15 @@
 package com.kmkbe.core.callback;
 
-import com.kmkbe.core.exception.IllegalApiKeyException;
+import com.kmkbe.core.domain.entity.ErrorLog;
 import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.repository.ErrorLogRepository;
+import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.utils.ExceptionUtils;
+import com.kmkbe.core.utils.ObjectUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
+import lombok.RequiredArgsConstructor;
 import org.hibernate.PropertyValueException;
 import org.springframework.context.support.DefaultMessageSourceResolvable;
 import org.springframework.http.HttpStatus;
@@ -28,13 +32,35 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestControllerAdvice
+@RequiredArgsConstructor
 public class ExceptionAdvice {
+    private final ErrorLogRepository errorLogRepository;
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<CommonResult<Object>> handle(
             Exception exception,
             WebRequest request
     ) {
+        String jsonRequest = "", pageUrl = "";
+        if (request != null) {
+            try {
+                jsonRequest = ObjectUtils.jsonToStr(request.getParameterMap());
+                pageUrl = request.getDescription(false);
+            } catch (Exception ignored) {
+
+            }
+        }
+
+        ErrorLog errorLog = ErrorLog.builder()
+                .errorType(exception.getClass().getCanonicalName())
+                .errorLine(String.valueOf(exception.getStackTrace()[0].getLineNumber()))
+                .errorMsg(exception.getMessage())
+                .pageUrl(pageUrl)
+                .methodName(exception.getStackTrace()[0].getMethodName())
+                .requestParam(jsonRequest)
+                .build();
+
+        errorLogRepository.save(errorLog);
         return ExceptionUtils.handleException(exception, request);
     }
 

@@ -12,4 +12,5 @@ import java.util.List;
 public class ImportantNotesDto {
     private String description;
     private List<String> legals;
+    private List<String> footers;
 }

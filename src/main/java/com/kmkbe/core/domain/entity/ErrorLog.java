@@ -1,13 +1,14 @@
 package com.kmkbe.core.domain.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
 
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @Entity
@@ -26,9 +27,8 @@ public class ErrorLog {
     @Column(name = "error_log_id", nullable = false)
     private Long errorLogId;
 
-    @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "login_log_code", nullable = false)
+    @JoinColumn(name = "login_log_code")
     private LoginLog loginLogCode;
 
     @Size(max = 100)
@@ -55,14 +55,14 @@ public class ErrorLog {
     @Column(name = "request_param", length = 1000)
     private String requestParam;
 
+    @Builder.Default
     @Size(max = 50)
-    @NotNull
     @Column(name = "usr_crt", nullable = false, length = 50)
-    private String usrCrt;
+    private String usrCrt = "system";
 
-    @NotNull
+    @Builder.Default
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt;
+    private Instant dtmCrt = Instant.now();
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)

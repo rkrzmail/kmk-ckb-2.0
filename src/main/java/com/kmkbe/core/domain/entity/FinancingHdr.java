@@ -1,5 +1,6 @@
 package com.kmkbe.core.domain.entity;
 
+import com.kmkbe.modules.user.entity.MstBranch;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -166,6 +167,15 @@ public class FinancingHdr {
     @NotNull
     @Column(name = "financing_step", nullable = false, length = 50)
     private String financingStep;
+
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(
+            name = "branch_code",
+            referencedColumnName = "branch_code",
+            nullable = false,
+            updatable = false
+    )
+    private MstBranch mstBranch;
 
     @OneToMany(mappedBy = "financingHdr")
     private Set<FinancingDtl> financingDtls;

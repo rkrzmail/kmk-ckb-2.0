@@ -1,6 +1,8 @@
 package com.kmkbe.modules.remote.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
@@ -21,6 +23,7 @@ import org.springframework.web.client.RestTemplate;
 public class CustomerRemoteService {
     private final RestTemplate restTemplate;
     private final BaseRemoteService baseRemoteService;
+    private final ObjectMapper objectMapper;
 
     /**
      * <p>current usecase CustomerSignUp</p>
@@ -61,7 +64,7 @@ public class CustomerRemoteService {
             );
 
             final ResponseEntity<BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto>> response = restTemplate.exchange(
-                    BaseRemoteService. BASE_URL_MST + "/vendor/byVendorId",
+                    BaseRemoteService.BASE_URL_MST + "/vendor/byVendorId",
                     HttpMethod.POST,
                     requestArgs,
                     new ParameterizedTypeReference<>() {

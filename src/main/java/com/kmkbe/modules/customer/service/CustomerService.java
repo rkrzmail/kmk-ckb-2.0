@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.constant.CustomerIdType;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
@@ -76,7 +77,7 @@ public class CustomerService {
 
             customer.setCustTypeCode(type.name());
             customer.setCustIdNo(request.getCustomerIdNo());
-            customer.setCustMobilePhone(request.getMobilePhone());
+            customer.setCustMobilePhone(FormatingUtils.formatOnlyNumber(request.getMobilePhone()));
             customer.setAgreeTc(request.getIsAgreeTc());
             customer.setCustPin(encodePin);
             customer.setIsEmailValid(false);

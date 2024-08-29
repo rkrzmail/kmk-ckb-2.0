@@ -3,12 +3,14 @@ package com.kmkbe.core.domain.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
 import java.util.Set;
 
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @Entity
@@ -28,34 +30,36 @@ public class MstFileType {
     private Long fileTypeId;
 
     @Size(max = 100)
-    @NotNull
+    //@NotNull
     @Column(name = "file_type_name", nullable = false, length = 100)
     private String fileTypeName;
 
     @Size(max = 500)
-    @NotNull
+    //@NotNull
     @Column(name = "file_type_desc", nullable = false, length = 500)
     private String fileTypeDesc;
 
     @Size(max = 50)
-    @NotNull
+    //@NotNull
     @Column(name = "file_allocation", nullable = false, length = 50)
     private String fileAllocation;
 
-    @NotNull
+    @Builder.Default
+    //@NotNull
     @Column(name = "is_mandatory", nullable = false)
     private Boolean isMandatory = false;
 
-    @NotNull
+    //@NotNull
     @Column(name = "max_size_mb", nullable = false)
     private Long maxSizeMb;
 
+    @Builder.Default
     @Size(max = 50)
-    @NotNull
+    //@NotNull
     @Column(name = "usr_crt", nullable = false, length = 50)
-    private String usrCrt;
+    private String usrCrt = "system";
 
-    @NotNull
+    //@NotNull
     @Column(name = "dtm_crt", nullable = false)
     private Instant dtmCrt;
 

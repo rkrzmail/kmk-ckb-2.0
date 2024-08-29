@@ -15,4 +15,8 @@ public interface MstFileTypeRepository extends JpaRepository<MstFileType, String
     default List<MstFileType> findAllMandatory() {
         return findAllByIsMandatory(true).orElse(new ArrayList<>());
     }
+
+    Optional<MstFileType> findTopByFileTypeNameOrderByFileTypeIdDesc(String fileTypeName);
+
+    Optional<MstFileType> findToByOrderByFileTypeIdDesc();
 }

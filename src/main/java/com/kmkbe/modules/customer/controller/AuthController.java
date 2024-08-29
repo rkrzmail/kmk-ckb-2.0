@@ -8,12 +8,16 @@ import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.dto.RequestOtpDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.OtpLog;
+import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.service.*;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
+import com.kmkbe.modules.loan_submission.service.DocumentService;
+import com.kmkbe.modules.loan_submission.service.LegalFileService;
+import com.kmkbe.modules.loan_submission.service.MstFileTypeService;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,6 +47,7 @@ public class AuthController {
     private final CustomerPersonalService customerPersonalService;
     private final OtpService otpService;
     private final CustomerRemoteService customerRemoteService;
+    private final DocumentService documentService;
 
     @Transactional
     @PostMapping("/sign-up")
@@ -64,34 +69,46 @@ public class AuthController {
         final CustomerType type;
         if (request.getCustomerType().equalsIgnoreCase("perusahaan")) {
             type = CustomerType.Company;
-            String address = "";
+            String address = "", province = "", city = "", kecamatan = "", kelurahan = "";
             if (
                     vendor.getVendorBuilding() != null
                             && !vendor.getVendorBuilding().isEmpty()
             ) {
                 address = vendor.getVendorBuilding().getFirst().getAddressInfo();
+                province = vendor.getVendorBuilding().getFirst().getStateName();
+                city =  vendor.getVendorBuilding().getFirst().getCityName();
+                kecamatan = vendor.getVendorBuilding().getFirst().getDistrictName();
+                kelurahan = vendor.getVendorBuilding().getFirst().getDistrictName();
+            }
+
+            Instant staySince;
+            try {
+                staySince = Instant.parse(vendor.getFoundedDate());
+            } catch (Exception e) {
+                staySince = Instant.now();
             }
 
             request.setCompany(
                     SignUpRequest.Company.builder()
-                            .companyModel(CompanyModel.PT)
-                            .companyType("Perseroan Terbatas")
+                            .companyModel("")
+                            .companyType(vendor.getJenisPerusahaanDescription())
                             .identityType("AKTA")
                             .identityNo(request.getCustomerIdNo())
                             .identityIssuedDate(Instant.now())
                             .identityExpiredDate(Instant.now())
                             .companyAddress(address)
+                            .custIdNo(vendor.getNipSiup())
                             .rt("")
                             .rw("")
-                            .kelurahan("")
-                            .kecamatan("")
-                            .city("")
-                            .province("")
+                            .kelurahan(kelurahan)
+                            .kecamatan(kecamatan)
+                            .city(city)
+                            .province(province)
                             .zipCode("")
                             .area("")
-                            .phone("")
+                            .phone(FormatingUtils.formatOnlyNumber(vendor.getPhone()))
                             .ownershipStatus("")
-                            .staySince(Instant.now())
+                            .staySince(staySince)
                             .build()
             );
         } else if (request.getCustomerType().equalsIgnoreCase("perorangan")) {
@@ -106,6 +123,7 @@ public class AuthController {
         } else {
             customerPersonalService.create(cust, request.getPersonal());
         }
+        documentService.mappingFromInquiryVendor(cust, vendor);
 
         final OtpLog otpLog = otpService.create(cust, OtpService.OtpType.SIGNUP);
 

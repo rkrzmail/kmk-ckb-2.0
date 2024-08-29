@@ -5,7 +5,7 @@ import com.kmkbe.core.domain.dto.ProductDto;
 import com.kmkbe.core.domain.entity.Product;
 import com.kmkbe.core.domain.mapper.ProductMapper;
 import com.kmkbe.core.domain.repository.ProductRepository;
-import com.kmkbe.modules.loan_submission.request.ProductListRequest;
+import com.kmkbe.core.domain.request.PaginationRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -23,7 +23,7 @@ import java.util.stream.Collectors;
 public class ProductService {
     private final ProductRepository productRepository;
 
-    public PaginationResult<ProductDto> fetchAll(ProductListRequest request) {
+    public PaginationResult<ProductDto> fetchAll(PaginationRequest request) {
         try {
             Page<Product> productPagination = productRepository.findAll(
                     PageRequest.of(request.getPageNo(), request.getPageSize())

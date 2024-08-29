@@ -12,8 +12,11 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class DetailDistributionSubmissionDto {
+public class CustomerPlafondDto {
     private UUID financingHdrCode;
+    private UUID bouwheerCode;
+    private UUID custCode;
+    private String bouwheerName;
     private String custName;
     private String custIdTypeCode;
     private String custIdNo;

@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
-import java.util.List;
-
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
@@ -29,7 +27,7 @@ public class BaseMstRemoteResponseDto<T> {
 
     @JsonProperty("ReturnObject")
     @JsonAlias("Data")
-    public List<T> data;
+    public T data;
 
     @NoArgsConstructor
     @Getter

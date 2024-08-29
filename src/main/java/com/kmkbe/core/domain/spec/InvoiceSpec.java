@@ -3,8 +3,8 @@ package com.kmkbe.core.domain.spec;
 import com.kmkbe.core.domain.entity.FinancingDtl;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.entity.Invoice;
-import com.kmkbe.core.domain.constant.InvoiceSearchBy;
-import com.kmkbe.core.domain.request.InvoiceListRequest;
+import com.kmkbe.core.domain.request.PaginationRequest;
+import io.netty.util.internal.StringUtil;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
@@ -17,25 +17,29 @@ import java.util.Date;
 
 @Slf4j
 public class InvoiceSpec {
-    public static Specification<Invoice> list(InvoiceListRequest request) {
-        return byInvoiceGreaterThanToday()
+    public static Specification<Invoice> list(PaginationRequest request) {
+       /* return byInvoiceGreaterThanToday()
                 .and(
                         bySearchBy(
                                 request.getSearchBy().getSearch(),
                                 request.getSearchBy().getValue()
                         )
-                );
+                );*/
+        return bySearchBy(
+                request.getSearchBy(),
+                request.getSearchValue()
+        );
     }
 
     public static Specification<Invoice> listDistributionDetail(
             FinancingHdr financingHdr,
-            InvoiceListRequest request
+            PaginationRequest request
     ) {
         return byFinancingHdr(financingHdr)
                 .and(
                         bySearchBy(
-                                request.getSearchBy().getSearch(),
-                                request.getSearchBy().getValue()
+                                request.getSearchBy(),
+                                request.getSearchValue()
                         )
                 );
     }
@@ -62,22 +66,23 @@ public class InvoiceSpec {
         };
     }
 
-    public static Specification<Invoice> bySearchBy(InvoiceSearchBy searchBy, String value) {
+    public static Specification<Invoice> bySearchBy(String searchBy, String value) {
         return (root, query, criteriaBuilder) -> {
-            if (value == null) {
+            if (searchBy == null || StringUtil.isNullOrEmpty(value)) {
                 return null;
             }
 
-            return switch (searchBy) {
-                case NoInvoice -> criteriaBuilder.and(criteriaBuilder.equal(root.get("cust_inv_no"), value));
-                case PemberiKerja -> null;
+            return switch (searchBy.toLowerCase()) {
+                case "noinvoice" -> criteriaBuilder.and(criteriaBuilder.equal(root.get("cust_inv_no"), value));
+                case "pemberikerja" -> null;
                 //return criteriaBuilder.and(criteriaBuilder.equal(root.get("bo"), value));
-                case Item -> null;
+                case "item" -> null;
                 //return criteriaBuilder.and(criteriaBuilder.equal(root.get("invoice_due_date"), value));
-                case TanggalInvoice -> criteriaBuilder.and(criteriaBuilder.equal(root.get("invoice_date"), value));
-                case JatuhTempoInvoice ->
+                case "tanggalinvoice" -> criteriaBuilder.and(criteriaBuilder.equal(root.get("invoice_date"), value));
+                case "jatuhtempoinvoice" ->
                         criteriaBuilder.and(criteriaBuilder.equal(root.get("invoice_due_date"), value));
-                case JumlahTagihan -> criteriaBuilder.and(criteriaBuilder.equal(root.get("invoice_amt"), value));
+                case "jumlahtagihan" -> criteriaBuilder.and(criteriaBuilder.equal(root.get("invoice_amt"), value));
+                default -> null;
             };
         };
     }

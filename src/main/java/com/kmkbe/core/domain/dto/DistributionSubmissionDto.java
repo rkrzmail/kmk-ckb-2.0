@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.Date;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -22,5 +23,5 @@ public class DistributionSubmissionDto {
     private String branchRecommended;
     private String custStatus;
     private StatusLabelDto status;
-
+    private Instant dtmCrt;
 }

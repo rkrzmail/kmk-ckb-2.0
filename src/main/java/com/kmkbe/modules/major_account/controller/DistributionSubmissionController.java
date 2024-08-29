@@ -1,17 +1,23 @@
 package com.kmkbe.modules.major_account.controller;
 
-import com.kmkbe.core.domain.dto.DetailDistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.PostedInvoiceDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.request.InvoiceListRequest;
-import com.kmkbe.modules.major_account.request.DistributionListRequest;
+import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
+import com.kmkbe.modules.loan_submission.service.InvoiceService;
+import com.kmkbe.modules.major_account.request.AssignInvoiceToBranchRequest;
 import com.kmkbe.modules.major_account.service.DistributionSubmissionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.security.SignatureException;
+
 
 @Validated
 @RestController
@@ -22,46 +28,38 @@ import org.springframework.web.bind.annotation.*;
 )
 @RequiredArgsConstructor
 public class DistributionSubmissionController {
+    private final InvoiceService invoiceService;
+    private final FinancingHdrService financingHdrService;
     private final DistributionSubmissionService distributionSubmissionService;
 
-    @GetMapping("/submission/list")
+    @GetMapping("/list")
     public CommonResult<PaginationResult<DistributionSubmissionDto>> getDistributionList(
-            DistributionListRequest request
+            PaginationRequest request
     ) {
         return new CommonResult<PaginationResult<DistributionSubmissionDto>>().success(
                 distributionSubmissionService.submissionDistribution(request)
         );
     }
 
-    @GetMapping("/submission/detail/{financingHdrCode}")
-    public CommonResult<DetailDistributionSubmissionDto> getDistributionDetail(
-            @PathVariable String financingHdrCode
-    ) {
-        return new CommonResult<DetailDistributionSubmissionDto>().success(
-                distributionSubmissionService.detailSubmissionDistribution(financingHdrCode)
-        );
-    }
-
-    @GetMapping("/submission/detail/{financingHdrCode}/invoices")
+    @GetMapping("/detail/{financingHdrCode}/invoices")
     public CommonResult<PaginationResult<PostedInvoiceDto>> getDetailInvoiceDistributionList(
             @PathVariable String financingHdrCode,
-            InvoiceListRequest request
+            PaginationRequest request
     ) {
         return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
-                distributionSubmissionService.invoiceSubmission(
-                        financingHdrCode,
+                invoiceService.invoiceSubmissionByFinancingHdr(
+                        financingHdrService.findByCode(financingHdrCode),
                         request
                 )
         );
     }
 
-    @PostMapping("/submission/assign")
+    @PutMapping("/assign")
     public CommonResult<Object> createAssign(
-
-    ) {
-        distributionSubmissionService.assignSubmission();
-        return new CommonResult<>().success(
-                null
-        );
+            Authentication authentication,
+            @Valid @RequestBody AssignInvoiceToBranchRequest request
+    ) throws SignatureException {
+        distributionSubmissionService.assignSubmission(authentication, request);
+        return new CommonResult<>().success(null, "Assigned Successfully");
     }
 }

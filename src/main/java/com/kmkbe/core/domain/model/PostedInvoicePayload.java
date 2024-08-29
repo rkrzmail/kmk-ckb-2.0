@@ -11,8 +11,6 @@ import java.util.Date;
 @Setter
 @NoArgsConstructor
 public class PostedInvoicePayload {
-
-
     private String bouwheerCode;
 
 
@@ -38,4 +36,8 @@ public class PostedInvoicePayload {
 
 
     private BigDecimal invoiceAmount;
+
+    private String poNumber;
+
+    private Date postingDate;
 }

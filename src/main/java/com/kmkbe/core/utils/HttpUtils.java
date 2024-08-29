@@ -76,8 +76,8 @@ public class HttpUtils {
         if (
                 response.getContentType() != null
                         && (
-                                response.getContentType().equals("application/octet-stream")
-                                        || response.getContentType().equals("application/json")
+                        response.getContentType().equals("application/octet-stream")
+                                || response.getContentType().equals("application/json")
                 )
         ) {
             HttpServletResponseCopier wrapper = WebUtils.getNativeResponse(response, HttpServletResponseCopier.class);
@@ -98,5 +98,15 @@ public class HttpUtils {
         result.put("payload", ObjectUtils.strToJson(payload));
 
         return result;
+    }
+
+    public static String getHeaderBearerToken(HttpServletRequest request) {
+        final String authHeader = request.getHeader("Authorization");
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return null;
+        }
+
+        return authHeader.substring("Bearer ".length());
     }
 }

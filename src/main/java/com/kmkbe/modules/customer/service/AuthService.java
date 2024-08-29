@@ -138,7 +138,7 @@ public class AuthService {
     public LoginDto refreshToken(RefreshTokenRequest request) throws Exception {
         try {
             final RefreshToken payload = refreshTokenServices.verify(request.refreshToken());
-            refreshTokenServices.invalidate(payload.getRefreshToken().toString());
+            //refreshTokenServices.invalidate(payload.getRefreshToken().toString());
 
             final Customer customer = customerRepository
                     .findByCustCode(payload.getUserCode())

@@ -43,7 +43,7 @@ public class CustomerCompanyService {
                 company.setCustCompanyCode(UUID.randomUUID());
                 company.setCustCode(customer);
                 company.setCustCompanyType(companyReq.getCompanyType());
-                company.setCompanyModel(companyReq.getCompanyModel().name());
+                company.setCompanyModel(companyReq.getCompanyModel());
                 company.setIdentityType(companyReq.getIdentityType());
                 company.setIdentityNo(companyReq.getIdentityNo());
                 company.setIdentityIssuedDate(companyReq.getIdentityIssuedDate());

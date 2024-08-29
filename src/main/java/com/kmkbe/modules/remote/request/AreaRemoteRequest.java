@@ -2,13 +2,16 @@ package com.kmkbe.modules.remote.request;
 
 import lombok.*;
 
+import java.util.List;
+
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class AreaRemoteRequest {
-    private PropCriteriaGenericTypeRequest.AreaPropName area;
+    private PropCriteriaGenericTypeRequest.AreaPropName type;
+    private List<PropCriteriaGenericTypeRequest.AreaPropName> areas;
     private String value;
 
     @Builder.Default

@@ -1,5 +1,6 @@
 package com.kmkbe.modules.loan_submission.service;
 
+import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.entity.MstFileType;
 import com.kmkbe.core.domain.repository.MstFileTypeRepository;
 import lombok.RequiredArgsConstructor;

@@ -1,6 +1,7 @@
 package com.kmkbe.modules.loan_submission.service;
 
 
+import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.core.domain.entity.Customer;
@@ -17,6 +18,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -25,11 +28,25 @@ public class LegalFileService {
     private final LegalFileRepository legalFileRepository;
     private final FileStorageService fileStorageService;
 
-    public LegalFile fetchByCust(Customer customer) {
-        return legalFileRepository.findByCustCode(customer).orElse(null);
+    public LegalFile findByFileId(Long fileId) {
+        try {
+            return legalFileRepository.findById(fileId).orElse(null);
+        } catch (Exception e) {
+            log.error("findByFileId, error {}", e.getMessage());
+            throw e;
+        }
     }
 
-    public LegalFile fetchByCust(Customer customer, MstFileType mstFileType) {
+    public List<LegalFile> fetchByMstFileTypeAndCust(Customer customer) {
+        try {
+            return legalFileRepository.findAllByCustCode(customer);
+        } catch (Exception e) {
+            log.error("fetchByCust, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public LegalFile fetchByMstFileTypeAndCust(Customer customer, MstFileType mstFileType) {
         return legalFileRepository.findByCustCodeAndFileTypeCode(customer, mstFileType).orElse(null);
     }
 
@@ -46,7 +63,7 @@ public class LegalFileService {
                 throw new Exception("File path cannot be null. Expected upload dir, provided: " + path);
             }
 
-            LegalFile checkExisting = fetchByCust(customer, fileType);
+            LegalFile checkExisting = fetchByMstFileTypeAndCust(customer, fileType);
             if (checkExisting != null) {
                 legalFileRepository.delete(checkExisting);
             }

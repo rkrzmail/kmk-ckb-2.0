@@ -20,6 +20,7 @@ public interface IRefreshTokenServices {
         refreshToken.setUserCode(user.getUserCode());
         refreshToken.setRefreshToken(UUID.randomUUID());
         refreshToken.setExpiredDate(new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1)));
+        //refreshToken.setExpiredDate(new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5)));
         refreshToken.setIssuedDate(new Date());
         return refreshToken;
     }

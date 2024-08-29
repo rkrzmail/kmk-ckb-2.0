@@ -1,7 +1,6 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.JwtSimulasiModel;
@@ -15,6 +14,7 @@ import com.kmkbe.core.exception.LoanDocMandatoryException;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
@@ -23,6 +23,7 @@ import com.kmkbe.modules.loan_submission.request.CreateLoanApplicationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.SaveImportantNotesRequest;
 import com.kmkbe.modules.remote.service.*;
+import io.netty.util.internal.StringUtil;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -130,12 +131,21 @@ public class LoanSubmissionService {
                         .build();
             }
 
+            if (inquiryInvoiceRemote.getRow().isEmpty()) {
+                throw CommonInvalidException.builder()
+                        .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
+                        .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
+                                "Dana Sakti. Harap melakukan pengecekan ulang " +
+                                "dengan pihak PT. Trakindo Utama.")
+                        .build();
+            }
+
             final SimpleDateFormat sdfNoSeperator = new SimpleDateFormat("yyyyMMdd");
             double baseUsdToIdr = currencyRemoteService.fetchIdrFrom("usd");
 
             List<PostedInvoiceDto> result = new ArrayList<>();
             for (int i = 0; i < inquiryInvoiceRemote.getRow().size(); i++) {
-                FinancingDtl financingDtl = financingDtlService.findBy(inquiryInvoiceRemote.getRow().get(i).getAccountingDocument());
+               /* FinancingDtl financingDtl = financingDtlService.findBy(inquiryInvoiceRemote.getRow().get(i).getAccountingDocument());
                 if (financingDtl != null) {
                     FinancingHdr financingHdr = financingDtl.getFinancingHdr();
                     if (
@@ -145,7 +155,7 @@ public class LoanSubmissionService {
                     } else {
                         continue;
                     }
-                }
+                }*/
 
                 Date invDate, invDueDate;
                 try {
@@ -157,7 +167,8 @@ public class LoanSubmissionService {
                 }
 
                 BigDecimal invoiceAmount = BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim()));
-                String currency = inquiryInvoiceRemote.getRow().get(i).getCurrency();
+                String currency = inquiryInvoiceRemote.getRow().get(i).getCurrency(),
+                        description = inquiryInvoiceRemote.getRow().get(i).getDescription();
                 if (
                         !currency.equalsIgnoreCase("idr")
                                 && !currency.equalsIgnoreCase("rupiah")
@@ -167,22 +178,40 @@ public class LoanSubmissionService {
                     currency = "IDR";
                 }
 
+                if (StringUtil.isNullOrEmpty(description)) {
+                    description = "Invoice By Trakindo";
+                }
+
+                Date postingDate = null;
+                try {
+                    postingDate = DateTimeUtils.SDF_STANDARD_DATE.parse(inquiryInvoiceRemote.getRow().get(i).getPostingDate());
+                } catch (Exception e) {
+                    try {
+                        postingDate = sdfNoSeperator.parse(inquiryInvoiceRemote.getRow().get(i).getPostingDate());
+                    } catch (Exception ignored) {
+                    }
+                }
+
                 result.add(PostedInvoiceDto.builder()
                         .bouwheerCode(vendorTokenExtractor.getBouwheerCode().toString())
                         .bouwheerName(vendorTokenExtractor.getBouwheerName())
                         .customerInvoiceNo(inquiryInvoiceRemote.getRow().get(i).getReference())
                         .bouwheerInvoiceNo(inquiryInvoiceRemote.getRow().get(i).getAccountingDocument())
+                        .poNumber(inquiryInvoiceRemote.getRow().get(i).getPoNumber())
+                        .postingDate(postingDate)
                         .invoiceDate(invDate)
                         .invoiceDueDate(invDueDate)
                         .invoiceAmount(invoiceAmount)
-                        .invoiceDescription(inquiryInvoiceRemote.getRow().get(i).getDescription())
+                        .invoiceDescription(description)
                         .currencyCode(currency)
-                        .amountConverter(PostedInvoiceDto.AmountConverter.builder()
-                                .base(BigDecimal.valueOf(baseUsdToIdr))
-                                .fromCurrencyCode(inquiryInvoiceRemote.getRow().get(i).getCurrency())
-                                .toCurrencyCode("IDR")
-                                .amount(BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim())))
-                                .build())
+                        .amountConverter(
+                                PostedInvoiceDto.AmountConverter.builder()
+                                        .base(BigDecimal.valueOf(baseUsdToIdr))
+                                        .fromCurrencyCode(inquiryInvoiceRemote.getRow().get(i).getCurrency())
+                                        .toCurrencyCode("IDR")
+                                        .amount(BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim())))
+                                        .build()
+                        )
                         .build());
             }
 
@@ -251,18 +280,22 @@ public class LoanSubmissionService {
         try {
             final String bouwheerCode = request.getInvoices().getFirst().getBouwheerCode();
             final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+            if (customer == null) {
+                throw CommonInvalidException.cannotAccessResource();
+            }
+
             final Product product = productRepository.findById(request.getProductId()).orElseThrow();
 
             Bouwheer bouwheer;
             Optional<Bouwheer> findBouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode));
             if (findBouwheer.isEmpty()) {
-                findBouwheer = bouwheerRepository.findFirstByBouwheerName("PT. Truckindo Utama");
+                findBouwheer = bouwheerRepository.findFirstByBouwheerName("PT. Trakindo Utama");
                 if (findBouwheer.isPresent()) {
                     bouwheer = findBouwheer.get();
                 } else {
                     bouwheer = new Bouwheer();
                     bouwheer.setBouwheerCode(UUID.randomUUID());
-                    bouwheer.setBouwheerName("PT. Truckindo Utama");
+                    bouwheer.setBouwheerName("PT. Trakindo Utama");
                     bouwheer.setLegalAddress("");
                     bouwheer.setRt("");
                     bouwheer.setRw("");
@@ -357,6 +390,10 @@ public class LoanSubmissionService {
     ) throws Exception {
         try {
             final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+            if (customer == null) {
+                throw CommonInvalidException.cannotAccessResource();
+            }
+
             if (!bcryptEncoder.matches(request.getPin(), customer.getCustPin())) {
                 throw new BadCredentialsException("Pin is invalid, try to entry right pin");
             }
@@ -367,6 +404,7 @@ public class LoanSubmissionService {
                                 request.getDocuments()
                                         .stream()
                                         .noneMatch(document -> document.getFileTypeCode().equals(mstFileType.getFileTypeCode()))
+                                        && mstFileType.getIsMandatory()
                         ) {
                             throw new LoanDocMandatoryException("Mandatory file: " + mstFileType.getFileTypeDesc() + " is not present, try to attach the file");
                         }
@@ -381,7 +419,7 @@ public class LoanSubmissionService {
                                     .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
                                     .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                                     .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-                                    .description(item.getInvoice().getInvoiceDescription())
+                                    .description("Invoice By Trakindo")
                                     .bouwheerName(createdFinancing.getBouwheer().getBouwheerName())
                                     .build()
                     ).toList();
@@ -424,14 +462,16 @@ public class LoanSubmissionService {
             String token
     ) throws JsonProcessingException, SignatureException {
         try {
-            if (token != null) {
-                if (
-                        token.equals("1")
-                                || token.equals("2")
-                                || token.equals("3")
-                ) {
-                    token = "eyJCb3V3aGVlckNvZGUiOiJiOGVlODViMC0wYjExLTQ5MDMtYWYxZS0xOWFkZGI2NTM0NjIiLCJDcmVhdGVkRGF0ZVN0cmluZyI6IjIwMjQtMDgtMjEgMTU6MDQ6MzIiLCJWZW5kb3JDb2RlIjoiMDAwMTAwMDAwNiJ9.CEC649B96AB33D8736A6838302CF4213";
-                }
+            if (StringUtil.isNullOrEmpty(token)) {
+                return null;
+            }
+
+            if (
+                    token.equals("1")
+                            || token.equals("2")
+                            || token.equals("3")
+            ) {
+                token = "eyJCb3V3aGVlckNvZGUiOiJiOGVlODViMC0wYjExLTQ5MDMtYWYxZS0xOWFkZGI2NTM0NjIiLCJDcmVhdGVkRGF0ZVN0cmluZyI6IjIwMjQtMDgtMjEgMTU6MDQ6MzIiLCJWZW5kb3JDb2RlIjoiMDAwMTAwMDAwNiJ9.CEC649B96AB33D8736A6838302CF4213";
             }
 
             VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, token);
@@ -446,7 +486,7 @@ public class LoanSubmissionService {
                     .name(inquiryVendorRemote.getVendorName())
                     .customerType("Perusahaan")
                     .email(inquiryVendorRemote.getEmail())
-                    .mobilePhone(inquiryVendorRemote.getPhone())
+                    .mobilePhone(FormatingUtils.formatPhone(inquiryVendorRemote.getPhone()))
                     .customerIdNo(inquiryVendorRemote.getNpwp())
                     .build();
 
@@ -623,12 +663,18 @@ public class LoanSubmissionService {
             JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(token);
             UUID bc = jwtSimulasiModel != null ? UUID.fromString(jwtSimulasiModel.getBouwheerCode()) : UUID.randomUUID();
 
-            Bouwheer bouwheer = bouwheerRepository.findFirstByBouwheerName("PT. Truck Indo").orElse(null);
+            final Bouwheer bouwheer;
+            if (jwtSimulasiModel != null) {
+                bouwheer = bouwheerRepository.findByBouwheerCode(bc).orElse(null);
+            } else {
+                bouwheer = bouwheerRepository.findFirstByBouwheerName();
+            }
+
             if (bouwheer != null) {
                 bouwheerCode = bouwheer.getBouwheerCode();
                 bouwheerName = bouwheer.getBouwheerName();
             } else {
-                bouwheerName = "PT. Truck Indo";
+                bouwheerName = "PT. Trakindo Utama";
                 bouwheerCode = bc;
             }
 
@@ -636,6 +682,10 @@ public class LoanSubmissionService {
                 vendorCode = jwtSimulasiModel.getVendorCode();
             } else if (authentication != null) {
                 CustomerDto cust = CustomerUtils.authenticateCustomerDto(authentication);
+                if (cust == null) {
+                    throw CommonInvalidException.cannotAccessResource();
+                }
+
                 vendorCode = cust.getCustExternalCode();
             } else {
                 vendorCode = null;

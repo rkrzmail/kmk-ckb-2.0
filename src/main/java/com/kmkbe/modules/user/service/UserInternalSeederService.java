@@ -13,7 +13,7 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class UserInternalSeederServices {
+public class UserInternalSeederService {
     private final BCryptPasswordEncoder bcryptEncoder;
 
     private final MstRoleRepository mstRoleRepository;

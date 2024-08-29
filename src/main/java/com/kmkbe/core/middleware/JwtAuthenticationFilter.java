@@ -47,7 +47,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/loan-submissions/invoices",
             "/api/v1/loan-submissions/importance-notes",
             "/api/v1/loan-submissions/simulations/percentage",
-            "/api/v1/loan-submissions/simulations/calculate"
+            "/api/v1/loan-submissions/simulations/calculate",
     };
 
     public static final String[] ENDPOINTS_WHITELIST = {
@@ -58,7 +58,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/otp/**",
             "/api/v1/error/**",
             "/api/v1/uploads/**",
-            //"/api/v1/testing/**",
+            "/api/v1/testing/**",
+            "/api/v1/documents/download/loan/**",
 
             // internal
             //"/api/v1/internal/user/**",

@@ -13,10 +13,12 @@ public class PostedInvoiceDto {
     private String bouwheerName;
     private String customerInvoiceNo;
     private String bouwheerInvoiceNo;
+    private String poNumber;
     private String invoiceDescription;
     private String currencyCode;
     private Date invoiceDate;
     private Date invoiceDueDate;
+    private Date postingDate;
     private BigDecimal invoiceAmount;
     private AmountConverter amountConverter;
 

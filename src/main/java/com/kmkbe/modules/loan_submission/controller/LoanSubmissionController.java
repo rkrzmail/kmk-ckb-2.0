@@ -9,7 +9,6 @@ import com.kmkbe.modules.loan_submission.request.*;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
 import com.kmkbe.modules.loan_submission.service.SessionLoanSubmissionService;
-import com.kmkbe.core.domain.dto.PostedInvoiceDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -162,17 +161,10 @@ public class LoanSubmissionController {
         );
     }
 
-    @GetMapping("/documents/requirement")
-    public CommonResult<List<MstFileTypeDto>> getDocumentRequirement(
-            HttpServletRequest httpServletRequest,
-            Authentication authentication
-    ) throws Exception {
-        return new CommonResult<List<MstFileTypeDto>>().success(
-                documentService.fetchAllLoanDocumentRequirement(httpServletRequest, authentication)
-        );
-    }
-
-    @PostMapping(path = "/documents/requirement/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    @PostMapping(
+            path = "/documents/requirement/upload",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
     public CommonResult<LegalFileDto> uploadDocument(
             HttpServletRequest httpServletRequest,
             Authentication authentication,
@@ -187,6 +179,19 @@ public class LoanSubmissionController {
                         fileTypeCode
                 ),
                 "File Upload Successfully"
+        );
+    }
+
+    @GetMapping("/documents/requirement")
+    public CommonResult<List<MstFileTypeDto>> getDocumentRequirement(
+            Authentication authentication,
+            HttpServletRequest httpServletRequest
+    ) throws Exception {
+        return new CommonResult<List<MstFileTypeDto>>().success(
+                documentService.fetchAllLoanDocumentRequirement(
+                        httpServletRequest,
+                        authentication
+                )
         );
     }
 

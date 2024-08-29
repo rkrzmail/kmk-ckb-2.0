@@ -3,15 +3,16 @@ package com.kmkbe.core.domain.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @Entity
@@ -28,13 +29,21 @@ public class Cwr {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "cust_code", nullable = false)
-    private Customer custCode;
+    @JoinColumn(
+            name = "cust_code",
+            referencedColumnName = "cust_code",
+            nullable = false
+    )
+    private Customer customer;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "bouwheer_code", nullable = false)
-    private Bouwheer bouwheerCode;
+    @JoinColumn(
+            name = "bouwheer_code",
+            referencedColumnName = "bouwheer_code",
+            nullable = false
+    )
+    private Bouwheer bouwheer;
 
     @Size(max = 5)
     @NotNull
@@ -75,11 +84,11 @@ public class Cwr {
 
     @NotNull
     @Column(name = "plafond_amt", nullable = false, precision = 17, scale = 2)
-    private BigDecimal plafondAmt;
+    private Double plafondAmt;
 
     @NotNull
     @Column(name = "realisation_amt", nullable = false, precision = 17, scale = 2)
-    private BigDecimal realisationAmt;
+    private Double realisationAmt;
 
     @Size(max = 20)
     @NotNull

@@ -16,10 +16,16 @@ import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.InvoiceRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
+import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
+import com.kmkbe.modules.user.entity.MstUser;
+import com.kmkbe.modules.user.utils.UserInternalUtils;
+import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.security.SignatureException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.UUID;
@@ -166,5 +172,71 @@ public class FinancingHdrService {
             log.error("disburseInvoice, error {}", e.getMessage());
             throw e;
         }
+    }
+
+    public void paidFinancing(
+            Authentication authentication,
+            FinancingInvoicePaidRequest request,
+            String apiKey
+    ) throws SignatureException {
+        try {
+            final UUID financingHdrCode;
+            try {
+                financingHdrCode = UUID.fromString(request.getFinancingCode());
+            } catch (IllegalArgumentException ignored) {
+                throw new IllegalStateException("Invalid given financingCode");
+            }
+
+            final String user;
+            if (authentication != null) {
+                MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
+                user = authenticateUser.getUsername();
+            } else if (!StringUtil.isNullOrEmpty(apiKey)) {
+                user = "POST";
+            } else {
+                throw new IllegalStateException("can perform action, invalid credentials given");
+            }
+
+            FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
+                    .orElseThrow(() -> new IllegalStateException("Financing Not Found with given financingCode"));
+
+            financingHdr.setFinancingStatus(FinancingStatus.PAID.name());
+            financingHdr.setFinancingStep(FinancingStatus.PAID.name());
+            financingHdr.setUsrUpd(user);
+            financingHdr.setDtmUpd(Instant.now());
+            financingHdrRepository.save(financingHdr);
+
+            updateFinancing(
+                    financingHdrCode,
+                    user,
+                    FinancingStatus.PAID,
+                    FinancingStatus.PAID
+            );
+        } catch (Exception e) {
+            log.error("paidFinancing, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public void updateFinancing(
+            UUID financingHdrCode,
+            String user,
+            FinancingStatus financingStatus,
+            FinancingStatus financingStep
+    ) {
+        FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
+                .orElseThrow(() -> new IllegalStateException("Financing Not Found with given financingCode"));
+
+        financingHdr.setFinancingStatus(financingStatus.name());
+        financingHdr.setFinancingStep(financingStep.name());
+        financingHdr.setUsrUpd(user);
+        financingHdr.setDtmUpd(Instant.now());
+        financingHdrRepository.save(financingHdr);
+    }
+
+    public FinancingHdr findByCode(String financingHdrCode) {
+        return financingHdrRepository
+                .findByFinancingHdrCode(UUID.fromString(financingHdrCode))
+                .orElseThrow(() -> new IllegalStateException("Invalid given financingHdrCode"));
     }
 }

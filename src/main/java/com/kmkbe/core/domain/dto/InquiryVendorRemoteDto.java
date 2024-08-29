@@ -42,7 +42,13 @@ public class InquiryVendorRemoteDto {
     private String pkpLink;
 
     @JsonProperty("jenis_perusahaan")
-    private Integer jenisPerusahaan;
+    private String jenisPerusahaan;
+
+    @JsonProperty("jenis_perusahaan_name")
+    private String jenisPerusahaanName;
+
+    @JsonProperty("jenis_perusahaan_description")
+    private String jenisPerusahaanDescription;
 
     @JsonProperty("ktp_npwp_vendor_stock_id")
     private String ktpNpwpVendorStockId;
@@ -115,19 +121,13 @@ public class InquiryVendorRemoteDto {
     @AllArgsConstructor
     public static class VendorBuilding {
         @JsonProperty("ownership_status")
-        private Integer ownershipStatus;
+        private String ownershipStatus;
 
         @JsonProperty("jenis")
-        private Integer jenis;
+        private String jenis;
 
         @JsonProperty("category")
-        private Integer category;
-
-        @JsonProperty("document_no")
-        private Integer documentNo;
-
-        @JsonProperty("building_address")
-        private Integer buildingAddress;
+        private String category;
 
         @JsonProperty("address_detail")
         private String addressDetail;
@@ -151,9 +151,6 @@ public class InquiryVendorRemoteDto {
     @NoArgsConstructor
     @AllArgsConstructor
     public static class OtherDocument {
-        @JsonProperty("id")
-        private Integer id;
-
         @JsonProperty("document_name")
         private String documentName;
 
@@ -167,7 +164,7 @@ public class InquiryVendorRemoteDto {
         private String documentUrl;
 
         @JsonProperty("vendor_id")
-        private Integer vendorId;
+        private String vendorId;
 
         @JsonProperty("is_temporary")
         private Object isTemporary;
