@@ -1,5 +1,6 @@
 package com.kmkbe.modules.branch_admin.controller;
 
+import com.kmkbe.core.domain.dto.AssignmentDto;
 import com.kmkbe.core.domain.dto.PostedInvoiceDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
@@ -7,11 +8,14 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.branch_admin.service.AssignmentSubmissionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.security.SignatureException;
 
 @Validated
 @RestController
@@ -25,12 +29,16 @@ public class AssignmentSubmissionController {
     private final AssignmentSubmissionService assignmentSubmissionService;
 
     @GetMapping("/list")
-    public CommonResult<PaginationResult<PostedInvoiceDto>> getAssignmentList(
+    public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
+            Authentication authentication,
             PaginationRequest request
-    ) {
-        return new CommonResult<PaginationResult<PostedInvoiceDto>>()
+    ) throws SignatureException {
+        return new CommonResult<PaginationResult<AssignmentDto>>()
                 .success(
-                        assignmentSubmissionService.assignmentList(request)
+                        assignmentSubmissionService.assignmentList(
+                                authentication,
+                                request
+                        )
                 );
     }
 
