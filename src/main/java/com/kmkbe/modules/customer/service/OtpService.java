@@ -40,7 +40,7 @@ public class OtpService {
         otpLog.setEmail(customer.getCustEmail());
         otpLog.setMobilePhone(customer.getCustMobilePhone());
         otpLog.setGeneratedDate(now);
-        otpLog.setExpiredDate(now.plus(5, ChronoUnit.MINUTES));
+        otpLog.setExpiredDate(now.plus(1, ChronoUnit.MINUTES));
         otpLog.setUsrCrt(customer.getCustName());
         otpLog.setDtmCrt(Instant.now());
         otpLog.setIsUsed(false);
@@ -207,10 +207,10 @@ public class OtpService {
 
             this.customer = findCust.get();
 
-            final Long todayRequest = otpRepository.countTodayRequestByEmail(customer.getCustEmail());
+            /*final Long todayRequest = otpRepository.countTodayRequestByEmail(customer.getCustEmail());
             if (todayRequest > 5) {
                 throw new IllegalStateException("Request limit exceeded for today, try again tomorrow");
-            }
+            }*/
 
             if (otpCode != null && !otpCode.isEmpty()) {
                 final Optional<OtpLog> findOtp = otpRepository.findTopByEmailAndOtpCodeOrderByDtmCrtDesc(

@@ -16,7 +16,7 @@ public interface LegalFileRepository extends JpaRepository<LegalFile, Long>, Jpa
 
     Optional<LegalFile> findByCustCodeAndFileTypeCode(Customer customer, MstFileType fileType);
 
-    Optional<LegalFile> findTopByFileNameOrderByFileIdDesc(String fileName);
+    Optional<LegalFile> findTopByFileNameAndCustCodeOrderByFileIdDesc(String fileName, Customer customer);
 
     Optional<LegalFile> findTopByFileIdOrderByFileIdDesc(Long fileId);
 

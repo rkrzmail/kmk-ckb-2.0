@@ -38,10 +38,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SignatureException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -260,20 +257,28 @@ public class DocumentService {
 
             List<LegalFile> legalFiles = new ArrayList<>();
             if (!StringUtil.isNullOrEmpty(vendor.getAktaPendirianLink())) {
-                legalFileRepository.findTopByFileNameOrderByFileIdDesc("Akta Pendirian")
+                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
+                                "Akta Pendirian",
+                                customer
+                        )
                         .ifPresent(legalFileRepository::delete);
-                mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Akta Pendirian")
-                        .ifPresent(mstFileTypeRepository::delete);
 
-                MstFileType m1 = MstFileType.builder()
-                        .fileTypeCode("APN01")
-                        .fileTypeName("Akta Pendirian")
-                        .fileTypeDesc("Akta Pendirian")
-                        .fileAllocation("Financing")
-                        .usrCrt("system")
-                        .dtmCrt(Instant.now())
-                        .build();
-                mstFileTypeRepository.save(m1);
+                final MstFileType m1;
+                Optional<MstFileType> findMst =
+                        mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Akta Pendirian");
+                if (findMst.isEmpty()) {
+                    m1 = MstFileType.builder()
+                            .fileTypeCode("APN01")
+                            .fileTypeName("Akta Pendirian")
+                            .fileTypeDesc("Akta Pendirian")
+                            .fileAllocation("Financing")
+                            .usrCrt("system")
+                            .dtmCrt(Instant.now())
+                            .build();
+                    mstFileTypeRepository.save(m1);
+                } else {
+                    m1 = findMst.get();
+                }
 
                 legalFiles.add(
                         LegalFile.builder()
@@ -289,20 +294,27 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getAktaPerubahanLink())) {
-                legalFileRepository.findTopByFileNameOrderByFileIdDesc("Akta Perubahan Terakhir Lainnya")
+                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
+                                "Akta Perubahan Terakhir Lainnya",
+                                customer
+                        )
                         .ifPresent(legalFileRepository::delete);
-                mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Akta Perubahan Terakhir Lainnya")
-                        .ifPresent(mstFileTypeRepository::delete);
 
-                MstFileType m2 = MstFileType.builder()
-                        .fileTypeCode("APTL01")
-                        .fileTypeName("Akta Perubahan Terakhir Lainnya")
-                        .fileTypeDesc("Akta Perubahan Terakhir Lainnya")
-                        .fileAllocation("Financing")
-                        .usrCrt("system")
-                        .dtmCrt(Instant.now())
-                        .build();
-                mstFileTypeRepository.save(m2);
+                MstFileType m2;
+                Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Akta Perubahan Terakhir Lainnya");
+                if (findMst.isEmpty()) {
+                    m2 = MstFileType.builder()
+                            .fileTypeCode("APTL01")
+                            .fileTypeName("Akta Perubahan Terakhir Lainnya")
+                            .fileTypeDesc("Akta Perubahan Terakhir Lainnya")
+                            .fileAllocation("Financing")
+                            .usrCrt("system")
+                            .dtmCrt(Instant.now())
+                            .build();
+                    mstFileTypeRepository.save(m2);
+                } else {
+                    m2 = findMst.get();
+                }
 
                 legalFiles.add(
                         LegalFile.builder()
@@ -318,20 +330,27 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getPengesahanKemenkumhamLink())) {
-                legalFileRepository.findTopByFileNameOrderByFileIdDesc("Sk Persetujuan Kemenkumham")
+                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
+                                "Sk Persetujuan Kemenkumham",
+                                customer
+                        )
                         .ifPresent(legalFileRepository::delete);
-                mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Sk Persetujuan Kemenkumham")
-                        .ifPresent(mstFileTypeRepository::delete);
 
-                MstFileType m3 = MstFileType.builder()
-                        .fileTypeCode("SKPK01")
-                        .fileTypeName("Sk Persetujuan Kemenkumham")
-                        .fileTypeDesc("Sk Persetujuan Kemenkumham")
-                        .fileAllocation("Financing")
-                        .usrCrt("system")
-                        .dtmCrt(Instant.now())
-                        .build();
-                mstFileTypeRepository.save(m3);
+                MstFileType m3;
+                Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Sk Persetujuan Kemenkumham");
+                if (findMst.isEmpty()) {
+                    m3 = MstFileType.builder()
+                            .fileTypeCode("SKPK01")
+                            .fileTypeName("Sk Persetujuan Kemenkumham")
+                            .fileTypeDesc("Sk Persetujuan Kemenkumham")
+                            .fileAllocation("Financing")
+                            .usrCrt("system")
+                            .dtmCrt(Instant.now())
+                            .build();
+                    mstFileTypeRepository.save(m3);
+                } else {
+                    m3 = findMst.get();
+                }
 
                 legalFiles.add(
                         LegalFile.builder()
@@ -347,20 +366,27 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getNpwpLink())) {
-                legalFileRepository.findTopByFileNameOrderByFileIdDesc("NPWP")
+                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
+                                "NPWP",
+                                customer
+                        )
                         .ifPresent(legalFileRepository::delete);
-                mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("NPWP")
-                        .ifPresent(mstFileTypeRepository::delete);
 
-                MstFileType m4 = MstFileType.builder()
-                        .fileTypeCode("NPWP01")
-                        .fileTypeName("NPWP")
-                        .fileTypeDesc("NPWP")
-                        .fileAllocation("Legal")
-                        .usrCrt("system")
-                        .dtmCrt(Instant.now())
-                        .build();
-                mstFileTypeRepository.save(m4);
+                MstFileType m4;
+                Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("NPWP");
+                if (findMst.isEmpty()) {
+                    m4 = MstFileType.builder()
+                            .fileTypeCode("NPWP01")
+                            .fileTypeName("NPWP")
+                            .fileTypeDesc("NPWP")
+                            .fileAllocation("Legal")
+                            .usrCrt("system")
+                            .dtmCrt(Instant.now())
+                            .build();
+                    mstFileTypeRepository.save(m4);
+                } else {
+                    m4 = findMst.get();
+                }
 
                 legalFiles.add(
                         LegalFile.builder()
@@ -377,20 +403,27 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getNipSiupLink())) {
-                legalFileRepository.findTopByFileNameOrderByFileIdDesc("NIB")
+                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
+                                "NIB",
+                                customer
+                        )
                         .ifPresent(legalFileRepository::delete);
-                mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("NIB")
-                        .ifPresent(mstFileTypeRepository::delete);
 
-                MstFileType m5 = MstFileType.builder()
-                        .fileTypeCode("NIB01")
-                        .fileTypeName("NIB")
-                        .fileTypeDesc("NIB")
-                        .fileAllocation("Legal")
-                        .usrCrt("system")
-                        .dtmCrt(Instant.now())
-                        .build();
-                mstFileTypeRepository.save(m5);
+                MstFileType m5;
+                Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("NIB");
+                if (findMst.isEmpty()) {
+                    m5 = MstFileType.builder()
+                            .fileTypeCode("NIB01")
+                            .fileTypeName("NIB")
+                            .fileTypeDesc("NIB")
+                            .fileAllocation("Legal")
+                            .usrCrt("system")
+                            .dtmCrt(Instant.now())
+                            .build();
+                    mstFileTypeRepository.save(m5);
+                } else {
+                    m5 = findMst.get();
+                }
 
                 legalFiles.add(
                         LegalFile.builder()
@@ -407,20 +440,27 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getPkpLink())) {
-                legalFileRepository.findTopByFileNameOrderByFileIdDesc("PKP")
+                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
+                                "PKP",
+                                customer
+                        )
                         .ifPresent(legalFileRepository::delete);
-                mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("PKP")
-                        .ifPresent(mstFileTypeRepository::delete);
 
-                MstFileType m6 = MstFileType.builder()
-                        .fileTypeCode("PKP01")
-                        .fileTypeName("PKP")
-                        .fileTypeDesc("PKP")
-                        .fileAllocation("Legal")
-                        .usrCrt("system")
-                        .dtmCrt(Instant.now())
-                        .build();
-                mstFileTypeRepository.save(m6);
+                final MstFileType m6;
+                Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("PKP");
+                if (findMst.isEmpty()) {
+                    m6 = MstFileType.builder()
+                            .fileTypeCode("PKP01")
+                            .fileTypeName("PKP")
+                            .fileTypeDesc("PKP")
+                            .fileAllocation("Legal")
+                            .usrCrt("system")
+                            .dtmCrt(Instant.now())
+                            .build();
+                    mstFileTypeRepository.save(m6);
+                } else {
+                    m6 = findMst.get();
+                }
 
                 legalFiles.add(
                         LegalFile.builder()
@@ -437,25 +477,35 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getKtpNpwpVendorStockLink())) {
-                legalFileRepository.findTopByFileNameOrderByFileIdDesc("Identitas Pengurus")
+                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
+                                "Identitas Pengurus",
+                                customer
+                        )
                         .ifPresent(legalFileRepository::delete);
-                legalFileRepository.findTopByFileNameOrderByFileIdDesc("IPS")
+                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
+                                "IPS",
+                                customer
+                        )
                         .ifPresent(legalFileRepository::delete);
-                mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("IPS")
-                        .ifPresent(mstFileTypeRepository::delete);
-                mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Identitas Pengurus")
-                        .ifPresent(mstFileTypeRepository::delete);
 
+                Optional<MstFileType> findMst1 = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("IPS");
+                findMst1.ifPresent(mstFileTypeRepository::delete);
 
-                MstFileType m7 = MstFileType.builder()
-                        .fileTypeCode("IPS01")
-                        .fileTypeName("Identitas Pengurus")
-                        .fileTypeDesc("Identitas Pengurus")
-                        .fileAllocation("Legal")
-                        .usrCrt("system")
-                        .dtmCrt(Instant.now())
-                        .build();
-                mstFileTypeRepository.save(m7);
+                final MstFileType m7;
+                Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Identitas Pengurus");
+                if (findMst.isEmpty()) {
+                    m7 = MstFileType.builder()
+                            .fileTypeCode("IPS01")
+                            .fileTypeName("Identitas Pengurus")
+                            .fileTypeDesc("Identitas Pengurus")
+                            .fileAllocation("Legal")
+                            .usrCrt("system")
+                            .dtmCrt(Instant.now())
+                            .build();
+                    mstFileTypeRepository.save(m7);
+                } else {
+                    m7 = findMst.get();
+                }
 
                 legalFiles.add(
                         LegalFile.builder()
@@ -472,20 +522,28 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getLaporanKeuanganLink())) {
-                legalFileRepository.findTopByFileNameOrderByFileIdDesc("Laporan Keuangan")
+                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
+                                "Laporan Keuangan",
+                                customer
+                        )
                         .ifPresent(legalFileRepository::delete);
-                mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Laporan Keuangan")
-                        .ifPresent(mstFileTypeRepository::delete);
 
-                MstFileType m8 = MstFileType.builder()
-                        .fileTypeCode("LKN01")
-                        .fileTypeName("Laporan Keuangan")
-                        .fileTypeDesc("Laporan Keuangan")
-                        .fileAllocation("Financing")
-                        .usrCrt("system")
-                        .dtmCrt(Instant.now())
-                        .build();
-                mstFileTypeRepository.save(m8);
+                final MstFileType m8;
+                Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Laporan Keuangan");
+                if (findMst.isEmpty()) {
+                    m8 = MstFileType.builder()
+                            .fileTypeCode("LKN01")
+                            .fileTypeName("Laporan Keuangan")
+                            .fileTypeDesc("Laporan Keuangan")
+                            .fileAllocation("Financing")
+                            .usrCrt("system")
+                            .dtmCrt(Instant.now())
+                            .build();
+                    mstFileTypeRepository.save(m8);
+                } else {
+                    m8 = findMst.get();
+                }
+
 
                 legalFiles.add(
                         LegalFile.builder()
@@ -502,20 +560,26 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getKtpDirekturLink())) {
-                legalFileRepository.findTopByFileNameOrderByFileIdDesc("Ktp Pengurus")
+                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
+                                "Ktp Pengurus",
+                                customer
+                        )
                         .ifPresent(legalFileRepository::delete);
-                mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Ktp Pengurus")
-                        .ifPresent(mstFileTypeRepository::delete);
-
-                MstFileType m9 = MstFileType.builder()
-                        .fileTypeCode("KPS01")
-                        .fileTypeName("Ktp Pengurus")
-                        .fileTypeDesc("Ktp Pengurus")
-                        .fileAllocation("Legal")
-                        .usrCrt("system")
-                        .dtmCrt(Instant.now())
-                        .build();
-                mstFileTypeRepository.save(m9);
+                final MstFileType m9;
+                Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Ktp Pengurus");
+                if (findMst.isEmpty()) {
+                    m9 = MstFileType.builder()
+                            .fileTypeCode("KPS01")
+                            .fileTypeName("Ktp Pengurus")
+                            .fileTypeDesc("Ktp Pengurus")
+                            .fileAllocation("Legal")
+                            .usrCrt("system")
+                            .dtmCrt(Instant.now())
+                            .build();
+                    mstFileTypeRepository.save(m9);
+                } else {
+                    m9 = findMst.get();
+                }
 
                 legalFiles.add(
                         LegalFile.builder()
@@ -536,20 +600,27 @@ public class DocumentService {
                             !vendor.getBankDetail().isEmpty()
                             && vendor.getBankDetail().getFirst().getDocLink() != null
             ) {
-                legalFileRepository.findTopByFileNameOrderByFileIdDesc("Bank Detail")
+                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
+                                "Bank Detail",
+                                customer
+                        )
                         .ifPresent(legalFileRepository::delete);
-                mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Bank Detail")
-                        .ifPresent(mstFileTypeRepository::delete);
+                final MstFileType m10;
+                Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Bank Detail");
+                if (findMst.isEmpty()) {
+                    m10 = MstFileType.builder()
+                            .fileTypeCode("BDL01")
+                            .fileTypeName("Bank Detail")
+                            .fileTypeDesc("Bank Detail")
+                            .fileAllocation("Financing")
+                            .usrCrt("system")
+                            .dtmCrt(Instant.now())
+                            .build();
+                    mstFileTypeRepository.save(m10);
+                } else {
+                    m10 = findMst.get();
+                }
 
-                MstFileType m10 = MstFileType.builder()
-                        .fileTypeCode("BDL01")
-                        .fileTypeName("Bank Detail")
-                        .fileTypeDesc("Bank Detail")
-                        .fileAllocation("Financing")
-                        .usrCrt("system")
-                        .dtmCrt(Instant.now())
-                        .build();
-                mstFileTypeRepository.save(m10);
 
                 legalFiles.add(
                         LegalFile.builder()
@@ -571,20 +642,27 @@ public class DocumentService {
             ) {
                 int index = 1;
                 for (InquiryVendorRemoteDto.OtherDocument doc : vendor.getOtherDocument()) {
-                    legalFileRepository.findTopByFileNameOrderByFileIdDesc(doc.getDocumentName())
+                    legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
+                                    doc.getDocumentName(),
+                                    customer
+                            )
                             .ifPresent(legalFileRepository::delete);
-                    mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc(doc.getDocumentName())
-                            .ifPresent(mstFileTypeRepository::delete);
 
-                    MstFileType m11 = MstFileType.builder()
-                            .fileTypeCode("DOCOTHER_0" + index)
-                            .fileTypeName(doc.getDocumentName())
-                            .fileTypeDesc(doc.getDocumentName())
-                            .fileAllocation("Legal")
-                            .usrCrt("system")
-                            .dtmCrt(Instant.now())
-                            .build();
-                    mstFileTypeRepository.save(m11);
+                    final MstFileType m11;
+                    Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc(doc.getDocumentName());
+                    if (findMst.isEmpty()) {
+                        m11 = MstFileType.builder()
+                                .fileTypeCode("DOCOTHER_0" + index)
+                                .fileTypeName(doc.getDocumentName())
+                                .fileTypeDesc(doc.getDocumentName())
+                                .fileAllocation("Legal")
+                                .usrCrt("system")
+                                .dtmCrt(Instant.now())
+                                .build();
+                        mstFileTypeRepository.save(m11);
+                    } else {
+                        m11 = findMst.get();
+                    }
 
                     legalFiles.add(
                             LegalFile.builder()
