@@ -1,10 +1,7 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
-import com.kmkbe.core.domain.dto.CwrDto;
-import com.kmkbe.core.domain.dto.InquiryAgreementCwrDto;
-import com.kmkbe.core.domain.dto.InquiryCwrRemoteDto;
+import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.CwrMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
@@ -29,10 +26,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 
@@ -59,7 +58,7 @@ public class CwrService {
     }
 
     public PaginationResult<CwrDto> list(
-            String custCode,
+            String financingHdrCode,
             PaginationRequest request
     ) {
         try {
@@ -76,8 +75,12 @@ public class CwrService {
                 pageNo = pageNo - 1;
             }
 
-            Customer customer = customerRepository.findByCustCode(UUID.fromString(custCode))
-                    .orElseThrow(() -> new IllegalStateException("Customer not found or not valid"));
+            FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
+                    .orElseThrow(() -> new IllegalStateException("Financing not found or not valid"));
+            Customer customer = financingHdr.getCustomer();
+            if (customer == null) {
+                throw new IllegalStateException("Customer not found or not valid");
+            }
 
             Page<Cwr> page = cwrRepository.findAllByCustomer(
                     customer,
@@ -96,6 +99,71 @@ public class CwrService {
                     .build();
         } catch (Exception e) {
             log.error("list: error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public InquiryCwrDto inquiryCwr(String cwrNo) throws JsonProcessingException {
+        try {
+            CommonInvalidException ex = CommonInvalidException.builder()
+                    .title("Peringatan")
+                    .message("Harap input CWR aktif di Confins terlebih dahulu")
+                    .build();
+            final List<InquiryCwrRemoteDto> data;
+            try {
+                BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> response = cwrRemoteService.inquiryCwr(
+                        InquiryCwrRemoteRequest.builder()
+                                .cwrNo(cwrNo)
+                                .build()
+                );
+                data = response.getData();
+            } catch (Exception e) {
+                throw ex;
+            }
+
+
+            if (data != null && !data.isEmpty()) {
+                return InquiryCwrDto.builder()
+                        .cwrStartDate(new Date())
+                        .cwrEndDate(new Date())
+                        .plafondAmt(BigDecimal.valueOf(data.getFirst().getPlafondAmt()))
+                        .currency(data.getFirst().getCurrency())
+                        .build();
+            }
+
+            throw ex;
+        } catch (Exception e) {
+            log.error("inquiryCwr: error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public InquiryAgreementCwrDto inquiryAgreementCwr(String agreementNo) throws JsonProcessingException {
+        try {
+            CommonInvalidException ex = CommonInvalidException.builder()
+                    .title("Peringatan")
+                    .message("Tidak bisa mencari Agreement, harap input CWR aktif di Confins terlebih dahulu")
+                    .build();
+            final List<InquiryAgreementCwrDto> data;
+            try {
+                BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreement(
+                        InquiryAgreementRemoteRequest.builder()
+                                .agreementNo(agreementNo)
+                                .build()
+                );
+
+                data = response.getData();
+            } catch (Exception e) {
+                throw ex;
+            }
+
+            if (data != null && !data.isEmpty()) {
+                return data.getFirst();
+            }
+
+            throw ex;
+        } catch (Exception e) {
+            log.error("inquiryAgreementCwr: error {}", e.getMessage());
             throw e;
         }
     }
@@ -205,7 +273,6 @@ public class CwrService {
                     Cwr cwr = cwrRepository.findTopByCwrCode(inquiryCwr.getCWRNo())
                             .orElseThrow(() -> new IllegalStateException("CWR not found or not valid"));
 
-
                     agreements.add(
                             Agreement.builder()
                                     .agreementCode(inquiryCwr.getAgrmntNo())
@@ -228,8 +295,8 @@ public class CwrService {
                 agreementRepository.saveAll(agreements);
             }
 
-           List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
-                   .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
+            List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
+                    .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
 
             List<FinancingSubmissionRequest.FinancingInvoice> financingInvoices = financingDtls.stream()
                     .filter((e) -> e.getInvoice() != null)
@@ -240,7 +307,6 @@ public class CwrService {
                             .accountingDocument(e.getInvoice().getBouwheerInvNo())
                             .build())
                     .toList();
-
 
             financingRemoteService.postedSubmission(
                     FinancingSubmissionRequest.builder()

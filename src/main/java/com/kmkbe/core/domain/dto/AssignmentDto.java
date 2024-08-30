@@ -20,5 +20,6 @@ public class AssignmentDto {
     private BigDecimal financingAmount;
     private String custStatus;
     private String status;
+    private String statusLabel;
     private Instant dtmCrt;
 }

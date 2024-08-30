@@ -161,7 +161,7 @@ public class EmailService {
         );
     }
 
-    private JavaMailSender csulMailSender(){
+    private JavaMailSender csulMailSender() {
         final MailRemoteDto internalMail = configRemoteService.fetchEmailInfo();
         return mailConfig.javaMailSender(
                 internalMail.getServerUrl(),

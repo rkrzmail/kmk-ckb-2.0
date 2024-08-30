@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -29,6 +30,7 @@ import java.util.Optional;
 @Slf4j
 @RequiredArgsConstructor
 public class AuthInternalServices {
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final MstUserRepository mstUserRepository;
     private final MstEmployeeRepository mstEmployeeRepository;
     private final UserInternalRemoteService userInternalRemoteService;
@@ -57,24 +59,34 @@ public class AuthInternalServices {
                 user = findUser.get();
             }
 
-            /*if (!user.getPassword().equals(bcryptEncoder.encode(request.getPassword()))) {
-                throw new RuntimeException("Check your email or username or password");
-            }
-
-            if (user.getIsUserNonad()) {
-
-            }
-
             if (user.getIsUserAd()) {
+                BaseLdapRemoteResponseDto<UserInternalRemoteDto> userResponse = userInternalRemoteService.validateActiveDirectory(
+                        ActiveDirectoryRemoteRequest.builder()
+                                .loginID(user.getUsername())
+                                .password(request.getPassword())
+                                .build()
+                );
 
-            }*/
+                if (userResponse.getData().getUserValid()) {
+                    final RefreshToken refreshTokenResult = refreshTokenServices.create(
+                            IRefreshTokenServices.User.builder()
+                                    .userCode(user.getUserCode())
+                                    .build()
+                    );
 
-            BaseLdapRemoteResponseDto<UserInternalRemoteDto> userResponse = userInternalRemoteService.validateActiveDirectory(
-                    ActiveDirectoryRemoteRequest.builder()
-                            .loginID(user.getUsername())
-                            .password(request.getPassword())
-                            .build()
-            );
+                    return new LoginDto(
+                            jwtService.generateToken(user),
+                            refreshTokenResult.getRefreshToken().toString(),
+                            jwtService.getExpirationTime()
+                    );
+                }
+
+                throw CommonInvalidException.invalidInternalUser();
+            }
+
+            if (!user.getPassword().equals(bCryptPasswordEncoder.encode(request.getPassword()))) {
+                throw new RuntimeException("Check your username or password");
+            }
 
             final RefreshToken refreshTokenResult = refreshTokenServices.create(
                     IRefreshTokenServices.User.builder()
@@ -82,24 +94,11 @@ public class AuthInternalServices {
                             .build()
             );
 
-            if (userResponse.getData().getUserValid()) {
-               /* Authentication authentication = authenticationManager.authenticate(
-                        new UsernamePasswordAuthenticationToken(
-                                request.getEmailOrUsername(),
-                                request.getPassword()
-                        )
-                );
-
-                SecurityContextHolder.getContext().setAuthentication(authentication);*/
-
-                return new LoginDto(
-                        jwtService.generateToken(user),
-                        refreshTokenResult.getRefreshToken().toString(),
-                        jwtService.getExpirationTime()
-                );
-            }
-
-            throw CommonInvalidException.invalidInternalUser();
+            return new LoginDto(
+                    jwtService.generateToken(user),
+                    refreshTokenResult.getRefreshToken().toString(),
+                    jwtService.getExpirationTime()
+            );
         } catch (Exception e) {
             log.error("signIn, error {}", e.getMessage());
             throw e;

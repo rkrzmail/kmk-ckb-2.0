@@ -40,7 +40,7 @@ public class OtpService {
         otpLog.setEmail(customer.getCustEmail());
         otpLog.setMobilePhone(customer.getCustMobilePhone());
         otpLog.setGeneratedDate(now);
-        otpLog.setExpiredDate(now.plus(1, ChronoUnit.MINUTES));
+        otpLog.setExpiredDate(now.plus(5, ChronoUnit.MINUTES));
         otpLog.setUsrCrt(customer.getCustName());
         otpLog.setDtmCrt(Instant.now());
         otpLog.setIsUsed(false);

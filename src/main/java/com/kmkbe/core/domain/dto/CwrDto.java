@@ -25,8 +25,8 @@ public class CwrDto implements Serializable {
     private String facility;
     private Boolean isRevolving;
     private String currency;
-    private Date cwrStartdate;
-    private Date cwrEnddate;
+    private Date cwrStartDate;
+    private Date cwrEndDate;
     private Double plafondAmt;
     private Double realisationAmt;
     private String status;

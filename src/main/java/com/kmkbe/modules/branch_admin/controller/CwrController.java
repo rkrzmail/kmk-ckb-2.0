@@ -2,6 +2,8 @@ package com.kmkbe.modules.branch_admin.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.dto.CwrDto;
+import com.kmkbe.core.domain.dto.InquiryAgreementCwrDto;
+import com.kmkbe.core.domain.dto.InquiryCwrDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -9,8 +11,9 @@ import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryCwrRequest;
 import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.branch_admin.service.CwrService;
+import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
+import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -33,6 +36,7 @@ import java.text.ParseException;
 public class CwrController {
     private final CwrService cwrService;
     private final AgreementService agreementService;
+    private final FinancingRemoteService financingRemoteService;
 
     @GetMapping("/{cwrCode}")
     public CommonResult<Object> getCwr(
@@ -43,17 +47,26 @@ public class CwrController {
         );
     }
 
-    @GetMapping("/list/{custCode}")
+    @GetMapping("/list/{financingHdrCode}")
     public CommonResult<PaginationResult<CwrDto>> getCwrList(
-            @PathVariable("custCode") String custCode,
+            @PathVariable("financingHdrCode") String financingHdrCode,
             PaginationRequest request
     ) {
         return new CommonResult<PaginationResult<CwrDto>>().success(
-                cwrService.list(custCode, request)
+                cwrService.list(financingHdrCode, request)
         );
     }
 
-    @PostMapping("/create/inquiry")
+    @GetMapping("/inquiry")
+    public CommonResult<InquiryCwrDto> getInquiryCwr(
+            @RequestParam("cwrNo") String cwrNo
+    ) throws JsonProcessingException {
+        return new CommonResult<InquiryCwrDto>().success(
+                cwrService.inquiryCwr(cwrNo)
+        );
+    }
+
+    @PostMapping("/inquiry/create")
     public CommonResult<Object> createInquiryCwr(
             Authentication authentication,
             @Valid @RequestBody CreateInquiryCwrRequest request
@@ -65,13 +78,22 @@ public class CwrController {
         );
     }
 
-    @PostMapping("/create/inquiry/agreement/{financingHdrCode}/{cwrCode}")
+    @GetMapping("/inquiry/agreement")
+    public CommonResult<InquiryAgreementCwrDto> getInquiryAgreement(
+            @RequestParam("agreementNo") String agreementNo
+    ) throws JsonProcessingException {
+        return new CommonResult<InquiryAgreementCwrDto>().success(
+                cwrService.inquiryAgreementCwr(agreementNo)
+        );
+    }
+
+    @PostMapping("/inquiry/agreement/create/{financingHdrCode}/{cwrCode}")
     public CommonResult<Object> createInquiryAgreement(
             @PathVariable("financingHdrCode") String financingHdrCode,
             @PathVariable("cwrCode") String cwrCode,
             Authentication authentication,
             @Valid @RequestBody CreateInquiryAgreementRequest request
-    ) throws SignatureException, ParseException, JsonProcessingException {
+    ) throws SignatureException, JsonProcessingException {
         cwrService.createInquiryAgreement(authentication, financingHdrCode, cwrCode, request);
         return new CommonResult<>().success(
                 null,
@@ -113,6 +135,14 @@ public class CwrController {
                 authentication,
                 file,
                 agreementCode
+        );
+
+        financingRemoteService.updateFinancingStatus(
+                UpdateFinancingStatusRequest.builder()
+                        .financingCode("")
+                        .status(UpdateFinancingStatusRequest.Status.Approve)
+                        .vendorCode("") // cust_external_code
+                        .build()
         );
 
         return new CommonResult<>().success(

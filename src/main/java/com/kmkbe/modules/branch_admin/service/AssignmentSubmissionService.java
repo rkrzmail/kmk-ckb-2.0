@@ -1,12 +1,10 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.AssignmentDto;
-import com.kmkbe.core.domain.dto.PostedInvoiceDto;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
 import lombok.RequiredArgsConstructor;
@@ -85,7 +83,8 @@ public class AssignmentSubmissionService {
                                 .dueDate(new Date(e.getFinancingDueDate().toEpochMilli()))
                                 .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
                                 .custStatus(isNewCust ? "New Customer" : "Existing Customer")
-                                .status(label)
+                                .status(e.getFinancingStatus())
+                                .statusLabel(label)
                                 .build();
                     })
                     .toList();
