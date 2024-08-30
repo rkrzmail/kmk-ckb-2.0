@@ -75,19 +75,19 @@ public class Cwr {
     private String currency;
 
     @NotNull
-    @Column(name = "cwr_startdate", nullable = false)
-    private Instant cwrStartdate;
+    @Column(name = "cwr_start_date", nullable = false)
+    private Instant cwrStartDate;
 
     @NotNull
-    @Column(name = "cwr_enddate", nullable = false)
-    private Instant cwrEnddate;
+    @Column(name = "cwr_end_date", nullable = false)
+    private Instant cwrEndDate;
 
     @NotNull
-    @Column(name = "plafond_amt", nullable = false, precision = 17, scale = 2)
+    @Column(name = "plafond_amt", nullable = false)
     private Double plafondAmt;
 
     @NotNull
-    @Column(name = "realisation_amt", nullable = false, precision = 17, scale = 2)
+    @Column(name = "realisation_amt", nullable = false)
     private Double realisationAmt;
 
     @Size(max = 20)
@@ -112,7 +112,7 @@ public class Cwr {
     @Column(name = "dtm_upd")
     private Instant dtmUpd;
 
-    @OneToMany(mappedBy = "cwrCode")
+    @OneToMany(mappedBy = "cwr")
     private Set<Agreement> agreements = new LinkedHashSet<>();
 
 }

@@ -11,14 +11,10 @@ import lombok.ToString;
 @Setter
 @NoArgsConstructor
 @ToString
-public class AgreementCreditCwrRequest {
-    @NotNull(message = "Customer Code is required, key: custCode")
-    @NotEmpty(message = "Customer Code is required, key: custCode")
-    private String bouwheerCode;
-
-    @NotNull(message = "Customer Code is required, key: custCode")
-    @NotEmpty(message = "Customer Code is required, key: custCode")
-    private String custCode;
+public class CreateInquiryCwrRequest {
+    @NotNull(message = "Customer Code is required, key: financingHdrCode")
+    @NotEmpty(message = "Customer Code is required, key: financingHdrCode")
+    private String financingHdrCode;
 
     @NotNull(message = "Cwr No is required, key: cwrNo")
     @NotEmpty(message = "Cwr No is required, key: cwrNo")

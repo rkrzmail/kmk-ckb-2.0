@@ -3,13 +3,14 @@ package com.kmkbe.core.domain.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.math.BigDecimal;
 import java.time.Instant;
 
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @Entity
@@ -26,8 +27,12 @@ public class Agreement {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "cwr_code", nullable = false)
-    private Cwr cwrCode;
+    @JoinColumn(
+            name = "cwr_code",
+            referencedColumnName = "cwr_code",
+            nullable = false
+    )
+    private Cwr cwr;
 
     @Size(max = 20)
     @NotNull
@@ -36,8 +41,12 @@ public class Agreement {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "financing_hdr_code", nullable = false)
-    private FinancingHdr financingHdrCode;
+    @JoinColumn(
+            name = "financing_hdr_code",
+            referencedColumnName = "financing_hdr_code",
+            nullable = false
+    )
+    private FinancingHdr financingHdr;
 
     @Size(max = 100)
     @NotNull
@@ -50,8 +59,8 @@ public class Agreement {
     private String currency;
 
     @NotNull
-    @Column(name = "financing_amt", nullable = false, precision = 17, scale = 2)
-    private BigDecimal financingAmt;
+    @Column(name = "financing_amt", nullable = false)
+    private Double financingAmt;
 
     @Size(max = 20)
     @NotNull

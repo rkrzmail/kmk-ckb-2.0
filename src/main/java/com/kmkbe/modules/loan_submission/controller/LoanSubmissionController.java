@@ -4,6 +4,8 @@ package com.kmkbe.modules.loan_submission.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.request.*;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
@@ -183,14 +185,16 @@ public class LoanSubmissionController {
     }
 
     @GetMapping("/documents/requirement")
-    public CommonResult<List<MstFileTypeDto>> getDocumentRequirement(
+    public CommonResult<PaginationResult<MstFileTypeDto>> getDocumentRequirement(
             Authentication authentication,
-            HttpServletRequest httpServletRequest
+            HttpServletRequest httpServletRequest,
+            PaginationRequest request
     ) throws Exception {
-        return new CommonResult<List<MstFileTypeDto>>().success(
+        return new CommonResult<PaginationResult<MstFileTypeDto>>().success(
                 documentService.fetchAllLoanDocumentRequirement(
                         httpServletRequest,
-                        authentication
+                        authentication,
+                        request
                 )
         );
     }

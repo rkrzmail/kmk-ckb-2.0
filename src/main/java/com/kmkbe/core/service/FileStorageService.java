@@ -61,9 +61,9 @@ public class FileStorageService {
                 ext = ext.toLowerCase();
             }
 
-            if (extValidation != null && !ext.equalsIgnoreCase(extValidation)) {
+            /*if (extValidation != null && !ext.equalsIgnoreCase(extValidation)) {
                 throw new Exception("File extension is not valid, expected: " + extValidation + " but got: " + ext);
-            }
+            }*/
 
             String fileNameExt = FileUtils.getFileNameExtension(name);
             if (StringUtil.isNullOrEmpty(fileNameExt)) {

@@ -5,14 +5,19 @@ import com.kmkbe.core.domain.dto.CwrDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
-import com.kmkbe.modules.branch_admin.request.AgreementCreditCwrRequest;
+import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
+import com.kmkbe.modules.branch_admin.request.CreateInquiryCwrRequest;
+import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.branch_admin.service.CwrService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SignatureException;
 import java.text.ParseException;
@@ -27,6 +32,7 @@ import java.text.ParseException;
 @RequiredArgsConstructor
 public class CwrController {
     private final CwrService cwrService;
+    private final AgreementService agreementService;
 
     @GetMapping("/{cwrCode}")
     public CommonResult<Object> getCwr(
@@ -47,27 +53,29 @@ public class CwrController {
         );
     }
 
-    @PostMapping("/create/credit")
-    public CommonResult<Object> createCredit(
+    @PostMapping("/create/inquiry")
+    public CommonResult<Object> createInquiryCwr(
             Authentication authentication,
-            @Valid @RequestBody AgreementCreditCwrRequest request
+            @Valid @RequestBody CreateInquiryCwrRequest request
     ) throws SignatureException, ParseException, JsonProcessingException {
-        cwrService.createCredit(authentication, request);
+        cwrService.createInquiryCwr(authentication, request);
         return new CommonResult<>().success(
                 null,
-                "Cwr created successfully"
+                "Inquiry CWR created successfully"
         );
     }
 
-    @PostMapping("/create/agreement/{cwrCode}")
-    public CommonResult<Object> createAgreement(
+    @PostMapping("/create/inquiry/agreement/{financingHdrCode}/{cwrCode}")
+    public CommonResult<Object> createInquiryAgreement(
+            @PathVariable("financingHdrCode") String financingHdrCode,
             @PathVariable("cwrCode") String cwrCode,
-            Authentication authentication
+            Authentication authentication,
+            @Valid @RequestBody CreateInquiryAgreementRequest request
     ) throws SignatureException, ParseException, JsonProcessingException {
-        cwrService.createAgreement(authentication);
+        cwrService.createInquiryAgreement(authentication, financingHdrCode, cwrCode, request);
         return new CommonResult<>().success(
                 null,
-                "Cwr created successfully"
+                "Inquiry Agreement created successfully"
         );
     }
 
@@ -88,6 +96,28 @@ public class CwrController {
     ) {
         return new CommonResult<PaginationResult<Object>>().success(
                 null
+        );
+    }
+
+    @PostMapping(
+            value = "/upload/contract/{agreementCode}",
+            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+    )
+    public CommonResult<Object> uploadContact(
+            Authentication authentication,
+            @PathVariable("agreementCode") String agreementCode,
+            @Valid @RequestPart MultipartFile file
+
+    ) throws Exception {
+        agreementService.upload(
+                authentication,
+                file,
+                agreementCode
+        );
+
+        return new CommonResult<>().success(
+                null,
+                "Agreement upload successfully"
         );
     }
 }

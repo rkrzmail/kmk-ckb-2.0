@@ -22,7 +22,7 @@ public class FileUtils {
 
     public static String getFileNameExtension(String fileName) throws Exception {
         if (StringUtil.isNullOrEmpty(fileName.trim())) {
-            throw new Exception("File name is null");
+            return null;
         }
 
         String[] splitter = fileName.split("\\.");

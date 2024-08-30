@@ -72,9 +72,10 @@ public class DocumentService {
         }
     }
 
-    public List<MstFileTypeDto> fetchAllLoanDocumentRequirement(
+    public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
             HttpServletRequest httpServletRequest,
-            Authentication authentication
+            Authentication authentication,
+            PaginationRequest request
     ) throws SignatureException {
         try {
             final Customer customer = CustomerUtils.authenticateCustomer(authentication);
@@ -91,9 +92,32 @@ public class DocumentService {
                 mappingFromInquiryVendor(customer, inquiryVendorRemote);
             }
 
-            return mstFileTypeRepository.findAll(Sort.by("fileTypeId").descending())
-                    .stream()
-                    .map((file) -> {
+            int pageNo = 0, pageSize = 10;
+
+            if (request.getPageNo() != null) {
+                pageNo = request.getPageNo();
+            }
+            if (request.getPageSize() != null) {
+                pageSize = request.getPageSize();
+            }
+
+            if (pageNo > 0) {
+                pageNo = pageNo - 1;
+            }
+
+            Page<MstFileType> page = mstFileTypeRepository.findAllByFileAllocationInOrderByFileTypeIdDesc(
+                    List.of(
+                            "Legal",
+                            "Financing"
+                    ),
+                    PageRequest.of(
+                            pageNo,
+                            pageSize,
+                            Sort.by("fileTypeId").descending()
+                    )
+            );
+
+            List<MstFileTypeDto> result = page.map((file) -> {
                         MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
                         LegalFile legalFile = null;
 
@@ -122,6 +146,13 @@ public class DocumentService {
                         return dto;
                     })
                     .toList();
+
+            return PaginationResult.<MstFileTypeDto>builder()
+                    .currentPage(pageNo + 1)
+                    .totalData(page.getTotalElements())
+                    .totalPage(page.getTotalPages())
+                    .list(result)
+                    .build();
         } catch (Exception e) {
             log.error("getAllLoanDocumentRequirement: {}", e.getMessage());
             throw e;
@@ -138,7 +169,9 @@ public class DocumentService {
         String code = null;
         try {
             final Customer customer = CustomerUtils.authenticateCustomer(authentication);
-            final MstFileType mstFileType = mstFileTypeRepository.findByFileTypeCode(fileTypeCode).orElseThrow();
+            final MstFileType mstFileType = mstFileTypeRepository.findByFileTypeCode(fileTypeCode).orElseThrow(
+                    () -> new IllegalStateException("File type not found")
+            );
             final LegalFile existingFile = legalFileService.fetchByMstFileTypeAndCust(CustomerUtils.authenticateCustomer(authentication), mstFileType);
             code = customer.getCustName();
 
