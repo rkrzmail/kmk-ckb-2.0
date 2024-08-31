@@ -103,7 +103,7 @@ public class CwrService {
         }
     }
 
-    public InquiryCwrDto inquiryCwr(String cwrNo) throws JsonProcessingException {
+    public InquiryCwrDto inquiryCwr(String cwrNo) throws JsonProcessingException, ParseException {
         try {
             CommonInvalidException ex = CommonInvalidException.builder()
                     .title("Peringatan")
@@ -123,12 +123,15 @@ public class CwrService {
 
 
             if (data != null && !data.isEmpty()) {
-                return InquiryCwrDto.builder()
-                        .cwrStartDate(new Date())
-                        .cwrEndDate(new Date())
+                final InquiryCwrDto build = InquiryCwrDto.builder()
+                        .cwrStartDate(DateTimeUtils.SDF_STANDARD_DATE_TIME.parse(data.getFirst().getStartDt()))
+                        .cwrEndDate(DateTimeUtils.SDF_STANDARD_DATE_TIME.parse(data.getFirst().getEndDt()))
+                        .cwrNo(cwrNo)
+                        .loanAmt(BigDecimal.valueOf(data.getFirst().getRealisationAmt()))
                         .plafondAmt(BigDecimal.valueOf(data.getFirst().getPlafondAmt()))
                         .currency(data.getFirst().getCurrency())
                         .build();
+                return build;
             }
 
             throw ex;

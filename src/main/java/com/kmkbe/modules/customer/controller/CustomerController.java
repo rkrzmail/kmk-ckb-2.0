@@ -137,6 +137,15 @@ public class CustomerController {
         );
     }
 
+    @GetMapping("/dashboard/{financingHdrCode}")
+    public CommonResult<CustomerPlafondDto> getDashboard(
+            @PathVariable String financingHdrCode
+    ) {
+        return new CommonResult<CustomerPlafondDto>().success(
+                customerPlafondService.plafond(financingHdrCode)
+        );
+    }
+
     @GetMapping("/documents/{custCode}")
     public CommonResult<PaginationResult<LegalFileDto>> getDocuments(
             @PathVariable String custCode,
