@@ -25,9 +25,8 @@ import java.util.stream.IntStream;
 @RequiredArgsConstructor
 @Slf4j
 public class FinancingService {
-    @Autowired
-    public  AgreementRepository agreementRepository;
-    @Autowired
+    private final AgreementRepository agreementRepository;
+
     private final FinancingRemoteService financingRemoteService;
 
 
@@ -43,12 +42,11 @@ public class FinancingService {
 
             UpdateFinancingStatusRequest updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
                     .vendorCode(agreement.getFinancingHdr().getCustomer().getCustExternalCode() )
-                    .financingCode(agreement.getApplicationCode())
+                    .financingCode(agreement.getFinancingHdr().getFinancingHdrCode().toString())
+                    .status(UpdateFinancingStatusRequest.Status.Approve)
                     .build();
             try {
                 BaseSimpleRemoteResponseDto<ObjectUtils.Null> nullBaseSimpleRemoteResponseDto =  financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
-
-
                 //update
                 agreement.setApprovalFlag("true");
                 agreementRepository.save(agreement);
