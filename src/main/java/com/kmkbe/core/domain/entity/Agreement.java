@@ -21,8 +21,13 @@ public class Agreement {
     @Column(name = "agreement_code", nullable = false, length = 20)
     private String agreementCode;
 
-    @ColumnDefault("nextval('agreement_agreement_id_seq'::regclass)")
-    @Column(name = "agreement_id", nullable = false)
+    @Column(
+            name = "agreement_id",
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false,
+            nullable = false
+    )
     private Long agreementId;
 
     @NotNull(message = "Cwr cannot be null")
@@ -40,7 +45,7 @@ public class Agreement {
     private String applicationCode;
 
     @NotNull(message = "Financing hdr cannot be null")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(
             name = "financing_hdr_code",
             referencedColumnName = "financing_hdr_code",

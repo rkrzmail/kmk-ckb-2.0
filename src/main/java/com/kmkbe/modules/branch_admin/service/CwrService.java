@@ -1,24 +1,26 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.core.domain.entity.*;
+import com.kmkbe.core.domain.entity.Bouwheer;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.entity.Cwr;
+import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.mapper.CwrMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.repository.*;
+import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.core.domain.repository.CwrRepository;
+import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryCwrRequest;
-import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
-import com.kmkbe.modules.remote.request.InquiryAgreementRemoteRequest;
 import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
-import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,6 +29,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.time.Instant;
@@ -37,24 +40,12 @@ import java.util.*;
 @Slf4j
 public class CwrService {
     private final CustomerRepository customerRepository;
-    private final BouwheerRepository bouwheerRepository;
     private final CwrRemoteService cwrRemoteService;
     private final CwrRepository cwrRepository;
-    private final AgreementRepository agreementRepository;
     private final FinancingHdrRepository financingHdrRepository;
-    private final FinancingRemoteService financingRemoteService;
-    private final FinancingDtlRepository financingDtlRepository;
+    private final ObjectMapper objectMapper;
 
-    public void create() {
-        try {
-
-        } catch (Exception e) {
-            log.error("create: error {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    public PaginationResult<CwrDto> list(
+    public PaginationResult<CwrListDto> list(
             String custCode,
             PaginationRequest request
     ) {
@@ -80,11 +71,11 @@ public class CwrService {
                     PageRequest.of(pageNo, pageSize)
             );
 
-            List<CwrDto> result = page.stream()
+            List<CwrListDto> result = page.stream()
                     .map(CwrMapper.INSTANCE::toDto)
                     .toList();
 
-            return PaginationResult.<CwrDto>builder()
+            return PaginationResult.<CwrListDto>builder()
                     .currentPage(pageNo + 1)
                     .totalData(page.getTotalElements())
                     .totalPage(page.getTotalPages())
@@ -96,8 +87,65 @@ public class CwrService {
         }
     }
 
+    public DetailCwrDto detail(String cwrCode, String financingHdrCode) {
+        try {
+            Cwr cwr = cwrRepository.findById(cwrCode).orElseThrow(
+                    () -> new IllegalStateException("CWR not found")
+            );
+
+            Customer customer = cwr.getCustomer();
+            if (customer == null) {
+                throw new IllegalStateException("Customer not found or not valid");
+            }
+
+            final FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
+                    .orElseThrow(() -> new IllegalStateException("Financing not found or not valid"));
+
+            return DetailCwrDto.builder()
+                    .cwrCode(cwr.getCwrCode())
+                    .cwrStartDate(Date.from(cwr.getCwrStartDate()))
+                    .cwrEndDate(Date.from(cwr.getCwrEndDate()))
+                    .currency(cwr.getCurrency())
+                    .plafondAmt(new BigDecimal(cwr.getPlafondAmt(), MathContext.DECIMAL64))
+                    .realisationAmt(new BigDecimal(cwr.getRealisationAmt(), MathContext.DECIMAL64))
+                    .remainingPlafondAmt(new BigDecimal(cwr.getPlafondAmt() - cwr.getRealisationAmt(), MathContext.DECIMAL64))
+                    .custCode(customer.getCustCode())
+                    .custTypeCode(customer.getCustTypeCode())
+                    .custIdTypeCode(customer.getCustIdTypeCode())
+                    .custIdNo(customer.getCustIdNo())
+                    .custName(customer.getCustName())
+                    .custEmail(customer.getCustEmail())
+                    .financingAmt(BigDecimal.valueOf(financingHdr.getFinancingAmt()))
+                    .build();
+        } catch (Exception e) {
+            log.error("detail: error {}", e.getMessage());
+            throw e;
+        }
+    }
+
     public InquiryCwrDto inquiryCwr(String cwrNo) throws JsonProcessingException, ParseException {
         try {
+            if (cwrNo.equalsIgnoreCase("1")) {
+                List<InquiryCwrRemoteDto> data = new ArrayList<>();
+                data.add(sample());
+
+                return InquiryCwrDto.builder()
+                        .cwrStartDate(DateTimeUtils.timestampToDate(data.getFirst().getStartDt()))
+                        .cwrEndDate(DateTimeUtils.timestampToDate(data.getFirst().getEndDt()))
+                        .cwrCode(cwrNo)
+                        .loanAmt(new BigDecimal(data.getFirst().getRealisationAmt(), MathContext.DECIMAL64))
+                        .plafondAmt(new BigDecimal(data.getFirst().getPlafondAmt(), MathContext.DECIMAL64))
+                        .currency(data.getFirst().getCurrency())
+                        .build();
+            }
+
+            cwrRepository.findById(cwrNo).ifPresent(cwr -> {
+                throw CommonInvalidException.builder()
+                        .title("Peringatan")
+                        .message("Nomor CWR sudah di input sebelumnya")
+                        .build();
+            });
+
             CommonInvalidException ex = CommonInvalidException.builder()
                     .title("Peringatan")
                     .message("Harap input CWR aktif di Confins terlebih dahulu")
@@ -119,7 +167,7 @@ public class CwrService {
                 return InquiryCwrDto.builder()
                         .cwrStartDate(DateTimeUtils.timestampToDate(data.getFirst().getStartDt()))
                         .cwrEndDate(DateTimeUtils.timestampToDate(data.getFirst().getEndDt()))
-                        .cwrNo(cwrNo)
+                        .cwrCode(cwrNo)
                         .loanAmt(BigDecimal.valueOf(data.getFirst().getRealisationAmt()))
                         .plafondAmt(BigDecimal.valueOf(data.getFirst().getPlafondAmt()))
                         .currency(data.getFirst().getCurrency())
@@ -133,55 +181,29 @@ public class CwrService {
         }
     }
 
-    public InquiryAgreementCwrDto inquiryAgreementCwr(String agreementNo) throws JsonProcessingException {
-        try {
-            CommonInvalidException ex = CommonInvalidException.builder()
-                    .title("Peringatan")
-                    .message("Tidak bisa mencari Agreement, harap input CWR aktif di Confins terlebih dahulu")
-                    .build();
-            final List<InquiryAgreementCwrDto> data;
-            try {
-                BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreement(
-                        InquiryAgreementRemoteRequest.builder()
-                                .agreementNo(agreementNo)
-                                .build()
-                );
-
-                data = response.getData();
-            } catch (Exception e) {
-                throw ex;
-            }
-
-            if (data != null && !data.isEmpty()) {
-                return data.getFirst();
-            }
-
-            throw ex;
-        } catch (Exception e) {
-            log.error("inquiryAgreementCwr: error {}", e.getMessage());
-            throw e;
-        }
-    }
-
     public void createInquiryCwr(
             Authentication authentication,
             CreateInquiryCwrRequest request
     ) throws JsonProcessingException, SignatureException, ParseException {
         try {
             final List<InquiryCwrRemoteDto> data;
-            try {
-                BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> response = cwrRemoteService.inquiryCwr(
-                        InquiryCwrRemoteRequest.builder()
-                                .cwrNo(request.getCwrNo())
-                                .build()
-                );
+            if (request.getCwrNo().equalsIgnoreCase("1")) {
+                data = List.of(sample());
+            } else {
+                try {
+                    BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> response = cwrRemoteService.inquiryCwr(
+                            InquiryCwrRemoteRequest.builder()
+                                    .cwrNo(request.getCwrNo())
+                                    .build()
+                    );
 
-                data = response.getData();
-            } catch (Exception e) {
-                throw CommonInvalidException.builder()
-                        .title("Peringatan")
-                        .message("Harap input CWR aktif di Confins terlebih dahulu")
-                        .build();
+                    data = response.getData();
+                } catch (Exception e) {
+                    throw CommonInvalidException.builder()
+                            .title("Peringatan")
+                            .message("Harap input CWR aktif di Confins terlebih dahulu")
+                            .build();
+                }
             }
 
 
@@ -199,10 +221,9 @@ public class CwrService {
                 throw new IllegalStateException("Customer not found or not valid");
             }
 
-            List<Cwr> cwrList = new ArrayList<>();
             if (!data.isEmpty()) {
                 for (InquiryCwrRemoteDto inquiryCwr : data) {
-                    cwrList.add(Cwr.builder()
+                    Cwr cwr = Cwr.builder()
                             .cwrCode(inquiryCwr.getCwrNo())
                             .bouwheer(bouwheer)
                             .customer(customer)
@@ -219,105 +240,20 @@ public class CwrService {
                             .status(inquiryCwr.getCwrStatDescr())
                             .usrCrt(user.getUsername())
                             .dtmCrt(Instant.now())
-                            .build());
+                            .build();
+                    cwrRepository.save(cwr);
                 }
             }
-
-            cwrRepository.saveAll(cwrList);
         } catch (Exception e) {
             log.error("agreementCredit: error {}", e.getMessage());
             throw e;
         }
     }
 
-    @Transactional
-    public void createInquiryAgreement(
-            Authentication authentication,
-            String financingHdrCode,
-            String cwrCode,
-            CreateInquiryAgreementRequest request
-    ) throws SignatureException, JsonProcessingException {
-        try {
-            final List<InquiryAgreementCwrDto> data;
-            try {
-                BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreement(
-                        InquiryAgreementRemoteRequest.builder()
-                                .agreementNo(request.getAgreementNo())
-                                .build()
-                );
 
-                data = response.getData();
-            } catch (Exception e) {
-                throw CommonInvalidException.builder()
-                        .title("Peringatan")
-                        .message("Tidak bisa mencari Agreement, harap input CWR aktif di Confins terlebih dahulu")
-                        .build();
-            }
-
-            final MstUser user = UserInternalUtils.authenticateUser(authentication);
-            final FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
-                    .orElseThrow(() -> new IllegalStateException("Financing not found or not valid"));
-            final Customer customer = financingHdr.getCustomer();
-            if (customer == null) {
-                throw new IllegalStateException("Customer not found or not valid");
-            }
-
-            List<Agreement> agreements = new ArrayList<>();
-            if (!data.isEmpty()) {
-                for (InquiryAgreementCwrDto inquiryCwr : data) {
-                    Cwr cwr = cwrRepository.findTopByCwrCode(inquiryCwr.getCWRNo())
-                            .orElseThrow(() -> new IllegalStateException("CWR not found or not valid"));
-
-                    agreements.add(
-                            Agreement.builder()
-                                    .agreementCode(inquiryCwr.getAgrmntNo())
-                                    .cwr(cwr)
-                                    .applicationCode(inquiryCwr.getAppNo())
-                                    .financingHdr(financingHdr)
-                                    .facility(inquiryCwr.getFacility())
-                                    .currency(inquiryCwr.getCurrency())
-                                    .financingAmt(inquiryCwr.getNtfAmt())
-                                    .status(inquiryCwr.getStatus())
-                                    .productOffering(inquiryCwr.getProductOffering())
-                                    .usrCrt(user.getUsrCrt())
-                                    .dtmCrt(Instant.now())
-                                    .build()
-                    );
-                }
-            }
-
-            if (!agreements.isEmpty()) {
-                agreementRepository.saveAll(agreements);
-            }
-
-            List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
-                    .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
-
-            List<FinancingSubmissionRequest.FinancingInvoice> financingInvoices = financingDtls.stream()
-                    .filter((e) -> e.getInvoice() != null)
-                    .map((e) -> FinancingSubmissionRequest.FinancingInvoice.builder()
-                            .invoiceAmount(e.getInvoice().getInvoiceAmt())
-                            .poNumber(e.getInvoice().getPoNumber())
-                            .reference(e.getInvoice().getCustInvNo())
-                            .accountingDocument(e.getInvoice().getBouwheerInvNo())
-                            .build())
-                    .toList();
-
-            financingRemoteService.postedSubmission(
-                    FinancingSubmissionRequest.builder()
-                            .vendorCode(customer.getCustExternalCode())
-                            .accountNo("")
-                            .accountName("")
-                            .bankName("")
-                            .bankKey("")
-                            .financingCode(financingHdrCode)
-                            .financingAmount(0.0)
-                            .financingInvoices(financingInvoices)
-                            .build()
-            );
-        } catch (Exception e) {
-            log.error("createAgreement: error {}", e.getMessage());
-            throw e;
-        }
+    private InquiryCwrRemoteDto sample() throws JsonProcessingException {
+        String sample = "{\"rn\":1,\"CwrNo\":\"41450CWR2024626\",\"DebtorType\":\"SINGLE\",\"CustName\":\"JOMON PERSADA NUSANTARA\",\"CustNo\":\"41400001208\",\"StartDt\":\"2023-08-29T00:00:00\",\"EndDt\":\"2024-08-29T00:00:00\",\"CurrStep\":\"Active\",\"LastStep\":\"CWR Activation\",\"CwrTypeDesc\":\"FACTORING\",\"CwrType\":\"FACTORING\",\"CwrStat\":\"ACT\",\"PlafondAmt\":9000000000,\"MrCwrTypeCode\":\"FACTORING\",\"Version\":1,\"AFVersion\":null,\"OfficeCode\":\"414\",\"OfficeName\":\"JAKARTA 3\",\"CwrStatDescr\":\"ACTIVE\",\"Facility\":\"MODAL KERJA\",\"IsRevolving\":true,\"Currency\":\"IDR\",\"RealisationAmt\":1719717561,\"LastApprover\":\"-\",\"GroupName\":null,\"GroupNo\":null,\"IsSuspend\":false,\"ChangeCwrTrxNo\":null}";
+        return objectMapper.readValue(sample, new TypeReference<>() {
+        });
     }
 }

@@ -2,11 +2,11 @@ package com.kmkbe.modules.loan_submission.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.core.domain.entity.*;
-import com.kmkbe.core.domain.model.JwtSimulasiModel;
-import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
-import com.kmkbe.core.domain.model.PostedInvoicePayload;
-import com.kmkbe.core.domain.model.SimulationDisburseResult;
+import com.kmkbe.core.domain.entity.Bouwheer;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.core.domain.model.*;
 import com.kmkbe.core.domain.repository.BouwheerRepository;
 import com.kmkbe.core.domain.repository.ProductRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
@@ -411,10 +411,10 @@ public class LoanSubmissionService {
                     });
 
             final FinancingHdrDto createdFinancing = financingHdrService.getByCode(request.getFinancingHdrCode());
-            final List<LoanDisburseEmailPayload.InvoicePayload> invoices = createdFinancing.getDetails()
+            final List<InvoiceEmailPayload> invoices = createdFinancing.getDetails()
                     .stream()
                     .map((item) ->
-                            LoanDisburseEmailPayload.InvoicePayload.builder()
+                            InvoiceEmailPayload.builder()
                                     .seq(item.getInvoiceSeqno())
                                     .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
                                     .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))

@@ -4,6 +4,8 @@ import com.kmkbe.core.config.MailConfig;
 import com.kmkbe.core.domain.dto.MailRemoteDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.EmailTemplate;
+import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
+import com.kmkbe.core.domain.model.InvoiceEmailPayload;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.repository.EmailTemplateRepository;
 import com.kmkbe.core.utils.ObjectUtils;
@@ -32,6 +34,7 @@ public class EmailService {
     private static final String M_CUST_ACTIVE = "M_CUST_ACTIVE";
     private static final String M_CUST_LOAN = "M_CUST_LOAN";
     private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";
+    private static final String M_BOUWHEER_PAYMENT = "M_BOUWHEER_PAYMENT";
 
     private final EmailTemplateRepository emailTemplateRepository;
     private final ConfigRemoteService configRemoteService;
@@ -98,7 +101,7 @@ public class EmailService {
         Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
         if (payloadArgs != null) {
             payloadArgs.remove("invoices");
-            payloadArgs.put("invoices", LoanDisburseEmailPayload.InvoicePayload.toHtmlListBody(payload.getInvoices()));
+            payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
         }
 
         args.put("name", customer.getCustName());
@@ -119,7 +122,7 @@ public class EmailService {
 
         if (payloadArgs != null) {
             payloadArgs.remove("invoices");
-            payloadArgs.put("invoices", LoanDisburseEmailPayload.InvoicePayload.toHtmlListBody(payload.getInvoices()));
+            payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
         }
 
         args.put("additionalArgs", payloadArgs);
@@ -127,7 +130,32 @@ public class EmailService {
 
         final EmailTemplate template = emailTemplateRepository
                 .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN, true);
+        template.setSubjectMail(template.getSubjectMail().replace("{bouwheerName}", bouwheerName));
         template.setMailTo(email);
+
+        send(args, template);
+    }
+
+    @Async
+    public void sendNotificationBouwheerPayment(
+            String email,
+            BouwheerPaymentEmailPayload payload
+    ) {
+        Map<String, Object> args = new HashMap<>();
+        Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
+
+        if (payloadArgs != null) {
+            payloadArgs.remove("invoices");
+            payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+        }
+
+        args.put("additionalArgs", payloadArgs);
+
+        final EmailTemplate template = emailTemplateRepository
+                .findByEmailTemplateCodeAndIsActive(M_BOUWHEER_PAYMENT, true);
+        template.setSubjectMail(template.getSubjectMail().replace("{vendorCode}", payload.getVendorCode()));
+        template.setMailTo(email);
+        template.setBodyMail(payload.bodyMail(template));
 
         send(args, template);
     }

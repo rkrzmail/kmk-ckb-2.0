@@ -1,24 +1,20 @@
 package com.kmkbe.core.domain.dto;
 
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 
-import java.io.Serializable;
 import java.util.Date;
 
-/**
- * DTO for {@link com.kmkbe.core.domain.entity.Cwr}
- */
-@Builder
+@SuperBuilder
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
-@Setter
-public class CwrDto implements Serializable {
+public class CwrDto {
+    private String cwrCode;
     private String bouwheerCode;
     private String custCode;
     private String bouwheerName;
     private String custName;
-    private String cwrCode;
     private String branchCode;
     private String cwrType;
     private String cwrTypeDesc;

@@ -29,8 +29,10 @@ public class UserInternalSeederService {
 
     //@Transactional
     public void seed() {
-        clearAdmin();
-        seedBranchAdmin();
+        /*clearAdmin();
+        seedBranchAdmin();*/
+        clearMajorAccount();
+        seedMajorAccount();
     }
 
     private void clearAdmin() {
@@ -42,11 +44,15 @@ public class UserInternalSeederService {
             mstAppRoleFormUserRepository
                     .deleteAll(mstAppRoleFormUserRepository.findAllByUser(admin1.get()));
             mstUserRepository.delete(admin1.get());
+        }
 
+        if (admin2.isPresent()) {
             mstAppRoleFormUserRepository
                     .deleteAll(mstAppRoleFormUserRepository.findAllByUser(admin2.get()));
             mstUserRepository.delete(admin2.get());
+        }
 
+        if (admin3.isPresent()) {
             mstAppRoleFormUserRepository
                     .deleteAll(mstAppRoleFormUserRepository.findAllByUser(admin3.get()));
             mstUserRepository.delete(admin3.get());
@@ -55,6 +61,26 @@ public class UserInternalSeederService {
         mstEmployeeRepository.findById("100001").ifPresent(mstEmployeeRepository::delete);
         mstEmployeeRepository.findById("100002").ifPresent(mstEmployeeRepository::delete);
         mstEmployeeRepository.findById("100003").ifPresent(mstEmployeeRepository::delete);
+    }
+
+    private void clearMajorAccount() {
+        Optional<MstUser> mjrAccount1 = mstUserRepository.findByUsername("mjr.acc.1");
+        Optional<MstUser> mjrAccount2 = mstUserRepository.findByUsername("mjr.acc.2");
+
+        if (mjrAccount1.isPresent()) {
+            mstAppRoleFormUserRepository
+                    .deleteAll(mstAppRoleFormUserRepository.findAllByUser(mjrAccount1.get()));
+            mstUserRepository.delete(mjrAccount1.get());
+        }
+
+        if (mjrAccount2.isPresent()) {
+            mstAppRoleFormUserRepository
+                    .deleteAll(mstAppRoleFormUserRepository.findAllByUser(mjrAccount2.get()));
+            mstUserRepository.delete(mjrAccount2.get());
+        }
+
+        mstEmployeeRepository.findById("1000011").ifPresent(mstEmployeeRepository::delete);
+        mstEmployeeRepository.findById("1000012").ifPresent(mstEmployeeRepository::delete);
     }
 
     private void seedBranchAdmin() {
@@ -132,7 +158,7 @@ public class UserInternalSeederService {
     private MstUser userMajorAccount(MstEmployee employee, int index) {
         return MstUser.builder()
                 .employee(employee)
-                .username("major.acc." + index)
+                .username("mjr.acc." + index)
                 .password(bcryptEncoder.encode("admin123"))
                 .isUserAd(false)
                 .isUserNonad(true)
@@ -198,10 +224,14 @@ public class UserInternalSeederService {
             MstBranch jakarta2 = mstBranchRepository.findByBranchCode("413").orElseThrow();
 
             MstEmployee mjr1Employee = employeeMajorAccount(jakarta1, 1);
-            MstUser mjr1 = userBranchAdmin(mjr1Employee, 1);
+            MstUser mjr1 = userMajorAccount(mjr1Employee, 1);
+            mstEmployeeRepository.save(mjr1Employee);
+            mstUserRepository.save(mjr1);
 
-            MstEmployee mjr2Employee = employeeMajorAccount(jakarta2, 1);
-            MstUser mjr2 = userBranchAdmin(mjr2Employee, 1);
+            MstEmployee mjr2Employee = employeeMajorAccount(jakarta2, 2);
+            MstUser mjr2 = userMajorAccount(mjr2Employee, 2);
+            mstEmployeeRepository.save(mjr2Employee);
+            mstUserRepository.save(mjr2);
 
             for (MstAppRoleForm appRoleForm : mstAppRoleForms) {
                 seedAppRoleFormUser(mjr1, appRoleForm);

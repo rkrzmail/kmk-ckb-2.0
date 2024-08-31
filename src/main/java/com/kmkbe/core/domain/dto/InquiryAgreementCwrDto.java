@@ -28,7 +28,7 @@ public class InquiryAgreementCwrDto {
     public String debtorType;
 
     @JsonProperty("CWRNo")
-    public String cWRNo;
+    public String cwrNo;
 
     @JsonProperty("AppNo")
     public String appNo;

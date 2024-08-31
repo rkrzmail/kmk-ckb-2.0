@@ -1,26 +1,21 @@
 package com.kmkbe.modules.branch_admin.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.kmkbe.core.domain.dto.CwrDto;
-import com.kmkbe.core.domain.dto.InquiryAgreementCwrDto;
-import com.kmkbe.core.domain.dto.InquiryCwrDto;
+import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
-import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryCwrRequest;
-import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.branch_admin.service.CwrService;
-import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
-import com.kmkbe.modules.remote.service.FinancingRemoteService;
+import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
+import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.MediaType;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SignatureException;
 import java.text.ParseException;
@@ -35,25 +30,26 @@ import java.text.ParseException;
 @RequiredArgsConstructor
 public class CwrController {
     private final CwrService cwrService;
-    private final AgreementService agreementService;
-    private final FinancingRemoteService financingRemoteService;
-
-    @GetMapping("/{cwrCode}")
-    public CommonResult<Object> getCwr(
-            @PathVariable("cwrCode") String cwrCode
-    ) {
-        return new CommonResult<Object>().success(
-                null
-        );
-    }
+    private final InvoiceService invoiceService;
+    private final FinancingHdrService financingHdrService;
 
     @GetMapping("/list/{custCode}")
-    public CommonResult<PaginationResult<CwrDto>> getCwrList(
+    public CommonResult<PaginationResult<CwrListDto>> getCwrList(
             @PathVariable("custCode") String custCode,
             PaginationRequest request
     ) {
-        return new CommonResult<PaginationResult<CwrDto>>().success(
+        return new CommonResult<PaginationResult<CwrListDto>>().success(
                 cwrService.list(custCode, request)
+        );
+    }
+
+    @GetMapping("/detail/{cwrCode}/{financingHdrCode}")
+    public CommonResult<DetailCwrDto> getCwr(
+            @PathVariable("cwrCode") String cwrCode,
+            @PathVariable("financingHdrCode") String financingHdrCode
+    ) {
+        return new CommonResult<DetailCwrDto>().success(
+                cwrService.detail(cwrCode, financingHdrCode)
         );
     }
 
@@ -78,76 +74,25 @@ public class CwrController {
         );
     }
 
-    @GetMapping("/inquiry/agreement")
-    public CommonResult<InquiryAgreementCwrDto> getInquiryAgreement(
-            @RequestParam("agreementNo") String agreementNo
-    ) throws JsonProcessingException {
-        return new CommonResult<InquiryAgreementCwrDto>().success(
-                cwrService.inquiryAgreementCwr(agreementNo)
-        );
-    }
-
-    @PostMapping("/inquiry/agreement/create/{financingHdrCode}/{cwrCode}")
-    public CommonResult<Object> createInquiryAgreement(
+    @GetMapping("/invoices/{financingHdrCode}")
+    public CommonResult<PaginationResult<PostedInvoiceDto>> getCwrInvoices(
             @PathVariable("financingHdrCode") String financingHdrCode,
-            @PathVariable("cwrCode") String cwrCode,
-            Authentication authentication,
-            @Valid @RequestBody CreateInquiryAgreementRequest request
-    ) throws SignatureException, JsonProcessingException {
-        cwrService.createInquiryAgreement(authentication, financingHdrCode, cwrCode, request);
-        return new CommonResult<>().success(
-                null,
-                "Inquiry Agreement created successfully"
-        );
-    }
-
-    @GetMapping("/invoices/{cwrCode}")
-    public CommonResult<PaginationResult<Object>> getCwrInvoices(
-            @PathVariable("cwrCode") String cwrCode,
             PaginationRequest request
     ) {
-        return new CommonResult<PaginationResult<Object>>().success(
-                null
-        );
-    }
-
-    @GetMapping("/disbursement/{cwrCode}")
-    public CommonResult<PaginationResult<Object>> getCwrDisbursement(
-            @PathVariable("cwrCode") String cwrCode,
-            PaginationRequest request
-    ) {
-        return new CommonResult<PaginationResult<Object>>().success(
-                null
-        );
-    }
-
-    @PostMapping(
-            value = "/upload/contract/{agreementCode}",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public CommonResult<Object> uploadContact(
-            Authentication authentication,
-            @PathVariable("agreementCode") String agreementCode,
-            @Valid @RequestPart MultipartFile file
-
-    ) throws Exception {
-        agreementService.upload(
-                authentication,
-                file,
-                agreementCode
+        PaginationResult<PostedInvoiceDto> result = PaginationResult.empty(
+                request.getPageNo()
         );
 
-        financingRemoteService.updateFinancingStatus(
-                UpdateFinancingStatusRequest.builder()
-                        .financingCode("")
-                        .status(UpdateFinancingStatusRequest.Status.Approve)
-                        .vendorCode("") // cust_external_code
-                        .build()
-        );
+        FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+        if (financingHdr != null) {
+            result = invoiceService.invoiceSubmissionByFinancingHdr(
+                    financingHdr,
+                    request
+            );
+        }
 
-        return new CommonResult<>().success(
-                null,
-                "Agreement upload successfully"
+        return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
+                result
         );
     }
 }

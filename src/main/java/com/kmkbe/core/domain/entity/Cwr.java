@@ -24,7 +24,13 @@ public class Cwr {
     private String cwrCode;
 
     @ColumnDefault("nextval('cwr_cwr_id_seq'::regclass)")
-    @Column(name = "cwr_id", nullable = false)
+    @Column(
+            name = "cwr_id",
+            nullable = false,
+            columnDefinition = "serial",
+            insertable = false,
+            updatable = false
+    )
     private Long cwrId;
 
     @NotNull(message = "Customer cannot be null")

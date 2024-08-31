@@ -11,7 +11,7 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class InquiryCwrDto {
-    private String cwrNo;
+    private String cwrCode;
     private Date cwrStartDate;
     private Date cwrEndDate;
     private String currency;

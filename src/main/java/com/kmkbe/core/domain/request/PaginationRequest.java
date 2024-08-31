@@ -12,8 +12,8 @@ import java.util.Date;
 public class PaginationRequest {
     private Date startDate = new Date();
     private Date endDate = new Date();
-    public String searchBy;;
-    public String searchValue;
-    public Integer pageNo;
-    public Integer pageSize;
+    private String searchBy;;
+    private String searchValue;
+    private Integer pageNo;
+    private Integer pageSize;
 }
