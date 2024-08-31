@@ -5,6 +5,7 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.Date;
+import java.util.UUID;
 
 @Getter
 @Setter
@@ -12,7 +13,8 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class AssignmentDto {
-    private String financingHdrCode;
+    private UUID financingHdrCode;
+    private UUID custCode;
     private String custName;
     private String bouwheerName;
     private Date verifDate;

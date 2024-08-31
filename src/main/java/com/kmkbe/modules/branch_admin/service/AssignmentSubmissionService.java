@@ -77,7 +77,8 @@ public class AssignmentSubmissionService {
                         );
 
                         return AssignmentDto.builder()
-                                .financingHdrCode(e.getFinancingHdrCode().toString())
+                                .financingHdrCode(e.getFinancingHdrCode())
+                                .custCode(e.getCustomer().getCustCode())
                                 .custName(e.getCustomer().getCustName())
                                 .bouwheerName(e.getBouwheer().getBouwheerName())
                                 .verifDate(null)
