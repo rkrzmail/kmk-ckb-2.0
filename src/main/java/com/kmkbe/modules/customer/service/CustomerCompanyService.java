@@ -31,7 +31,7 @@ public class CustomerCompanyService {
     public void create(Customer customer, SignUpRequest.Company companyReq) {
         try {
             final boolean userExists = customerCompanyRepository
-                    .findByCustCode(customer)
+                    .findByCustomer(customer)
                     .isPresent();
 
             if (userExists) {
@@ -41,7 +41,7 @@ public class CustomerCompanyService {
             final CustomerCompany company = new CustomerCompany();
             {
                 company.setCustCompanyCode(UUID.randomUUID());
-                company.setCustCode(customer);
+                company.setCustomer(customer);
                 company.setCustCompanyType(companyReq.getCompanyType());
                 company.setCompanyModel(companyReq.getCompanyModel());
                 company.setIdentityType(companyReq.getIdentityType());
@@ -77,7 +77,7 @@ public class CustomerCompanyService {
             UpdateCustomerRequest.UpdateAddressRequest addressRequest
     ) {
         try {
-            final Optional<CustomerCompany> find = customerCompanyRepository.findByCustCode(customer);
+            final Optional<CustomerCompany> find = customerCompanyRepository.findByCustomer(customer);
             final CustomerCompany company = find.orElseGet(CustomerCompany::new);
             if (find.isEmpty()) {
                 company.setCustCompanyCode(UUID.randomUUID());
@@ -88,7 +88,7 @@ public class CustomerCompanyService {
                 company.setDtmUpd(Instant.now());
             }
 
-            company.setCustCode(customer);
+            company.setCustomer(customer);
             company.setCustCompanyType(request.getCustCompanyType());
             company.setCompanyModel(request.getCompanyModel());
             company.setIdentityType(request.getIdentityType());

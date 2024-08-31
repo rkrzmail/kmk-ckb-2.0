@@ -30,7 +30,7 @@ public class CustomerPersonalService {
 
     public void create(Customer cust, SignUpRequest.Personal personalReq) {
         final boolean userExists = customerPersonalRepository
-                .findByCustCode(cust)
+                .findByCustomer(cust)
                 .isPresent();
 
         if (userExists) {
@@ -40,7 +40,7 @@ public class CustomerPersonalService {
         final CustomerPersonal personal = new CustomerPersonal();
         {
             personal.setCustPersonalCode(UUID.randomUUID());
-            personal.setCustCode(cust);
+            personal.setCustomer(cust);
             personal.setBirthPlace(personalReq.getBirthPlace());
             personal.setBirthDate(personalReq.getBirthDate());
             personal.setGender(personalReq.getGender());
@@ -74,7 +74,7 @@ public class CustomerPersonalService {
             UpdateCustomerRequest.UpdateAddressRequest addressRequest
     ) {
         try {
-            final Optional<CustomerPersonal> find = customerPersonalRepository.findByCustCode(customer);
+            final Optional<CustomerPersonal> find = customerPersonalRepository.findByCustomer(customer);
             final CustomerPersonal personal = find.orElseGet(CustomerPersonal::new);
             if (find.isEmpty()) {
                 personal.setCustPersonalCode(UUID.randomUUID());
@@ -85,7 +85,7 @@ public class CustomerPersonalService {
                 personal.setDtmUpd(Instant.now());
             }
 
-            personal.setCustCode(customer);
+            personal.setCustomer(customer);
             personal.setBirthPlace(request.getBirthPlace());
             personal.setBirthDate(request.getBirthDate().toInstant());
             personal.setGender(request.getGender());

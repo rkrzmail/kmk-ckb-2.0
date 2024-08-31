@@ -172,8 +172,7 @@ public class FinancingHdr {
     @JoinColumn(
             name = "branch_code",
             referencedColumnName = "branch_code",
-            nullable = false,
-            updatable = false
+            nullable = false
     )
     private MstBranch mstBranch;
 

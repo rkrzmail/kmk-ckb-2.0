@@ -2,16 +2,18 @@ package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.AssignmentDto;
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.modules.user.entity.MstUser;
+import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -26,6 +28,7 @@ import java.util.List;
 @Slf4j
 public class AssignmentSubmissionService {
     private final FinancingHdrRepository financingHdrRepository;
+    private final MstUserRepository mstUserRepository;
 
     public PaginationResult<AssignmentDto> assignmentList(
             Authentication authentication,
@@ -46,17 +49,17 @@ public class AssignmentSubmissionService {
                 pageNo = pageNo - 1;
             }
 
-            MstUser user = UserInternalUtils.authenticateUser(authentication);
-            Page<FinancingHdr> financingHdrPage = financingHdrRepository.findByFinancingStatusOrderByFinancingHdrIdDesc(
+            MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
+            MstUser user = mstUserRepository.findById(authenticateUser.getUserCode()).orElseThrow();
+            /*Page<FinancingHdr> financingHdrPage = financingHdrRepository.findByFinancingStatusOrderByFinancingHdrIdDesc(
                     "NEW",
-                    PageRequest.of(pageNo, pageSize)
-            );
-
-            /*Page<FinancingHdr> financingHdrPageBranch = financingHdrRepository.findByFinancingStatusAndMstBranchOrderByFinancingHdrIdDesc(
-                    "NEW",
-                    null,
                     PageRequest.of(pageNo, pageSize)
             );*/
+
+            Page<FinancingHdr> financingHdrPage = financingHdrRepository.findByMstBranchOrderByFinancingHdrIdDesc(
+                    user.getEmployee().getBranch(),
+                    PageRequest.of(pageNo, pageSize)
+            );
 
             List<AssignmentDto> result = financingHdrPage.stream()
                     .filter(e -> e.getCustomer() != null && e.getBouwheer() != null)
@@ -66,36 +69,23 @@ public class AssignmentSubmissionService {
                                         e.getCustomer(),
                                         "PAID"
                                 ) == 0;
-                        String color, label;
 
-                        if (e.getFinancingStatus().equalsIgnoreCase("new")) {
-                            color = "#808080";
-                            label = "Baru";
-                        } else if (
-                                e.getFinancingStatus().equalsIgnoreCase("inprocess")
-                                        || e.getFinancingStatus().equalsIgnoreCase("signing")
-                                        || e.getFinancingStatus().equalsIgnoreCase("signed")
-                                        || e.getFinancingStatus().equalsIgnoreCase("live")
-                                        || e.getFinancingStatus().equalsIgnoreCase("golive")
 
-                        ) {
-                            color = "#ccffcc";
-                            label = "Aktif";
-                        } else {
-                            color = "#FF5C5C";
-                            label = e.getFinancingStatus();
-                        }
+                        MappedFinancingStatus financingStatus = new MappedFinancingStatus(
+                                e,
+                                MappedFinancingStatus.Type.BranchAdmin
+                        );
 
                         return AssignmentDto.builder()
                                 .financingHdrCode(e.getFinancingHdrCode().toString())
                                 .custName(e.getCustomer().getCustName())
                                 .bouwheerName(e.getBouwheer().getBouwheerName())
-                                .verifDate(new Date())
+                                .verifDate(null)
                                 .dueDate(new Date(e.getFinancingDueDate().toEpochMilli()))
                                 .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
                                 .custStatus(isNewCust ? "New Customer" : "Existing Customer")
-                                .status(e.getFinancingStatus())
-                                .statusLabel(label)
+                                .status(financingStatus.getStatus())
+                                .statusLabel(financingStatus.getLabel())
                                 .build();
                     })
                     .toList();

@@ -28,8 +28,15 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             Pageable pageable
     );
 
-    Page<FinancingHdr> findByFinancingStatusAndMstBranchOrderByFinancingHdrIdDesc(
+    Page<FinancingHdr> findByFinancingStatusAndFinancingStepAndMstBranchOrderByFinancingHdrIdDesc(
             String financingStatus,
+            String financingStepStatus,
+            MstBranch mstBranch,
+            Pageable pageable
+    );
+
+
+    Page<FinancingHdr> findByMstBranchOrderByFinancingHdrIdDesc(
             MstBranch mstBranch,
             Pageable pageable
     );

@@ -86,10 +86,16 @@ public class Customer implements UserDetails {
     @Column
     private Instant dtmUpd;
 
-    @OneToOne(mappedBy = "custCode")
+    @OneToOne(
+            mappedBy = "customer",
+            fetch = FetchType.EAGER
+    )
     private CustomerPersonal personal;
 
-    @OneToOne(mappedBy = "custCode")
+    @OneToOne(
+            mappedBy = "customer",
+            fetch = FetchType.EAGER
+    )
     private CustomerCompany company;
 
     @OneToMany(mappedBy = "custCode")

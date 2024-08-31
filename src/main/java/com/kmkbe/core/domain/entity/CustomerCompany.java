@@ -31,14 +31,14 @@ public class CustomerCompany implements Serializable {
     private UUID custCompanyCode = UUID.randomUUID();
 
     @NotNull
-    @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @OneToOne(fetch = FetchType.EAGER, optional = false)
     @JoinColumn(
             name = "cust_code",
             referencedColumnName = "cust_code",
             nullable = false,
             updatable = false
     )
-    private Customer custCode;
+    private Customer customer;
 
     @Column(length = 50)
     private String custCompanyType = "";

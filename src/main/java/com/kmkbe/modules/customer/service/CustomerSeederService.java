@@ -93,7 +93,7 @@ public class CustomerSeederService {
             Customer customer = seedCustomer(CustomerType.Personal, email);
             CustomerPersonal personal = CustomerPersonal.builder()
                     .custPersonalCode(UUID.randomUUID())
-                    .custCode(customer)
+                    .customer(customer)
                     .birthPlace("Jakarta")
                     .birthDate(DateTimeUtils.SDF_STANDARD_DATE.parse("1998-01-01").toInstant())
                     .gender(GenderType.PEREMPUAN.toString())
@@ -134,7 +134,7 @@ public class CustomerSeederService {
             Customer customer = seedCustomer(CustomerType.Company, email);
             CustomerCompany company = CustomerCompany.builder()
                     .custCompanyCode(UUID.randomUUID())
-                    .custCode(customer)
+                    .customer(customer)
                     .custCompanyType("Perseroan Terbatas") // Commanditer Venotschap, Yayasan, Firma, Koperasi, Usaha Dagang, Badan Usaha Milik Desa, Debitur Kelompok, Expedisi Muatan Kapal Laut
                     .companyModel("Perseroan Terbatas") // Yayasan, Koperasi
                     .identityType(CustomerIdType.NPWP.name())

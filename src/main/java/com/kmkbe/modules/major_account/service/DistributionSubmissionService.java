@@ -2,8 +2,10 @@ package com.kmkbe.modules.major_account.service;
 
 import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.StatusLabelDto;
+import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingDtlRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.InvoiceRepository;
@@ -15,6 +17,7 @@ import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -27,6 +30,7 @@ import java.security.SignatureException;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -39,6 +43,7 @@ public class DistributionSubmissionService {
     private final EmailService emailService;
     private final MstBranchRepository mstBranchRepository;
     private final FinancingHdrService financingHdrService;
+    private final CustomerRepository customerRepository;
 
     public PaginationResult<DistributionSubmissionDto> submissionDistribution(
             PaginationRequest request
@@ -73,21 +78,31 @@ public class DistributionSubmissionService {
                             || e.getFinancingStatus().equalsIgnoreCase("new")
                     )*/
                     .map((e) -> {
-                        String city = "";
-
+                        String city = "", kelurahan = "", kecamatan = "";
                         if (e.getCustomer() != null) {
                             if (e.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
-                                city = e.getCustomer().getCompany().getCity();
+                                if (e.getCustomer().getCompany() != null) {
+                                    city = e.getCustomer().getCompany().getCity();
+                                    kelurahan = e.getCustomer().getCompany().getKelurahan();
+                                    kecamatan = e.getCustomer().getCompany().getKecamatan();
+                                }
                             } else {
                                 if (e.getCustomer().getPersonal() != null) {
                                     city = e.getCustomer().getPersonal().getCity();
+                                    kelurahan = e.getCustomer().getPersonal().getKelurahan();
+                                    kecamatan = e.getCustomer().getPersonal().getKecamatan();
                                 }
                             }
                         }
 
                         boolean isNewCust = financingHdrRepository.countByCustomerAndFinancingStatus(e.getCustomer(), "PAID") == 0;
 
-                        String color, label;
+                        String color,
+                                label,
+                                currentBranch = null,
+                                currentBranchCode = null,
+                                branchRecommended = null,
+                                branchRecommendedCode = null;
                         if (e.getFinancingStatus().equalsIgnoreCase("new")) {
                             color = "#808080";
                             label = "Baru";
@@ -106,6 +121,30 @@ public class DistributionSubmissionService {
                             label = e.getFinancingStatus();
                         }
 
+                        if (e.getMstBranch() != null) {
+                            branchRecommendedCode = e.getMstBranch().getBranchCode();
+                            branchRecommended = e.getMstBranch().getBranchName();
+                            currentBranchCode = e.getMstBranch().getBranchCode();
+                            currentBranch = e.getMstBranch().getBranchName();
+                        } else {
+                            if (
+                                    !StringUtil.isNullOrEmpty(city)
+                                            && !StringUtil.isNullOrEmpty(kelurahan)
+                                            && !StringUtil.isNullOrEmpty(kecamatan)
+                            ) {
+                                Optional<MstBranch> findBranch = mstBranchRepository.findTopLikeBranchNameRawQuery(
+                                        city,
+                                        kelurahan,
+                                        kecamatan
+                                );
+
+                                if (findBranch.isPresent()) {
+                                    branchRecommendedCode = findBranch.get().getBranchCode();
+                                    branchRecommended = findBranch.get().getBranchName();
+                                }
+                            }
+                        }
+
                         return DistributionSubmissionDto.builder()
                                 .financingHdrCode(e.getFinancingHdrCode().toString())
                                 .custName(e.getCustomer().getCustName())
@@ -113,7 +152,10 @@ public class DistributionSubmissionService {
                                 .city(city)
                                 .dueDate(Date.from(e.getFinancingDueDate()))
                                 .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
-                                .branchRecommended("")
+                                .branchRecommendedCode(branchRecommendedCode)
+                                .branchRecommended(branchRecommended)
+                                .currentBranchCode(currentBranchCode)
+                                .currentBranch(currentBranch)
                                 .custStatus(isNewCust ? "New Customer" : "Existing Customer")
                                 .status(StatusLabelDto.builder()
                                         .status(e.getFinancingStatus())

@@ -20,7 +20,10 @@ public class DistributionSubmissionDto {
     private String city;
     private Date dueDate;
     private BigDecimal financingAmount;
+    private String branchRecommendedCode;
     private String branchRecommended;
+    private String currentBranchCode;
+    private String currentBranch;
     private String custStatus;
     private StatusLabelDto status;
     private Instant dtmCrt;
