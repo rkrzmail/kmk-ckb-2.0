@@ -172,10 +172,10 @@ public class DocumentService {
             final LegalFile existingFile = legalFileService.fetchByMstFileTypeAndCust(CustomerUtils.authenticateCustomer(authentication), mstFileType);
             code = customer.getCustName();
 
-            String requireExt = FileUtils.getFileNameExtension(mstFileType.getFileTypeName());
+           /* String requireExt = FileUtils.getFileNameExtension(mstFileType.getFileTypeName());
             if (!StringUtil.isNullOrEmpty(requireExt)) {
                 requireExt = requireExt.toLowerCase();
-            }
+            }*/
 
             final String uploadDir = customer.getCustCode() + "/loan_submission";
             final String uploadName = mstFileType.getFileTypeCode() + "_" + file.getOriginalFilename();
@@ -183,7 +183,7 @@ public class DocumentService {
                     file,
                     uploadDir,
                     uploadName,//,
-                    requireExt
+                    null
             );
 
             LegalFileDto dto = legalFileService.create(

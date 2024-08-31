@@ -26,7 +26,7 @@ public class FileUtils {
         }
 
         String[] splitter = fileName.split("\\.");
-        if (splitter.length >= 1) {
+        if (splitter.length > 1) {
             return splitter[1];
         }
 

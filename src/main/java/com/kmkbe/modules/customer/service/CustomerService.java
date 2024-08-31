@@ -1,5 +1,9 @@
 package com.kmkbe.modules.customer.service;
 
+import com.kmkbe.core.domain.entity.CustomerCompany;
+import com.kmkbe.core.domain.entity.CustomerPersonal;
+import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
+import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.domain.constant.CustomerIdType;
 import com.kmkbe.core.domain.constant.CustomerType;
@@ -26,6 +30,8 @@ import java.util.UUID;
 @Slf4j
 public class CustomerService {
     private final CustomerRepository customerRepository;
+    private final CustomerPersonalRepository customerPersonalRepository;
+    private final CustomerCompanyRepository customerCompanyRepository;
     private final BCryptPasswordEncoder bcryptEncoder;
 
     public Customer create(
@@ -45,6 +51,16 @@ public class CustomerService {
                 if (find.get().getIsActive()) {
                     throw CommonInvalidException.alreadyRegistered();
                 } else {
+                    CustomerCompany customerCompany = find.get().getCompany();
+                    if (customerCompany != null) {
+                        customerCompanyRepository.delete(customerCompany);
+                    }
+
+                    CustomerPersonal customerPersonal = find.get().getPersonal();
+                    if (customerPersonal != null) {
+                        customerPersonalRepository.delete(customerPersonal);
+                    }
+
                     customerRepository.delete(find.get());
                 }
             }
