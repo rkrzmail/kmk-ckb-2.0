@@ -47,13 +47,13 @@ public class CwrController {
         );
     }
 
-    @GetMapping("/list/{financingHdrCode}")
+    @GetMapping("/list/{custCode}")
     public CommonResult<PaginationResult<CwrDto>> getCwrList(
-            @PathVariable("financingHdrCode") String financingHdrCode,
+            @PathVariable("custCode") String custCode,
             PaginationRequest request
     ) {
         return new CommonResult<PaginationResult<CwrDto>>().success(
-                cwrService.list(financingHdrCode, request)
+                cwrService.list(custCode, request)
         );
     }
 

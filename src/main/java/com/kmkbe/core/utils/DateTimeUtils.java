@@ -1,10 +1,14 @@
 package com.kmkbe.core.utils;
 
+import io.netty.util.internal.StringUtil;
+
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
 public class DateTimeUtils {
@@ -69,6 +73,15 @@ public class DateTimeUtils {
 
     public static String formatToDate(Instant instant) {
         return DTF_DATE_RESPONSE_STANDARD_FORMATTER.format(instant);
+    }
+
+    public static Date timestampToDate(String v) throws ParseException {
+        if (StringUtil.isNullOrEmpty(v)) {
+            return null;
+        }
+        return SDF_STANDARD_DATE_TIME.parse(
+                v.replace("T", " ")
+        );
     }
 
     public static String formatToDateTime(Instant instant) {

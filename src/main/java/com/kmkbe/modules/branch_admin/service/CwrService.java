@@ -30,10 +30,7 @@ import java.math.BigDecimal;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -58,7 +55,7 @@ public class CwrService {
     }
 
     public PaginationResult<CwrDto> list(
-            String financingHdrCode,
+            String custCode,
             PaginationRequest request
     ) {
         try {
@@ -75,12 +72,8 @@ public class CwrService {
                 pageNo = pageNo - 1;
             }
 
-            FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
-                    .orElseThrow(() -> new IllegalStateException("Financing not found or not valid"));
-            Customer customer = financingHdr.getCustomer();
-            if (customer == null) {
-                throw new IllegalStateException("Customer not found or not valid");
-            }
+            Customer customer = customerRepository.findByCustCode(UUID.fromString(custCode))
+                    .orElseThrow(() -> new IllegalStateException("Customer not found or not valid"));
 
             Page<Cwr> page = cwrRepository.findAllByCustomer(
                     customer,
@@ -123,15 +116,14 @@ public class CwrService {
 
 
             if (data != null && !data.isEmpty()) {
-                final InquiryCwrDto build = InquiryCwrDto.builder()
-                        .cwrStartDate(DateTimeUtils.SDF_STANDARD_DATE_TIME.parse(data.getFirst().getStartDt()))
-                        .cwrEndDate(DateTimeUtils.SDF_STANDARD_DATE_TIME.parse(data.getFirst().getEndDt()))
+                return InquiryCwrDto.builder()
+                        .cwrStartDate(DateTimeUtils.timestampToDate(data.getFirst().getStartDt()))
+                        .cwrEndDate(DateTimeUtils.timestampToDate(data.getFirst().getEndDt()))
                         .cwrNo(cwrNo)
                         .loanAmt(BigDecimal.valueOf(data.getFirst().getRealisationAmt()))
                         .plafondAmt(BigDecimal.valueOf(data.getFirst().getPlafondAmt()))
                         .currency(data.getFirst().getCurrency())
                         .build();
-                return build;
             }
 
             throw ex;
@@ -220,8 +212,8 @@ public class CwrService {
                             .facility(inquiryCwr.getFacility())
                             .isRevolving(inquiryCwr.getIsRevolving())
                             .currency(inquiryCwr.getCurrency())
-                            .cwrStartDate(DateTimeUtils.SDF_STANDARD_DATE_TIME.parse(inquiryCwr.getStartDt()).toInstant())
-                            .cwrEndDate(DateTimeUtils.SDF_STANDARD_DATE_TIME.parse(inquiryCwr.getEndDt()).toInstant())
+                            .cwrStartDate(Objects.requireNonNull(DateTimeUtils.timestampToDate(inquiryCwr.getStartDt())).toInstant())
+                            .cwrEndDate(Objects.requireNonNull(DateTimeUtils.timestampToDate(inquiryCwr.getEndDt())).toInstant())
                             .plafondAmt(inquiryCwr.getPlafondAmt())
                             .realisationAmt(inquiryCwr.getRealisationAmt())
                             .status(inquiryCwr.getCwrStatDescr())
