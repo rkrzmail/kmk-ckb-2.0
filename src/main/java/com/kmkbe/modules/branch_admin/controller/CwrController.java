@@ -60,7 +60,7 @@ public class CwrController {
     @GetMapping("/inquiry")
     public CommonResult<InquiryCwrDto> getInquiryCwr(
             @RequestParam("cwrNo") String cwrNo
-    ) throws JsonProcessingException {
+    ) throws JsonProcessingException, ParseException {
         return new CommonResult<InquiryCwrDto>().success(
                 cwrService.inquiryCwr(cwrNo)
         );

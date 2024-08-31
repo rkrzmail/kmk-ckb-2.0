@@ -107,7 +107,7 @@ public class CommonInvalidException extends RuntimeException {
         return CommonInvalidException.builder()
                 .title("Email atau Password tidak valid")
                 .message("Email atau Password salah, silahkan masukkan email dan password yang valid")
-                .action(Action.builder().title("Kemabli").uri("/internal/auth/sign-in").build())
+                .action(Action.builder().title("Kembali").uri("/internal/auth/sign-in").build())
                 .headerMessage("Invalid Email or Password")
                 .build();
     }

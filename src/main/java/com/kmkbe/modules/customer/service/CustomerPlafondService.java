@@ -23,9 +23,9 @@ public class CustomerPlafondService {
 
             final String address;
             if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
-                address = financingHdr.getCustomer().getCompany().getCompanyAddress();
+                address = financingHdr.getCustomer().getCompany() == null ? "": String.valueOf( financingHdr.getCustomer().getCompany().getCompanyAddress());
             } else {
-                address = financingHdr.getCustomer().getPersonal().getLegalAddress();
+                address = financingHdr.getCustomer().getPersonal() == null ? "": String.valueOf( financingHdr.getCustomer().getPersonal().getLegalAddress());
             }
 
             return CustomerPlafondDto.builder()
