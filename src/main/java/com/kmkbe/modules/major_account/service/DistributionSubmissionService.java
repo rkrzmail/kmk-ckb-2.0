@@ -4,12 +4,15 @@ import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.StatusLabelDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingDtlRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.InvoiceRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.utils.CommonFormattingUtils;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.major_account.request.AssignInvoiceToBranchRequest;
@@ -184,7 +187,6 @@ public class DistributionSubmissionService {
             AssignInvoiceToBranchRequest request
     ) throws SignatureException {
         try {
-
             final UUID financingHdrCode;
             try {
                 financingHdrCode = UUID.fromString(request.getFinancingHdrCode());
@@ -204,6 +206,51 @@ public class DistributionSubmissionService {
             financingHdr.setDtmUpd(Instant.now());
             financingHdr.setUsrUpd(authenticateUser.getUsername());
             financingHdrRepository.save(financingHdr);
+
+            if (mstBranch.getEmployees() != null && !mstBranch.getEmployees().isEmpty()) {
+                final List<LoanDisburseEmailPayload.InvoicePayload> invoices = financingHdr.getFinancingDtls()
+                        .stream()
+                        .map((item) ->
+                                LoanDisburseEmailPayload.InvoicePayload.builder()
+                                        .seq(item.getInvoiceSeqno())
+                                        .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
+                                        .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+                                        .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
+                                        .description("Invoice By Trakindo")
+                                        .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+                                        .build()
+                        ).toList();
+
+                final double totalFeeAmt =
+                        financingHdr.getAdminFeeAmt()
+                                + financingHdr.getLegalFeeAmtNett()
+                                + financingHdr.getInsuranceFeeAmt()
+                                + financingHdr.getOthersFeeAmt()
+                                + financingHdr.getProvisionFeeAmt()
+                                + financingHdr.getSurveyFeeAmtNett();
+
+                emailService.sendNotificationBranchAssign(
+                        //mstBranch.getEmployees().stream().toList().getFirst().getEmail(),
+                        "vandikalvandi@gmail.com",
+                        financingHdr.getBouwheer().getBouwheerName(),
+                        LoanDisburseEmailPayload.builder()
+                                .financingCode(financingHdr.getFinancingHdrCode().toString())
+                                .applicationDate(DateTimeUtils.formatToDate(financingHdr.getDisburseDate()))
+                                .companyName(financingHdr.getBouwheer().getBouwheerName())
+                                .phoneNumber(financingHdr.getCustomer().getCustMobilePhone())
+                                .tenor(financingHdr.getTenor())
+                                .financingCode(financingHdr.getFinancingHdrCode().toString())
+                                .financingDueDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDueDate()))
+                                .retention(CommonFormattingUtils.formatAmount(financingHdr.getRetention()))
+                                .financingAmt(CommonFormattingUtils.formatAmount(financingHdr.getFinancingAmt()))
+                                .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+                                .invoiceAmt(CommonFormattingUtils.formatAmount(financingHdr.getTotalInvoiceAmt()))
+                                .disburseAmt(CommonFormattingUtils.formatAmount(financingHdr.getDisburseAmt()))
+                                .invoices(invoices)
+                                .build()
+                );
+            }
+
         } catch (Exception e) {
             log.error("assignSubmission: error {}", e.getMessage());
             throw e;

@@ -27,7 +27,7 @@ public class Cwr {
     @Column(name = "cwr_id", nullable = false)
     private Long cwrId;
 
-    @NotNull
+    @NotNull(message = "Customer cannot be null")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "cust_code",
@@ -36,7 +36,7 @@ public class Cwr {
     )
     private Customer customer;
 
-    @NotNull
+    @NotNull(message = "Bouwheer cannot be null")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "bouwheer_code",
@@ -46,61 +46,61 @@ public class Cwr {
     private Bouwheer bouwheer;
 
     @Size(max = 5)
-    @NotNull
+    @NotNull(message = "Branch code cannot be null")
     @Column(name = "branch_code", nullable = false, length = 5)
     private String branchCode;
 
     @Size(max = 100)
-    @NotNull
+    @NotNull(message = "Cwr type cannot be null")
     @Column(name = "cwr_type", nullable = false, length = 100)
     private String cwrType;
 
     @Size(max = 300)
-    @NotNull
+    @NotNull(message = "Cwr type description cannot be null")
     @Column(name = "cwr_type_desc", nullable = false, length = 300)
     private String cwrTypeDesc;
 
     @Size(max = 100)
-    @NotNull
+    @NotNull(message = "Facility cannot be null")
     @Column(name = "facility", nullable = false, length = 100)
     private String facility;
 
-    @NotNull
+    @NotNull(message = "Is revolving cannot be null")
     @Column(name = "is_revolving", nullable = false)
     private Boolean isRevolving = false;
 
     @Size(max = 5)
-    @NotNull
+    @NotNull(message = "Currency cannot be null")
     @Column(name = "currency", nullable = false, length = 5)
     private String currency;
 
-    @NotNull
+    @NotNull(message = "Cwr start date cannot be null")
     @Column(name = "cwr_start_date", nullable = false)
     private Instant cwrStartDate;
 
-    @NotNull
+    @NotNull(message = "Cwr end date cannot be null")
     @Column(name = "cwr_end_date", nullable = false)
     private Instant cwrEndDate;
 
-    @NotNull
+    @NotNull(message = "Plafond amount cannot be null")
     @Column(name = "plafond_amt", nullable = false)
     private Double plafondAmt;
 
-    @NotNull
+    @NotNull(message = "Realisation amount cannot be null")
     @Column(name = "realisation_amt", nullable = false)
     private Double realisationAmt;
 
     @Size(max = 20)
-    @NotNull
+    @NotNull(message = "Status cannot be null")
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
     @Size(max = 50)
-    @NotNull
+    @NotNull(message = "UsrCrt cannot be null")
     @Column(name = "usr_crt", nullable = false, length = 50)
     private String usrCrt;
 
-    @NotNull
+    @NotNull(message = "DtmCrt cannot be null")
     @ColumnDefault("now()")
     @Column(name = "dtm_crt", nullable = false)
     private Instant dtmCrt;

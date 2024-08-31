@@ -25,7 +25,7 @@ public class Agreement {
     @Column(name = "agreement_id", nullable = false)
     private Long agreementId;
 
-    @NotNull
+    @NotNull(message = "Cwr cannot be null")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "cwr_code",
@@ -35,11 +35,11 @@ public class Agreement {
     private Cwr cwr;
 
     @Size(max = 20)
-    @NotNull
+    @NotNull(message = "Application code cannot be null")
     @Column(name = "application_code", nullable = false, length = 20)
     private String applicationCode;
 
-    @NotNull
+    @NotNull(message = "Financing hdr cannot be null")
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(
             name = "financing_hdr_code",
@@ -49,35 +49,35 @@ public class Agreement {
     private FinancingHdr financingHdr;
 
     @Size(max = 100)
-    @NotNull
+    @NotNull(message = "Facility cannot be null")
     @Column(name = "facility", nullable = false, length = 100)
     private String facility;
 
     @Size(max = 5)
-    @NotNull
+    @NotNull(message = "Currency cannot be null")
     @Column(name = "currency", nullable = false, length = 5)
     private String currency;
 
-    @NotNull
+    @NotNull(message = "Financing amt cannot be null")
     @Column(name = "financing_amt", nullable = false)
     private Double financingAmt;
 
     @Size(max = 20)
-    @NotNull
+    @NotNull(message = "Status cannot be null")
     @Column(name = "status", nullable = false, length = 20)
     private String status;
 
     @Size(max = 100)
-    @NotNull
+    @NotNull(message = "Product offering cannot be null")
     @Column(name = "product_offering", nullable = false, length = 100)
     private String productOffering;
 
     @Size(max = 50)
-    @NotNull
+    @NotNull(message = "Usr crt cannot be null")
     @Column(name = "usr_crt", nullable = false, length = 50)
     private String usrCrt;
 
-    @NotNull
+    @NotNull(message = "Dtm crt cannot be null")
     @ColumnDefault("now()")
     @Column(name = "dtm_crt", nullable = false)
     private Instant dtmCrt;

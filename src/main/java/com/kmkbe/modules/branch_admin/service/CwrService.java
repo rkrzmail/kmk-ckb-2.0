@@ -199,11 +199,11 @@ public class CwrService {
                 throw new IllegalStateException("Customer not found or not valid");
             }
 
-
             List<Cwr> cwrList = new ArrayList<>();
             if (!data.isEmpty()) {
                 for (InquiryCwrRemoteDto inquiryCwr : data) {
                     cwrList.add(Cwr.builder()
+                            .cwrCode(inquiryCwr.getCwrNo())
                             .bouwheer(bouwheer)
                             .customer(customer)
                             .branchCode(inquiryCwr.getOfficeCode())

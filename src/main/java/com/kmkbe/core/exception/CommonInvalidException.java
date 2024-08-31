@@ -112,6 +112,15 @@ public class CommonInvalidException extends RuntimeException {
                 .build();
     }
 
+    public static CommonInvalidException invalidInternalUserEmployee() {
+        return CommonInvalidException.builder()
+                .title("Data Karyawan Tidak Valid")
+                .message("LDAP tervalidasi tapi, tidak ditemukan data karyawan, silahkan hubungi admin atau developer")
+                .action(Action.builder().title("Kembali").uri("/internal/auth/sign-in").build())
+                .headerMessage("Invalid Email or Password")
+                .build();
+    }
+
     public static CommonInvalidException cannotAccessResource() {
         return CommonInvalidException.builder()
                 .title("Tidak ada akses")

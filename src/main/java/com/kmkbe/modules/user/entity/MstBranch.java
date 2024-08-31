@@ -1,15 +1,13 @@
 package com.kmkbe.modules.user.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.util.Set;
 
 @Getter
 @Setter
@@ -111,4 +109,6 @@ public class MstBranch {
     @Column(name = "dtm_upd")
     private Instant dtmUpd;
 
+    @OneToMany(mappedBy = "branch")
+    private Set<MstEmployee> employees;
 }

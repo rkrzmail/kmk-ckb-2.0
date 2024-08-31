@@ -60,6 +60,10 @@ public class AuthInternalServices {
             }
 
             if (user.getIsUserAd()) {
+                if (user.getEmployee() == null) {
+                    throw CommonInvalidException.invalidInternalUserEmployee();
+                }
+
                 BaseLdapRemoteResponseDto<UserInternalRemoteDto> userResponse = userInternalRemoteService.validateActiveDirectory(
                         ActiveDirectoryRemoteRequest.builder()
                                 .loginID(user.getUsername())

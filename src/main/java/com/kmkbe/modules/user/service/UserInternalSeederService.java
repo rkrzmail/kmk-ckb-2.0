@@ -8,6 +8,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -29,20 +30,34 @@ public class UserInternalSeederService {
     //@Transactional
     public void seed() {
         clearAdmin();
-        seedAdmin();
+        seedBranchAdmin();
     }
 
     private void clearAdmin() {
-        mstUserRepository.findByUsername("Admin Jakarta 1").ifPresent(mstUserRepository::delete);
-        mstUserRepository.findByUsername("Admin Jakarta 2").ifPresent(mstUserRepository::delete);
-        mstUserRepository.findByUsername("Admin Jakarta 3").ifPresent(mstUserRepository::delete);
+        Optional<MstUser> admin1 = mstUserRepository.findByUsername("Admin Jakarta 1");
+        Optional<MstUser> admin2 = mstUserRepository.findByUsername("Admin Jakarta 2");
+        Optional<MstUser> admin3 = mstUserRepository.findByUsername("Admin Jakarta 3");
+
+        if (admin1.isPresent()) {
+            mstAppRoleFormUserRepository
+                    .deleteAll(mstAppRoleFormUserRepository.findAllByUser(admin1.get()));
+            mstUserRepository.delete(admin1.get());
+
+            mstAppRoleFormUserRepository
+                    .deleteAll(mstAppRoleFormUserRepository.findAllByUser(admin2.get()));
+            mstUserRepository.delete(admin2.get());
+
+            mstAppRoleFormUserRepository
+                    .deleteAll(mstAppRoleFormUserRepository.findAllByUser(admin3.get()));
+            mstUserRepository.delete(admin3.get());
+        }
 
         mstEmployeeRepository.findById("100001").ifPresent(mstEmployeeRepository::delete);
         mstEmployeeRepository.findById("100002").ifPresent(mstEmployeeRepository::delete);
         mstEmployeeRepository.findById("100003").ifPresent(mstEmployeeRepository::delete);
     }
 
-    private void seedAdmin() {
+    private void seedBranchAdmin() {
         try {
             MstBranch jakarta1 = mstBranchRepository.findByBranchCode("412").orElseThrow();
             MstBranch jakarta2 = mstBranchRepository.findByBranchCode("413").orElseThrow();
@@ -61,28 +76,28 @@ public class UserInternalSeederService {
             );
 
             if (mstAppRoleForms.isEmpty()) {
-                mstAppRoleForms.add(seedAdminBranchRoleForm(appRole, form));
+                mstAppRoleForms.add(seedRoleForm(appRole, form));
             }
 
-            MstEmployee admin1Employee = employee(jakarta1, 1);
-            MstUser admin1 = user(admin1Employee, 1);
+            MstEmployee admin1Employee = employeeBranchAdmin(jakarta1, 1);
+            MstUser admin1 = userBranchAdmin(admin1Employee, 1);
             mstEmployeeRepository.save(admin1Employee);
             mstUserRepository.save(admin1);
 
-            MstEmployee admin2Employee = employee(jakarta2, 2);
-            MstUser admin2 = user(admin2Employee, 2);
+            MstEmployee admin2Employee = employeeBranchAdmin(jakarta2, 2);
+            MstUser admin2 = userBranchAdmin(admin2Employee, 2);
             mstEmployeeRepository.save(admin2Employee);
             mstUserRepository.save(admin2);
 
-            MstEmployee admin3Employee = employee(jakarta3, 3);
-            MstUser admin3 = user(admin3Employee, 3);
+            MstEmployee admin3Employee = employeeBranchAdmin(jakarta3, 3);
+            MstUser admin3 = userBranchAdmin(admin3Employee, 3);
             mstEmployeeRepository.save(admin3Employee);
             mstUserRepository.save(admin3);
 
             for (MstAppRoleForm appRoleForm : mstAppRoleForms) {
-                seedJakarta(admin1, appRoleForm);
-                seedJakarta(admin2, appRoleForm);
-                seedJakarta(admin3, appRoleForm);
+                seedAppRoleFormUser(admin1, appRoleForm);
+                seedAppRoleFormUser(admin2, appRoleForm);
+                seedAppRoleFormUser(admin3, appRoleForm);
             }
         } catch (Exception e) {
             log.error("seedInternalUser, error {}", e.getMessage());
@@ -90,7 +105,7 @@ public class UserInternalSeederService {
         }
     }
 
-    private void seedJakarta(
+    private void seedAppRoleFormUser(
             MstUser user,
             MstAppRoleForm appRoleForm
     ) {
@@ -103,7 +118,7 @@ public class UserInternalSeederService {
         mstAppRoleFormUserRepository.save(appRoleFormUser);
     }
 
-    private MstUser user(MstEmployee employee, int index) {
+    private MstUser userBranchAdmin(MstEmployee employee, int index) {
         return MstUser.builder()
                 .employee(employee)
                 .username("Admin Jakarta " + index)
@@ -114,7 +129,18 @@ public class UserInternalSeederService {
                 .build();
     }
 
-    private MstEmployee employee(MstBranch branch, int index) {
+    private MstUser userMajorAccount(MstEmployee employee, int index) {
+        return MstUser.builder()
+                .employee(employee)
+                .username("major.acc." + index)
+                .password(bcryptEncoder.encode("admin123"))
+                .isUserAd(false)
+                .isUserNonad(true)
+                .isActive(true)
+                .build();
+    }
+
+    private MstEmployee employeeBranchAdmin(MstBranch branch, int index) {
         return MstEmployee.builder()
                 .branch(branch)
                 .employeeName("Admin Jakarta " + index)
@@ -126,7 +152,19 @@ public class UserInternalSeederService {
                 .build();
     }
 
-    private MstAppRoleForm seedAdminBranchRoleForm(
+    private MstEmployee employeeMajorAccount(MstBranch branch, int index) {
+        return MstEmployee.builder()
+                .branch(branch)
+                .employeeName("Major Account " + index)
+                .employeeType("Contract")
+                .employeeCode("100001" + index)
+                .email("vandikalvandi@gmail.com")
+                .phone("08131")
+                .isActive(true)
+                .build();
+    }
+
+    private MstAppRoleForm seedRoleForm(
             MstApplicationRole appRole,
             MstForm form
     ) {
@@ -135,6 +173,43 @@ public class UserInternalSeederService {
                 .form(form)
                 .build();
 
-       return mstAppRoleFormRepository.save(appRoleForm);
+        return mstAppRoleFormRepository.save(appRoleForm);
+    }
+
+    private void seedMajorAccount() {
+        try {
+            MstApplicationRole appRole = mstApplicationRoleRepository
+                    .findById(UUID.fromString("4ab9812c-aba1-cdbf-111b-558c2b20e2aa"))
+                    .orElse(null);
+
+            MstForm form = mstFormRepository.findById("menu_mjr_account")
+                    .orElse(null);
+
+            List<MstAppRoleForm> mstAppRoleForms = mstAppRoleFormRepository.findAllByApplicationRoleAndForm(
+                    appRole,
+                    form
+            );
+
+            if (mstAppRoleForms.isEmpty()) {
+                mstAppRoleForms.add(seedRoleForm(appRole, form));
+            }
+
+            MstBranch jakarta1 = mstBranchRepository.findByBranchCode("412").orElseThrow();
+            MstBranch jakarta2 = mstBranchRepository.findByBranchCode("413").orElseThrow();
+
+            MstEmployee mjr1Employee = employeeMajorAccount(jakarta1, 1);
+            MstUser mjr1 = userBranchAdmin(mjr1Employee, 1);
+
+            MstEmployee mjr2Employee = employeeMajorAccount(jakarta2, 1);
+            MstUser mjr2 = userBranchAdmin(mjr2Employee, 1);
+
+            for (MstAppRoleForm appRoleForm : mstAppRoleForms) {
+                seedAppRoleFormUser(mjr1, appRoleForm);
+                seedAppRoleFormUser(mjr2, appRoleForm);
+            }
+        } catch (Exception e) {
+            log.error("seedMajorAccount, error {}", e.getMessage());
+            throw e;
+        }
     }
 }
