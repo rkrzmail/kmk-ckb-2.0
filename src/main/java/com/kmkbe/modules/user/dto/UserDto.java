@@ -12,6 +12,7 @@ import java.util.List;
 public class UserDto {
     private String employeeName;
     private String roleCode;
+    private String branchCode;
     private Boolean isActive;
     private List<UserRoleFormDto> permissions;
 }

@@ -10,6 +10,7 @@ import com.kmkbe.modules.user.utils.UserInternalUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -48,13 +49,23 @@ public class AssignmentSubmissionService {
             MstUser user = UserInternalUtils.authenticateUser(authentication);
             Page<FinancingHdr> financingHdrPage = financingHdrRepository.findByFinancingStatusOrderByFinancingHdrIdDesc(
                     "NEW",
-                    Pageable.ofSize(pageSize).withPage(pageNo)
+                    PageRequest.of(pageNo, pageSize)
             );
+
+            /*Page<FinancingHdr> financingHdrPageBranch = financingHdrRepository.findByFinancingStatusAndMstBranchOrderByFinancingHdrIdDesc(
+                    "NEW",
+                    null,
+                    PageRequest.of(pageNo, pageSize)
+            );*/
 
             List<AssignmentDto> result = financingHdrPage.stream()
                     .filter(e -> e.getCustomer() != null && e.getBouwheer() != null)
                     .map(e -> {
-                        boolean isNewCust = financingHdrRepository.countByCustomerAndFinancingStatus(e.getCustomer(), "PAID") == 0;
+                        boolean isNewCust = financingHdrRepository
+                                .countByCustomerAndFinancingStatus(
+                                        e.getCustomer(),
+                                        "PAID"
+                                ) == 0;
                         String color, label;
 
                         if (e.getFinancingStatus().equalsIgnoreCase("new")) {
