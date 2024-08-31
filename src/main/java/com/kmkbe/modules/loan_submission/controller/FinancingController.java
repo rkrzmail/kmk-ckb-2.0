@@ -7,6 +7,8 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
+import com.kmkbe.modules.loan_submission.service.FinancingService;
+import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -25,6 +27,8 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class FinancingController {
     private final FinancingHdrService financingHdrService;
+    private final FinancingService financingService;
+
 
     @PostMapping("/invoice-paid")
     public CommonResult<Object> invoicePaid(
@@ -66,12 +70,25 @@ public class FinancingController {
     }
 
     @GetMapping("/approvals/status")
-    public CommonResult<Object> updateApproval(
-            @RequestParam("apiKey") String apiKey
+    public CommonResult<Object> updateApproval( @RequestParam("apiKey") String apiKey
     ) {
         //http://localhost:8443/api/v1/financing/approvals/status?apiKey=$2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC
-        return new CommonResult<>().success(
-                null
-        );
+        try {
+
+            if (!apiKey.equals("$2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC")) {
+                //throw new Exception("Invalid ApiKey");
+                throw new IllegalApiKeyException();
+            }
+
+
+
+            financingService.recallApprovalStatus();
+
+
+
+            return new CommonResult<>().success(null, "Success Submitted");
+        } catch (Exception e) {
+            throw e;
+        }
     }
 }

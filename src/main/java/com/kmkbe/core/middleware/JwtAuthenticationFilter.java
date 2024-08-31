@@ -68,6 +68,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             "/uploads/**",
             "/error/**",
+
+
+            "/api/v1/financing/approvals/status/**",
     };
 
     public static final String[] ENDPOINTS_SWAGGERS = {

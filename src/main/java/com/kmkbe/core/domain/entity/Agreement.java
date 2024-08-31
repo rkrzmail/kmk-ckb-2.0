@@ -89,4 +89,7 @@ public class Agreement {
     @Column(name = "dtm_upd")
     private Instant dtmUpd;
 
+    @Column(name = "approval_flag")
+    private String approvalFlag;
+
 }
