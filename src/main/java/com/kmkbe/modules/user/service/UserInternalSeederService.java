@@ -52,7 +52,6 @@ public class UserInternalSeederService {
 
                     mstApplicationRoleRepository.save(applicationRole);
 
-
                     MstAppRoleForm roleForm = MstAppRoleForm.builder()
                             .applicationRoleCode(applicationRole)
                             .isActive(true)
@@ -78,10 +77,11 @@ public class UserInternalSeederService {
         try {
             MstBranch jakarta1 = mstBranchRepository.findByBranchCode("412").orElseThrow();
             MstBranch jakarta2 = mstBranchRepository.findByBranchCode("413").orElseThrow();
+            MstBranch jakarta3 = mstBranchRepository.findByBranchCode("414").orElseThrow();
 
             MstEmployee admin1Employee = MstEmployee.builder()
                     .branchCode(jakarta1)
-                    .employeeName("Admin 1")
+                    .employeeName("Admin Jakarta 1")
                     .employeeType("Contract")
                     .employeeCode("100001")
                     .email("vandikalvandi@gmail.com")
@@ -91,13 +91,12 @@ public class UserInternalSeederService {
 
             MstUser admin1 = MstUser.builder()
                     .employeeCode(admin1Employee)
-                    .username("Admin 1")
+                    .username("Admin Jakarta 1")
                     .password(bcryptEncoder.encode("admin12345"))
-                    .isUserAd(true)
+                    .isUserAd(false)
                     .isUserNonad(true)
                     .isActive(true)
                     .build();
-
 
             mstEmployeeRepository.save(admin1Employee);
             mstUserRepository.save(admin1);

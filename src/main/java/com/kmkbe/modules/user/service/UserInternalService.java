@@ -45,6 +45,7 @@ public class UserInternalService {
 
             return UserDto.builder()
                     .employeeName(employee.getEmployeeName())
+                    .branchCode("")
                     .roleCode(
                             permission
                                     .getAppRoleFormCode()
