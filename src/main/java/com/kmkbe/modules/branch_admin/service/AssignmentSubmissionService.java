@@ -51,11 +51,6 @@ public class AssignmentSubmissionService {
 
             MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
             MstUser user = mstUserRepository.findById(authenticateUser.getUserCode()).orElseThrow();
-            /*Page<FinancingHdr> financingHdrPage = financingHdrRepository.findByFinancingStatusOrderByFinancingHdrIdDesc(
-                    "NEW",
-                    PageRequest.of(pageNo, pageSize)
-            );*/
-
             Page<FinancingHdr> financingHdrPage = financingHdrRepository.findByMstBranchOrderByFinancingHdrIdDesc(
                     user.getEmployee().getBranch(),
                     PageRequest.of(pageNo, pageSize)
