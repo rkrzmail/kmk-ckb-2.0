@@ -17,11 +17,11 @@ import java.util.UUID;
 @Entity
 @Table(name = "mst_app_role_form_user", schema = "users")
 public class MstAppRoleFormUser {
+    @Builder.Default
     @Id
     @Column(name = "app_role_form_user_code", nullable = false)
-    private UUID appRoleFormUserCode;
+    private UUID appRoleFormUserCode = UUID.randomUUID();
 
-    @NotNull
     @ColumnDefault("nextval('users.mst_app_role_form_user_app_role_form_user_id_seq'::regclass)")
     @Column(
             name = "app_role_form_user_id",
@@ -31,25 +31,33 @@ public class MstAppRoleFormUser {
     )
     private Long appRoleFormUserId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "app_role_form_code")
-    private MstAppRoleForm appRoleFormCode;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(
+            name = "app_role_form_code",
+            referencedColumnName = "app_role_form_code"
+    )
+    private MstAppRoleForm appRoleForm;
 
     @NotNull
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_code", nullable = false)
-    private MstUser userCode;
+    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+    @JoinColumn(
+            name = "user_code",
+            referencedColumnName = "user_code",
+            nullable = false
+    )
+    private MstUser user;
 
-    @NotNull
+    @Builder.Default
     @ColumnDefault("false")
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive = false;
+    private Boolean isActive = true;
 
+    @Builder.Default
     @Size(max = 50)
-    @NotNull
     @Column(name = "usr_crt", nullable = false, length = 50)
-    private String usrCrt;
+    private String usrCrt = "system";
 
+    @Builder.Default
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
     private Instant dtmCrt = Instant.now();

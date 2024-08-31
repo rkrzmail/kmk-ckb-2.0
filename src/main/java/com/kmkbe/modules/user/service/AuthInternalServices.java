@@ -53,7 +53,7 @@ public class AuthInternalServices {
                         .orElseThrow(CommonInvalidException::invalidInternalUser);
 
                 user = mstUserRepository
-                        .findByEmployeeCode(findEmployee)
+                        .findByEmployee(findEmployee)
                         .orElseThrow(CommonInvalidException::invalidInternalUser);
             } else {
                 user = findUser.get();
@@ -84,8 +84,8 @@ public class AuthInternalServices {
                 throw CommonInvalidException.invalidInternalUser();
             }
 
-            if (!user.getPassword().equals(bCryptPasswordEncoder.encode(request.getPassword()))) {
-                throw new RuntimeException("Check your username or password");
+            if (!bCryptPasswordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw CommonInvalidException.invalidPassword();
             }
 
             final RefreshToken refreshTokenResult = refreshTokenServices.create(

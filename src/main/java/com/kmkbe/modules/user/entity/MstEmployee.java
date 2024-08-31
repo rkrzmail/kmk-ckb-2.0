@@ -21,7 +21,6 @@ public class MstEmployee {
     @Column(name = "employee_code", nullable = false, length = 10)
     private String employeeCode;
 
-    @NotNull
     @ColumnDefault("nextval('users.mst_employee_employee_id_seq'::regclass)")
     @Column(
             name = "employee_id",
@@ -44,8 +43,12 @@ public class MstEmployee {
     private String employeeType;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "branch_code")
-    private MstBranch branchCode;
+    @JoinColumn(
+            name = "branch_code",
+            referencedColumnName = "branch_code",
+            nullable = false
+    )
+    private MstBranch branch;
 
     @Size(max = 50)
     @Column(name = "email", length = 50)
@@ -55,19 +58,19 @@ public class MstEmployee {
     @Column(name = "phone", length = 20)
     private String phone;
 
-    @NotNull
+    @Builder.Default
     @ColumnDefault("false")
-    @Column(name = "is_active", nullable = false)
-    private Boolean isActive = false;
+    @Column(name = "is_active")
+    private Boolean isActive = true;
 
+    @Builder.Default
     @Size(max = 50)
-    @NotNull
-    @Column(name = "usr_crt", nullable = false, length = 50)
-    private String usrCrt;
+    @Column(name = "usr_crt", length = 50)
+    private String usrCrt = "system";
 
-    @NotNull
-    @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt;
+    @Builder.Default
+    @Column(name = "dtm_crt")
+    private Instant dtmCrt = Instant.now();
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
@@ -75,5 +78,6 @@ public class MstEmployee {
 
     @Column(name = "dtm_upd")
     private Instant dtmUpd;
+
 
 }

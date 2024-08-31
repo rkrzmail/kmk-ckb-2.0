@@ -12,5 +12,5 @@ public interface MstUserRepository extends JpaRepository<MstUser, UUID> {
 
     Optional<MstUser> findByUsername(String username);
 
-    Optional<MstUser> findByEmployeeCode(MstEmployee employee);
+    Optional<MstUser> findByEmployee(MstEmployee employee);
 }

@@ -76,6 +76,15 @@ public class CommonInvalidException extends RuntimeException {
                 .build();
     }
 
+    public static CommonInvalidException invalidPassword() {
+        return CommonInvalidException.builder()
+                .title("Username atau Password tidak valid")
+                .message("Username atau Password salah, silahkan masukkan username dan password yang valid")
+                .action(Action.builder().title("Kembali").uri("/internal/auth/sign-in").build())
+                .headerMessage("Invalid Username and Password")
+                .build();
+    }
+
     public static CommonInvalidException notActive() {
         return CommonInvalidException.builder()
                 .title("Akun anda belum di konfirmasi Aktif")

@@ -8,6 +8,7 @@ import com.kmkbe.core.utils.RedisUtils;
 import com.kmkbe.modules.customer.service.CustomerSeederService;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
+import com.kmkbe.modules.user.service.UserInternalSeederService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
@@ -52,9 +53,10 @@ public class TestingController {
     private final CustomerSeederService seederService;
     private final RedisUtils redisUtils;
     private final CustomerRemoteService customerRemoteService;
+    private final UserInternalSeederService userInternalSeederService;
 
 
-    private final Path fileStorageLocation =  Paths.get("uploads")
+    private final Path fileStorageLocation = Paths.get("uploads")
             .toAbsolutePath().normalize();
 
     @GetMapping("/get")
@@ -116,6 +118,15 @@ public class TestingController {
         return new CommonResult<>().success(fileStorageService.load("Banner Jawa Tengah.jpg"));
     }
 
+    @GetMapping("/seed")
+    public CommonResult<Object> seedUserInternal() {
+        userInternalSeederService.seed();
+        return new CommonResult<>().success(
+                null
+        );
+    }
+
+
     @PostMapping("/uploadFile")
     public CommonResult<Object> uploadFile(
             @RequestParam("file") MultipartFile file,
@@ -124,18 +135,17 @@ public class TestingController {
         /*String fileName = storeFile(file);*/
 
 
-
         String uploadPath = request.getServletContext().getRealPath("resources/");
         System.out.println(uploadPath);
         File dir = new File(uploadPath);
-        if(!dir.exists()) {
+        if (!dir.exists()) {
             dir.mkdirs();
         }
 
         String fileName = file.getOriginalFilename();
         fileName = UUID.randomUUID() + "." + fileName.substring(fileName.lastIndexOf("."));
         Files.copy(file.getInputStream(), Paths.get(uploadPath, fileName));
-        System.out.println(uploadPath + File.separator +  fileName);
+        System.out.println(uploadPath + File.separator + fileName);
 
         String fileDownloadUri = ServletUriComponentsBuilder.fromCurrentContextPath()
                 .path("/downloadFile/")
@@ -169,6 +179,7 @@ public class TestingController {
         return new ResponseEntity<>(inputStreamResource, headers, HttpStatus.OK);
     }
 
+
     public String storeFile(MultipartFile file) {
         try {
             Files.createDirectories(this.fileStorageLocation);
@@ -181,7 +192,7 @@ public class TestingController {
 
         try {
             // Check if the file's name contains invalid characters
-            if(fileName.contains("..")) {
+            if (fileName.contains("..")) {
                 throw new IllegalStateException("Sorry! Filename contains invalid path sequence " + fileName);
             }
 
@@ -199,7 +210,7 @@ public class TestingController {
         try {
             Path filePath = this.fileStorageLocation.resolve(fileName).normalize();
             Resource resource = new UrlResource(filePath.toUri());
-            if(resource.exists()) {
+            if (resource.exists()) {
                 return resource;
             } else {
                 throw new IllegalStateException("File not found " + fileName);

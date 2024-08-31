@@ -13,6 +13,7 @@ public class UserDto {
     private String employeeName;
     private String roleCode;
     private String branchCode;
+    private String branchName;
     private Boolean isActive;
     private List<UserRoleFormDto> permissions;
 }

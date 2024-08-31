@@ -22,11 +22,11 @@ import java.util.UUID;
 @Entity
 @Table(name = "mst_user", schema = "users")
 public class MstUser implements UserDetails {
+    @Builder.Default
     @Id
     @Column(name = "user_code", nullable = false)
-    private UUID userCode;
+    private UUID userCode = UUID.randomUUID();
 
-    @NotNull
     @ColumnDefault("nextval('users.mst_user_user_id_seq'::regclass)")
     @Column(
             name = "user_id",
@@ -43,8 +43,12 @@ public class MstUser implements UserDetails {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "employee_code", nullable = false)
-    private MstEmployee employeeCode;
+    @JoinColumn(
+            name = "employee_code",
+            referencedColumnName = "employee_code",
+            nullable = false
+    )
+    private MstEmployee employee;
 
     @NotNull
     @ColumnDefault("false")
@@ -60,17 +64,17 @@ public class MstUser implements UserDetails {
     @Column(name = "password", length = 250)
     private String password;
 
-    @NotNull
+    @Builder.Default
     @ColumnDefault("false")
     @Column(name = "is_active", nullable = false)
-    private Boolean isActive = false;
+    private Boolean isActive = true;
 
+    @Builder.Default
     @Size(max = 50)
-    @NotNull
     @Column(name = "usr_crt", nullable = false, length = 50)
-    private String usrCrt = "by system";
+    private String usrCrt = "system";
 
-    @NotNull
+    @Builder.Default
     @Column(name = "dtm_crt", nullable = false)
     private Instant dtmCrt = Instant.now();
 
@@ -81,7 +85,11 @@ public class MstUser implements UserDetails {
     @Column(name = "dtm_upd")
     private Instant dtmUpd;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "userCode")
+    @OneToMany(
+            cascade = CascadeType.ALL,
+            mappedBy = "user",
+            fetch = FetchType.EAGER
+    )
     private Set<MstAppRoleFormUser> appRoleFormsUser;
 
     @Override

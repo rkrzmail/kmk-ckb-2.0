@@ -8,6 +8,7 @@ import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -24,32 +25,36 @@ public class UserInternalService {
     private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
     private final MstUserRepository mstUserRepository;
 
+    @Transactional
     public UserDto profile(Authentication authentication) throws SignatureException {
         try {
             MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
-            MstUser user = mstUserRepository.findByUsername(authenticateUser.getUsername()).orElseThrow(() -> new SignatureException("Invalid user or user is not authorized"));
-            MstEmployee employee = user.getEmployeeCode();
+            MstUser user = mstUserRepository.findById(authenticateUser.getUserCode()).orElseThrow();
+            MstEmployee employee = user.getEmployee();
 
-            Optional<MstAppRoleFormUser> findPermission = mstAppRoleFormUserRepository.findTopByUserCodeOrderByAppRoleFormUserId(user);
-            MstAppRoleFormUser permission = findPermission.orElseGet(() -> MstAppRoleFormUser.builder().build());
+            Optional<MstAppRoleFormUser> findPermission = mstAppRoleFormUserRepository
+                    .findTopByUserOrderByAppRoleFormUserId(user);
+            MstAppRoleFormUser permission = findPermission
+                    .orElseGet(() -> MstAppRoleFormUser.builder().build());
 
             List<UserRoleFormDto> roles = user.getAppRoleFormsUser()
                     .stream()
                     .map((role) -> UserRoleFormDto.builder()
-                            .parentCode(role.getAppRoleFormCode().getFormCode().getParentCode())
-                            .path(role.getAppRoleFormCode().getFormCode().getParentCode())
-                            .icon(role.getAppRoleFormCode().getFormCode().getFormIcon())
-                            .name(role.getAppRoleFormCode().getFormCode().getFormName())
+                            .parentCode(role.getAppRoleForm().getForm().getParentCode())
+                            .path(role.getAppRoleForm().getForm().getParentCode())
+                            .icon(role.getAppRoleForm().getForm().getFormIcon())
+                            .name(role.getAppRoleForm().getForm().getFormName())
                             .build())
                     .toList();
 
             return UserDto.builder()
                     .employeeName(employee.getEmployeeName())
-                    .branchCode("")
+                    .branchCode(employee.getBranch().getBranchCode())
+                    .branchName(employee.getBranch().getBranchName())
                     .roleCode(
                             permission
-                                    .getAppRoleFormCode()
-                                    .getApplicationRoleCode()
+                                    .getAppRoleForm()
+                                    .getApplicationRole()
                                     .getRoleCode()
                                     .getRoleCode()
                     )
