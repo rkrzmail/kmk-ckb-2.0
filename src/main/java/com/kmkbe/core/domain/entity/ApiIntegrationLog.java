@@ -14,7 +14,10 @@ import java.time.Instant;
 @Table(name = "api_integration_log")
 public class ApiIntegrationLog {
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "api_integration_log_id_gen")
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "api_integration_log_id_gen"
+    )
     @SequenceGenerator(name = "api_integration_log_id_gen", sequenceName = "api_integration_log_api_log_id_seq", allocationSize = 1)
     @Column(name = "api_log_id", nullable = false)
     private Long apiLogId;

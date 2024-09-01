@@ -1,16 +1,23 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.AssignmentDto;
+import com.kmkbe.core.domain.entity.Agreement;
+import com.kmkbe.core.domain.entity.AgreementFile;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.MappedFinancingStatus;
+import com.kmkbe.core.domain.repository.AgreementFileRepository;
+import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.spec.FinancingHdrSpec;
+import com.kmkbe.core.utils.HttpUtils;
+import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.netty.util.internal.StringUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,8 +38,11 @@ import java.util.List;
 public class AssignmentSubmissionService {
     private final FinancingHdrRepository financingHdrRepository;
     private final MstUserRepository mstUserRepository;
+    private final AgreementRepository agreementRepository;
+    private final AgreementFileRepository agreementFileRepository;
 
     public PaginationResult<AssignmentDto> assignmentList(
+            HttpServletRequest httpServletRequest,
             Authentication authentication,
             PaginationRequest request
     ) throws SignatureException {
@@ -62,10 +72,10 @@ public class AssignmentSubmissionService {
                     custNameFilter = null,
                     bouwheerNameFilter = null;
 
-            if(
+            if (
                     !StringUtil.isNullOrEmpty(request.getSearchBy())
-                    && !StringUtil.isNullOrEmpty(request.getSearchValue())
-            ){
+                            && !StringUtil.isNullOrEmpty(request.getSearchValue())
+            ) {
                 switch (request.getSearchBy().toLowerCase()) {
                     case "status":
                         financingStatusFilter = request.getSearchValue();
@@ -104,6 +114,22 @@ public class AssignmentSubmissionService {
                                 MappedFinancingStatus.Type.BranchAdmin
                         );
 
+                        Agreement agreement = agreementRepository.findTopByFinancingHdr(e).orElse(null);
+                        AgreementFile agreementFile = agreementFileRepository.findTopByAgreementOrderByAgreementFileId(
+                                agreement
+                        ).orElse(null);
+
+                        String agreementDoc = null;
+                        if (agreementFile != null) {
+                            agreementDoc = UriUtils.getBaseUrl(httpServletRequest)
+                                    + "/api/v1"
+                                    + "/documents/download/agreement"
+                                    + "/"
+                                    + agreementFile.getAgreementFileId()
+                                    + "?token="
+                                    + HttpUtils.getHeaderBearerToken(httpServletRequest);
+                        }
+
                         return AssignmentDto.builder()
                                 .financingHdrCode(e.getFinancingHdrCode())
                                 .custCode(e.getCustomer().getCustCode())
@@ -115,6 +141,7 @@ public class AssignmentSubmissionService {
                                 .custStatus(isNewCust ? "New Customer" : "Existing Customer")
                                 .status(financingStatus.getStatus())
                                 .statusLabel(financingStatus.getLabel())
+                                .agreementDoc(agreementDoc)
                                 .build();
                     })
                     .toList();

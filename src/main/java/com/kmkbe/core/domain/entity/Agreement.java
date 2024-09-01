@@ -96,5 +96,4 @@ public class Agreement {
 
     @Column(name = "approval_flag")
     private String approvalFlag;
-
 }

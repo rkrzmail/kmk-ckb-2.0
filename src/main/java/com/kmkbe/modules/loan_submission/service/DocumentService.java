@@ -4,11 +4,13 @@ import com.kmkbe.core.domain.dto.DocumentTemplateFinancingDto;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.dto.LegalFileDto;
 import com.kmkbe.core.domain.dto.MstFileTypeDto;
+import com.kmkbe.core.domain.entity.AgreementFile;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.LegalFile;
 import com.kmkbe.core.domain.entity.MstFileType;
 import com.kmkbe.core.domain.mapper.FileTypeMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.repository.AgreementFileRepository;
 import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.LegalFileRepository;
 import com.kmkbe.core.domain.repository.MstFileTypeRepository;
@@ -44,6 +46,7 @@ import java.util.*;
 @RequiredArgsConstructor
 @Slf4j
 public class DocumentService {
+    private final AgreementFileRepository agreementFileRepository;
     private final MstFileTypeRepository mstFileTypeRepository;
     private final LegalFileRepository legalFileRepository;
     private final FileStorageService fileStorageService;
@@ -51,7 +54,9 @@ public class DocumentService {
     private final CustomerRemoteService customerRemoteService;
     private final CustomerRepository customerRepository;
 
-    public List<DocumentTemplateFinancingDto> fetchDocumentTemplateFinancing() throws Exception {
+    public List<DocumentTemplateFinancingDto> fetchDocumentTemplateFinancing(
+            Authentication authentication
+    ) throws Exception {
         try {
             return Arrays.asList(
                     DocumentTemplateFinancingDto.builder()
@@ -72,21 +77,12 @@ public class DocumentService {
     public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
             HttpServletRequest httpServletRequest,
             Authentication authentication,
-            PaginationRequest request
+            PaginationRequest request,
+            Boolean isFirst
     ) throws SignatureException {
         try {
-            final Customer customer = CustomerUtils.authenticateCustomer(authentication);
-            InquiryVendorRemoteDto inquiryVendorRemote = null;
-            try {
-                inquiryVendorRemote = customerRemoteService
-                        .inquiryVendor(customer.getCustExternalCode()).getData();
-
-            } catch (Exception e) {
-                //throw new IllegalStateException("Your vendor is not registered from MST Integeration");
-            }
-
-            if (inquiryVendorRemote != null) {
-                mappingFromInquiryVendor(customer, inquiryVendorRemote);
+            if (isFirst != null && isFirst) {
+                //fetchAndMappingDocVendor(authentication);
             }
 
             int pageNo = 0, pageSize = 10;
@@ -120,7 +116,8 @@ public class DocumentService {
 
                         try {
                             legalFile = legalFileService.fetchByMstFileTypeAndCust(CustomerUtils.authenticateCustomer(authentication), file);
-                        } catch (SignatureException ignored) {
+                        } catch (Exception e) {
+                            log.error("fetchByCust, error {}", e.getMessage());
                         }
 
                         if (legalFile != null) {
@@ -195,7 +192,7 @@ public class DocumentService {
                     uploadName
             );
 
-            if (existingFile != null) {
+            if (existingFile != null && !existingFile.getFilePath().contains("http")) {
                 fileStorageService.delete(existingFile.getFilePath() + "/" + existingFile.getFileName(), "");
             }
 
@@ -246,6 +243,50 @@ public class DocumentService {
         }
     }
 
+    public ResponseEntity<Resource> agreementDocByAgreementId(
+            HttpServletRequest httpServletRequest,
+            Long id
+    ) {
+        try {
+            HttpHeaders headers = new HttpHeaders();
+            AgreementFile agreementFile = agreementFileRepository.findById(id).orElse(null);
+            if (agreementFile == null) {
+                headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+                return new ResponseEntity<>(null, headers, HttpStatus.OK);
+            }
+
+            if (agreementFile.getFilePath().contains("http")) {
+                headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+                return new ResponseEntity<>(null, headers, HttpStatus.OK);
+            }
+
+            return fileStorageService.downloadUploadFile(
+                    httpServletRequest,
+                    agreementFile.getFilePath(),
+                    agreementFile.getFileName()
+            );
+        } catch (Exception e) {
+            log.error("agreementDocByAgreementId, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    private void fetchAndMappingDocVendor(Authentication authentication) throws SignatureException {
+        final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+        InquiryVendorRemoteDto inquiryVendorRemote = null;
+        try {
+            inquiryVendorRemote = customerRemoteService
+                    .inquiryVendor(customer.getCustExternalCode()).getData();
+
+        } catch (Exception e) {
+            //throw new IllegalStateException("Your vendor is not registered from MST Integeration");
+        }
+
+        if (inquiryVendorRemote != null) {
+            mappingFromInquiryVendor(customer, inquiryVendorRemote);
+        }
+    }
+
     public void mappingFromInquiryVendor(
             Customer customer,
             InquiryVendorRemoteDto vendor
@@ -257,11 +298,14 @@ public class DocumentService {
 
             List<LegalFile> legalFiles = new ArrayList<>();
             if (!StringUtil.isNullOrEmpty(vendor.getAktaPendirianLink())) {
-                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
-                                "Akta Pendirian",
-                                customer
-                        )
-                        .ifPresent(legalFileRepository::delete);
+                List<LegalFile> exists = legalFileRepository.findAllRawByCustAndFileTypeCodeStr(
+                        "APN01",
+                        customer.getCustCode().toString()
+                );
+
+                if (!exists.isEmpty()) {
+                    legalFileRepository.deleteAll(exists);
+                }
 
                 final MstFileType m1;
                 Optional<MstFileType> findMst =
@@ -294,11 +338,14 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getAktaPerubahanLink())) {
-                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
-                                "Akta Perubahan Terakhir Lainnya",
-                                customer
-                        )
-                        .ifPresent(legalFileRepository::delete);
+                List<LegalFile> exists = legalFileRepository.findAllRawByCustAndFileTypeCodeStr(
+                        "APTL01",
+                        customer.getCustCode().toString()
+                );
+
+                if (!exists.isEmpty()) {
+                    legalFileRepository.deleteAll(exists);
+                }
 
                 MstFileType m2;
                 Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Akta Perubahan Terakhir Lainnya");
@@ -330,11 +377,14 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getPengesahanKemenkumhamLink())) {
-                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
-                                "Sk Persetujuan Kemenkumham",
-                                customer
-                        )
-                        .ifPresent(legalFileRepository::delete);
+                List<LegalFile> exists = legalFileRepository.findAllRawByCustAndFileTypeCodeStr(
+                        "SKPK01",
+                        customer.getCustCode().toString()
+                );
+
+                if (!exists.isEmpty()) {
+                    legalFileRepository.deleteAll(exists);
+                }
 
                 MstFileType m3;
                 Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Sk Persetujuan Kemenkumham");
@@ -366,11 +416,14 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getNpwpLink())) {
-                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
-                                "NPWP",
-                                customer
-                        )
-                        .ifPresent(legalFileRepository::delete);
+                List<LegalFile> exists = legalFileRepository.findAllRawByCustAndFileTypeCodeStr(
+                        "NPWP01",
+                        customer.getCustCode().toString()
+                );
+
+                if (!exists.isEmpty()) {
+                    legalFileRepository.deleteAll(exists);
+                }
 
                 MstFileType m4;
                 Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("NPWP");
@@ -403,11 +456,14 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getNipSiupLink())) {
-                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
-                                "NIB",
-                                customer
-                        )
-                        .ifPresent(legalFileRepository::delete);
+                List<LegalFile> exists = legalFileRepository.findAllRawByCustAndFileTypeCodeStr(
+                        "NIB01",
+                        customer.getCustCode().toString()
+                );
+
+                if (!exists.isEmpty()) {
+                    legalFileRepository.deleteAll(exists);
+                }
 
                 MstFileType m5;
                 Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("NIB");
@@ -440,11 +496,14 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getPkpLink())) {
-                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
-                                "PKP",
-                                customer
-                        )
-                        .ifPresent(legalFileRepository::delete);
+                List<LegalFile> exists = legalFileRepository.findAllRawByCustAndFileTypeCodeStr(
+                        "PKP01",
+                        customer.getCustCode().toString()
+                );
+
+                if (!exists.isEmpty()) {
+                    legalFileRepository.deleteAll(exists);
+                }
 
                 final MstFileType m6;
                 Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("PKP");
@@ -477,16 +536,14 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getKtpNpwpVendorStockLink())) {
-                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
-                                "Identitas Pengurus",
-                                customer
-                        )
-                        .ifPresent(legalFileRepository::delete);
-                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
-                                "IPS",
-                                customer
-                        )
-                        .ifPresent(legalFileRepository::delete);
+                List<LegalFile> exists = legalFileRepository.findAllRawByCustAndFileTypeCodeStr(
+                        "IPS01",
+                        customer.getCustCode().toString()
+                );
+
+                if (!exists.isEmpty()) {
+                    legalFileRepository.deleteAll(exists);
+                }
 
                 Optional<MstFileType> findMst1 = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("IPS");
                 findMst1.ifPresent(mstFileTypeRepository::delete);
@@ -522,11 +579,14 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getLaporanKeuanganLink())) {
-                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
-                                "Laporan Keuangan",
-                                customer
-                        )
-                        .ifPresent(legalFileRepository::delete);
+                List<LegalFile> exists = legalFileRepository.findAllRawByCustAndFileTypeCodeStr(
+                        "LKN01",
+                        customer.getCustCode().toString()
+                );
+
+                if (!exists.isEmpty()) {
+                    legalFileRepository.deleteAll(exists);
+                }
 
                 final MstFileType m8;
                 Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Laporan Keuangan");
@@ -544,7 +604,6 @@ public class DocumentService {
                     m8 = findMst.get();
                 }
 
-
                 legalFiles.add(
                         LegalFile.builder()
                                 .custCode(customer)
@@ -560,11 +619,15 @@ public class DocumentService {
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getKtpDirekturLink())) {
-                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
-                                "Ktp Pengurus",
-                                customer
-                        )
-                        .ifPresent(legalFileRepository::delete);
+                List<LegalFile> exists = legalFileRepository.findAllRawByCustAndFileTypeCodeStr(
+                        "KPS01",
+                        customer.getCustCode().toString()
+                );
+
+                if (!exists.isEmpty()) {
+                    legalFileRepository.deleteAll(exists);
+                }
+
                 final MstFileType m9;
                 Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Ktp Pengurus");
                 if (findMst.isEmpty()) {
@@ -600,11 +663,15 @@ public class DocumentService {
                             !vendor.getBankDetail().isEmpty()
                             && vendor.getBankDetail().getFirst().getDocLink() != null
             ) {
-                legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
-                                "Bank Detail",
-                                customer
-                        )
-                        .ifPresent(legalFileRepository::delete);
+                List<LegalFile> exists = legalFileRepository.findAllRawByCustAndFileTypeCodeStr(
+                        "BDL01",
+                        customer.getCustCode().toString()
+                );
+
+                if (!exists.isEmpty()) {
+                    legalFileRepository.deleteAll(exists);
+                }
+
                 final MstFileType m10;
                 Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Bank Detail");
                 if (findMst.isEmpty()) {
@@ -642,11 +709,14 @@ public class DocumentService {
             ) {
                 int index = 1;
                 for (InquiryVendorRemoteDto.OtherDocument doc : vendor.getOtherDocument()) {
-                    legalFileRepository.findTopByFileNameAndCustCodeOrderByFileIdDesc(
-                                    doc.getDocumentName(),
-                                    customer
-                            )
-                            .ifPresent(legalFileRepository::delete);
+                    List<LegalFile> exists = legalFileRepository.findAllRawByCustAndFileTypeCodeStr(
+                            "DOCOTHER_0" + index,
+                            customer.getCustCode().toString()
+                    );
+
+                    if (!exists.isEmpty()) {
+                        legalFileRepository.deleteAll(exists);
+                    }
 
                     final MstFileType m11;
                     Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc(doc.getDocumentName());
@@ -751,7 +821,8 @@ public class DocumentService {
     }
 
     private String fileUlr(HttpServletRequest httpServletRequest, LegalFile legalFile) {
-        return UriUtils.getBaseUrl(httpServletRequest)
+        return (UriUtils.getBaseUrl(httpServletRequest)
+                .replace("http", "https"))
                 + "/api/v1"
                 + "/documents/download/loan"
                 + "/"

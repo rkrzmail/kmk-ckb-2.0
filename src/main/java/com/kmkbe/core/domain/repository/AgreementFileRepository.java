@@ -8,7 +8,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.Optional;
 
-public interface AgreementFileRepository extends JpaRepository<AgreementFile, String>, JpaSpecificationExecutor<AgreementFile> {
+public interface AgreementFileRepository extends JpaRepository<AgreementFile, Long>, JpaSpecificationExecutor<AgreementFile> {
     Optional<AgreementFile> findByAgreement(Agreement agreement);
 
     Optional<AgreementFile> findTopByAgreementOrderByAgreementFileId(Agreement agreement);

@@ -24,4 +24,5 @@ public class AssignmentDto {
     private String status;
     private String statusLabel;
     private Instant dtmCrt;
+    private String agreementDoc;
 }

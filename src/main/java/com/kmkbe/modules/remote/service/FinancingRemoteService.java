@@ -48,7 +48,8 @@ public class FinancingRemoteService {
     }
 
     public BaseSimpleRemoteResponseDto<ObjectUtils.Null> updateFinancingStatus(
-            UpdateFinancingStatusRequest request ) throws JsonProcessingException {
+            UpdateFinancingStatusRequest request
+    ) throws JsonProcessingException {
         try {
             final HttpEntity<String> requestArgs = new HttpEntity<>(
                     com.kmkbe.core.utils.ObjectUtils.jsonToStr(request),

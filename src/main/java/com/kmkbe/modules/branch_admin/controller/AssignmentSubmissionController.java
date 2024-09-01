@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.branch_admin.service.AssignmentSubmissionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
@@ -30,12 +31,14 @@ public class AssignmentSubmissionController {
 
     @GetMapping("/list")
     public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
+            HttpServletRequest httpServletRequest,
             Authentication authentication,
             PaginationRequest request
     ) throws SignatureException {
         return new CommonResult<PaginationResult<AssignmentDto>>()
                 .success(
                         assignmentSubmissionService.assignmentList(
+                                httpServletRequest,
                                 authentication,
                                 request
                         )

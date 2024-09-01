@@ -47,6 +47,7 @@ public class LegalFileService {
     }
 
     public LegalFile fetchByMstFileTypeAndCust(Customer customer, MstFileType mstFileType) {
+        //var a = legalFileRepository.findAllByCustCodeAndFileTypeCode(customer, mstFileType);
         return legalFileRepository.findByCustCodeAndFileTypeCode(customer, mstFileType).orElse(null);
     }
 

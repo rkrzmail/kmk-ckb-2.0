@@ -15,6 +15,7 @@ import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
@@ -75,6 +76,7 @@ public class AgreementController {
         );
     }
 
+    @Transactional
     @PostMapping(
             value = "/upload/contract",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -97,16 +99,21 @@ public class AgreementController {
                 agreement.getAgreementCode()
         );
 
-        financingRemoteService.updateFinancingStatus(
-                UpdateFinancingStatusRequest.builder()
-                        .financingCode(financingHdrCode)
-                        .status(UpdateFinancingStatusRequest.Status.Approve)
-                        .vendorCode(financingHdr.getCustomer().getCustExternalCode())
-                        .build()
-        );
+        final UpdateFinancingStatusRequest updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
+                .financingCode(financingHdrCode)
+                .status(UpdateFinancingStatusRequest.Status.Approve)
+                .vendorCode(financingHdr.getCustomer().getCustExternalCode())
+                .build();
+
+        try {
+            financingRemoteService.updateFinancingStatus(
+                    updateFinancingStatusRequest
+            );
+        } catch (Exception ignored) {
+        }
 
         //Branch admin melakukan upload dokumen perjanjian kerjasama
-        financingHdr.setFinancingStatus("SIGNING");
+        financingHdr.setFinancingStatus("INPROCESS");
         financingHdr.setFinancingStep("SIGNING");
         financingHdrRepository.save(financingHdr);
 

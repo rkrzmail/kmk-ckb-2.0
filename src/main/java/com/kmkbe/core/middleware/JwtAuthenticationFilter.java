@@ -60,7 +60,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/error/**",
             "/api/v1/uploads/**",
             "/api/v1/testing/**",
-            "/api/v1/documents/download/loan/**",
+            "/api/v1/documents/download/**",
 
             // internal
             //"/api/v1/internal/user/**",

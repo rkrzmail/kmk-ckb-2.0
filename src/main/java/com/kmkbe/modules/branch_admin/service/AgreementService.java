@@ -124,7 +124,7 @@ public class AgreementService {
                             .build())
                     .collect(Collectors.toList());
 
-            if (result.isEmpty()) {
+            /*if (result.isEmpty()) {
                 result.add(AgreementDto.builder()
                         .no(1)
                         .cwrCode(cwrCode)
@@ -141,7 +141,7 @@ public class AgreementService {
                         .disburseAmt(BigDecimal.valueOf(10000000))
                         .currency("IDR")
                         .build());
-            }
+            }*/
 
             return PaginationResult.<AgreementDto>builder()
                     .currentPage(pageNo + 1)
@@ -161,9 +161,10 @@ public class AgreementService {
             String agreementCode
     ) throws Exception {
         try {
-            final MstFileType mstFileType = mstFileTypeRepository.findByFileTypeCode("AGGREMENT01").orElseThrow(
-                    () -> new IllegalArgumentException("File type not found")
-            );
+            final MstFileType mstFileType = mstFileTypeRepository.findByFileTypeCode("AGGREMENT01")
+                    .orElseThrow(
+                            () -> new IllegalArgumentException("File type not found")
+                    );
 
             final Agreement agreement = agreementRepository.findTopByAgreementCodeOrderByAgreementId(
                     agreementCode
@@ -178,7 +179,7 @@ public class AgreementService {
                 throw new IllegalArgumentException("Agreement Financing not found");
             }
 
-            final String uploadDir = agreement.getFinancingHdr().getCustomer().getCustCode() + "/loan_submission";
+            final String uploadDir = agreement.getFinancingHdr().getCustomer().getCustCode() + "/agreement";
             final String uploadName = mstFileType.getFileTypeCode() + "_" + multipartFile.getOriginalFilename();
             final String uploadedPath = fileStorageService.save(
                     multipartFile,
@@ -200,7 +201,7 @@ public class AgreementService {
 
                 agreementFileRepository.save(agreementFile);
             } else {
-                fileStorageService.delete(agreementFile.getFilePath() + "/" + agreementFile.getFileName(), "");
+                //fileStorageService.delete(agreementFile.getFilePath() + "/" + agreementFile.getFileName(), "");
 
                 agreementFile.setFileName(uploadName);
                 agreementFile.setFilePath(FileUtils.getFilePathFromFullPath(uploadedPath));

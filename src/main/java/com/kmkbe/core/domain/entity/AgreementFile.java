@@ -17,9 +17,20 @@ import java.time.Instant;
 @Table(name = "agreement_file", schema = "public")
 public class AgreementFile {
     @Id
-    @NotNull
-    @ColumnDefault("nextval('agreement_file_agreement_file_id_seq'::regclass)")
-    @Column(name = "agreement_file_id", nullable = false)
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy = GenerationType.SEQUENCE,
+            generator = "agreement_file_agreement_file_id_seq"
+    )
+    @SequenceGenerator(
+            name = "agreement_file_agreement_file_id_seq",
+            sequenceName = "agreement_file_agreement_file_id_seq",
+            allocationSize = 1
+    )
+    @Column(
+            name = "agreement_file_id",
+            columnDefinition = "serial"
+    )
     private Long agreementFileId;
 
     @NotNull

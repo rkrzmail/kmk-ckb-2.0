@@ -159,7 +159,7 @@ public class LoanSubmissionController {
             Authentication authentication
     ) throws Exception {
         return new CommonResult<List<DocumentTemplateFinancingDto>>().success(
-                documentService.fetchDocumentTemplateFinancing()
+                documentService.fetchDocumentTemplateFinancing(authentication)
         );
     }
 
@@ -188,13 +188,15 @@ public class LoanSubmissionController {
     public CommonResult<PaginationResult<MstFileTypeDto>> getDocumentRequirement(
             Authentication authentication,
             HttpServletRequest httpServletRequest,
-            PaginationRequest request
+            PaginationRequest request,
+            Boolean isFirst
     ) throws Exception {
         return new CommonResult<PaginationResult<MstFileTypeDto>>().success(
                 documentService.fetchAllLoanDocumentRequirement(
                         httpServletRequest,
                         authentication,
-                        request
+                        request,
+                        isFirst
                 )
         );
     }

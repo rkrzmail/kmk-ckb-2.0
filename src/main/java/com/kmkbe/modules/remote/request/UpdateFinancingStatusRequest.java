@@ -7,13 +7,13 @@ import lombok.Getter;
 @Getter
 @Builder
 public class UpdateFinancingStatusRequest {
-    @JsonProperty("VendorCode")
+    @JsonProperty("vendor_code")
     private String vendorCode;
 
-    @JsonProperty("FinancingCode")
+    @JsonProperty("financing_code")
     private String financingCode;
 
-    @JsonProperty("Status")
+    @JsonProperty("status")
     private Status status;
 
     public enum Status {
