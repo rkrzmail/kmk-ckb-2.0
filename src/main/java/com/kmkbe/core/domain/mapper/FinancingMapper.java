@@ -2,6 +2,7 @@ package com.kmkbe.core.domain.mapper;
 
 import com.kmkbe.core.domain.dto.FinancingDtlDto;
 import com.kmkbe.core.domain.dto.FinancingHdrDto;
+import com.kmkbe.core.domain.dto.FinancingHdrListDto;
 import com.kmkbe.core.domain.entity.FinancingDtl;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import org.mapstruct.Mapper;
@@ -27,4 +28,6 @@ public interface FinancingMapper {
     FinancingDtlDto dtlDtoFromEntity(FinancingDtl financingDtl);
 
     List<FinancingDtlDto> dtlsDtoFromEntities(List<FinancingDtl> financingDtls);
+
+    FinancingHdr fromDtoList(FinancingHdrListDto listDto);
 }

@@ -11,13 +11,17 @@ import jakarta.persistence.criteria.Subquery;
 import org.springframework.data.jpa.domain.Specification;
 
 public class FinancingHdrSpec {
+    public static final String FIND_ASSIGNMENT_LIST_SQL = """
+            """;
+
+
     public static Specification<FinancingHdr> bySearchBy(String searchBy, String value) {
         return (root, query, criteriaBuilder) -> {
             Join<FinancingHdr, Customer> joinCust = root.join("cust_code", JoinType.INNER);
             Join<FinancingHdr, Bouwheer> joinBouwheer = root.join("bouwheer_code", JoinType.INNER);
 
             if (searchBy == null || StringUtil.isNullOrEmpty(value)) {
-                return criteriaBuilder.and(criteriaBuilder.equal(root.get("1"), "1"));
+                return criteriaBuilder.conjunction();
             }
 
             return switch (searchBy.toLowerCase()) {

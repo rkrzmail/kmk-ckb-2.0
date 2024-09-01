@@ -6,9 +6,11 @@ import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.spec.FinancingHdrSpec;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import io.netty.util.internal.StringUtil;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -51,8 +53,39 @@ public class AssignmentSubmissionService {
 
             MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
             MstUser user = mstUserRepository.findById(authenticateUser.getUserCode()).orElseThrow();
-            Page<FinancingHdr> financingHdrPage = financingHdrRepository.findByMstBranchOrderByFinancingHdrIdDesc(
+            /*Page<FinancingHdr> financingHdrPage = financingHdrRepository.findByMstBranchOrderByFinancingHdrIdDesc(
                     user.getEmployee().getBranch(),
+                    PageRequest.of(pageNo, pageSize)
+            );*/
+
+            String financingStatusFilter = null,
+                    custNameFilter = null,
+                    bouwheerNameFilter = null;
+
+            if(
+                    !StringUtil.isNullOrEmpty(request.getSearchBy())
+                    && !StringUtil.isNullOrEmpty(request.getSearchValue())
+            ){
+                switch (request.getSearchBy().toLowerCase()) {
+                    case "status":
+                        financingStatusFilter = request.getSearchValue();
+                        break;
+                    case "namadebitur":
+                        custNameFilter = request.getSearchValue();
+                        break;
+                    case "pemberikerja":
+                        bouwheerNameFilter = request.getSearchValue();
+                        break;
+                    case "cabang":
+                        break;
+                }
+            }
+
+            Page<FinancingHdr> financingHdrPage = financingHdrRepository.findAllAssignmentFinancingRaw(
+                    user.getEmployee().getBranch().getBranchCode(),
+                    financingStatusFilter,
+                    custNameFilter,
+                    bouwheerNameFilter,
                     PageRequest.of(pageNo, pageSize)
             );
 
