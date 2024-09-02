@@ -237,6 +237,7 @@ public class AgreementService {
                     .title("Peringatan")
                     .message("Tidak bisa mencari Agreement, terjadi kesalahan")
                     .build();
+
             final List<InquiryAgreementCwrDto> data;
             try {
                 BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreement(
@@ -251,9 +252,10 @@ public class AgreementService {
             }
 
             if (data != null && !data.isEmpty()) {
+                Map<String, Object> obj = findCsulBank();
                 return InquiryAgreementDto.builder()
-                        .bankName("")
-                        .rekeningNo("")
+                        .bankName(obj.get("bankName").toString())
+                        .rekeningNo(obj.get("accountNo").toString())
                         .currency(data.getFirst().getCurrency())
                         .disburseAmt(new BigDecimal(data.getFirst().getNtfAmt(), MathContext.DECIMAL64))
                         .build();
@@ -373,11 +375,7 @@ public class AgreementService {
             throw new IllegalStateException("No Valid Invoice to submit Agreement");
         }
 
-        GeneralSettingDtl bank = generalSettingDtlRepository.findTopByGsDtlCode("DTLBANK001")
-                .orElseThrow(() -> new IllegalStateException("Bank not found or not valid"));
-        Map<String, Object> obj = ObjectUtils.strToJson(objectMapper.readValue(bank.getGsDtlValue(), new TypeReference<>() {
-
-        }));
+        Map<String, Object> obj = findCsulBank();
 
         financingRemoteService.postedSubmission(
                 FinancingSubmissionRequest.builder()
@@ -419,5 +417,14 @@ public class AgreementService {
                         .invoices(invoices)
                         .build()
         );
+    }
+
+    private Map<String, Object> findCsulBank() throws JsonProcessingException {
+        GeneralSettingDtl bank = generalSettingDtlRepository.findTopByGsDtlCode("DTLBANK001")
+                .orElseThrow(() -> new IllegalStateException("Bank not found or not valid"));
+
+        return ObjectUtils.strToJson(objectMapper.readValue(bank.getGsDtlValue(), new TypeReference<>() {
+
+        }));
     }
 }
