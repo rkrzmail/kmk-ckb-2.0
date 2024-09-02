@@ -12,6 +12,7 @@ import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
+import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -69,6 +70,7 @@ public class EmailService {
         obj.put("name", customer.getCustName());
         obj.put("otp_code", otpCode);
         obj.put("id_no", customer.getCustIdNo());
+        obj.put("email", customer.getCustEmail());
 
         send(customer.getCustEmail(), obj, M_CUST_NEW_OTP);
     }
@@ -79,6 +81,7 @@ public class EmailService {
         obj.put("name", customer.getCustName());
         obj.put("otp_code", otpCode);
         obj.put("id_no", customer.getCustIdNo());
+        obj.put("email", customer.getCustEmail());
 
         send(customer.getCustEmail(), obj, M_CUST_CHANGE_OTP);
     }
@@ -88,6 +91,7 @@ public class EmailService {
         Map<String, Object> obj = new HashMap<>();
         obj.put("name", customer.getCustName());
         obj.put("id_no", customer.getCustIdNo());
+        obj.put("email", customer.getCustEmail());
 
         send(customer.getCustEmail(), obj, M_CUST_ACTIVE);
     }
@@ -104,6 +108,7 @@ public class EmailService {
             payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
         }
 
+        args.put("email", customer.getCustEmail());
         args.put("name", customer.getCustName());
         args.put("id_no", customer.getCustIdNo());
         args.put("additionalArgs", payloadArgs);
@@ -189,21 +194,17 @@ public class EmailService {
         );
     }
 
-    private JavaMailSender csulMailSender() {
-        final MailRemoteDto internalMail = configRemoteService.fetchEmailInfo();
-        return mailConfig.javaMailSender(
-                internalMail.getServerUrl(),
-                internalMail.getPort(),
-                internalMail.getUsername(),
-                internalMail.getPassword()
-        );
-    }
-
     private String mappingBody(
             String bodyMail,
             final Map<String, Object> args
     ) {
         String body = bodyMail;
+        if (args.get("email") != null) {
+            body = body.replace("{email}", args.get("email").toString());
+        } else {
+            body = body.replace("{email}", "");
+        }
+
         if (args.get("name") != null) {
             body = body.replace("{name}", args.get("name").toString());
         } else {
@@ -232,12 +233,13 @@ public class EmailService {
     }
 
     // only for testing purpose and if failed to send using intenal mail
-    private JavaMailSender testingMailSender() {
+    private JavaMailSender testingMailSender() throws MessagingException {
         return mailConfig.javaMailSender(
                 testingMailHost,
                 testingMailPort,
                 testingMailUsername,
-                testingMailPassword
+                testingMailPassword,
+                false
         );
     }
 
@@ -278,16 +280,15 @@ public class EmailService {
             String email
     ) {
         try {
-            //JavaMailSender mailSender = testingMailSender();
-            JavaMailSender mailSender = csulMailSender();
-            MimeMessage mimeMessage = mailSender.createMimeMessage();
-            mimeMessageTemplate(mimeMessage, template);
-
+            CsulMailSender csulMailSender = new CsulMailSender(mailConfig, configRemoteService);
             int attempts = 0;
             boolean success = false;
             for (int i = 0; i < MAX_SENT_FAIL_ATTEMPTS; i++) {
                 try {
-                    mailSender.send(mimeMessage);
+                    mailConfig.sendHtmlEmail(
+                            csulMailSender.getInternalMail(),
+                            template
+                    );
                     success = true;
                 } catch (Exception e) {
                     attempts++;
@@ -302,7 +303,9 @@ public class EmailService {
 
             if (!success) {
                 log.info("EmailService send email with testing mail sender");
-                mailSender = testingMailSender();
+                JavaMailSender mailSender = testingMailSender();
+                MimeMessage mimeMessage = mailSender.createMimeMessage();
+                mimeMessageTemplate(mimeMessage, template);
                 mailSender.send(mimeMessage);
             }
 
@@ -310,6 +313,30 @@ public class EmailService {
         } catch (Exception e) {
             log.error("sendMailMessage, error {}", e.getMessage());
             return false;
+        }
+    }
+
+
+    private static class CsulMailSender {
+        @Getter
+        private final MailRemoteDto internalMail;
+
+        @Getter
+        private final JavaMailSender mailSender;
+
+
+        private CsulMailSender(
+                MailConfig mailConfig,
+                ConfigRemoteService configRemoteService
+        ) throws MessagingException {
+            internalMail = configRemoteService.fetchEmailInfo();
+            mailSender = mailConfig.javaMailSender(
+                    internalMail.getServerUrl(),
+                    internalMail.getPort(),
+                    internalMail.getUsername(),
+                    internalMail.getPassword(),
+                    internalMail.getEnableSSL() != null && internalMail.getEnableSSL()
+            );
         }
     }
 }

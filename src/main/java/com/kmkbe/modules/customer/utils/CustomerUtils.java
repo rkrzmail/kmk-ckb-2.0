@@ -4,6 +4,7 @@ import com.kmkbe.core.constants.CommonConstants;
 import com.kmkbe.core.domain.dto.CustomerDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.mapper.CustomerMapper;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 
@@ -16,7 +17,7 @@ import java.time.Instant;
 public class CustomerUtils {
     public static Customer authenticateCustomer(Authentication authentication) throws SignatureException {
         if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
-            if(authentication.getPrincipal() instanceof Customer) {
+            if (authentication.getPrincipal() instanceof Customer) {
                 return (Customer) authentication.getPrincipal();
             }
         }
@@ -34,5 +35,12 @@ public class CustomerUtils {
                         Instant.now()
                 ).toMinutes() / (double) CommonConstants.MONTH_IN_MINUTES).setScale(1, RoundingMode.CEILING)
                 .doubleValue();
+    }
+
+    public static void clearCustomerInactiveData(JdbcTemplate jdbcTemplate, Customer customer) {
+        jdbcTemplate.update("DELETE FROM public.legal_file WHERE cust_code = ?", customer.getCustCode());
+        jdbcTemplate.update("DELETE FROM public.customer_personal WHERE cust_code = ?", customer.getCustCode());
+        jdbcTemplate.update("DELETE FROM public.customer_company WHERE cust_code = ?", customer.getCustCode());
+        jdbcTemplate.update("DELETE FROM public.customer WHERE cust_code = ?", customer.getCustCode());
     }
 }

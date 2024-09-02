@@ -145,6 +145,10 @@ public class LoanSubmissionService {
 
             List<PostedInvoiceDto> result = new ArrayList<>();
             for (int i = 0; i < inquiryInvoiceRemote.getRow().size(); i++) {
+                if (StringUtil.isNullOrEmpty(inquiryInvoiceRemote.getRow().get(i).getPoNumber())) {
+                    continue;
+                }
+
                /* FinancingDtl financingDtl = financingDtlService.findBy(inquiryInvoiceRemote.getRow().get(i).getAccountingDocument());
                 if (financingDtl != null) {
                     FinancingHdr financingHdr = financingDtl.getFinancingHdr();
@@ -354,6 +358,24 @@ public class LoanSubmissionService {
                     simulationDisburseResult
             );
 
+           /* final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, null);
+            final InquiryInvoiceRemoteDto inquiryInvoiceRemote;
+
+            try {
+                inquiryInvoiceRemote = invoiceRemoteDto.inquiryInvoice(vendorTokenExtractor.getVendorCode()).getData();
+                List<InquiryInvoiceRemoteDto.InvoiceRemoteDto> invoiceRemoteDto = inquiryInvoiceRemote.getRow();
+                List<PostedInvoiceDto> postedInvoices = new ArrayList<>();
+                for (InquiryInvoiceRemoteDto.InvoiceRemoteDto invoice : invoiceRemoteDto) {
+                    for (PostedInvoicePayload postedInvoicePayload : request.getInvoices()) {
+                        if (invoice.getReference().equals(postedInvoicePayload.getInvoiceCode())) {
+                            postedInvoices.add(postedInvoicePayload.toPostedInvoiceDto());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                //throw new IllegalStateException("Terjdi kesalahan saat mengambil data invoice dari pihak PT. Trakindo Utama.");
+            }*/
+
             final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, request);
 
             financingDtlService.createBulk(
@@ -364,14 +386,14 @@ public class LoanSubmissionService {
                     createdInvoices
             );
 
-            simulationHistoryService.create(
+            /*simulationHistoryService.create(
                     customer,
                     createdFinancingHdr,
                     totalInvoiceAmount,
                     createdFinancingHdr.getRetention(),
                     createdFinancingHdr.getAdminFeeAmt(),
                     createdFinancingHdr.getFinancingAmt()
-            );
+            );*/
 
             return CreatedSimulationDto.builder()
                     .productId(request.getProductId())

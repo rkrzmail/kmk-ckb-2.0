@@ -28,7 +28,7 @@ public class FinancingSubmissionRequest {
     public String financingCode;
 
     @JsonProperty("financing_amount")
-    public Double financingAmount;
+    public String financingAmount;
 
     @JsonProperty("data")
     public List<FinancingInvoice> financingInvoices;
@@ -46,6 +46,6 @@ public class FinancingSubmissionRequest {
         public String reference;
 
         @JsonProperty("invoice_amount")
-        public Double invoiceAmount;
+        public String invoiceAmount;
     }
 }

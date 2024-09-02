@@ -7,6 +7,7 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Date;
 import java.util.UUID;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -21,5 +22,9 @@ public class InvoiceDto {
     private Instant invoiceDate;
     private Instant invoiceDueDate;
     private BigDecimal invoiceAmt;
+    private String poNumber;
+    private Date postingDate;
+    private String test;
+
     //private BouwheerDto bouwheer;
 }

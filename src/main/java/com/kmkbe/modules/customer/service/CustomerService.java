@@ -16,6 +16,7 @@ import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class CustomerService {
     private final CustomerPersonalRepository customerPersonalRepository;
     private final CustomerCompanyRepository customerCompanyRepository;
     private final BCryptPasswordEncoder bcryptEncoder;
+    private final JdbcTemplate jdbcTemplate;
 
     public Customer create(
             SignUpRequest request,
@@ -51,17 +53,7 @@ public class CustomerService {
                 if (find.get().getIsActive()) {
                     throw CommonInvalidException.alreadyRegistered();
                 } else {
-                    CustomerCompany customerCompany = find.get().getCompany();
-                    if (customerCompany != null) {
-                        customerCompanyRepository.delete(customerCompany);
-                    }
-
-                    CustomerPersonal customerPersonal = find.get().getPersonal();
-                    if (customerPersonal != null) {
-                        customerPersonalRepository.delete(customerPersonal);
-                    }
-
-                    customerRepository.delete(find.get());
+                    CustomerUtils.clearCustomerInactiveData(jdbcTemplate, find.get());
                 }
             }
 

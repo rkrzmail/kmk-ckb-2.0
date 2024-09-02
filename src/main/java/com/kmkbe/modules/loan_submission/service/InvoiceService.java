@@ -59,41 +59,29 @@ public class InvoiceService {
         try {
             List<Invoice> invoices = request.getInvoices()
                     .stream()
-                    .map((posted) -> {
-                        invoiceRepository.findByCustomerAndBouwheerInvNoAndCustInvNo(
-                                customer,
-                                posted.getBouwheerInvoiceNo(),
-                                posted.getCustomerInvoiceNo()
-                        ).ifPresent(invoiceRepository::delete);
-
-                        final Invoice invoice = new Invoice();
-                        {
-                            invoice.setInvoiceCode(UUID.randomUUID());
-                            invoice.setCustomer(customer);
-                            invoice.setBouwheer(bouwheer);
-                            invoice.setBouwheerInvNo(posted.getBouwheerInvoiceNo());
-                            invoice.setCustInvNo(posted.getCustomerInvoiceNo());
-                            invoice.setInvoiceDescription(
+                    .map((posted) -> Invoice.builder()
+                            .customer(customer)
+                            .bouwheer(bouwheer)
+                            .bouwheerInvNo(posted.getBouwheerInvoiceNo())
+                            .custInvNo(posted.getCustomerInvoiceNo())
+                            .invoiceDescription(
                                     StringUtil.isNullOrEmpty(posted.getInvoiceDescription())
                                             ? "Invoice By Trakindo"
                                             : posted.getInvoiceDescription()
-                            );
-                            invoice.setInvoiceDate(posted.getInvoiceDate().toInstant());
-                            invoice.setInvoiceDueDate(posted.getInvoiceDueDate().toInstant());
-                            invoice.setInvoiceAmt(posted.getInvoiceAmount().doubleValue());
-                            invoice.setPoNumber(posted.getPoNumber());
-                            invoice.setPostingDate(posted.getPostingDate());
-                            invoice.setUsrCrt(customer.getCustName());
-                            invoice.setDtmCrt(Instant.now());
-                            invoiceRepository.save(invoice);
-                        }
+                            )
+                            .invoiceDate(posted.getInvoiceDate().toInstant())
+                            .invoiceDueDate(posted.getInvoiceDueDate().toInstant())
+                            .invoiceAmt(posted.getInvoiceAmount().doubleValue())
+                            .poNumber(posted.getPoNumber())
+                            .postingDate(posted.getPostingDate())
+                            .usrCrt(customer.getCustName())
+                            .build())
+                    .toList();
 
-                        return invoice;
-                    }).collect(Collectors.toCollection(ArrayList::new));
-
-            //invoices = invoiceRepository.saveAll(invoices);
-
-            return invoices.stream().map(InvoiceMapper.INSTANCE::dtoFromEntity).collect(Collectors.toList());
+            return invoiceRepository.saveAll(invoices)
+                    .stream()
+                    .map(InvoiceMapper.INSTANCE::dtoFromEntity)
+                    .toList();
         } catch (Exception e) {
             log.error("createBulk, error {}", e.getMessage());
             throw e;

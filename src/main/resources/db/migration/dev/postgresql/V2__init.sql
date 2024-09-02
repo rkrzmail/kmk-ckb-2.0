@@ -173,6 +173,8 @@ CREATE TABLE invoice
     invoice_date        TIMESTAMP      NOT NULL,
     invoice_due_date    TIMESTAMP      NOT NULL,
     invoice_amt         NUMERIC(17, 2) NOT NULL,
+    po_number VARCHAR(50) NULL,
+    posting_date timestamp NULL,
     usr_crt             VARCHAR(50)    NOT NULL,
     dtm_crt             TIMESTAMP      NOT NULL,
     usr_upd             VARCHAR(50)    NULL,

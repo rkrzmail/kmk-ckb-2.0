@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.dto.StatusLabelDto;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
+import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingDtlRepository;
@@ -101,14 +102,12 @@ public class DistributionSubmissionService {
                         boolean isNewCust = financingHdrRepository.countByCustomerAndFinancingStatus(e.getCustomer(), "PAID") == 0;
 
                         String color,
-                                label,
                                 currentBranch = null,
                                 currentBranchCode = null,
                                 branchRecommended = null,
                                 branchRecommendedCode = null;
                         if (e.getFinancingStatus().equalsIgnoreCase("new")) {
                             color = "#808080";
-                            label = "Baru";
                         } else if (
                                 e.getFinancingStatus().equalsIgnoreCase("inprocess")
                                         || e.getFinancingStatus().equalsIgnoreCase("signing")
@@ -118,10 +117,8 @@ public class DistributionSubmissionService {
 
                         ) {
                             color = "#ccffcc";
-                            label = "Aktif";
                         } else {
                             color = "#FF5C5C";
-                            label = e.getFinancingStatus();
                         }
 
                         if (e.getMstBranch() != null) {
@@ -148,6 +145,11 @@ public class DistributionSubmissionService {
                             }
                         }
 
+                        MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
+                                e,
+                                MappedFinancingStatus.Type.MajorAccount
+                        );
+
                         return DistributionSubmissionDto.builder()
                                 .financingHdrCode(e.getFinancingHdrCode().toString())
                                 .custName(e.getCustomer().getCustName())
@@ -161,8 +163,8 @@ public class DistributionSubmissionService {
                                 .currentBranch(currentBranch)
                                 .custStatus(isNewCust ? "New Customer" : "Existing Customer")
                                 .status(StatusLabelDto.builder()
-                                        .status(e.getFinancingStatus())
-                                        .statusLabel(label)
+                                        .status(mappedFinancingStatus.getStatus())
+                                        .statusLabel(mappedFinancingStatus.getLabel())
                                         .color(color)
                                         .build())
                                 .dtmCrt(e.getDtmCrt())

@@ -87,16 +87,33 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
 
     @Query(
             value = """
-                    select *
-                        from
-                            financing_hdr
-                        order by
-                            financing_hdr.financing_hdr_id desc
+                    select
+                        fh.*
+                    from
+                        public.financing_hdr fh
+                    where
+                        fh.financing_hdr_code in (
+                                                     select
+                                                         fd.financing_hdr_code
+                                                     from
+                                                         public.financing_dtl fd
+                                                             join public.invoice iv on fd.invoice_code = iv.invoice_code
+                                                 )
+                    order by
+                        fh.financing_hdr_id desc
                     """,
             countQuery = """
                     select count(*)
                     from
-                        financing_hdr
+                        financing_hdr fh
+                    where
+                        fh.financing_hdr_code in (
+                                                     select
+                                                         fd.financing_hdr_code
+                                                     from
+                                                         public.financing_dtl fd
+                                                             join public.invoice iv on fd.invoice_code = iv.invoice_code
+                                                 )
                     """,
             nativeQuery = true
     )

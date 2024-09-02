@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 
 public class MD5Test {
     private static final String[] VENDOR_CODES = {
+            "0002000493",
             "0004000012"
     };
 
@@ -65,7 +66,7 @@ public class MD5Test {
             }
         }
 
-        String result = String.join(";", encodedPayloads);
+        String result = String.join("\n", encodedPayloads);
         Assertions.assertNotNull(result);
         Assertions.assertFalse(result.isEmpty());
 

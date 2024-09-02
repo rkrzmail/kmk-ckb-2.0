@@ -27,10 +27,4 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID>, JpaSpec
             Specification<Invoice> spec,
             Pageable pageable
     );
-
-    Page<Invoice> findAllBy(
-            Specification<Invoice> spec,
-            Pageable pageable
-    );
-
 }

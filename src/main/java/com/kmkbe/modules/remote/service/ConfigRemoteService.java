@@ -52,6 +52,8 @@ public class ConfigRemoteService {
                     }
             );
 
+            System.out.println("Successfully get email config");
+
             return response.getBody();
         } catch (Exception e) {
             log.error("fetchEmailInfo: {}", e.getMessage());

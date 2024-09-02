@@ -27,6 +27,7 @@ import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import io.netty.util.internal.StringUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -359,14 +360,18 @@ public class AgreementService {
                 .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
 
         List<FinancingSubmissionRequest.FinancingInvoice> financingInvoices = financingDtls.stream()
-                .filter((e) -> e.getInvoice() != null)
+                .filter((e) -> e.getInvoice() != null && !StringUtil.isNullOrEmpty(e.getInvoice().getPoNumber()))
                 .map((e) -> FinancingSubmissionRequest.FinancingInvoice.builder()
-                        .invoiceAmount(e.getInvoice().getInvoiceAmt())
+                        .invoiceAmount(new BigDecimal(e.getInvoice().getInvoiceAmt(), MathContext.DECIMAL64).toString())
                         .poNumber(e.getInvoice().getPoNumber())
                         .reference(e.getInvoice().getCustInvNo())
                         .accountingDocument(e.getInvoice().getBouwheerInvNo())
                         .build())
                 .toList();
+
+        if (financingInvoices.isEmpty()) {
+            throw new IllegalStateException("No Valid Invoice to submit Agreement");
+        }
 
         GeneralSettingDtl bank = generalSettingDtlRepository.findTopByGsDtlCode("DTLBANK001")
                 .orElseThrow(() -> new IllegalStateException("Bank not found or not valid"));
@@ -382,7 +387,7 @@ public class AgreementService {
                         .bankName(obj.get("bankName").toString())
                         .bankKey(obj.get("bankKey").toString())
                         .financingCode(request.getFinancingHdrCode())
-                        .financingAmount(financingHdr.getFinancingAmt())
+                        .financingAmount(new BigDecimal(financingHdr.getFinancingAmt(), MathContext.DECIMAL64).toString())
                         .financingInvoices(financingInvoices)
                         .build()
         );
