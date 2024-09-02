@@ -28,11 +28,14 @@ public class UserInternalSeederService {
     private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
 
     //@Transactional
-    public void seed() {
-        /*clearAdmin();
-        seedBranchAdmin();*/
+    public void seedMajorAcc() {
         clearMajorAccount();
         seedMajorAccount();
+    }
+
+    public void seedAdmin() {
+        clearAdmin();
+        seedBranchAdmin();
     }
 
     private void clearAdmin() {

@@ -9,6 +9,7 @@ import com.kmkbe.modules.customer.service.CustomerSeederService;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.modules.user.service.UserInternalSeederService;
+import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
@@ -118,9 +119,23 @@ public class TestingController {
         return new CommonResult<>().success(fileStorageService.load("Banner Jawa Tengah.jpg"));
     }
 
-    @GetMapping("/seed")
-    public CommonResult<Object> seedUserInternal() {
-        userInternalSeederService.seed();
+    @GetMapping("/seed/user")
+    public CommonResult<Object> seedUserInternal(
+            @RequestParam("key") String key
+    ) {
+        if (StringUtil.isNullOrEmpty(key)) {
+            return new CommonResult<>().success(
+                    null
+            );
+        } else if (!key.equalsIgnoreCase("0987654321")) {
+            return new CommonResult<>().success(
+                    null
+            );
+        }
+
+
+        userInternalSeederService.seedMajorAcc();
+        userInternalSeederService.seedAdmin();
         return new CommonResult<>().success(
                 null
         );
@@ -154,31 +169,6 @@ public class TestingController {
 
         return new CommonResult<>().success(fileDownloadUri);
     }
-
-    @GetMapping("/view/{id}")
-    public ResponseEntity<?> download(
-            @PathVariable String id
-//            ,@RequestParam(value = "token", defaultValue = "") String token
-    ) throws Exception {
-        Path filePath = Paths.get("uploads", id);
-
-        InputStream inputStream = new FileInputStream(filePath.toFile());
-        InputStreamResource inputStreamResource = new InputStreamResource(inputStream);
-
-        HttpHeaders headers = new HttpHeaders();
-        String mimeType = Files.probeContentType(filePath);
-
-        if (mimeType == null) {
-            mimeType = "application/octet-stream"; // Fallback MIME type
-        }
-
-        headers.setContentType(MediaType.parseMediaType(mimeType));
-        headers.setContentLength(Files.size(filePath));
-        headers.setContentDispositionFormData("attachment", id);
-
-        return new ResponseEntity<>(inputStreamResource, headers, HttpStatus.OK);
-    }
-
 
     public String storeFile(MultipartFile file) {
         try {
