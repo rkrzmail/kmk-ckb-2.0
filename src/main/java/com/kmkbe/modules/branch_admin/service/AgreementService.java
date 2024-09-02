@@ -125,8 +125,8 @@ public class AgreementService {
                             .build())
                     .collect(Collectors.toList());
 
-            /*if (result.isEmpty()) {
-                result.add(AgreementDto.builder()
+            if (result.isEmpty()) {
+                /*result.add(AgreementDto.builder()
                         .no(1)
                         .cwrCode(cwrCode)
                         .agreementNo("001")
@@ -141,8 +141,8 @@ public class AgreementService {
                         .disburseDate(new Date())
                         .disburseAmt(BigDecimal.valueOf(10000000))
                         .currency("IDR")
-                        .build());
-            }*/
+                        .build());*/
+            }
 
             return PaginationResult.<AgreementDto>builder()
                     .currentPage(pageNo + 1)
