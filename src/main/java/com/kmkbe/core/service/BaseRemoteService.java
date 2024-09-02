@@ -59,6 +59,10 @@ public class BaseRemoteService {
         return confinsMouBaseUrl + "/Generic/GetPagingObjectBySQL";
     }
 
+    public String Los_Generic_GetPagingObjectBySQL() {
+        return confinsMouBaseUrl + "/Generic/GetPagingObjectBySQL";
+    }
+
     public String Fou_Generic_GetPagingObjectBySQL() {
         return confinsFouBaseUrl + "/Generic/GetPagingObjectBySQL";
     }
