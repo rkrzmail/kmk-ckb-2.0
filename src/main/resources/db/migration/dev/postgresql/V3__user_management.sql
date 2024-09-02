@@ -1,4 +1,3 @@
-set search_path = "users";
 
 --region users.mst_branch
 DROP TABLE IF EXISTS users.mst_branch CASCADE;
@@ -482,3 +481,568 @@ VALUES
 --endregion
 
 --endregion
+--endregion
+
+-- region V4
+alter table public.customer
+    add column if not exists agree_legal_share boolean default false not null;
+
+alter table public.customer
+    add column if not exists cust_external_code varchar(50) null;
+
+alter table public.invoice
+    add column if not exists status varchar(20) null;
+
+alter table public.financing_hdr
+    add column if not exists financing_step VARCHAR(50) NULL;
+
+alter table public.bouwheer
+    add column if not exists secret_key VARCHAR(100) NULL;
+
+alter table public.bouwheer
+    add column if not exists api_key VARCHAR(100) NULL;
+
+alter table public.financing_hdr
+    add column if not exists financing_step VARCHAR(50) NULL;
+
+alter table public.invoice
+    add column if not exists po_number VARCHAR(50) NULL;
+
+alter table public.invoice
+    add column if not exists posting_date timestamp NULL;
+
+drop table if exists public.simulation_hist cascade;
+create table public.simulation_hist
+(
+    simulation_hist_id   BIGSERIAL             NOT NULL,
+    simulation_hist_code UUID,
+    financing_hdr_code   UUID                  NOT NULL,
+    total_invoice_amt    NUMERIC(17, 2)        NOT NULL,
+    retention            NUMERIC(5, 2)         NOT NULL,
+    admin_amt            NUMERIC(17, 2)        NOT NULL,
+    financing_amt        NUMERIC(17, 2)        NOT NULL,
+    is_used              BOOLEAN DEFAULT FALSE NOT NULL,
+    usr_crt              VARCHAR(50)           NOT NULL,
+    dtm_crt              TIMESTAMP             NOT NULL,
+    usr_upd              VARCHAR(50)           NULL,
+    dtm_upd              TIMESTAMP             NULL,
+    PRIMARY KEY (simulation_hist_code),
+    constraint fk_simulation_hist_to_financing_hdr foreign key (financing_hdr_code) references public.financing_hdr (financing_hdr_code)
+);
+
+drop table if exists public.cwr cascade;
+create table public.cwr
+(
+    cwr_id          bigserial               not null,
+    cwr_code        varchar(20),
+    cust_code       uuid                    not null,
+    bouwheer_code   uuid                    not null,
+    branch_code     varchar(5)              not null,
+    cwr_type        varchar(100)            not null,
+    cwr_type_desc   varchar(300)            not null,
+    facility        varchar(100)            not null,
+    is_revolving    bool                    not null,
+    currency        varchar(5)              not null,
+    cwr_start_date  timestamp               not null,
+    cwr_end_date    timestamp               not null,
+    plafond_amt     numeric(17, 2)          not null,
+    realisation_amt numeric(17, 2)          not null,
+    status          varchar(20)             not null,
+    usr_crt         varchar(50)             not null,
+    dtm_crt         timestamp default now() not null,
+    usr_upd         varchar(50)             null,
+    dtm_upd         timestamp               null,
+    primary key (cwr_code),
+    constraint fk_cwr_to_customer foreign key (cust_code) references public.customer (cust_code),
+    constraint fk_cwr_to_bouwheer foreign key (bouwheer_code) references public.bouwheer (bouwheer_code)
+);
+
+drop table if exists public.agreement cascade;
+create table public.agreement
+(
+    agreement_id       bigserial               not null,
+    agreement_code     varchar(20),
+    cwr_code           varchar(20)             not null,
+    application_code   varchar(20)             not null,
+    financing_hdr_code uuid                    not null,
+    facility           varchar(100)            not null,
+    currency           varchar(5)              not null,
+    financing_amt      numeric(17, 2)          not null,
+    status             varchar(20)             not null,
+    product_offering   varchar(100)            not null,
+    usr_crt            varchar(50)             not null,
+    dtm_crt            timestamp default now() not null,
+    usr_upd            varchar(50),
+    dtm_upd            timestamp,
+    primary key (agreement_code),
+    constraint fk_agreement_to_cwr foreign key (cwr_code) references public.cwr (cwr_code),
+    constraint fk_agreement_to_financing_hdr foreign key (financing_hdr_code) references public.financing_hdr (financing_hdr_code)
+);
+
+drop table if exists public.branch_area_mapping cascade;
+create table public.branch_area_mapping
+(
+    branch_area_mapping_id bigserial,
+    branch_code            varchar(3),
+    area                   varchar(50)             not null,
+    province               varchar(50)             not null,
+    city                   varchar(50)             not null,
+    is_active              bool                    not null,
+    usr_crt                varchar(50)             not null,
+    dtm_crt                timestamp default now() not null,
+    usr_upd                varchar(50),
+    dtm_upd                timestamp,
+    primary key (branch_area_mapping_id),
+    constraint fk_branch_area_mapping_to_mst_branch foreign key (branch_code) references users.mst_branch
+);
+
+insert into
+    public.branch_area_mapping (branch_code, area, province, city, is_active, usr_crt)
+select
+    bam."Kode Cabang"::text,
+    bam.area,
+    bam.provinsi,
+    bam.kota,
+    true::boolean as active,
+    'system'
+from
+    test.branch_area_mapping bam
+        join users.mst_branch mb on bam."Kode Cabang"::text = mb.branch_code;
+
+delete
+from
+    public.email_template
+where
+    email_template_code = 'M_BRANCH_ASSIGN';
+
+INSERT INTO
+    email_template
+(email_template_code, subject_mail, body_mail, is_active, usr_crt, dtm_crt)
+VALUES
+    ('M_BRANCH_ASSIGN', 'Prospect Factoring {bouwheerName}', '<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .tbl {
+            border-collapse: collapse;
+        }
+
+        .tbl th {
+            background-color: #083B82;
+            color: #fff;
+            padding: 0.5rem 0.7rem;
+            font-weight: 700;
+            font-size: 0.8em;
+        }
+
+        .tbl td {
+            padding: 0.5rem 0.7rem;
+            font-weight: 400;
+        }
+
+        .tbl-center td {
+            text-align: center;
+        }
+
+        .br {
+            border: 0.5px solid #000;
+        }
+
+        .primary {
+            font-weight: bold;
+            background-color: #083B82;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <p style="line-height: 5px;">
+        Berikut adalah daftar penempatan utilisasi kontrak factoring Truckindo Utama pada cabang {branchArea}.
+        Dengan detail pengajuan :
+    </p>
+    <br>
+    <table>
+        <tr>
+            <td>
+                Nama Perusahaan
+            </td>
+            <td>:</td>
+            <td>
+                {companyName}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Email
+            </td>
+            <td>:</td>
+            <td>
+                {email}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                No. Hp
+            </td>
+            <td>:</td>
+            <td>
+                {phoneNumber}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Tanggal Pengajuan
+            </td>
+            <td>:</td>
+            <td>
+                {applicationDate}
+            </td>
+        </tr>
+    </table>
+    <br>
+    <table class="tbl tbl-center">
+        <thead>
+            <tr>
+                <th>No. Invoice</th>
+                <th>Deskripsi</th>
+                <th>Pemberi Kerja</th>
+
+                <th>Tanggal Invoice</th>
+                <th>Tanggal Jatuh Tempo</th>
+                <th>Nilai Tagihan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {invoices}
+        </tbody>
+    </table>
+    <br>
+    <p>Adapun rincian dari pengajuan ini sebagai berikut:</p>
+    <table class="tbl br text-left">
+        <tr>
+            <td>
+                Nilai Transaksi
+            </td>
+            <td>
+                {invoiceAmt}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Retensi
+            </td>
+            <td>
+                {retention}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Nilai Pembiayaan
+            </td>
+            <td>
+                {financingAmt}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Nilai Layaan
+            </td>
+            <td>
+                {totalFeeAmt}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Tenor
+            </td>
+            <td>
+                {tenor}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Jatuh Tempo
+            </td>
+            <td>
+                {financingDueDate}
+            </td>
+        </tr>
+        <tr class="primary">
+            <td>
+                Total Pencairan
+            </td>
+            <td>
+                {disburseAmt}
+            </td>
+        </tr>
+    </table>
+    <p>
+        Demikian informasi ini disampaikan terima kasih atas kepercayaan Anda.
+    </p>
+    <br />
+    <p>Hormat Kami,</p>
+    <p style="color: rgb(14, 193, 14); font-weight: bold">PT. Candra Sakti Utama Leasing</p>
+    <img src="https://www.csulfinance.com/cfind/source/images/logo.png" />
+</body>
+
+</html>', true, 'SYSTEM', NOW());
+
+alter table public.mst_file_type
+    add column if not exists cust_type_code varchar(50) null;
+
+alter table public.legal_file
+    add column if not exists  file_no varchar(50) null;
+
+alter table legal_file
+    ALTER COLUMN file_type_code DROP NOT NULL;
+
+alter table public.financing_hdr
+    add column if not exists branch_code varchar(3);
+
+alter table public.financing_hdr
+    drop constraint if exists fk_financing_hdr_to_mst_branch;
+
+alter table public.financing_hdr
+    add constraint fk_financing_hdr_to_mst_branch foreign key (branch_code) references users.mst_branch (branch_code);
+
+
+drop table if exists public.agreement_file cascade;
+create table public.agreement_file
+(
+    agreement_file_id bigserial,
+    agreement_code    varchar(20)  not null,
+    file_type_code    varchar(20)  not null,
+    file_name         varchar(500) not null,
+    file_path         varchar(8000),
+    content_type      varchar(500),
+    usr_crt           varchar(50),
+    dtm_crt           timestamp,
+    usr_upd           varchar(50),
+    dtm_upd           timestamp,
+    primary key (agreement_file_id),
+    constraint fk_agreement_file_to_agreement foreign key (agreement_code) references public.agreement (agreement_code),
+    constraint fk_agreement_file_to_mst_file_type foreign key (file_type_code) references public.mst_file_type
+);
+
+delete
+from
+    public.mst_file_type
+where
+    file_type_code = 'AGGREMENT01';
+insert into
+    public.mst_file_type(file_type_code, file_type_name, file_type_desc, file_allocation, is_mandatory, max_size_mb,
+                         usr_crt, dtm_crt)
+values
+    ('AGGREMENT01', 'Kontrak Persetujuan', 'Kontrak Persetujuan', 'Agreement', false, 20, 'system', now());
+
+
+delete
+from
+    public.general_setting_hdr
+where
+    gs_hdr_code = 'BANKNM001';
+insert into
+    public.general_setting_hdr (gs_hdr_code, gs_description, usr_crt, dtm_crt, is_active)
+values
+    ('BANK001',
+     'Csul Bank Account',
+     'system',
+     now(),
+     true);
+
+delete
+from
+    public.general_setting_dtl
+where
+    gs_dtl_code = 'DTLBANK001';
+insert into
+    public.general_setting_dtl (gs_dtl_code, gs_hdr_code, gs_dtl_value, usr_crt, dtm_crt, is_active)
+values
+    ('DTLBANK001',
+     'BANK001',
+     '"{\"accountNo\":\"2132412412421\",\"accountName\":\"CSUL Finance\",\"bankName\":\"Mandiri\",\"bankKey\":\"BMRI008\"}"',
+     'system',
+     now(),
+     true);
+
+delete
+from
+    public.email_template
+where
+    email_template_code = 'M_BOUWHEER_PAYMENT';
+INSERT INTO
+    email_template
+(email_template_code, subject_mail, body_mail, is_active, usr_crt, dtm_crt)
+VALUES
+    ('M_BOUWHEER_PAYMENT', 'Pembiayaan Invoice Vendor {vendorCode} menggunakan CSUL Finance', '<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            margin: 20px;
+        }
+
+        .header,
+        .footer {
+            margin-bottom: 20px;
+        }
+
+        .header {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .table-container {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .table-container th,
+        .table-container td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        .table-container th {
+            background-color: #002060;
+            color: white;
+        }
+
+        .table-container tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .table-container tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div>
+            Yth. {bouwheerName},<br>
+            Terdapat transaksi yang akan dibiayai oleh CSUL Finance, sehingga perlu adanya perubahan bank account
+            menggunakan bank account CSUL.
+            Dengan detail vendor:
+        </div>
+        <br/>
+        <table>
+            <tr>
+                <td>
+                    Nama Vendor
+                </td>
+                <td>:</td>
+                <td>
+                    {vendorName}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Vendor Code
+                </td>
+                <td>:</td>
+                <td>
+                    {vendorCode}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Account No.
+                </td>
+                <td>:</td>
+                <td>
+                    {accountNo}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Bank Account
+                </td>
+                <td>:</td>
+                <td>
+                    {bankAccount}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Bank Name
+                </td>
+                <td>:</td>
+                <td>
+                    {bankName}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Bank Key
+                </td>
+                <td>:</td>
+                <td>
+                    {bankKey}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Tanggal Pengajuan
+                </td>
+                <td>:</td>
+                <td>
+                    {tglPengajuan}
+                </td>
+            </tr>
+        </table>
+        <br>
+        <p>
+            Dengan detail pengajuan:
+        </p>
+        <table class="table-container">
+            <thead>
+                <tr>
+                    <th>No. Invoice</th>
+                    <th>Deskripsi</th>
+                    <th>Pemberi Kerja</th>
+                    <th>Tanggal Invoice</th>
+                    <th>Tanggal Jatuh Tempo</th>
+                    <th>Nilai Tagihan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {invoices}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            Demikian informasi ini disampaikan, terima kasih atas kepercayaannya.<br><br>
+            Hormat Kami,
+        </div>
+        <p style="color: rgb(14, 193, 14); font-weight: bold">PT. Candra Sakti Utama Leasing</p>
+        <img src="https://www.csulfinance.com/cfind/source/images/logo.png" />
+    </div>
+</body>
+
+</html>', true, 'SYSTEM', NOW());
+
+alter table public.agreement
+    add column if not exists approval_flag varchar(150) null;
+-- endregion

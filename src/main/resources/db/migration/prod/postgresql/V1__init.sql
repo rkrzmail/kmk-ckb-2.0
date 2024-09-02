@@ -846,8 +846,6 @@ values
 -- endregion
 
 -- region V3
-set search_path = users;
-
 --region users.mst_branch
 DROP TABLE IF EXISTS users.mst_branch CASCADE;
 CREATE TABLE users.mst_branch
@@ -1654,7 +1652,7 @@ alter table public.financing_hdr
     add column if not exists branch_code varchar(3);
 
 alter table public.financing_hdr
-    drop constraint fk_financing_hdr_to_mst_branch;
+    drop constraint if exists fk_financing_hdr_to_mst_branch;
 
 alter table public.financing_hdr
     add constraint fk_financing_hdr_to_mst_branch foreign key (branch_code) references users.mst_branch (branch_code);
@@ -1891,4 +1889,7 @@ VALUES
 </body>
 
 </html>', true, 'SYSTEM', NOW());
+
+alter table public.agreement
+    add column if not exists approval_flag varchar(150) null;
 -- endregion
