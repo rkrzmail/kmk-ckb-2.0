@@ -235,7 +235,7 @@ public class AgreementService {
 
             CommonInvalidException ex = CommonInvalidException.builder()
                     .title("Peringatan")
-                    .message("Tidak bisa mencari Agreement, harap input CWR aktif di Confins terlebih dahulu")
+                    .message("Tidak bisa mencari Agreement, terjadi kesalahan")
                     .build();
             final List<InquiryAgreementCwrDto> data;
             try {

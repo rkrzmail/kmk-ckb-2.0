@@ -82,7 +82,7 @@ public class CwrRemoteService {
             );
 
             final ResponseEntity<BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>>> response = restTemplate.exchange(
-                    baseRemoteService.Mou_Generic_GetPagingObjectBySQL(),
+                    baseRemoteService.Los_Generic_GetPagingObjectBySQL(),
                     HttpMethod.POST,
                     requestArgs,
                     new ParameterizedTypeReference<>() {
