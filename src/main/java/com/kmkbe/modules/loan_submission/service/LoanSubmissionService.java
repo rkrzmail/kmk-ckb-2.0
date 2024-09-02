@@ -2,12 +2,10 @@ package com.kmkbe.modules.loan_submission.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.core.domain.entity.Bouwheer;
-import com.kmkbe.core.domain.entity.Customer;
-import com.kmkbe.core.domain.entity.FinancingHdr;
-import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.*;
 import com.kmkbe.core.domain.repository.BouwheerRepository;
+import com.kmkbe.core.domain.repository.LegalFileRepository;
 import com.kmkbe.core.domain.repository.ProductRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.exception.LoanDocMandatoryException;
@@ -64,6 +62,7 @@ public class LoanSubmissionService {
     private final MstFileTypeService mstFileTypeService;
     private final EmailService emailService;
     private final SimulationHistoryService simulationHistoryService;
+    private final LegalFileRepository legalFileRepository;
 
     public List<PostedInvoiceDto> fetchActiveInvoice(
             Authentication authentication,
@@ -420,17 +419,32 @@ public class LoanSubmissionService {
                 throw new BadCredentialsException("Pin is invalid, try to entry right pin");
             }
 
-            mstFileTypeService.getAll()
-                    .forEach(mstFileType -> {
-                        if (
-                                request.getDocuments()
-                                        .stream()
-                                        .noneMatch(document -> document.getFileTypeCode().equals(mstFileType.getFileTypeCode()))
-                                        && mstFileType.getIsMandatory()
-                        ) {
-                            throw new LoanDocMandatoryException("Mandatory file: " + mstFileType.getFileTypeDesc() + " is not present, try to attach the file");
-                        }
-                    });
+            boolean shouldUploadMandatory = false;
+            List<LegalFile> legalFiles = legalFileRepository.findAllByCustCode(customer);
+            if (
+                    legalFiles
+                            .stream()
+                            .noneMatch(
+                                    file -> file.getFileTypeCode()
+                                            .getFileTypeCode()
+                                            .equalsIgnoreCase("DOC006")
+                                            && !DateTimeUtils.SDF_STANDARD_DATE.format(new Date(file.getDtmUpd().toEpochMilli()))
+                                            .equalsIgnoreCase(DateTimeUtils.SDF_STANDARD_DATE.format(new Date()))
+                            )
+            ) {
+                throw new LoanDocMandatoryException("Surat Instruksi Transfer belum di perbaharui, silahkan upload terlebih dahulu");
+            }
+
+            List<MstFileType> mandatoryFile = mstFileTypeService.getAllMandatory();
+            for (MstFileType mstFileType : mandatoryFile) {
+                if (
+                        legalFiles
+                                .stream()
+                                .noneMatch(file -> file.getFileTypeCode().getFileTypeCode().equals(mstFileType.getFileTypeCode()))
+                ) {
+                    throw new LoanDocMandatoryException("Harap upload semua dokumen mandatory terlebih dahulu");
+                }
+            }
 
             final FinancingHdrDto createdFinancing = financingHdrService.getByCode(request.getFinancingHdrCode());
             final List<InvoiceEmailPayload> invoices = createdFinancing.getDetails()
