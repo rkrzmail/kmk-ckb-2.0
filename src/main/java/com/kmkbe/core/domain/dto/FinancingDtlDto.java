@@ -19,7 +19,6 @@ public class FinancingDtlDto implements Serializable {
     private UUID financingDtlCode;
     private Long financingDtlId;
     private String bouwheerInvNo;
-    private Long invoiceSeqno;
     private Instant paidToCustDate;
     private Instant bouwheerPaidDate;
     private InvoiceDto invoice;

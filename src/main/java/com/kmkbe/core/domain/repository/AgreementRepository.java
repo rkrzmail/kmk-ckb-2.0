@@ -25,12 +25,14 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     @Query(
             value = "SELECT cwr.cwr_code, ag.agreement_code, fh.financing_hdr_code, " +
                     "bw.bouwheer_code, bw.bouwheer_name, ag.financing_amt, " +
-                    "fh.disburse_date, ag.currency, fh.disburse_amt, " +
+                    "fh.disburse_date as disburse_date, ag.currency, fh.disburse_amt, " +
+                    "ct.cust_name, ct.cust_code," +
                     "ROW_NUMBER() OVER (ORDER BY fh.disburse_date DESC) as no " +
                     "FROM public.agreement ag " +
                     "JOIN public.cwr ON ag.cwr_code = cwr.cwr_code " +
                     "JOIN public.financing_hdr fh ON ag.financing_hdr_code = fh.financing_hdr_code " +
                     "JOIN public.bouwheer bw ON fh.bouwheer_code = bw.bouwheer_code " +
+                    "JOIN public.customer ct ON cwr.cust_code = ct.cust_code " +
                     "WHERE ag.cwr_code = :cwrCode AND ag.financing_hdr_code = :financingHdrCode " +
                     "ORDER BY fh.disburse_date DESC",
             countQuery = "SELECT COUNT(*) FROM public.agreement ag " +

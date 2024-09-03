@@ -125,27 +125,7 @@ public class CwrService {
 
     public InquiryCwrDto inquiryCwr(String cwrNo) throws JsonProcessingException, ParseException {
         try {
-            if (cwrNo.equalsIgnoreCase("1")) {
-                List<InquiryCwrRemoteDto> data = new ArrayList<>();
-                data.add(sample());
-
-                return InquiryCwrDto.builder()
-                        .cwrStartDate(DateTimeUtils.timestampToDate(data.getFirst().getStartDt()))
-                        .cwrEndDate(DateTimeUtils.timestampToDate(data.getFirst().getEndDt()))
-                        .cwrCode(cwrNo)
-                        .loanAmt(new BigDecimal(data.getFirst().getRealisationAmt(), MathContext.DECIMAL64))
-                        .plafondAmt(new BigDecimal(data.getFirst().getPlafondAmt(), MathContext.DECIMAL64))
-                        .currency(data.getFirst().getCurrency())
-                        .build();
-            }
-
-            cwrRepository.findById(cwrNo).ifPresent(cwr -> {
-                throw CommonInvalidException.builder()
-                        .title("Peringatan")
-                        .message("Nomor CWR sudah di input sebelumnya")
-                        .build();
-            });
-
+            validateCwr(cwrNo);
             CommonInvalidException ex = CommonInvalidException.builder()
                     .title("Peringatan")
                     .message("Harap input CWR aktif di Confins terlebih dahulu")
@@ -186,24 +166,21 @@ public class CwrService {
             CreateInquiryCwrRequest request
     ) throws JsonProcessingException, SignatureException, ParseException {
         try {
+            validateCwr(request.getCwrNo());
             final List<InquiryCwrRemoteDto> data;
-            if (request.getCwrNo().equalsIgnoreCase("1")) {
-                data = List.of(sample());
-            } else {
-                try {
-                    BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> response = cwrRemoteService.inquiryCwr(
-                            InquiryCwrRemoteRequest.builder()
-                                    .cwrNo(request.getCwrNo())
-                                    .build()
-                    );
+            try {
+                BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> response = cwrRemoteService.inquiryCwr(
+                        InquiryCwrRemoteRequest.builder()
+                                .cwrNo(request.getCwrNo())
+                                .build()
+                );
 
-                    data = response.getData();
-                } catch (Exception e) {
-                    throw CommonInvalidException.builder()
-                            .title("Peringatan")
-                            .message("Harap input CWR aktif di Confins terlebih dahulu")
-                            .build();
-                }
+                data = response.getData();
+            } catch (Exception e) {
+                throw CommonInvalidException.builder()
+                        .title("Peringatan")
+                        .message("Harap input CWR aktif di Confins terlebih dahulu")
+                        .build();
             }
 
 
@@ -255,5 +232,16 @@ public class CwrService {
         String sample = "{\"rn\":1,\"CwrNo\":\"41450CWR2024626\",\"DebtorType\":\"SINGLE\",\"CustName\":\"JOMON PERSADA NUSANTARA\",\"CustNo\":\"41400001208\",\"StartDt\":\"2023-08-29T00:00:00\",\"EndDt\":\"2024-08-29T00:00:00\",\"CurrStep\":\"Active\",\"LastStep\":\"CWR Activation\",\"CwrTypeDesc\":\"FACTORING\",\"CwrType\":\"FACTORING\",\"CwrStat\":\"ACT\",\"PlafondAmt\":9000000000,\"MrCwrTypeCode\":\"FACTORING\",\"Version\":1,\"AFVersion\":null,\"OfficeCode\":\"414\",\"OfficeName\":\"JAKARTA 3\",\"CwrStatDescr\":\"ACTIVE\",\"Facility\":\"MODAL KERJA\",\"IsRevolving\":true,\"Currency\":\"IDR\",\"RealisationAmt\":1719717561,\"LastApprover\":\"-\",\"GroupName\":null,\"GroupNo\":null,\"IsSuspend\":false,\"ChangeCwrTrxNo\":null}";
         return objectMapper.readValue(sample, new TypeReference<>() {
         });
+    }
+
+    public void validateCwr(String cwrNo) {
+        final Cwr existingCwr = cwrRepository.findTopByCwrCode(cwrNo)
+                .orElse(null);
+        if (existingCwr != null) {
+            throw CommonInvalidException.builder()
+                    .title("Peringatan")
+                    .message("Nomor CWR sudah di input sebelumnya")
+                    .build();
+        }
     }
 }

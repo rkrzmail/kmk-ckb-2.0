@@ -49,7 +49,7 @@ public class AuthController {
     private final CustomerRemoteService customerRemoteService;
     private final DocumentService documentService;
 
-    @Transactional
+    //@Transactional
     @PostMapping("/sign-up")
     public CommonResult<RequestOtpDto> signUp(
             @Valid @RequestBody SignUpRequest request

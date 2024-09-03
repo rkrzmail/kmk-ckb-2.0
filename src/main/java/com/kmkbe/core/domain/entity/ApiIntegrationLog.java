@@ -3,11 +3,13 @@ package com.kmkbe.core.domain.entity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.time.Instant;
 
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Getter
 @Setter
 @Entity
@@ -18,8 +20,15 @@ public class ApiIntegrationLog {
             strategy = GenerationType.SEQUENCE,
             generator = "api_integration_log_id_gen"
     )
-    @SequenceGenerator(name = "api_integration_log_id_gen", sequenceName = "api_integration_log_api_log_id_seq", allocationSize = 1)
-    @Column(name = "api_log_id", nullable = false)
+    @SequenceGenerator(
+            name = "api_integration_log_id_gen",
+            sequenceName = "api_integration_log_api_log_id_seq",
+            allocationSize = 1
+    )
+    @Column(
+            name = "api_log_id",
+            columnDefinition = "serial"
+    )
     private Long apiLogId;
 
     @Size(max = 500)
@@ -47,14 +56,16 @@ public class ApiIntegrationLog {
     @Column(name = "response_status", nullable = false, length = 30)
     private String responseStatus;
 
+    @Builder.Default
     @Size(max = 50)
     @NotNull
     @Column(name = "usr_crt", nullable = false, length = 50)
-    private String usrCrt;
+    private String usrCrt = "system";
 
+    @Builder.Default
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt;
+    private Instant dtmCrt = Instant.now();
 
     @Column(name = "dtm_upd")
     private Instant dtmUpd;

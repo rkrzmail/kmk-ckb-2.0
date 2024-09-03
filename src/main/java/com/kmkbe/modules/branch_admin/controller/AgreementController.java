@@ -24,8 +24,6 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.security.SignatureException;
-
 @Validated
 @RestController
 @RequestMapping("/api/v1/cwr/agreement")
@@ -45,7 +43,7 @@ public class AgreementController {
             @PathVariable("cwrCode") String cwrCode,
             @PathVariable("financingHdrCode") String financingHdrCode,
             PaginationRequest request
-    ) {
+    ) throws JsonProcessingException {
         return new CommonResult<PaginationResult<AgreementDto>>().success(
                 agreementService.list(
                         cwrCode,
@@ -57,10 +55,14 @@ public class AgreementController {
 
     @GetMapping("/inquiry")
     public CommonResult<InquiryAgreementDto> getInquiryAgreement(
-            @RequestParam("agreementNo") String agreementNo
+            @RequestParam("agreementNo") String agreementNo,
+            String cwrCode
     ) throws JsonProcessingException {
         return new CommonResult<InquiryAgreementDto>().success(
-                agreementService.inquiryAgreementCwr(agreementNo)
+                agreementService.inquiryAgreementCwr(
+                        cwrCode,
+                        agreementNo
+                )
         );
     }
 
@@ -68,7 +70,7 @@ public class AgreementController {
     public CommonResult<Object> createInquiryAgreement(
             Authentication authentication,
             @Valid @RequestBody CreateInquiryAgreementRequest request
-    ) throws SignatureException, JsonProcessingException {
+    ) throws Exception {
         agreementService.createInquiryAgreement(authentication, request);
         return new CommonResult<>().success(
                 null,

@@ -75,7 +75,7 @@ public class FinancingDtlService {
                             detail.setInvoice(invoice);
                             detail.setFinancingDtlCode(UUID.randomUUID());
                             detail.setBouwheerInvNo(postedInvoices.get(index).getBouwheerInvoiceNo());
-                            detail.setInvoiceSeqno((long) index + 1);
+                            //detail.setInvoiceSeqno((long) index + 1);
                             detail.setFinancingHdr(financingHdr);
                             detail.setUsrCrt(customer.getCustName());
                             detail.setDtmCrt(Instant.now());

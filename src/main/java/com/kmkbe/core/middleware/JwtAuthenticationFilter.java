@@ -107,15 +107,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-       /* Thread.currentThread().setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
-            @Override
-            public void uncaughtException(Thread t, Throwable e) {
-                log.error("uncaughtException: error {}", e.getMessage());
-            }
-        });*/
-
-
-
         //determine whitelist endpoints
         for (String endpoint : ENDPOINTS_WHITELIST) {
             if (new AntPathRequestMatcher(endpoint).matches(request)) {

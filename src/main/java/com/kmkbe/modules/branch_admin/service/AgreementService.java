@@ -28,20 +28,24 @@ import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.netty.util.internal.StringUtil;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
-import java.security.SignatureException;
+import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
@@ -84,7 +88,7 @@ public class AgreementService {
             String cwrCode,
             String financingHdrCode,
             PaginationRequest request
-    ) {
+    ) throws JsonProcessingException {
         try {
             int pageNo = 0, pageSize = 10;
 
@@ -105,24 +109,30 @@ public class AgreementService {
                     PageRequest.of(pageNo, pageSize)
             );
 
+            Map<String, Object> obj = findCsulBank();
+
             List<AgreementDto> result = page
                     .stream()
-                    .map((e) -> AgreementDto.builder()
-                            .no(e.get("no") != null ? Integer.parseInt(e.get("no").toString()) : 0)
-                            .cwrCode(cwrCode)
-                            .agreementNo(e.get("agreement_code") != null ? e.get("agreement_code").toString() : null)
-                            .financingHdrCode(e.get("financing_hdr_code") != null ? UUID.fromString(e.get("financing_hdr_code").toString()) : null)
-                            .bouwheerCode(e.get("bouwheer_code") != null ? UUID.fromString(e.get("bouwheer_code").toString()) : null)
-                            .custCode(e.get("cust_code") != null ? UUID.fromString(e.get("cust_code").toString()) : null)
-                            .bouwheerName(e.get("bouwheer_name") != null ? e.get("bouwheer_name").toString() : null)
-                            .custName(e.get("cust_name") != null ? e.get("cust_name").toString() : null)
-                            .bankName(e.get("bank_name") != null ? e.get("bank_name").toString() : null)
-                            .rekeningNo(e.get("rekening_no") != null ? e.get("rekening_no").toString() : null)
-                            .financingAmt(BigDecimal.valueOf(e.get("financing_amt") != null ? Double.parseDouble(e.get("financing_amt").toString()) : 0))
-                            .disburseDate(new Date(e.get("disburse_date") != null ? Long.parseLong(e.get("disburse_date").toString()) : 0))
-                            .disburseAmt(BigDecimal.valueOf(e.get("disburse_amt") != null ? Double.parseDouble(e.get("disburse_amt").toString()) : 0))
-                            .currency(e.get("currency") != null ? e.get("currency").toString() : null)
-                            .build())
+                    .map((e) ->
+                            AgreementDto.builder()
+                                    .no(e.get("no") != null ? Integer.parseInt(e.get("no").toString()) : 0)
+                                    .cwrCode(cwrCode)
+                                    .agreementNo(e.get("agreement_code") != null ? e.get("agreement_code").toString() : null)
+                                    .financingHdrCode(e.get("financing_hdr_code") != null ? UUID.fromString(e.get("financing_hdr_code").toString()) : null)
+                                    .bouwheerCode(e.get("bouwheer_code") != null ? UUID.fromString(e.get("bouwheer_code").toString()) : null)
+                                    .custCode(e.get("cust_code") != null ? UUID.fromString(e.get("cust_code").toString()) : null)
+                                    .bouwheerName(e.get("bouwheer_name") != null ? e.get("bouwheer_name").toString() : null)
+                                    .custName(e.get("cust_name") != null ? e.get("cust_name").toString() : null)
+                                    /*.bankName(e.get("bank_name") != null ? e.get("bank_name").toString() : null)
+                                    .rekeningNo(e.get("rekening_no") != null ? e.get("rekening_no").toString() : null)*/
+                                    .bankName(obj.get("bankName").toString())
+                                    .rekeningNo(obj.get("accountNo").toString())
+                                    .financingAmt(new BigDecimal(e.get("financing_amt") != null ? Double.parseDouble(e.get("financing_amt").toString()) : 0, MathContext.DECIMAL64))
+                                    .disburseDate(e.get("disburse_date") != null ? Timestamp.valueOf(e.get("disburse_date").toString()) : null)
+                                    .disburseAmt(new BigDecimal(e.get("disburse_amt") != null ? Double.parseDouble(e.get("disburse_amt").toString()) : 0, MathContext.DECIMAL64))
+                                    .currency(e.get("currency") != null ? e.get("currency").toString() : null)
+                                    .build()
+                    )
                     .collect(Collectors.toList());
 
             if (result.isEmpty()) {
@@ -222,17 +232,12 @@ public class AgreementService {
         }
     }
 
-    public InquiryAgreementDto inquiryAgreementCwr(String agreementNo) throws JsonProcessingException {
+    public InquiryAgreementDto inquiryAgreementCwr(
+            String cwrCode,
+            String agreementNo
+    ) throws JsonProcessingException {
         try {
-            if (agreementNo != null && agreementNo.equalsIgnoreCase("1")) {
-                return InquiryAgreementDto.builder()
-                        .bankName("Mandiri")
-                        .rekeningNo("123")
-                        .currency("IDR")
-                        .disburseAmt(new BigDecimal(10000000, MathContext.DECIMAL64))
-                        .build();
-            }
-
+            validateAgreement(agreementNo);
             CommonInvalidException ex = CommonInvalidException.builder()
                     .title("Peringatan")
                     .message("Tidak bisa mencari Agreement, terjadi kesalahan")
@@ -253,6 +258,11 @@ public class AgreementService {
 
             if (data != null && !data.isEmpty()) {
                 Map<String, Object> obj = findCsulBank();
+
+                /*if (!data.getFirst().getCwrNo().equalsIgnoreCase("")) {
+                    throw new IllegalStateException("Nomor CWR tidak sesuai dengan Nomor Pencairan, pastikan Nomor Pencairan benar");
+                }*/
+
                 return InquiryAgreementDto.builder()
                         .bankName(obj.get("bankName").toString())
                         .rekeningNo(obj.get("accountNo").toString())
@@ -268,32 +278,28 @@ public class AgreementService {
         }
     }
 
-    @Transactional
+    @Transactional(propagation = Propagation.REQUIRED)
     public void createInquiryAgreement(
             Authentication authentication,
             CreateInquiryAgreementRequest request
-    ) throws SignatureException, JsonProcessingException {
+    ) throws Exception {
         try {
+            validateAgreement(request.getAgreementNo());
             final List<InquiryAgreementCwrDto> data;
-            if (request.getAgreementNo().equalsIgnoreCase("1")) {
-                data = List.of(sampleResponse());
-            } else {
-                try {
-                    BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreement(
-                            InquiryAgreementRemoteRequest.builder()
-                                    .agreementNo(request.getAgreementNo())
-                                    .build()
-                    );
+            try {
+                BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreement(
+                        InquiryAgreementRemoteRequest.builder()
+                                .agreementNo(request.getAgreementNo())
+                                .build()
+                );
 
-                    data = response.getData();
-                } catch (Exception e) {
-                    throw CommonInvalidException.builder()
-                            .title("Peringatan")
-                            .message("Tidak bisa mencari Data Pencairan, Pastikan No. Pencairan benar")
-                            .build();
-                }
+                data = response.getData();
+            } catch (Exception e) {
+                throw CommonInvalidException.builder()
+                        .title("Peringatan")
+                        .message("Tidak bisa mencari Data Pencairan, Pastikan No. Pencairan benar")
+                        .build();
             }
-
 
             final MstUser user = UserInternalUtils.authenticateUser(authentication);
             final FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(request.getFinancingHdrCode()))
@@ -305,21 +311,26 @@ public class AgreementService {
 
             List<Agreement> agreements = new ArrayList<>();
             if (!data.isEmpty()) {
-                for (InquiryAgreementCwrDto inquiryCwr : data) {
-                    Cwr cwr = cwrRepository.findTopByCwrCode(inquiryCwr.getCwrNo())
-                            .orElseThrow(() -> new IllegalStateException("CWR not found or not valid"));
+                for (InquiryAgreementCwrDto inquiryAgreement : data) {
+                    String cwrCode = inquiryAgreement.getCwrNo();
+                    final Cwr cwr = cwrRepository.findTopByCwrCode(cwrCode)
+                            .orElseThrow(() -> new IllegalStateException("Nomor CWR tidak ditemukan, pastikan nomor CWR benar"));
+
+                    if (!inquiryAgreement.getCwrNo().equalsIgnoreCase(request.getCwrCode())) {
+                        throw new IllegalStateException("Nomor CWR tidak sesuai dengan Nomor Pencairan, pastikan Nomor Pencairan benar");
+                    }
 
                     agreements.add(
                             Agreement.builder()
-                                    .agreementCode(inquiryCwr.getAgrmntNo())
+                                    .agreementCode(inquiryAgreement.getAgrmntNo())
                                     .cwr(cwr)
-                                    .applicationCode(inquiryCwr.getAppNo())
+                                    .applicationCode(inquiryAgreement.getAppNo())
                                     .financingHdr(financingHdr)
-                                    .facility(inquiryCwr.getFacility())
-                                    .currency(inquiryCwr.getCurrency())
-                                    .financingAmt(inquiryCwr.getNtfAmt())
-                                    .status(inquiryCwr.getStatus())
-                                    .productOffering(inquiryCwr.getProductOffering())
+                                    .facility(inquiryAgreement.getFacility())
+                                    .currency(inquiryAgreement.getCurrency())
+                                    .financingAmt(inquiryAgreement.getNtfAmt())
+                                    .status(inquiryAgreement.getStatus())
+                                    .productOffering(inquiryAgreement.getProductOffering())
                                     .usrCrt(user.getUsrCrt())
                                     .dtmCrt(Instant.now())
                                     .build()
@@ -357,7 +368,7 @@ public class AgreementService {
             FinancingHdr financingHdr,
             CreateInquiryAgreementRequest request,
             Customer customer
-    ) throws JsonProcessingException {
+    ) throws Exception {
         List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
                 .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
 
@@ -394,7 +405,6 @@ public class AgreementService {
                 .stream()
                 .map((item) ->
                         InvoiceEmailPayload.builder()
-                                .seq(item.getInvoiceSeqno())
                                 .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
                                 .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                                 .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
@@ -426,5 +436,13 @@ public class AgreementService {
         return ObjectUtils.strToJson(objectMapper.readValue(bank.getGsDtlValue(), new TypeReference<>() {
 
         }));
+    }
+
+    private void validateAgreement(String agreementNo) {
+        final Agreement agreement = agreementRepository.findById(agreementNo)
+                .orElse(null);
+        if (agreement != null) {
+            throw new IllegalStateException("Nomor Pencairan sudah di masukkan sebelumnya, silahkan masukkan Nomor Pencairan yg lain");
+        }
     }
 }

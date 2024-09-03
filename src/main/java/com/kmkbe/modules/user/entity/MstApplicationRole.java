@@ -34,12 +34,20 @@ public class MstApplicationRole {
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "application_code", nullable = false)
+    @JoinColumn(
+            name = "application_code",
+            referencedColumnName = "application_code",
+            nullable = false
+    )
     private MstApplication applicationCode;
 
     @NotNull
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "role_code", nullable = false)
+    @JoinColumn(
+            name = "role_code",
+            referencedColumnName = "role_code",
+            nullable = false
+    )
     private MstRole roleCode;
 
     @Builder.Default

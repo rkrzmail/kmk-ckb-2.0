@@ -1892,4 +1892,69 @@ VALUES
 
 alter table public.agreement
     add column if not exists approval_flag varchar(150) null;
+
+    delete
+from
+    users.mst_role
+where
+    role_code = 'brnch_admin';
+
+insert into
+    users.mst_role (role_code, role_name, is_active, usr_crt, dtm_crt)
+values
+    ('brnch_admin', 'Branch Admin', true, 'system', now());
+
+delete
+from
+    users.mst_application_role
+where
+    role_code = 'brnch_admin';
+
+insert into
+    users.mst_application_role (application_role_code, application_code, role_code, is_active, usr_crt, dtm_crt)
+values
+    (gen_random_uuid(), 'danasakti', 'brnch_admin', true, 'system', now());
+
+delete
+from
+    users.mst_application_role
+where
+    role_code = 'mjr_account';
+
+insert into users.mst_application_role (application_role_code, application_code, role_code, is_active, usr_crt, dtm_crt)
+values
+    (gen_random_uuid(), 'danasakti', 'mjr_account', true, 'system', now());
+
+
+delete
+from
+    users.mst_role
+where
+    role_code = 'brnch_admin';
+
+insert into
+    users.mst_role (role_code, role_name, is_active, usr_crt, dtm_crt)
+values
+    ('brnch_admin', 'Branch Admin', true, 'system', now());
+
+delete
+from
+    users.mst_application_role
+where
+    role_code = 'brnch_admin';
+
+insert into
+    users.mst_application_role (application_role_code, application_code, role_code, is_active, usr_crt, dtm_crt)
+values
+    (gen_random_uuid(), 'danasakti', 'brnch_admin', true, 'system', now());
+
+delete
+from
+    users.mst_application_role
+where
+    role_code = 'mjr_account';
+
+insert into users.mst_application_role (application_role_code, application_code, role_code, is_active, usr_crt, dtm_crt)
+values
+    (gen_random_uuid(), 'danasakti', 'mjr_account', true, 'system', now());
 -- endregion

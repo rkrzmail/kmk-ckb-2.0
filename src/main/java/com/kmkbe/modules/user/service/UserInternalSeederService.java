@@ -92,8 +92,10 @@ public class UserInternalSeederService {
             MstBranch jakarta2 = mstBranchRepository.findByBranchCode("413").orElseThrow();
             MstBranch jakarta3 = mstBranchRepository.findByBranchCode("414").orElseThrow();
 
+            MstRole role = mstRoleRepository.findByRoleCode("brnch_adm").orElse(null);
+
             MstApplicationRole appRole = mstApplicationRoleRepository
-                    .findById(UUID.fromString("ecf84049-ed3c-7622-e88c-f44d50e4cb9d"))
+                    .findByRoleCode(role)
                     .orElse(null);
 
             MstForm form = mstFormRepository.findById("mnu_brnch_adm")
@@ -207,8 +209,10 @@ public class UserInternalSeederService {
 
     private void seedMajorAccount() {
         try {
+            MstRole role = mstRoleRepository.findByRoleCode("mjr_account").orElse(null);
+
             MstApplicationRole appRole = mstApplicationRoleRepository
-                    .findById(UUID.fromString("4ab9812c-aba1-cdbf-111b-558c2b20e2aa"))
+                    .findByRoleCode(role)
                     .orElse(null);
 
             MstForm form = mstFormRepository.findById("menu_mjr_account")

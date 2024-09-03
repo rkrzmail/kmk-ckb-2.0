@@ -51,10 +51,6 @@ public class FinancingDtl {
     @Column(name = "bouwheer_inv_no", nullable = false, length = 50)
     private String bouwheerInvNo;
 
-    @NotNull
-    @Column(name = "invoice_seqno", nullable = false)
-    private Long invoiceSeqno;
-
     @Column(name = "paid_to_cust_date")
     private Instant paidToCustDate;
 

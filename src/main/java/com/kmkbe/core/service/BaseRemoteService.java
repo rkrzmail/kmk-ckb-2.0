@@ -21,6 +21,9 @@ public class BaseRemoteService {
     @Value("${csul.confins.mou.v1}")
     public String confinsMouBaseUrl;
 
+    @Value("${csul.confins.los.v1}")
+    public String confinsLosBaseUrl;
+
     @Value("${csul.confins.adinskey}")
     public String adInsKey;
 
@@ -60,7 +63,7 @@ public class BaseRemoteService {
     }
 
     public String Los_Generic_GetPagingObjectBySQL() {
-        return confinsMouBaseUrl + "/Generic/GetPagingObjectBySQL";
+        return confinsLosBaseUrl + "/Generic/GetPagingObjectBySQL";
     }
 
     public String Fou_Generic_GetPagingObjectBySQL() {

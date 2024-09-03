@@ -296,7 +296,6 @@ public class DocumentService {
                 return;
             }
 
-            List<LegalFile> legalFiles = new ArrayList<>();
             if (!StringUtil.isNullOrEmpty(vendor.getAktaPendirianLink())) {
                 List<LegalFile> exists = legalFileRepository.findAllRawByCustAndFileTypeCodeStr(
                         "APN01",
@@ -324,17 +323,15 @@ public class DocumentService {
                     m1 = findMst.get();
                 }
 
-                legalFiles.add(
-                        LegalFile.builder()
-                                .custCode(customer)
-                                .fileName("Akta Pendirian")
-                                .filePath(vendor.getAktaPendirianLink())
-                                .contentType("")
-                                .fileTypeCode(m1)
-                                .usrCrt("system")
-                                .dtmCrt(Instant.now())
-                                .build()
-                );
+                legalFileRepository.save(LegalFile.builder()
+                        .custCode(customer)
+                        .fileName("Akta Pendirian")
+                        .filePath(vendor.getAktaPendirianLink())
+                        .contentType("")
+                        .fileTypeCode(m1)
+                        .usrCrt("system")
+                        .dtmCrt(Instant.now())
+                        .build());
             }
 
             if (!StringUtil.isNullOrEmpty(vendor.getAktaPerubahanLink())) {
@@ -363,7 +360,7 @@ public class DocumentService {
                     m2 = findMst.get();
                 }
 
-                legalFiles.add(
+                legalFileRepository.save(
                         LegalFile.builder()
                                 .custCode(customer)
                                 .fileName("Akta Perubahan Terakhir Lainnya")
@@ -402,7 +399,7 @@ public class DocumentService {
                     m3 = findMst.get();
                 }
 
-                legalFiles.add(
+                legalFileRepository.save(
                         LegalFile.builder()
                                 .custCode(customer)
                                 .fileName("Sk Persetujuan Kemenkumham")
@@ -441,7 +438,7 @@ public class DocumentService {
                     m4 = findMst.get();
                 }
 
-                legalFiles.add(
+                legalFileRepository.save(
                         LegalFile.builder()
                                 .custCode(customer)
                                 .fileName("NPWP")
@@ -481,7 +478,7 @@ public class DocumentService {
                     m5 = findMst.get();
                 }
 
-                legalFiles.add(
+                legalFileRepository.save(
                         LegalFile.builder()
                                 .custCode(customer)
                                 .fileName("NIB")
@@ -521,7 +518,7 @@ public class DocumentService {
                     m6 = findMst.get();
                 }
 
-                legalFiles.add(
+                legalFileRepository.save(
                         LegalFile.builder()
                                 .custCode(customer)
                                 .fileName("PKP")
@@ -564,7 +561,7 @@ public class DocumentService {
                     m7 = findMst.get();
                 }
 
-                legalFiles.add(
+                legalFileRepository.save(
                         LegalFile.builder()
                                 .custCode(customer)
                                 .fileName("Identitas Pengurus")
@@ -604,7 +601,7 @@ public class DocumentService {
                     m8 = findMst.get();
                 }
 
-                legalFiles.add(
+                legalFileRepository.save(
                         LegalFile.builder()
                                 .custCode(customer)
                                 .fileName("Laporan Keuangan")
@@ -644,7 +641,7 @@ public class DocumentService {
                     m9 = findMst.get();
                 }
 
-                legalFiles.add(
+                legalFileRepository.save(
                         LegalFile.builder()
                                 .custCode(customer)
                                 .fileName("Ktp Pengurus")
@@ -689,7 +686,7 @@ public class DocumentService {
                 }
 
 
-                legalFiles.add(
+                legalFileRepository.save(
                         LegalFile.builder()
                                 .custCode(customer)
                                 .fileName("Bank Detail")
@@ -734,7 +731,7 @@ public class DocumentService {
                         m11 = findMst.get();
                     }
 
-                    legalFiles.add(
+                    legalFileRepository.save(
                             LegalFile.builder()
                                     .custCode(customer)
                                     .fileName(doc.getDocumentName())
@@ -749,11 +746,6 @@ public class DocumentService {
                     index++;
                 }
             }
-
-            if (!legalFiles.isEmpty()) {
-                legalFileRepository.saveAll(legalFiles);
-            }
-
         } catch (Exception e) {
             log.error("mappingFromInquiryVendor, error {}", e.getMessage());
             throw e;

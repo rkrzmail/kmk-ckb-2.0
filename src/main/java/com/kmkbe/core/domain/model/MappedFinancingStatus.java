@@ -69,7 +69,10 @@ public class MappedFinancingStatus {
     }
 
     private void mappedCustomer() {
-        if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
+        if (financingHdr.getFinancingStatus().equalsIgnoreCase("new")) {
+            label = "New";
+            status = "NEW";
+        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
             if (
                     financingHdr.getFinancingStep().equalsIgnoreCase("ASSIGNMENT")
                             || financingHdr.getFinancingStep().equalsIgnoreCase("INPROCESS")
@@ -92,7 +95,10 @@ public class MappedFinancingStatus {
     }
 
     private void mappedMajorAccount() {
-        if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
+        if (financingHdr.getFinancingStatus().equalsIgnoreCase("new")) {
+            label = "New";
+            status = "NEW";
+        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
             if (financingHdr.getFinancingStep().equalsIgnoreCase("ASSIGNMENT")) {
                 label = "Assignment";
                 status = "ASSIGNMENT";

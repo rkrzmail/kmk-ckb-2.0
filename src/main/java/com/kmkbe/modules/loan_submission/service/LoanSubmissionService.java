@@ -288,41 +288,8 @@ public class LoanSubmissionService {
             }
 
             final Product product = productRepository.findById(request.getProductId()).orElseThrow();
-
-            Bouwheer bouwheer;
-            Optional<Bouwheer> findBouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode));
-            if (findBouwheer.isEmpty()) {
-                findBouwheer = bouwheerRepository.findFirstByBouwheerName("PT. Trakindo Utama");
-                if (findBouwheer.isPresent()) {
-                    bouwheer = findBouwheer.get();
-                } else {
-                    bouwheer = new Bouwheer();
-                    bouwheer.setBouwheerCode(UUID.randomUUID());
-                    bouwheer.setBouwheerName("PT. Trakindo Utama");
-                    bouwheer.setLegalAddress("");
-                    bouwheer.setRt("");
-                    bouwheer.setRw("");
-                    bouwheer.setKelurahan("");
-                    bouwheer.setKecamatan("");
-                    bouwheer.setCity("");
-                    bouwheer.setProvince("");
-                    bouwheer.setZipcode("");
-                    bouwheer.setArea("");
-                    bouwheer.setPhone("");
-                    bouwheer.setPicName("");
-                    bouwheer.setPicEmail("");
-                    bouwheer.setPicMobilePhone("");
-                    bouwheer.setTermOfPayment(0L);
-                    bouwheer.setGracePeriod(0L);
-                    bouwheer.setAesKey("");
-                    bouwheer.setSecretKey("");
-                    bouwheer.setApiKey("");
-                    bouwheer.setIsActive(true);
-                    bouwheer = bouwheerRepository.save(bouwheer);
-                }
-            } else {
-                bouwheer = findBouwheer.get();
-            }
+            final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode))
+                    .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
 
             final double totalInvoiceAmount = request.getInvoices()
                     .stream()
@@ -428,7 +395,7 @@ public class LoanSubmissionService {
                                     file -> file.getFileTypeCode()
                                             .getFileTypeCode()
                                             .equalsIgnoreCase("DOC006")
-                                            && !DateTimeUtils.SDF_STANDARD_DATE.format(new Date(file.getDtmUpd().toEpochMilli()))
+                                            && DateTimeUtils.SDF_STANDARD_DATE.format(new Date(file.getDtmUpd().toEpochMilli()))
                                             .equalsIgnoreCase(DateTimeUtils.SDF_STANDARD_DATE.format(new Date()))
                             )
             ) {
@@ -451,7 +418,7 @@ public class LoanSubmissionService {
                     .stream()
                     .map((item) ->
                             InvoiceEmailPayload.builder()
-                                    .seq(item.getInvoiceSeqno())
+                                    //.seq(item.getInvoiceSeqno())
                                     .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
                                     .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                                     .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
@@ -735,10 +702,6 @@ public class LoanSubmissionService {
                                 "dengan pihak PT. Trakindo Utama.")
                         .build();
             }
-        }
-
-        private void validate() {
-
         }
     }
 }

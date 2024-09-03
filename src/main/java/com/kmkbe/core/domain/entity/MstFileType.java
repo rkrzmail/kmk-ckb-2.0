@@ -18,7 +18,7 @@ import java.util.Set;
 public class MstFileType {
     @Id
     @Size(max = 20)
-    @Column(name = "file_type_code", nullable = false, length = 20)
+    @Column(name = "file_type_code", length = 20)
     private String fileTypeCode;
 
     @Column(

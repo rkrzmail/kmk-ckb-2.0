@@ -44,9 +44,13 @@ public class ObjectUtils {
     }
 
     public static String jsonToStr(Object object, boolean includeNonNull) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.setSerializationInclusion(includeNonNull ? JsonInclude.Include.ALWAYS : JsonInclude.Include.NON_NULL);
-        return mapper.writeValueAsString(object);
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            mapper.setSerializationInclusion(includeNonNull ? JsonInclude.Include.ALWAYS : JsonInclude.Include.NON_NULL);
+            return mapper.writeValueAsString(object);
+        } catch (Exception e) {
+            return "";
+        }
     }
 
     public static <T> T castObjectFromMap(Map<String, Object> map, T object) throws IllegalAccessException {
