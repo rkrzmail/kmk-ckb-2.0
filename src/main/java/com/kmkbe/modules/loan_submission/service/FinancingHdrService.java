@@ -174,7 +174,7 @@ public class FinancingHdrService {
         }
     }
 
-    public void paidFinancing(
+    public FinancingHdr paidFinancing(
             Authentication authentication,
             FinancingInvoicePaidRequest request,
             String apiKey
@@ -200,38 +200,15 @@ public class FinancingHdrService {
             FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
                     .orElseThrow(() -> new IllegalStateException("Financing Not Found with given financingCode"));
 
-            financingHdr.setFinancingStatus(FinancingStatus.PAID.name());
-            financingHdr.setFinancingStep(FinancingStatus.PAID.name());
+            financingHdr.setFinancingStatus("LIVE");
+            financingHdr.setFinancingStep("PAID");
             financingHdr.setUsrUpd(user);
             financingHdr.setDtmUpd(Instant.now());
-            financingHdrRepository.save(financingHdr);
-
-            updateFinancing(
-                    financingHdrCode,
-                    user,
-                    FinancingStatus.PAID,
-                    FinancingStatus.PAID
-            );
+            return financingHdrRepository.save(financingHdr);
         } catch (Exception e) {
             log.error("paidFinancing, error {}", e.getMessage());
             throw e;
         }
-    }
-
-    public void updateFinancing(
-            UUID financingHdrCode,
-            String user,
-            FinancingStatus financingStatus,
-            FinancingStatus financingStep
-    ) {
-        FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
-                .orElseThrow(() -> new IllegalStateException("Financing Not Found with given financingCode"));
-
-        financingHdr.setFinancingStatus(financingStatus.name());
-        financingHdr.setFinancingStep(financingStep.name());
-        financingHdr.setUsrUpd(user);
-        financingHdr.setDtmUpd(Instant.now());
-        financingHdrRepository.save(financingHdr);
     }
 
     public FinancingHdr findByCode(String financingHdrCode) {

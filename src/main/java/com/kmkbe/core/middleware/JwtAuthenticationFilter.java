@@ -40,7 +40,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private String apiKey;*/
 
     public static final String[] ENDPOINTS_WHITELIST_FINANCING = {
-            "/api/v1/financing/invoice-paid"
+            "/api/v1/financing/invoice-paid",
+            "/api/v1/financing/approvals/status",
     };
 
     public static final String[] ENDPOINTS_WHITELIST_LOAN_SUBMISSION = {
@@ -69,9 +70,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
             "/uploads/**",
             "/error/**",
-
-
-            "/api/v1/financing/approvals/status/**",
     };
 
     public static final String[] ENDPOINTS_SWAGGERS = {

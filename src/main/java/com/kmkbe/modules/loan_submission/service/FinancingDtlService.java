@@ -100,4 +100,18 @@ public class FinancingDtlService {
         }
     }
 
+    public void updatePaid(FinancingHdr financingHdr) {
+        try {
+            financingDtlRepository.findAllByFinancingHdr(financingHdr)
+                    .orElse(new ArrayList<>())
+                    .forEach(financingDtl -> {
+                        financingDtl.setBouwheerPaidDate(Instant.now());
+                        financingDtl.getInvoice().setStatus("PAID");
+                        financingDtlRepository.save(financingDtl);
+                    });
+        } catch (Exception e) {
+            log.error("updatePaid, error {}", e.getMessage());
+            throw e;
+        }
+    }
 }

@@ -26,14 +26,9 @@ import java.util.stream.IntStream;
 @Slf4j
 public class FinancingService {
     private final AgreementRepository agreementRepository;
-
     private final FinancingRemoteService financingRemoteService;
-
-
     private final FinancingHdrRepository financingHdrRepository;
     private final CustomerRepository customerRepository;
-
-
 
     public void recallApprovalStatus()   {
         //find all aggremmnet with flag false or null
@@ -46,7 +41,7 @@ public class FinancingService {
                     .status(UpdateFinancingStatusRequest.Status.Approve)
                     .build();
             try {
-                BaseSimpleRemoteResponseDto<ObjectUtils.Null> nullBaseSimpleRemoteResponseDto =  financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
+                financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
                 //update
                 agreement.setApprovalFlag("true");
                 agreementRepository.save(agreement);
@@ -56,7 +51,6 @@ public class FinancingService {
             }
             //end
         }
-
     }
 
 }

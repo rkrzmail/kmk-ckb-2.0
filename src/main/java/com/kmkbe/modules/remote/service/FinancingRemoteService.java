@@ -1,12 +1,14 @@
 package com.kmkbe.modules.remote.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
 import com.kmkbe.core.domain.entity.ApiIntegrationLog;
 import com.kmkbe.core.domain.repository.ApiIntegrationLogRepository;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
+import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
@@ -31,9 +33,10 @@ public class FinancingRemoteService {
     private final BaseRemoteService baseRemoteService;
     private final ApiIntegrationLogRepository apiIntegrationLogRepository;
     private final TransactionTemplate transactionTemplate;
+    private final ObjectMapper objectMapper;
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public BaseSimpleRemoteResponseDto<ObjectUtils.Null> postedSubmission(
+    public BaseSimpleRemoteResponseDto<Object> postedSubmission(
             FinancingSubmissionRequest request
     ) throws Exception {
         String jsonStr = "";
@@ -46,7 +49,7 @@ public class FinancingRemoteService {
                     baseRemoteService.apiKeyHeaders()
             );
 
-            final ResponseEntity<BaseSimpleRemoteResponseDto<ObjectUtils.Null>> response = restTemplate.exchange(
+            final ResponseEntity<BaseSimpleRemoteResponseDto<Object>> response = restTemplate.exchange(
                     BaseRemoteService.BASE_URL_MST + "/post/credit/submission",
                     HttpMethod.POST,
                     requestArgs,
@@ -56,6 +59,10 @@ public class FinancingRemoteService {
 
             statusCode = response.getStatusCode().value();
             responseStr = com.kmkbe.core.utils.ObjectUtils.jsonToStr(response.getBody());
+            if(StringUtil.isNullOrEmpty(responseStr)){
+               responseStr = objectMapper.writeValueAsString(response.getBody());
+            }
+
             return response.getBody();
         } catch (HttpStatusCodeException httpStatusCodeException) {
             String message = "Posted Submission Failed";
@@ -84,7 +91,7 @@ public class FinancingRemoteService {
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public BaseSimpleRemoteResponseDto<ObjectUtils.Null> updateFinancingStatus(
+    public BaseSimpleRemoteResponseDto<Object> updateFinancingStatus(
             UpdateFinancingStatusRequest request
     ) throws JsonProcessingException {
         String jsonStr = "";
@@ -92,12 +99,13 @@ public class FinancingRemoteService {
         int statusCode = 200;
         Exception ex;
         try {
+            jsonStr = com.kmkbe.core.utils.ObjectUtils.jsonToStr(request);
             final HttpEntity<String> requestArgs = new HttpEntity<>(
-                    com.kmkbe.core.utils.ObjectUtils.jsonToStr(request),
+                    jsonStr,
                     baseRemoteService.apiKeyHeaders()
             );
 
-            final ResponseEntity<BaseSimpleRemoteResponseDto<ObjectUtils.Null>> response = restTemplate.exchange(
+            final ResponseEntity<BaseSimpleRemoteResponseDto<Object>> response = restTemplate.exchange(
                     BaseRemoteService.BASE_URL_MST + "/post/credit/approval",
                     HttpMethod.POST,
                     requestArgs,
@@ -107,6 +115,10 @@ public class FinancingRemoteService {
 
             statusCode = response.getStatusCode().value();
             responseStr = com.kmkbe.core.utils.ObjectUtils.jsonToStr(response.getBody());
+            if(StringUtil.isNullOrEmpty(responseStr)){
+                responseStr = objectMapper.writeValueAsString(response.getBody());
+            }
+
             return response.getBody();
         } catch (HttpStatusCodeException httpStatusCodeException) {
             String message = "Posted Submission Failed";

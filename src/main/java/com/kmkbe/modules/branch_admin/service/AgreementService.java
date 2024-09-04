@@ -3,10 +3,7 @@ package com.kmkbe.modules.branch_admin.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kmkbe.core.domain.dto.AgreementDto;
-import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
-import com.kmkbe.core.domain.dto.InquiryAgreementCwrDto;
-import com.kmkbe.core.domain.dto.InquiryAgreementDto;
+import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
@@ -388,7 +385,7 @@ public class AgreementService {
 
         Map<String, Object> obj = findCsulBank();
 
-        financingRemoteService.postedSubmission(
+        BaseSimpleRemoteResponseDto<Object> postedResponse = financingRemoteService.postedSubmission(
                 FinancingSubmissionRequest.builder()
                         .vendorCode(customer.getCustExternalCode())
                         .accountNo(obj.get("accountNo").toString())
@@ -413,8 +410,17 @@ public class AgreementService {
                                 .build()
                 ).toList();
 
+        String email = financingHdr.getBouwheer().getPicEmail();
+        if (
+                postedResponse.getData() != null
+                        && postedResponse instanceof Map<?, ?> body
+                        && body.get("email") != null
+        ) {
+            email = body.get("email").toString();
+        }
+
         emailService.sendNotificationBouwheerPayment(
-                financingHdr.getBouwheer().getPicEmail(),
+                email,
                 BouwheerPaymentEmailPayload.builder()
                         .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
                         .vendorCode(customer.getCustExternalCode())

@@ -41,8 +41,7 @@ public class FinancingDtl {
     @JoinColumn(
             name = "invoice_code",
             referencedColumnName = "invoice_code",
-            nullable = false,
-            updatable = false
+            nullable = false
     )
     private Invoice invoice;
 
