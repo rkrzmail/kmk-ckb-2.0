@@ -17,8 +17,7 @@ import java.util.stream.Collectors;
 
 public class MD5Test {
     private static final String[] VENDOR_CODES = {
-            "0002000493",
-            "0004000012"
+            "0002004099"
     };
 
     private static final String SECRET = "DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH";

@@ -11,4 +11,5 @@ public class InquiryCwrRemoteRequest {
     @Builder.Default
     private PropCriteriaGenericTypeRequest.CwrPropName name = PropCriteriaGenericTypeRequest.CwrPropName.cwrNo;
     private String cwrNo;
+    private String custNo;
 }

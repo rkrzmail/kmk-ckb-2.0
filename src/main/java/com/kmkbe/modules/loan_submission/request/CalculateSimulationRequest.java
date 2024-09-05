@@ -13,6 +13,8 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 @ToString
 public class CalculateSimulationRequest {
+    private String token;
+
     @NotEmpty(message = "Please select at least 1 invoice to get calculated invoice amount")
     private BigDecimal totalInvoiceAmount;
 

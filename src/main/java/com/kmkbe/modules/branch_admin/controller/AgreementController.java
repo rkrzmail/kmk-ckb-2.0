@@ -103,7 +103,7 @@ public class AgreementController {
 
         final UpdateFinancingStatusRequest updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
                 .financingCode(financingHdrCode)
-                .status(UpdateFinancingStatusRequest.Status.Approve)
+                .status(UpdateFinancingStatusRequest.Status.Approved)
                 .vendorCode(financingHdr.getCustomer().getCustExternalCode())
                 .build();
 

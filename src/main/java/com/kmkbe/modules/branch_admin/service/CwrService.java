@@ -17,12 +17,17 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryCwrRequest;
+import com.kmkbe.modules.customer.service.ExistingCustomerService;
+import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
+import com.kmkbe.modules.remote.request.PropCriteriaGenericTypeRequest;
+import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
@@ -145,8 +150,8 @@ public class CwrService {
 
             if (data != null && !data.isEmpty()) {
                 return InquiryCwrDto.builder()
-                        .cwrStartDate(DateTimeUtils.timestampToDate(data.getFirst().getStartDt()))
-                        .cwrEndDate(DateTimeUtils.timestampToDate(data.getFirst().getEndDt()))
+                        .cwrStartDate(DateTimeUtils.cSharpTimeStampToDate(data.getFirst().getStartDt()))
+                        .cwrEndDate(DateTimeUtils.cSharpTimeStampToDate(data.getFirst().getEndDt()))
                         .cwrCode(cwrNo)
                         .loanAmt(BigDecimal.valueOf(data.getFirst().getRealisationAmt()))
                         .plafondAmt(BigDecimal.valueOf(data.getFirst().getPlafondAmt()))
@@ -210,8 +215,8 @@ public class CwrService {
                             .facility(inquiryCwr.getFacility())
                             .isRevolving(inquiryCwr.getIsRevolving())
                             .currency(inquiryCwr.getCurrency())
-                            .cwrStartDate(Objects.requireNonNull(DateTimeUtils.timestampToDate(inquiryCwr.getStartDt())).toInstant())
-                            .cwrEndDate(Objects.requireNonNull(DateTimeUtils.timestampToDate(inquiryCwr.getEndDt())).toInstant())
+                            .cwrStartDate(Objects.requireNonNull(DateTimeUtils.cSharpTimeStampToDate(inquiryCwr.getStartDt())).toInstant())
+                            .cwrEndDate(Objects.requireNonNull(DateTimeUtils.cSharpTimeStampToDate(inquiryCwr.getEndDt())).toInstant())
                             .plafondAmt(inquiryCwr.getPlafondAmt())
                             .realisationAmt(inquiryCwr.getRealisationAmt())
                             .status(inquiryCwr.getCwrStatDescr())

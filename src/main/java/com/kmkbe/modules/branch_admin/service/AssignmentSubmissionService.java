@@ -121,13 +121,11 @@ public class AssignmentSubmissionService {
 
                         String agreementDoc = null;
                         if (agreementFile != null) {
-                            agreementDoc = UriUtils.getBaseUrl(httpServletRequest)
-                                    + "/api/v1"
-                                    + "/documents/download/agreement"
-                                    + "/"
-                                    + agreementFile.getAgreementFileId()
-                                    + "?token="
-                                    + HttpUtils.getHeaderBearerToken(httpServletRequest);
+                            agreementDoc = UriUtils.fileUlr(
+                                    httpServletRequest,
+                                    Math.toIntExact(agreementFile.getAgreementFileId()),
+                                    UriUtils.DocType.agreement
+                            );
                         }
 
                         return AssignmentDto.builder()

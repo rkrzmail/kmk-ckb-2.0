@@ -17,7 +17,7 @@ public class UpdateFinancingStatusRequest {
     private Status status;
 
     public enum Status {
-        Approve,
+        Approved,
         Reject,
         Disburse
     }

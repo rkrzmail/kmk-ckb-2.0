@@ -22,11 +22,16 @@ public class CustomerRemoteServiceTest extends BaseRemoteServicesTest {
     @BeforeEach
     public void setupBeforeEach() {
         super.setupBeforeEach();
-        customerRemoteService = new CustomerRemoteService(restTemplateByPassSSL, baseRemoteService, objectMapper);
+        customerRemoteService = new CustomerRemoteService(
+                restTemplateByPassSSL,
+                baseRemoteService,
+                objectMapper,
+                null
+        );
 
         existingCustomerRequest = ExistingCustomerRequest.builder()
                 .args(ExistingCustomerRequest.Args.builder()
-                        .key("IdNo")
+                        .key(ExistingCustomerRequest.KeyType.ktp)
                         .operator("EQ")
                         .value("010002509057000")
                         .build()

@@ -66,6 +66,10 @@ public class BaseRemoteService {
         return confinsLosBaseUrl + "/Generic/GetPagingObjectBySQL";
     }
 
+    public String Los_Agreement_GetListAgreementDetailForCwrByCwrNo() {
+        return confinsLosBaseUrl + "/Agrmnt/GetListAgrmntDetailForCwrByCwrNo";
+    }
+
     public String Fou_Generic_GetPagingObjectBySQL() {
         return confinsFouBaseUrl + "/Generic/GetPagingObjectBySQL";
     }

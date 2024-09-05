@@ -124,9 +124,10 @@ public class DocumentService {
                             LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
                             legalFileDto.setUploadedDate(legalFile.getDtmUpd());
 
-                            String generatedUrl = fileUlr(
+                            String generatedUrl = UriUtils.fileUlr(
                                     httpServletRequest,
-                                    legalFile
+                                    Math.toIntExact(legalFile.getFileId()),
+                                    UriUtils.DocType.loan
                             );
 
                             if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
@@ -786,9 +787,10 @@ public class DocumentService {
                     .map((legal) -> {
                         LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legal);
                         legalFileDto.setUploadedDate(legal.getDtmUpd());
-                        String generatedUrl = fileUlr(
+                        String generatedUrl = UriUtils.fileUlr(
                                 httpServletRequest,
-                                legal
+                                Math.toIntExact(legal.getFileId()),
+                                UriUtils.DocType.loan
                         );
 
                         if (legal.getFilePath() != null && legal.getFilePath().contains("http")) {
@@ -810,16 +812,5 @@ public class DocumentService {
             log.error("uploadedCustomerDoc: error {}", e.getMessage());
             throw e;
         }
-    }
-
-    private String fileUlr(HttpServletRequest httpServletRequest, LegalFile legalFile) {
-        return (UriUtils.getBaseUrl(httpServletRequest)
-                .replace("http", "https"))
-                + "/api/v1"
-                + "/documents/download/loan"
-                + "/"
-                + legalFile.getFileId()
-                + "?token="
-                + HttpUtils.getHeaderBearerToken(httpServletRequest);
     }
 }

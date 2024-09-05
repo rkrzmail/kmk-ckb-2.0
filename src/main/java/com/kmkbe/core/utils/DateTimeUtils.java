@@ -2,12 +2,12 @@ package com.kmkbe.core.utils;
 
 import io.netty.util.internal.StringUtil;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 
@@ -75,13 +75,25 @@ public class DateTimeUtils {
         return DTF_DATE_RESPONSE_STANDARD_FORMATTER.format(instant);
     }
 
-    public static Date timestampToDate(String v) throws ParseException {
-        if (StringUtil.isNullOrEmpty(v)) {
+    public static Date cSharpTimeStampToDate(String v) {
+        try {
+            if (StringUtil.isNullOrEmpty(v)) {
+                return null;
+            }
+
+            final String[] split = v
+                    .replace("T", " ")
+                    .trim()
+                    .split(" ");
+
+            if (split.length > 0) {
+                return SDF_STANDARD_DATE_TIME.parse(split[0]);
+            }
+
+            return SDF_STANDARD_DATE_TIME.parse(v.replace("T", " ").trim());
+        } catch (Exception e) {
             return null;
         }
-        return SDF_STANDARD_DATE_TIME.parse(
-                v.replace("T", " ")
-        );
     }
 
     public static String formatToDateTime(Instant instant) {
@@ -99,5 +111,15 @@ public class DateTimeUtils {
 
     static Instant getInstantFromNanos(long nanosSinceEpoch) {
         return Instant.ofEpochSecond(0L, nanosSinceEpoch);
+    }
+
+    public static Date setDateZeroTime(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
     }
 }

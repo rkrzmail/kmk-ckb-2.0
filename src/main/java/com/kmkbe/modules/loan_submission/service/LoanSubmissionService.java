@@ -12,21 +12,24 @@ import com.kmkbe.core.exception.LoanDocMandatoryException;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.common.service.EmailService;
+import com.kmkbe.modules.customer.service.ExistingCustomerService;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateLoanApplicationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.SaveImportantNotesRequest;
+import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
+import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
+import com.kmkbe.modules.remote.request.PropCriteriaGenericTypeRequest;
 import com.kmkbe.modules.remote.service.*;
 import io.netty.util.internal.StringUtil;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.EmptyResultDataAccessException;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -50,48 +53,24 @@ public class LoanSubmissionService {
     private final JdbcTemplate jdbcTemplate;
     private final JwtLoanSubmissionService jwtLoanSubmissionService;
 
-    private final LoanSubmissionRemoteService loanSubmissionRemoteService;
-    private final FinancingRemoteService financingRemoteService;
     private final CustomerRemoteService customerRemoteService;
     private final InvoiceRemoteDto invoiceRemoteDto;
     private final CurrencyRemoteService currencyRemoteService;
+    private final ExistingCustomerService existingCustomerService;
 
     private final InvoiceService invoiceService;
     private final FinancingHdrService financingHdrService;
     private final FinancingDtlService financingDtlService;
     private final MstFileTypeService mstFileTypeService;
     private final EmailService emailService;
-    private final SimulationHistoryService simulationHistoryService;
     private final LegalFileRepository legalFileRepository;
+    private final ImportantNotesService importantNotesService;
 
     public List<PostedInvoiceDto> fetchActiveInvoice(
             Authentication authentication,
             String token
     ) throws Exception {
         try {
-            if (token != null) {
-                switch (token) {
-                    case "1" -> throw CommonInvalidException.builder()
-                            .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
-                            .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
-                                    "Dana Sakti. Harap melakukan pengecekan ulang " +
-                                    "dengan pihak PT. Trakindo Utama.")
-                            .build();
-                    case "2" -> throw CommonInvalidException.builder()
-                            .title("Perusahaan Anda Terdaftar dalam Daftar Blacklist")
-                            .message("Perusahaan Anda saat ini terdaftar dalam daftar " +
-                                    "blacklist PT Trakindo Utama, sehingga Anda " +
-                                    "belum dapat menggunakan Dana Sakti.")
-                            .build();
-                    case "3" -> throw CommonInvalidException.builder()
-                            .title("Mohon Maaf, Anda Tidak Memenuhi Syarat")
-                            .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
-                                    "Dana Sakti. Harap melakukan pengecekan ulang " +
-                                    "dengan pihak PT. Trakindo Utama.")
-                            .build();
-                }
-            }
-
             final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, token);
             final InquiryInvoiceRemoteDto inquiryInvoiceRemote;
 
@@ -147,18 +126,6 @@ public class LoanSubmissionService {
                 if (StringUtil.isNullOrEmpty(inquiryInvoiceRemote.getRow().get(i).getPoNumber())) {
                     continue;
                 }
-
-               /* FinancingDtl financingDtl = financingDtlService.findBy(inquiryInvoiceRemote.getRow().get(i).getAccountingDocument());
-                if (financingDtl != null) {
-                    FinancingHdr financingHdr = financingDtl.getFinancingHdr();
-                    if (
-                            financingHdr.getFinancingStatus().equals(FinancingStatus.NEW.getValue())
-                    ) {
-
-                    } else {
-                        continue;
-                    }
-                }*/
 
                 Date invDate, invDueDate;
                 try {
@@ -243,7 +210,10 @@ public class LoanSubmissionService {
         }
     }
 
-    public EstimatedDisburseDto calculateDisburse(CalculateSimulationRequest request) {
+    public EstimatedDisburseDto calculateDisburse(
+            Authentication authentication,
+            CalculateSimulationRequest request
+    ) throws SignatureException, JsonProcessingException {
         try {
             final BigDecimal ntfResult = request.getTotalInvoiceAmount()
                     .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
@@ -255,12 +225,42 @@ public class LoanSubmissionService {
             }
 
             final Product product = findProduct.get();
-            final BigDecimal serviceFee = BigDecimal.valueOf(
-                    product.getSurveyFee()
-                            + product.getLegalFee()
-                            + product.getAdminLimitFee()
-                            + product.getOthersFee()
-            );
+            BigDecimal serviceFee = ntfResult;
+
+            boolean isCustomerExisting = isCustomerExisting(authentication, request.getToken());
+            if (isCustomerExisting) {
+                serviceFee = serviceFee
+                        .add(
+                                BigDecimal.valueOf(product.getEffectiveRate() * ntfResult.doubleValue())
+                        )
+                        .add(
+                                BigDecimal.valueOf(product.getAdminRate() * ntfResult.doubleValue())
+                        )
+                        .add(
+                                BigDecimal.valueOf(product.getOthersFee())
+                        );
+            } else {
+                serviceFee = serviceFee
+                        .add(
+                                BigDecimal.valueOf(product.getEffectiveRate() * ntfResult.doubleValue())
+                        )
+                        .add(
+                                BigDecimal.valueOf(product.getProvisionRate() * ntfResult.doubleValue())
+                        )
+                        .add(
+                                BigDecimal.valueOf(product.getSurveyFee())
+                        )
+                        .add(
+                                BigDecimal.valueOf(product.getLegalFee())
+                        )
+                        .add(
+                                BigDecimal.valueOf(product.getAdminRate() * ntfResult.doubleValue())
+                        )
+                        .add(
+                                BigDecimal.valueOf(product.getOthersFee())
+                        );
+            }
+
             final BigDecimal estimateDisburse = ntfResult.subtract(serviceFee);
 
             return EstimatedDisburseDto.builder()
@@ -308,7 +308,7 @@ public class LoanSubmissionService {
                 simulation.setTotalInvoiceAmount(BigDecimal.valueOf(totalInvoiceAmount).setScale(2, RoundingMode.CEILING));
             }
 
-            final EstimatedDisburseDto calculateDisburse = calculateDisburse(simulation);
+            final EstimatedDisburseDto calculateDisburse = calculateDisburse(authentication, simulation);
             final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
                     .financingAmount(calculateDisburse.getFinancingAmount())
                     .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
@@ -352,15 +352,6 @@ public class LoanSubmissionService {
                     createdInvoices
             );
 
-            /*simulationHistoryService.create(
-                    customer,
-                    createdFinancingHdr,
-                    totalInvoiceAmount,
-                    createdFinancingHdr.getRetention(),
-                    createdFinancingHdr.getAdminFeeAmt(),
-                    createdFinancingHdr.getFinancingAmt()
-            );*/
-
             return CreatedSimulationDto.builder()
                     .productId(request.getProductId())
                     .financingHdrCode(createdFinancingHdr.getFinancingHdrCode())
@@ -386,7 +377,6 @@ public class LoanSubmissionService {
                 throw new BadCredentialsException("Pin is invalid, try to entry right pin");
             }
 
-            boolean shouldUploadMandatory = false;
             List<LegalFile> legalFiles = legalFileRepository.findAllByCustCode(customer);
             if (
                     legalFiles
@@ -469,36 +459,35 @@ public class LoanSubmissionService {
                 return null;
             }
 
-            if (
-                    token.equals("1")
-                            || token.equals("2")
-                            || token.equals("3")
-            ) {
-                token = "eyJCb3V3aGVlckNvZGUiOiJiOGVlODViMC0wYjExLTQ5MDMtYWYxZS0xOWFkZGI2NTM0NjIiLCJDcmVhdGVkRGF0ZVN0cmluZyI6IjIwMjQtMDgtMjEgMTU6MDQ6MzIiLCJWZW5kb3JDb2RlIjoiMDAwMTAwMDAwNiJ9.CEC649B96AB33D8736A6838302CF4213";
-            }
-
             VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, token);
-            Optional<ExternalIntegrationLoanSimulationDto> find = findExternalIntegrationByBouwheerCode(
+            Optional<ExternalIntegrationLoanSimulationDto> find = importantNotesService.findExternalIntegrationByBouwheerCode(
                     vendorTokenExtractor.getBouwheerCode().toString(),
                     vendorTokenExtractor.getVendorCode()
             );
 
             InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService.inquiryVendor(vendorTokenExtractor.getVendorCode()).getData();
-            ExternalIntegrationLoanSimulationDto.VendorDto vendor = ExternalIntegrationLoanSimulationDto.VendorDto.builder()
-                    .vendorCode(vendorTokenExtractor.getVendorCode())
-                    .name(inquiryVendorRemote.getVendorName())
-                    .customerType("Perusahaan")
-                    .email(inquiryVendorRemote.getEmail())
-                    .mobilePhone(FormatingUtils.formatPhone(inquiryVendorRemote.getPhone()))
-                    .customerIdNo(inquiryVendorRemote.getNpwp())
-                    .build();
 
             ExternalIntegrationLoanSimulationDto result = find.orElseGet(() -> ExternalIntegrationLoanSimulationDto.builder()
                     .bouwheerCode(vendorTokenExtractor.getBouwheerCode().toString())
                     .alreadyAcceptImportantNotes(false)
                     .build());
 
-            result.setVendor(Base64.getUrlEncoder().encodeToString(ObjectUtils.jsonToStr(vendor).getBytes(StandardCharsets.UTF_8)));
+            result.setVendor(
+                    Base64
+                            .getUrlEncoder()
+                            .encodeToString(
+                                    ObjectUtils
+                                            .jsonToStr(
+                                                    importantNotesService
+                                                            .generateVendor(
+                                                                    inquiryVendorRemote,
+                                                                    vendorTokenExtractor.getVendorCode(),
+                                                                    "Perusahaan"
+                                                            )
+                                            )
+                                            .getBytes(StandardCharsets.UTF_8)
+                            )
+            );
 
             return result;
         } catch (Exception e) {
@@ -508,86 +497,21 @@ public class LoanSubmissionService {
     }
 
     public ImportantNotesDto importanceNotes() {
-        return ImportantNotesDto.builder()
-                .description("<p>Semua <b>data legalitas, keuangan, & informasi transaksi</b> perusahaan bapak/ibu dalam E-procurement dan POST (Purchase Order System Tracking) PT. Trakindo Utama akan diberikan secara otomatis kepada PT. Chandra Sakti Utama Leasing (CSULfinance) sebagai anak usaha Grup TMT (Tiara Marga Trakindo) yang memfasilitasi pembiayaan tagihan antara vendor dengan PT.Trakindo Utama. Semua data informasi ini dipakai hanya untuk transaksi pembiayaan anjak piutang / tagihan di CSULfinance. \n" +
-                        "CSULfinance berizin dan diawasi oleh Otoritas Jasa Keuangan (OJK)</p>")
-                .legals(List.of(
-                        "Akta Pendirian",
-                        "Akta Penyesuaian Anggaran Dasar terhadap UU 40/2007 (Jika PT)",
-                        "Akta Perubahan mengenai Modal Ditempatkan dan Disetor",
-                        "Akta Perubahan Maksud dan Tujuan Persero",
-                        "Akta Perubahan Terakhir mengenai Perubahan Susunan Pengurus Perseroan",
-                        "Akta-Akta Perubahan Terakhir Lainnya + SK Persetujuan Menkumhan / Surat Penerimaan Pemberitahuan Perubahan Anggaran Dasar / Data Perseroan (Jika ada)",
-                        "Identitas Pengurus (KTP/Paspor/KITAS)",
-                        "NPWP",
-                        "NIB (RBA)",
-                        "Izin Usaha Lainnya",
-                        "Izin Lokasi",
-                        "Company Profile",
-                        "Rekap Invoice Tagihan Trakindo",
-                        "Rekening Koran",
-                        "PO dari Trakindo",
-                        "FAP (Formulir Aplikasi Pembiayaan)",
-                        "Laporan Keuangan",
-                        "Foto Gedung",
-                        "Pengalaman Kerja",
-                        "Struktur Organisasi",
-                        "Bank Detail"
-                ))
-                .build();
+        return importantNotesService.importantNotesDto();
     }
 
     public ExternalIntegrationLoanSimulationDto saveImportantNotes(SaveImportantNotesRequest request) throws SignatureException, JsonProcessingException {
         try {
             VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(null, request.getToken());
-            Optional<ExternalIntegrationLoanSimulationDto> find = findExternalIntegrationByBouwheerCode(
+            final InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService.inquiryVendor(vendorTokenExtractor.getVendorCode()).getData();
+
+            return importantNotesService.create(
+                    inquiryVendorRemote,
                     vendorTokenExtractor.getBouwheerCode().toString(),
                     vendorTokenExtractor.getVendorCode()
             );
-
-            final ExternalIntegrationLoanSimulationDto result;
-            if (find.isEmpty()) {
-                jdbcTemplate.update(
-                        "insert into _loan_important_notes (vendor_code, bouwheer_code, already_accept_important_notes, dtm_crt) values (?, ?, ?, ?)",
-                        vendorTokenExtractor.getVendorCode(),
-                        vendorTokenExtractor.getBouwheerCode(),
-                        true,
-                        new Date()
-                );
-
-                result = findExternalIntegrationByBouwheerCode(vendorTokenExtractor.getBouwheerCode().toString(), vendorTokenExtractor.getVendorCode())
-                        .get();
-            } else {
-                result = find.get();
-            }
-
-            final InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService.inquiryVendor(vendorTokenExtractor.getVendorCode()).getData();
-            final ExternalIntegrationLoanSimulationDto.VendorDto vendor = ExternalIntegrationLoanSimulationDto.VendorDto.builder()
-                    .vendorCode(vendorTokenExtractor.getVendorCode())
-                    .name(inquiryVendorRemote.getVendorName())
-                    .customerType("Perusahaan")
-                    .email(inquiryVendorRemote.getEmail())
-                    .mobilePhone(inquiryVendorRemote.getPhone())
-                    .customerIdNo(inquiryVendorRemote.getNpwp())
-                    .build();
-
-            result.setVendor(Base64.getUrlEncoder().encodeToString(ObjectUtils.jsonToStr(vendor).getBytes(StandardCharsets.UTF_8)));
-
-            return result;
         } catch (Exception e) {
             log.error("saveImportantNotes, error {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    public SimulationHistDto lastSimulationHistory(Authentication authentication) throws SignatureException {
-        try {
-            Customer customer = CustomerUtils.authenticateCustomer(authentication);
-            FinancingHdr financingHdr = financingHdrService.findLastBy(customer);
-
-            return simulationHistoryService.findLastBy(financingHdr);
-        } catch (Exception e) {
-            log.error("lastSimulationHistory, error {}", e.getMessage());
             throw e;
         }
     }
@@ -601,54 +525,72 @@ public class LoanSubmissionService {
         );
     }
 
-    /**
-     * <h4>Dummy for crud operation of modal dialog important notes (FE)</h4>
-     * <p>This can be determine modal show only once</p>
-     */
-    private void initTblImportantNotes() {
-        final String query =
-                "select count(*) "
-                        + "from information_schema.tables "
-                        + "where table_name = ? and table_schema = 'public'";
+    private boolean isCustomerExisting(Authentication authentication, String token) throws SignatureException, JsonProcessingException {
+        final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(null, token);
+        final ExistingCustomerDto existingCustomer = existingCustomerService.findLastByVendorCode(vendorTokenExtractor.getVendorCode())
+                .orElse(null);
+        if (authentication == null) {
+            if (existingCustomer == null) {
+                InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService
+                        .inquiryVendor(vendorTokenExtractor.getVendorCode())
+                        .getData();
 
-        Integer result = jdbcTemplate.queryForObject(query, Integer.class, "_loan_important_notes");
-        if (result == null || result == 0) {
-            final String createTable =
-                    """
-                                create table public._loan_important_notes
-                                (
-                                    id                          int generated by default as identity primary key,
-                                    vendor_code                 varchar(255)                  not null,
-                                    bouwheer_code               varchar(255)                  not null,
-                                    already_accept_important_notes boolean default false not null,
-                                    dtm_crt                     timestamp             not null
-                                );
-                            """;
+                boolean result = validateCwrForCustomerExisting(
+                        ExistingCustomerRequest.KeyType.npwp.name(),
+                        inquiryVendorRemote.getNpwp(),
+                        null,
+                        null
+                );
 
-            jdbcTemplate.execute(createTable);
+                existingCustomerService.createOrUpdate(
+                        vendorTokenExtractor.getVendorCode(),
+                        result,
+                        ExistingCustomerRequest.KeyType.npwp.name().toUpperCase(),
+                        inquiryVendorRemote.getNpwp()
+                );
+
+                return result;
+            }
+
+            return existingCustomer.getIsExisting();
         }
+
+        final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+        final String identityType = customer.getCustIdTypeCode(),
+                identityNo = customer.getCompany() != null
+                        ? customer.getCompany().getIdentityNo()
+                        : (customer.getPersonal() != null ? customer.getPersonal().getIdentityNo() : customer.getCustIdNo());
+
+        boolean result = validateCwrForCustomerExisting(
+                identityType,
+                identityNo,
+                customer,
+                bouwheerRepository.findByBouwheerCode(vendorTokenExtractor.getBouwheerCode())
+                        .orElse(null)
+        );
+
+        existingCustomerService.createOrUpdate(
+                customer.getCustExternalCode(),
+                result,
+                identityType,
+                identityNo
+        );
+
+        return result;
     }
 
-    private Optional<ExternalIntegrationLoanSimulationDto> findExternalIntegrationByBouwheerCode(String bouwheerCode, String vendorCode) {
-        try {
-            initTblImportantNotes();
-            ExternalIntegrationLoanSimulationDto result = jdbcTemplate.queryForObject(
-                    "select bouwheer_code, vendor_code, already_accept_important_notes, dtm_crt from public._loan_important_notes where bouwheer_code = ? and vendor_code = ? order by id desc limit 1",
-                    (rs, rowNum) -> ExternalIntegrationLoanSimulationDto.builder()
-                            .bouwheerCode(rs.getString("bouwheer_code"))
-                            .alreadyAcceptImportantNotes(rs.getBoolean("already_accept_important_notes"))
-                            .dtmCrt(rs.getTimestamp("dtm_crt"))
-                            .build(),
-                    bouwheerCode,
-                    vendorCode
-            );
-            return Optional.ofNullable(result);
-        } catch (EmptyResultDataAccessException emptyResultDataAccessException) {
-            return Optional.empty();
-        } catch (Exception e) {
-            log.error("findExternalIntegrationByBouwheerCode, error {}", e.getMessage());
-            throw e;
-        }
+    private boolean validateCwrForCustomerExisting(
+            String identityType,
+            String identityNo,
+            Customer customer,
+            Bouwheer bouwheer
+    ) throws JsonProcessingException {
+        return existingCustomerService.inquiryAndDecideExistingCustomer(
+                ExistingCustomerRequest.KeyType.valueOf(identityType.toLowerCase()),
+                identityNo,
+                customer,
+                bouwheer
+        );
     }
 
     @Getter

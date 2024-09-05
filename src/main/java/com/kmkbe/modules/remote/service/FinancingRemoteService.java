@@ -74,7 +74,7 @@ public class FinancingRemoteService {
                 message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
             }
 
-            throw new RuntimeException("Error while perform action to MST\n\nDetail:" + message);
+            throw new RuntimeException("Error while perform action to MST\nDetail:" + message);
         } catch (Exception e) {
             log.error("postedSubmission, error {}", e.getMessage());
             throw new RuntimeException("Posted Submission Failed");

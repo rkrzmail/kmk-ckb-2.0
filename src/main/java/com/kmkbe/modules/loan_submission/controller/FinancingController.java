@@ -77,12 +77,9 @@ public class FinancingController {
     public CommonResult<Object> updateApproval(
             @RequestParam("apiKey") String apiKey
     ) {
-        //curl http://localhost:8443/api/v1/financing/approvals/status?apiKey=$2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC
-        //curl http://localhost:8443/api/v1/financing/approvals/status?apiKey=%242b%2410%24YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC
         if (!apiKey.equalsIgnoreCase("123")) {
             throw new IllegalApiKeyException();
         }
-
         financingService.recallApprovalStatus();
         return new CommonResult<>().success(null, "Success Check Approval Status");
     }

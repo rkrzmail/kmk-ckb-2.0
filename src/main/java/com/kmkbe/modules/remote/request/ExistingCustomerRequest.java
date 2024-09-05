@@ -2,6 +2,7 @@ package com.kmkbe.modules.remote.request;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -26,18 +27,32 @@ public class ExistingCustomerRequest {
          * <p>Example Key = IdNo</p>
          */
         @JsonProperty("Key")
-        private String key;
+        private KeyType key;
 
         /**
          * <p>Example Operator = EQ</p>
          */
+        @Builder.Default
         @JsonProperty("Operator")
-        private String operator;
+        private String operator = "EQ";
 
         /**
          * <p>Example Value = xxxxxx</p>
          */
         @JsonProperty("Value")
         private String value;
+    }
+
+
+    public enum KeyType{
+        ktp("IdNo"),
+        npwp("TaxIdNo");
+
+        @JsonValue
+        private final String value;
+
+        KeyType(String value) {
+            this.value = value;
+        }
     }
 }

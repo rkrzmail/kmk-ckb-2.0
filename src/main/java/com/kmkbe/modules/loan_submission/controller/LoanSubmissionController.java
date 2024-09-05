@@ -101,10 +101,11 @@ public class LoanSubmissionController {
 
     @GetMapping("/simulations/calculate")
     public CommonResult<EstimatedDisburseDto> getCalculateDisburse(
+            Authentication authentication,
             CalculateSimulationRequest request
-    ) {
+    ) throws SignatureException, JsonProcessingException {
         return new CommonResult<EstimatedDisburseDto>().success(
-                loanSubmissionService.calculateDisburse(request)
+                loanSubmissionService.calculateDisburse(authentication, request)
         );
     }
 

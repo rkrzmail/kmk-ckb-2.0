@@ -242,7 +242,7 @@ public class AgreementService {
 
             final List<InquiryAgreementCwrDto> data;
             try {
-                BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreement(
+                BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreementByNoAgreement(
                         InquiryAgreementRemoteRequest.builder()
                                 .agreementNo(agreementNo)
                                 .build()
@@ -284,7 +284,7 @@ public class AgreementService {
             validateAgreement(request.getAgreementNo());
             final List<InquiryAgreementCwrDto> data;
             try {
-                BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreement(
+                BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreementByNoAgreement(
                         InquiryAgreementRemoteRequest.builder()
                                 .agreementNo(request.getAgreementNo())
                                 .build()
@@ -414,9 +414,9 @@ public class AgreementService {
         if (
                 postedResponse.getData() != null
                         && postedResponse instanceof Map<?, ?> body
-                        && body.get("email") != null
+                        && body.get("email_address") != null
         ) {
-            email = body.get("email").toString();
+            email = body.get("email_address").toString();
         }
 
         emailService.sendNotificationBouwheerPayment(

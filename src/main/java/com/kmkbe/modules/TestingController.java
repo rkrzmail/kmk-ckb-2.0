@@ -1,5 +1,6 @@
 package com.kmkbe.modules;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.OtpRepository;
 import com.kmkbe.core.service.FileStorageService;
@@ -61,7 +62,7 @@ public class TestingController {
             .toAbsolutePath().normalize();
 
     @GetMapping("/get")
-    public CommonResult<Object> get() {
+    public CommonResult<Object> get() throws JsonProcessingException {
         //var a = redisUtils.getValue("khesatoken");
        /* Cache cache = cacheManager.getCache("refreshToken");
         if (cache != null) {
@@ -77,7 +78,7 @@ public class TestingController {
             list.add(redisUtils.getValue(key));
         }*/
 
-        var a = customerRemoteService.validateExisting(
+       /* var a = customerRemoteService.validateExisting(
                 ExistingCustomerRequest.builder()
                         .args(ExistingCustomerRequest.Args.builder()
                                 .key("IdNo")
@@ -89,7 +90,8 @@ public class TestingController {
                         .requestDateTime(DateTimeUtils.SDF_STANDARD_DATE.format(new Date()))
                         .build()
         );
-        return new CommonResult<>().success(a, "ok");
+        return new CommonResult<>().success(a, "ok");*/
+        return null;
     }
 
     @GetMapping("/getAll")
