@@ -1,0 +1,73 @@
+Manifest-Version: 1.0
+Main-Class: com.kmkbe.KmkbeApplication
+Class-Path: jackson-core-2.17.1.jar logback-core-1.5.6.jar reactive-stre
+ ams-1.0.4.jar spring-data-mongodb-4.3.0.jar aspectjweaver-1.9.22.jar sp
+ ring-boot-configuration-processor-3.2.4.jar spring-boot-starter-aop-3.3
+ .0.jar spring-core-6.1.8.jar thymeleaf-3.1.2.RELEASE.jar jedis-5.1.2.ja
+ r spring-expression-6.1.8.jar spring-boot-starter-security-3.3.0.jar lo
+ mbok-1.18.32.jar spring-boot-starter-jdbc-3.3.0.jar logback-classic-1.5
+ .6.jar jul-to-slf4j-2.0.13.jar junit-jupiter-params-5.10.2.jar spring-s
+ ecurity-crypto-6.3.0.jar HdrHistogram-2.2.1.jar spring-security-oauth2-
+ authorization-server-1.3.0.jar spring-boot-starter-json-3.3.0.jar sprin
+ g-security-oauth2-jose-6.3.0.jar byte-buddy-1.14.16.jar spring-boot-sta
+ rter-web-3.3.0.jar spring-boot-starter-tomcat-3.3.0.jar jjwt-api-0.11.5
+ .jar junit-jupiter-5.10.2.jar mockito-core-5.11.0.jar junit-jupiter-eng
+ ine-5.10.2.jar tomcat-embed-el-10.1.24.jar springdoc-openapi-starter-we
+ bmvc-api-2.5.0.jar objenesis-3.3.jar jakarta.transaction-api-2.0.1.jar 
+ spring-web-6.1.8.jar jakarta.persistence-api-3.1.0.jar spring-boot-admi
+ n-client-3.3.2.jar awaitility-4.2.1.jar opentest4j-1.3.0.jar commons-la
+ ng3-3.14.0.jar jaxb-runtime-4.0.5.jar junit-4.13.2.jar lettuce-core-6.3
+ .2.RELEASE.jar jakarta.xml.bind-api-4.0.2.jar spring-boot-starter-loggi
+ ng-3.3.0.jar netty-handler-4.1.110.Final.jar spring-security-web-6.3.0.
+ jar spring-boot-starter-thymeleaf-3.3.0.jar asm-9.6.jar netty-resolver-
+ 4.1.110.Final.jar jakarta.annotation-api-2.1.1.jar netty-transport-4.1.
+ 110.Final.jar jackson-annotations-2.17.1.jar spring-boot-starter-data-j
+ pa-3.3.0.jar istack-commons-runtime-4.1.2.jar spring-aop-6.1.8.jar json
+ -20231013.jar jjwt-jackson-0.11.5.jar spring-oxm-6.1.8.jar log4j-api-2.
+ 23.1.jar accessors-smart-2.5.1.jar jandex-3.1.2.jar spring-boot-starter
+ -data-redis-3.3.0.jar spring-jcl-6.1.8.jar jackson-dataformat-toml-2.17
+ .1.jar mongodb-driver-sync-5.0.1.jar snakeyaml-2.2.jar spring-security-
+ oauth2-resource-server-6.3.0.jar testng-7.10.2.jar netty-common-4.1.110
+ .Final.jar spring-security-config-6.3.0.jar swagger-ui-5.13.0.jar Laten
+ cyUtils-2.0.3.jar spring-boot-starter-oauth2-resource-server-3.3.0.jar 
+ spring-data-commons-3.3.0.jar jackson-datatype-jsr310-2.17.1.jar Hikari
+ CP-5.1.0.jar swagger-models-jakarta-2.2.21.jar spring-boot-starter-test
+ -3.3.0.jar netty-buffer-4.1.110.Final.jar hibernate-core-6.5.2.Final.ja
+ r spring-boot-starter-3.3.0.jar postgresql-42.7.3.jar jakarta.mail-2.0.
+ 3.jar spring-orm-6.1.8.jar spring-boot-actuator-autoconfigure-3.3.0.jar
+  junit-platform-commons-1.10.2.jar jboss-logging-3.5.3.Final.jar jackso
+ n-databind-2.17.1.jar mockito-junit-jupiter-5.11.0.jar spring-boot-star
+ ter-data-mongodb-3.3.0.jar spring-data-jpa-3.3.0.jar spring-security-oa
+ uth2-core-6.3.0.jar assertj-core-3.25.3.jar swagger-annotations-jakarta
+ -2.2.21.jar spring-boot-devtools-3.3.0.jar junit-jupiter-api-5.10.2.jar
+  netty-transport-native-unix-common-4.1.110.Final.jar flyway-core-10.10
+ .0.jar hamcrest-core-2.2.jar jakarta.validation-api-3.0.2.jar spring-bo
+ ot-starter-actuator-3.3.0.jar thymeleaf-spring6-3.1.2.RELEASE.jar unbes
+ cape-1.1.6.RELEASE.jar jakarta.activation-api-2.1.3.jar byte-buddy-agen
+ t-1.14.16.jar tomcat-embed-websocket-10.1.24.jar hibernate-commons-anno
+ tations-6.0.6.Final.jar json-smart-2.5.1.jar springdoc-openapi-starter-
+ common-2.5.0.jar spring-boot-autoconfigure-3.3.0.jar spring-context-6.1
+ .8.jar spring-beans-6.1.8.jar spring-boot-admin-starter-client-3.3.2.ja
+ r netty-codec-4.1.110.Final.jar spring-boot-test-3.3.0.jar spring-tx-6.
+ 1.8.jar spring-jdbc-6.1.8.jar txw2-4.0.5.jar checker-qual-3.42.0.jar jj
+ wt-impl-0.11.5.jar spring-boot-starter-cache-3.3.0.jar spring-security-
+ core-6.3.0.jar micrometer-observation-1.13.0.jar json-path-2.9.0.jar jc
+ ommander-1.82.jar log4j-to-slf4j-2.23.1.jar micrometer-core-1.13.0.jar 
+ spring-boot-3.3.0.jar gson-2.10.1.jar swagger-core-jakarta-2.2.21.jar m
+ apstruct-1.5.5.Final.jar junit-platform-engine-1.10.2.jar jackson-datat
+ ype-jdk8-2.17.1.jar jakarta.inject-api-2.0.1.jar spring-boot-starter-ma
+ il-3.3.0.jar spring-data-keyvalue-3.3.0.jar commons-pool2-2.12.0.jar to
+ mcat-embed-core-10.1.24.jar springdoc-openapi-starter-webmvc-ui-2.5.0.j
+ ar antlr4-runtime-4.13.0.jar bson-5.0.1.jar mongodb-driver-core-5.0.1.j
+ ar micrometer-jakarta9-1.13.0.jar jaxb-core-4.0.5.jar spring-test-6.1.8
+ .jar angus-activation-2.0.2.jar jsonassert-1.5.1.jar spring-context-sup
+ port-6.1.8.jar spring-webmvc-6.1.8.jar jackson-dataformat-yaml-2.17.1.j
+ ar android-json-0.0.20131108.vaadin1.jar classmate-1.7.0.jar jquery-3.7
+ .1.jar slf4j-api-2.0.13.jar hamcrest-2.2.jar xmlunit-core-2.9.1.jar spr
+ ing-data-redis-3.3.0.jar jackson-module-parameter-names-2.17.1.jar spri
+ ng-boot-actuator-3.3.0.jar attoparser-2.0.7.RELEASE.jar spring-boot-tes
+ t-autoconfigure-3.3.0.jar micrometer-commons-1.13.0.jar flyway-database
+ -postgresql-10.10.0.jar bson-record-codec-5.0.1.jar reactor-core-3.6.6.
+ jar nimbus-jose-jwt-9.39.1.jar spring-aspects-6.1.8.jar apiguardian-api
+ -1.1.2.jar
+
