@@ -402,6 +402,7 @@ public class AgreementService {
                 .stream()
                 .map((item) ->
                         InvoiceEmailPayload.builder()
+                                .invoiceNo(item.getInvoice().getCustInvNo())
                                 .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
                                 .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                                 .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))

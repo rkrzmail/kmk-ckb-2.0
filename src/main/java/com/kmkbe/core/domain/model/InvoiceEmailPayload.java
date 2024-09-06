@@ -8,7 +8,7 @@ import java.util.List;
 @Getter
 @Builder
 public class InvoiceEmailPayload {
-    private Long seq;
+    private String invoiceNo;
     private String description;
     private String bouwheerName;
 
@@ -43,7 +43,7 @@ public class InvoiceEmailPayload {
                 result.append("<tr style=" + "\"background-color: #E7ECFF;\"" + ">").append("\n");
             }
 
-            result.append("<td>").append(payload.getSeq()).append("</td>").append("\n");
+            result.append("<td>").append(payload.getInvoiceNo()).append("</td>").append("\n");
             result.append("<td>").append(payload.getDescription()).append("</td>").append("\n");
             result.append("<td>").append(payload.getBouwheerName()).append("</td>").append("\n");
             result.append("<td>").append(payload.getInvoiceDate()).append("</td>").append("\n");

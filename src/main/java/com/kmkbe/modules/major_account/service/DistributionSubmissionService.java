@@ -215,7 +215,7 @@ public class DistributionSubmissionService {
                         .stream()
                         .map((item) ->
                                 InvoiceEmailPayload.builder()
-                                        //.seq(item.getInvoiceSeqno())
+                                        .invoiceNo(item.getInvoice().getCustInvNo())
                                         .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
                                         .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                                         .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
