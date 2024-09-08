@@ -21,15 +21,12 @@ import com.kmkbe.modules.loan_submission.request.CreateLoanApplicationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.SaveImportantNotesRequest;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
-import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
-import com.kmkbe.modules.remote.request.PropCriteriaGenericTypeRequest;
 import com.kmkbe.modules.remote.service.*;
 import io.netty.util.internal.StringUtil;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
@@ -227,25 +224,27 @@ public class LoanSubmissionService {
             final Product product = findProduct.get();
             BigDecimal serviceFee = ntfResult;
 
-            boolean isCustomerExisting = isCustomerExisting(authentication, request.getToken());
-            if (isCustomerExisting) {
+            Cwr isCustomerExisting = isCustomerExistingByCwr(authentication, request.getToken());
+            if (isCustomerExisting != null) {
+                // pengali rate dari pengajuan menjadi plafond dari CWR
                 serviceFee = serviceFee
                         .add(
-                                BigDecimal.valueOf(product.getEffectiveRate() * ntfResult.doubleValue())
+                                BigDecimal.valueOf(product.getEffectiveRate() * isCustomerExisting.getPlafondAmt())
                         )
                         .add(
-                                BigDecimal.valueOf(product.getAdminRate() * ntfResult.doubleValue())
+                                BigDecimal.valueOf(product.getAdminRate() * isCustomerExisting.getPlafondAmt())
                         )
                         .add(
                                 BigDecimal.valueOf(product.getOthersFee())
                         );
             } else {
+                // pengali pengajuan * 3
                 serviceFee = serviceFee
                         .add(
-                                BigDecimal.valueOf(product.getEffectiveRate() * ntfResult.doubleValue())
+                                BigDecimal.valueOf(product.getEffectiveRate() * ntfResult.doubleValue() * 3)
                         )
                         .add(
-                                BigDecimal.valueOf(product.getProvisionRate() * ntfResult.doubleValue())
+                                BigDecimal.valueOf(product.getProvisionRate() * ntfResult.doubleValue() * 3)
                         )
                         .add(
                                 BigDecimal.valueOf(product.getSurveyFee())
@@ -254,7 +253,7 @@ public class LoanSubmissionService {
                                 BigDecimal.valueOf(product.getLegalFee())
                         )
                         .add(
-                                BigDecimal.valueOf(product.getAdminRate() * ntfResult.doubleValue())
+                                BigDecimal.valueOf(product.getAdminRate() * ntfResult.doubleValue() * 3)
                         )
                         .add(
                                 BigDecimal.valueOf(product.getOthersFee())
@@ -525,34 +524,32 @@ public class LoanSubmissionService {
         );
     }
 
-    private boolean isCustomerExisting(Authentication authentication, String token) throws SignatureException, JsonProcessingException {
+    private Cwr isCustomerExistingByCwr(Authentication authentication, String token) throws SignatureException, JsonProcessingException {
         final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(null, token);
         final ExistingCustomerDto existingCustomer = existingCustomerService.findLastByVendorCode(vendorTokenExtractor.getVendorCode())
                 .orElse(null);
         if (authentication == null) {
+            InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService
+                    .inquiryVendor(vendorTokenExtractor.getVendorCode())
+                    .getData();
+
+            Cwr cwr = validateCwrForCustomerExisting(
+                    ExistingCustomerRequest.KeyType.npwp.name(),
+                    inquiryVendorRemote.getNpwp(),
+                    null,
+                    null
+            );
+
             if (existingCustomer == null) {
-                InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService
-                        .inquiryVendor(vendorTokenExtractor.getVendorCode())
-                        .getData();
-
-                boolean result = validateCwrForCustomerExisting(
-                        ExistingCustomerRequest.KeyType.npwp.name(),
-                        inquiryVendorRemote.getNpwp(),
-                        null,
-                        null
-                );
-
                 existingCustomerService.createOrUpdate(
                         vendorTokenExtractor.getVendorCode(),
-                        result,
+                        cwr != null,
                         ExistingCustomerRequest.KeyType.npwp.name().toUpperCase(),
                         inquiryVendorRemote.getNpwp()
                 );
-
-                return result;
             }
 
-            return existingCustomer.getIsExisting();
+            return cwr;
         }
 
         final Customer customer = CustomerUtils.authenticateCustomer(authentication);
@@ -561,7 +558,7 @@ public class LoanSubmissionService {
                         ? customer.getCompany().getIdentityNo()
                         : (customer.getPersonal() != null ? customer.getPersonal().getIdentityNo() : customer.getCustIdNo());
 
-        boolean result = validateCwrForCustomerExisting(
+        Cwr cwr = validateCwrForCustomerExisting(
                 identityType,
                 identityNo,
                 customer,
@@ -571,15 +568,15 @@ public class LoanSubmissionService {
 
         existingCustomerService.createOrUpdate(
                 customer.getCustExternalCode(),
-                result,
+                cwr != null,
                 identityType,
                 identityNo
         );
 
-        return result;
+        return cwr;
     }
 
-    private boolean validateCwrForCustomerExisting(
+    private Cwr validateCwrForCustomerExisting(
             String identityType,
             String identityNo,
             Customer customer,

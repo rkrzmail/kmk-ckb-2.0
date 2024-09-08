@@ -13,6 +13,7 @@ import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.core.domain.repository.CustomerRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -31,21 +32,21 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class CustomerSeederService {
+public class CustomerSeederService implements CommandLineRunner {
     private final CustomerRepository customerRepository;
     private final CustomerCompanyRepository companyRepository;
     private final CustomerPersonalRepository personalRepository;
     private final BCryptPasswordEncoder bcryptEncoder;
 
-    @Transactional
-    public void seed() {
-        final String emailCompany = "khesa@nikitagenerator.com";
-        final String emailPersonal = "vandikalvandi@gmail.com";
+    //@Transactional
+    private void seed() {
+        final String emailCompany = null;
+        final String emailPersonal = "genzha112233@gmail.com";
         try {
-            Optional<Customer> findCompany = customerRepository.findByCustEmail(emailCompany);
+           /* Optional<Customer> findCompany = customerRepository.findByCustEmail(emailCompany);
             if (findCompany.isEmpty()) {
                 seedCustomerCompany(emailCompany);
-            }
+            }*/
 
             Optional<Customer> findPersonal = customerRepository.findByCustEmail(emailPersonal);
             if (findPersonal.isEmpty()) {
@@ -77,6 +78,8 @@ public class CustomerSeederService {
                     .dtmCrt(Instant.now())
                     .usrUpd("SYSTEM")
                     .dtmUpd(null)
+                    .custExternalCode("0002004099")
+                    .agreeLegalShare(true)
                     .build();
 
             customer = customerRepository.save(customer);
@@ -175,5 +178,10 @@ public class CustomerSeederService {
         ).toMinutes() / (double) CommonConstants.MONTH_IN_MINUTES;
 
         return Map.of("staySince", staySince, "stayLength", differenceDays);
+    }
+
+    @Override
+    public void run(String... args) {
+        seed();
     }
 }

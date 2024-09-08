@@ -15,6 +15,7 @@ import com.kmkbe.core.domain.model.SimulationDisburseResult;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.InvoiceRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.user.entity.MstUser;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
 import java.security.SignatureException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.UUID;
 
 @Service
@@ -65,19 +67,22 @@ public class FinancingHdrService {
                 double retentionAmount = disburseAmount * retentionRate;
 
                 double bankLoanInterest = 0.11;
-                double interestAmount = disburseAmount * bankLoanInterest;
+                double interestAmount = disburseAmount * bankLoanInterest;;
+
+                // ((tanggal due date invoice) 10 - hari berjalan) + 7 (bouwheer grace period)
+                Long tenor = DateTimeUtils.dateDiffInDay(request.getInvoices().getFirst().getInvoiceDueDate(), new Date()) + bouwheer.getGracePeriod();
 
                 header.setFinancingHdrCode(UUID.randomUUID());
                 header.setCustomer(customer);
                 header.setBouwheer(bouwheer);
-                header.setTenor(90L); // 90 as default
+                header.setTenor(tenor);
                 header.setFinancingDate(Instant.now());
                 header.setCurrencyCode(firstInvoice.getCurrencyCode());
                 header.setInvoiceQty((long) request.getInvoices().size());
                 header.setInterestType("COF"); // not clear
                 header.setInterestAmt(interestAmount); // not clear
                 header.setTermOfPayment(0L); // not clear
-                header.setGracePeriod(0L); // not clear
+                header.setGracePeriod(bouwheer.getGracePeriod()); // get from bouwheer grace_period
                 header.setRetention(retentionAmount); // not clear
                 header.setTotalInvoiceAmt(totalInvoiceAmount);
                 header.setFinancingDueDate(simulationResult.getMaxInvoiceDate().toInstant()); // not clear

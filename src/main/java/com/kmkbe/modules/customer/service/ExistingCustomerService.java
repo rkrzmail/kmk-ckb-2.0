@@ -138,7 +138,7 @@ public class ExistingCustomerService {
     }
 
     @Transactional
-    public boolean inquiryAndDecideExistingCustomer(
+    public Cwr inquiryAndDecideExistingCustomer(
             ExistingCustomerRequest.KeyType identityType,
             String identityNo,
             Customer customer,
@@ -148,7 +148,7 @@ public class ExistingCustomerService {
                 identityType == null
                         || identityNo == null
         ) {
-            return false;
+            return null;
         }
 
         try {
@@ -166,7 +166,7 @@ public class ExistingCustomerService {
             );
 
             if (existingCustomer == null) {
-                return false;
+                return null;
             }
 
             final BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> cwrResponse = cwrRemoteService.inquiryCwr(
@@ -218,6 +218,24 @@ public class ExistingCustomerService {
                         agreementResponse.getData() != null
                                 && agreementResponse.getData().isEmpty()
                 ) {
+                    Cwr result = Cwr.builder()
+                            .cwrCode(firstCwr.getCwrNo())
+                            .bouwheer(bouwheer)
+                            .customer(customer)
+                            .branchCode(firstCwr.getOfficeCode())
+                            .cwrType(firstCwr.getCwrType())
+                            .cwrTypeDesc(firstCwr.getCwrTypeDesc())
+                            .facility(firstCwr.getFacility())
+                            .isRevolving(firstCwr.getIsRevolving())
+                            .currency(firstCwr.getCurrency())
+                            .cwrStartDate(Objects.requireNonNull(DateTimeUtils.cSharpTimeStampToDate(firstCwr.getStartDt())).toInstant())
+                            .cwrEndDate(Objects.requireNonNull(DateTimeUtils.cSharpTimeStampToDate(firstCwr.getEndDt())).toInstant())
+                            .plafondAmt(firstCwr.getPlafondAmt())
+                            .realisationAmt(firstCwr.getRealisationAmt())
+                            .status(firstCwr.getCwrStatDescr())
+                            .usrCrt(customer.getCustName())
+                            .dtmCrt(Instant.now())
+                            .build();
                     if (customer != null && bouwheer != null) {
                         if (StringUtil.isNullOrEmpty(customer.getCustNo())) {
                             final Customer loadedCust = customerRepository.findByCustCode(customer.getCustCode())
@@ -232,34 +250,15 @@ public class ExistingCustomerService {
                                 .orElse(null);
 
                         if (cwr == null) {
-                            cwrRepository.save(
-                                    Cwr.builder()
-                                            .cwrCode(firstCwr.getCwrNo())
-                                            .bouwheer(bouwheer)
-                                            .customer(customer)
-                                            .branchCode(firstCwr.getOfficeCode())
-                                            .cwrType(firstCwr.getCwrType())
-                                            .cwrTypeDesc(firstCwr.getCwrTypeDesc())
-                                            .facility(firstCwr.getFacility())
-                                            .isRevolving(firstCwr.getIsRevolving())
-                                            .currency(firstCwr.getCurrency())
-                                            .cwrStartDate(Objects.requireNonNull(DateTimeUtils.cSharpTimeStampToDate(firstCwr.getStartDt())).toInstant())
-                                            .cwrEndDate(Objects.requireNonNull(DateTimeUtils.cSharpTimeStampToDate(firstCwr.getEndDt())).toInstant())
-                                            .plafondAmt(firstCwr.getPlafondAmt())
-                                            .realisationAmt(firstCwr.getRealisationAmt())
-                                            .status(firstCwr.getCwrStatDescr())
-                                            .usrCrt(customer.getCustName())
-                                            .dtmCrt(Instant.now())
-                                            .build()
-                            );
+                            cwrRepository.save(result);
                         }
                     }
 
-                    return true;
+                    return result;
                 }
             }
 
-            return false;
+            return null;
         } catch (Exception e) {
             log.error("inquiryAndDecideExistingCustomer: error {}", e.getMessage());
             throw e;

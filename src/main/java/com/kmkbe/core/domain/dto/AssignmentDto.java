@@ -14,6 +14,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class AssignmentDto {
     private UUID financingHdrCode;
+    private String agreementCode;
     private UUID custCode;
     private String custName;
     private String bouwheerName;

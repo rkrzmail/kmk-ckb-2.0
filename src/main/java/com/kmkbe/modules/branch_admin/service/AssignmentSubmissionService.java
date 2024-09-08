@@ -115,11 +115,16 @@ public class AssignmentSubmissionService {
                         );
 
                         Agreement agreement = agreementRepository.findTopByFinancingHdr(e).orElse(null);
-                        AgreementFile agreementFile = agreementFileRepository.findTopByAgreementOrderByAgreementFileId(
-                                agreement
-                        ).orElse(null);
+                        AgreementFile agreementFile = null;
 
-                        String agreementDoc = null;
+                        String agreementDoc = null, agreementCode = null;
+                        if (agreement != null) {
+                            agreementCode = agreement.getAgreementCode();
+                            agreementFile = agreementFileRepository.findTopByAgreementOrderByAgreementFileId(
+                                    agreement
+                            ).orElse(null);
+                        }
+
                         if (agreementFile != null) {
                             agreementDoc = UriUtils.fileUlr(
                                     httpServletRequest,
@@ -130,6 +135,7 @@ public class AssignmentSubmissionService {
 
                         return AssignmentDto.builder()
                                 .financingHdrCode(e.getFinancingHdrCode())
+                                .agreementCode(agreementCode)
                                 .custCode(e.getCustomer().getCustCode())
                                 .custName(e.getCustomer().getCustName())
                                 .bouwheerName(e.getBouwheer().getBouwheerName())
