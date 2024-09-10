@@ -4,16 +4,14 @@ import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
 import com.kmkbe.core.domain.dto.FinancingHdrDto;
 import com.kmkbe.core.domain.dto.PaidInvoiceDto;
-import com.kmkbe.core.domain.entity.Bouwheer;
-import com.kmkbe.core.domain.entity.Customer;
-import com.kmkbe.core.domain.entity.FinancingHdr;
-import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.FinancingMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.model.PostedInvoicePayload;
 import com.kmkbe.core.domain.model.SimulationDisburseResult;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.InvoiceRepository;
+import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
@@ -30,6 +28,7 @@ import java.security.SignatureException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -38,7 +37,7 @@ import java.util.UUID;
 public class FinancingHdrService {
     private final FinancingHdrRepository financingHdrRepository;
     private final InvoiceRepository invoiceRepository;
-
+    private final RedisRepository redisRepository;
     public FinancingHdr findLastBy(Customer customer) {
         try {
             return financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer).orElse(null);
@@ -49,6 +48,7 @@ public class FinancingHdrService {
     }
 
     public FinancingHdr create(
+            Authentication authentication,
             Customer customer,
             Bouwheer bouwheer,
             Product product,
@@ -116,7 +116,14 @@ public class FinancingHdrService {
 
                 header = financingHdrRepository.save(header);
 
-                //save _redis by customer customer.getCustCode()
+                //save _redis by customer customer.getCustCode() Authentication authentication,
+                Redis  redis =   Redis.builder()
+                                 .redis(String.valueOf(authentication.getCredentials()))
+                                 .session("")
+                                 .json(  Map.of("FinancingHdr", header) ).build();
+
+                redisRepository.delete(redis);
+                redisRepository.save(redis);
             }
 
             return header;

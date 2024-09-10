@@ -140,6 +140,8 @@ public class AuthService {
             final RefreshToken payload = refreshTokenServices.verify(request.refreshToken());
             refreshTokenServices.invalidate(payload.getRefreshToken().toString());
 
+
+
             final Customer customer = customerRepository
                     .findByCustCode(payload.getUserCode())
                     .orElseThrow(() -> new IllegalStateException("Invalid Refresh Token, Entire Customer doesn't exists. Try to login again."));

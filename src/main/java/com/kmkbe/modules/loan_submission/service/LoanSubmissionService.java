@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.model.*;
 import com.kmkbe.core.domain.repository.BouwheerRepository;
 import com.kmkbe.core.domain.repository.LegalFileRepository;
 import com.kmkbe.core.domain.repository.ProductRepository;
+
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.exception.LoanDocMandatoryException;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
@@ -49,6 +50,7 @@ public class LoanSubmissionService {
     private final BouwheerRepository bouwheerRepository;
     private final BCryptPasswordEncoder bcryptEncoder;
     private final JdbcTemplate jdbcTemplate;
+
     private final JwtLoanSubmissionService jwtLoanSubmissionService;
 
     private final CustomerRemoteService customerRemoteService;
@@ -222,15 +224,11 @@ public class LoanSubmissionService {
             }
 
             final Product product = findProduct.get();
-            BigDecimal serviceFee = BigDecimal.valueOf(0.0),
-                    provisionFeeAmount = BigDecimal.valueOf(0.0),
-                    effectiveFeeAmount,
-                    adminFeeAmount,
-                    othersFeeAmount,
-                    surveyFeeAmount = BigDecimal.valueOf(0.0),
-                    legalFeeAmount = BigDecimal.valueOf(0.0);
 
-            Double provisionRate = 0.0, effectiveRate = 0.0, adminRate = 0.0;
+
+            Double provisionRate = findProduct.get().getProvisionRate(),
+                    effectiveRate = findProduct.get().getEffectiveRate(),
+                    adminRate = findProduct.get().getAdminRate();
 
 
             boolean isCustomerExisting = false;
@@ -239,31 +237,55 @@ public class LoanSubmissionService {
                 validateCwr = isCustomerExistingByCwr(authentication, request.getToken());
                 isCustomerExisting = validateCwr != null;
             }
+            BigDecimal serviceFee ,
+                    provisionFeeAmount ,
+                    effectiveFeeAmount,
+                    adminFeeAmount,
+                    othersFeeAmount,
+                    surveyFeeAmount,
+                    legalFeeAmount ;
 
+            int tenor = 90;//(duedate-skr)+gp bouwherr
+            if (request.getBouwheerCode() == null && request.getInvoiceDueDate() == null) {
 
+            }else {
+                Optional<Bouwheer> bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
+                int top =  DateTimeUtils.dateDiffInDay(request.getInvoiceDueDate(), new Date());
+                tenor = top + ( bouwheer.isEmpty() ? 0 : bouwheer.get().getGracePeriod().intValue()) ;
+            }
             double plafonLimit = validateCwr.getPlafondAmt();
             double nilai_pembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
             double effective_Rate = product.getEffectiveRate().doubleValue();
-            int tenor = 90;//(duedate-skr)+gp bouwherr
             double interestAmount = nilai_pembiayaan * effective_Rate / 100 * tenor / 360 ;//6 digit
             double jumlahBiaya = 0;
+
 
             if (plafonLimit == 0){
                 plafonLimit = ntfResult.doubleValue() * 3;
             }
             if (isCustomerExisting) {
                 double provisionRateFee  = product.getProvisionRate() * plafonLimit / 100 ;
+                double adminFeee  = product.getAdminRate() * nilai_pembiayaan / 100 ;
                 jumlahBiaya = provisionRateFee + product.getSurveyFee() +product.getLegalFee() +
                         product.getAdminRate() + product.getOthersFee() ;
+                provisionFeeAmount = new BigDecimal(provisionRateFee);
+                surveyFeeAmount = new BigDecimal(product.getSurveyFee());
+                legalFeeAmount  = new BigDecimal(product.getLegalFee());
+                adminFeeAmount= new BigDecimal(adminFeee);
+                othersFeeAmount= new BigDecimal(product.getOthersFee());
             }else{
+                provisionFeeAmount = new BigDecimal(0);
+                surveyFeeAmount = new BigDecimal(0);
+                legalFeeAmount  = new BigDecimal(0);
+                adminFeeAmount= new BigDecimal(0);
+                        othersFeeAmount = new BigDecimal(0);
                 jumlahBiaya = product.getAdminRate() + product.getOthersFee() ;
             }
             double nilaiYangdiCarikan = nilai_pembiayaan  - jumlahBiaya;
+            serviceFee = new BigDecimal(jumlahBiaya);
+            effectiveFeeAmount = new BigDecimal(interestAmount);;
 
-
-
-
-            if (isCustomerExisting) {
+            /*if (isCustomerExisting) {
                 // pengali rate dari pengajuan menjadi plafond dari CWR
                 effectiveFeeAmount = new BigDecimal((product.getEffectiveRate() / 100) * validateCwr.getPlafondAmt(), MathContext.DECIMAL64);
                 adminFeeAmount = new BigDecimal((product.getAdminRate() / 100) * validateCwr.getPlafondAmt(), MathContext.DECIMAL64);
@@ -300,16 +322,17 @@ public class LoanSubmissionService {
                         .add(adminFeeAmount)
                         .add(othersFeeAmount)
                         .setScale(0, RoundingMode.UP);
-            }
+            }*/
 
-            final BigDecimal estimateDisburse = ntfResult.subtract(serviceFee).setScale(0, RoundingMode.UP);
+            //final BigDecimal estimateDisburse = ntfResult.subtract(serviceFee).setScale(0, RoundingMode.UP);
+            final BigDecimal estimateDisburse = new BigDecimal(nilaiYangdiCarikan);
 
             return EstimatedDisburseDto.builder()
                     .productId(product.getProductId())
-                    .financingAmount(ntfResult.setScale(0, RoundingMode.UP))
+                    .financingAmount(ntfResult.setScale(0, RoundingMode.UP)) //yng diajukan
                     .serviceFeeAmount(serviceFee)
-                    .estimatedDisburseAmount(estimateDisburse)
-                    .effectiveFeeAmount(effectiveFeeAmount)
+                    .estimatedDisburseAmount(estimateDisburse)//effectiveFeeAmount
+                    .effectiveFeeAmount(effectiveFeeAmount)//interest
                     .provisionFeeAmount(provisionFeeAmount)
                     .adminFeeAmount(adminFeeAmount)
                     .othersFeeAmount(othersFeeAmount)
@@ -376,6 +399,7 @@ public class LoanSubmissionService {
                     .build();
 
             final FinancingHdr createdFinancingHdr = financingHdrService.create(
+                    authentication,
                     customer,
                     bouwheer,
                     product,
