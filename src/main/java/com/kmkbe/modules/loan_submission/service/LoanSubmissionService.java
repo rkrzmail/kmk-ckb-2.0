@@ -216,7 +216,8 @@ public class LoanSubmissionService {
     ) throws SignatureException, JsonProcessingException {
         try {
             final BigDecimal ntfResult = request.getTotalInvoiceAmount()
-                    .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
+                    .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0))
+                    .setScale(0, RoundingMode.UP);
             final Optional<Product> findProduct = productRepository.findNtfRange(ntfResult.doubleValue());
 
             if (findProduct.isEmpty()) {
@@ -237,53 +238,57 @@ public class LoanSubmissionService {
                 validateCwr = isCustomerExistingByCwr(authentication, request.getToken());
                 isCustomerExisting = validateCwr != null;
             }
-            BigDecimal serviceFee ,
-                    provisionFeeAmount ,
+
+            BigDecimal serviceFee,
+                    provisionFeeAmount,
                     effectiveFeeAmount,
                     adminFeeAmount,
                     othersFeeAmount,
                     surveyFeeAmount,
-                    legalFeeAmount ;
+                    legalFeeAmount;
 
             int tenor = 90;//(duedate-skr)+gp bouwherr
             if (request.getBouwheerCode() == null && request.getInvoiceDueDate() == null) {
 
-            }else {
+            } else {
                 Optional<Bouwheer> bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
-                int top =  DateTimeUtils.dateDiffInDay(request.getInvoiceDueDate(), new Date());
-                tenor = top + ( bouwheer.isEmpty() ? 0 : bouwheer.get().getGracePeriod().intValue()) ;
+                int top = DateTimeUtils.dateDiffInDay(request.getInvoiceDueDate(), new Date());
+                tenor = top + (bouwheer.map(value -> value.getGracePeriod().intValue()).orElse(0));
             }
-            double plafonLimit = validateCwr.getPlafondAmt();
+
+            double plafonLimit = validateCwr != null ? validateCwr.getPlafondAmt() : 0;
             double nilai_pembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
             double effective_Rate = product.getEffectiveRate().doubleValue();
-            double interestAmount = nilai_pembiayaan * effective_Rate / 100 * tenor / 360 ;//6 digit
+            double interestAmount = nilai_pembiayaan * effective_Rate / 100 * tenor / 360;//6 digit
             double jumlahBiaya = 0;
 
-
-            if (plafonLimit == 0){
+            if (plafonLimit == 0) {
                 plafonLimit = ntfResult.doubleValue() * 3;
             }
-            if (isCustomerExisting) {
-                double provisionRateFee  = product.getProvisionRate() * plafonLimit / 100 ;
-                double adminFeee  = product.getAdminRate() * nilai_pembiayaan / 100 ;
-                jumlahBiaya = provisionRateFee + product.getSurveyFee() +product.getLegalFee() +
-                        product.getAdminRate() + product.getOthersFee() ;
+
+            if (!isCustomerExisting) {
+                double provisionRateFee = product.getProvisionRate() * plafonLimit / 100;
+                double adminFeee = product.getAdminRate() * nilai_pembiayaan / 100;
+                jumlahBiaya = provisionRateFee + product.getSurveyFee() + product.getLegalFee() +
+                        adminFeee + product.getOthersFee();
                 provisionFeeAmount = new BigDecimal(provisionRateFee);
                 surveyFeeAmount = new BigDecimal(product.getSurveyFee());
-                legalFeeAmount  = new BigDecimal(product.getLegalFee());
-                adminFeeAmount= new BigDecimal(adminFeee);
-                othersFeeAmount= new BigDecimal(product.getOthersFee());
-            }else{
+                legalFeeAmount = new BigDecimal(product.getLegalFee());
+                adminFeeAmount = new BigDecimal(adminFeee);
+                othersFeeAmount = new BigDecimal(product.getOthersFee());
+            } else {
                 provisionFeeAmount = new BigDecimal(0);
                 surveyFeeAmount = new BigDecimal(0);
-                legalFeeAmount  = new BigDecimal(0);
-                adminFeeAmount= new BigDecimal(0);
-                        othersFeeAmount = new BigDecimal(0);
-                jumlahBiaya = product.getAdminRate() + product.getOthersFee() ;
+                legalFeeAmount = new BigDecimal(0);
+                adminFeeAmount = new BigDecimal(0);
+                othersFeeAmount = new BigDecimal(0);
+                jumlahBiaya = product.getAdminRate() + product.getOthersFee();
             }
-            double nilaiYangdiCarikan = nilai_pembiayaan  - jumlahBiaya;
-            serviceFee = new BigDecimal(jumlahBiaya);
-            effectiveFeeAmount = new BigDecimal(interestAmount);;
+
+            double nilaiYangdiCarikan = Math.round(nilai_pembiayaan) - Math.round(jumlahBiaya);
+            serviceFee = new BigDecimal(jumlahBiaya).setScale(0, RoundingMode.UP);
+            effectiveFeeAmount = new BigDecimal(interestAmount);
+
 
             /*if (isCustomerExisting) {
                 // pengali rate dari pengajuan menjadi plafond dari CWR
@@ -325,7 +330,7 @@ public class LoanSubmissionService {
             }*/
 
             //final BigDecimal estimateDisburse = ntfResult.subtract(serviceFee).setScale(0, RoundingMode.UP);
-            final BigDecimal estimateDisburse = new BigDecimal(nilaiYangdiCarikan);
+            final BigDecimal estimateDisburse = new BigDecimal(nilaiYangdiCarikan).setScale(0, RoundingMode.UP);
 
             return EstimatedDisburseDto.builder()
                     .productId(product.getProductId())
