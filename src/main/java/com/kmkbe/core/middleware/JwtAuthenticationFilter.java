@@ -28,6 +28,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.util.UUID;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -198,7 +200,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private void authenticate(UserDetails userDetails, @NonNull HttpServletRequest request) {
         final UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                 userDetails,
-                null,
+                UUID.randomUUID(),
                 userDetails.getAuthorities()
         );
 

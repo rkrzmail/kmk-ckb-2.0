@@ -115,6 +115,8 @@ public class FinancingHdrService {
                 header.setDtmCrt(Instant.now());
 
                 header = financingHdrRepository.save(header);
+
+                //save _redis by customer customer.getCustCode()
             }
 
             return header;

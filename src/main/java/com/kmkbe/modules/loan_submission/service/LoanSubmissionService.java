@@ -240,6 +240,29 @@ public class LoanSubmissionService {
                 isCustomerExisting = validateCwr != null;
             }
 
+
+            double plafonLimit = validateCwr.getPlafondAmt();
+            double nilai_pembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
+            double effective_Rate = product.getEffectiveRate().doubleValue();
+            int tenor = 90;//(duedate-skr)+gp bouwherr
+            double interestAmount = nilai_pembiayaan * effective_Rate / 100 * tenor / 360 ;//6 digit
+            double jumlahBiaya = 0;
+
+            if (plafonLimit == 0){
+                plafonLimit = ntfResult.doubleValue() * 3;
+            }
+            if (isCustomerExisting) {
+                double provisionRateFee  = product.getProvisionRate() * plafonLimit / 100 ;
+                jumlahBiaya = provisionRateFee + product.getSurveyFee() +product.getLegalFee() +
+                        product.getAdminRate() + product.getOthersFee() ;
+            }else{
+                jumlahBiaya = product.getAdminRate() + product.getOthersFee() ;
+            }
+            double nilaiYangdiCarikan = nilai_pembiayaan  - jumlahBiaya;
+
+
+
+
             if (isCustomerExisting) {
                 // pengali rate dari pengajuan menjadi plafond dari CWR
                 effectiveFeeAmount = new BigDecimal((product.getEffectiveRate() / 100) * validateCwr.getPlafondAmt(), MathContext.DECIMAL64);
