@@ -14,4 +14,13 @@ public class SimulationDisburseResult {
     private BigDecimal estimatedDisburseAmount;
     private Date maxInvoiceDate;
     private Double totalInvoiceAmount;
+    private BigDecimal provisionFeeAmount;
+    private BigDecimal effectiveFeeAmount;
+    private BigDecimal adminFeeAmount;
+    private BigDecimal othersFeeAmount;
+    private BigDecimal legalFeeAmount;
+    private BigDecimal surveyFeeAmount;
+    private Double provisionRate;
+    private Double effectiveRate;
+    private Double adminRate;
 }

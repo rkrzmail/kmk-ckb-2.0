@@ -236,6 +236,7 @@ public class DistributionSubmissionService {
                         //mstBranch.getEmployees().stream().toList().getFirst().getEmail(),
                         "vandikalvandi@gmail.com",
                         financingHdr.getBouwheer().getBouwheerName(),
+                        mstBranch.getBranchName(),
                         LoanDisburseEmailPayload.builder()
                                 .financingCode(financingHdr.getFinancingHdrCode().toString())
                                 .applicationDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))

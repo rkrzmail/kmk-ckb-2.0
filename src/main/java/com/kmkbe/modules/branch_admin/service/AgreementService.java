@@ -275,7 +275,7 @@ public class AgreementService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void createInquiryAgreement(
             Authentication authentication,
             CreateInquiryAgreementRequest request
@@ -413,8 +413,7 @@ public class AgreementService {
 
         String email = financingHdr.getBouwheer().getPicEmail();
         if (
-                postedResponse.getData() != null
-                        && postedResponse instanceof Map<?, ?> body
+                postedResponse.getData() instanceof Map<?, ?> body
                         && body.get("email_address") != null
         ) {
             email = body.get("email_address").toString();

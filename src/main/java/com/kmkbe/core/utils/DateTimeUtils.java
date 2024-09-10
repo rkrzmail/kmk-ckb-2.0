@@ -86,10 +86,10 @@ public class DateTimeUtils {
                     .split(" ");
 
             if (split.length > 0) {
-                return SDF_STANDARD_DATE_TIME.parse(split[0]);
+                return SDF_STANDARD_DATE.parse(split[0]);
             }
 
-            return SDF_STANDARD_DATE_TIME.parse(v.replace("T", " ").trim());
+            return SDF_STANDARD_DATE.parse(v.replace("T", " ").trim());
         } catch (Exception e) {
             return null;
         }

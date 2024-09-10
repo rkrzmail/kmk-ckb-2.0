@@ -32,7 +32,7 @@ import java.util.UUID;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class CustomerSeederService implements CommandLineRunner {
+public class CustomerSeederService  {//implements CommandLineRunner
     private final CustomerRepository customerRepository;
     private final CustomerCompanyRepository companyRepository;
     private final CustomerPersonalRepository personalRepository;
@@ -180,8 +180,8 @@ public class CustomerSeederService implements CommandLineRunner {
         return Map.of("staySince", staySince, "stayLength", differenceDays);
     }
 
-    @Override
+    /*@Override
     public void run(String... args) {
         seed();
-    }
+    }*/
 }

@@ -34,6 +34,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
@@ -214,7 +215,6 @@ public class LoanSubmissionService {
         try {
             final BigDecimal ntfResult = request.getTotalInvoiceAmount()
                     .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
-
             final Optional<Product> findProduct = productRepository.findNtfRange(ntfResult.doubleValue());
 
             if (findProduct.isEmpty()) {
@@ -222,51 +222,79 @@ public class LoanSubmissionService {
             }
 
             final Product product = findProduct.get();
-            BigDecimal serviceFee = ntfResult;
+            BigDecimal serviceFee = BigDecimal.valueOf(0.0),
+                    provisionFeeAmount = BigDecimal.valueOf(0.0),
+                    effectiveFeeAmount,
+                    adminFeeAmount,
+                    othersFeeAmount,
+                    surveyFeeAmount = BigDecimal.valueOf(0.0),
+                    legalFeeAmount = BigDecimal.valueOf(0.0);
 
-            Cwr isCustomerExisting = isCustomerExistingByCwr(authentication, request.getToken());
-            if (isCustomerExisting != null) {
-                // pengali rate dari pengajuan menjadi plafond dari CWR
-                serviceFee = serviceFee
-                        .add(
-                                BigDecimal.valueOf(product.getEffectiveRate() * isCustomerExisting.getPlafondAmt())
-                        )
-                        .add(
-                                BigDecimal.valueOf(product.getAdminRate() * isCustomerExisting.getPlafondAmt())
-                        )
-                        .add(
-                                BigDecimal.valueOf(product.getOthersFee())
-                        );
-            } else {
-                // pengali pengajuan * 3
-                serviceFee = serviceFee
-                        .add(
-                                BigDecimal.valueOf(product.getEffectiveRate() * ntfResult.doubleValue() * 3)
-                        )
-                        .add(
-                                BigDecimal.valueOf(product.getProvisionRate() * ntfResult.doubleValue() * 3)
-                        )
-                        .add(
-                                BigDecimal.valueOf(product.getSurveyFee())
-                        )
-                        .add(
-                                BigDecimal.valueOf(product.getLegalFee())
-                        )
-                        .add(
-                                BigDecimal.valueOf(product.getAdminRate() * ntfResult.doubleValue() * 3)
-                        )
-                        .add(
-                                BigDecimal.valueOf(product.getOthersFee())
-                        );
+            Double provisionRate = 0.0, effectiveRate = 0.0, adminRate = 0.0;
+
+
+            boolean isCustomerExisting = false;
+            Cwr validateCwr = null;
+            if (authentication != null || !StringUtil.isNullOrEmpty(request.getToken())) {
+                validateCwr = isCustomerExistingByCwr(authentication, request.getToken());
+                isCustomerExisting = validateCwr != null;
             }
 
-            final BigDecimal estimateDisburse = ntfResult.subtract(serviceFee);
+            if (isCustomerExisting) {
+                // pengali rate dari pengajuan menjadi plafond dari CWR
+                effectiveFeeAmount = new BigDecimal((product.getEffectiveRate() / 100) * validateCwr.getPlafondAmt(), MathContext.DECIMAL64);
+                adminFeeAmount = new BigDecimal((product.getAdminRate() / 100) * validateCwr.getPlafondAmt(), MathContext.DECIMAL64);
+                othersFeeAmount = new BigDecimal(product.getOthersFee(), MathContext.DECIMAL64);
+
+                effectiveRate = product.getEffectiveRate();
+                adminRate = product.getAdminRate();
+
+                serviceFee = serviceFee
+                        .add(effectiveFeeAmount)
+                        .add(adminFeeAmount)
+                        .add(othersFeeAmount);
+            } else {
+                var a1 = new BigDecimal(((ntfResult.doubleValue() * 360) / ((0.2 * 90) + 360)), MathContext.DECIMAL64);
+                var a = new BigDecimal((ntfResult.doubleValue() - a1.doubleValue()), MathContext.DECIMAL64);
+
+                //effectiveFeeAmount = new BigDecimal((product.getEffectiveRate() / 100) * ntfResult.doubleValue() * 3, MathContext.DECIMAL64);
+                effectiveFeeAmount = a.multiply(BigDecimal.valueOf(3.0)).setScale(0, RoundingMode.UP);
+                provisionFeeAmount = new BigDecimal((product.getProvisionRate() / 100) * ntfResult.doubleValue() * 3, MathContext.DECIMAL64);
+                adminFeeAmount = new BigDecimal((product.getAdminRate() / 100) * ntfResult.doubleValue() * 3, MathContext.DECIMAL64);
+                othersFeeAmount = new BigDecimal(product.getOthersFee(), MathContext.DECIMAL64);
+                surveyFeeAmount = new BigDecimal(product.getSurveyFee(), MathContext.DECIMAL64);
+                legalFeeAmount = new BigDecimal(product.getLegalFee(), MathContext.DECIMAL64);
+
+                effectiveRate = product.getEffectiveRate();
+                adminRate = product.getAdminRate();
+                provisionRate = product.getProvisionRate();
+
+                serviceFee = serviceFee
+                        .add(effectiveFeeAmount)
+                        .add(provisionFeeAmount)
+                        .add(surveyFeeAmount)
+                        .add(legalFeeAmount)
+                        .add(adminFeeAmount)
+                        .add(othersFeeAmount)
+                        .setScale(0, RoundingMode.UP);
+            }
+
+            final BigDecimal estimateDisburse = ntfResult.subtract(serviceFee).setScale(0, RoundingMode.UP);
 
             return EstimatedDisburseDto.builder()
                     .productId(product.getProductId())
-                    .financingAmount(ntfResult)
+                    .financingAmount(ntfResult.setScale(0, RoundingMode.UP))
                     .serviceFeeAmount(serviceFee)
                     .estimatedDisburseAmount(estimateDisburse)
+                    .effectiveFeeAmount(effectiveFeeAmount)
+                    .provisionFeeAmount(provisionFeeAmount)
+                    .adminFeeAmount(adminFeeAmount)
+                    .othersFeeAmount(othersFeeAmount)
+                    .legalFeeAmount(legalFeeAmount)
+                    .surveyFeeAmount(surveyFeeAmount)
+                    .adminRate(adminRate)
+                    .effectiveRate(effectiveRate)
+                    .provisionRate(provisionRate)
                     .build();
         } catch (Exception e) {
             log.error("calculateDisburse, error {}", e.getMessage());
@@ -313,6 +341,15 @@ public class LoanSubmissionService {
                     .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
                     .maxInvoiceDate(maxInvoiceDueDate)
                     .totalInvoiceAmount(totalInvoiceAmount)
+                    .effectiveFeeAmount(calculateDisburse.getEffectiveFeeAmount())
+                    .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
+                    .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
+                    .othersFeeAmount(calculateDisburse.getOthersFeeAmount())
+                    .legalFeeAmount(calculateDisburse.getLegalFeeAmount())
+                    .surveyFeeAmount(calculateDisburse.getSurveyFeeAmount())
+                    .adminRate(calculateDisburse.getAdminRate())
+                    .effectiveRate(calculateDisburse.getEffectiveRate())
+                    .provisionRate(calculateDisburse.getProvisionRate())
                     .build();
 
             final FinancingHdr createdFinancingHdr = financingHdrService.create(
@@ -525,7 +562,7 @@ public class LoanSubmissionService {
     }
 
     private Cwr isCustomerExistingByCwr(Authentication authentication, String token) throws SignatureException, JsonProcessingException {
-        final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(null, token);
+        final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, token);
         final ExistingCustomerDto existingCustomer = existingCustomerService.findLastByVendorCode(vendorTokenExtractor.getVendorCode())
                 .orElse(null);
         if (authentication == null) {

@@ -1,13 +1,16 @@
 package com.kmkbe.modules.common.service;
 
+import com.kmkbe.core.annotation.LogMethod;
 import com.kmkbe.core.config.MailConfig;
 import com.kmkbe.core.domain.dto.MailRemoteDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.EmailTemplate;
+import com.kmkbe.core.domain.entity.ErrorLog;
 import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.repository.EmailTemplateRepository;
+import com.kmkbe.core.domain.repository.ErrorLogRepository;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import jakarta.mail.MessagingException;
@@ -40,6 +43,7 @@ public class EmailService {
     private final EmailTemplateRepository emailTemplateRepository;
     private final ConfigRemoteService configRemoteService;
     private final MailConfig mailConfig;
+    private final ErrorLogRepository errorLogRepository;
 
     @Value("${testing.mail.host}")
     private String testingMailHost;
@@ -57,43 +61,57 @@ public class EmailService {
     public EmailService(
             EmailTemplateRepository emailTemplateRepository,
             ConfigRemoteService configRemoteService,
-            MailConfig mailConfig
+            MailConfig mailConfig,
+            ErrorLogRepository errorLogRepository
     ) {
         this.emailTemplateRepository = emailTemplateRepository;
         this.configRemoteService = configRemoteService;
         this.mailConfig = mailConfig;
+        this.errorLogRepository = errorLogRepository;
     }
 
     @Async
     public void sendOtp(Customer customer, String otpCode) {
-        Map<String, Object> obj = new HashMap<>();
-        obj.put("name", customer.getCustName());
-        obj.put("otp_code", otpCode);
-        obj.put("id_no", customer.getCustIdNo());
-        obj.put("email", customer.getCustEmail());
+        try {
+            Map<String, Object> obj = new HashMap<>();
+            obj.put("name", customer.getCustName());
+            obj.put("otp_code", otpCode);
+            obj.put("id_no", customer.getCustIdNo());
+            obj.put("email", customer.getCustEmail());
 
-        send(customer.getCustEmail(), obj, M_CUST_NEW_OTP);
+            send(customer.getCustEmail(), obj, M_CUST_NEW_OTP);
+        } catch (Exception e) {
+            log.error("Error sendOtp {}", e.getMessage());
+        }
     }
 
     @Async
     public void sendOtpChangePin(Customer customer, String otpCode) {
-        Map<String, Object> obj = new HashMap<>();
-        obj.put("name", customer.getCustName());
-        obj.put("otp_code", otpCode);
-        obj.put("id_no", customer.getCustIdNo());
-        obj.put("email", customer.getCustEmail());
+        try {
+            Map<String, Object> obj = new HashMap<>();
+            obj.put("name", customer.getCustName());
+            obj.put("otp_code", otpCode);
+            obj.put("id_no", customer.getCustIdNo());
+            obj.put("email", customer.getCustEmail());
 
-        send(customer.getCustEmail(), obj, M_CUST_CHANGE_OTP);
+            send(customer.getCustEmail(), obj, M_CUST_CHANGE_OTP);
+        } catch (Exception e) {
+            log.error("Error sendOtpChangePin {}", e.getMessage());
+        }
     }
 
     @Async
     public void sendNotificationActive(Customer customer) {
-        Map<String, Object> obj = new HashMap<>();
-        obj.put("name", customer.getCustName());
-        obj.put("id_no", customer.getCustIdNo());
-        obj.put("email", customer.getCustEmail());
+        try {
+            Map<String, Object> obj = new HashMap<>();
+            obj.put("name", customer.getCustName());
+            obj.put("id_no", customer.getCustIdNo());
+            obj.put("email", customer.getCustEmail());
 
-        send(customer.getCustEmail(), obj, M_CUST_ACTIVE);
+            send(customer.getCustEmail(), obj, M_CUST_ACTIVE);
+        } catch (Exception e) {
+            log.error("Error sendNotificationActive {}", e.getMessage());
+        }
     }
 
     @Async
@@ -101,44 +119,55 @@ public class EmailService {
             final Customer customer,
             LoanDisburseEmailPayload payload
     ) {
-        Map<String, Object> args = new HashMap<>();
-        Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
-        if (payloadArgs != null) {
-            payloadArgs.remove("invoices");
-            payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+        try {
+            Map<String, Object> args = new HashMap<>();
+            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
+            if (payloadArgs != null) {
+                payloadArgs.remove("invoices");
+                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+            }
+
+            args.put("email", customer.getCustEmail());
+            args.put("name", customer.getCustName());
+            args.put("id_no", customer.getCustIdNo());
+            args.put("additionalArgs", payloadArgs);
+
+            send(customer.getCustEmail(), args, M_CUST_LOAN);
+        } catch (Exception e) {
+            log.error("Error sendNotificationLoanDisbursement {}", e.getMessage());
         }
-
-        args.put("email", customer.getCustEmail());
-        args.put("name", customer.getCustName());
-        args.put("id_no", customer.getCustIdNo());
-        args.put("additionalArgs", payloadArgs);
-
-        send(customer.getCustEmail(), args, M_CUST_LOAN);
     }
 
     @Async
     public void sendNotificationBranchAssign(
             String email,
             String bouwheerName,
+            String branchArea,
             LoanDisburseEmailPayload payload
     ) {
-        Map<String, Object> args = new HashMap<>();
-        Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
+        try {
+            Map<String, Object> args = new HashMap<>();
+            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
 
-        if (payloadArgs != null) {
-            payloadArgs.remove("invoices");
-            payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+            if (payloadArgs != null) {
+                payloadArgs.remove("invoices");
+                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+            }
+
+            args.put("additionalArgs", payloadArgs);
+            args.put("bouwheerName", bouwheerName);
+            args.put("branchArea", branchArea);
+            args.put("email", email);
+
+            final EmailTemplate template = emailTemplateRepository
+                    .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN, true);
+            template.setSubjectMail(template.getSubjectMail().replace("{bouwheerName}", bouwheerName));
+            template.setMailTo(email);
+
+            send(args, template);
+        } catch (Exception e) {
+            log.error("Error sendNotificationBranchAssign {}", e.getMessage());
         }
-
-        args.put("additionalArgs", payloadArgs);
-        args.put("bouwheerName", bouwheerName);
-
-        final EmailTemplate template = emailTemplateRepository
-                .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN, true);
-        template.setSubjectMail(template.getSubjectMail().replace("{bouwheerName}", bouwheerName));
-        template.setMailTo(email);
-
-        send(args, template);
     }
 
     @Async
@@ -146,23 +175,39 @@ public class EmailService {
             String email,
             BouwheerPaymentEmailPayload payload
     ) {
-        Map<String, Object> args = new HashMap<>();
-        Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
+        try {
+            Map<String, Object> args = new HashMap<>();
+            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
 
-        if (payloadArgs != null) {
-            payloadArgs.remove("invoices");
-            payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+            if (payloadArgs != null) {
+                payloadArgs.remove("invoices");
+                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+            }
+
+            args.put("additionalArgs", payloadArgs);
+
+            final EmailTemplate template = emailTemplateRepository
+                    .findByEmailTemplateCodeAndIsActive(M_BOUWHEER_PAYMENT, true);
+            template.setSubjectMail(template.getSubjectMail().replace("{vendorCode}", payload.getVendorCode()));
+            template.setMailTo(email);
+            template.setBodyMail(payload.bodyMail(template));
+
+            boolean success = false;
+            for (int i = 0; i < 3; i++) {
+                try {
+                    send(args, template);
+                    success = true;
+                } catch (Exception e) {
+                    log.error("failed send sendNotificationBouwheerPayment to {} due to {}", email, e.getMessage());
+                }
+
+                if (success) {
+                    break;
+                }
+            }
+        } catch (Exception e) {
+            log.error("Error sendNotificationBouwheerPayment {}", e.getMessage());
         }
-
-        args.put("additionalArgs", payloadArgs);
-
-        final EmailTemplate template = emailTemplateRepository
-                .findByEmailTemplateCodeAndIsActive(M_BOUWHEER_PAYMENT, true);
-        template.setSubjectMail(template.getSubjectMail().replace("{vendorCode}", payload.getVendorCode()));
-        template.setMailTo(email);
-        template.setBodyMail(payload.bodyMail(template));
-
-        send(args, template);
     }
 
     private void send(
@@ -223,6 +268,12 @@ public class EmailService {
             body = body.replace("{otp_code}", "");
         }
 
+        if (args.get("branchArea") != null) {
+            body = body.replace("{branchArea}", args.get("branchArea").toString());
+        } else {
+            body = body.replace("{branchArea}", "");
+        }
+
         if (args.get("additionalArgs") != null) {
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) args.get("additionalArgs")).entrySet()) {
                 body = body.replace("{" + entry.getKey() + "}", entry.getValue().toString());
@@ -275,6 +326,7 @@ public class EmailService {
         return helper;
     }
 
+    @LogMethod
     private boolean sendMailMessage(
             EmailTemplate template,
             String email
@@ -294,6 +346,7 @@ public class EmailService {
                     attempts++;
                     log.error("EmailService Failed to send email to {} due to {}", email, e.getMessage());
                     log.error("EmailService try attempts: {}", attempts);
+
                 }
 
                 if (success) {
@@ -317,13 +370,10 @@ public class EmailService {
     }
 
 
+    @Getter
     private static class CsulMailSender {
-        @Getter
         private final MailRemoteDto internalMail;
-
-        @Getter
         private final JavaMailSender mailSender;
-
 
         private CsulMailSender(
                 MailConfig mailConfig,
