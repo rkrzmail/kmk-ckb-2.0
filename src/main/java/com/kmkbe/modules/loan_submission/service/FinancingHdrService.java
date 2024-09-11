@@ -116,14 +116,7 @@ public class FinancingHdrService {
 
                 header = financingHdrRepository.save(header);
 
-                //save _redis by customer customer.getCustCode() Authentication authentication,
-                Redis  redis =   Redis.builder()
-                                 .redis(String.valueOf(authentication.getCredentials()))
-                                 .session("")
-                                 .json(  Map.of("FinancingHdr", header) ).build();
 
-                redisRepository.delete(redis);
-                redisRepository.save(redis);
             }
 
             return header;
