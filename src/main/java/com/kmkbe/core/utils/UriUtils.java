@@ -13,6 +13,12 @@ public class UriUtils {
                 .toUriString();
     }
 
+    public static String getDomainUrl(HttpServletRequest request){
+        return getBaseUrl(request)
+                .replace("http://", "")
+                .replace("https://", "");
+    }
+
     public static String fileUlr(
             HttpServletRequest httpServletRequest,
             int id,

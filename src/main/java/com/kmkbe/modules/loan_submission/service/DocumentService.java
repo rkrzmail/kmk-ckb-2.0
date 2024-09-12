@@ -38,6 +38,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.SignatureException;
 import java.time.Instant;
 import java.util.*;
@@ -131,7 +133,13 @@ public class DocumentService {
                             );
 
                             if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
-                                generatedUrl = legalFile.getFilePath();
+                                try {
+                                    URI uri = new URI(legalFile.getFilePath());
+                                    uri = new URI("https", UriUtils.getDomainUrl(httpServletRequest) + "/viewimage/", uri.getPath(), uri.getFragment());
+                                    generatedUrl = uri.toString();
+                                } catch (URISyntaxException e) {
+                                    generatedUrl = legalFile.getFilePath();
+                                }
                             }
 
                             legalFileDto.setFileUrl(generatedUrl);
