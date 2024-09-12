@@ -15,7 +15,7 @@ public class EstimatedDisburseDto {
     private BigDecimal serviceFeeAmount;
     private BigDecimal estimatedDisburseAmount;
     private BigDecimal provisionFeeAmount;
-    private BigDecimal effectiveFeeAmount;
+    private BigDecimal interestFeeAmount;
     private BigDecimal adminFeeAmount;
     private BigDecimal othersFeeAmount;
     private BigDecimal legalFeeAmount;

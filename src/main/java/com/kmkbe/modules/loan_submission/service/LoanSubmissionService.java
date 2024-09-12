@@ -39,6 +39,7 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -213,11 +214,12 @@ public class LoanSubmissionService {
     public EstimatedDisburseDto calculateDisburse(
             Authentication authentication,
             CalculateSimulationRequest request
-    ) throws SignatureException, JsonProcessingException {
+    ) throws SignatureException, JsonProcessingException, ParseException {
         try {
             final BigDecimal ntfResult = request.getTotalInvoiceAmount()
-                    .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0))
-                    .setScale(0, RoundingMode.UP);
+                    .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
+                    //.setScale(0, RoundingMode.UP);
+
             final Optional<Product> findProduct = productRepository.findNtfRange(ntfResult.doubleValue());
 
             if (findProduct.isEmpty()) {
@@ -225,7 +227,6 @@ public class LoanSubmissionService {
             }
 
             final Product product = findProduct.get();
-
 
             Double provisionRate = findProduct.get().getProvisionRate(),
                     effectiveRate = findProduct.get().getEffectiveRate(),
@@ -239,105 +240,62 @@ public class LoanSubmissionService {
                 isCustomerExisting = validateCwr != null;
             }
 
-            BigDecimal serviceFee,
+            BigDecimal
                     provisionFeeAmount,
-                    effectiveFeeAmount,
                     adminFeeAmount,
                     othersFeeAmount,
                     surveyFeeAmount,
                     legalFeeAmount;
 
-            int tenor = 90;//(duedate-skr)+gp bouwherr
-            if (request.getBouwheerCode() == null && request.getInvoiceDueDate() == null) {
-
-            } else {
+            int tenor = 90; // (duedate - skr) + gp bouwherr
+            if (request.getBouwheerCode() != null && request.getInvoiceDueDate() != null) {
                 Optional<Bouwheer> bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
-                int top = DateTimeUtils.dateDiffInDay(request.getInvoiceDueDate(), new Date());
+                int top = DateTimeUtils.dateDiffInDay(new Date(), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(request.getInvoiceDueDate()));
                 tenor = top + (bouwheer.map(value -> value.getGracePeriod().intValue()).orElse(0));
             }
 
-            double plafonLimit = validateCwr != null ? validateCwr.getPlafondAmt() : 0;
-            double nilai_pembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
-            double effective_Rate = product.getEffectiveRate().doubleValue();
-            double interestAmount = nilai_pembiayaan * effective_Rate / 100 * tenor / 360;//6 digit
-            double jumlahBiaya = 0;
+            BigDecimal plafondLimitBigDecimal = validateCwr != null
+                    ? BigDecimal.valueOf(validateCwr.getPlafondAmt())
+                    : ntfResult.multiply(BigDecimal.valueOf(3.0));
 
-            if (plafonLimit == 0) {
-                plafonLimit = ntfResult.doubleValue() * 3;
-            }
+            double plafonLimit = plafondLimitBigDecimal.doubleValue();
+            double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
+            double effective_Rate = product.getEffectiveRate();
+            double interestAmount = nilaiPembiayaan * effective_Rate / 100 * tenor / 360;//6 digit
+            double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
+            double jumlahBiaya;
+            double provisionRateFee = product.getProvisionRate() * plafonLimit / 100;
 
             if (!isCustomerExisting) {
-                double provisionRateFee = product.getProvisionRate() * plafonLimit / 100;
-                double adminFeee = product.getAdminRate() * nilai_pembiayaan / 100;
-                jumlahBiaya = provisionRateFee + product.getSurveyFee() + product.getLegalFee() +
-                        adminFeee + product.getOthersFee();
-                provisionFeeAmount = new BigDecimal(provisionRateFee);
-                surveyFeeAmount = new BigDecimal(product.getSurveyFee());
-                legalFeeAmount = new BigDecimal(product.getLegalFee());
-                adminFeeAmount = new BigDecimal(adminFeee);
-                othersFeeAmount = new BigDecimal(product.getOthersFee());
+                jumlahBiaya = provisionRateFee
+                        + product.getSurveyFee()
+                        + product.getLegalFee()
+                        + adminFee
+                        + product.getOthersFee();
+                provisionFeeAmount = new BigDecimal(provisionRateFee).setScale(0, RoundingMode.HALF_UP);
+                surveyFeeAmount = new BigDecimal(product.getSurveyFee()).setScale(0, RoundingMode.HALF_UP);
+                legalFeeAmount = new BigDecimal(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
+                adminFeeAmount = new BigDecimal(adminFee).setScale(0, RoundingMode.HALF_UP);
+                othersFeeAmount = new BigDecimal(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
             } else {
                 provisionFeeAmount = new BigDecimal(0);
                 surveyFeeAmount = new BigDecimal(0);
                 legalFeeAmount = new BigDecimal(0);
                 adminFeeAmount = new BigDecimal(0);
                 othersFeeAmount = new BigDecimal(0);
-                jumlahBiaya = product.getAdminRate() + product.getOthersFee();
+                jumlahBiaya = adminFee + product.getOthersFee();
             }
 
-            double nilaiYangdiCarikan = Math.round(nilai_pembiayaan) - Math.round(jumlahBiaya);
-            serviceFee = new BigDecimal(jumlahBiaya).setScale(0, RoundingMode.UP);
-            effectiveFeeAmount = new BigDecimal(interestAmount);
-
-
-            /*if (isCustomerExisting) {
-                // pengali rate dari pengajuan menjadi plafond dari CWR
-                effectiveFeeAmount = new BigDecimal((product.getEffectiveRate() / 100) * validateCwr.getPlafondAmt(), MathContext.DECIMAL64);
-                adminFeeAmount = new BigDecimal((product.getAdminRate() / 100) * validateCwr.getPlafondAmt(), MathContext.DECIMAL64);
-                othersFeeAmount = new BigDecimal(product.getOthersFee(), MathContext.DECIMAL64);
-
-                effectiveRate = product.getEffectiveRate();
-                adminRate = product.getAdminRate();
-
-                serviceFee = serviceFee
-                        .add(effectiveFeeAmount)
-                        .add(adminFeeAmount)
-                        .add(othersFeeAmount);
-            } else {
-                var a1 = new BigDecimal(((ntfResult.doubleValue() * 360) / ((0.2 * 90) + 360)), MathContext.DECIMAL64);
-                var a = new BigDecimal((ntfResult.doubleValue() - a1.doubleValue()), MathContext.DECIMAL64);
-
-                //effectiveFeeAmount = new BigDecimal((product.getEffectiveRate() / 100) * ntfResult.doubleValue() * 3, MathContext.DECIMAL64);
-                effectiveFeeAmount = a.multiply(BigDecimal.valueOf(3.0)).setScale(0, RoundingMode.UP);
-                provisionFeeAmount = new BigDecimal((product.getProvisionRate() / 100) * ntfResult.doubleValue() * 3, MathContext.DECIMAL64);
-                adminFeeAmount = new BigDecimal((product.getAdminRate() / 100) * ntfResult.doubleValue() * 3, MathContext.DECIMAL64);
-                othersFeeAmount = new BigDecimal(product.getOthersFee(), MathContext.DECIMAL64);
-                surveyFeeAmount = new BigDecimal(product.getSurveyFee(), MathContext.DECIMAL64);
-                legalFeeAmount = new BigDecimal(product.getLegalFee(), MathContext.DECIMAL64);
-
-                effectiveRate = product.getEffectiveRate();
-                adminRate = product.getAdminRate();
-                provisionRate = product.getProvisionRate();
-
-                serviceFee = serviceFee
-                        .add(effectiveFeeAmount)
-                        .add(provisionFeeAmount)
-                        .add(surveyFeeAmount)
-                        .add(legalFeeAmount)
-                        .add(adminFeeAmount)
-                        .add(othersFeeAmount)
-                        .setScale(0, RoundingMode.UP);
-            }*/
-
-            //final BigDecimal estimateDisburse = ntfResult.subtract(serviceFee).setScale(0, RoundingMode.UP);
-            final BigDecimal estimateDisburse = new BigDecimal(nilaiYangdiCarikan).setScale(0, RoundingMode.UP);
+            double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
+            final BigDecimal serviceFee = new BigDecimal(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
+            final BigDecimal estimated = new BigDecimal(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
 
             return EstimatedDisburseDto.builder()
                     .productId(product.getProductId())
                     .financingAmount(ntfResult.setScale(0, RoundingMode.UP)) //yng diajukan
                     .serviceFeeAmount(serviceFee)
-                    .estimatedDisburseAmount(estimateDisburse)//effectiveFeeAmount
-                    .effectiveFeeAmount(effectiveFeeAmount)//interest
+                    .estimatedDisburseAmount(estimated)
+                    .interestFeeAmount(new BigDecimal(interestAmount))//interest
                     .provisionFeeAmount(provisionFeeAmount)
                     .adminFeeAmount(adminFeeAmount)
                     .othersFeeAmount(othersFeeAmount)
@@ -392,7 +350,7 @@ public class LoanSubmissionService {
                     .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
                     .maxInvoiceDate(maxInvoiceDueDate)
                     .totalInvoiceAmount(totalInvoiceAmount)
-                    .effectiveFeeAmount(calculateDisburse.getEffectiveFeeAmount())
+                    .interestFeeAmount(calculateDisburse.getInterestFeeAmount())
                     .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
                     .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
                     .othersFeeAmount(calculateDisburse.getOthersFeeAmount())

@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SignatureException;
+import java.text.ParseException;
 import java.util.List;
 
 @Validated
@@ -103,7 +104,7 @@ public class LoanSubmissionController {
     public CommonResult<EstimatedDisburseDto> getCalculateDisburse(
             Authentication authentication,
             CalculateSimulationRequest request
-    ) throws SignatureException, JsonProcessingException {
+    ) throws SignatureException, JsonProcessingException, ParseException {
         return new CommonResult<EstimatedDisburseDto>().success(
                 loanSubmissionService.calculateDisburse(authentication, request)
         );

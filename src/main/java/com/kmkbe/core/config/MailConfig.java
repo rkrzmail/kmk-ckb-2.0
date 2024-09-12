@@ -70,6 +70,7 @@ public class MailConfig {
         properties.put("mail.smtp.auth", "true");
         properties.put("mail.smtp.starttls.enable", "true");
         properties.put("mail.smtp.user", mail.getUsername());
+        properties.put("mail.smtp.ssl.trust", mail.getServerUrl());
 
         Session session = Session.getDefaultInstance(properties);
         MimeMessage msg = new MimeMessage(session);

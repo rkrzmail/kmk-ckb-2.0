@@ -63,14 +63,8 @@ public class FinancingHdrService {
                 final double totalInvoiceAmount = simulationResult.getTotalInvoiceAmount();
                 final double financingAmount = simulationResult.getFinancingAmount().doubleValue();
 
-                double retentionRate = 0.0 / 100;
-                double retentionAmount = disburseAmount * retentionRate;
-
-                double bankLoanInterest = 0.11;
-                double interestAmount = disburseAmount * bankLoanInterest;;
-
                 // ((tanggal due date invoice) 10 - hari berjalan) + 7 (bouwheer grace period)
-                Long top = (long) DateTimeUtils.dateDiffInDay(request.getInvoices().getFirst().getInvoiceDueDate(), new Date());
+                Long top = (long) DateTimeUtils.dateDiffInDay(new Date(), request.getInvoices().getFirst().getInvoiceDueDate());
 
                 header.setFinancingHdrCode(UUID.randomUUID());
                 header.setCustomer(customer);
@@ -80,33 +74,28 @@ public class FinancingHdrService {
                 header.setCurrencyCode(firstInvoice.getCurrencyCode());
                 header.setInvoiceQty((long) request.getInvoices().size());
                 header.setInterestType("COF"); // not clear
-                header.setInterestAmt(interestAmount); // not clear
                 header.setTermOfPayment(top); // not clear
                 header.setGracePeriod(bouwheer.getGracePeriod()); // get from bouwheer grace_period
                 header.setRetention(100 - request.getDisbursePercentage()); // not clear
                 header.setTotalInvoiceAmt(totalInvoiceAmount);
+                header.setFinancingAmt(financingAmount);
+                header.setDisburseAmt(disburseAmount);
+                header.setInterestAmt(simulationResult.getInterestFeeAmount().doubleValue()); // not clear
                 header.setFinancingDueDate(simulationResult.getMaxInvoiceDate().toInstant()); // not clear
                 header.setProvisionFeeAmt(simulationResult.getProvisionFeeAmount().doubleValue()); // not clear
                 header.setProvisionFeePercentage(simulationResult.getProvisionRate());
+                header.setAdminFeePercentage(simulationResult.getAdminRate());
                 header.setEffectiveRate(simulationResult.getEffectiveRate());
                 header.setSurveyFeeAmt(simulationResult.getSurveyFeeAmount().doubleValue());
-                header.setSurveyFeeAmtNett(simulationResult.getSurveyFeeAmount().doubleValue());
                 header.setLegalFeeAmt(simulationResult.getLegalFeeAmount().doubleValue());
-                header.setLegalFeeAmtNett(simulationResult.getLegalFeeAmount().doubleValue());
-                header.setInsuranceFeePercentage(product.getInsuranceRate());
                 header.setOthersFeeAmt(simulationResult.getOthersFeeAmount().doubleValue());
-                header.setFinancingAmt(financingAmount);
-                header.setDisburseAmt(disburseAmount);
+                header.setAdminFeeAmt(simulationResult.getAdminFeeAmount().doubleValue());
 
-                Long countCustomerTransaction = invoiceRepository.countByCustomer(customer);
-                if (countCustomerTransaction == 0) {
-                    // admin fee only for new customer
-                    header.setAdminLimitAmt(product.getAdminLimitFee());
-                    header.setAdminFeeAmt(product.getAdminLimitFee() * (product.getAdminRate() / 100));
-                } else {
-                    header.setAdminLimitAmt(0.0);
-                    header.setAdminFeeAmt(0.0);
-                }
+                header.setInsuranceFeeAmt(0.0);
+                header.setSurveyFeeAmtNett(0.0);
+                header.setLegalFeeAmtNett(0.0);
+                header.setInsuranceFeePercentage(0.0);
+                header.setAdminLimitAmt(0.0);
 
                 header.setDisburseDate(Instant.now());
                 header.setFinancingStatus(FinancingStatus.NEW.name()); // fresh input will store as NEW
