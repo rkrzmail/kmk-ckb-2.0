@@ -135,7 +135,7 @@ public class DocumentService {
                             if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
                                 try {
                                     URI uri = new URI(legalFile.getFilePath());
-                                    uri = new URI("https", UriUtils.getDomainUrl(httpServletRequest) + "/viewimage/", uri.getPath(), uri.getFragment());
+                                    uri = new URI("https", UriUtils.getDomainUrl(httpServletRequest), uri.getPath(), uri.getFragment());
                                     generatedUrl = uri.toString();
                                 } catch (URISyntaxException e) {
                                     generatedUrl = legalFile.getFilePath();
