@@ -169,12 +169,20 @@ public class ExistingCustomerService {
                 return null;
             }
 
-            final BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> cwrResponse = cwrRemoteService.inquiryCwr(
-                    InquiryCwrRemoteRequest.builder()
-                            .name(PropCriteriaGenericTypeRequest.CwrPropName.custNo)
-                            .custNo(existingCustomer.getCustNo())
-                            .build()
-            );
+            BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> cwrResponse = null;
+            try {
+                cwrResponse = cwrRemoteService.inquiryCwr(
+                        InquiryCwrRemoteRequest.builder()
+                                .name(PropCriteriaGenericTypeRequest.CwrPropName.custNo)
+                                .custNo(existingCustomer.getCustNo())
+                                .build()
+                );
+            } catch (Exception e) {
+            }
+
+            if (cwrResponse == null) {
+                return null;
+            }
 
             final List<InquiryCwrRemoteDto> cwrs = cwrResponse.getData();
             final List<InquiryCwrRemoteDto> cwrActives = new ArrayList<>();
