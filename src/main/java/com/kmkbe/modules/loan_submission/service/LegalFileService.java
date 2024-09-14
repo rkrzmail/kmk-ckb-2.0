@@ -88,7 +88,7 @@ public class LegalFileService {
             LegalFileDto dto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
             dto.setUploadedDate(legalFile.getDtmUpd());
             dto.setFileUrl(
-                    UriUtils.getBaseUrl(httpServletRequest)
+                    UriUtils.getBaseUrl(httpServletRequest).replace("http", "https")
                             + legalFile.getFilePath()
                             + "/"
                             + legalFile.getFileName()

@@ -17,7 +17,16 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     Optional<Agreement> findTopByAgreementCodeOrderByAgreementId(String agreementCode);
 
     @Query(
-            value = "SELECT * FROM public.agreement WHERE approval_flag is null OR approval_flag in ('','false')",
+            value = """
+                    select
+                        ag.*
+                    from
+                        public.agreement ag
+                            join public.agreement_file agf on ag.agreement_code = agf.agreement_code
+                    where
+                         ag.approval_flag is null
+                      OR ag.approval_flag in ('', 'false');
+                    """,
             nativeQuery = true
     )
     List<Agreement> viewApprovalStatusPending();

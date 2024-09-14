@@ -44,7 +44,8 @@ public class PropCriteriaGenericTypeRequest {
     }
 
     public enum CwrPropName {
-        cwrNo("C.CWR_NO");
+        cwrNo("C.CWR_NO"),
+        custNo("COALESCE(G.CUST_NO,CC.CUST_NO)");
 
         @JsonValue
         private final String value;

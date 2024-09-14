@@ -10,86 +10,86 @@ import lombok.*;
 @AllArgsConstructor
 public class InquiryCwrRemoteDto {
     @JsonAlias("rn")
-    public Integer rn;
+    private Integer rn;
 
     @JsonAlias("CwrNo")
-    public String cwrNo;
+    private String cwrNo;
 
     @JsonAlias("DebtorType")
-    public String debtorType;
+    private String debtorType;
 
     @JsonAlias("CustName")
-    public String custName;
+    private String custName;
 
     @JsonAlias("CustNo")
-    public String custNo;
+    private String custNo;
 
     @JsonAlias("StartDt")
-    public String startDt;
+    private String startDt;
 
     @JsonAlias("EndDt")
-    public String endDt;
+    private String endDt;
 
     @JsonAlias("CurrStep")
-    public String currStep;
+    private String currStep;
 
     @JsonAlias("LastStep")
-    public String lastStep;
+    private String lastStep;
 
     @JsonAlias("CwrTypeDesc")
-    public String cwrTypeDesc;
+    private String cwrTypeDesc;
 
     @JsonAlias("CwrType")
-    public String cwrType;
+    private String cwrType;
 
     @JsonAlias("CwrStat")
-    public String cwrStat;
+    private String cwrStat;
 
     @JsonAlias("PlafondAmt")
-    public Double plafondAmt;
+    private Double plafondAmt;
 
     @JsonAlias("MrCwrTypeCode")
-    public String mrCwrTypeCode;
+    private String mrCwrTypeCode;
 
     @JsonAlias("Version")
-    public Integer version;
+    private Integer version;
 
     @JsonAlias("AFVersion")
-    public Object aFVersion;
+    private Object aFVersion;
 
     @JsonAlias("OfficeCode")
-    public String officeCode;
+    private String officeCode;
 
     @JsonAlias("OfficeName")
-    public String officeName;
+    private String officeName;
 
     @JsonAlias("CwrStatDescr")
-    public String cwrStatDescr;
+    private String cwrStatDescr;
 
     @JsonAlias("Facility")
-    public String facility;
+    private String facility;
 
     @JsonAlias("IsRevolving")
-    public Boolean isRevolving;
+    private Boolean isRevolving;
 
     @JsonAlias("Currency")
-    public String currency;
+    private String currency;
 
     @JsonAlias("RealisationAmt")
-    public Double realisationAmt;
+    private Double realisationAmt;
 
     @JsonAlias("LastApprover")
-    public String lastApprover;
+    private String lastApprover;
 
     @JsonAlias("GroupName")
-    public Object groupName;
+    private Object groupName;
 
     @JsonAlias("GroupNo")
-    public Object groupNo;
+    private Object groupNo;
 
     @JsonAlias("IsSuspend")
-    public Boolean isSuspend;
+    private Boolean isSuspend;
 
     @JsonAlias("ChangeCwrTrxNo")
-    public Object changeCwrTrxNo;
+    private Object changeCwrTrxNo;
 }

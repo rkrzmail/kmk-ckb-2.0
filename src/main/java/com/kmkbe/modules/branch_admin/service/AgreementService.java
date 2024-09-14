@@ -242,7 +242,7 @@ public class AgreementService {
 
             final List<InquiryAgreementCwrDto> data;
             try {
-                BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreement(
+                BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreementByNoAgreement(
                         InquiryAgreementRemoteRequest.builder()
                                 .agreementNo(agreementNo)
                                 .build()
@@ -275,7 +275,7 @@ public class AgreementService {
         }
     }
 
-    @Transactional(propagation = Propagation.REQUIRED)
+    @Transactional
     public void createInquiryAgreement(
             Authentication authentication,
             CreateInquiryAgreementRequest request
@@ -284,7 +284,7 @@ public class AgreementService {
             validateAgreement(request.getAgreementNo());
             final List<InquiryAgreementCwrDto> data;
             try {
-                BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreement(
+                BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreementByNoAgreement(
                         InquiryAgreementRemoteRequest.builder()
                                 .agreementNo(request.getAgreementNo())
                                 .build()
@@ -402,6 +402,7 @@ public class AgreementService {
                 .stream()
                 .map((item) ->
                         InvoiceEmailPayload.builder()
+                                .invoiceNo(item.getInvoice().getCustInvNo())
                                 .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
                                 .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                                 .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
@@ -412,11 +413,10 @@ public class AgreementService {
 
         String email = financingHdr.getBouwheer().getPicEmail();
         if (
-                postedResponse.getData() != null
-                        && postedResponse instanceof Map<?, ?> body
-                        && body.get("email") != null
+                postedResponse.getData() instanceof Map<?, ?> body
+                        && body.get("email_address") != null
         ) {
-            email = body.get("email").toString();
+            email = body.get("email_address").toString();
         }
 
         emailService.sendNotificationBouwheerPayment(

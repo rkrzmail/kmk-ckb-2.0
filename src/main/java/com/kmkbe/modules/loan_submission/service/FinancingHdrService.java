@@ -4,17 +4,16 @@ import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
 import com.kmkbe.core.domain.dto.FinancingHdrDto;
 import com.kmkbe.core.domain.dto.PaidInvoiceDto;
-import com.kmkbe.core.domain.entity.Bouwheer;
-import com.kmkbe.core.domain.entity.Customer;
-import com.kmkbe.core.domain.entity.FinancingHdr;
-import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.FinancingMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.model.PostedInvoicePayload;
 import com.kmkbe.core.domain.model.SimulationDisburseResult;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.InvoiceRepository;
+import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.user.entity.MstUser;
@@ -28,6 +27,8 @@ import org.springframework.stereotype.Service;
 import java.security.SignatureException;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Date;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -36,7 +37,7 @@ import java.util.UUID;
 public class FinancingHdrService {
     private final FinancingHdrRepository financingHdrRepository;
     private final InvoiceRepository invoiceRepository;
-
+    private final RedisRepository redisRepository;
     public FinancingHdr findLastBy(Customer customer) {
         try {
             return financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer).orElse(null);
@@ -47,6 +48,7 @@ public class FinancingHdrService {
     }
 
     public FinancingHdr create(
+            Authentication authentication,
             Customer customer,
             Bouwheer bouwheer,
             Product product,
@@ -61,47 +63,39 @@ public class FinancingHdrService {
                 final double totalInvoiceAmount = simulationResult.getTotalInvoiceAmount();
                 final double financingAmount = simulationResult.getFinancingAmount().doubleValue();
 
-                double retentionRate = 0.0 / 100;
-                double retentionAmount = disburseAmount * retentionRate;
-
-                double bankLoanInterest = 0.11;
-                double interestAmount = disburseAmount * bankLoanInterest;
+                // ((tanggal due date invoice) 10 - hari berjalan) + 7 (bouwheer grace period)
+                Long top = (long) DateTimeUtils.dateDiffInDay(new Date(), request.getInvoices().getFirst().getInvoiceDueDate());
 
                 header.setFinancingHdrCode(UUID.randomUUID());
                 header.setCustomer(customer);
                 header.setBouwheer(bouwheer);
-                header.setTenor(90L); // 90 as default
+                header.setTenor(top + bouwheer.getGracePeriod());
                 header.setFinancingDate(Instant.now());
                 header.setCurrencyCode(firstInvoice.getCurrencyCode());
                 header.setInvoiceQty((long) request.getInvoices().size());
                 header.setInterestType("COF"); // not clear
-                header.setInterestAmt(interestAmount); // not clear
-                header.setTermOfPayment(0L); // not clear
-                header.setGracePeriod(0L); // not clear
-                header.setRetention(retentionAmount); // not clear
+                header.setTermOfPayment(top); // not clear
+                header.setGracePeriod(bouwheer.getGracePeriod()); // get from bouwheer grace_period
+                header.setRetention(100 - request.getDisbursePercentage()); // not clear
                 header.setTotalInvoiceAmt(totalInvoiceAmount);
-                header.setFinancingDueDate(simulationResult.getMaxInvoiceDate().toInstant()); // not clear
-                header.setProvisionFeeAmt(product.getProvisionRate()); // not clear
-                header.setEffectiveRate(product.getEffectiveRate());
-                header.setProvisionFeePercentage(product.getProvisionRate());
-                header.setSurveyFeeAmt(product.getSurveyFee());
-                header.setSurveyFeeAmtNett(product.getSurveyFee());
-                header.setLegalFeeAmt(product.getLegalFee());
-                header.setLegalFeeAmtNett(product.getLegalFee());
-                header.setInsuranceFeePercentage(product.getInsuranceRate());
-                header.setOthersFeeAmt(product.getOthersFee());
                 header.setFinancingAmt(financingAmount);
                 header.setDisburseAmt(disburseAmount);
+                header.setInterestAmt(simulationResult.getInterestFeeAmount().doubleValue()); // not clear
+                header.setFinancingDueDate(simulationResult.getMaxInvoiceDate().toInstant()); // not clear
+                header.setProvisionFeeAmt(simulationResult.getProvisionFeeAmount().doubleValue()); // not clear
+                header.setProvisionFeePercentage(simulationResult.getProvisionRate());
+                header.setAdminFeePercentage(simulationResult.getAdminRate());
+                header.setEffectiveRate(simulationResult.getEffectiveRate());
+                header.setSurveyFeeAmt(simulationResult.getSurveyFeeAmount().doubleValue());
+                header.setLegalFeeAmt(simulationResult.getLegalFeeAmount().doubleValue());
+                header.setOthersFeeAmt(simulationResult.getOthersFeeAmount().doubleValue());
+                header.setAdminFeeAmt(simulationResult.getAdminFeeAmount().doubleValue());
 
-                Long countCustomerTransaction = invoiceRepository.countByCustomer(customer);
-                if (countCustomerTransaction == 0) {
-                    // admin fee only for new customer
-                    header.setAdminLimitAmt(product.getAdminLimitFee());
-                    header.setAdminFeeAmt(product.getAdminLimitFee() * (product.getAdminRate() / 100));
-                } else {
-                    header.setAdminLimitAmt(0.0);
-                    header.setAdminFeeAmt(0.0);
-                }
+                header.setSurveyFeeAmtNett(simulationResult.getSurveyFeeAmount().doubleValue());
+                header.setLegalFeeAmtNett(simulationResult.getLegalFeeAmount().doubleValue());
+                header.setInsuranceFeeAmt(0.0);
+                header.setInsuranceFeePercentage(0.0);
+                header.setAdminLimitAmt(0.0);
 
                 header.setDisburseDate(Instant.now());
                 header.setFinancingStatus(FinancingStatus.NEW.name()); // fresh input will store as NEW
@@ -110,6 +104,8 @@ public class FinancingHdrService {
                 header.setDtmCrt(Instant.now());
 
                 header = financingHdrRepository.save(header);
+
+
             }
 
             return header;

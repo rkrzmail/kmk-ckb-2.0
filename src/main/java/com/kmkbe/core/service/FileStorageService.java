@@ -141,12 +141,13 @@ public class FileStorageService {
                     .getMimeType(resource.getFile().getAbsolutePath());
 
             if (resource.exists()) {
+                HttpHeaders headers = new HttpHeaders();
+                headers.add("content-disposition", "inline;filename=" + fileName);
+
                 return ResponseEntity.ok()
+                        .contentLength(paths.toFile().length())
                         .contentType(MediaType.parseMediaType(contentType))
-                        .header(
-                                HttpHeaders.CONTENT_DISPOSITION,
-                                "attachment; filename=\"" + resource.getFilename() + "\""
-                        )
+                        .headers(headers)
                         .body(resource);
             } else {
                 throw new RuntimeException("File not found ");

@@ -2,13 +2,12 @@ package com.kmkbe.core.utils;
 
 import io.netty.util.internal.StringUtil;
 
-import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Date;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class DateTimeUtils {
@@ -75,13 +74,25 @@ public class DateTimeUtils {
         return DTF_DATE_RESPONSE_STANDARD_FORMATTER.format(instant);
     }
 
-    public static Date timestampToDate(String v) throws ParseException {
-        if (StringUtil.isNullOrEmpty(v)) {
+    public static Date cSharpTimeStampToDate(String v) {
+        try {
+            if (StringUtil.isNullOrEmpty(v)) {
+                return null;
+            }
+
+            final String[] split = v
+                    .replace("T", " ")
+                    .trim()
+                    .split(" ");
+
+            if (split.length > 0) {
+                return SDF_STANDARD_DATE.parse(split[0]);
+            }
+
+            return SDF_STANDARD_DATE.parse(v.replace("T", " ").trim());
+        } catch (Exception e) {
             return null;
         }
-        return SDF_STANDARD_DATE_TIME.parse(
-                v.replace("T", " ")
-        );
     }
 
     public static String formatToDateTime(Instant instant) {
@@ -99,5 +110,49 @@ public class DateTimeUtils {
 
     static Instant getInstantFromNanos(long nanosSinceEpoch) {
         return Instant.ofEpochSecond(0L, nanosSinceEpoch);
+    }
+
+    public static Date setDateZeroTime(Date date) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTime(date);
+        calendar.set(Calendar.HOUR_OF_DAY, 0);
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+        return calendar.getTime();
+    }
+
+
+    public static Map<TimeUnit, Long> computeDateDiff(Date date1, Date date2) {
+        try {
+            long diffInMillis = date2.getTime() - date1.getTime();
+
+            //create the list
+            List<TimeUnit> units = new ArrayList<>(EnumSet.allOf(TimeUnit.class));
+            Collections.reverse(units);
+
+            //create the result map of TimeUnit and difference
+            Map<TimeUnit, Long> result = new LinkedHashMap<TimeUnit, Long>();
+            long milliesRest = diffInMillis;
+
+            for (TimeUnit unit : units) {
+
+                //calculate difference in millisecond
+                long diff = unit.convert(milliesRest, TimeUnit.MILLISECONDS);
+                long diffInMilliesForUnit = unit.toMillis(diff);
+                milliesRest = milliesRest - diffInMilliesForUnit;
+
+                //put the result in the map
+                result.put(unit, diff);
+            }
+
+            return result;
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static int dateDiffInDay(Date date1, Date date2) {
+        return (int) ((date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24)) + 2;
     }
 }

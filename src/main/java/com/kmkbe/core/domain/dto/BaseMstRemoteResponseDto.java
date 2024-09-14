@@ -11,38 +11,38 @@ import lombok.*;
 @Data
 public class BaseMstRemoteResponseDto<T> {
     @JsonProperty("HeaderObj")
-    public Header header;
+    private Header header;
 
     @JsonProperty("StatusCode")
-    public String statusCode;
+    private String statusCode;
 
     @JsonProperty("Message")
-    public String message;
+    private String message;
 
     @JsonProperty("ErrorMessages")
-    public Object errorMessages;
+    private Object errorMessages;
 
     @JsonProperty("RowVersion")
-    public Object rowVersion;
+    private Object rowVersion;
 
     @JsonProperty("ReturnObject")
     @JsonAlias("Data")
-    public T data;
+    private T data;
 
     @NoArgsConstructor
     @Getter
     @Setter
     public static class Header {
         @JsonProperty("ResponseTime")
-        public String responseTime;
+        private String responseTime;
 
         @JsonProperty("StatusCode")
-        public String statusCode;
+        private String statusCode;
 
         @JsonProperty("Message")
-        public String message;
+        private String message;
 
         @JsonProperty("ErrorMessages")
-        public Object errorMessages;
+        private Object errorMessages;
     }
 }

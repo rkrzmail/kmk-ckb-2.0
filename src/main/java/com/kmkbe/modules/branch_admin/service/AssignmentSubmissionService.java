@@ -115,23 +115,27 @@ public class AssignmentSubmissionService {
                         );
 
                         Agreement agreement = agreementRepository.findTopByFinancingHdr(e).orElse(null);
-                        AgreementFile agreementFile = agreementFileRepository.findTopByAgreementOrderByAgreementFileId(
-                                agreement
-                        ).orElse(null);
+                        AgreementFile agreementFile = null;
 
-                        String agreementDoc = null;
+                        String agreementDoc = null, agreementCode = null;
+                        if (agreement != null) {
+                            agreementCode = agreement.getAgreementCode();
+                            agreementFile = agreementFileRepository.findTopByAgreementOrderByAgreementFileId(
+                                    agreement
+                            ).orElse(null);
+                        }
+
                         if (agreementFile != null) {
-                            agreementDoc = UriUtils.getBaseUrl(httpServletRequest)
-                                    + "/api/v1"
-                                    + "/documents/download/agreement"
-                                    + "/"
-                                    + agreementFile.getAgreementFileId()
-                                    + "?token="
-                                    + HttpUtils.getHeaderBearerToken(httpServletRequest);
+                            agreementDoc = UriUtils.fileUlr(
+                                    httpServletRequest,
+                                    Math.toIntExact(agreementFile.getAgreementFileId()),
+                                    UriUtils.DocType.agreement
+                            );
                         }
 
                         return AssignmentDto.builder()
                                 .financingHdrCode(e.getFinancingHdrCode())
+                                .agreementCode(agreementCode)
                                 .custCode(e.getCustomer().getCustCode())
                                 .custName(e.getCustomer().getCustName())
                                 .bouwheerName(e.getBouwheer().getBouwheerName())

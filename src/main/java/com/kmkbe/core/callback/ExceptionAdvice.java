@@ -47,7 +47,6 @@ public class ExceptionAdvice {
                 jsonRequest = ObjectUtils.jsonToStr(request.getParameterMap());
                 pageUrl = request.getDescription(false);
             } catch (Exception ignored) {
-
             }
         }
 

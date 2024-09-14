@@ -151,4 +151,10 @@ public class ExceptionUtils {
         log.error(exception.getMessage(), exception);
         return new ResponseEntity<>(result, null, HttpStatusCode.valueOf(detail.getStatus()));
     }
+
+    public static void catchUncaughtException() {
+        /*Thread.currentThread().setUncaughtExceptionHandler((t, e) -> {
+            log.error("uncaughtException: error {}", e.getMessage());
+        });*/
+    }
 }

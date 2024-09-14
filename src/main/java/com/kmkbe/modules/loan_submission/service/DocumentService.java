@@ -38,6 +38,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.security.SignatureException;
 import java.time.Instant;
 import java.util.*;
@@ -124,13 +126,20 @@ public class DocumentService {
                             LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
                             legalFileDto.setUploadedDate(legalFile.getDtmUpd());
 
-                            String generatedUrl = fileUlr(
+                            String generatedUrl = UriUtils.fileUlr(
                                     httpServletRequest,
-                                    legalFile
+                                    Math.toIntExact(legalFile.getFileId()),
+                                    UriUtils.DocType.loan
                             );
 
                             if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
-                                generatedUrl = legalFile.getFilePath();
+                                try {
+                                    URI uri = new URI(legalFile.getFilePath());
+                                    uri = new URI("https", UriUtils.getDomainUrl(httpServletRequest), uri.getPath(), uri.getFragment());
+                                    generatedUrl = uri.toString();
+                                } catch (URISyntaxException e) {
+                                    generatedUrl = legalFile.getFilePath();
+                                }
                             }
 
                             legalFileDto.setFileUrl(generatedUrl);
@@ -786,9 +795,10 @@ public class DocumentService {
                     .map((legal) -> {
                         LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legal);
                         legalFileDto.setUploadedDate(legal.getDtmUpd());
-                        String generatedUrl = fileUlr(
+                        String generatedUrl = UriUtils.fileUlr(
                                 httpServletRequest,
-                                legal
+                                Math.toIntExact(legal.getFileId()),
+                                UriUtils.DocType.loan
                         );
 
                         if (legal.getFilePath() != null && legal.getFilePath().contains("http")) {
@@ -810,16 +820,5 @@ public class DocumentService {
             log.error("uploadedCustomerDoc: error {}", e.getMessage());
             throw e;
         }
-    }
-
-    private String fileUlr(HttpServletRequest httpServletRequest, LegalFile legalFile) {
-        return (UriUtils.getBaseUrl(httpServletRequest)
-                .replace("http", "https"))
-                + "/api/v1"
-                + "/documents/download/loan"
-                + "/"
-                + legalFile.getFileId()
-                + "?token="
-                + HttpUtils.getHeaderBearerToken(httpServletRequest);
     }
 }
