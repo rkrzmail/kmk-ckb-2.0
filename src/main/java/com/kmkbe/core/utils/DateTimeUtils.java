@@ -153,6 +153,6 @@ public class DateTimeUtils {
     }
 
     public static int dateDiffInDay(Date date1, Date date2) {
-        return (int) ((date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24));
+        return (int) ((date2.getTime() - date1.getTime()) / (1000 * 60 * 60 * 24)) + 2;
     }
 }

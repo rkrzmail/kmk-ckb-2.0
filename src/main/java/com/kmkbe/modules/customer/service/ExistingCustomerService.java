@@ -17,12 +17,10 @@ import io.netty.util.internal.StringUtil;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.security.SignatureException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.*;
@@ -152,18 +150,22 @@ public class ExistingCustomerService {
         }
 
         try {
-            final CustomerRemoteDto existingCustomer = customerRemoteService.validateExisting(
-                    ExistingCustomerRequest.builder()
-                            .args(
-                                    ExistingCustomerRequest.Args.builder()
-                                            .key(identityType)
-                                            .value(identityNo)
-                                            .build()
-                            )
-                            .includeProperties(new ArrayList<>())
-                            .requestDateTime(DateTimeUtils.SDF_STANDARD_DATE.format(new Date()))
-                            .build()
-            );
+            CustomerRemoteDto existingCustomer = null;
+            try {
+                existingCustomer = customerRemoteService.validateExisting(
+                        ExistingCustomerRequest.builder()
+                                .args(
+                                        ExistingCustomerRequest.Args.builder()
+                                                .key(identityType)
+                                                .value(identityNo)
+                                                .build()
+                                )
+                                .includeProperties(new ArrayList<>())
+                                .requestDateTime(DateTimeUtils.SDF_STANDARD_DATE.format(new Date()))
+                                .build()
+                );
+            } catch (Exception ignored) {
+            }
 
             if (existingCustomer == null) {
                 return null;
@@ -177,7 +179,7 @@ public class ExistingCustomerService {
                                 .custNo(existingCustomer.getCustNo())
                                 .build()
                 );
-            } catch (Exception e) {
+            } catch (Exception ignored) {
             }
 
             if (cwrResponse == null) {

@@ -218,7 +218,7 @@ public class LoanSubmissionService {
         try {
             final BigDecimal ntfResult = request.getTotalInvoiceAmount()
                     .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
-                    //.setScale(0, RoundingMode.UP);
+            //.setScale(0, RoundingMode.UP);
 
             final Optional<Product> findProduct = productRepository.findNtfRange(ntfResult.doubleValue());
 
@@ -292,10 +292,10 @@ public class LoanSubmissionService {
 
             return EstimatedDisburseDto.builder()
                     .productId(product.getProductId())
-                    .financingAmount(ntfResult.setScale(0, RoundingMode.UP)) //yng diajukan
+                    .financingAmount(ntfResult.setScale(0, RoundingMode.HALF_UP)) //yng diajukan
                     .serviceFeeAmount(serviceFee)
                     .estimatedDisburseAmount(estimated)
-                    .interestFeeAmount(new BigDecimal(interestAmount))//interest
+                    .interestFeeAmount(new BigDecimal(interestAmount).setScale(0, RoundingMode.HALF_UP))//interest
                     .provisionFeeAmount(provisionFeeAmount)
                     .adminFeeAmount(adminFeeAmount)
                     .othersFeeAmount(othersFeeAmount)
@@ -342,6 +342,10 @@ public class LoanSubmissionService {
             {
                 simulation.setDisbursePercentage(request.getDisbursePercentage());
                 simulation.setTotalInvoiceAmount(BigDecimal.valueOf(totalInvoiceAmount).setScale(2, RoundingMode.CEILING));
+                simulation.setBouwheerCode(request.getInvoices().getFirst().getBouwheerCode());
+                simulation.setInvoiceDueDate(
+                        DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
+                );
             }
 
             final EstimatedDisburseDto calculateDisburse = calculateDisburse(authentication, simulation);

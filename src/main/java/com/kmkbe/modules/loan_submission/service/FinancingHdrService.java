@@ -91,9 +91,9 @@ public class FinancingHdrService {
                 header.setOthersFeeAmt(simulationResult.getOthersFeeAmount().doubleValue());
                 header.setAdminFeeAmt(simulationResult.getAdminFeeAmount().doubleValue());
 
+                header.setSurveyFeeAmtNett(simulationResult.getSurveyFeeAmount().doubleValue());
+                header.setLegalFeeAmtNett(simulationResult.getLegalFeeAmount().doubleValue());
                 header.setInsuranceFeeAmt(0.0);
-                header.setSurveyFeeAmtNett(0.0);
-                header.setLegalFeeAmtNett(0.0);
                 header.setInsuranceFeePercentage(0.0);
                 header.setAdminLimitAmt(0.0);
 
