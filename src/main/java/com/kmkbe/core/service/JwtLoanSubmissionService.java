@@ -3,33 +3,27 @@ package com.kmkbe.core.service;
 import com.kmkbe.core.domain.model.JwtSimulasiModel;
 import com.kmkbe.core.utils.ObjectUtils;
 import io.netty.util.internal.StringUtil;
-import jakarta.xml.bind.DatatypeConverter;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.util.Base64;
 import java.util.Map;
 
 @Service
 @Slf4j
+@RequiredArgsConstructor
 public class JwtLoanSubmissionService {
-    @Value("${csul.loan-submission.secret-key}")
-    public String secretKey;
+    private final KeySecretServices keySecretServices;
 
     public JwtSimulasiModel extractToken(String token) {
         if (StringUtil.isNullOrEmpty(token)) {
             return null;
         }
 
-        byte[] payloadBytes = Base64.getUrlDecoder().decode(splitter(token, 0));
-        String payloadStr = new String(payloadBytes, StandardCharsets.UTF_8);
+        final String payloadStr = keySecretServices.decodePayloadAsString(token);
 
         try {
-            if (!validateSecret(token)) {
+            if (!keySecretServices.validate(token)) {
                 return null;
             }
         } catch (Exception e) {
@@ -78,23 +72,4 @@ public class JwtLoanSubmissionService {
 
         return null;
     }
-
-    public boolean validateSecret(String token) throws NoSuchAlgorithmException {
-        final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
-        messageDigest.update((splitter(token, 0) + "." + "DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH").getBytes());
-        byte[] digest = messageDigest.digest();
-
-        String myHash = DatatypeConverter.printHexBinary(digest);
-        return myHash.equalsIgnoreCase(splitter(token, 1));
-    }
-
-    private String splitter(String token, int index) {
-        String[] splitter = token.split("\\.");
-        if (splitter.length <= index) {
-            return null;
-        }
-
-        return splitter[index].trim();
-    }
-
 }

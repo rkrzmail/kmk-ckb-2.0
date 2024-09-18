@@ -1,8 +1,10 @@
 package com.kmkbe.core.middleware;
 
 import com.kmkbe.core.domain.model.JwtSimulasiModel;
+import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.service.JwtService;
+import com.kmkbe.core.utils.HttpUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.FilterChain;
@@ -38,8 +40,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Value("${spring.profiles.active}")
     private String profileActives;
 
-    /*@Value("${security.api.key}")
-    private String apiKey;*/
+    @Value("${security.api.key}")
+    private String apiKey;
 
     public static final String[] ENDPOINTS_WHITELIST_FINANCING = {
             "/api/v1/financing/invoice-paid",
@@ -70,20 +72,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/internal/auth/**",
             //"/api/v1/internal/auth/refresh-token",
 
+            "/monitoring/**", // actuator replacement
             "/uploads/**",
             "/error/**",
     };
 
     public static final String[] ENDPOINTS_SWAGGERS = {
-            "/api/v1/actuator/**",
             "/swagger-ui.html",
             "/swagger-ui/**",
             "/swagger-resources/**",
             "/configuration/**",
             "/webjars/**",
-            "/actuator/**",
             "/instances/**",
-            "/actuator/**",
 
             "/api/v1/api-docs/**",
             "/api/v1/swagger-ui/**",
@@ -101,93 +101,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Qualifier("internalUserDetailService")
     private final UserDetailsService internalUserDetailsService;
 
+    /**
+     * <h5>In order to validate an request required:</h5>
+     * <ul>
+     *     <li>Validate API key</li>
+     *     <li>Validate white list</li>
+     *     <li>Validate loan submission</li>
+     * </ul>
+     * </br>
+     *
+     * <p>Loan Submission can access without Authorization and Authorized User</p>
+     */
     @Override
     protected void doFilterInternal(
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
-        //determine whitelist endpoints
-        for (String endpoint : ENDPOINTS_WHITELIST) {
-            if (new AntPathRequestMatcher(endpoint).matches(request)) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-        }
-
-        final String authHeader = request.getHeader("Authorization");
-        final String loanSubmissionBypassToken = request.getParameter("token"); //determine loan-submission whitelist when token integrate valid
-
-        boolean invalidBouwheer = false;
-        if (
-                !StringUtil.isNullOrEmpty(loanSubmissionBypassToken)
-                        //&& new AntPathRequestMatcher("/api/v1/loan-submissions").matches(request)
-                        && new OrRequestMatcher(
-                        new AntPathRequestMatcher("/api/v1/loan-submissions"),
-                        new AntPathRequestMatcher("/api/v1/loan-submissions/invoices"),
-                        new AntPathRequestMatcher("/api/v1/loan-submissions/importance-notes"),
-                        new AntPathRequestMatcher("/api/v1/loan-submissions/simulations/percentage"),
-                        new AntPathRequestMatcher("/api/v1/loan-submissions/simulations/calculate")
-                ).matches(request)
-        ) {
-            if (
-                    loanSubmissionBypassToken.equalsIgnoreCase("1")
-                            || loanSubmissionBypassToken.equalsIgnoreCase("2")
-                            || loanSubmissionBypassToken.equalsIgnoreCase("3")
-            ) {
-                filterChain.doFilter(request, response);
-                return;
-            }
-
-            if (new AntPathRequestMatcher("/api/v1/loan-submissions/**").matches(request)) {
-                JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(loanSubmissionBypassToken);
-                if (jwtSimulasiModel == null) {
-                    invalidBouwheer = true;
-                } else if (!StringUtil.isNullOrEmpty(jwtSimulasiModel.getBouwheerCode())) {
-                    filterChain.doFilter(request, response);
-                    return;
-                }
-            }
-        } else {
-            if (authHeader == null) {
-                for (String endpoint : ENDPOINTS_WHITELIST_LOAN_SUBMISSION) {
-                    if (new AntPathRequestMatcher(endpoint).matches(request)) {
-                        filterChain.doFilter(request, response);
-                        return;
-                    }
-                }
-            }
-        }
-
-        if (invalidBouwheer) {
-            handlerExceptionResolver.resolveException(request, response, null, new Exception("External request need passing an valid token"));
-            return;
-        }
-
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-
         try {
-            final String jwt = authHeader.substring("Bearer ".length());
-            final String username = jwtService.extractUsername(jwt);
-            final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
-            if (username != null && authentication == null) {
-                UserDetails user;
-                try {
-                    user = userDetailsService.loadUserByUsername(username);
-                } catch (Exception e) {
-                    user = internalUserDetailsService.loadUserByUsername(username);
-                }
-
-                if (jwtService.isTokenValid(jwt, user)) {
-                    authenticate(user, request);
-                }
+            if (shouldValidateApiKey(request, response, filterChain)) {
+                return;
             }
 
-            filterChain.doFilter(request, response);
+            if (whiteListEndPointsValidation(request, response, filterChain)) {
+                return;
+            }
+
+            if (lonaSubmissionValidation(request, response, filterChain)) {
+                return;
+            }
+
+            setAuthenticate(request, response, filterChain);
         } catch (ExpiredJwtException | BadCredentialsException e) {
             request.setAttribute("exception", e);
             filterChain.doFilter(request, response);
@@ -195,6 +139,37 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             logger.error("failed on set user authentication, {}", e);
             handlerExceptionResolver.resolveException(request, response, null, e);
         }
+    }
+
+    private void setAuthenticate(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+        final String authHeader = HttpUtils.getHeaderAuthorization(request);
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        final String jwt = authHeader.substring("Bearer ".length());
+        final String username = jwtService.extractUsername(jwt);
+        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+        if (username != null && authentication == null) {
+            UserDetails user;
+            try {
+                user = userDetailsService.loadUserByUsername(username);
+            } catch (Exception e) {
+                user = internalUserDetailsService.loadUserByUsername(username);
+            }
+
+            if (jwtService.isTokenValid(jwt, user)) {
+                authenticate(user, request);
+            }
+        }
+
+        filterChain.doFilter(request, response);
     }
 
     private void authenticate(UserDetails userDetails, @NonNull HttpServletRequest request) {
@@ -212,15 +187,120 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         SecurityContextHolder.getContext().setAuthentication(authToken);
     }
 
-    private void notSecureRefreshToken() {
-         /*String isRefreshToken = request.getHeader("isRefreshToken");
-            String requestURL = request.getRequestURL().toString();
+    private boolean whiteListEndPointsValidation(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+        for (String endpoint : ENDPOINTS_WHITELIST) {
+            if (new AntPathRequestMatcher(endpoint).matches(request)) {
+                filterChain.doFilter(request, response);
+                return true;
+            }
+        }
 
-            if (isRefreshToken != null && isRefreshToken.equals("true") && requestURL.contains("refresh-token")) {
-                allowForRefreshToken(e, request);
-            } else {
-                request.setAttribute("exception", e);
-            }*/
+        return false;
+    }
+
+    private boolean lonaSubmissionValidation(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+        final String loanSubmissionBypassToken = request.getParameter("token"); //determine loan-submission whitelist when token integrate valid
+        boolean invalidBouwheer = false;
+        if (
+                !StringUtil.isNullOrEmpty(loanSubmissionBypassToken)
+                        && new OrRequestMatcher(
+                        new AntPathRequestMatcher("/api/v1/loan-submissions"),
+                        new AntPathRequestMatcher("/api/v1/loan-submissions/invoices"),
+                        new AntPathRequestMatcher("/api/v1/loan-submissions/importance-notes"),
+                        new AntPathRequestMatcher("/api/v1/loan-submissions/simulations/percentage"),
+                        new AntPathRequestMatcher("/api/v1/loan-submissions/simulations/calculate")
+                ).matches(request)
+        ) {
+            if (
+                    loanSubmissionBypassToken.equalsIgnoreCase("1")
+                            || loanSubmissionBypassToken.equalsIgnoreCase("2")
+                            || loanSubmissionBypassToken.equalsIgnoreCase("3")
+            ) {
+                filterChain.doFilter(request, response);
+                return true;
+            }
+
+            if (new AntPathRequestMatcher("/api/v1/loan-submissions/**").matches(request)) {
+                JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(loanSubmissionBypassToken);
+                if (jwtSimulasiModel == null) {
+                    invalidBouwheer = true;
+                } else if (!StringUtil.isNullOrEmpty(jwtSimulasiModel.getBouwheerCode())) {
+                    filterChain.doFilter(request, response);
+                    return true;
+                }
+            }
+        } else {
+            if (HttpUtils.getHeaderAuthorization(request) == null) {
+                for (String endpoint : ENDPOINTS_WHITELIST_LOAN_SUBMISSION) {
+                    if (new AntPathRequestMatcher(endpoint).matches(request)) {
+                        filterChain.doFilter(request, response);
+                        return true;
+                    }
+                }
+            }
+        }
+
+        if (invalidBouwheer) {
+            handlerExceptionResolver.resolveException(request, response, null, new Exception("External request need passing an valid token"));
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean shouldValidateApiKey(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain
+    ) throws ServletException, IOException {
+        if (
+                new OrRequestMatcher(
+                        new AntPathRequestMatcher("/monitoring/**")
+                ).matches(request)
+        ) {
+            if (apiKeyValidation(request, response)) {
+                filterChain.doFilter(request, response);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private boolean apiKeyValidation(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response
+    ) {
+        final String providedApiKey = HttpUtils.getHeaderApiKey(request);
+        if (providedApiKey == null || !providedApiKey.equals(apiKey)) {
+            handlerExceptionResolver.resolveException(request, response, null, new IllegalApiKeyException());
+            return false;
+        }
+
+        return true;
+    }
+
+    private void notSecureRefreshToken(
+            @NonNull HttpServletRequest request,
+            ExpiredJwtException e
+    ) {
+        String isRefreshToken = request.getHeader("isRefreshToken");
+        String requestURL = request.getRequestURL().toString();
+
+        if (isRefreshToken != null && isRefreshToken.equals("true") && requestURL.contains("refresh-token")) {
+            allowForRefreshToken(e, request);
+        } else {
+            request.setAttribute("exception", e);
+        }
     }
 
     private void allowForRefreshToken(ExpiredJwtException ex, HttpServletRequest request) {

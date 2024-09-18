@@ -13,11 +13,10 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class MD5Test {
     private static final String[] VENDOR_CODES = {
-            "0002004099"
+            "0002005287"
     };
 
     private static final String SECRET = "DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH";

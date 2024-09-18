@@ -101,12 +101,20 @@ public class HttpUtils {
     }
 
     public static String getHeaderBearerToken(HttpServletRequest request) {
-        final String authHeader = request.getHeader("Authorization");
+        final String authHeader = getHeaderAuthorization(request);
 
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return null;
         }
 
         return authHeader.substring("Bearer ".length());
+    }
+
+    public static String getHeaderAuthorization(HttpServletRequest request){
+        return request.getHeader("Authorization");
+    }
+
+    public static String getHeaderApiKey(HttpServletRequest request){
+        return request.getHeader("API-Key");
     }
 }

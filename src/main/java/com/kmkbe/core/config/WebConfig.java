@@ -17,8 +17,6 @@ import java.util.List;
 import java.util.concurrent.Executors;
 
 @Configuration
-@EnableWebMvc
-@EnableAsync
 @RequiredArgsConstructor
 public class WebConfig implements WebMvcConfigurer {
 
