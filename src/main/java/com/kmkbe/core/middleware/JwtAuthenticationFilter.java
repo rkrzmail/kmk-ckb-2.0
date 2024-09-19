@@ -72,7 +72,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/internal/auth/**",
             //"/api/v1/internal/auth/refresh-token",
 
-            "/monitoring/**", // actuator replacement
+            "/api/monitoring/**", // actuator replacement
             "/uploads/**",
             "/error/**",
     };
@@ -263,7 +263,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     ) throws ServletException, IOException {
         if (
                 new OrRequestMatcher(
-                        new AntPathRequestMatcher("/monitoring/**")
+                        new AntPathRequestMatcher("/api/monitoring/**")
                 ).matches(request)
         ) {
             if (apiKeyValidation(request, response)) {

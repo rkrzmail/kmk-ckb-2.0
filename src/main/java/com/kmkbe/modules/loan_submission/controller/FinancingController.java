@@ -51,7 +51,7 @@ public class FinancingController {
                     providedApiKey
             );
 
-            financingDtlService.updatePaid(financingHdr);
+            financingDtlService.updatePaid(request, financingHdr);
 
             return new CommonResult<>().success(null, "Success Submitted");
         } catch (Exception e) {

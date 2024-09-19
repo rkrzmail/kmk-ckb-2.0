@@ -9,6 +9,7 @@ import com.kmkbe.core.domain.entity.Invoice;
 import com.kmkbe.core.domain.mapper.InvoiceMapper;
 import com.kmkbe.core.domain.model.PostedInvoicePayload;
 import com.kmkbe.core.domain.repository.FinancingDtlRepository;
+import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -100,15 +101,27 @@ public class FinancingDtlService {
         }
     }
 
-    public void updatePaid(FinancingHdr financingHdr) {
+    public void updatePaid(FinancingInvoicePaidRequest request, FinancingHdr financingHdr) {
         try {
-            financingDtlRepository.findAllByFinancingHdr(financingHdr)
-                    .orElse(new ArrayList<>())
-                    .forEach(financingDtl -> {
-                        financingDtl.setBouwheerPaidDate(Instant.now());
-                        financingDtl.getInvoice().setStatus("PAID");
-                        financingDtlRepository.save(financingDtl);
-                    });
+            for (FinancingInvoicePaidRequest.InvoicePaid invoicePaid : request.getInvoicePaid()) {
+                List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr).orElse(null);
+                if (financingDtls != null) {
+                    for (FinancingDtl financingDtl : financingDtls) {
+                        if (invoicePaid.getInvoiceNo().equalsIgnoreCase(financingDtl.getInvoice().getBouwheerInvNo())) {
+                            financingDtl.getInvoice().setStatus("PAID");
+                            financingDtl.getInvoice().setUsrUpd(financingHdr.getUsrUpd());
+                            financingDtl.getInvoice().setDtmUpd(Instant.now());
+
+                            financingDtl.setBouwheerPaidDate(request.getInvoicePaid().getFirst().getPostingDate().toInstant());
+                            financingDtl.setDtmUpd(Instant.now());
+                            financingDtl.setUsrUpd(financingHdr.getUsrUpd());
+                            financingDtlRepository.save(financingDtl);
+                            break;
+                        }
+                    }
+                }
+            }
+
         } catch (Exception e) {
             log.error("updatePaid, error {}", e.getMessage());
             throw e;
