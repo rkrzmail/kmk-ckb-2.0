@@ -169,6 +169,15 @@ public class ExistingCustomerService {
 
             if (existingCustomer == null) {
                 return null;
+            } else {
+                if (StringUtil.isNullOrEmpty(customer.getCustNo())) {
+                    final Customer loadedCust = customerRepository.findByCustCode(customer.getCustCode())
+                            .orElseThrow();
+                    loadedCust.setCustNo(existingCustomer.getCustNo());
+                    loadedCust.setUsrUpd(customer.getCustName());
+                    loadedCust.setDtmUpd(Instant.now());
+                    customerRepository.save(loadedCust);
+                }
             }
 
             BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> cwrResponse = null;
@@ -246,16 +255,7 @@ public class ExistingCustomerService {
                             .usrCrt(customer.getCustName())
                             .dtmCrt(Instant.now())
                             .build();
-                    if (customer != null && bouwheer != null) {
-                        if (StringUtil.isNullOrEmpty(customer.getCustNo())) {
-                            final Customer loadedCust = customerRepository.findByCustCode(customer.getCustCode())
-                                    .orElseThrow();
-                            loadedCust.setCustNo(existingCustomer.getCustNo());
-                            loadedCust.setUsrUpd(customer.getCustName());
-                            loadedCust.setDtmUpd(Instant.now());
-                            customerRepository.save(loadedCust);
-                        }
-
+                    if (bouwheer != null) {
                         final Cwr cwr = cwrRepository.findTopByCwrCode(firstCwr.getCwrNo())
                                 .orElse(null);
 

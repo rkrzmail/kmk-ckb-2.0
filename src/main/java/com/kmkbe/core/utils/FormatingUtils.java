@@ -1,10 +1,11 @@
 package com.kmkbe.core.utils;
 
+import lombok.Getter;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.List;
 import java.util.Locale;
 
 public class FormatingUtils {
@@ -408,5 +409,24 @@ public class FormatingUtils {
         }
 
         return value.replaceAll(" ", "");
+    }
+
+
+    @Getter
+    public static class CurrencyFormatter {
+        private String unit;
+        private String value;
+
+        public CurrencyFormatter(double numb) {
+            try {
+                double dalamJutaan = numb / SEJUTA;
+                DecimalFormat decimalFormat = new DecimalFormat("#,###");
+                value = decimalFormat.format(dalamJutaan);
+                unit = "*Dalam jutaan rupiah";
+            } catch (Exception e) {
+                value = String.valueOf(numb);
+                unit = "*Dalam jutaan rupiah";
+            }
+        }
     }
 }

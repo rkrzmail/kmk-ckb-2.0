@@ -1,11 +1,8 @@
 package com.kmkbe.modules.customer.controller;
 
-import com.kmkbe.core.domain.dto.CustomerPlafondDto;
-import com.kmkbe.core.domain.dto.LegalFileDto;
-import com.kmkbe.core.domain.dto.PostedInvoiceDto;
+import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.constant.CustomerType;
-import com.kmkbe.core.domain.dto.CustomerDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.CustomerCompany;
 import com.kmkbe.core.domain.entity.CustomerPersonal;
@@ -39,7 +36,7 @@ public class CustomerController {
     private final CustomerService customerService;
     private final CustomerCompanyService customerCompanyService;
     private final CustomerPersonalService customerPersonalService;
-    private final CustomerPlafondService customerPlafondService;
+    private final CustomerDashboardService customerDashboardService;
     private final InvoiceService invoiceService;
     private final DocumentService documentService;
 
@@ -133,16 +130,7 @@ public class CustomerController {
             @PathVariable String financingHdrCode
     ) {
         return new CommonResult<CustomerPlafondDto>().success(
-                customerPlafondService.plafond(financingHdrCode)
-        );
-    }
-
-    @GetMapping("/dashboard/{financingHdrCode}")
-    public CommonResult<CustomerPlafondDto> getDashboard(
-            @PathVariable String financingHdrCode
-    ) {
-        return new CommonResult<CustomerPlafondDto>().success(
-                customerPlafondService.plafond(financingHdrCode)
+                customerDashboardService.plafond(financingHdrCode)
         );
     }
 
@@ -158,6 +146,15 @@ public class CustomerController {
                         httpServletRequest,
                         request
                 )
+        );
+    }
+
+    @GetMapping("/dashboard")
+    public CommonResult<CustomerDashboardDto> getDashboard(
+            Authentication authentication
+    ) throws SignatureException {
+        return new CommonResult<CustomerDashboardDto>().success(
+                customerDashboardService.mainDashboard(authentication)
         );
     }
 }

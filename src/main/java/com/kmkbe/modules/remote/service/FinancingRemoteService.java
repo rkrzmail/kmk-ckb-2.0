@@ -4,14 +4,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
 import com.kmkbe.core.domain.entity.ApiIntegrationLog;
-import com.kmkbe.core.domain.repository.ApiIntegrationLogRepository;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.ObjectUtils;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpMethod;
@@ -19,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
@@ -31,8 +28,6 @@ import java.util.Map;
 public class FinancingRemoteService {
     private final RestTemplate restTemplate;
     private final BaseRemoteService baseRemoteService;
-    private final ApiIntegrationLogRepository apiIntegrationLogRepository;
-    private final TransactionTemplate transactionTemplate;
     private final ObjectMapper objectMapper;
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -86,7 +81,6 @@ public class FinancingRemoteService {
                     .responseJson(responseStr)
                     .responseStatus(String.valueOf(statusCode))
                     .build();
-            apiIntegrationLogRepository.save(apiIntegrationLog);
         }
     }
 
@@ -142,7 +136,6 @@ public class FinancingRemoteService {
                     .responseJson(responseStr)
                     .responseStatus(String.valueOf(statusCode))
                     .build();
-            apiIntegrationLogRepository.save(apiIntegrationLog);
         }
     }
 }

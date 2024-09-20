@@ -23,4 +23,6 @@ public interface CwrRepository extends JpaRepository<Cwr, String>, JpaSpecificat
     Optional<Cwr> findTopByCwrCode(
             @Param("cwrCode") String cwrCode
     );
+
+    Optional<Cwr> findTopByCustomerOrderByCwrEndDateDesc(Customer customer);
 }

@@ -25,8 +25,7 @@ public class CustomerRemoteServiceTest extends BaseRemoteServicesTest {
         customerRemoteService = new CustomerRemoteService(
                 restTemplateByPassSSL,
                 baseRemoteService,
-                objectMapper,
-                null
+                objectMapper
         );
 
         existingCustomerRequest = ExistingCustomerRequest.builder()

@@ -2,14 +2,13 @@ package com.kmkbe.modules.remote.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementByNoCwrRemoteDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementCwrDto;
+import com.kmkbe.core.domain.dto.InquiryCwrRemoteDto;
 import com.kmkbe.core.domain.entity.ApiIntegrationLog;
-import com.kmkbe.core.domain.repository.ApiIntegrationLogRepository;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.core.utils.ObjectUtils;
-import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
-import com.kmkbe.core.domain.dto.InquiryCwrRemoteDto;
 import com.kmkbe.modules.remote.request.*;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +36,6 @@ public class CwrRemoteService {
     private final RestTemplate restTemplate;
     private final BaseRemoteService baseRemoteService;
     private final ObjectMapper objectMapper;
-    private final ApiIntegrationLogRepository apiIntegrationLogRepository;
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> inquiryCwr(
@@ -112,7 +110,6 @@ public class CwrRemoteService {
                     .responseJson(responseStr)
                     .responseStatus(String.valueOf(statusCode))
                     .build();
-            apiIntegrationLogRepository.save(apiIntegrationLog);
         }
     }
 
@@ -179,7 +176,6 @@ public class CwrRemoteService {
                     .responseJson(responseStr)
                     .responseStatus(String.valueOf(statusCode))
                     .build();
-            apiIntegrationLogRepository.save(apiIntegrationLog);
         }
     }
 
@@ -239,7 +235,6 @@ public class CwrRemoteService {
                     .responseJson(responseStr)
                     .responseStatus(String.valueOf(statusCode))
                     .build();
-            apiIntegrationLogRepository.save(apiIntegrationLog);
         }
     }
 }

@@ -1,0 +1,60 @@
+package com.kmkbe.modules.customer.controller;
+
+import com.kmkbe.core.domain.dto.CustomerDashboardDto;
+import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.modules.customer.service.CustomerDashboardService;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.*;
+
+import java.security.SignatureException;
+
+@RestController
+@RequestMapping("/api/v1/customer/agreement")
+@Tag(
+        name = "Customer",
+        description = "Customer Endpoints"
+)
+@RequiredArgsConstructor
+public class CustomerAgreementController {
+    private final CustomerDashboardService customerDashboardService;
+
+    @GetMapping("/dashboard")
+    public CommonResult<CustomerDashboardDto.Agreement> getAgreementDashboard(
+            Authentication authentication
+    ) throws SignatureException {
+        return new CommonResult<CustomerDashboardDto.Agreement>().success(
+                customerDashboardService.agreementDashboard(authentication)
+        );
+    }
+
+    @GetMapping("/signer")
+    public CommonResult<PaginationResult<Object>> getSignerPersons(
+            PaginationRequest request
+    ) {
+        return new CommonResult<PaginationResult<Object>>().success(
+                null
+        );
+    }
+
+    @GetMapping("/financing")
+    public CommonResult<PaginationResult<Object>> getFinancing(
+            PaginationRequest request
+    ) {
+        return new CommonResult<PaginationResult<Object>>().success(
+                null
+        );
+    }
+
+    @PostMapping("/signing/{agreementFileId}")
+    public CommonResult<Object> postUploadSigning(
+            @PathVariable("agreementFileId") String agreementFileId
+    ){
+        return new CommonResult<Object>().success(
+                null
+        );
+    }
+}

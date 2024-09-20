@@ -1,22 +1,23 @@
 package com.kmkbe.modules.remote.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kmkbe.core.domain.entity.ApiIntegrationLog;
-import com.kmkbe.core.domain.repository.ApiIntegrationLogRepository;
-import com.kmkbe.core.service.BaseRemoteService;
-import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
 import com.kmkbe.core.domain.dto.CustomerRemoteDto;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
+import com.kmkbe.core.domain.entity.ApiIntegrationLog;
+import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import com.kmkbe.modules.remote.request.InquiryRequest;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,7 +33,6 @@ public class CustomerRemoteService {
     private final RestTemplate restTemplate;
     private final BaseRemoteService baseRemoteService;
     private final ObjectMapper objectMapper;
-    private final ApiIntegrationLogRepository apiIntegrationLogRepository;
 
     /**
      * <p>current usecase CustomerSignUp</p>
@@ -89,7 +89,6 @@ public class CustomerRemoteService {
                     .responseJson(responseStr)
                     .responseStatus(String.valueOf(statusCode))
                     .build();
-            apiIntegrationLogRepository.save(apiIntegrationLog);
         }
     }
 
@@ -147,7 +146,6 @@ public class CustomerRemoteService {
                     .responseJson(responseStr)
                     .responseStatus(String.valueOf(statusCode))
                     .build();
-            apiIntegrationLogRepository.save(apiIntegrationLog);
         }
     }
 }
