@@ -350,7 +350,8 @@ public class LoanSubmissionService {
 
             final EstimatedDisburseDto calculateDisburse = calculateDisburse(authentication, simulation);
             if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
-                throw new IllegalStateException("Estimated disburse amount cannot be negative");
+                throw new IllegalStateException("Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
+                        "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
             }
 
             final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
