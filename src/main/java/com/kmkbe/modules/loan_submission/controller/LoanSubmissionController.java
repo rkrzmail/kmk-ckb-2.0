@@ -115,8 +115,9 @@ public class LoanSubmissionController {
             Authentication authentication,
             @Valid @RequestBody CreateSimulationRequest request
     ) throws Exception {
+        var result = loanSubmissionService.createSimulation(authentication, request);
         return new CommonResult<CreatedSimulationDto>().success(
-                loanSubmissionService.createSimulation(authentication, request),
+                result,
                 "Simulation Created Successfully"
         );
     }

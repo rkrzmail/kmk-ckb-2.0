@@ -7,7 +7,6 @@ import com.kmkbe.core.domain.model.*;
 import com.kmkbe.core.domain.repository.BouwheerRepository;
 import com.kmkbe.core.domain.repository.LegalFileRepository;
 import com.kmkbe.core.domain.repository.ProductRepository;
-
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.exception.LoanDocMandatoryException;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
@@ -22,7 +21,9 @@ import com.kmkbe.modules.loan_submission.request.CreateLoanApplicationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.SaveImportantNotesRequest;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
-import com.kmkbe.modules.remote.service.*;
+import com.kmkbe.modules.remote.service.CurrencyRemoteService;
+import com.kmkbe.modules.remote.service.CustomerRemoteService;
+import com.kmkbe.modules.remote.service.InvoiceRemoteDto;
 import io.netty.util.internal.StringUtil;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
@@ -35,7 +36,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
@@ -120,7 +120,7 @@ public class LoanSubmissionService {
             }
 
             final SimpleDateFormat sdfNoSeperator = new SimpleDateFormat("yyyyMMdd");
-            double baseUsdToIdr = currencyRemoteService.fetchIdrFrom("usd");
+            //double baseUsdToIdr = currencyRemoteService.fetchIdrFrom("usd");
 
             List<PostedInvoiceDto> result = new ArrayList<>();
             for (int i = 0; i < inquiryInvoiceRemote.getRow().size(); i++) {
@@ -145,7 +145,7 @@ public class LoanSubmissionService {
                                 && !currency.equalsIgnoreCase("rupiah")
                                 && !currency.equalsIgnoreCase("rp")
                 ) {
-                    invoiceAmount = invoiceAmount.multiply(BigDecimal.valueOf(baseUsdToIdr));
+                    //invoiceAmount = invoiceAmount.multiply(BigDecimal.valueOf(baseUsdToIdr));
                     currency = "IDR";
                 }
 
@@ -177,7 +177,7 @@ public class LoanSubmissionService {
                         .currencyCode(currency)
                         .amountConverter(
                                 PostedInvoiceDto.AmountConverter.builder()
-                                        .base(BigDecimal.valueOf(baseUsdToIdr))
+                                        //.base(BigDecimal.valueOf(baseUsdToIdr))
                                         .fromCurrencyCode(inquiryInvoiceRemote.getRow().get(i).getCurrency())
                                         .toCurrencyCode("IDR")
                                         .amount(BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim())))
@@ -349,6 +349,10 @@ public class LoanSubmissionService {
             }
 
             final EstimatedDisburseDto calculateDisburse = calculateDisburse(authentication, simulation);
+            if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
+                throw new IllegalStateException("Estimated disburse amount cannot be negative");
+            }
+
             final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
                     .financingAmount(calculateDisburse.getFinancingAmount())
                     .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())

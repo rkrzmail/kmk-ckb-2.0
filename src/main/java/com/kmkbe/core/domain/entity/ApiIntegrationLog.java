@@ -36,19 +36,16 @@ public class ApiIntegrationLog {
     @Column(name = "endpoint_url", nullable = false, length = 500)
     private String endpointUrl;
 
-    @Size(max = 50)
     @NotNull
-    @Column(name = "content_type", nullable = false, length = 50)
+    @Column(name = "content_type", nullable = false)
     private String contentType;
 
-    @Size(max = 8000)
     @NotNull
-    @Column(name = "request_payload", nullable = false, length = 8000)
+    @Column(name = "request_payload", nullable = false)
     private String requestPayload;
 
-    @Size(max = 8000)
     @NotNull
-    @Column(name = "response_json", nullable = false, length = 8000)
+    @Column(name = "response_json", nullable = false)
     private String responseJson;
 
     @Size(max = 30)

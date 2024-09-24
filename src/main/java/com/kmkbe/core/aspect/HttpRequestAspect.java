@@ -13,7 +13,10 @@ import org.aspectj.lang.annotation.Aspect;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
+import org.thymeleaf.util.StringUtils;
 
 import java.util.Map;
 
@@ -26,10 +29,11 @@ public class HttpRequestAspect {
     private final ObjectMapper objectMapper;
 
     @Around("execution(* org.springframework.web.client.RestTemplate.exchange(..))")
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Object logRestTemplateCalls(ProceedingJoinPoint joinPoint) throws Throwable {
         Object[] args = joinPoint.getArgs();
         Object response;
-        String requestStr = "", requestHeader = "", responseStr = "";
+        String requestStr = "empty", requestHeader = "", responseStr = "";
         String url = "";
         int statusCode = 200;
         try {
@@ -63,14 +67,18 @@ public class HttpRequestAspect {
 
                 if (arg instanceof HttpEntity<?> requestEntity) {
                     requestHeader = objectMapper.writeValueAsString(requestEntity.getHeaders());
-                    requestStr = objectMapper.writeValueAsString(requestEntity.getBody());
+
+                    if (requestEntity.getBody() != null) {
+                        requestStr = objectMapper.writeValueAsString(requestEntity.getBody());
+                    }
+
                 }
             }
 
             ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
                     .endpointUrl(url)
                     .contentType("application/json")
-                    .requestPayload(requestStr)
+                    .requestPayload(StringUtils.isEmpty(requestStr) ? "empty" : requestStr)
                     .responseJson(responseStr)
                     .responseStatus(String.valueOf(statusCode))
                     .build();

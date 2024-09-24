@@ -14,7 +14,6 @@ import com.kmkbe.modules.remote.request.PropCriteriaGenericTypeRequest;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import io.netty.util.internal.StringUtil;
-import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -135,7 +134,6 @@ public class ExistingCustomerService {
         }
     }
 
-    @Transactional
     public Cwr inquiryAndDecideExistingCustomer(
             ExistingCustomerRequest.KeyType identityType,
             String identityNo,
