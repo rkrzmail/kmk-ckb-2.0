@@ -46,8 +46,8 @@ public class CustomClientHttpRequestFactory extends SimpleClientHttpRequestFacto
     private final boolean disableSslVerification;
 
     public CustomClientHttpRequestFactory() {
-        this.setConnectTimeout(120000);
-        this.setReadTimeout(120000);
+        this.setConnectTimeout(12000000);
+        this.setReadTimeout(12000000);
         this.disableSslVerification = true;
     }
 
