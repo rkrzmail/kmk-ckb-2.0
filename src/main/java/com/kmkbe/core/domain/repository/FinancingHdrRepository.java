@@ -6,7 +6,6 @@ import com.kmkbe.modules.user.entity.MstBranch;
 import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -99,6 +98,8 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
                                                          public.financing_dtl fd
                                                              join public.invoice iv on fd.invoice_code = iv.invoice_code
                                                  )
+                        and nullif(fh.financing_status, '') is not null
+                        and nullif(fh.financing_step, '') is not null
                     order by
                         fh.financing_hdr_id desc
                     """,
@@ -114,6 +115,8 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
                                                          public.financing_dtl fd
                                                              join public.invoice iv on fd.invoice_code = iv.invoice_code
                                                  )
+                        and nullif(fh.financing_status, '') is not null
+                        and nullif(fh.financing_step, '') is not null
                     """,
             nativeQuery = true
     )
@@ -121,5 +124,5 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             Pageable pageable
     );
 
-    
+
 }

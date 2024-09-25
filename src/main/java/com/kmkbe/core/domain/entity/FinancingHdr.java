@@ -6,7 +6,6 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
-import org.hibernate.sql.ast.tree.update.Assignment;
 
 import java.time.Instant;
 import java.util.Set;
@@ -159,14 +158,12 @@ public class FinancingHdr {
     @Column(name = "financing_due_date", nullable = false)
     private Instant financingDueDate;
 
-    @Size(max = 50)
     @NotNull
-    @Column(name = "financing_status", nullable = false, length = 50)
+    @Column(name = "financing_status", nullable = false)
     private String financingStatus;
 
-    @Size(max = 50)
     @NotNull
-    @Column(name = "financing_step", nullable = false, length = 50)
+    @Column(name = "financing_step", nullable = false)
     private String financingStep;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)

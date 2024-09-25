@@ -1,10 +1,12 @@
 package com.kmkbe.modules.loan_submission.service;
 
-import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
 import com.kmkbe.core.domain.dto.FinancingHdrDto;
 import com.kmkbe.core.domain.dto.PaidInvoiceDto;
-import com.kmkbe.core.domain.entity.*;
+import com.kmkbe.core.domain.entity.Bouwheer;
+import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.Product;
 import com.kmkbe.core.domain.mapper.FinancingMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.model.PostedInvoicePayload;
@@ -28,7 +30,6 @@ import java.security.SignatureException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -98,8 +99,10 @@ public class FinancingHdrService {
                 header.setAdminLimitAmt(0.0);
 
                 header.setDisburseDate(Instant.now());
-                header.setFinancingStatus(FinancingStatus.NEW.name()); // fresh input will store as NEW
-                header.setFinancingStep(FinancingStatus.NEW.name());
+                /*header.setFinancingStatus(FinancingStatus.NEW.name()); // fresh input will store as NEW
+                header.setFinancingStep(FinancingStatus.NEW.name());*/
+                header.setFinancingStatus(""); // fresh input will store as NEW
+                header.setFinancingStep("");
                 header.setUsrCrt(customer.getCustName());
                 header.setDtmCrt(Instant.now());
 
