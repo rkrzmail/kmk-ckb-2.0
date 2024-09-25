@@ -99,8 +99,6 @@ public class FinancingHdrService {
                 header.setAdminLimitAmt(0.0);
 
                 header.setDisburseDate(Instant.now());
-                /*header.setFinancingStatus(FinancingStatus.NEW.name()); // fresh input will store as NEW
-                header.setFinancingStep(FinancingStatus.NEW.name());*/
                 header.setFinancingStatus(""); // fresh input will store as NEW
                 header.setFinancingStep("");
                 header.setUsrCrt(customer.getCustName());
@@ -118,20 +116,28 @@ public class FinancingHdrService {
         }
     }
 
-    public FinancingHdrDto getByCode(UUID code) throws Exception {
+    public FinancingHdr getByCode(UUID code) throws Exception {
         try {
-            FinancingHdr entity = financingHdrRepository.findByFinancingHdrCode(code).orElseThrow(
+            return financingHdrRepository.findByFinancingHdrCode(code).orElseThrow(
                     () -> CommonInvalidException.builder()
                             .title("Tidak ada data financing")
                             .message("Tidak ada data financing")
                             .build()
             );
+        } catch (Exception e) {
+            log.error("getByCode, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public FinancingHdrDto dtoFromEntity(FinancingHdr entity) throws Exception {
+        try {
             FinancingHdrDto dto = FinancingMapper.INSTANCE.hdrDtoFromEntity(entity);
             dto.setCustomer(entity.getCustomer());
             dto.setBouwheer(entity.getBouwheer());
             return dto;
         } catch (Exception e) {
-            log.error("getByCode, error {}", e.getMessage());
+            log.error("dtoFromEntity, error {}", e.getMessage());
             throw e;
         }
     }

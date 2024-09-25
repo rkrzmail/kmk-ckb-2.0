@@ -1,10 +1,12 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.*;
 import com.kmkbe.core.domain.repository.BouwheerRepository;
+import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.LegalFileRepository;
 import com.kmkbe.core.domain.repository.ProductRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
@@ -41,6 +43,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
 import java.util.*;
 
 @Service
@@ -66,6 +69,7 @@ public class LoanSubmissionService {
     private final EmailService emailService;
     private final LegalFileRepository legalFileRepository;
     private final ImportantNotesService importantNotesService;
+    private final FinancingHdrRepository financingHdrRepository;
 
     public List<PostedInvoiceDto> fetchActiveInvoice(
             Authentication authentication,
@@ -458,7 +462,18 @@ public class LoanSubmissionService {
                 }
             }
 
-            final FinancingHdrDto createdFinancing = financingHdrService.getByCode(request.getFinancingHdrCode());
+
+            final FinancingHdr financing = financingHdrService.getByCode(request.getFinancingHdrCode());
+            {
+                financing.setFinancingStatus(FinancingStatus.NEW.name());
+                financing.setFinancingStep(FinancingStatus.NEW.name());
+                financing.setDtmUpd(Instant.now());
+                financing.setUsrUpd(customer.getCustName());
+                financingHdrRepository.save(financing);
+            }
+
+            final FinancingHdrDto createdFinancing = financingHdrService.dtoFromEntity(financing);
+
             final List<InvoiceEmailPayload> invoices = createdFinancing.getDetails()
                     .stream()
                     .map((item) ->
@@ -638,12 +653,16 @@ public class LoanSubmissionService {
             Customer customer,
             Bouwheer bouwheer
     ) throws JsonProcessingException {
-        return existingCustomerService.inquiryAndDecideExistingCustomer(
-                ExistingCustomerRequest.KeyType.valueOf(identityType.toLowerCase()),
-                identityNo,
-                customer,
-                bouwheer
-        );
+        try {
+            return existingCustomerService.inquiryAndDecideExistingCustomer(
+                    ExistingCustomerRequest.KeyType.valueOf(identityType.toLowerCase()),
+                    identityNo,
+                    customer,
+                    bouwheer
+            );
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Getter

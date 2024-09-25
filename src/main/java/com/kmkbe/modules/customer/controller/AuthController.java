@@ -1,28 +1,23 @@
 package com.kmkbe.modules.customer.controller;
 
-import com.kmkbe.core.exception.CommonInvalidException;
-import com.kmkbe.core.domain.model.CommonResult;
-import com.kmkbe.core.domain.dto.LoginDto;
-import com.kmkbe.core.domain.constant.CompanyModel;
 import com.kmkbe.core.domain.constant.CustomerType;
+import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
+import com.kmkbe.core.domain.dto.LoginDto;
 import com.kmkbe.core.domain.dto.RequestOtpDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.OtpLog;
-import com.kmkbe.core.utils.FormatingUtils;
+import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.exception.CommonInvalidException;
+import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
-import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.service.*;
-import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
-import com.kmkbe.modules.loan_submission.service.LegalFileService;
-import com.kmkbe.modules.loan_submission.service.MstFileTypeService;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -106,7 +101,7 @@ public class AuthController {
                             .province(province)
                             .zipCode("")
                             .area("")
-                            .phone(FormatingUtils.formatOnlyNumber(vendor.getPhone()))
+                            .phone(request.getMobilePhone())
                             .ownershipStatus("")
                             .staySince(staySince)
                             .build()
