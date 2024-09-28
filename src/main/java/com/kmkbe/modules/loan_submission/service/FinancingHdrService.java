@@ -3,17 +3,18 @@ package com.kmkbe.modules.loan_submission.service;
 import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
 import com.kmkbe.core.domain.dto.FinancingHdrDto;
 import com.kmkbe.core.domain.dto.PaidInvoiceDto;
-import com.kmkbe.core.domain.entity.Bouwheer;
-import com.kmkbe.core.domain.entity.Customer;
-import com.kmkbe.core.domain.entity.FinancingHdr;
-import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.core.domain.dto.StatusLabelDto;
+import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.FinancingMapper;
+import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.model.PostedInvoicePayload;
 import com.kmkbe.core.domain.model.SimulationDisburseResult;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.InvoiceRepository;
 import com.kmkbe.core.domain.repository.RedisRepository;
+import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.domain.spec.FinancingHdrSpec;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
@@ -23,13 +24,17 @@ import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.security.SignatureException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -151,18 +156,114 @@ public class FinancingHdrService {
         }
     }
 
-    public PaginationResult<PaidInvoiceDto> paidInvoice() {
+    public PaginationResult<PaidInvoiceDto> paidInvoice(
+            PaginationRequest request
+    ) {
         try {
-            return PaginationResult.<PaidInvoiceDto>builder()
-                    .currentPage(1)
-                    .totalData(0L)
-                    .totalPage(1)
-                    .list(new ArrayList<>())
-                    .build();
+            int pageNo = 0, pageSize = 10;
+
+            if (request.getPageNo() != null) {
+                pageNo = request.getPageNo();
+            }
+            if (request.getPageSize() != null) {
+                pageSize = request.getPageSize();
+            }
+            if (pageNo > 0) {
+                pageNo = pageNo - 1;
+            }
+
+            final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAll(
+                    FinancingHdrSpec.byStepStatus(),
+                    PageRequest.of(pageNo, pageSize)
+            );
+
+            return paginatePaidInvoice (
+                    financingHdrs,
+                    pageNo
+            );
         } catch (Exception e) {
             log.error("paidInvoice, error {}", e.getMessage());
             throw e;
         }
+    }
+
+    public PaginationResult<PaidInvoiceDto> paginatePaidInvoice(
+            Page<FinancingHdr> financingHdrs,
+            int pageNo
+    ) {
+        if (pageNo > 0) {
+            pageNo = pageNo - 1;
+        }
+
+        final List<PaidInvoiceDto> paidInvoiceDto = financingHdrs
+                .stream()
+                .map((e) -> {
+                    FinancingDtl financingDtl = e.getFinancingDtls()
+                            .stream()
+                            .findFirst()
+                            .orElse(null);
+
+                    String invoiceNo = (financingDtl != null && financingDtl.getInvoice() != null)
+                            ? financingDtl.getInvoice().getCustInvNo()
+                            : null;
+                    Date paidDate = (financingDtl != null && financingDtl.getInvoice() != null)
+                            ? Date.from(financingDtl.getInvoice().getInvoiceDate())
+                            : null;
+                    Date dueDate = (financingDtl != null && financingDtl.getInvoice() != null)
+                            ? Date.from(financingDtl.getInvoice().getInvoiceDueDate())
+                            : null;
+                    BigDecimal paidAmount = (financingDtl != null && financingDtl.getInvoice() != null)
+                            ? BigDecimal.valueOf(financingDtl.getInvoice().getInvoiceAmt())
+                            : null;
+                    MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
+                            e,
+                            MappedFinancingStatus.Type.MajorAccount
+                    );
+
+                    String color = getColor(e);
+                    Customer customer = e.getCustomer();
+                    String customerName = customer.getCustName();
+
+                    return PaidInvoiceDto.builder()
+                            .invoiceNo(invoiceNo)
+                            .custName(customerName)
+                            .bouwheerName(e.getBouwheer().getBouwheerName())
+                            .paidDate(paidDate)
+                            .dueDate(dueDate)
+                            .paidAmount(paidAmount)
+                            .status(StatusLabelDto.builder()
+                                    .status(mappedFinancingStatus.getStatus())
+                                    .statusLabel(mappedFinancingStatus.getLabel())
+                                    .color(color)
+                                    .build())
+                            .build();
+                })
+                .toList();
+        return PaginationResult.<PaidInvoiceDto>builder()
+                .currentPage(pageNo + 1)
+                .totalData(financingHdrs.getTotalElements())
+                .totalPage(financingHdrs.getTotalPages())
+                .list(paidInvoiceDto)
+                .build();
+    }
+
+    private static String getColor(FinancingHdr e) {
+        String color;
+        if (e.getFinancingStatus().equalsIgnoreCase("new")) {
+            color = "#808080";
+        } else if (
+                e.getFinancingStatus().equalsIgnoreCase("inprocess")
+                        || e.getFinancingStatus().equalsIgnoreCase("signing")
+                        || e.getFinancingStatus().equalsIgnoreCase("signed")
+                        || e.getFinancingStatus().equalsIgnoreCase("live")
+                        || e.getFinancingStatus().equalsIgnoreCase("golive")
+
+        ) {
+            color = "#ccffcc";
+        } else {
+            color = "#FF5C5C";
+        }
+        return color;
     }
 
     public PaginationResult<DisburseInvoiceDto> disburseInvoice() {

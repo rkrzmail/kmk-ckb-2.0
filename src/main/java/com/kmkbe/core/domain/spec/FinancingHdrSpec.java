@@ -4,10 +4,7 @@ import com.kmkbe.core.domain.entity.Bouwheer;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import io.netty.util.internal.StringUtil;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
 public class FinancingHdrSpec {
@@ -32,6 +29,16 @@ public class FinancingHdrSpec {
                 case "cabang" -> null;
                 default -> null;
             };
+        };
+    }
+
+    public static Specification<FinancingHdr> byStepStatus() {
+        return (root, query, criteriaBuilder) -> {
+
+            return criteriaBuilder.and(
+                    criteriaBuilder.equal(root.get("financing_status"),"INPROCESS"),
+                    criteriaBuilder.equal(root.get("financing_step"),"SIGNED")
+            );
         };
     }
 }
