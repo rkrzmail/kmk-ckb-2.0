@@ -10,9 +10,7 @@ import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.model.PostedInvoicePayload;
 import com.kmkbe.core.domain.model.SimulationDisburseResult;
-import com.kmkbe.core.domain.repository.FinancingHdrRepository;
-import com.kmkbe.core.domain.repository.InvoiceRepository;
-import com.kmkbe.core.domain.repository.RedisRepository;
+import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.spec.FinancingHdrSpec;
 import com.kmkbe.core.exception.CommonInvalidException;
@@ -44,6 +42,9 @@ public class FinancingHdrService {
     private final FinancingHdrRepository financingHdrRepository;
     private final InvoiceRepository invoiceRepository;
     private final RedisRepository redisRepository;
+    private final AgreementRepository agreementRepository;
+    private final DisbursementLogRepository disbursementLogRepository;
+
     public FinancingHdr findLastBy(Customer customer) {
         try {
             return financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer).orElse(null);
@@ -247,6 +248,68 @@ public class FinancingHdrService {
                 .build();
     }
 
+    public PaginationResult<DisburseInvoiceDto> paginatePaidDisbursement(
+            Page<FinancingHdr> financingHdrs,
+            int pageNo
+    ) {
+        if (pageNo > 0) {
+            pageNo = pageNo - 1;
+        }
+
+        final List<DisburseInvoiceDto> disburseInvoiceDto = financingHdrs
+                .stream()
+                .map((e) -> {
+                    Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode(e.getFinancingHdrCode());
+
+
+                    if (agreement == null) {
+                        return null;
+                    }
+
+                    DisbursementLog disbursementLog = disbursementLogRepository.findByAgreement_AgreementCode(agreement.getAgreementCode());
+
+                    FinancingDtl financingDtl = e.getFinancingDtls()
+                            .stream()
+                            .findFirst()
+                            .orElse(null);
+
+                    Date paidDate = (financingDtl != null && financingDtl.getInvoice() != null)
+                            ? Date.from(financingDtl.getInvoice().getInvoiceDate())
+                            : null;
+                    String color = getColor(e);
+                    Customer customer = e.getCustomer();
+                    String customerName = customer.getCustName();
+                    MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
+                            e,
+                            MappedFinancingStatus.Type.MajorAccount
+                    );
+
+                    return DisburseInvoiceDto.builder()
+                            .agreementNo(agreement.getAgreementCode())
+                            .custName(customerName)
+                            .bouwheerName(e.getBouwheer().getBouwheerName())
+                            .disburseDate(Date.from(e.getDisburseDate()))
+                            .paidDate(paidDate)
+                            .retentionRefund(BigDecimal.valueOf(disbursementLog.getApAmt()))
+                            .paidAmount(BigDecimal.valueOf(disbursementLog.getApPaidAmt()))
+                            .retentionRefundDate(Date.from(disbursementLog.getApDueDate())).
+                            status(StatusLabelDto.builder()
+                                    .status(mappedFinancingStatus.getStatus())
+                                    .statusLabel(mappedFinancingStatus.getLabel())
+                                    .color(color)
+                                    .build())
+                            .build();
+                })
+                .toList();
+
+        return PaginationResult.<DisburseInvoiceDto>builder()
+                .currentPage(pageNo + 1)
+                .totalData(financingHdrs.getTotalElements())
+                .totalPage(financingHdrs.getTotalPages())
+                .list(disburseInvoiceDto)
+                .build();
+    }
+
     private static String getColor(FinancingHdr e) {
         String color;
         if (e.getFinancingStatus().equalsIgnoreCase("new")) {
@@ -266,14 +329,33 @@ public class FinancingHdrService {
         return color;
     }
 
-    public PaginationResult<DisburseInvoiceDto> disburseInvoice() {
+    public PaginationResult<DisburseInvoiceDto> disburseInvoice(
+            PaginationRequest request,
+            FinancingHdr financingHdr
+    ) {
         try {
-            return PaginationResult.<DisburseInvoiceDto>builder()
-                    .currentPage(1)
-                    .totalData(0L)
-                    .totalPage(1)
-                    .list(new ArrayList<>())
-                    .build();
+            int pageNo = 0, pageSize = 10;
+
+            if (request.getPageNo() != null) {
+                pageNo = request.getPageNo();
+            }
+            if (request.getPageSize() != null) {
+                pageSize = request.getPageSize();
+            }
+            if (pageNo > 0) {
+                pageNo = pageNo - 1;
+            }
+
+            final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAll(
+              FinancingHdrSpec.byDisbursementStepStatus(financingHdr),
+              PageRequest.of(pageNo, pageSize)
+            );
+
+            return paginatePaidDisbursement(
+                    financingHdrs,
+                    pageNo
+            );
+
         } catch (Exception e) {
             log.error("disburseInvoice, error {}", e.getMessage());
             throw e;

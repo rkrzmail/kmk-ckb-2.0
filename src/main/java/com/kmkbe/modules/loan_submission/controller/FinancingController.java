@@ -76,9 +76,18 @@ public class FinancingController {
     }
 
     @GetMapping("/invoices/disbursement")
-    public CommonResult<PaginationResult<DisburseInvoiceDto>> getDisbursement() {
+    public CommonResult<PaginationResult<DisburseInvoiceDto>> getDisbursement(
+            PaginationRequest request,
+            FinancingHdr financingHdr
+    ) {
+        PaginationResult<DisburseInvoiceDto> result = PaginationResult.empty(
+                request.getPageNo()
+        );
+
+        result = financingHdrService.disburseInvoice(request, financingHdr);
+
         return new CommonResult<PaginationResult<DisburseInvoiceDto>>().success(
-                financingHdrService.disburseInvoice()
+                result
         );
     }
 
