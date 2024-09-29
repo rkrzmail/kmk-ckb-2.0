@@ -23,6 +23,7 @@ public class CustomerPlafondDto {
     private String email;
     private String custTypeCode;
     private String address;
+    private String phoneNo;
     private PlafondDto plafond;
 
     @Getter

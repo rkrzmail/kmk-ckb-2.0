@@ -34,11 +34,13 @@ public class CustomerDashboardService {
         try {
             FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
 
-            final String address;
+            final String address, phoneNo;
             if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
                 address = financingHdr.getCustomer().getCompany() == null ? "" : String.valueOf(financingHdr.getCustomer().getCompany().getCompanyAddress());
+                phoneNo = financingHdr.getCustomer().getCompany() == null ? "" :financingHdr.getCustomer().getCompany().getPhone();
             } else {
                 address = financingHdr.getCustomer().getPersonal() == null ? "" : String.valueOf(financingHdr.getCustomer().getPersonal().getLegalAddress());
+                phoneNo = financingHdr.getCustomer().getPersonal() == null ? "" :financingHdr.getCustomer().getPersonal().getPhone();
             }
 
             return CustomerPlafondDto.builder()
@@ -52,6 +54,7 @@ public class CustomerDashboardService {
                     .email(financingHdr.getCustomer().getCustEmail())
                     .custTypeCode(financingHdr.getCustomer().getCustTypeCode())
                     .address(address)
+                    .phoneNo(phoneNo)
                     .plafond(CustomerPlafondDto.PlafondDto.builder()
                             .plafond(BigDecimal.valueOf(0))
                             .totalPlafond(BigDecimal.valueOf(0))

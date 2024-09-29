@@ -91,6 +91,7 @@ public class MjrDashboardService {
             List<Long> chartAssignment  = new ArrayList<>();
             List<Long> chartInProcess  = new ArrayList<>();
             List<Long> chartSigning  = new ArrayList<>();
+            List<Long> chartLive  = new ArrayList<>();
 
 
             @SuppressWarnings("unchecked")
@@ -108,13 +109,12 @@ public class MjrDashboardService {
                             chart.setTotalSigning((Long) objects[5]);
                             chart.setTotalLive((Long) objects[6]);
 
-
                             chartLabel.add(String.valueOf(objects[1]));
                             chartNew.add((Long) objects[2]);
                             chartAssignment.add((Long) objects[3]);
                             chartInProcess.add((Long) objects[4]);
                             chartSigning.add((Long) objects[5]);
-
+                            chartLive.add((Long) objects[6]);
                         }
 
                         return chart;
@@ -140,6 +140,7 @@ public class MjrDashboardService {
             result.setChartAssignment(chartAssignment);
             result.setChartInProcess(chartInProcess);
             result.setChartSigning(chartSigning);
+            result.setChartLive(chartLive);
 
             return result;
         } catch (Exception e) {
