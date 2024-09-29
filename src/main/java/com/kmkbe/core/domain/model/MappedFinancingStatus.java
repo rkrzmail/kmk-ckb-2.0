@@ -1,8 +1,7 @@
 package com.kmkbe.core.domain.model;
 
 import com.kmkbe.core.domain.entity.FinancingHdr;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 public class MappedFinancingStatus {
     @Getter

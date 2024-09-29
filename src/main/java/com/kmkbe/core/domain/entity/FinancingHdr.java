@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.io.Serializable;
 import java.time.Instant;
 import java.util.Set;
 import java.util.UUID;
@@ -14,8 +15,8 @@ import java.util.UUID;
 @Getter
 @Setter
 @Entity
-@Table(name = "financing_hdr")
-public class FinancingHdr {
+@Table(name = "financing_hdr", schema = "public")
+public class FinancingHdr implements Serializable {
     @Id
     @Column(name = "financing_hdr_code", nullable = false)
     private UUID financingHdrCode;
@@ -195,4 +196,7 @@ public class FinancingHdr {
 
     @Column(name = "dtm_upd")
     private Instant dtmUpd;
+
+    @OneToMany(mappedBy = "financingHdr")
+    private Set<Agreement> agreement;
 }
