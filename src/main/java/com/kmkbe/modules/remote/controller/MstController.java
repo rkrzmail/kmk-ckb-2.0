@@ -98,6 +98,6 @@ public class MstController {
                 requests
         );
 
-        return new CommonResult<List<AreaRemoteDto>>().success(result2.getData());
+        return new CommonResult<List<AreaRemoteDto>>().success(result2 != null ? result2.getData() : null);
     }
 }

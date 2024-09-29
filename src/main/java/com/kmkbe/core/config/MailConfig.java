@@ -62,15 +62,19 @@ public class MailConfig {
 
     public void sendHtmlEmail(
             MailRemoteDto mail,
-            EmailTemplate template
+            EmailTemplate template,
+            boolean enabledSsl
     ) throws MessagingException {
         Properties properties = new Properties();
         properties.put("mail.smtp.host", mail.getServerUrl());
         properties.put("mail.smtp.port", mail.getPort());
         properties.put("mail.smtp.auth", "true");
-        properties.put("mail.smtp.starttls.enable", "true");
+        properties.put("mail.smtp.starttls.enable", enabledSsl ? "true" : "false");
         properties.put("mail.smtp.user", mail.getUsername());
-        properties.put("mail.smtp.ssl.trust", mail.getServerUrl());
+        if(enabledSsl){
+            properties.put("mail.smtp.ssl.trust", mail.getServerUrl());
+        }
+
 
         Session session = Session.getDefaultInstance(properties);
         MimeMessage msg = new MimeMessage(session);

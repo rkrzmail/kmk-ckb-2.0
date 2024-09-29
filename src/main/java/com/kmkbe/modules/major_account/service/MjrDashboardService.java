@@ -67,7 +67,7 @@ public class MjrDashboardService {
                             ) as total_all
                     from
                         users.branch bch
-                            join counting on bch.branch_code::text = counting.branch_code::text;
+                            left join counting on bch.branch_code::text = counting.branch_code::text;
                     """;
 
             Query query = entityManager.createNativeQuery(sql);

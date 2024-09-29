@@ -5,7 +5,6 @@ import com.kmkbe.core.config.MailConfig;
 import com.kmkbe.core.domain.dto.MailRemoteDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.EmailTemplate;
-import com.kmkbe.core.domain.entity.ErrorLog;
 import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
@@ -339,7 +338,8 @@ public class EmailService {
                 try {
                     mailConfig.sendHtmlEmail(
                             csulMailSender.getInternalMail(),
-                            template
+                            template,
+                            csulMailSender.getInternalMail().getEnableSSL()
                     );
                     success = true;
                 } catch (Exception e) {
