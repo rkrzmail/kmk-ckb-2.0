@@ -202,13 +202,13 @@ public class DocumentService {
             );
 
             if (existingFile != null && !existingFile.getFilePath().contains("http")) {
-                fileStorageService.delete(existingFile.getFilePath() + "/" + existingFile.getFileName(), "");
+                //fileStorageService.delete(existingFile.getFilePath() + "/" + existingFile.getFileName(), "");
             }
 
             return dto;
         } catch (Exception e) {
             if (code != null && file != null && file.getOriginalFilename() != null) {
-                fileStorageService.delete(file.getOriginalFilename(), code);
+                //fileStorageService.delete(file.getOriginalFilename(), code);
             }
 
             log.error("uploadLoanDocument, error {}", e.getMessage());

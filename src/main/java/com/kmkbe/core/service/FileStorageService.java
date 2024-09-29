@@ -84,6 +84,7 @@ public class FileStorageService {
 
             try (InputStream inputStream = file.getInputStream()) {
                 Files.copy(inputStream, fileDestination, StandardCopyOption.REPLACE_EXISTING);
+
                 return "/uploads/" + uploadDir + "/" + name;
             } catch (Exception e) {
                 throw new RuntimeException("Could not store the file. Error: " + e.getMessage());
