@@ -15,6 +15,11 @@ public class MjrAccDashboardDto {
     private Date endDate;
     private Long totalAll;
     private List<Chart> chart;
+    private List<String> chartLabel;
+    private List<Long> chartNew;
+    private List<Long> chartAssignment;
+    private List<Long> chartInProcess;
+    private List<Long> chartSigning;
 
     @Builder
     @AllArgsConstructor

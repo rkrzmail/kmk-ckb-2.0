@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -84,6 +85,14 @@ public class MjrDashboardService {
 
             MjrAccDashboardDto result = new MjrAccDashboardDto();
 
+
+            List<String> chartLabel = new ArrayList<>();
+            List<Long> chartNew  = new ArrayList<>();
+            List<Long> chartAssignment  = new ArrayList<>();
+            List<Long> chartInProcess  = new ArrayList<>();
+            List<Long> chartSigning  = new ArrayList<>();
+
+
             @SuppressWarnings("unchecked")
             List<MjrAccDashboardDto.Chart> queryResultList = query.getResultList()
                     .stream()
@@ -98,6 +107,14 @@ public class MjrDashboardService {
                             chart.setTotalInProcess((Long) objects[4]);
                             chart.setTotalSigning((Long) objects[5]);
                             chart.setTotalLive((Long) objects[6]);
+
+
+                            chartLabel.add(String.valueOf(objects[1]));
+                            chartNew.add((Long) objects[2]);
+                            chartAssignment.add((Long) objects[3]);
+                            chartInProcess.add((Long) objects[4]);
+                            chartSigning.add((Long) objects[5]);
+
                         }
 
                         return chart;
@@ -116,7 +133,13 @@ public class MjrDashboardService {
             result.setTotalAll(totalAll);
             result.setStartDate(request.getStartDate());
             result.setEndDate(request.getEndDate());
-            result.setChart(queryResultList);
+            //result.setChart(queryResultList);
+
+            result.setChartLabel(chartLabel);
+            result.setChartNew(chartNew);
+            result.setChartAssignment(chartAssignment);
+            result.setChartInProcess(chartInProcess);
+            result.setChartSigning(chartSigning);
 
             return result;
         } catch (Exception e) {
