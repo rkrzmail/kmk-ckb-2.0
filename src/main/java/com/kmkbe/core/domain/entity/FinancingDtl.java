@@ -63,7 +63,7 @@ public class FinancingDtl {
 
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt;
+    private Instant dtmCrt = Instant.now();;
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)

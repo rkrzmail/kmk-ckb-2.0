@@ -70,6 +70,7 @@ public class AgreementService {
             log.error("findByCode, error {}", e.getMessage());
             throw e;
         }
+
     }
 
     public Agreement findByFinancingHdr(FinancingHdr financingHdr) {

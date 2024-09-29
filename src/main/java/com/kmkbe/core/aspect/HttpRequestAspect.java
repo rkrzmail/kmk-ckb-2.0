@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.thymeleaf.util.StringUtils;
 
+import java.time.Instant;
 import java.util.Map;
 
 @Aspect
@@ -31,6 +32,7 @@ public class HttpRequestAspect {
     @Around("execution(* org.springframework.web.client.RestTemplate.exchange(..))")
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public Object logRestTemplateCalls(ProceedingJoinPoint joinPoint) throws Throwable {
+        long startTime = System.currentTimeMillis();
         Object[] args = joinPoint.getArgs();
         Object response;
         String requestStr = "empty", requestHeader = "", responseStr = "";
@@ -60,6 +62,8 @@ public class HttpRequestAspect {
             log.error("Error while executing RestTemplate call {}", e.getMessage());
             throw e;
         } finally {
+            long executionTime = System.currentTimeMillis() - startTime;
+
             for (Object arg : args) {
                 if (arg instanceof String argUrl && argUrl.toLowerCase().contains("http")) {
                     url = argUrl;
@@ -77,10 +81,11 @@ public class HttpRequestAspect {
 
             ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
                     .endpointUrl(url)
-                    .contentType("application/json")
+                    .contentType("application/json;"+executionTime + "ms")
                     .requestPayload(StringUtils.isEmpty(requestStr) ? "empty" : requestStr)
                     .responseJson(responseStr)
                     .responseStatus(String.valueOf(statusCode))
+                    .dtmUpd(Instant.now())
                     .build();
 
             apiIntegrationLogRepository.save(apiIntegrationLog);

@@ -80,6 +80,9 @@ public class FinancingDtlService {
                             detail.setFinancingHdr(financingHdr);
                             detail.setUsrCrt(customer.getCustName());
                             detail.setDtmCrt(Instant.now());
+
+
+
                         }
 
                         financingDtlRepository.save(detail);

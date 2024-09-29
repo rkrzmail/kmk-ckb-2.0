@@ -109,6 +109,7 @@ public class FinancingHdrService {
                 header.setFinancingStep("");
                 header.setUsrCrt(customer.getCustName());
                 header.setDtmCrt(Instant.now());
+ 
 
                 header = financingHdrRepository.save(header);
 
@@ -390,6 +391,7 @@ public class FinancingHdrService {
 
             financingHdr.setFinancingStatus("LIVE");
             financingHdr.setFinancingStep("PAID");
+
             financingHdr.setUsrUpd(user);
             financingHdr.setDtmUpd(Instant.now());
             return financingHdrRepository.save(financingHdr);
