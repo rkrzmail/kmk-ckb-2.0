@@ -1,7 +1,6 @@
 package com.kmkbe.modules.loan_submission.service;
 
-import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
-import com.kmkbe.core.domain.dto.PaidInvoiceDto;
+
 import com.kmkbe.core.domain.dto.PostedInvoiceDto;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.PaginationResult;
@@ -23,9 +22,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.security.SignatureException;
-import java.time.Instant;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -298,91 +295,4 @@ public class InvoiceService {
                 .build();
     }
 
-    public PaginationResult<PostedInvoiceDto> paginateInvoiceFinancing(
-            Page<FinancingDtl> financingDtls,
-            int pageNo
-    ) {
-        if (pageNo > 0) {
-            pageNo = pageNo - 1;
-        }
-
-        final List<PostedInvoiceDto> postedInvoice = financingDtls
-                .stream()
-                .filter(
-                        (e) ->
-                                e.getFinancingHdr() != null
-                                        && e.getInvoice() != null
-                )
-                .map((e) ->
-                        PostedInvoiceDto.builder()
-                                .bouwheerCode(e.getFinancingHdr().getBouwheer().getBouwheerCode().toString())
-                                .bouwheerName(e.getFinancingHdr().getBouwheer().getBouwheerName())
-                                .customerInvoiceNo(e.getInvoice().getCustInvNo())
-                                .bouwheerInvoiceNo(e.getInvoice().getBouwheerInvNo())
-                                .invoiceDate(Date.from(e.getInvoice().getInvoiceDate()))
-                                .invoiceDueDate(Date.from(e.getInvoice().getInvoiceDueDate()))
-                                .invoiceAmount(BigDecimal.valueOf(e.getInvoice().getInvoiceAmt()))
-                                .invoiceDescription(
-                                        StringUtil.isNullOrEmpty(e.getInvoice().getInvoiceDescription())
-                                                ? "Invoice By Trakindo"
-                                                : e.getInvoice().getInvoiceDescription()
-                                )
-                                .postingDate(Date.from(e.getInvoice().getPostingDate().toInstant()))
-                                .currencyCode("IDR")
-                                .build()
-                )
-                .toList();
-
-        return PaginationResult.<PostedInvoiceDto>builder()
-                .currentPage(pageNo + 1)
-                .totalData(financingDtls.getTotalElements())
-                .totalPage(financingDtls.getTotalPages())
-                .list(postedInvoice)
-                .build();
-    }
-
-    public PaginationResult<PostedInvoiceDto> paidInvoiceFinancing(FinancingHdr financingHdr,
-                                                          PaginationRequest request) {
-        try {
-            int pageNo = 0, pageSize = 10;
-
-            if (request.getPageNo() != null) {
-                pageNo = request.getPageNo();
-            }
-            if (request.getPageSize() != null) {
-                pageSize = request.getPageSize();
-            }
-
-            if (pageNo > 0) {
-                pageNo = pageNo - 1;
-            }
-
-            final Page<FinancingDtl> financingDtls = financingDtlRepository.findByFinancingHdr(
-                    financingHdr,
-                    PageRequest.of(pageNo, pageSize)
-            );
-
-            return paginateInvoiceFinancing(
-                    financingDtls,
-                    pageNo
-            );
-        } catch (Exception e) {
-            log.error("invoiceSubmission: error {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    public PaginationResult<DisburseInvoiceDto> disburseInvoiceFinancing() {
-        try {
-            return PaginationResult.<DisburseInvoiceDto>builder()
-                    .currentPage(1)
-                    .totalData(0L)
-                    .totalPage(1)
-                    .list(new ArrayList<>())
-                    .build();
-        } catch (Exception e) {
-            log.error("disburseInvoice, error {}", e.getMessage());
-            throw e;
-        }
-    }
 }

@@ -12,6 +12,7 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface AgreementRepository extends JpaRepository<Agreement, String>, JpaSpecificationExecutor<Agreement> {
     Optional<Agreement> findTopByAgreementCodeOrderByAgreementId(String agreementCode);
@@ -58,5 +59,6 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     );
 
     Optional<Agreement> findTopByFinancingHdr(FinancingHdr financingHdr);
+    Agreement findByFinancingHdr_FinancingHdrCode(UUID financinghdrCode);
 }
 

@@ -579,6 +579,32 @@ create table public.agreement
     constraint fk_agreement_to_financing_hdr foreign key (financing_hdr_code) references public.financing_hdr (financing_hdr_code)
 );
 
+
+DROP TABLE IF EXISTS disbursement_log CASCADE;
+CREATE TABLE disbursement_log
+(
+    disbursement_id     BIGSERIAL       NOT NULL,
+    disbursement_code   UUID            PRIMARY KEY,
+    agreement_code      varchar(20),
+    ap_no               varchar(20),
+    ap_desc             varchar(500),
+    currency            varchar(20),
+    ap_amt              NUMERIC(17,2),
+    ap_paid_amt         NUMERIC(17,2),
+    ap_amt_inprocess    NUMERIC(17,2),
+    ap_unpaid_amt       NUMERIC(17,2),
+    ap_type_code        varchar(10),
+    ap_type_name        varchar(150),
+    ap_due_date         TIMESTAMP,
+    branch_code         varchar(3),
+    ap_paid_location    varchar(3),
+    usr_crt             varchar(50),
+    dtm_crt             TIMESTAMP,
+    usr_upd             varchar(50),
+    dtm_upd             TIMESTAMP
+        CONSTRAINT fk_disbursement_log_to_agreement FOREIGN KEY (agreement_code) REFERENCES public.agreement (agreement_code)
+);
+
 drop table if exists public.branch_area_mapping cascade;
 create table public.branch_area_mapping
 (

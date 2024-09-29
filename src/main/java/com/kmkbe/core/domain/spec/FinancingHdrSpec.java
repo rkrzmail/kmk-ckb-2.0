@@ -1,13 +1,8 @@
 package com.kmkbe.core.domain.spec;
 
-import com.kmkbe.core.domain.entity.Bouwheer;
-import com.kmkbe.core.domain.entity.Customer;
-import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.*;
 import io.netty.util.internal.StringUtil;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
-import jakarta.persistence.criteria.Root;
-import jakarta.persistence.criteria.Subquery;
+import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;
 
 public class FinancingHdrSpec {
@@ -33,5 +28,33 @@ public class FinancingHdrSpec {
                 default -> null;
             };
         };
+    }
+
+    public static Specification<FinancingHdr> byStepStatus() {
+        return (root, query, criteriaBuilder) -> {
+
+            return criteriaBuilder.and(
+                    criteriaBuilder.equal(root.get("financing_status"),"INPROCESS"),
+                    criteriaBuilder.equal(root.get("financing_step"),"SIGNED")
+            );
+        };
+    }
+
+    public static Specification<FinancingHdr> byDisbursement(FinancingHdr financingHdr) {
+        return (root, query, criteriaBuilder) -> {
+            Join<DisbursementLog, Agreement> joinDisbursement = root.join("disbursement_log", JoinType.INNER);
+            Join<Agreement,FinancingHdr> joinFinancingHdr = joinDisbursement.join("financing_hdr", JoinType.INNER);
+
+            return criteriaBuilder.and(
+                    criteriaBuilder.equal(
+                            joinFinancingHdr.get("financing_hdr_code"), financingHdr.getFinancingHdrCode()
+                    )
+            );
+        };
+    }
+
+    public static Specification<FinancingHdr> byDisbursementStepStatus(FinancingHdr financingHdr) {
+        return byDisbursement(financingHdr)
+                .and(byStepStatus());
     }
 }

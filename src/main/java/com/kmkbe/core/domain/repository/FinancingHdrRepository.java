@@ -4,8 +4,10 @@ import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.modules.user.entity.MstBranch;
 import io.lettuce.core.dynamic.annotation.Param;
+import lombok.NonNull;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -122,6 +124,12 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
     )
     Page<FinancingHdr> findAllByRawOrder(
             Pageable pageable
+    );
+
+    @NonNull
+    Page<FinancingHdr> findAll(
+            @NonNull Specification<FinancingHdr> spec,
+            @NonNull Pageable pageable
     );
 
 

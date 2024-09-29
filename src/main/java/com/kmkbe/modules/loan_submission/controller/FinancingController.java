@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.dto.PaidInvoiceDto;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.loan_submission.service.FinancingDtlService;
@@ -60,16 +61,33 @@ public class FinancingController {
     }
 
     @GetMapping("/invoices/paid")
-    public CommonResult<PaginationResult<PaidInvoiceDto>> getInvoicePaid() {
+    public CommonResult<PaginationResult<PaidInvoiceDto>> getInvoicePaid(
+            PaginationRequest request
+    ) {
+        PaginationResult<PaidInvoiceDto> result = PaginationResult.empty(
+                request.getPageNo()
+        );
+
+        result = financingHdrService.paidInvoice(request);
+
         return new CommonResult<PaginationResult<PaidInvoiceDto>>().success(
-                financingHdrService.paidInvoice()
+                result
         );
     }
 
     @GetMapping("/invoices/disbursement")
-    public CommonResult<PaginationResult<DisburseInvoiceDto>> getDisbursement() {
+    public CommonResult<PaginationResult<DisburseInvoiceDto>> getDisbursement(
+            PaginationRequest request,
+            FinancingHdr financingHdr
+    ) {
+        PaginationResult<DisburseInvoiceDto> result = PaginationResult.empty(
+                request.getPageNo()
+        );
+
+        result = financingHdrService.disburseInvoice(request, financingHdr);
+
         return new CommonResult<PaginationResult<DisburseInvoiceDto>>().success(
-                financingHdrService.disburseInvoice()
+                result
         );
     }
 

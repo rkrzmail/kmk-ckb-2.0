@@ -35,7 +35,7 @@ public class ConfigRemoteService {
         try {
             final BaseLdapRemoteResponseDto<String> tokenResponse = authRemoteService.fetchAuthJwt();
 
-            final String url = siscaUrlWhiteList + "/authconfig/mail/office365";
+            final String url = siscaUrlWhiteList + "/authconfig/mail/danasakti-mail";
             final HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(tokenResponse.getData());
 
