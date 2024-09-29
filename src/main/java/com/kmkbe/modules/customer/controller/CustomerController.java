@@ -9,6 +9,7 @@ import com.kmkbe.core.domain.entity.CustomerPersonal;
 import com.kmkbe.core.domain.mapper.CustomerMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.service.*;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
@@ -39,6 +40,7 @@ public class CustomerController {
     private final CustomerDashboardService customerDashboardService;
     private final InvoiceService invoiceService;
     private final DocumentService documentService;
+    private final AgreementService agreementService;
 
     @GetMapping
     public CommonResult<CustomerDto> profile(
@@ -116,11 +118,11 @@ public class CustomerController {
     }
 
     @GetMapping("/credit-facilities")
-    public CommonResult<PaginationResult<PostedInvoiceDto>> getActiveCreditFacilities(
+    public CommonResult<PaginationResult<CustomerCreditFacilityDto>> getActiveCreditFacilities(
             Authentication authentication,
             PaginationRequest request
     ) throws SignatureException {
-        return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
+        return new CommonResult<PaginationResult<CustomerCreditFacilityDto>>().success(
                 invoiceService.customerCreditFacilities(authentication, request)
         );
     }

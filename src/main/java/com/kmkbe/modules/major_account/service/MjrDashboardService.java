@@ -1,12 +1,10 @@
 package com.kmkbe.modules.major_account.service;
 
 import com.kmkbe.core.domain.dto.MjrAccDashboardDto;
-import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.major_account.request.MjrDashboardRequest;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
-import jakarta.persistence.TemporalType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
@@ -55,11 +53,11 @@ public class MjrDashboardService {
                     select
                         bch.branch_code,
                         bch.branch_name,
-                        counting.total_new,
-                        counting.total_assignment,
-                        counting.total_inprocess,
-                        counting.total_signing,
-                        counting.total_live,
+                        coalesce(counting.total_new, 0) as total_new,
+                        coalesce(counting.total_assignment, 0) as total_assignment,
+                        coalesce(counting.total_inprocess, 0) as total_inprocess,
+                        coalesce(counting.total_signing, 0) as total_signing,
+                        coalesce(counting.total_live, 0) as total_live,
                         (
                             coalesce(counting.total_new, 0)
                                 + coalesce(counting.total_assignment, 0)
@@ -69,7 +67,7 @@ public class MjrDashboardService {
                             ) as total_all
                     from
                         users.branch bch
-                            join counting on bch.branch_code::text = counting.branch_code::text;
+                            left join counting on bch.branch_code::text = counting.branch_code::text;
                     """;
 
             Query query = entityManager.createNativeQuery(sql);

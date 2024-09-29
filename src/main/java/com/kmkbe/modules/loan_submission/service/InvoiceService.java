@@ -1,28 +1,37 @@
 package com.kmkbe.modules.loan_submission.service;
 
 
+import com.kmkbe.core.domain.dto.CustomerCreditFacilityDto;
+import com.kmkbe.core.domain.dto.InvoiceDto;
 import com.kmkbe.core.domain.dto.PostedInvoiceDto;
 import com.kmkbe.core.domain.entity.*;
+import com.kmkbe.core.domain.mapper.InvoiceMapper;
+import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.FinancingDtlRepository;
-import com.kmkbe.core.domain.request.PaginationRequest;
-import com.kmkbe.modules.customer.utils.CustomerUtils;
-import com.kmkbe.core.domain.dto.InvoiceDto;
-import com.kmkbe.core.domain.mapper.InvoiceMapper;
 import com.kmkbe.core.domain.repository.InvoiceRepository;
-import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
+import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.domain.spec.FinancingDtlSpec;
 import com.kmkbe.core.domain.spec.InvoiceSpec;
+import com.kmkbe.modules.customer.utils.CustomerUtils;
+import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.security.SignatureException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -159,7 +168,7 @@ public class InvoiceService {
         }
     }
 
-    public PaginationResult<PostedInvoiceDto> customerCreditFacilities(
+    public PaginationResult<CustomerCreditFacilityDto> customerCreditFacilities(
             Authentication authentication,
             PaginationRequest request
     ) throws SignatureException {
@@ -173,20 +182,15 @@ public class InvoiceService {
                 pageSize = request.getPageSize();
             }
 
-            if (pageNo > 0) {
-                pageNo = pageNo - 1;
-            }
-
             Customer customer = CustomerUtils.authenticateCustomer(authentication);
-            final Page<FinancingDtl> financingDtls = financingDtlRepository.findByCustomer(
-                    customer.getCustCode().toString(),
+            final Page<FinancingDtl> financingDtlPage = financingDtlRepository.findAll(
+                    Specification.where(
+                            FinancingDtlSpec.custDashboardFilterBy(customer, request.getSearchBy(), request.getSearchValue())
+                    ),
                     PageRequest.of(pageNo, pageSize)
             );
 
-            return paginateInvoice(
-                    financingDtls,
-                    pageNo
-            );
+            return paginateCustDashboard(financingDtlPage, pageNo, pageSize);
         } catch (Exception e) {
             log.error("customerCreditFacilities: error {}", e.getMessage());
             throw e;
@@ -295,4 +299,60 @@ public class InvoiceService {
                 .build();
     }
 
+    public PaginationResult<CustomerCreditFacilityDto> paginateCustDashboard(
+            Page<FinancingDtl> financingDtlPage,
+            int pageNo,
+            int pageSize
+    ) {
+        if (pageNo > 0) {
+            pageNo = pageNo - 1;
+        }
+
+        final int startRow = pageNo * pageSize + 1;
+        final List<CustomerCreditFacilityDto> results = IntStream.range(0, financingDtlPage.getNumberOfElements())
+                .mapToObj((i) -> {
+                    String agreementCode = null;
+                    boolean hasAction = false;
+
+                    if (
+                            financingDtlPage.getContent().get(i).getFinancingHdr().getAgreement() != null
+                                    && !financingDtlPage.getContent().get(i).getFinancingHdr().getAgreement().isEmpty()
+                    ) {
+                        Agreement agreement = financingDtlPage.getContent().get(i).getFinancingHdr().getAgreement().stream().toList().getFirst();
+                        agreementCode = agreement.getAgreementCode();
+                        hasAction = agreement.getAgreementFile() != null;
+                    }
+
+                    MappedFinancingStatus status = new MappedFinancingStatus(
+                            financingDtlPage.getContent().get(i).getFinancingHdr(),
+                            MappedFinancingStatus.Type.Customer
+                    );
+
+                    return CustomerCreditFacilityDto.builder()
+                            .no(startRow + i)
+                            .agreementCode(agreementCode)
+                            .bouwheerCode(financingDtlPage.getContent().get(i).getFinancingHdr().getBouwheer().getBouwheerCode().toString())
+                            .bouwheerName(financingDtlPage.getContent().get(i).getFinancingHdr().getBouwheer().getBouwheerName())
+                            .invoiceAmount(new BigDecimal(financingDtlPage.getContent().get(i).getInvoice().getInvoiceAmt(), MathContext.DECIMAL64))
+                            .invoiceDescription(StringUtil.isNullOrEmpty(financingDtlPage.getContent().get(i).getInvoice().getInvoiceDescription())
+                                    ? "Invoice By Trakindo"
+                                    : financingDtlPage.getContent().get(i).getInvoice().getInvoiceDescription())
+                            .status(status.getStatus())
+                            .statusLabel(status.getLabel())
+                            .invoiceDate(Date.from(financingDtlPage.getContent().get(i).getInvoice().getInvoiceDate()))
+                            .facilityDueDate(null)
+                            .verifDate(null)
+                            .disburseDate(Date.from(financingDtlPage.getContent().get(i).getBouwheerPaidDate()))
+                            .hasAction(hasAction)
+                            .build();
+                })
+                .toList();
+
+        return PaginationResult.<CustomerCreditFacilityDto>builder()
+                .currentPage(pageNo + 1)
+                .totalData(financingDtlPage.getTotalElements())
+                .totalPage(financingDtlPage.getTotalPages())
+                .list(results)
+                .build();
+    }
 }

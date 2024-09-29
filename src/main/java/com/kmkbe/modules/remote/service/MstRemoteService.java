@@ -105,7 +105,7 @@ public class MstRemoteService {
             return response.getBody();
         } catch (Exception e) {
             log.error("areaQuery: {}", e.getMessage());
-            return dummyZipCode();
+            return null;
         }
     }
 
