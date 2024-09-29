@@ -1,19 +1,17 @@
 package com.kmkbe.modules.customer.service;
 
-import com.kmkbe.core.domain.entity.CustomerCompany;
-import com.kmkbe.core.domain.entity.CustomerPersonal;
-import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
-import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
-import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.domain.constant.CustomerIdType;
 import com.kmkbe.core.domain.constant.CustomerType;
+import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
+import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
-import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;

@@ -17,7 +17,6 @@ import com.kmkbe.core.domain.repository.MstFileTypeRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.FileUtils;
-import com.kmkbe.core.utils.HttpUtils;
 import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
@@ -42,7 +41,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.SignatureException;
 import java.time.Instant;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -201,7 +203,7 @@ public class DocumentService {
                     uploadName
             );
 
-            if (existingFile != null && !existingFile.getFilePath().contains("http")) {
+            if (existingFile != null) {
                 fileStorageService.delete(existingFile.getFilePath() + "/" + existingFile.getFileName(), "");
             }
 
