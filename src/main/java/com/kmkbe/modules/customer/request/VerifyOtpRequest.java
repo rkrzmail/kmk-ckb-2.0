@@ -14,8 +14,6 @@ public record VerifyOtpRequest(
         @NotEmpty(message = "otp is empty")
         String otp,
 
-        @NotNull(message = "pin is required")
-        @NotEmpty(message = "pin is empty")
         String pin
 ) {
 }

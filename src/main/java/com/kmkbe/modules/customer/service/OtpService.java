@@ -116,6 +116,12 @@ public class OtpService {
         if (!bcryptEncoder.matches((customer.getCustEmail() + otp.getOtpLogId()), genRequestId(customer, otp))) {
             throw new IllegalStateException("Request id not valid, try to enter valid requestId");
         }
+        /*if (!otp.getOtpCode().equalsIgnoreCase(request.otp())){
+            throw new IllegalStateException("Request id not valid, try to enter valid requestId");
+        }*/
+            
+        
+        
 
         if (Instant.now().isAfter(otp.getExpiredDate())) {
             throw new IllegalStateException("Otp is expired, try to resend again");
