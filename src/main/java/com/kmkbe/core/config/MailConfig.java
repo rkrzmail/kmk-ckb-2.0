@@ -65,15 +65,7 @@ public class MailConfig {
             EmailTemplate template,
             boolean enabledSsl
     ) throws MessagingException {
-        Properties properties = new Properties();
-        properties.put("mail.smtp.host", mail.getServerUrl());
-        properties.put("mail.smtp.port", mail.getPort());
-        properties.put("mail.smtp.auth", "true");
-        properties.put("mail.smtp.starttls.enable", enabledSsl ? "true" : "false");
-        properties.put("mail.smtp.user", mail.getUsername());
-        if(enabledSsl){
-            properties.put("mail.smtp.ssl.trust", mail.getServerUrl());
-        }
+        Properties properties = getProperties(mail, enabledSsl);
 
 
         Session session = Session.getDefaultInstance(properties);
@@ -97,5 +89,19 @@ public class MailConfig {
                 mail.getUsername(),
                 mail.getPassword()
         );
+    }
+
+    private static Properties getProperties(MailRemoteDto mail, boolean enabledSsl) {
+        Properties properties = new Properties();
+        properties.put("mail.smtp.host", mail.getServerUrl());
+        properties.put("mail.smtp.port", mail.getPort());
+        properties.put("mail.smtp.auth", "true");
+        properties.put("mail.smtp.starttls.enable", enabledSsl ? "true" : "false");
+        properties.put("mail.smtp.starttls.required", enabledSsl ? "true" : "false");
+        properties.put("mail.smtp.user", mail.getUsername());
+        if (enabledSsl) {
+            properties.put("mail.smtp.ssl.trust", mail.getServerUrl());
+        }
+        return properties;
     }
 }
