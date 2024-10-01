@@ -34,20 +34,20 @@ public class FinancingHdrSpec {
         return (root, query, criteriaBuilder) -> {
 
             return criteriaBuilder.and(
-                    criteriaBuilder.equal(root.get("financing_status"),"INPROCESS"),
-                    criteriaBuilder.equal(root.get("financing_step"),"SIGNED")
+                    criteriaBuilder.equal(root.get("financingStatus"),"INPROCESS"),
+                    criteriaBuilder.equal(root.get("financingStep"),"SIGNED")
             );
         };
     }
 
     public static Specification<FinancingHdr> byDisbursement(FinancingHdr financingHdr) {
         return (root, query, criteriaBuilder) -> {
-            Join<DisbursementLog, Agreement> joinDisbursement = root.join("disbursement_log", JoinType.INNER);
-            Join<Agreement,FinancingHdr> joinFinancingHdr = joinDisbursement.join("financing_hdr", JoinType.INNER);
+            Join<DisbursementLog, Agreement> joinDisbursement = root.join("disbursementLog", JoinType.INNER);
+            Join<Agreement,FinancingHdr> joinFinancingHdr = joinDisbursement.join("financingHdr", JoinType.INNER);
 
             return criteriaBuilder.and(
                     criteriaBuilder.equal(
-                            joinFinancingHdr.get("financing_hdr_code"), financingHdr.getFinancingHdrCode()
+                            joinFinancingHdr.get("financingHdrCode"), financingHdr.getFinancingHdrCode()
                     )
             );
         };

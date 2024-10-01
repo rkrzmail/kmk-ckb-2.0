@@ -63,14 +63,8 @@ public class FinancingController {
     public CommonResult<PaginationResult<PaidInvoiceDto>> getInvoicePaid(
             PaginationRequest request
     ) {
-        PaginationResult<PaidInvoiceDto> result = PaginationResult.empty(
-                request.getPageNo()
-        );
-
-        result = financingHdrService.paidInvoice(request);
-
         return new CommonResult<PaginationResult<PaidInvoiceDto>>().success(
-                result
+                financingHdrService.paidInvoice(request)
         );
     }
 
@@ -79,14 +73,8 @@ public class FinancingController {
             PaginationRequest request,
             FinancingHdr financingHdr
     ) {
-        PaginationResult<DisburseInvoiceDto> result = PaginationResult.empty(
-                request.getPageNo()
-        );
-
-        result = financingHdrService.disburseInvoice(request, financingHdr);
-
         return new CommonResult<PaginationResult<DisburseInvoiceDto>>().success(
-                result
+                financingHdrService.disburseInvoice(request, financingHdr)
         );
     }
 
