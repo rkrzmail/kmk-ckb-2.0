@@ -174,7 +174,7 @@ public class FinancingHdrService {
             }
 
             final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAll(
-                    FinancingHdrSpec.byStepStatus(),
+                    FinancingHdrSpec.byStepStatus(request.getSearchBy(),request.getSearchValue()),
                     PageRequest.of(pageNo, pageSize)
             );
 
@@ -218,7 +218,7 @@ public class FinancingHdrService {
                             : null;
                     MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
                             e,
-                            MappedFinancingStatus.Type.MajorAccount
+                            MappedFinancingStatus.Type.Repayment
                     );
 
                     String color = getColor(e);
@@ -281,7 +281,7 @@ public class FinancingHdrService {
                     String customerName = customer.getCustName();
                     MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
                             e,
-                            MappedFinancingStatus.Type.MajorAccount
+                            MappedFinancingStatus.Type.Disbursement
                     );
 
                     return DisburseInvoiceDto.builder()
@@ -347,7 +347,7 @@ public class FinancingHdrService {
             }
 
             final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAll(
-              FinancingHdrSpec.byDisbursementStepStatus(financingHdr),
+              FinancingHdrSpec.byDisbursement(request.getSearchBy(), request.getSearchValue()),
               PageRequest.of(pageNo, pageSize)
             );
 
