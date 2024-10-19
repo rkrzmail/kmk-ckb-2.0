@@ -9,14 +9,14 @@ import lombok.Setter;
 @Setter
 @Data
 @NoArgsConstructor
-public class CommonResult<T> {
+public class CommonResultCount<T> extends CommonResult<T>{
     protected Boolean isSuccess;
     protected Integer code;
     protected Integer count;
     protected String message;
     protected T data;
 
-    public CommonResult<T> success(T data) {
+    public CommonResultCount<T> success(T data) {
         this.isSuccess = true;
         this.code = 200;
         this.message = "Success";
@@ -24,16 +24,7 @@ public class CommonResult<T> {
         return this;
     }
 
-    public CommonResult<T> successWithCount(T data, Integer count ) {
-        this.isSuccess = true;
-        this.code = 200;
-        this.message = "Success";
-        this.count = count;
-        this.data = data;
-        return this;
-    }
-
-    public CommonResult<T> success(T data, String message) {
+    public CommonResultCount<T> success(T data, String message, int count) {
         this.isSuccess = true;
         this.code = 200;
         this.message = message;
@@ -41,11 +32,11 @@ public class CommonResult<T> {
         return this;
     }
 
-    public CommonResult<T> fail(Integer code, String message) {
+    public CommonResultCount<T> fail(Integer code, String message) {
         return fail(code, message, null);
     }
 
-    public CommonResult<T> fail(Integer code, String message, T data) {
+    public CommonResultCount<T> fail(Integer code, String message, T data) {
         this.isSuccess = false;
         this.code = code;
         this.message = message;

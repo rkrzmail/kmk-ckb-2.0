@@ -1,5 +1,6 @@
 package com.kmkbe.core.domain.entity;
 
+import com.kmkbe.core.utils.DateTimeUtils;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -62,7 +63,7 @@ public class ApiIntegrationLog {
     @Builder.Default
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt = Instant.now();
+    private Instant dtmCrt = DateTimeUtils.now();
 
     @Column(name = "dtm_upd")
     private Instant dtmUpd;

@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.CustomerPersonal;
 import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
@@ -79,10 +80,10 @@ public class CustomerPersonalService {
             if (find.isEmpty()) {
                 personal.setCustPersonalCode(UUID.randomUUID());
                 personal.setUsrCrt(customer.getCustName());
-                personal.setDtmCrt(Instant.now());
+                personal.setDtmCrt(DateTimeUtils.now());
             } else {
                 personal.setUsrUpd(customer.getCustName());
-                personal.setDtmUpd(Instant.now());
+                personal.setDtmUpd(DateTimeUtils.now());
             }
 
             personal.setCustomer(customer);

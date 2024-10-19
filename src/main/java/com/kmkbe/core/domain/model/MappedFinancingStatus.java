@@ -62,8 +62,10 @@ public class MappedFinancingStatus {
                 status = "COMPLETED";
             }
         } else {
-            label = "Untracked";
-            status = "UNTRACKED";
+            /*label = "Untracked";
+            status = "UNTRACKED";*/
+            label = "New";
+            status = "NEW";
         }
     }
 
@@ -88,8 +90,10 @@ public class MappedFinancingStatus {
             label = "Completed";
             status = "COMPLETED";
         } else {
-            label = "Untracked";
-            status = "UNTRACKED";
+           /* label = "Untracked";
+            status = "UNTRACKED";*/
+            label = "New";
+            status = "NEW";
         }
     }
 
@@ -125,8 +129,10 @@ public class MappedFinancingStatus {
                 status = "COMPLETED";
             }
         } else {
-            label = "Untracked";
-            status = "UNTRACKED";
+           /* label = "Untracked";
+            status = "UNTRACKED";*/
+            label = "New";
+            status = "NEW";
         }
     }
 
@@ -150,8 +156,10 @@ public class MappedFinancingStatus {
                 status = "COMPLETED";
             }
         } else {
-            label = "Untracked";
-            status = "UNTRACKED";
+            /* label = "Untracked";
+            status = "UNTRACKED";*/
+            label = "New";
+            status = "NEW";
         }
     }
 
@@ -175,8 +183,10 @@ public class MappedFinancingStatus {
                 status = "PAID";
             }
         } else {
-            label = "Untracked";
-            status = "UNTRACKED";
+            /* label = "Untracked";
+            status = "UNTRACKED";*/
+            label = "New";
+            status = "NEW";
         }
     }
 

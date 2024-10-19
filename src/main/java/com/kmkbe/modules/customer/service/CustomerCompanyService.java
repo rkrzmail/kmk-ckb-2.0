@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.CustomerCompany;
 import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
@@ -62,7 +63,7 @@ public class CustomerCompanyService {
                 company.setStaySince(companyReq.getStaySince());
                 company.setStayLength(CustomerUtils.calculateStayLength(companyReq.getStaySince()));
                 company.setUsrCrt(customer.getCustName());
-                company.setDtmCrt(Instant.now());
+                company.setDtmCrt(DateTimeUtils.now());
             }
 
             customerCompanyRepository.save(company);
@@ -82,10 +83,10 @@ public class CustomerCompanyService {
             if (find.isEmpty()) {
                 company.setCustCompanyCode(UUID.randomUUID());
                 company.setUsrCrt(customer.getCustName());
-                company.setDtmCrt(Instant.now());
+                company.setDtmCrt(DateTimeUtils.now());
             } else {
                 company.setUsrUpd(customer.getCustName());
-                company.setDtmUpd(Instant.now());
+                company.setDtmUpd(DateTimeUtils.now());
             }
 
             company.setCustomer(customer);
@@ -99,6 +100,7 @@ public class CustomerCompanyService {
             {
                 company.setKelurahan(addressRequest.getKelurahan());
                 company.setKecamatan(addressRequest.getKecamatan());
+                company.setProvince(addressRequest.getProvince());//ketinggalan
                 company.setCity(addressRequest.getCity());
                 company.setZipCode(addressRequest.getZipCode());
                 company.setArea(addressRequest.getArea());

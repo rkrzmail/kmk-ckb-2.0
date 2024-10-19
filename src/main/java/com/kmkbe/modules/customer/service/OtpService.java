@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.OtpLog;
 import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.OtpRepository;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.request.RequestOtpRequest;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
@@ -35,14 +36,14 @@ public class OtpService {
     private final BCryptPasswordEncoder bcryptEncoder;
 
     public OtpLog create(@NonNull Customer customer, @NonNull OtpType type) throws Exception {
-        final Instant now = Instant.now();
+        final Instant now = DateTimeUtils.now();
         final OtpLog otpLog = new OtpLog();
         otpLog.setEmail(customer.getCustEmail());
         otpLog.setMobilePhone(customer.getCustMobilePhone());
         otpLog.setGeneratedDate(now);
         otpLog.setExpiredDate(now.plus(5, ChronoUnit.MINUTES));
         otpLog.setUsrCrt(customer.getCustName());
-        otpLog.setDtmCrt(Instant.now());
+        otpLog.setDtmCrt(DateTimeUtils.now());
         otpLog.setIsUsed(false);
         otpLog.setOtpCode(genOtp());
         //otpLog.setOtpCode("1111");
@@ -72,13 +73,13 @@ public class OtpService {
         emailService.sendNotificationActive(customer);
 
         final OtpLog otp = findCustomerOtp.getOtpLog();
-        if (Instant.now().isAfter(otp.getExpiredDate())) {
+        if (DateTimeUtils.now().isAfter(otp.getExpiredDate())) {
             throw new IllegalStateException("Otp is Expired");
         }
 
         otp.setIsUsed(true);
         otp.setUsrUpd(customer.getCustName());
-        otp.setDtmUpd(Instant.now());
+        otp.setDtmUpd(DateTimeUtils.now());
 
         otpRepository.save(otp);
         return "Sign up successfully";
@@ -123,13 +124,13 @@ public class OtpService {
         
         
 
-        if (Instant.now().isAfter(otp.getExpiredDate())) {
+        if (DateTimeUtils.now().isAfter(otp.getExpiredDate())) {
             throw new IllegalStateException("Otp is expired, try to resend again");
         }
 
         otp.setIsUsed(true);
         otp.setUsrUpd(customer.getCustName());
-        otp.setDtmUpd(Instant.now());
+        otp.setDtmUpd(DateTimeUtils.now());
         otpRepository.save(otp);
 
         return "Otp verified, try to enter new pin";

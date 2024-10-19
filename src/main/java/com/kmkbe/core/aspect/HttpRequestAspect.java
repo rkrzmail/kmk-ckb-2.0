@@ -3,6 +3,7 @@ package com.kmkbe.core.aspect;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.entity.ApiIntegrationLog;
 import com.kmkbe.core.domain.repository.ApiIntegrationLogRepository;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
@@ -85,7 +86,7 @@ public class HttpRequestAspect {
                     .requestPayload(StringUtils.isEmpty(requestStr) ? "empty" : requestStr)
                     .responseJson(responseStr)
                     .responseStatus(String.valueOf(statusCode))
-                    .dtmUpd(Instant.now())
+                    .dtmUpd(DateTimeUtils.now())
                     .build();
 
             apiIntegrationLogRepository.save(apiIntegrationLog);

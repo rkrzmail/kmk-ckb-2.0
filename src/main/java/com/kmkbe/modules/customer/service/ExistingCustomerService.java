@@ -91,7 +91,7 @@ public class ExistingCustomerService {
                         isExisting,
                         identityType,
                         identityNo,
-                        Timestamp.from(Instant.now())
+                        Timestamp.from(DateTimeUtils.now())
                 );
             } else {
                 jdbcTemplate.update(
@@ -99,7 +99,7 @@ public class ExistingCustomerService {
                         isExisting,
                         identityType,
                         identityNo,
-                        Timestamp.from(Instant.now()),
+                        Timestamp.from(DateTimeUtils.now()),
                         vendorCode
                 );
             }
@@ -173,7 +173,7 @@ public class ExistingCustomerService {
                             .orElseThrow();
                     loadedCust.setCustNo(existingCustomer.getCustNo());
                     loadedCust.setUsrUpd(customer.getCustName());
-                    loadedCust.setDtmUpd(Instant.now());
+                    loadedCust.setDtmUpd(DateTimeUtils.now());
                     customerRepository.save(loadedCust);
                 }
             }
@@ -251,7 +251,7 @@ public class ExistingCustomerService {
                             .realisationAmt(firstCwr.getRealisationAmt())
                             .status(firstCwr.getCwrStatDescr())
                             .usrCrt(customer.getCustName())
-                            .dtmCrt(Instant.now())
+                            .dtmCrt(DateTimeUtils.now())
                             .build();
                     if (bouwheer != null) {
                         final Cwr cwr = cwrRepository.findTopByCwrCode(firstCwr.getCwrNo())

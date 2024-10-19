@@ -35,4 +35,13 @@ public class MjrAccDashboardDto {
         private Long totalSigning;
         private Long totalLive;
     }
+
+    @Builder
+    @AllArgsConstructor
+    @NoArgsConstructor
+    @Getter
+    @Setter
+    public static class Counting {
+        private Long countTotal;
+    }
 }

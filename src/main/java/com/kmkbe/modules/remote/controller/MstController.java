@@ -11,6 +11,7 @@ import com.kmkbe.modules.remote.request.PropCriteriaGenericTypeRequest;
 import com.kmkbe.modules.remote.request.RefMasterRequest;
 import com.kmkbe.modules.remote.request.ZipCodeRequest;
 import com.kmkbe.modules.remote.service.MstRemoteService;
+import com.kmkbe.modules.user.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -98,6 +99,13 @@ public class MstController {
                 requests
         );
 
-        return new CommonResult<List<AreaRemoteDto>>().success(result2 != null ? result2.getData() : null);
+
+        if (result2 != null){
+            return new CommonResult<List<AreaRemoteDto>>().successWithCount(  result2.getData() , Utils.getInt(String.valueOf(result2.getCount())));
+        }else{
+            result2 = mstRemoteService.dummyZipCode();
+            return new CommonResult<List<AreaRemoteDto>>().successWithCount(result2.getData() , Utils.getInt(String.valueOf(result2.getCount())));
+        }
+
     }
 }

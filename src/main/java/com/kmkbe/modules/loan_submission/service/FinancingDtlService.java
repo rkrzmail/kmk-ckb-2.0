@@ -9,6 +9,8 @@ import com.kmkbe.core.domain.entity.Invoice;
 import com.kmkbe.core.domain.mapper.InvoiceMapper;
 import com.kmkbe.core.domain.model.PostedInvoicePayload;
 import com.kmkbe.core.domain.repository.FinancingDtlRepository;
+import com.kmkbe.core.domain.repository.InvoiceRepository;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Service;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
@@ -25,7 +28,7 @@ import java.util.stream.IntStream;
 @Slf4j
 public class FinancingDtlService {
     private final FinancingDtlRepository financingDtlRepository;
-
+    private final InvoiceRepository invoiceRepository;
     public FinancingDtl findBy(String bouwheerInvNo) {
         try {
             return financingDtlRepository.findFirstByBouwheerInvNo(bouwheerInvNo).orElse(null);
@@ -69,7 +72,7 @@ public class FinancingDtlService {
                             );
 
                             invoice.setUsrCrt(customer.getCustName());
-                            invoice.setDtmCrt(Instant.now());
+                            invoice.setDtmCrt(DateTimeUtils.now());
                             invoice.setCustomer(customer);
                             invoice.setBouwheer(bouwheer);
 
@@ -79,7 +82,7 @@ public class FinancingDtlService {
                             //detail.setInvoiceSeqno((long) index + 1);
                             detail.setFinancingHdr(financingHdr);
                             detail.setUsrCrt(customer.getCustName());
-                            detail.setDtmCrt(Instant.now());
+                            detail.setDtmCrt(DateTimeUtils.now());
 
 
 
@@ -106,23 +109,23 @@ public class FinancingDtlService {
 
     public void updatePaid(FinancingInvoicePaidRequest request, FinancingHdr financingHdr) {
         try {
-            for (FinancingInvoicePaidRequest.InvoicePaid invoicePaid : request.getInvoicePaid()) {
-                List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr).orElse(null);
-                if (financingDtls != null) {
-                    for (FinancingDtl financingDtl : financingDtls) {
-                        if (invoicePaid.getInvoiceNo().equalsIgnoreCase(financingDtl.getInvoice().getBouwheerInvNo())) {
+            List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr).orElse(null);
+            if (financingDtls != null) {
+                for (FinancingDtl financingDtl : financingDtls) {
+                    for (FinancingInvoicePaidRequest.InvoicePaid invoicePaid : request.getInvoicePaid()) {
+                        if (invoicePaid.getInvoiceNo().equalsIgnoreCase(financingDtl.getInvoice().getCustInvNo())) {
                             financingDtl.getInvoice().setStatus("PAID");
                             financingDtl.getInvoice().setUsrUpd(financingHdr.getUsrUpd());
-                            financingDtl.getInvoice().setDtmUpd(Instant.now());
+                            financingDtl.getInvoice().setDtmUpd(DateTimeUtils.now());
 
                             financingDtl.setBouwheerPaidDate(request.getInvoicePaid().getFirst().getPostingDate().toInstant());
-                            financingDtl.setDtmUpd(Instant.now());
+                            financingDtl.setDtmUpd(DateTimeUtils.now());
                             financingDtl.setUsrUpd(financingHdr.getUsrUpd());
                             financingDtlRepository.save(financingDtl);
                             break;
                         }
-                    }
-                }
+                    }//for
+                }//for
             }
 
         } catch (Exception e) {

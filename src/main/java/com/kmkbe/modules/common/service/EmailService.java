@@ -331,15 +331,16 @@ public class EmailService {
             String email
     ) {
         try {
-            CsulMailSender csulMailSender = new CsulMailSender(mailConfig, configRemoteService);
+            //CsulMailSender csulMailSender = new CsulMailSender(mailConfig, configRemoteService);
             int attempts = 0;
             boolean success = false;
+            MailRemoteDto internalMail = configRemoteService.fetchEmailInfo();
             for (int i = 0; i < MAX_SENT_FAIL_ATTEMPTS; i++) {
                 try {
                     mailConfig.sendHtmlEmail(
-                            csulMailSender.getInternalMail(),
+                            internalMail,
                             template,
-                            csulMailSender.getInternalMail().getEnableSSL()
+                            internalMail.getEnableSSL()
                     );
                     success = true;
                 } catch (Exception e) {
@@ -372,8 +373,10 @@ public class EmailService {
 
     @Getter
     private static class CsulMailSender {
-        private final MailRemoteDto internalMail;
+        private MailRemoteDto internalMail;
         private final JavaMailSender mailSender;
+
+
 
         private CsulMailSender(
                 MailConfig mailConfig,

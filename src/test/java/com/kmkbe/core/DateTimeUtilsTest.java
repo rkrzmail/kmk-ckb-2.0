@@ -21,7 +21,7 @@ public class DateTimeUtilsTest {
     @Test
     @DisplayName("should return valid temporal time")
     public void temporalTimeTest() {
-        Instant now = Instant.now();
+        Instant now = DateTimeUtils.now();
         String nowStr = now.toString();
         Assertions.assertNotNull(nowStr);
     }

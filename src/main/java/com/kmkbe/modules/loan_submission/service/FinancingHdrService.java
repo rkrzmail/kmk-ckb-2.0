@@ -76,7 +76,7 @@ public class FinancingHdrService {
                 header.setCustomer(customer);
                 header.setBouwheer(bouwheer);
                 header.setTenor(top + bouwheer.getGracePeriod());
-                header.setFinancingDate(Instant.now());
+                header.setFinancingDate(DateTimeUtils.now());
                 header.setCurrencyCode(firstInvoice.getCurrencyCode());
                 header.setInvoiceQty((long) request.getInvoices().size());
                 header.setInterestType("COF"); // not clear
@@ -103,11 +103,11 @@ public class FinancingHdrService {
                 header.setInsuranceFeePercentage(0.0);
                 header.setAdminLimitAmt(0.0);
 
-                header.setDisburseDate(Instant.now());
+                header.setDisburseDate(DateTimeUtils.now());
                 header.setFinancingStatus(""); // fresh input will store as NEW
                 header.setFinancingStep("");
                 header.setUsrCrt(customer.getCustName());
-                header.setDtmCrt(Instant.now());
+                header.setDtmCrt(DateTimeUtils.now());
  
 
                 header = financingHdrRepository.save(header);
@@ -392,7 +392,7 @@ public class FinancingHdrService {
             financingHdr.setFinancingStep("PAID");
 
             financingHdr.setUsrUpd(user);
-            financingHdr.setDtmUpd(Instant.now());
+            financingHdr.setDtmUpd(DateTimeUtils.now());
             return financingHdrRepository.save(financingHdr);
         } catch (Exception e) {
             log.error("paidFinancing, error {}", e.getMessage());

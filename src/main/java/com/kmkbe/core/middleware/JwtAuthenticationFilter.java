@@ -198,7 +198,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 return true;
             }
         }
-
+        for (String endpoint : ENDPOINTS_WHITELIST_FINANCING) {
+            if (new AntPathRequestMatcher(endpoint).matches(request)) {
+                filterChain.doFilter(request, response);
+                return true;
+            }
+        }
         return false;
     }
 

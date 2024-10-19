@@ -24,6 +24,13 @@ public class BaseRemoteService {
     @Value("${csul.confins.los.v1}")
     public String confinsLosBaseUrl;
 
+    @Value("${csul.confins.ar.v1}")
+    public String confinsArBaseUrl;
+
+
+    @Value("${csul.confins.payment.v1}")
+    public String confinsPaymentBaseUrl;
+
     @Value("${csul.confins.adinskey}")
     public String adInsKey;
 
@@ -73,6 +80,31 @@ public class BaseRemoteService {
     public String Fou_Generic_GetPagingObjectBySQL() {
         return confinsFouBaseUrl + "/Generic/GetPagingObjectBySQL";
     }
+
+    public String Agrmnt_GetAgrmntByAgrmntNoL() {
+        return confinsArBaseUrl + "/Agrmnt/GetAgrmntByAgrmntNoL";
+    }
+
+    public String Agrmnt_GetAgrmntByAgrmntNo() {
+        return confinsArBaseUrl + "/Agrmnt/GetAgrmntByAgrmntNo";
+    }
+
+    public String Agrmnt_GetNewInfoByAgrmntNo() {
+        return confinsArBaseUrl + "/Agrmnt/GetNewInfoByAgrmntNo";
+    }
+
+    public String OnlinePayment_GetOutstandingBillDetailByAgrmntNo() {
+        return confinsArBaseUrl + "/OnlinePayment/GetOutstandingBillDetailByAgrmntNo";
+    }
+
+    public String PrepaidAlloc_GetRcvAmtValueByParamPriorityCodeV2() {
+        return confinsArBaseUrl + "/PrepaidAlloc/GetRcvAmtValueByParamPriorityCodeV2";
+    }
+
+    public String PaymentReceive_SubmitPaymentReceiveFromApi() {
+        return confinsPaymentBaseUrl + "/PaymentReceive/SubmitPaymentReceiveFromApi";
+    }
+
 
     public HttpHeaders adInsKeyHeaders() {
         return keyHeaders("AdInsKey", adInsKey);

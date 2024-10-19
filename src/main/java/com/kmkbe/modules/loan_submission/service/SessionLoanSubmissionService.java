@@ -1,6 +1,7 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
@@ -68,14 +69,14 @@ public class SessionLoanSubmissionService {
                         customer.getCustCode(),
                         lastStep,
                         ObjectUtils.jsonToStr(jsonSession),
-                        Timestamp.from(Instant.now())
+                        Timestamp.from(DateTimeUtils.now())
                 );
             } else {
                 jdbcTemplate.update(
                         "update public._loan_submission_session set last_step = ?, session = ?, dtm_upd = ? where cust_code = ?",
                         lastStep,
                         ObjectUtils.jsonToStr(jsonSession),
-                        Timestamp.from(Instant.now()),
+                        Timestamp.from(DateTimeUtils.now()),
                         customer.getCustCode()
                 );
             }

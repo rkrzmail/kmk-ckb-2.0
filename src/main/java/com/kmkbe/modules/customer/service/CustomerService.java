@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
 import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
@@ -94,7 +95,7 @@ public class CustomerService {
             }
 
             customer.setUsrCrt(customer.getCustName());
-            customer.setDtmCrt(Instant.now());
+            customer.setDtmCrt(DateTimeUtils.now());
             return customerRepository.save(customer);
         } catch (CommonInvalidException e) {
             log.error("create, error {}", e.getMessage());
@@ -108,7 +109,7 @@ public class CustomerService {
         customer.setIsEmailValid(true);
         customer.setIsActive(true);
         customer.setUsrUpd(customer.getCustName());
-        customer.setDtmUpd(Instant.now());
+        customer.setDtmUpd(DateTimeUtils.now());
         customerRepository.save(customer);
     }
 

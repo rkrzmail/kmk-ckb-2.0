@@ -93,6 +93,106 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
                     from
                         public.financing_hdr fh
                     where
+                        fh.financing_status is not null and
+                        fh.financing_step is not null and
+                        fh.financing_hdr_code in (
+                                                     select
+                                                         fd.financing_hdr_code
+                                                     from
+                                                         public.financing_dtl fd
+                                                             join public.invoice iv on fd.invoice_code = iv.invoice_code
+                                                 )
+                        and nullif(fh.financing_status, '') is not null
+                        and nullif(fh.financing_step, '') is not null
+                    order by
+                        fh.dtm_crt desc
+                    """,
+            countQuery = """
+                    select count(*)
+                    from
+                        financing_hdr fh
+                    where
+                        fh.financing_status is not null and
+                        fh.financing_step is not null and
+                        fh.financing_hdr_code in (
+                                                     select
+                                                         fd.financing_hdr_code
+                                                     from
+                                                         public.financing_dtl fd
+                                                             join public.invoice iv on fd.invoice_code = iv.invoice_code
+                                                 )
+                        and nullif(fh.financing_status, '') is not null
+                        and nullif(fh.financing_step, '') is not null
+                    """,
+            nativeQuery = true
+    )
+    Page<FinancingHdr> findAllByRawOrder(
+            Pageable pageable
+    );
+
+
+    @Query(
+            value = """
+                    select
+                        fh.*
+                    from
+                        public.financing_hdr fh
+                    where
+                          fh.cust_code = :custCode and
+                        fh.financing_status is not null and
+                        fh.financing_step is not null and
+                        fh.financing_hdr_code in (
+                                                     select
+                                                         fd.financing_hdr_code
+                                                     from
+                                                         public.financing_dtl fd
+                                                             join public.invoice iv on fd.invoice_code = iv.invoice_code
+                                                 )
+                        and nullif(fh.financing_status, '') is not null
+                        and nullif(fh.financing_step, '') is not null
+                    order by
+                        fh.dtm_crt desc
+                    """,
+            countQuery = """
+                    select count(*)
+                    from
+                        financing_hdr fh
+                    where
+                          fh.cust_code = :custCode and
+                        fh.financing_status is not null and
+                        fh.financing_step is not null and
+                        fh.financing_hdr_code in (
+                                                     select
+                                                         fd.financing_hdr_code
+                                                     from
+                                                         public.financing_dtl fd
+                                                             join public.invoice iv on fd.invoice_code = iv.invoice_code
+                                                 )
+                        and nullif(fh.financing_status, '') is not null
+                        and nullif(fh.financing_step, '') is not null
+                    """,
+            nativeQuery = true
+    )
+    Page<FinancingHdr> findAllByRawOrder(
+            @Param("custCode") String custCode,
+            Pageable pageable
+    );
+
+
+    Page<FinancingHdr> findAllByCustomer( Customer customer,
+            Pageable pageable
+    );
+
+
+    @Query(
+            value = """
+                    select
+                        fh.*
+                    from
+                        public.financing_hdr fh
+                    where
+                        fh.cust_code = :custCode and
+                        fh.financing_status = :financingStatus and
                         fh.financing_hdr_code in (
                                                      select
                                                          fd.financing_hdr_code
@@ -110,6 +210,8 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
                     from
                         financing_hdr fh
                     where
+                        fh.cust_code = :custCode and
+                        fh.financing_status = :financingStatus and
                         fh.financing_hdr_code in (
                                                      select
                                                          fd.financing_hdr_code
@@ -122,8 +224,10 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
                     """,
             nativeQuery = true
     )
-    Page<FinancingHdr> findAllByRawOrder(
-            Pageable pageable
+    Page<FinancingHdr> findAllForInvoice(
+            @Param("custCode") String custCode,
+            @Param("financingStatus") String financingStatus,
+                                          Pageable pageable
     );
 
     @NonNull

@@ -4,6 +4,7 @@ import com.kmkbe.core.constants.CommonConstants;
 import com.kmkbe.core.domain.dto.CustomerDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.mapper.CustomerMapper;
+import com.kmkbe.core.utils.DateTimeUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -32,7 +33,7 @@ public class CustomerUtils {
     public static double calculateStayLength(Instant staySince) {
         return BigDecimal.valueOf(Duration.between(
                         staySince,
-                        Instant.now()
+                        DateTimeUtils.now()
                 ).toMinutes() / (double) CommonConstants.MONTH_IN_MINUTES).setScale(1, RoundingMode.CEILING)
                 .doubleValue();
     }

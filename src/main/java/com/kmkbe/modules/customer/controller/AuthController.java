@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.OtpLog;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.exception.CommonInvalidException;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
@@ -80,7 +81,7 @@ public class AuthController {
             try {
                 staySince = Instant.parse(vendor.getFoundedDate());
             } catch (Exception e) {
-                staySince = Instant.now();
+                staySince = DateTimeUtils.now();
             }
 
             request.setCompany(
@@ -89,8 +90,8 @@ public class AuthController {
                             .companyType(vendor.getJenisPerusahaanDescription())
                             .identityType("AKTA")
                             .identityNo(request.getCustomerIdNo())
-                            .identityIssuedDate(Instant.now())
-                            .identityExpiredDate(Instant.now())
+                            .identityIssuedDate(DateTimeUtils.now())
+                            .identityExpiredDate(DateTimeUtils.now())
                             .companyAddress(address)
                             .custIdNo(vendor.getNipSiup())
                             .rt("")

@@ -2,6 +2,7 @@ package com.kmkbe.core.domain.repository;
 
 import com.kmkbe.core.domain.entity.FinancingDtl;
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -20,33 +21,41 @@ public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID
     Optional<FinancingDtl> findFirstByBouwheerInvNo(String bouwheerInvNo);
 
     @Query(
-            value = "select fd.* \n" +
-                    "from\n" +
-                    "    financing_dtl as fd\n" +
-                    "where\n" +
-                    "    financing_hdr_code = (\n" +
-                    "                             select financing_hdr_code\n" +
-                    "                             from financing_hdr\n" +
-                    "                             where cust_code = :custCode\n" +
-                    "                             order by financing_hdr_id desc limit 1\n" +
-                    "                         ) " +
-                    "order by ?#{#pageable}",
-            countQuery = "select count(*) \n" +
-                    "from\n" +
-                    "    financing_dtl as fd\n" +
-                    "where\n" +
-                    "    financing_hdr_code = (\n" +
-                    "                             select financing_hdr_code\n" +
-                    "                             from financing_hdr\n" +
-                    "                             where cust_code = :custCode\n" +
-                    "                             order by financing_hdr_id desc limit 1\n" +
-                    "                         )",
-            nativeQuery = true
+            value = """
+
+                    SELECT  fd.* FROM financing_dtl  fd
+                    JOIN financing_hdr fh ON (fd.financing_hdr_code=fh.financing_hdr_code)
+                    JOIN invoice i ON (i.invoice_code=fd.invoice_code)
+                    WHERE
+                    fh.cust_code  = :custCode and
+                    fh.financing_status is not null  and
+                    fh.financing_status <> 'LIVE' and
+                    fh.financing_status <> '' and
+                    i.invoice_due_date BETWEEN CURRENT_DATE and date_add(NOW(),INTERVAL '14 DAY')
+
+                    """,
+            countQuery = """
+
+                    SELECT  COUNT(fd.*) FROM financing_dtl  fd
+                    JOIN financing_hdr fh ON (fd.financing_hdr_code=fh.financing_hdr_code)
+                    JOIN invoice i ON (i.invoice_code=fd.invoice_code)
+                    WHERE 
+                    fh.cust_code = :custCode and
+                    fh.financing_status is not null  and
+                    fh.financing_status <> 'LIVE' and
+                    fh.financing_status <> '' and
+                    i.invoice_due_date BETWEEN CURRENT_DATE and date_add(NOW(),INTERVAL '14 DAY')
+
+                    """,
+
+                    nativeQuery = true
     )
     Page<FinancingDtl> findByCustomer(
-            String custCode,
+            @Param("custCode") String custCode,
             Pageable pageable
     );
+
+
 
     Page<FinancingDtl> findByFinancingHdr(
             FinancingHdr financingHdr,

@@ -75,7 +75,7 @@ public class CustomerSeederService  {//implements CommandLineRunner
                     .agreeTc(true)
                     .isActive(true)
                     .usrCrt("SYSTEM")
-                    .dtmCrt(Instant.now())
+                    .dtmCrt(DateTimeUtils.now())
                     .usrUpd("SYSTEM")
                     .dtmUpd(null)
                     .custExternalCode("0002004099")
@@ -142,8 +142,8 @@ public class CustomerSeederService  {//implements CommandLineRunner
                     .companyModel("Perseroan Terbatas") // Yayasan, Koperasi
                     .identityType(CustomerIdType.NPWP.name())
                     .identityNo("1234567890")
-                    .identityIssuedDate(Instant.now())
-                    .identityExpiredDate(Instant.now().plus(365, ChronoUnit.DAYS))
+                    .identityIssuedDate(DateTimeUtils.now())
+                    .identityExpiredDate(DateTimeUtils.now().plus(365, ChronoUnit.DAYS))
                     .phone("0251560324")
                     .companyAddress("Jl. Raya Citayam")
                     .rt("08")
@@ -174,7 +174,7 @@ public class CustomerSeederService  {//implements CommandLineRunner
 
         final double differenceDays = Duration.between(
                 staySince.toInstant(),
-                Instant.now()
+                DateTimeUtils.now()
         ).toMinutes() / (double) CommonConstants.MONTH_IN_MINUTES;
 
         return Map.of("staySince", staySince, "stayLength", differenceDays);

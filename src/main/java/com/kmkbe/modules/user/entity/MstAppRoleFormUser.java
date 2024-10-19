@@ -1,5 +1,6 @@
 package com.kmkbe.modules.user.entity;
 
+import com.kmkbe.core.utils.DateTimeUtils;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -60,7 +61,7 @@ public class MstAppRoleFormUser {
     @Builder.Default
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt = Instant.now();
+    private Instant dtmCrt = DateTimeUtils.now();
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)

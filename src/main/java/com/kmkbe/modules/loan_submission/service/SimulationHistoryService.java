@@ -6,6 +6,7 @@ import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.entity.SimulationHist;
 import com.kmkbe.core.domain.mapper.SimulationHistoryMapper;
 import com.kmkbe.core.domain.repository.SimulationHistRepository;
+import com.kmkbe.core.utils.DateTimeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -69,7 +70,7 @@ public class SimulationHistoryService {
                     .adminAmt(adminAmt)
                     .financingAmt(financingAmt)
                     .usrCrt(customer.getCustName())
-                    .dtmCrt(Instant.now())
+                    .dtmCrt(DateTimeUtils.now())
                     .build();
 
             return simulationHistRepository.save(history);

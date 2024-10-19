@@ -1,5 +1,6 @@
 package com.kmkbe.modules.user.entity;
 
+import com.kmkbe.core.utils.DateTimeUtils;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -60,7 +61,7 @@ public class MstApplication {
 
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt = Instant.now();
+    private Instant dtmCrt = DateTimeUtils.now();
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)

@@ -12,6 +12,7 @@ public class LoanDisburseEmailPayload {
     private String companyName;
     private String phoneNumber;
 
+
     /**
      * date format with dd/MM/yyyy see DateSerializer
      */

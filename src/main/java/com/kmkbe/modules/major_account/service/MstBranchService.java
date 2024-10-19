@@ -22,12 +22,20 @@ public class MstBranchService {
             List<BranchDto> result = new ArrayList<>();
 
             if (mstBranches != null && !mstBranches.isEmpty()) {
-                result = mstBranches.stream()
+               /* result = mstBranches.stream()
                         .map((e) -> BranchDto.builder()
                                 .branchCode(e.getBranchCode())
                                 .branchName(e.getBranchName())
                                 .build())
-                        .toList();
+                        .toList();*/
+                for (MstBranch mstBranch : mstBranches) {
+                    if ("CBU".equalsIgnoreCase(mstBranch.getBusinessUnit()) ){
+                        result.add( BranchDto.builder()
+                                .branchCode(mstBranch.getBranchCode())
+                                .branchName(mstBranch.getBranchName())
+                                .build());
+                    }
+                }
             }
 
             return result;

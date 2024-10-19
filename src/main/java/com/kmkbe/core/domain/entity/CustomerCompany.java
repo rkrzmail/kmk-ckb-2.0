@@ -1,5 +1,6 @@
 package com.kmkbe.core.domain.entity;
 
+import com.kmkbe.core.utils.DateTimeUtils;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -53,10 +54,10 @@ public class CustomerCompany implements Serializable {
     private String identityNo = "";
 
     @Column
-    private Instant identityIssuedDate = Instant.now();
+    private Instant identityIssuedDate = DateTimeUtils.now();
 
     @Column
-    private Instant identityExpiredDate = Instant.now();
+    private Instant identityExpiredDate = DateTimeUtils.now();
 
     @Column(length = 1000)
     private String companyAddress = "";
@@ -92,7 +93,7 @@ public class CustomerCompany implements Serializable {
     private String ownershipStatus = "";
 
     @Column
-    private Instant staySince = Instant.now();
+    private Instant staySince = DateTimeUtils.now();
 
     @Column // precision = 7, scale = 2
     private Double stayLength = 0.0;

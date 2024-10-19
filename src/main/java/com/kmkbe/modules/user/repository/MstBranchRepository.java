@@ -18,9 +18,12 @@ public interface MstBranchRepository extends JpaRepository<MstBranch, String>, J
                     from
                         users.mst_branch
                     where
+                        business_unit = 'CBU' and 
+                        ( 
                          city like '%' || :city || '%'
                       or kelurahan like '%' || :kelurahan || '%'
                       or kecamatan like '%' || :kecamatan || '%'
+                      )
                     order by
                         branch_id desc
                     limit 1

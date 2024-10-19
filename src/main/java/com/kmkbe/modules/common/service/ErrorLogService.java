@@ -1,5 +1,6 @@
 package com.kmkbe.modules.common.service;
 
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.HttpUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.core.domain.entity.ErrorLog;
@@ -39,7 +40,7 @@ public class ErrorLogService {
             errorLog.setMethodName(thrownElement.getMethodName());
             errorLog.setRequestParam(ObjectUtils.jsonToStr(HttpUtils.createRequestLog(servletRequest, HttpUtils.DEFAULT_MAX_PAYLOAD_LENGTH)));
             errorLog.setUsrCrt("SYSTEM");
-            errorLog.setDtmCrt(Instant.now());
+            errorLog.setDtmCrt(DateTimeUtils.now());
             errorLogRepository.save(errorLog);
         } catch (Exception e) {
             log.error("create, error {}", e.getMessage());

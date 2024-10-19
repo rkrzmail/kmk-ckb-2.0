@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.services;
 import com.kmkbe.core.domain.entity.OtpLog;
 import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.OtpRepository;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
 import com.kmkbe.modules.customer.service.OtpService;
 import org.assertj.core.api.Assertions;
@@ -39,8 +40,8 @@ public class OtpServicesTest {
     @DisplayName("Should return true if otp expired date is after +5 minutes")
     void checkExpirationTime() {
         OtpLog otp = new OtpLog();
-        otp.setExpiredDate(Instant.now().plus(5, ChronoUnit.MINUTES));
-        Assertions.assertThat(otp.getExpiredDate()).isAfter(Instant.now());
+        otp.setExpiredDate(DateTimeUtils.now().plus(5, ChronoUnit.MINUTES));
+        Assertions.assertThat(otp.getExpiredDate()).isAfter(DateTimeUtils.now());
     }
 
     @Test

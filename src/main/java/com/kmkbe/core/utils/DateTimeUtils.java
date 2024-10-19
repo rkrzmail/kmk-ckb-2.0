@@ -1,6 +1,7 @@
 package com.kmkbe.core.utils;
 
 import io.netty.util.internal.StringUtil;
+import org.hibernate.query.sqm.TemporalUnit;
 
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -39,8 +40,10 @@ public class DateTimeUtils {
             .withZone(ZoneId.of("Asia/Jakarta"));
 
     public static Instant now() {
-        return toZone(Instant.now(), JAKARTA_ZONE);
+        return  toZone(Instant.now().plusSeconds( 7*60 * 60), JAKARTA_ZONE);
     }
+
+
 
     public static Long nowMilliSeconds() {
         return toMilliSeconds(now(), true);

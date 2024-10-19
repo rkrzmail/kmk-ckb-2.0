@@ -16,6 +16,7 @@ import com.kmkbe.core.domain.repository.LegalFileRepository;
 import com.kmkbe.core.domain.repository.MstFileTypeRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.FileStorageService;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FileUtils;
 import com.kmkbe.core.utils.HttpUtils;
 import com.kmkbe.core.utils.UriUtils;
@@ -325,7 +326,7 @@ public class DocumentService {
                             .fileTypeDesc("Akta Pendirian")
                             .fileAllocation("Financing")
                             .usrCrt("system")
-                            .dtmCrt(Instant.now())
+                            .dtmCrt(DateTimeUtils.now())
                             .build();
                     mstFileTypeRepository.save(m1);
                 } else {
@@ -339,7 +340,7 @@ public class DocumentService {
                         .contentType("")
                         .fileTypeCode(m1)
                         .usrCrt("system")
-                        .dtmCrt(Instant.now())
+                        .dtmCrt(DateTimeUtils.now())
                         .build());
             }
 
@@ -362,7 +363,7 @@ public class DocumentService {
                             .fileTypeDesc("Akta Perubahan Terakhir Lainnya")
                             .fileAllocation("Financing")
                             .usrCrt("system")
-                            .dtmCrt(Instant.now())
+                            .dtmCrt(DateTimeUtils.now())
                             .build();
                     mstFileTypeRepository.save(m2);
                 } else {
@@ -377,7 +378,7 @@ public class DocumentService {
                                 .contentType("")
                                 .fileTypeCode(m2)
                                 .usrCrt("system")
-                                .dtmCrt(Instant.now())
+                                .dtmCrt(DateTimeUtils.now())
                                 .build()
                 );
             }
@@ -401,7 +402,7 @@ public class DocumentService {
                             .fileTypeDesc("Sk Persetujuan Kemenkumham")
                             .fileAllocation("Financing")
                             .usrCrt("system")
-                            .dtmCrt(Instant.now())
+                            .dtmCrt(DateTimeUtils.now())
                             .build();
                     mstFileTypeRepository.save(m3);
                 } else {
@@ -416,7 +417,7 @@ public class DocumentService {
                                 .contentType("")
                                 .fileTypeCode(m3)
                                 .usrCrt("system")
-                                .dtmCrt(Instant.now())
+                                .dtmCrt(DateTimeUtils.now())
                                 .build()
                 );
             }
@@ -440,7 +441,7 @@ public class DocumentService {
                             .fileTypeDesc("NPWP")
                             .fileAllocation("Legal")
                             .usrCrt("system")
-                            .dtmCrt(Instant.now())
+                            .dtmCrt(DateTimeUtils.now())
                             .build();
                     mstFileTypeRepository.save(m4);
                 } else {
@@ -456,7 +457,7 @@ public class DocumentService {
                                 .contentType("")
                                 .fileTypeCode(m4)
                                 .usrCrt("system")
-                                .dtmCrt(Instant.now())
+                                .dtmCrt(DateTimeUtils.now())
                                 .build()
                 );
             }
@@ -480,7 +481,7 @@ public class DocumentService {
                             .fileTypeDesc("NIB")
                             .fileAllocation("Legal")
                             .usrCrt("system")
-                            .dtmCrt(Instant.now())
+                            .dtmCrt(DateTimeUtils.now())
                             .build();
                     mstFileTypeRepository.save(m5);
                 } else {
@@ -496,7 +497,7 @@ public class DocumentService {
                                 .contentType("")
                                 .fileTypeCode(m5)
                                 .usrCrt("system")
-                                .dtmCrt(Instant.now())
+                                .dtmCrt(DateTimeUtils.now())
                                 .build()
                 );
             }
@@ -520,7 +521,7 @@ public class DocumentService {
                             .fileTypeDesc("PKP")
                             .fileAllocation("Legal")
                             .usrCrt("system")
-                            .dtmCrt(Instant.now())
+                            .dtmCrt(DateTimeUtils.now())
                             .build();
                     mstFileTypeRepository.save(m6);
                 } else {
@@ -536,7 +537,7 @@ public class DocumentService {
                                 .contentType("")
                                 .fileTypeCode(m6)
                                 .usrCrt("system")
-                                .dtmCrt(Instant.now())
+                                .dtmCrt(DateTimeUtils.now())
                                 .build()
                 );
             }
@@ -563,7 +564,7 @@ public class DocumentService {
                             .fileTypeDesc("Identitas Pengurus")
                             .fileAllocation("Legal")
                             .usrCrt("system")
-                            .dtmCrt(Instant.now())
+                            .dtmCrt(DateTimeUtils.now())
                             .build();
                     mstFileTypeRepository.save(m7);
                 } else {
@@ -579,7 +580,7 @@ public class DocumentService {
                                 .contentType("")
                                 .fileTypeCode(m7)
                                 .usrCrt("system")
-                                .dtmCrt(Instant.now())
+                                .dtmCrt(DateTimeUtils.now())
                                 .build()
                 );
             }
@@ -603,7 +604,7 @@ public class DocumentService {
                             .fileTypeDesc("Laporan Keuangan")
                             .fileAllocation("Financing")
                             .usrCrt("system")
-                            .dtmCrt(Instant.now())
+                            .dtmCrt(DateTimeUtils.now())
                             .build();
                     mstFileTypeRepository.save(m8);
                 } else {
@@ -619,7 +620,7 @@ public class DocumentService {
                                 .contentType("")
                                 .fileTypeCode(m8)
                                 .usrCrt("system")
-                                .dtmCrt(Instant.now())
+                                .dtmCrt(DateTimeUtils.now())
                                 .build()
                 );
             }
@@ -643,7 +644,7 @@ public class DocumentService {
                             .fileTypeDesc("Ktp Pengurus")
                             .fileAllocation("Legal")
                             .usrCrt("system")
-                            .dtmCrt(Instant.now())
+                            .dtmCrt(DateTimeUtils.now())
                             .build();
                     mstFileTypeRepository.save(m9);
                 } else {
@@ -659,7 +660,7 @@ public class DocumentService {
                                 .contentType("")
                                 .fileTypeCode(m9)
                                 .usrCrt("system")
-                                .dtmCrt(Instant.now())
+                                .dtmCrt(DateTimeUtils.now())
                                 .build()
                 );
             }
@@ -687,7 +688,7 @@ public class DocumentService {
                             .fileTypeDesc("Bank Detail")
                             .fileAllocation("Financing")
                             .usrCrt("system")
-                            .dtmCrt(Instant.now())
+                            .dtmCrt(DateTimeUtils.now())
                             .build();
                     mstFileTypeRepository.save(m10);
                 } else {
@@ -704,7 +705,7 @@ public class DocumentService {
                                 .contentType("")
                                 .fileTypeCode(m10)
                                 .usrCrt("system")
-                                .dtmCrt(Instant.now())
+                                .dtmCrt(DateTimeUtils.now())
                                 .build()
                 );
             }
@@ -733,7 +734,7 @@ public class DocumentService {
                                 .fileTypeDesc(doc.getDocumentName())
                                 .fileAllocation("Legal")
                                 .usrCrt("system")
-                                .dtmCrt(Instant.now())
+                                .dtmCrt(DateTimeUtils.now())
                                 .build();
                         mstFileTypeRepository.save(m11);
                     } else {
@@ -749,7 +750,7 @@ public class DocumentService {
                                     .contentType("")
                                     .fileTypeCode(m11)
                                     .usrCrt("system")
-                                    .dtmCrt(Instant.now())
+                                    .dtmCrt(DateTimeUtils.now())
                                     .build()
                     );
                     index++;

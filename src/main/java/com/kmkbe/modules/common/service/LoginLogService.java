@@ -4,6 +4,7 @@ import com.kmkbe.core.domain.constant.LoginRole;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.LoginLog;
 import com.kmkbe.core.domain.repository.LoginLogRepository;
+import com.kmkbe.core.utils.DateTimeUtils;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,7 +28,7 @@ public class LoginLogService {
         }
 
         loginLog.setLoginLogCode(UUID.randomUUID());
-        loginLog.setLoginDate(Instant.now());
+        loginLog.setLoginDate(DateTimeUtils.now());
         loginLog.setLoginRole(role.name()); // need to change
         loginLog.setIsLogout(false);
         loginLogRepository.save(loginLog);
@@ -42,8 +43,8 @@ public class LoginLogService {
 
             final LoginLog loginLog = find.get();
             loginLog.setIsLogout(true);
-            loginLog.setLogoutDate(Instant.now());
-            loginLog.setUsrLogout(Instant.now());
+            loginLog.setLogoutDate(DateTimeUtils.now());
+            loginLog.setUsrLogout(DateTimeUtils.now());
             loginLogRepository.save(loginLog);
         } catch (Exception e) {
             log.error("error logout: {}", e.getMessage());

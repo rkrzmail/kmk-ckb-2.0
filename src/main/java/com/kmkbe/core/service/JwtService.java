@@ -1,5 +1,6 @@
 package com.kmkbe.core.service;
 
+import com.kmkbe.core.utils.DateTimeUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -103,7 +104,7 @@ public class JwtService {
     }
 
     public String generateOauth2Token(Authentication authentication) {
-        Instant now = Instant.now();
+        Instant now = DateTimeUtils.now();
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("self")

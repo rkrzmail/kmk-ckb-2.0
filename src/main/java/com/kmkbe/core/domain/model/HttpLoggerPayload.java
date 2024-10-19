@@ -1,5 +1,6 @@
 package com.kmkbe.core.domain.model;
 
+import com.kmkbe.core.utils.DateTimeUtils;
 import lombok.*;
 import org.bson.Document;
 
@@ -25,7 +26,7 @@ public class HttpLoggerPayload {
         doc.put("request", request);
         doc.put("response", response);
         doc.put("controller", controller);
-        doc.put("timestamp", Date.from(Instant.now()));
+        doc.put("timestamp", Date.from(DateTimeUtils.now()));
         return doc;
     }
 }

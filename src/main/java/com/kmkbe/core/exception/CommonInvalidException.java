@@ -3,6 +3,7 @@ package com.kmkbe.core.exception;
 import io.netty.util.internal.StringUtil;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -12,6 +13,8 @@ import java.util.Map;
 public class CommonInvalidException extends RuntimeException {
     private String title;
     private String headerMessage;
+
+    @Setter
     private String message;
     private Action action;
 
@@ -21,6 +24,8 @@ public class CommonInvalidException extends RuntimeException {
         private String title;
         private String uri;
     }
+
+
 
     public Map<String, Object> getPayload() {
         Map<String, Object> result = new HashMap<>(Map.of(

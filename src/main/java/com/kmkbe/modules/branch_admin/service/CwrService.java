@@ -221,7 +221,7 @@ public class CwrService {
                             .realisationAmt(inquiryCwr.getRealisationAmt())
                             .status(inquiryCwr.getCwrStatDescr())
                             .usrCrt(user.getUsername())
-                            .dtmCrt(Instant.now())
+                            .dtmCrt(DateTimeUtils.now())
                             .build();
                     cwrRepository.save(cwr);
                 }

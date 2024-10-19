@@ -25,6 +25,9 @@ public class BaseMstRemoteResponseDto<T> {
     @JsonProperty("RowVersion")
     private Object rowVersion;
 
+    @JsonProperty("Count")
+    private Object count;
+
     @JsonProperty("ReturnObject")
     @JsonAlias("Data")
     private T data;

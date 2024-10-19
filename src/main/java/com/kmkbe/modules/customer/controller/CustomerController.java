@@ -15,6 +15,7 @@ import com.kmkbe.modules.customer.service.*;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
+import com.kmkbe.modules.user.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -25,6 +26,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
+import java.time.Duration;
 
 @RestController
 @RequestMapping("/api/v1/customer")
@@ -39,6 +41,7 @@ public class CustomerController {
     private final CustomerPersonalService customerPersonalService;
     private final CustomerDashboardService customerDashboardService;
     private final InvoiceService invoiceService;
+    private final CustomerDashboardListService customerDashboardListService;
     private final DocumentService documentService;
     private final AgreementService agreementService;
 
@@ -58,6 +61,12 @@ public class CustomerController {
         return new CommonResult<CustomerDto>().success(result);
     }
 
+    private void setMessageIfError(String data, String message){
+        if (Utils.isEmptyOrNull(data)) {
+            throw new IllegalArgumentException(message);
+        }
+    }
+
     @PutMapping
     @Transactional
     public CommonResult<CustomerDto> updateCustomer(
@@ -70,6 +79,24 @@ public class CustomerController {
             if (request.getCompany() == null) {
                 throw new IllegalArgumentException("Company cannot be null");
             }
+
+
+            //mandaroty
+            setMessageIfError(request.getCompany().getIdentityNo(),"All field  cannot be null");
+            setMessageIfError(request.getCompany().getCompanyAddress(), "All field cannot be null");
+            setMessageIfError(request.getAddress().getZipCode(), "All field cannot be null");
+            setMessageIfError(String.valueOf(request.getCompany().getIdentityIssuedDate()),"All field cannot be null");
+            setMessageIfError(String.valueOf(request.getCompany().getStaySince()),"All field cannot be null");
+            setMessageIfError(String.valueOf(request.getCompany().getOwnershipStatus()),"All field cannot be null");
+            setMessageIfError(String.valueOf(request.getCompany().getCompanyModel()),"All field cannot be null");
+            setMessageIfError(String.valueOf(request.getCompany().getCustCompanyType()),"All field cannot be null");
+            //tanggal seejak
+            if (request.getCompany().getStaySince().getTime()> Utils.NowDate().getTime()){
+                setMessageIfError(String.valueOf(request.getCompany().getCustCompanyType()),"Tanggal Sejak tidak boleh lebih dari hari ini");
+            }
+
+
+
 
             CustomerCompany company = customerCompanyService.update(
                     customer,
@@ -107,23 +134,47 @@ public class CustomerController {
         );
     }
 
-    @GetMapping("/invoices/due-date")
-    public CommonResult<PaginationResult<PostedInvoiceDto>> getPostedInvoicesDue(
+    //PostedInvoiceDto
+   /* @GetMapping("/invoices/due-date")
+    public CommonResult<PaginationResult<CustomerCreditFacilityDto>> getPostedInvoicesDue(
             Authentication authentication,
             PaginationRequest request
     ) throws SignatureException {
-        return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
+        return new CommonResult<PaginationResult<CustomerCreditFacilityDto>>().success(
                 invoiceService.customerDueDateInvoices(authentication, request)
         );
-    }
+    }*/
 
-    @GetMapping("/credit-facilities")
+   /* @GetMapping("/credit-facilities")
     public CommonResult<PaginationResult<CustomerCreditFacilityDto>> getActiveCreditFacilities(
             Authentication authentication,
             PaginationRequest request
     ) throws SignatureException {
         return new CommonResult<PaginationResult<CustomerCreditFacilityDto>>().success(
                 invoiceService.customerCreditFacilities(authentication, request)
+        );
+    }*/
+
+    @GetMapping("/invoices/due-date")
+    public CommonResult<PaginationResult<CustomerCreditFacilityDueDateDto>> getPostedInvoicesDue(
+            Authentication authentication,
+            PaginationRequest request
+    ) throws SignatureException {
+        return new CommonResult<PaginationResult<CustomerCreditFacilityDueDateDto>>().success(
+                customerDashboardListService.listinvoicesduedate(authentication, request)
+        );
+
+    }
+
+    @GetMapping("/credit-facilities")
+    public CommonResult<PaginationResult<CustomerCreditFacilityNewDto>> getActiveCreditFacilities(
+            Authentication authentication,
+            PaginationRequest request
+    ) throws SignatureException {
+        //invoiceService.customerCreditFacilities(authentication, request)
+
+        return new CommonResult<PaginationResult<CustomerCreditFacilityNewDto>>().success(
+                customerDashboardListService.listcreditfacilities(authentication, request)
         );
     }
 

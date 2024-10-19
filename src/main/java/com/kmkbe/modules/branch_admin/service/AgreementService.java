@@ -204,7 +204,7 @@ public class AgreementService {
                         .filePath(FileUtils.getFilePathFromFullPath(uploadedPath))
                         .contentType(multipartFile.getContentType())
                         .usrCrt(user.getUsername())
-                        .dtmCrt(Instant.now())
+                        .dtmCrt(DateTimeUtils.now())
                         .build();
 
                 agreementFileRepository.save(agreementFile);
@@ -213,7 +213,7 @@ public class AgreementService {
 
                 agreementFile.setFileName(uploadName);
                 agreementFile.setFilePath(FileUtils.getFilePathFromFullPath(uploadedPath));
-                agreementFile.setDtmUpd(Instant.now());
+                agreementFile.setDtmUpd(DateTimeUtils.now());
                 agreementFile.setUsrUpd(user.getUsername());
                 agreementFileRepository.save(agreementFile);
             }
@@ -250,6 +250,7 @@ public class AgreementService {
 
                 data = response.getData();
             } catch (Exception e) {
+                ex.setMessage(String.valueOf(e.getMessage()));
                 throw ex;
             }
 
@@ -266,6 +267,8 @@ public class AgreementService {
                         .currency(data.getFirst().getCurrency())
                         .disburseAmt(new BigDecimal(data.getFirst().getNtfAmt(), MathContext.DECIMAL64))
                         .build();
+            }else{
+                ex.setMessage("Failed to inquiry Agreement result null ");
             }
 
             throw ex;
@@ -329,7 +332,7 @@ public class AgreementService {
                                     .status(inquiryAgreement.getStatus())
                                     .productOffering(inquiryAgreement.getProductOffering())
                                     .usrCrt(user.getUsrCrt())
-                                    .dtmCrt(Instant.now())
+                                    .dtmCrt(DateTimeUtils.now())//DateTimeUtils.now()
                                     .build()
                     );
                 }

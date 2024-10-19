@@ -5,10 +5,7 @@ import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.*;
-import com.kmkbe.core.domain.repository.BouwheerRepository;
-import com.kmkbe.core.domain.repository.FinancingHdrRepository;
-import com.kmkbe.core.domain.repository.LegalFileRepository;
-import com.kmkbe.core.domain.repository.ProductRepository;
+import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.exception.LoanDocMandatoryException;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
@@ -26,6 +23,8 @@ import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import com.kmkbe.modules.remote.service.CurrencyRemoteService;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.modules.remote.service.InvoiceRemoteDto;
+import com.kmkbe.modules.user.entity.MstBranch;
+import com.kmkbe.modules.user.repository.MstBranchRepository;
 import io.netty.util.internal.StringUtil;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
@@ -62,6 +61,9 @@ public class LoanSubmissionService {
     private final CurrencyRemoteService currencyRemoteService;
     private final ExistingCustomerService existingCustomerService;
 
+    private final CustomerCompanyRepository customerCompanyRepository;
+    private final CustomerPersonalRepository customerPersonalRepository;
+
     private final InvoiceService invoiceService;
     private final FinancingHdrService financingHdrService;
     private final FinancingDtlService financingDtlService;
@@ -70,6 +72,8 @@ public class LoanSubmissionService {
     private final LegalFileRepository legalFileRepository;
     private final ImportantNotesService importantNotesService;
     private final FinancingHdrRepository financingHdrRepository;
+    private final MstBranchRepository mstBranchRepository;
+
 
     public List<PostedInvoiceDto> fetchActiveInvoice(
             Authentication authentication,
@@ -458,17 +462,44 @@ public class LoanSubmissionService {
                                 .stream()
                                 .noneMatch(file -> file.getFileTypeCode().getFileTypeCode().equals(mstFileType.getFileTypeCode()))
                 ) {
-                    throw new LoanDocMandatoryException("Harap upload semua dokumen mandatory terlebih dahulu");
+
+                    throw new LoanDocMandatoryException("Harap upload semua dokumen mandatory terlebih dahulu");//AGGREMENT01
                 }
             }
+
+
+
 
 
             final FinancingHdr financing = financingHdrService.getByCode(request.getFinancingHdrCode());
             {
                 financing.setFinancingStatus(FinancingStatus.NEW.name());
                 financing.setFinancingStep(FinancingStatus.NEW.name());
-                financing.setDtmUpd(Instant.now());
+                financing.setDtmUpd(DateTimeUtils.now());
                 financing.setUsrUpd(customer.getCustName());
+
+
+                try {
+                    String city = "", kelurahan = "", kecamatan = "";
+                    if (financing.getCustomer() != null) {
+                        if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
+                            if (financing.getCustomer().getCompany() != null) {
+                                city = financing.getCustomer().getCompany().getCity();
+                                kelurahan = financing.getCustomer().getCompany().getKelurahan();
+                                kecamatan = financing.getCustomer().getCompany().getKecamatan();
+                            }
+                        } else {
+                            if (financing.getCustomer().getPersonal() != null) {
+                                city = financing.getCustomer().getPersonal().getCity();
+                                kelurahan = financing.getCustomer().getPersonal().getKelurahan();
+                                kecamatan = financing.getCustomer().getPersonal().getKecamatan();
+                            }
+                        }
+                    }
+                    Optional<MstBranch>  mstBranch = mstBranchRepository.findTopLikeBranchNameRawQuery(city,kelurahan,kecamatan);
+                    mstBranch.ifPresent(financing::setMstBranch);
+                }catch (Exception ignored){}
+
                 financingHdrRepository.save(financing);
             }
 
@@ -479,6 +510,7 @@ public class LoanSubmissionService {
                     .map((item) ->
                             InvoiceEmailPayload.builder()
                                     //.seq(item.getInvoiceSeqno())
+                                    .invoiceNo(item.getInvoice().getCustInvNo())
                                     .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
                                     .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                                     .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
@@ -486,6 +518,9 @@ public class LoanSubmissionService {
                                     .bouwheerName(createdFinancing.getBouwheer().getBouwheerName())
                                     .build()
                     ).toList();
+
+
+
 
             final double totalFeeAmt =
                     createdFinancing.getAdminFeeAmt()
@@ -495,13 +530,31 @@ public class LoanSubmissionService {
                             + createdFinancing.getProvisionFeeAmt()
                             + createdFinancing.getSurveyFeeAmtNett();
 
+            String phoneNumber = createdFinancing.getCustomer().getCustMobilePhone();
+            if(createdFinancing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
+                Optional<CustomerCompany> customerCompany = customerCompanyRepository.findByCustomer(createdFinancing.getCustomer());
+                if (customerCompany.isPresent()){
+                    if (customerCompany.get().getPhone()!=null && !customerCompany.get().getPhone().equalsIgnoreCase("")){
+                        phoneNumber = customerCompany.get().getPhone();
+                    }
+                }
+            }else{
+                Optional<CustomerPersonal> customerPersonal = customerPersonalRepository.findByCustomer(createdFinancing.getCustomer());
+                if (customerPersonal.isPresent()){
+                    if (customerPersonal.get().getPhone()!=null && !customerPersonal.get().getPhone().equalsIgnoreCase("")){
+                        phoneNumber = customerPersonal.get().getPhone();
+                    }
+                }
+            }
+
             emailService.sendNotificationLoanDisbursement(
                     customer,
                     LoanDisburseEmailPayload.builder()
                             .financingCode(createdFinancing.getFinancingHdrCode().toString())
                             .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
-                            .companyName(createdFinancing.getBouwheer().getBouwheerName())
-                            .phoneNumber(createdFinancing.getCustomer().getCustMobilePhone())
+                            //.companyName(createdFinancing.getBouwheer().getBouwheerName())
+                            .companyName(createdFinancing.getCustomer().getCustName())
+                            .phoneNumber(phoneNumber)
                             .tenor(createdFinancing.getTenor())
                             .financingCode(createdFinancing.getFinancingHdrCode().toString())
                             .financingDueDate(DateTimeUtils.formatToDate(createdFinancing.getFinancingDueDate()))

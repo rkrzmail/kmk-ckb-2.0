@@ -26,11 +26,10 @@ import java.util.List;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class MstRemoteService {
+public class InquiryDataAgreementService {
     private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
     private final BaseRemoteService baseRemoteService;
-
     /**
      * <p>Currently is for retrieve input option with references from @ConfinsUrlService.RefMasterTypeCode</p>
      */
@@ -93,7 +92,7 @@ public class MstRemoteService {
                     headers
             );
 
-            String url = baseRemoteService.Fou_Generic_GetPagingObjectBySQL();
+            String url = baseRemoteService.Agrmnt_GetAgrmntByAgrmntNoL();
             final ResponseEntity<BaseMstRemoteResponseDto<List<AreaRemoteDto>>> response = restTemplate.exchange(
                     url,
                     HttpMethod.POST,
@@ -109,9 +108,5 @@ public class MstRemoteService {
         }
     }
 
-     public BaseMstRemoteResponseDto<List<AreaRemoteDto>> dummyZipCode() throws JsonProcessingException {
-        String r = "{\"Data\":[{\"AreaCode1\":\"2 X 11 DUMMY LINGKUANG\",\"AreaCode2\":\"SICINCIN\",\"Zipcode\":\"25584\",\"City\":\"DUMMY PADANG PARIAMAN\",\"Province\":\"SUMATERA BARAT\",\"RefZipcodeId\":213025,\"IsActive\":true,\"SubZipcode\":\"\",\"PhnArea\":\"\"},{\"AreaCode1\":\"2 X 11 ENAM LINGKUANG\",\"AreaCode2\":\"LUBUK PANDAN\",\"Zipcode\":\"25584\",\"City\":\"DUMMY PADANG PARIAMAN\",\"Province\":\"SUMATERA BARAT\",\"RefZipcodeId\":213026,\"IsActive\":true,\"SubZipcode\":\"\",\"PhnArea\":\"\"},{\"AreaCode1\":\"2 X 11 ENAM LINGKUANG\",\"AreaCode2\":\"SUNGAI ASAM\",\"Zipcode\":\"25584\",\"City\":\"DUMMY PADANG PARIAMAN\",\"Province\":\"SUMATERA BARAT\",\"RefZipcodeId\":213027,\"IsActive\":true,\"SubZipcode\":\"\",\"PhnArea\":\"\"},{\"AreaCode1\":\"2 X 11 KAYU TANAM\",\"AreaCode2\":\"GUGUAK\",\"Zipcode\":\"25585\",\"City\":\"DUMMY PADANG PARIAMAN\",\"Province\":\"SUMATERA BARAT\",\"RefZipcodeId\":213088,\"IsActive\":true,\"SubZipcode\":\"\",\"PhnArea\":\"\"},{\"AreaCode1\":\"2 X 11 KAYU TANAM\",\"AreaCode2\":\"KAYU TANAM\",\"Zipcode\":\"25585\",\"City\":\"DUMMY PADANG PARIAMAN\",\"Province\":\"SUMATERA BARAT\",\"RefZipcodeId\":213087,\"IsActive\":true,\"SubZipcode\":\"\",\"PhnArea\":\"\"},{\"AreaCode1\":\"2 X 11 KAYU TANAM\",\"AreaCode2\":\"ANDURIANG\",\"Zipcode\":\"25585\",\"City\":\"DUMMY PADANG PARIAMAN\",\"Province\":\"SUMATERA BARAT\",\"RefZipcodeId\":213089,\"IsActive\":true,\"SubZipcode\":\"\",\"PhnArea\":\"\"},{\"AreaCode1\":\"2 X 11 KAYU TANAM\",\"AreaCode2\":\"KAPALO HILALANG\",\"Zipcode\":\"25585\",\"City\":\"DUMMY PADANG PARIAMAN\",\"Province\":\"SUMATERA BARAT\",\"RefZipcodeId\":213090,\"IsActive\":true,\"SubZipcode\":\"\",\"PhnArea\":\"\"},{\"AreaCode1\":\"ABAB\",\"AreaCode2\":\"PRAMBATAN\",\"Zipcode\":\"31315\",\"City\":\"DUMMY PENUKAL ABAB LEMATANG ILIR\",\"Province\":\"SUMATERA SELATAN\",\"RefZipcodeId\":220205,\"IsActive\":true,\"SubZipcode\":\"\",\"PhnArea\":\"\"},{\"AreaCode1\":\"ABAB\",\"AreaCode2\":\"TANJUNG KURUNG\",\"Zipcode\":\"31315\",\"City\":\"DUMMY PENUKAL ABAB LEMATANG ILIR\",\"Province\":\"SUMATERA SELATAN\",\"RefZipcodeId\":220203,\"IsActive\":true,\"SubZipcode\":\"\",\"PhnArea\":\"\"},{\"AreaCode1\":\"ABAB\",\"AreaCode2\":\"PENGABUAN\",\"Zipcode\":\"31315\",\"City\":\"DUMMY PENUKAL ABAB LEMATANG ILIR\",\"Province\":\"SUMATERA SELATAN\",\"RefZipcodeId\":220204,\"IsActive\":true,\"SubZipcode\":\"\",\"PhnArea\":\"\"}],\"Count\":83744,\"HeaderObj\":{\"ResponseTime\":\"68 ms\",\"StatusCode\":\"200\",\"Message\":\"Success\",\"ErrorMessages\":null},\"StatusCode\":\"200\",\"Message\":\"Success\",\"ErrorMessages\":null,\"RowVersion\":null}";
-        return objectMapper.readValue(r, new TypeReference<>() {
-        });
-    }
+
 }

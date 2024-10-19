@@ -3,6 +3,7 @@ package com.kmkbe.modules.loan_submission.service;
 
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.service.FileStorageService;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.dto.LegalFileDto;
@@ -78,9 +79,9 @@ public class LegalFileService {
                 legalFile.setContentType(file.getContentType());
                 legalFile.setFileTypeCode(fileType);
                 legalFile.setUsrCrt(customer.getCustName());
-                legalFile.setDtmCrt(Instant.now());
+                legalFile.setDtmCrt(DateTimeUtils.now());
                 legalFile.setUsrUpd(customer.getCustName());
-                legalFile.setDtmUpd(Instant.now());
+                legalFile.setDtmUpd(DateTimeUtils.now());
             }
 
             legalFileRepository.save(legalFile);

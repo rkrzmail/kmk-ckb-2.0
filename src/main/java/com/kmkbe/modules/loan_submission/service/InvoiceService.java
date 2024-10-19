@@ -183,9 +183,16 @@ public class InvoiceService {
             }
 
             Customer customer = CustomerUtils.authenticateCustomer(authentication);
-            final Page<FinancingDtl> financingDtlPage = financingDtlRepository.findAll(
+           /* final Page<FinancingDtl> financingDtlPage = financingDtlRepository.findAll(
                     Specification.where(
                             FinancingDtlSpec.custDashboardFilterBy(customer, request.getSearchBy(), request.getSearchValue())
+                    ),
+                    PageRequest.of(pageNo, pageSize)
+            );
+*/
+            final Page<FinancingDtl> financingDtlPage = financingDtlRepository.findAll(
+                    Specification.where(
+                            FinancingDtlSpec.custDashboardFilterBy(customer, null, null)
                     ),
                     PageRequest.of(pageNo, pageSize)
             );
@@ -197,10 +204,10 @@ public class InvoiceService {
         }
     }
 
-    public PaginationResult<PostedInvoiceDto> customerDueDateInvoices(
+    public PaginationResult<CustomerCreditFacilityDto> customerDueDateInvoices(
             Authentication authentication,
             PaginationRequest request
-    ) {
+    )throws SignatureException {
         try {
             int pageNo = 0, pageSize = 10;
 
@@ -215,12 +222,25 @@ public class InvoiceService {
                 pageNo = pageNo - 1;
             }
 
-            return PaginationResult.<PostedInvoiceDto>builder()
+
+            Customer customer = CustomerUtils.authenticateCustomer(authentication);
+            final Page<FinancingDtl> financingDtlPage = financingDtlRepository.findAll(
+                    Specification.where(
+                            FinancingDtlSpec.custDashboardFilterBy(customer, request.getSearchBy(), request.getSearchValue())
+                    ),
+                    PageRequest.of(pageNo, pageSize)
+            );
+
+
+            //Customer customer = CustomerUtils.authenticateCustomer(authentication);
+            //List<Invoice> invoices  = invoiceRepository.findAllByCustomer(customer);
+            /*return PaginationResult.<PostedInvoiceDto>builder()
                     .currentPage(pageNo + 1)
                     .totalData(0L)
                     .totalPage(1)
-                    .list(new ArrayList<>())
-                    .build();
+                    .list(invoices)
+                    .build();*/
+            return paginateCustDashboard(financingDtlPage, pageNo, pageSize);
         } catch (Exception e) {
             log.error("customerDueDateInvoice: error {}", e.getMessage());
             throw e;
@@ -309,6 +329,66 @@ public class InvoiceService {
         }
 
         final int startRow = pageNo * pageSize + 1;
+        final List<CustomerCreditFacilityDto> results = IntStream.range(0, financingDtlPage.getNumberOfElements())
+                .mapToObj((i) -> {
+                    String agreementCode = null;
+                    boolean hasAction = false;
+
+                    if (
+                            financingDtlPage.getContent().get(i).getFinancingHdr().getAgreement() != null
+                                    && !financingDtlPage.getContent().get(i).getFinancingHdr().getAgreement().isEmpty()
+                    ) {
+                        Agreement agreement = financingDtlPage.getContent().get(i).getFinancingHdr().getAgreement().stream().toList().getFirst();
+                        agreementCode = agreement.getAgreementCode();
+                        hasAction = agreement.getAgreementFile() != null;
+                    }
+
+                    MappedFinancingStatus status = new MappedFinancingStatus(
+                            financingDtlPage.getContent().get(i).getFinancingHdr(),
+                            MappedFinancingStatus.Type.Customer
+                    );
+
+                    return CustomerCreditFacilityDto.builder()
+                            //.no(startRow + i)
+                            .agreementCode(agreementCode)
+                            .bouwheerCode(financingDtlPage.getContent().get(i).getFinancingHdr().getBouwheer().getBouwheerCode().toString())
+                            .bouwheerName(financingDtlPage.getContent().get(i).getFinancingHdr().getBouwheer().getBouwheerName())
+                            .invoiceAmount(new BigDecimal(financingDtlPage.getContent().get(i).getInvoice().getInvoiceAmt(), MathContext.DECIMAL64))
+                            .invoiceDescription(StringUtil.isNullOrEmpty(financingDtlPage.getContent().get(i).getInvoice().getInvoiceDescription())
+                                    ? "Invoice By Trakindo"
+                                    : financingDtlPage.getContent().get(i).getInvoice().getInvoiceDescription())
+                            .status(status.getStatus())
+                            .statusLabel(status.getLabel())
+                            .invoiceDate(Date.from(financingDtlPage.getContent().get(i).getInvoice().getInvoiceDate()))
+                            .facilityDueDate(null)
+                            .verifDate(null)
+                            .disburseDate(Date.from(financingDtlPage.getContent().get(i).getBouwheerPaidDate()))
+                            .hasAction(hasAction)
+                            .build();
+                })
+                .toList();
+
+        return PaginationResult.<CustomerCreditFacilityDto>builder()
+                .currentPage(pageNo + 1)
+                .totalData(financingDtlPage.getTotalElements())
+                .totalPage(financingDtlPage.getTotalPages())
+                .list(results)
+                .build();
+    }
+
+
+    public PaginationResult<CustomerCreditFacilityDto> pageNikitaDebitur(
+            Page<FinancingDtl> financingDtlPage,
+            int pageNo,
+            int pageSize
+    ) {
+        if (pageNo > 0) {
+            pageNo = pageNo - 1;
+        }
+
+        final int startRow = pageNo * pageSize + 1;
+
+
         final List<CustomerCreditFacilityDto> results = IntStream.range(0, financingDtlPage.getNumberOfElements())
                 .mapToObj((i) -> {
                     String agreementCode = null;

@@ -206,7 +206,7 @@ public class DistributionSubmissionService {
             financingHdr.setFinancingStatus("INPROCESS");
             financingHdr.setFinancingStep("ASSIGNMENT");
             financingHdr.setMstBranch(mstBranch);
-            financingHdr.setDtmUpd(Instant.now());
+            financingHdr.setDtmUpd(DateTimeUtils.now());
             financingHdr.setUsrUpd(authenticateUser.getUsername());
             financingHdrRepository.save(financingHdr);
 
