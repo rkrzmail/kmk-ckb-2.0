@@ -106,6 +106,7 @@ public class CustomerCompanyService {
                 company.setArea(addressRequest.getArea());
                 company.setRt(addressRequest.getRt());
                 company.setRw(addressRequest.getRw());
+                company.setProvince(addressRequest.getProvince());
             }
             company.setPhone(request.getPhone());
             company.setOwnershipStatus(request.getOwnershipStatus());

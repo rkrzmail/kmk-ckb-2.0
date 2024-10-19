@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
+import java.util.Set;
 
 @Builder
 @NoArgsConstructor
@@ -99,4 +100,7 @@ public class Agreement {
 
     @OneToOne(mappedBy = "agreement")
     private AgreementFile agreementFile;
+
+    @OneToMany(mappedBy = "agreement")
+    private Set<DisbursementLog> disbursementLogs;
 }
