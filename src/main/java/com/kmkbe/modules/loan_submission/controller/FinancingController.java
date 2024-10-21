@@ -53,6 +53,12 @@ public class FinancingController {
 
             financingDtlService.updatePaid(request, financingHdr);
 
+
+            try {
+                financingDtlService.paymentReceive(financingHdr);
+            }catch (Exception ignored){
+                //akan ada proses skeduler
+            }
             return new CommonResult<>().success(null, "Success Submitted");
         } catch (Exception e) {
             throw e;
