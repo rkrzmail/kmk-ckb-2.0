@@ -55,7 +55,7 @@ public class FinancingController {
 
 
             try {
-                financingDtlService.paymentReceive(financingHdr);
+                financingDtlService.paymentReceive(request, financingHdr);
             }catch (Exception ignored){
                 //akan ada proses skeduler
             }

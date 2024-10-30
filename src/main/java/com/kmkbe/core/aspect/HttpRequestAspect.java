@@ -1,6 +1,7 @@
 package com.kmkbe.core.aspect;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.kmkbe.core.domain.entity.ApiIntegrationLog;
 import com.kmkbe.core.domain.repository.ApiIntegrationLogRepository;
 import com.kmkbe.core.utils.DateTimeUtils;
@@ -39,6 +40,8 @@ public class HttpRequestAspect {
         String requestStr = "empty", requestHeader = "", responseStr = "";
         String url = "";
         int statusCode = 200;
+
+
         try {
             response = joinPoint.proceed();
             if (response instanceof ResponseEntity<?> responseEntity) {
@@ -58,10 +61,12 @@ public class HttpRequestAspect {
                 message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
             }
 
-            throw new RuntimeException("Error while perform action. Detail:" + message);
+            response = null;
+            //throw new RuntimeException("Error while perform action. Detail:" + message);
         } catch (Exception e) {
             log.error("Error while executing RestTemplate call {}", e.getMessage());
-            throw e;
+            response = null;
+            //throw e;
         } finally {
             long executionTime = System.currentTimeMillis() - startTime;
 
@@ -91,6 +96,8 @@ public class HttpRequestAspect {
 
             apiIntegrationLogRepository.save(apiIntegrationLog);
         }
+
+
 
         return response;
     }

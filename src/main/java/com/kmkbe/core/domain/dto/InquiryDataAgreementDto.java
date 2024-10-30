@@ -12,6 +12,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class InquiryDataAgreementDto {
     @JsonProperty("AgrmntObj")
     public AgrmntObj agrmntObj;

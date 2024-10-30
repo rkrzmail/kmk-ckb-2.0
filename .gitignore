@@ -34,3 +34,6 @@ build/
 /logs/**
 **.log
 /uploads
+
+src/main/resources/application-prod.properties
+
