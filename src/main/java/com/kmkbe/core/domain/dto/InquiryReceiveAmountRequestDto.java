@@ -11,6 +11,7 @@ import java.util.ArrayList;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class InquiryReceiveAmountRequestDto {
     @JsonProperty("AllocMapList")
     public ArrayList<AllocMapList> allocMapList;

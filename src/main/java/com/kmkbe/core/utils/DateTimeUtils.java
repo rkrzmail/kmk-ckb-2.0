@@ -40,9 +40,16 @@ public class DateTimeUtils {
             .withZone(ZoneId.of("Asia/Jakarta"));
 
     public static Instant now() {
-        return  toZone(Instant.now().plusSeconds( 7*60 * 60), JAKARTA_ZONE);
+        return toZone(Instant.now().plusSeconds(addTimeZoneCount), JAKARTA_ZONE);
     }
-
+    private static int addTimeZoneCount = 0;
+    public static void envMode(String env){
+        if (env!=null && env.equalsIgnoreCase("pro")){
+            addTimeZoneCount = 0;
+        }else{
+            addTimeZoneCount = 7*60 * 60 ;//7jam
+        }
+    }
 
 
     public static Long nowMilliSeconds() {

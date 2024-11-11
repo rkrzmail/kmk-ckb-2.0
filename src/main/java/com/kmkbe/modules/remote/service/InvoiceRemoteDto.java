@@ -34,7 +34,7 @@ public class InvoiceRemoteDto {
             );
 
             final ResponseEntity<BaseSimpleRemoteResponseDto<InquiryInvoiceRemoteDto>> response = restTemplate.exchange(
-                    BaseRemoteService.BASE_URL_MST + "/sap/listPostedInvoiceByVendorInSAP",
+                    baseRemoteService.getBaseMst() + "/sap/listPostedInvoiceByVendorInSAP",
                     HttpMethod.POST,
                     requestArgs,
                     new ParameterizedTypeReference<>() {

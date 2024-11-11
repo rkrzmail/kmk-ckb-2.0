@@ -13,7 +13,14 @@ import org.springframework.web.client.RestTemplate;
 @Service
 @Slf4j
 public class BaseRemoteService {
-    public static final String BASE_URL_MST = "https://6mn45m67ybarmii47vg4cc22240ltnmj.lambda-url.ap-southeast-1.on.aws/v1";
+    //public static final String BASE_URL_MST = "https://6mn45m67ybarmii47vg4cc22240ltnmj.lambda-url.ap-southeast-1.on.aws/v1";
+
+    @Value("${csul.mst.v1}")
+    public String BASE_URL_MST;
+
+    @Value("${env}")
+    public String baseENV;
+
 
     @Value("${csul.confins.fou.v1}")
     public String confinsFouBaseUrl;
@@ -51,6 +58,14 @@ public class BaseRemoteService {
         this.confinsFouBaseUrl = confinsFouBaseUrl;
         this.confinsMouBaseUrl = confinsMouBaseUrl;
         this.adInsKey = adInsKey;
+    }
+
+    public String getBaseMst() {
+        return BASE_URL_MST;
+    }
+
+    public String getEnvLC() {
+        return baseENV.toLowerCase();
     }
 
     public String CustObj_GetListKeyValueActiveByCode() {

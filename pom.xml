@@ -199,6 +199,12 @@
             <artifactId>poi-ooxml</artifactId>
             <version>5.3.0</version>
         </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.14.0</version> <!-- Make sure to use a version compatible with your Jackson core -->
+        </dependency>
+
     </dependencies>
     <build>
         <plugins>

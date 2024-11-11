@@ -64,13 +64,14 @@ public class LegalFileService {
             if (StringUtil.isNullOrEmpty(path)) {
                 throw new Exception("File path cannot be null. Expected upload dir, provided: " + path);
             }
-
+            LegalFile legalFile = new LegalFile();
             LegalFile checkExisting = fetchByMstFileTypeAndCust(customer, fileType);
             if (checkExisting != null) {
                 legalFileRepository.delete(checkExisting);
+                legalFile.setFileId(checkExisting.getFileId());
             }
 
-            LegalFile legalFile = new LegalFile();
+
             {
                 legalFile.setCustCode(customer);
                 //legalFile.setFileName(file.getOriginalFilename());
@@ -82,6 +83,8 @@ public class LegalFileService {
                 legalFile.setDtmCrt(DateTimeUtils.now());
                 legalFile.setUsrUpd(customer.getCustName());
                 legalFile.setDtmUpd(DateTimeUtils.now());
+
+
             }
 
             legalFileRepository.save(legalFile);

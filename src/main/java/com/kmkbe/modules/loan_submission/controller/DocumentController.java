@@ -45,7 +45,7 @@ public class DocumentController {
             HttpServletResponse httpServletResponse,
             String token
     ) {
-        throwEmptyToken(httpServletResponse, token);
+       // throwEmptyToken(httpServletResponse, token);
         return documentService.documentByLegalFileId(
                 request,
                 Long.valueOf(id)
@@ -59,7 +59,7 @@ public class DocumentController {
             HttpServletResponse httpServletResponse,
             String token
     ) {
-        throwEmptyToken(httpServletResponse, token);
+       // throwEmptyToken(httpServletResponse, token);
         return documentService.agreementDocByAgreementId(
                 request,
                 Long.valueOf(id)

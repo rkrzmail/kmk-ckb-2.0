@@ -5,9 +5,11 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonValue;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
+@Setter
 @Getter
 @Builder
 public class ExistingCustomerRequest {
@@ -19,6 +21,9 @@ public class ExistingCustomerRequest {
 
     @JsonProperty("RequestDateTime")
     private String requestDateTime;
+
+   /* @JsonProperty("Random")
+    private String random;*/
 
     @Getter
     @Builder
@@ -41,6 +46,8 @@ public class ExistingCustomerRequest {
          */
         @JsonProperty("Value")
         private String value;
+
+
     }
 
 

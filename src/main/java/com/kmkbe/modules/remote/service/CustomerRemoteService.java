@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.dto.CustomerRemoteDto;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.entity.ApiIntegrationLog;
 import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import com.kmkbe.modules.remote.request.InquiryRequest;
@@ -46,6 +47,7 @@ public class CustomerRemoteService {
         final String url = baseRemoteService.CustObj_GetListKeyValueActiveByCode();
         try {
             jsonStr = ObjectUtils.jsonToStr(params);
+            //params.setRandom(DateTimeUtils.now()+"");
             final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
             final HttpEntity<String> requestArgs = new HttpEntity<>(
                     jsonStr,
@@ -59,6 +61,8 @@ public class CustomerRemoteService {
                     new ParameterizedTypeReference<>() {
                     }
             );
+
+
 
             statusCode = response.getStatusCode().value();
             responseStr = ObjectUtils.jsonToStr(response.getBody());
@@ -99,7 +103,7 @@ public class CustomerRemoteService {
         String jsonStr = "";
         String responseStr = null;
         int statusCode = 200;
-        final String url = BaseRemoteService.BASE_URL_MST + "/vendor/byVendorId";
+        final String url = baseRemoteService.getBaseMst() + "/vendor/byVendorId";
         try {
             jsonStr = ObjectUtils.jsonToStr(InquiryRequest.builder()
                     .vendorCode(vendorCode)

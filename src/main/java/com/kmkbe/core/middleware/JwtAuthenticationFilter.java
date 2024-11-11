@@ -4,6 +4,7 @@ import com.kmkbe.core.domain.model.JwtSimulasiModel;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.service.JwtService;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.HttpUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.netty.util.internal.StringUtil;
@@ -43,10 +44,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Value("${security.api.key}")
     private String apiKey;
 
+    @Value("${env}")
+    private String envString;
+
     public static final String[] ENDPOINTS_WHITELIST_FINANCING = {
             "/api/v1/financing/invoice-paid",
             "/api/v1/financing/approvals/status",
     };
+
+
 
     public static final String[] ENDPOINTS_WHITELIST_LOAN_SUBMISSION = {
             "/api/v1/loan-submissions",
@@ -118,6 +124,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
+        DateTimeUtils.envMode(envString);
         try {
             if (shouldValidateApiKey(request, response, filterChain)) {
                 return;
@@ -200,6 +207,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
         for (String endpoint : ENDPOINTS_WHITELIST_FINANCING) {
             if (new AntPathRequestMatcher(endpoint).matches(request)) {
+                filterChain.doFilter(request, response);
+                return true;
+            }
+            String sts = request.getRequestURI();
+            if (endpoint.endsWith( request.getRequestURI())) {
                 filterChain.doFilter(request, response);
                 return true;
             }

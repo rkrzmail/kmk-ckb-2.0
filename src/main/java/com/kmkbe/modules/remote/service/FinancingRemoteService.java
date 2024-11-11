@@ -45,7 +45,7 @@ public class FinancingRemoteService {
             );
 
             final ResponseEntity<BaseSimpleRemoteResponseDto<Object>> response = restTemplate.exchange(
-                    BaseRemoteService.BASE_URL_MST + "/post/credit/submission",
+                    baseRemoteService.getBaseMst() + "/post/credit/submission",
                     HttpMethod.POST,
                     requestArgs,
                     new ParameterizedTypeReference<>() {
@@ -75,7 +75,7 @@ public class FinancingRemoteService {
             throw new RuntimeException("Posted Submission Failed");
         } finally {
             ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
-                    .endpointUrl(BaseRemoteService.BASE_URL_MST + "/post/credit/submission")
+                    .endpointUrl(baseRemoteService.getBaseMst()+ "/post/credit/submission")
                     .contentType("application/json")
                     .requestPayload(jsonStr)
                     .responseJson(responseStr)
@@ -100,7 +100,7 @@ public class FinancingRemoteService {
             );
 
             final ResponseEntity<BaseSimpleRemoteResponseDto<Object>> response = restTemplate.exchange(
-                    BaseRemoteService.BASE_URL_MST + "/post/credit/approval",
+                    baseRemoteService.getBaseMst() + "/post/credit/approval",
                     HttpMethod.POST,
                     requestArgs,
                     new ParameterizedTypeReference<>() {
@@ -130,7 +130,7 @@ public class FinancingRemoteService {
             throw e;
         } finally {
             ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
-                    .endpointUrl(BaseRemoteService.BASE_URL_MST + "/post/credit/approval")
+                    .endpointUrl(baseRemoteService.getBaseMst() + "/post/credit/approval")
                     .contentType("application/json")
                     .requestPayload(jsonStr)
                     .responseJson(responseStr)

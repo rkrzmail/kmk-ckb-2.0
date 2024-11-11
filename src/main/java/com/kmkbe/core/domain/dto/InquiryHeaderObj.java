@@ -3,30 +3,21 @@ package com.kmkbe.core.domain.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
-import java.time.Instant;
-
 @Getter
 @Setter
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class InquiryDataAgreementDto {
-    @JsonProperty("AgrmntObj")
-    public InquiryDataAgreementDtoAgrmntObj agrmntObj;
-    @JsonProperty("HeaderObj")
-    public InquiryHeaderObj headerObj;
+public class InquiryHeaderObj {
+    @JsonProperty("ResponseTime")
+    public String responseTime;
     @JsonProperty("StatusCode")
     public String statusCode;
     @JsonProperty("Message")
     public String message;
     @JsonProperty("ErrorMessages")
     public Object errorMessages;
-    @JsonProperty("RowVersion")
-    public Object rowVersion;
-
-
-
 }
 
 

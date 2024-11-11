@@ -74,14 +74,12 @@ public class HttpRequestAspect {
                 if (arg instanceof String argUrl && argUrl.toLowerCase().contains("http")) {
                     url = argUrl;
                 }
-
                 if (arg instanceof HttpEntity<?> requestEntity) {
                     requestHeader = objectMapper.writeValueAsString(requestEntity.getHeaders());
 
                     if (requestEntity.getBody() != null) {
                         requestStr = objectMapper.writeValueAsString(requestEntity.getBody());
                     }
-
                 }
             }
 

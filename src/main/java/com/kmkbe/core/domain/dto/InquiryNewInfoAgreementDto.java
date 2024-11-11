@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class InquiryNewInfoAgreementDto {
     @JsonProperty("Tenor")
     public double tenor;

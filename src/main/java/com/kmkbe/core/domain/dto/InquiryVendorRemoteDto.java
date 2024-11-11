@@ -10,6 +10,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Data
 public class InquiryVendorRemoteDto {
     @JsonProperty("vendor_id")
     private Integer vendorId;
