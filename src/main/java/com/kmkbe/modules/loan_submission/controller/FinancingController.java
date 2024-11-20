@@ -11,6 +11,7 @@ import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.loan_submission.service.FinancingDtlService;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.FinancingService;
+import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -18,6 +19,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.security.SignatureException;
 
 @Validated
 @RestController
@@ -61,14 +64,16 @@ public class FinancingController {
             }
             return new CommonResult<>().success(null, "Success Submitted");
         } catch (Exception e) {
-            throw e;
+            return new CommonResult<>().fail(500,   e.getMessage());
+            //throw e;
         }
     }
 
     @GetMapping("/invoices/paid")
     public CommonResult<PaginationResult<PaidInvoiceDto>> getInvoicePaid(
-            PaginationRequest request
-    ) {
+            Authentication authentication, PaginationRequest request
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
         return new CommonResult<PaginationResult<PaidInvoiceDto>>().success(
                 financingHdrService.paidInvoice(request)
         );
@@ -76,9 +81,10 @@ public class FinancingController {
 
     @GetMapping("/invoices/disbursement")
     public CommonResult<PaginationResult<DisburseInvoiceDto>> getDisbursement(
-            PaginationRequest request,
+            Authentication authentication, PaginationRequest request,
             FinancingHdr financingHdr
-    ) {
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
         return new CommonResult<PaginationResult<DisburseInvoiceDto>>().success(
                 financingHdrService.disburseInvoice(request, financingHdr)
         );

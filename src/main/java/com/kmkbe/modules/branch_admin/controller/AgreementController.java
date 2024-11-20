@@ -14,6 +14,7 @@ import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
+import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -23,6 +24,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.security.SignatureException;
 
 @Validated
 @RestController
@@ -42,8 +45,11 @@ public class AgreementController {
     public CommonResult<PaginationResult<AgreementDto>> getCwrDisbursement(
             @PathVariable("cwrCode") String cwrCode,
             @PathVariable("financingHdrCode") String financingHdrCode,
+            Authentication authentication,
             PaginationRequest request
-    ) throws JsonProcessingException {
+    ) throws JsonProcessingException, SignatureException {
+
+        UserInternalUtils.authenticated(authentication);
         return new CommonResult<PaginationResult<AgreementDto>>().success(
                 agreementService.list(
                         cwrCode,
@@ -56,8 +62,10 @@ public class AgreementController {
     @GetMapping("/inquiry")
     public CommonResult<InquiryAgreementDto> getInquiryAgreement(
             @RequestParam("agreementNo") String agreementNo,
+            Authentication authentication,
             String cwrCode
-    ) throws JsonProcessingException {
+    ) throws JsonProcessingException, SignatureException {
+        UserInternalUtils.authenticated(authentication);
         return new CommonResult<InquiryAgreementDto>().success(
                 agreementService.inquiryAgreementCwr(
                         cwrCode,

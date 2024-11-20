@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.major_account.service.BranchAreaMappingService;
 import com.kmkbe.modules.major_account.service.MstProductService;
 
+import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -16,6 +17,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.security.SignatureException;
 
 @Validated
 @RestController
@@ -32,8 +35,9 @@ public class MstProductController {
 
     @GetMapping("/list")
     public CommonResult<PaginationResult<ProductDto>> getList(
-            PaginationRequest request
-    ) {
+            Authentication authentication, PaginationRequest request
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
         return new CommonResult<PaginationResult<ProductDto>>().success(
                 productService.listProduct(request)
         );
@@ -47,7 +51,8 @@ public class MstProductController {
             HttpServletRequest httpServletRequest,
             Authentication authentication,
             @Valid @RequestPart MultipartFile file
-    ) {
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
         return new CommonResult<>().success(
                 null
         );

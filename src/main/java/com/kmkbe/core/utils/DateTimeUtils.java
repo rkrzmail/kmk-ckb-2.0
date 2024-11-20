@@ -40,7 +40,7 @@ public class DateTimeUtils {
             .withZone(ZoneId.of("Asia/Jakarta"));
 
     public static Instant now() {
-        return toZone(Instant.now().plusSeconds(addTimeZoneCount), JAKARTA_ZONE);
+        return toZone(Instant.now().plusSeconds( 7*60 * 60), JAKARTA_ZONE);
     }
     private static int addTimeZoneCount = 0;
     public static void envMode(String env){
@@ -131,7 +131,16 @@ public class DateTimeUtils {
         calendar.set(Calendar.MILLISECOND, 0);
         return calendar.getTime();
     }
-
+    public static String getDateOnly(String str){
+        if (str == null){
+            return "";
+        }
+        if (str.length()>=10){
+            return str.substring(0,10);
+        }else{
+            return str;
+        }
+    }
 
     public static Map<TimeUnit, Long> computeDateDiff(Date date1, Date date2) {
         try {

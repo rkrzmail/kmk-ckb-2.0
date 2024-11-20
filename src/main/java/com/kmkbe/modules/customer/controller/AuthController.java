@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.dto.RequestOtpDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.OtpLog;
 import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.repository.OtpRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
@@ -44,6 +45,7 @@ public class AuthController {
     private final OtpService otpService;
     private final CustomerRemoteService customerRemoteService;
     private final DocumentService documentService;
+
 
     //@Transactional
     @PostMapping("/sign-up")

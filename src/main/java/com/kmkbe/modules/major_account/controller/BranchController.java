@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.major_account.service.BranchAreaMappingService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
+import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -17,6 +18,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.security.SignatureException;
 import java.util.List;
 
 @Validated
@@ -40,8 +42,9 @@ public class BranchController {
 
     @GetMapping("/list")
     public CommonResult<PaginationResult<BranchAreaMappingDto>> getList(
-            PaginationRequest request
-    ) {
+            Authentication authentication, PaginationRequest request
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
         return new CommonResult<PaginationResult<BranchAreaMappingDto>>().success(
                 branchAreaMappingService.listBranch(request)
         );
@@ -49,8 +52,9 @@ public class BranchController {
 
     @GetMapping("/placement")
     public CommonResult<PaginationResult<BranchAreaMappingDto>> getBranchList(
-            PaginationRequest request
-    ) {
+            Authentication authentication, PaginationRequest request
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
         return new CommonResult<PaginationResult<BranchAreaMappingDto>>().success(
                 branchAreaMappingService.placementBranch(request)
         );

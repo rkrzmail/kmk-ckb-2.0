@@ -20,6 +20,9 @@ public class UserInternalUtils {
 
         throw new SignatureException();
     }
+    public static void authenticated(Authentication authentication) throws SignatureException {
+        authenticateUser(authentication);
+    }
 
 
 }

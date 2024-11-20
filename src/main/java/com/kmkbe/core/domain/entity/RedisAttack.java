@@ -9,6 +9,7 @@ import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
+import java.util.Date;
 import java.util.Map;
 
 @Builder
@@ -17,19 +18,24 @@ import java.util.Map;
 @Getter
 @Setter
 @Entity
-@Table(name = "_redis", schema = "public")
-public class Redis {
+@Table(name = "_redis_attack", schema = "public")
+public class RedisAttack {
     @Id
     @Size(max = 255)
     @Column(name = "redis", nullable = false)
     private String redis;
 
-    @Column(name = "json")
-    @JdbcTypeCode(SqlTypes.JSON)
-    private Map<String, Object> json;
-
     @Size(max = 255)
     @Column(name = "session")
     private String session;
+
+    @Column(name = "modified_date")
+    private Date modifiedDate;
+
+
+    @Column(name = "count_attack")
+    private int countAttack;
+
+
 
 }

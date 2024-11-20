@@ -15,6 +15,7 @@ import com.kmkbe.modules.customer.service.*;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
+import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.modules.user.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -180,8 +181,10 @@ public class CustomerController {
 
     @GetMapping("/plafond/{financingHdrCode}")
     public CommonResult<CustomerPlafondDto> getPlafond(
-            @PathVariable String financingHdrCode
-    ) {
+            @PathVariable String financingHdrCode,Authentication authentication
+
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
         return new CommonResult<CustomerPlafondDto>().success(
                 customerDashboardService.plafond(financingHdrCode)
         );

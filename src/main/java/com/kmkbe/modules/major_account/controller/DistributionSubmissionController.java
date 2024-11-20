@@ -9,6 +9,7 @@ import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.request.AssignInvoiceToBranchRequest;
 import com.kmkbe.modules.major_account.service.DistributionSubmissionService;
+import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -34,8 +35,9 @@ public class DistributionSubmissionController {
 
     @GetMapping("/list")
     public CommonResult<PaginationResult<DistributionSubmissionDto>> getDistributionList(
-            PaginationRequest request
-    ) {
+            Authentication authentication, PaginationRequest request
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
         return new CommonResult<PaginationResult<DistributionSubmissionDto>>().success(
                 distributionSubmissionService.submissionDistribution(request)
         );
@@ -44,8 +46,9 @@ public class DistributionSubmissionController {
     @GetMapping("/detail/{financingHdrCode}/invoices")
     public CommonResult<PaginationResult<PostedInvoiceDto>> getDetailInvoiceDistributionList(
             @PathVariable String financingHdrCode,
-            PaginationRequest request
-    ) {
+            Authentication authentication, PaginationRequest request
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
         return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
                 invoiceService.invoiceSubmissionByFinancingHdr(
                         financingHdrService.findByCode(financingHdrCode),

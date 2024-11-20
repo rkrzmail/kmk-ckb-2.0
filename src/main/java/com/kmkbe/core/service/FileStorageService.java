@@ -57,6 +57,19 @@ public class FileStorageService {
                 throw new Exception("File format or extension is not valid, try to upload valid file. Uploaded File: " + name);
             }
 
+            String extString = String.valueOf(ext).toLowerCase();
+            if (extString.equalsIgnoreCase("")||
+                    extString.equalsIgnoreCase("null")||
+                    extString.equalsIgnoreCase("doc")||
+                    extString.equalsIgnoreCase("pdf")||
+                    extString.equalsIgnoreCase("jpg")||
+                    extString.equalsIgnoreCase("jpeg")||
+                    extString.equalsIgnoreCase("png")) {
+                //doc, pdf,jpg, jpeg atau pngs
+            } else{
+                throw new Exception("File format or extension is not valid, try to upload valid file (doc, pdf,jpg, jpeg atau png). Uploaded File: " + name);
+            }
+
             if (ext.equals(ext.toUpperCase())) {
                 ext = ext.toLowerCase();
             }

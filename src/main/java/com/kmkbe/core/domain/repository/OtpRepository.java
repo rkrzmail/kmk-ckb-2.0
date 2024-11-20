@@ -20,4 +20,6 @@ public interface OtpRepository extends JpaRepository<OtpLog, Long> {
             nativeQuery = true
     )
     Long countTodayRequestByEmail(String email);
+
+
 }

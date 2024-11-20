@@ -1,8 +1,15 @@
 package com.kmkbe.modules.customer.service;
 
+import com.kmkbe.core.domain.entity.OtpLog;
+import com.kmkbe.core.domain.entity.RedisLog;
+import com.kmkbe.core.domain.entity.RedisAttack;
+import com.kmkbe.core.domain.repository.OtpRepository;
+import com.kmkbe.core.domain.repository.RedisAttackRepository;
+import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.service.JwtService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.service.LoginLogService;
 import com.kmkbe.core.domain.constant.LoginRole;
 import com.kmkbe.core.domain.dto.LoginDto;
@@ -14,8 +21,10 @@ import com.kmkbe.modules.customer.request.LoginRequest;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.common.service.refresh_token.IRefreshTokenServices;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
+import com.kmkbe.nikita.utils.Utils;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
+import jdk.jshell.execution.Util;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -27,6 +36,10 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.Optional;
 
 @Service
@@ -40,22 +53,70 @@ public class AuthService {
     private final ChangePasswordLogService changePasswordLogService;
     private final BCryptPasswordEncoder bcryptEncoder;
     private final AuthenticationManager authenticationManager;
+    private final OtpRepository otpRepository;
+    private final RedisRepository redisRepository;
+    private final RedisAttackRepository redisAttackRepository;
 
     @Qualifier("DbRefreshTokenServices")
     //@Qualifier("CacheRefreshTokenServices")
     private final IRefreshTokenServices refreshTokenServices;
 
-    @Transactional
+    //@Transactional
     public LoginDto signIn(LoginRequest request) {
         try {
+
+            //validate dan bruce attack
+            String key = "signIn:"+request.email();
+            int counter = 0;
+            RedisAttack redisAttack ;
+            Optional<RedisAttack>  redisAttacks = redisAttackRepository.findTopByRedis(key);
+            if (redisAttacks.isEmpty()){
+                counter = 1;
+                redisAttack = RedisAttack.builder()
+                        .redis(key)
+                        .session("")
+                        .countAttack(counter)
+                        .modifiedDate(Date.from(DateTimeUtils.now()))
+                        .build();
+                redisAttackRepository.save(redisAttack);
+            }else{
+                redisAttack = redisAttacks.get();
+                counter = redisAttack.getCountAttack()+1;
+                redisAttack.setCountAttack(counter);
+                redisAttack.setModifiedDate(Date.from(DateTimeUtils.now()));
+                redisAttackRepository.save(redisAttack);
+            }
+            if (counter>5){
+                // Define a formatter for parsing the dates
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+                // Parse the input dates
+                LocalDateTime startDate = LocalDateTime.parse(Utils.formatDate(redisAttack.getModifiedDate())  , formatter);
+                LocalDateTime endDate = LocalDateTime.parse(Utils.formatDate(Date.from(DateTimeUtils.now())), formatter);
+
+                // Calculate the duration between the dates
+                Duration duration = Duration.between(startDate, endDate);
+                if (duration.toMinutes() < 30){
+                    throw CommonInvalidException.invalidAttack();
+                }
+                redisAttack.setCountAttack(1);//update 1
+
+            }
+
+
+
+
+
             if (!CommonFormattingUtils.isEmailValid(request.email().toLowerCase())) {
-                throw CommonInvalidException.invalidEmail();
+                throw CommonInvalidException.invalidEmailOrPin();
             }
 
             final Optional<Customer> findCust = customerRepository.findByCustEmail(request.email().toLowerCase());
             if (findCust.isEmpty()) {
-                throw CommonInvalidException.notRegistered();
+                throw CommonInvalidException.invalidEmailOrPin();
             }
+            //check singgle session
+
 
             final Customer cust = findCust.get();
             if (!bcryptEncoder.matches(request.pin(), cust.getCustPin())) {
@@ -83,11 +144,26 @@ public class AuthService {
                             .build()
             );
 
-            return new LoginDto(
+
+            //benar
+            redisAttack.setCountAttack(0);
+            redisAttack.setModifiedDate(Date.from(DateTimeUtils.now()));
+            redisAttackRepository.save(redisAttack);
+
+            LoginDto loginDto = new LoginDto(
                     jwtService.generateToken(cust),
                     refreshTokenResult.getRefreshToken().toString(),
-                    jwtService.getExpirationTime()
-            );
+                    jwtService.getExpirationTime());
+            String jwt = refreshTokenResult.getRefreshToken().toString();
+
+            RedisLog redis =  RedisLog.builder()
+                    .redis(request.email())
+                    .session(jwt)
+                    .build();
+            redisRepository.save(redis);
+
+            return loginDto;
+
         } catch (CommonInvalidException e) {
             log.error("AuthService signIn: {}", e.getMessage());
             throw e;
@@ -118,6 +194,13 @@ public class AuthService {
             if (find.isEmpty()) {
                 throw new EntityNotFoundException("User not found");
             }
+
+            Optional<OtpLog> findCust = otpRepository.findTopByEmailAndOtpCodeOrderByDtmCrtDesc(request.email(), request.token());
+            if (findCust.isEmpty()) {
+                throw new EntityNotFoundException("User doesn't exists");
+            }
+
+
 
             final Customer cust = find.get();
             final String oldPin = cust.getCustPin();
