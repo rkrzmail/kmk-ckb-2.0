@@ -16,6 +16,7 @@ import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.Getter;
@@ -140,7 +141,7 @@ public class AssignmentSubmissionService {
                                 .custName(e.getCustomer().getCustName())
                                 .bouwheerName(e.getBouwheer().getBouwheerName())
                                 .verifDate(null)
-                                .dueDate(new Date(e.getFinancingDueDate().toEpochMilli()))
+                                .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
                                 .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
                                 .custStatus(isNewCust ? "New Customer" : "Existing Customer")
                                 .status(financingStatus.getStatus())

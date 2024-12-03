@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -54,10 +54,10 @@ public class CustomerCompany implements Serializable {
     private String identityNo = "";
 
     @Column
-    private Instant identityIssuedDate = DateTimeUtils.now();
+    private LocalDateTime identityIssuedDate = DateTimeUtils.now();
 
     @Column
-    private Instant identityExpiredDate = DateTimeUtils.now();
+    private LocalDateTime identityExpiredDate = DateTimeUtils.now();
 
     @Column(length = 1000)
     private String companyAddress = "";
@@ -93,7 +93,7 @@ public class CustomerCompany implements Serializable {
     private String ownershipStatus = "";
 
     @Column
-    private Instant staySince = DateTimeUtils.now();
+    private LocalDateTime staySince = DateTimeUtils.now();
 
     @Column // precision = 7, scale = 2
     private Double stayLength = 0.0;
@@ -102,10 +102,10 @@ public class CustomerCompany implements Serializable {
     private String usrCrt;
 
     @Column(nullable = false)
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Column(length = 50)
     private String usrUpd;
 
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 }

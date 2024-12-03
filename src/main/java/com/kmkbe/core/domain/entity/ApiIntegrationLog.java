@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Builder
 @AllArgsConstructor
@@ -63,9 +63,9 @@ public class ApiIntegrationLog {
     @Builder.Default
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt = DateTimeUtils.now();
+    private LocalDateTime dtmCrt = DateTimeUtils.now();
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
 }

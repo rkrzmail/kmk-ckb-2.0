@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -34,7 +34,7 @@ public class Product {
 
     @NotNull
     @Column(name = "effective_date", nullable = false)
-    private Instant effectiveDate;
+    private LocalDateTime effectiveDate;
 
     @NotNull
     @Column(name = "ntf_from", nullable = false) //, precision = 17, scale = 2
@@ -87,13 +87,13 @@ public class Product {
 
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
     private String usrUpd;
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
 }

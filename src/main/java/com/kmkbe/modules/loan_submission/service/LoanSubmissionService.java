@@ -25,6 +25,7 @@ import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.modules.remote.service.InvoiceRemoteDto;
 import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
+import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
@@ -42,7 +43,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -448,7 +449,7 @@ public class LoanSubmissionService {
                                     file -> file.getFileTypeCode()
                                             .getFileTypeCode()
                                             .equalsIgnoreCase("DOC006")
-                                            && DateTimeUtils.SDF_STANDARD_DATE.format(new Date(file.getDtmUpd().toEpochMilli()))
+                                            && DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(file.getDtmUpd()))
                                             .equalsIgnoreCase(DateTimeUtils.SDF_STANDARD_DATE.format(new Date()))
                             )
             ) {

@@ -1,6 +1,8 @@
 package com.kmkbe.core.middleware;
 
+import com.kmkbe.core.domain.entity.RedisLog;
 import com.kmkbe.core.domain.model.JwtSimulasiModel;
+import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.service.JwtService;
@@ -9,6 +11,7 @@ import com.kmkbe.core.utils.HttpUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -31,6 +34,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -103,6 +107,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final JwtLoanSubmissionService jwtLoanSubmissionService;
     private final UserDetailsService userDetailsService;
+    private final RedisRepository redisRepository;
+
 
     @Qualifier("internalUserDetailService")
     private final UserDetailsService internalUserDetailsService;
@@ -139,9 +145,20 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             setAuthenticate(request, response, filterChain);
-        } catch (ExpiredJwtException | BadCredentialsException e) {
+        } catch (ExpiredJwtException   e) {
             request.setAttribute("exception", e);
+
             filterChain.doFilter(request, response);
+        } catch (  BadCredentialsException e) {
+            if (request.getRequestURI().contains("internal")){
+                RequestDispatcher dispatcher = request.getRequestDispatcher("/error/internal/unauthorized");
+                dispatcher.forward(request, response);
+            }else{
+                RequestDispatcher dispatcher = request.getRequestDispatcher("/error/unauthorized");
+                dispatcher.forward(request, response);
+            }
+
+            return; // Stop further processing
         } catch (Exception e) {
             logger.error("failed on set user authentication, {}", e);
             handlerExceptionResolver.resolveException(request, response, null, e);
@@ -159,9 +176,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return;
         }
 
+
         final String jwt = authHeader.substring("Bearer ".length());
         final String username = jwtService.extractUsername(jwt);
         final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+
+        final String rtoken = request.getHeader("rtoken");
+        Optional<RedisLog> redisLog = redisRepository.findFirstByRedis(username);
+        if(rtoken.equalsIgnoreCase("")){
+            //abaikan
+        }else  if (redisLog.isPresent()){
+            if (request.getRequestURI().toLowerCase().contains("/loan-submissions/create")){
+
+            } else if (!redisLog.get().getSession().equalsIgnoreCase(rtoken)){
+                throw new BadCredentialsException("Invalid token, Multi Login");
+            }
+        }else{
+            throw new BadCredentialsException("Invalid token, Multi Login");
+        }
 
         if (username != null && authentication == null) {
             UserDetails user;

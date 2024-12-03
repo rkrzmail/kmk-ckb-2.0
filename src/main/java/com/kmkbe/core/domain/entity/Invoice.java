@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -70,11 +70,11 @@ public class Invoice {
 
     @NotNull
     @Column(name = "invoice_date", nullable = false)
-    private Instant invoiceDate;
+    private LocalDateTime invoiceDate;
 
     @NotNull
     @Column(name = "invoice_due_date", nullable = false)
-    private Instant invoiceDueDate;
+    private LocalDateTime invoiceDueDate;
 
     @NotNull
     @Column(name = "invoice_amt", nullable = false) // , precision = 17, scale = 2
@@ -91,14 +91,14 @@ public class Invoice {
     @Builder.Default
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt = DateTimeUtils.now();
+    private LocalDateTime dtmCrt = DateTimeUtils.now();
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
     private String usrUpd;
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
     @Column(name = "po_number")
     private String poNumber;

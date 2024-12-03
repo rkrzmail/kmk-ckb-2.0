@@ -6,8 +6,11 @@ import com.kmkbe.core.domain.dto.LoginDto;
 import com.kmkbe.core.domain.dto.RequestOtpDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.OtpLog;
+import com.kmkbe.core.domain.entity.RedisAttack;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.OtpRepository;
+import com.kmkbe.core.domain.repository.RedisAttackRepository;
+import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
@@ -17,6 +20,7 @@ import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.service.*;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
+import com.kmkbe.nikita.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -27,7 +31,10 @@ import org.springframework.security.web.authentication.logout.SecurityContextLog
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
-import java.time.Instant;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -45,7 +52,8 @@ public class AuthController {
     private final OtpService otpService;
     private final CustomerRemoteService customerRemoteService;
     private final DocumentService documentService;
-
+    private final RedisRepository redisRepository;
+    private final RedisAttackRepository redisAttackRepository;
 
     //@Transactional
     @PostMapping("/sign-up")
@@ -79,9 +87,9 @@ public class AuthController {
                 kelurahan = vendor.getVendorBuilding().getFirst().getDistrictName();
             }
 
-            Instant staySince;
+            LocalDateTime staySince;
             try {
-                staySince = Instant.parse(vendor.getFoundedDate());
+                staySince = LocalDateTime.parse(vendor.getFoundedDate());
             } catch (Exception e) {
                 staySince = DateTimeUtils.now();
             }
@@ -145,7 +153,48 @@ public class AuthController {
     public CommonResult<Object> forgotPin(
             @Valid @RequestBody ForgotPinRequest request
     ) {
+        //validate dan bruce attack
+        String key = "forgot:"+request.email();
+        int counter = 0;
+        RedisAttack redisAttack ;
+        Optional<RedisAttack> redisAttacks = redisAttackRepository.findTopByRedis(key);
+        if (redisAttacks.isEmpty()){
+            counter = 1;
+            redisAttack = RedisAttack.builder()
+                    .redis(key)
+                    .session("")
+                    .countAttack(counter)
+                    .modifiedDate(DateTimeUtils.nowDate())
+                    .build();
+            redisAttackRepository.save(redisAttack);
+        }else{
+            redisAttack = redisAttacks.get();
+            counter = redisAttack.getCountAttack()+1;
+            redisAttack.setCountAttack(counter);
+            redisAttack.setModifiedDate(DateTimeUtils.nowDate());
+            redisAttackRepository.save(redisAttack);
+        }
+        if (counter>5){
+            // Define a formatter for parsing the dates
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+
+            // Parse the input dates
+            LocalDateTime startDate = LocalDateTime.parse(Utils.formatDate(redisAttack.getModifiedDate())  , formatter);
+            LocalDateTime endDate =  DateTimeUtils.nowLocal();
+
+            // Calculate the duration between the dates
+            Duration duration = Duration.between(startDate, endDate);
+            if (duration.toMinutes() < 15){
+                throw CommonInvalidException.invalidAttack();
+            }
+            redisAttack.setCountAttack(1);//update 1
+        }
+
         final String message = authService.forgotPin(request);
+
+        redisAttack.setCountAttack(0);
+        redisAttack.setModifiedDate(DateTimeUtils.nowDate());
+        redisAttackRepository.save(redisAttack);
         return new CommonResult<>().success(null, message);
     }
 

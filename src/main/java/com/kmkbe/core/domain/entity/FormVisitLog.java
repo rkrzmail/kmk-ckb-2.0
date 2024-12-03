@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -41,6 +41,6 @@ public class FormVisitLog {
 
     @NotNull
     @Column(name = "access_date", nullable = false)
-    private Instant accessDate;
+    private LocalDateTime accessDate;
 
 }

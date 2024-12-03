@@ -70,9 +70,10 @@ public class FinancingRemoteService {
             }
 
             throw new RuntimeException("Error while perform action to MST\nDetail:" + message);
-        } catch (Exception e) {
-            log.error("postedSubmission, error {}", e.getMessage());
-            throw new RuntimeException("Posted Submission Failed");
+        /*} catch (Exception e) {
+            log.error("bypass postedSubmission, error {}", e.getMessage());
+            throw new RuntimeException("Posted Submission Failed");*/
+            //byPASS
         } finally {
             ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
                     .endpointUrl(baseRemoteService.getBaseMst()+ "/post/credit/submission")

@@ -36,13 +36,13 @@ public class AppConfig {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Jakarta"));
     }
 
-    @Bean
+   /* @Bean
     @Lazy
     public RestTemplate restTemplate(ObjectMapper objectMapper) {
         RestTemplate restTemplate = new RestTemplate();
         restTemplate.getMessageConverters().add(new ObjectToUrlEncodedConverter(objectMapper));
         return restTemplate;
-    }
+    }*/
 
     @Bean(name = "restTemplateByPassSSL")
     @Lazy

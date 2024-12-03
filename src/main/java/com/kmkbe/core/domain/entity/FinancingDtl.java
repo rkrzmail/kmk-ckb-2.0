@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -52,10 +52,10 @@ public class FinancingDtl {
     private String bouwheerInvNo;
 
     @Column(name = "paid_to_cust_date")
-    private Instant paidToCustDate;
+    private LocalDateTime paidToCustDate;
 
     @Column(name = "bouwheer_paid_date")
-    private Instant bouwheerPaidDate;
+    private LocalDateTime bouwheerPaidDate;
 
     @Size(max = 50)
     @NotNull
@@ -64,13 +64,13 @@ public class FinancingDtl {
 
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt = DateTimeUtils.now();;
+    private LocalDateTime dtmCrt = DateTimeUtils.now();;
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
     private String usrUpd;
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
 }

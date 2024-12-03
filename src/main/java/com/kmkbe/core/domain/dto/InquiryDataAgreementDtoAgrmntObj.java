@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -74,11 +74,11 @@ public class InquiryDataAgreementDtoAgrmntObj {
     public int nextInstNum;
     @JsonProperty("NextInstDueDt")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "UTC")
-    public Instant nextInstDueDt;
+    public LocalDateTime nextInstDueDt;
 
     @JsonProperty("NextInstDt")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "UTC")
-    public Instant nextInstDt;
+    public LocalDateTime nextInstDt;
     @JsonProperty("NextInstAmt")
     public double nextInstAmt;
     @JsonProperty("ContractStatCode")
@@ -87,22 +87,22 @@ public class InquiryDataAgreementDtoAgrmntObj {
     public String defaultStatCode;
     @JsonProperty("AgrmntDt")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "UTC")
-    public Instant agrmntDt;
+    public LocalDateTime agrmntDt;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "UTC")
     @JsonProperty("GoLiveDt")
-    public Instant goLiveDt;
+    public LocalDateTime goLiveDt;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "UTC")
     @JsonProperty("GoLiveBy")
     public String goLiveBy;
     @JsonProperty("PreGoLiveDt")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "UTC")
-    public Instant preGoLiveDt;
+    public LocalDateTime preGoLiveDt;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "UTC")
     @JsonProperty("EffectiveDt")
-    public Instant effectiveDt;
+    public LocalDateTime effectiveDt;
     @JsonProperty("MaturityDt")
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss", timezone = "UTC")
-    public Instant maturityDt;
+    public LocalDateTime maturityDt;
     @JsonProperty("PrepaidHoldStatCode")
     public String prepaidHoldStatCode;
     @JsonProperty("LcInstRatePrml")

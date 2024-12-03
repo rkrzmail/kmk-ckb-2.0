@@ -119,8 +119,7 @@ public class AgreementController {
             financingRemoteService.updateFinancingStatus(
                     updateFinancingStatusRequest
             );
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {  }
 
         //Branch admin melakukan upload dokumen perjanjian kerjasama
         financingHdr.setFinancingStatus("INPROCESS");

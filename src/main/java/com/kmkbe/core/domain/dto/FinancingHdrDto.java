@@ -10,7 +10,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -24,7 +24,7 @@ import java.util.UUID;
 @AllArgsConstructor
 public class FinancingHdrDto implements Serializable {
     private UUID financingHdrCode;
-    private Instant financingDate;
+    private LocalDateTime financingDate;
     private String currencyCode;
     private Long invoiceQty;
     private String interestType;
@@ -49,10 +49,10 @@ public class FinancingHdrDto implements Serializable {
     private Double othersFeeAmt;
     private Double financingAmt;
     private Double disburseAmt;
-    private Instant disburseDate;
-    private Instant financingDueDate;
+    private LocalDateTime disburseDate;
+    private LocalDateTime financingDueDate;
     private String financingStatus;
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
     private Customer customer;
     private Bouwheer bouwheer;
     private List<FinancingDtlDto> details;

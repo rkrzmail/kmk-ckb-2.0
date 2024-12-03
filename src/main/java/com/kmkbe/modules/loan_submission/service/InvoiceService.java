@@ -15,6 +15,7 @@ import com.kmkbe.core.domain.spec.FinancingDtlSpec;
 import com.kmkbe.core.domain.spec.InvoiceSpec;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
+import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -77,8 +78,8 @@ public class InvoiceService {
                                             ? "Invoice By Trakindo"
                                             : posted.getInvoiceDescription()
                             )
-                            .invoiceDate(posted.getInvoiceDate().toInstant())
-                            .invoiceDueDate(posted.getInvoiceDueDate().toInstant())
+                            .invoiceDate(Utils.toInstant( posted.getInvoiceDate()))
+                            .invoiceDueDate(Utils.toInstant( posted.getInvoiceDueDate()))
                             .invoiceAmt(posted.getInvoiceAmount().doubleValue())
                             .poNumber(posted.getPoNumber())
                             .postingDate(posted.getPostingDate())
@@ -298,8 +299,8 @@ public class InvoiceService {
                                 .bouwheerName(e.getFinancingHdr().getBouwheer().getBouwheerName())
                                 .customerInvoiceNo(e.getInvoice().getCustInvNo())
                                 .bouwheerInvoiceNo(e.getInvoice().getBouwheerInvNo())
-                                .invoiceDate(Date.from(e.getInvoice().getInvoiceDate()))
-                                .invoiceDueDate(Date.from(e.getInvoice().getInvoiceDueDate()))
+                                .invoiceDate(Utils.fromInstant(e.getInvoice().getInvoiceDate()))
+                                .invoiceDueDate(Utils.fromInstant(e.getInvoice().getInvoiceDueDate()))
                                 .invoiceAmount(BigDecimal.valueOf(e.getInvoice().getInvoiceAmt()))
                                 .invoiceDescription(
                                         StringUtil.isNullOrEmpty(e.getInvoice().getInvoiceDescription())
@@ -359,10 +360,10 @@ public class InvoiceService {
                                     : financingDtlPage.getContent().get(i).getInvoice().getInvoiceDescription())
                             .status(status.getStatus())
                             .statusLabel(status.getLabel())
-                            .invoiceDate(Date.from(financingDtlPage.getContent().get(i).getInvoice().getInvoiceDate()))
+                            .invoiceDate(Utils.fromInstant(financingDtlPage.getContent().get(i).getInvoice().getInvoiceDate()))
                             .facilityDueDate(null)
                             .verifDate(null)
-                            .disburseDate(Date.from(financingDtlPage.getContent().get(i).getBouwheerPaidDate()))
+                            .disburseDate(Utils.fromInstant(financingDtlPage.getContent().get(i).getBouwheerPaidDate()))
                             .hasAction(hasAction)
                             .build();
                 })
@@ -419,10 +420,10 @@ public class InvoiceService {
                                     : financingDtlPage.getContent().get(i).getInvoice().getInvoiceDescription())
                             .status(status.getStatus())
                             .statusLabel(status.getLabel())
-                            .invoiceDate(Date.from(financingDtlPage.getContent().get(i).getInvoice().getInvoiceDate()))
+                            .invoiceDate(Utils.fromInstant(financingDtlPage.getContent().get(i).getInvoice().getInvoiceDate()))
                             .facilityDueDate(null)
                             .verifDate(null)
-                            .disburseDate(Date.from(financingDtlPage.getContent().get(i).getBouwheerPaidDate()))
+                            .disburseDate(Utils.fromInstant(financingDtlPage.getContent().get(i).getBouwheerPaidDate()))
                             .hasAction(hasAction)
                             .build();
                 })

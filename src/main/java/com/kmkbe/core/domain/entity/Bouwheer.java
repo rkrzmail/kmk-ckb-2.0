@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -136,14 +136,14 @@ public class Bouwheer {
 
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
     private String usrUpd;
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
     @OneToMany(mappedBy = "bouwheer")
     private Set<FinancingHdr> financingHdrs = new LinkedHashSet<>();

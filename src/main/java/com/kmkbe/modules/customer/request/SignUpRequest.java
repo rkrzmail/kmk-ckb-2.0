@@ -13,7 +13,7 @@ import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.validator.constraints.Length;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -79,7 +79,7 @@ public class SignUpRequest {
         private String area;
         private String phone;
         private String ownershipStatus;
-        private Instant staySince;
+        private LocalDateTime staySince;
     }
 
     @SuperBuilder
@@ -92,8 +92,8 @@ public class SignUpRequest {
         private String companyModel;
         private String identityType;
         private String identityNo;
-        private Instant identityIssuedDate;
-        private Instant identityExpiredDate;
+        private LocalDateTime identityIssuedDate;
+        private LocalDateTime identityExpiredDate;
         private String companyAddress;
         private String custIdNo;
 
@@ -106,11 +106,11 @@ public class SignUpRequest {
     @ToString
     public static class Personal extends AddressDetail {
         private String birthPlace;
-        private Instant birthDate;
+        private LocalDateTime birthDate;
         private String gender;
         private String identityType;
         private String identityNo;
-        private Instant expiredDate;
+        private LocalDateTime expiredDate;
         private String motherMaidenName;
         private String maritalStatus;
         private CustomerModel customerModel;

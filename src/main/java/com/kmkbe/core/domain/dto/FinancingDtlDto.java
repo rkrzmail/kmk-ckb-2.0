@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -19,7 +19,7 @@ public class FinancingDtlDto implements Serializable {
     private UUID financingDtlCode;
     private Long financingDtlId;
     private String bouwheerInvNo;
-    private Instant paidToCustDate;
-    private Instant bouwheerPaidDate;
+    private LocalDateTime paidToCustDate;
+    private LocalDateTime bouwheerPaidDate;
     private InvoiceDto invoice;
 }

@@ -5,7 +5,7 @@ import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 
 
@@ -78,13 +78,13 @@ public class Customer implements UserDetails {
     private String usrCrt = "SYSTEM";
 
     @Column
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Column(length = 50)
     private String usrUpd;
 
     @Column
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
     @OneToOne(
             mappedBy = "customer",

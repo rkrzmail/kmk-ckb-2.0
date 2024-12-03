@@ -33,10 +33,9 @@ public class FinancingService {
                         .build();
                 try {
                     financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
-                    agreement.setApprovalFlag("true");
-                    agreementRepository.save(agreement);
-                } catch (Exception ignored) {
-                }
+                } catch (Exception ignored) {  }
+                agreement.setApprovalFlag("true");
+                agreementRepository.save(agreement);
             }
         }
     }

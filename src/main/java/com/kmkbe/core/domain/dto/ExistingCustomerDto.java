@@ -4,7 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Getter
@@ -19,6 +19,6 @@ public class ExistingCustomerDto {
     private String identityType;
     private String identityNo;
     private Boolean isExisting;
-    private Instant dtmCrt;
-    private Instant dtmUpd;
+    private LocalDateTime dtmCrt;
+    private LocalDateTime dtmUpd;
 }

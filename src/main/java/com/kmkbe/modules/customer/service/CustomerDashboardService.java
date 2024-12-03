@@ -9,6 +9,7 @@ import com.kmkbe.core.domain.repository.CwrRepository;
 import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
+import com.kmkbe.nikita.utils.Utils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
@@ -89,7 +90,7 @@ public class CustomerDashboardService {
                     .totalPlafondUsedUnit(used.getUnit())
                     .totalAvailablePlafond(available.getValue())
                     .totalAvailablePlafondUnit(available.getUnit())
-                    .validityLimitDate(Date.from(lastCwr.getCwrEndDate()))
+                    .validityLimitDate(Utils.fromInstant(lastCwr.getCwrEndDate()))
                     .totalInvoiceFounded(invoiceFunded)
                     .build();
         } catch (Exception e) {

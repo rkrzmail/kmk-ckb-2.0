@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 
 import java.security.Key;
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
@@ -104,12 +105,12 @@ public class JwtService {
     }
 
     public String generateOauth2Token(Authentication authentication) {
-        Instant now = DateTimeUtils.now();
+        LocalDateTime now = DateTimeUtils.now();
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("self")
-                .issuedAt(now)
-                .expiresAt(now.plus(10, ChronoUnit.HOURS))
+                .issuedAt(Instant.now())
+                .expiresAt(Instant.now().plus(10, ChronoUnit.HOURS))
                 .subject(authentication.getName())
                 .build();
 

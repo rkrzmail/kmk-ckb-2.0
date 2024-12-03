@@ -2,16 +2,27 @@ package com.kmkbe.modules.customer.controller;
 
 import com.kmkbe.core.domain.dto.LoginDto;
 import com.kmkbe.core.domain.dto.RequestOtpDto;
+import com.kmkbe.core.domain.entity.RedisAttack;
 import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.repository.RedisAttackRepository;
+import com.kmkbe.core.domain.repository.RedisRepository;
+import com.kmkbe.core.exception.CommonInvalidException;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.customer.request.LoginRequest;
 import com.kmkbe.modules.customer.request.RequestOtpRequest;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
 import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.customer.service.OtpService;
+import com.kmkbe.nikita.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/v1/otp")
@@ -23,17 +34,69 @@ import org.springframework.web.bind.annotation.*;
 public class OtpController {
     private final AuthService authService;
     private final OtpService otpService;
+    private final RedisRepository redisRepository;
+    private final RedisAttackRepository redisAttackRepository;
+
 
     @PutMapping("/verify/sign-up")
     public CommonResult<LoginDto> verifySignUp(
             @Valid @RequestBody VerifyOtpRequest request
     ) throws Exception {
+        //validate dan bruce attack
+        String key = "verifysignup:"+request.email();
+        int counter = 0;
+        RedisAttack redisAttack ;
+        // Define a formatter for parsing the dates
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime startDate;
+        Optional<RedisAttack>  redisAttacks = redisAttackRepository.findTopByRedis(key);
+        if (redisAttacks.isEmpty()){
+            counter = 1;
+            redisAttack = RedisAttack.builder()
+                    .redis(key)
+                    .session("")
+                    .countAttack(counter)
+                    .modifiedDate(DateTimeUtils.nowDate())
+                    .build();
+            startDate =   DateTimeUtils.nowLocal();
+            redisAttackRepository.save(redisAttack);
+        }else{
+            redisAttack = redisAttacks.get();
+            startDate = LocalDateTime.parse(Utils.formatDate(redisAttack.getModifiedDate())  , formatter);
+
+            counter = redisAttack.getCountAttack()+1;
+            redisAttack.setCountAttack(counter);
+            redisAttack.setModifiedDate(DateTimeUtils.nowDate());
+            redisAttackRepository.save(redisAttack);
+        }
+
+
+        if (counter>5){
+
+            // Parse the input dates
+            LocalDateTime endDate =  DateTimeUtils.nowLocal();
+
+            // Calculate the duration between the dates
+            Duration duration = Duration.between(startDate, endDate);
+            if (duration.toMinutes() < 15){
+                throw CommonInvalidException.invalidAttack();
+            }
+            redisAttack.setCountAttack(1);//update 1
+
+        }
+
         LoginRequest loginRequest = new LoginRequest(
                 request.email(),
                 request.pin()
         );
 
         String message = otpService.verifySignUp(request);
+
+
+
+        redisAttack.setCountAttack(0);
+        redisAttack.setModifiedDate(DateTimeUtils.nowDate());
+        redisAttackRepository.save(redisAttack);
         return new CommonResult<LoginDto>().success(
                 authService.signIn(loginRequest),
                 message
@@ -44,7 +107,56 @@ public class OtpController {
     public CommonResult<String> verifyForgotPin(
             @Valid @RequestBody VerifyOtpRequest request
     ) throws Exception {
-        return new CommonResult<String>().success(otpService.verifyForgotPin(request));
+
+        //validate dan bruce attack
+        String key = "verifyforgot:"+request.email();
+        int counter = 0;
+        RedisAttack redisAttack ;
+        // Define a formatter for parsing the dates
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+        LocalDateTime startDate;
+        Optional<RedisAttack>  redisAttacks = redisAttackRepository.findTopByRedis(key);
+        if (redisAttacks.isEmpty()){
+            counter = 1;
+            redisAttack = RedisAttack.builder()
+                    .redis(key)
+                    .session("")
+                    .countAttack(counter)
+                    .modifiedDate(DateTimeUtils.nowDate())
+                    .build();
+            startDate =   DateTimeUtils.nowLocal();
+            redisAttackRepository.save(redisAttack);
+        }else{
+            redisAttack = redisAttacks.get();
+            startDate = LocalDateTime.parse(Utils.formatDate(redisAttack.getModifiedDate())  , formatter);
+
+            counter = redisAttack.getCountAttack()+1;
+            redisAttack.setCountAttack(counter);
+            redisAttack.setModifiedDate(DateTimeUtils.nowDate());
+            redisAttackRepository.save(redisAttack);
+        }
+
+
+        if (counter>5){
+
+            // Parse the input dates
+            LocalDateTime endDate =  DateTimeUtils.nowLocal();
+
+            // Calculate the duration between the dates
+            Duration duration = Duration.between(startDate, endDate);
+            if (duration.toMinutes() < 15){
+                throw CommonInvalidException.invalidAttack();
+            }
+            redisAttack.setCountAttack(1);//update 1
+
+        }
+
+        String string = otpService.verifyForgotPin(request);
+
+        redisAttack.setCountAttack(0);
+        redisAttack.setModifiedDate(DateTimeUtils.nowDate());
+        redisAttackRepository.save(redisAttack);
+        return new CommonResult<String>().success(string);
     }
 
     @PostMapping("/send/forgot-pin")

@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Getter
@@ -18,7 +18,7 @@ public class ProductDto implements Serializable {
     private Long productId;
     private String branchCode;
     private String productName;
-    private Instant effectiveDate;
+    private LocalDateTime effectiveDate;
     private Double ntfFrom;
     private Double ntfTo;
     private Double effectiveRate;
@@ -31,7 +31,7 @@ public class ProductDto implements Serializable {
     private Double othersFee;
     private Boolean isActive;
     private String usrCrt;
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
     private String usrUpd;
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 }

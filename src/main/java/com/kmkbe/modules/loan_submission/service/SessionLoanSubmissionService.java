@@ -6,6 +6,7 @@ import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.core.domain.dto.LoanSubmissionSessionDto;
+import com.kmkbe.nikita.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -14,7 +15,8 @@ import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
 import java.sql.Timestamp;
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Optional;
 
 @Service
@@ -69,14 +71,14 @@ public class SessionLoanSubmissionService {
                         customer.getCustCode(),
                         lastStep,
                         ObjectUtils.jsonToStr(jsonSession),
-                        Timestamp.from(DateTimeUtils.now())
+                        Timestamp.valueOf(DateTimeUtils.nowLocal())
                 );
             } else {
                 jdbcTemplate.update(
                         "update public._loan_submission_session set last_step = ?, session = ?, dtm_upd = ? where cust_code = ?",
                         lastStep,
                         ObjectUtils.jsonToStr(jsonSession),
-                        Timestamp.from(DateTimeUtils.now()),
+                        Timestamp.valueOf(DateTimeUtils.nowLocal()),
                         customer.getCustCode()
                 );
             }
@@ -96,8 +98,8 @@ public class SessionLoanSubmissionService {
                     "select cust_code, last_step, session, dtm_crt, dtm_upd from public._loan_submission_session where cust_code = ? order by id desc limit 1",
                     (rs, rowNum) -> LoanSubmissionSessionDto.builder()
                             .lastStep(rs.getInt("last_step"))
-                            .dtmCrt(Instant.ofEpochMilli(rs.getTimestamp("dtm_crt").getTime()))
-                            .dtmUpd(rs.getTimestamp("dtm_upd") != null ? Instant.ofEpochMilli(rs.getTimestamp("dtm_upd").getTime()) : null)
+                            .dtmCrt(Utils.toInstant( new Date( rs.getTimestamp("dtm_crt").getTime())))
+                            .dtmUpd(rs.getTimestamp("dtm_upd") != null ? Utils.toInstant( new Date(rs.getTimestamp("dtm_upd").getTime())) : null)
                             .session(ObjectUtils.strToJson(rs.getString("session")))
                             .build(),
                     customer.getCustCode()

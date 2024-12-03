@@ -48,7 +48,7 @@ public class CommonInvalidException extends RuntimeException {
     public static CommonInvalidException invalidAttack() {
         return CommonInvalidException.builder()
                 .title("Terdeteksi kesalahan berulang")
-                .message("Anda sudah mencoba lebih dari 5, silahkan mengulang 30 menit lagi")
+                .message("Anda sudah mencoba lebih dari 5, silahkan mengulang 15 menit lagi")
                 .action(CommonInvalidException.Action.builder().title("Kembali").uri("/auth/sign-in").build())
                 .headerMessage("User not found")
                 .build();

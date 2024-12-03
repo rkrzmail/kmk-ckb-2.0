@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Getter
@@ -33,7 +33,7 @@ public class BouwheerDto {
     private String aesKey;
     private Boolean isActive;
     private String usrCrt;
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
     private String usrUpd;
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 }

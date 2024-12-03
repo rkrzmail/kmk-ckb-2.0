@@ -37,7 +37,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.sql.Timestamp;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -388,18 +388,8 @@ public class AgreementService {
 
         Map<String, Object> obj = findCsulBank();
 
-        BaseSimpleRemoteResponseDto<Object> postedResponse = financingRemoteService.postedSubmission(
-                FinancingSubmissionRequest.builder()
-                        .vendorCode(customer.getCustExternalCode())
-                        .accountNo(obj.get("accountNo").toString())
-                        .accountName(obj.get("accountName").toString())
-                        .bankName(obj.get("bankName").toString())
-                        .bankKey(obj.get("bankKey").toString())
-                        .financingCode(request.getFinancingHdrCode())
-                        .financingAmount(new BigDecimal(financingHdr.getFinancingAmt(), MathContext.DECIMAL64).toString())
-                        .financingInvoices(financingInvoices)
-                        .build()
-        );
+
+
 
         final List<InvoiceEmailPayload> invoices = financingDtls
                 .stream()
@@ -415,13 +405,30 @@ public class AgreementService {
                 ).toList();
 
         String email = financingHdr.getBouwheer().getPicEmail();
-        if (
-                postedResponse.getData() instanceof Map<?, ?> body
-                        && body.get("email_address") != null
-        ) {
-            email = body.get("email_address").toString();
-        }
 
+        try {
+            BaseSimpleRemoteResponseDto<Object> postedResponse = financingRemoteService.postedSubmission(
+                    FinancingSubmissionRequest.builder()
+                            .vendorCode(customer.getCustExternalCode())
+                            .accountNo(obj.get("accountNo").toString())
+                            .accountName(obj.get("accountName").toString())
+                            .bankName(obj.get("bankName").toString())
+                            .bankKey(obj.get("bankKey").toString())
+                            .financingCode(request.getFinancingHdrCode())
+                            .financingAmount(new BigDecimal(financingHdr.getFinancingAmt(), MathContext.DECIMAL64).toString())
+                            .financingInvoices(financingInvoices)
+                            .build()
+            );
+            if (
+                    postedResponse.getData() instanceof Map<?, ?> body
+                            && body.get("email_address") != null
+            ) {
+                email = body.get("email_address").toString();
+            }
+        } catch (Exception igonred) {}
+
+
+        /// no trow
         emailService.sendNotificationBouwheerPayment(
                 email,
                 BouwheerPaymentEmailPayload.builder()

@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -43,7 +43,7 @@ public class LoginLog {
 
     @NotNull
     @Column(name = "login_date", nullable = false)
-    private Instant loginDate;
+    private LocalDateTime loginDate;
 
     @NotNull
     @ColumnDefault("false")
@@ -51,10 +51,10 @@ public class LoginLog {
     private Boolean isLogout = false;
 
     @Column(name = "logout_date")
-    private Instant logoutDate;
+    private LocalDateTime logoutDate;
 
     @Column(name = "usr_logout")
-    private Instant usrLogout;
+    private LocalDateTime usrLogout;
 
     @OneToMany(mappedBy = "loginLogCode")
     private Set<ErrorLog> errorLogs = new LinkedHashSet<>();

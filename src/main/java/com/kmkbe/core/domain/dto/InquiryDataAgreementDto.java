@@ -3,7 +3,7 @@ package com.kmkbe.core.domain.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter

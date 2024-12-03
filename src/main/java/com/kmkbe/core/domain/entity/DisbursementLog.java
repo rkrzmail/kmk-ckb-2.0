@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Builder
@@ -72,7 +72,7 @@ public class DisbursementLog {
     private String apTypeName;
 
     @Column(name = "ap_due_date")
-    private Instant apDueDate;
+    private LocalDateTime apDueDate;
 
     @Size(max = 3)
     @Column(name = "branch_code", length = 3)
@@ -88,12 +88,12 @@ public class DisbursementLog {
 
     @ColumnDefault("now()")
     @Column(name = "dtm_crt")
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
     private String usrUpd;
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 }

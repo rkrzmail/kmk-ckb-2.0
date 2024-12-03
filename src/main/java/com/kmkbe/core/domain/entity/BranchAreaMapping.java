@@ -9,7 +9,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Builder
 @Getter
@@ -58,13 +58,13 @@ public class BranchAreaMapping {
     @NotNull
     @ColumnDefault("now()")
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
     private String usrUpd;
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
 }

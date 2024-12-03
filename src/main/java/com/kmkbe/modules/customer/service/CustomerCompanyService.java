@@ -7,11 +7,12 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
+import com.kmkbe.nikita.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -94,8 +95,8 @@ public class CustomerCompanyService {
             company.setCompanyModel(request.getCompanyModel());
             company.setIdentityType(request.getIdentityType());
             company.setIdentityNo(request.getIdentityNo());
-            company.setIdentityIssuedDate(request.getIdentityIssuedDate().toInstant());
-            company.setIdentityExpiredDate(request.getIdentityExpiredDate().toInstant());
+            company.setIdentityIssuedDate(Utils.toInstant(request.getIdentityIssuedDate()) );
+            company.setIdentityExpiredDate(Utils.toInstant(request.getIdentityExpiredDate() ));
             company.setCompanyAddress(request.getCompanyAddress());
             {
                 company.setKelurahan(addressRequest.getKelurahan());
@@ -110,8 +111,8 @@ public class CustomerCompanyService {
             }
             company.setPhone(request.getPhone());
             company.setOwnershipStatus(request.getOwnershipStatus());
-            company.setStaySince(request.getStaySince().toInstant());
-            company.setStayLength(CustomerUtils.calculateStayLength(request.getStaySince().toInstant()));
+            company.setStaySince(Utils.toInstant(request.getStaySince()));
+            company.setStayLength(CustomerUtils.calculateStayLength(Utils.toInstant(request.getStaySince())));
 
             return customerCompanyRepository.save(company);
         } catch (Exception e) {

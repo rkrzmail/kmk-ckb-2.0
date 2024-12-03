@@ -5,7 +5,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Getter
@@ -15,5 +15,5 @@ public class LegalFileDto {
     private Long fileId;
     private String fileUrl;
     private String fileName;
-    private Instant uploadedDate;
+    private LocalDateTime uploadedDate;
 }

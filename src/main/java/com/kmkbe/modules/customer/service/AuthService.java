@@ -29,6 +29,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -61,6 +62,8 @@ public class AuthService {
     //@Qualifier("CacheRefreshTokenServices")
     private final IRefreshTokenServices refreshTokenServices;
 
+
+
     //@Transactional
     public LoginDto signIn(LoginRequest request) {
         try {
@@ -69,6 +72,9 @@ public class AuthService {
             String key = "signIn:"+request.email();
             int counter = 0;
             RedisAttack redisAttack ;
+            // Define a formatter for parsing the dates
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            LocalDateTime startDate;
             Optional<RedisAttack>  redisAttacks = redisAttackRepository.findTopByRedis(key);
             if (redisAttacks.isEmpty()){
                 counter = 1;
@@ -76,27 +82,29 @@ public class AuthService {
                         .redis(key)
                         .session("")
                         .countAttack(counter)
-                        .modifiedDate(Date.from(DateTimeUtils.now()))
+                        .modifiedDate(DateTimeUtils.nowDate())
                         .build();
+                startDate =   DateTimeUtils.nowLocal();
                 redisAttackRepository.save(redisAttack);
             }else{
                 redisAttack = redisAttacks.get();
+                startDate = LocalDateTime.parse(Utils.formatDate(redisAttack.getModifiedDate())  , formatter);
+
                 counter = redisAttack.getCountAttack()+1;
                 redisAttack.setCountAttack(counter);
-                redisAttack.setModifiedDate(Date.from(DateTimeUtils.now()));
+                redisAttack.setModifiedDate(DateTimeUtils.nowDate());
                 redisAttackRepository.save(redisAttack);
             }
+
+
             if (counter>5){
-                // Define a formatter for parsing the dates
-                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
                 // Parse the input dates
-                LocalDateTime startDate = LocalDateTime.parse(Utils.formatDate(redisAttack.getModifiedDate())  , formatter);
-                LocalDateTime endDate = LocalDateTime.parse(Utils.formatDate(Date.from(DateTimeUtils.now())), formatter);
+                 LocalDateTime endDate =  DateTimeUtils.nowLocal();
 
                 // Calculate the duration between the dates
                 Duration duration = Duration.between(startDate, endDate);
-                if (duration.toMinutes() < 30){
+                if (duration.toMinutes() < 15){
                     throw CommonInvalidException.invalidAttack();
                 }
                 redisAttack.setCountAttack(1);//update 1
@@ -145,16 +153,18 @@ public class AuthService {
             );
 
 
-            //benar
-            redisAttack.setCountAttack(0);
-            redisAttack.setModifiedDate(Date.from(DateTimeUtils.now()));
-            redisAttackRepository.save(redisAttack);
+
 
             LoginDto loginDto = new LoginDto(
                     jwtService.generateToken(cust),
                     refreshTokenResult.getRefreshToken().toString(),
                     jwtService.getExpirationTime());
             String jwt = refreshTokenResult.getRefreshToken().toString();
+
+            //benar
+            redisAttack.setCountAttack(0);
+            redisAttack.setModifiedDate(DateTimeUtils.nowDate());
+            redisAttackRepository.save(redisAttack);
 
             RedisLog redis =  RedisLog.builder()
                     .redis(request.email())
@@ -190,6 +200,8 @@ public class AuthService {
     @Transactional
     public String forgotPin(ForgotPinRequest request) {
         try {
+
+
             final Optional<Customer> find = customerRepository.findByCustEmail(request.email());
             if (find.isEmpty()) {
                 throw new EntityNotFoundException("User not found");
@@ -223,6 +235,11 @@ public class AuthService {
             final RefreshToken payload = refreshTokenServices.verify(request.refreshToken());
             refreshTokenServices.invalidate(payload.getRefreshToken().toString());
 
+
+            Optional<RedisLog> redisLog = redisRepository.findFirstBySession(payload.getRefreshToken().toString());
+            if (redisLog.isEmpty()){
+                throw new BadCredentialsException("Invalid token, Multi Login");
+            }
 
 
             final Customer customer = customerRepository

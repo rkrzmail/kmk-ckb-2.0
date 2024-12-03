@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Builder
@@ -86,14 +86,14 @@ public class Agreement {
     @NotNull(message = "Dtm crt cannot be null")
     @ColumnDefault("now()")
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
     private String usrUpd;
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
     @Column(name = "approval_flag")
     private String approvalFlag;

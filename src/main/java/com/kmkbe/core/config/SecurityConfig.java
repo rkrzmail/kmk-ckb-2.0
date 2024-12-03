@@ -12,6 +12,7 @@ import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import jakarta.servlet.DispatcherType;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -67,6 +68,15 @@ public class SecurityConfig {
         //this.apiKeyAuthenticationFilter = new ApiKeyAuthenticationFilter();
     }
 
+
+    @Bean
+    public FilterRegistrationBean<CustomFilter> customFilter() {
+        FilterRegistrationBean<CustomFilter> registrationBean = new FilterRegistrationBean<CustomFilter>();
+        registrationBean.setFilter(new CustomFilter());
+        registrationBean.addUrlPatterns("/api/*"); // Hanya berlaku untuk endpoint tertentu
+        registrationBean.setOrder(1); // Prioritas filter
+        return registrationBean;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {

@@ -9,6 +9,7 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.request.RequestOtpRequest;
 import com.kmkbe.modules.customer.request.VerifyOtpRequest;
+import com.kmkbe.modules.user.utils.Utils;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -16,11 +17,12 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.mongodb.core.aggregation.ArithmeticOperators;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.text.DecimalFormat;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
 import java.util.Random;
@@ -36,7 +38,7 @@ public class OtpService {
     private final BCryptPasswordEncoder bcryptEncoder;
 
     public OtpLog create(@NonNull Customer customer, @NonNull OtpType type) throws Exception {
-        final Instant now = DateTimeUtils.now();
+        final LocalDateTime now = DateTimeUtils.now();
         final OtpLog otpLog = new OtpLog();
         otpLog.setEmail(customer.getCustEmail());
         otpLog.setMobilePhone(customer.getCustMobilePhone());
@@ -88,17 +90,25 @@ public class OtpService {
     public RequestOtpDto sendForgotPin(String email) throws Exception {
         final Optional<Customer> find = customerRepository.findByCustEmail(email);
         if (find.isEmpty()) {
-            throw new EntityNotFoundException("Customer not found, enter an valid email");
+            //throw new EntityNotFoundException("Customer not found, enter an valid email");
+
+            return new RequestOtpDto(
+                    genRequestId(email, Utils.RND()),
+                    email,
+                    DateTimeUtils.now().plus(5, ChronoUnit.MINUTES)
+            );
+        }else{
+            final Customer cust = find.get();
+            final OtpLog otpLog = create(cust, OtpType.CHANGE_PIN);
+
+            return new RequestOtpDto(
+                    genRequestId(cust, otpLog),
+                    cust.getCustEmail(),
+                    otpLog.getExpiredDate()
+            );
         }
 
-        final Customer cust = find.get();
-        final OtpLog otpLog = create(cust, OtpType.CHANGE_PIN);
 
-        return new RequestOtpDto(
-                genRequestId(cust, otpLog),
-                cust.getCustEmail(),
-                otpLog.getExpiredDate()
-        );
     }
 
     @Transactional
@@ -160,6 +170,10 @@ public class OtpService {
 
     public String genRequestId(Customer cust, OtpLog otpLog) {
         return bcryptEncoder.encode(cust.getCustEmail() + otpLog.getOtpLogId());
+    }
+
+    public String genRequestId(String email  , String otpLog) {
+        return bcryptEncoder.encode(email + otpLog);
     }
 
     public enum OtpType {

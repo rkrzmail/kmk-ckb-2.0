@@ -10,7 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 @Getter
 @Setter
@@ -52,10 +52,10 @@ public class JobLog {
 
     @NotNull
     @Column(name = "start_date", nullable = false)
-    private Instant startDate;
+    private LocalDateTime startDate;
 
     @Column(name = "end_date")
-    private Instant endDate;
+    private LocalDateTime endDate;
 
     @Size(max = 8000)
     @NotNull
@@ -73,13 +73,13 @@ public class JobLog {
 
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
     private String usrUpd;
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
 }

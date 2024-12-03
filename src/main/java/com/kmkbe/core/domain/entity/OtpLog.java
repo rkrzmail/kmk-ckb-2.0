@@ -3,7 +3,7 @@ package com.kmkbe.core.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 
 @NoArgsConstructor
@@ -38,10 +38,10 @@ public class OtpLog {
     private String email;
 
     @Column(nullable = false)
-    private Instant generatedDate;
+    private LocalDateTime generatedDate;
 
     @Column(nullable = false)
-    private Instant expiredDate;
+    private LocalDateTime expiredDate;
 
     @Column(nullable = false)
     private Boolean isUsed;
@@ -50,11 +50,11 @@ public class OtpLog {
     private String usrCrt;
 
     @Column
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Column(length = 50)
     private String usrUpd;
 
     @Column
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 }

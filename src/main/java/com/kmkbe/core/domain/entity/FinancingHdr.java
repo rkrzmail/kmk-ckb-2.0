@@ -8,7 +8,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.UUID;
 
@@ -51,7 +51,7 @@ public class FinancingHdr implements Serializable {
 
     @NotNull
     @Column(name = "financing_date", nullable = false)
-    private Instant financingDate;
+    private LocalDateTime financingDate;
 
     @Size(max = 5)
     @NotNull
@@ -153,11 +153,11 @@ public class FinancingHdr implements Serializable {
 
     @NotNull
     @Column(name = "disburse_date", nullable = false) // , precision = 17, scale = 2
-    private Instant disburseDate;
+    private LocalDateTime disburseDate;
 
     @NotNull
     @Column(name = "financing_due_date", nullable = false)
-    private Instant financingDueDate;
+    private LocalDateTime financingDueDate;
 
     @NotNull
     @Column(name = "financing_status", nullable = false)
@@ -188,14 +188,14 @@ public class FinancingHdr implements Serializable {
 
     @NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
     private String usrUpd;
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
     @OneToMany(mappedBy = "financingHdr")
     private Set<Agreement> agreement;

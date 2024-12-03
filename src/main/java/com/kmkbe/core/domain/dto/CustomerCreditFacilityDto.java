@@ -3,7 +3,7 @@ package com.kmkbe.core.domain.dto;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Getter
@@ -40,5 +40,5 @@ public class CustomerCreditFacilityDto {
     private String currentBranch;
     private String custStatus;
     private StatusLabelDto status;
-    private Instant dtmCrt;*/
+    private LocalDateTime dtmCrt;*/
 }

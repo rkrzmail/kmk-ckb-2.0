@@ -29,7 +29,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.TemporalField;
 import java.util.*;
 import java.util.stream.IntStream;
@@ -183,7 +184,7 @@ public class FinancingDtlService {
                             financingDtl.getInvoice().setUsrUpd(financingHdr.getUsrUpd());
                             financingDtl.getInvoice().setDtmUpd(DateTimeUtils.now());
 
-                            financingDtl.setBouwheerPaidDate(request.getInvoicePaid().getFirst().getPostingDate().toInstant());
+                            financingDtl.setBouwheerPaidDate(Utils.toInstant(request.getInvoicePaid().getFirst().getPostingDate()));
                             financingDtl.setDtmUpd(DateTimeUtils.now());
                             financingDtl.setUsrUpd(financingHdr.getUsrUpd());
                             financingDtlRepository.save(financingDtl);
@@ -203,7 +204,7 @@ public class FinancingDtlService {
     public void paymentReceive(FinancingInvoicePaidRequest request, FinancingHdr financingHdr) throws Exception {
         try {
             String noAggrNo = financingHdr.getAgreement().size() == 0 ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();
-            Instant settelmanetDate = request.getInvoicePaid().isEmpty()?DateTimeUtils.now(): request.getInvoicePaid().get(0).getClearingDate().toInstant();;
+            LocalDateTime settelmanetDate = request.getInvoicePaid().isEmpty()?DateTimeUtils.now(): Utils.toInstant(  request.getInvoicePaid().get(0).getClearingDate());;
             String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
 
 
@@ -242,12 +243,12 @@ public class FinancingDtlService {
 
                 paymentReceiveHistory.setSettlementDte(settelmanetDate);
                 int tenor= 0;
-                if (settelmanetDate.toEpochMilli()<inquiryDataAgreementDto.getAgrmntObj().nextInstDueDt.toEpochMilli()){
+                if (settelmanetDate.toInstant(ZoneOffset.UTC).toEpochMilli()<inquiryDataAgreementDto.getAgrmntObj().nextInstDueDt.toInstant(ZoneOffset.UTC).toEpochMilli()){
                     tenor  = (int)Utils.dateDuration(settelmanetDate, inquiryDataAgreementDto.getAgrmntObj().effectiveDt).toDays();
                 }else{
                     tenor  = (int)Utils.dateDuration(inquiryDataAgreementDto.getAgrmntObj().nextInstDueDt, inquiryDataAgreementDto.getAgrmntObj().effectiveDt).toDays();
                 }
-                paymentReceiveHistory.setRealTenor(tenor);//financingHdr.getTenor().intValue()
+                paymentReceiveHistory.setRealTenor(Math.abs(tenor));//financingHdr.getTenor().intValue()
                 paymentReceiveHistory.setNtfAmt(inquiryDataAgreementDto.getAgrmntObj().ntfAmt);
                 paymentReceiveHistory.setTotalInvAmt(financingHdr.getTotalInvoiceAmt());
                 paymentReceiveHistory.setLcRate(inquiryDataAgreementDto.getAgrmntObj().lcInstRatePrml);
@@ -275,17 +276,18 @@ public class FinancingDtlService {
             throw e;
         }
     }
-    public void paymentReceiveSubmitUpdate(FinancingHdr financingHdr, Instant settelmanetDate ) throws Exception {
+    public void paymentReceiveSubmitUpdate(FinancingHdr financingHdr, LocalDateTime settelmanetDate ) throws Exception {
         try {
             String noAggrNo = financingHdr.getAgreement().size() == 0 ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();
             String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
             String noCode = financingHdr.getFinancingHdrCode().toString();
+
+            Optional<PaymentReceiveHistory> paymentReceiveHistoryDto = paymentReceiveHistoryRepository.findTopByAgreementCode(noAggrNo);
             /*
             Inquiry than Submit
              */
             //Inquiry Receive Amount
             InquiryReceiveAmountRequest receiveAmountRequest = new InquiryReceiveAmountRequest();
-            receiveAmountRequest.setRequestDateTime(sToday);
             receiveAmountRequest.setRequestDateTime(sToday);
             ArrayList<InquiryReceiveAmountRequest.RcvAmtList> rcvAmtLists = new ArrayList<>();
             List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr).orElse(null);
@@ -294,9 +296,9 @@ public class FinancingDtlService {
             rcvAmtList.agrmntNo = noAggrNo;//karena hanya 1 agrrement per financeheader, isi 1 saja
             rcvAmtList.rcvAmt = Utils.formatNoExponent(financingHdr.getTotalInvoiceAmt());
             rcvAmtLists.add(rcvAmtList);
-            receiveAmountRequest.setValueDt(sToday);
+            receiveAmountRequest.setValueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settelmanetDate)) );
             receiveAmountRequest.setRcvAmtList(rcvAmtLists);
-            InquiryReceiveAmountRequestDto receiveAmountRequestDto = inquiryReceiveAmountRequest(receiveAmountRequest);
+            InquiryReceiveAmountRequestDto receiveAmountRequestDto = inquiryReceiveAmountRequest(receiveAmountRequest);//CALL API
 
 
             //Submit Payment Receive
@@ -338,11 +340,15 @@ public class FinancingDtlService {
             listPayRcvDApiObj.agrmntNo = noAggrNo;
             listPayRcvDApiObj.rcvAmt = financingHdr.getTotalInvoiceAmt();
 
-            listPayRcvDApiObj.isAutoAlloc = false;
+            listPayRcvDApiObj.isAutoAlloc = true;
             listPayRcvDApiObj.allocCurrCode ="IDR";
             listPayRcvDApiObj.rcvTrxType = "AGR";
             listPayRcvDApiObj.refNo = noCode;
-            listPayRcvDApiObj.totalAmtToBePaid = financingHdr.getDisburseAmt();//settlement_amt
+            listPayRcvDApiObj.exchangeRateAmt = 1;
+            if (paymentReceiveHistoryDto.isPresent()) {
+                PaymentReceiveHistory paymentReceiveHistory = paymentReceiveHistoryDto.get();
+                listPayRcvDApiObj.totalAmtToBePaid = Utils.formatNoExponent(paymentReceiveHistory.getSettlementAmt());//settlement_amt
+            }
             ArrayList<SubmitPaymentReceiveRequest.PayRcvDAllocAPIList> payRcvDAllocAPILists = new ArrayList<>();
             ArrayList<InquiryReceiveAmountRequestDto.AllocMapList> allocMapLists = receiveAmountRequestDto.getAllocMapList();
 
@@ -350,15 +356,17 @@ public class FinancingDtlService {
                 InquiryReceiveAmountRequestDto.AllocMapList allocMapList = allocMapLists.getFirst();//ambil yng pertama
                 for (int j = 0; j < allocMapList.allocList.size(); j++) {
                     InquiryReceiveAmountRequestDto.AllocList allocList = allocMapList.allocList.get(j);
-                    SubmitPaymentReceiveRequest.PayRcvDAllocAPIList payRcvDAllocAPIList = new SubmitPaymentReceiveRequest.PayRcvDAllocAPIList();
-                    payRcvDAllocAPIList.refPaymentAllocCode = allocList.paymentAllocCode;   // RcvAmt memiliki nilai > 0
-                    payRcvDAllocAPIList.allocAmt = Utils.formatNoExponent(allocList.rcvAmt);
-                    payRcvDAllocAPIList.officeCode = "";
-                    payRcvDAllocAPIList.descr = "";
-                    payRcvDAllocAPIList.bizUnitCode = "";
 
+                    if (allocList.rcvAmt>=1){
+                        SubmitPaymentReceiveRequest.PayRcvDAllocAPIList payRcvDAllocAPIList = new SubmitPaymentReceiveRequest.PayRcvDAllocAPIList();
+                        payRcvDAllocAPIList.refPaymentAllocCode = allocList.paymentAllocCode;   // RcvAmt memiliki nilai > 0
+                        payRcvDAllocAPIList.allocAmt = Utils.formatNoExponent(allocList.rcvAmt);
+                        payRcvDAllocAPIList.officeCode = "";
+                        payRcvDAllocAPIList.descr = "";
+                        payRcvDAllocAPIList.bizUnitCode = "";
 
-                    payRcvDAllocAPILists.add(payRcvDAllocAPIList);
+                        payRcvDAllocAPILists.add(payRcvDAllocAPIList);
+                    }
                 }
             }
 
@@ -373,7 +381,7 @@ public class FinancingDtlService {
             SubmitPaymentReceiveRequestDto submitPaymentReceiveRequestDto = submitPaymentReceiveRequest(submitPaymentReceiveRequest);
 
             if (submitPaymentReceiveRequestDto.getStatusCode().equalsIgnoreCase("200")) {
-                Optional<PaymentReceiveHistory> paymentReceiveHistoryDto = paymentReceiveHistoryRepository.findTopByAgreementCode(noAggrNo);
+                //Optional<PaymentReceiveHistory> paymentReceiveHistoryDto = paymentReceiveHistoryRepository.findTopByAgreementCode(noAggrNo);
 
                 //Update Table
                 try {
@@ -525,6 +533,8 @@ public class FinancingDtlService {
                     submitPaymentReceiveRequest,
                     headers
             );
+
+
 
             final ResponseEntity<String> response = restTemplate.exchange(
                     baseRemoteService.PaymentReceive_SubmitPaymentReceiveFromApi(),

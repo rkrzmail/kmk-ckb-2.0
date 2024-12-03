@@ -25,7 +25,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.thymeleaf.util.StringUtils;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Map;
 
 @Aspect
@@ -162,6 +162,28 @@ public class HttpRequestAspect {
                     .build();
 
             apiIntegrationLogRepository.save(apiIntegrationLog);
+        }
+
+
+
+        return response;
+    }
+
+
+
+    @Around("execution(* com.kmkbe.modules.customer.service.AuthService.signIn(..))")
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public Object logAttack(ProceedingJoinPoint joinPoint) throws Throwable {
+        Object response;
+
+        try {
+            //log awal = joinPoint.getArgs();
+            //LoginRequest
+            response = joinPoint.proceed();
+
+
+        } finally {
+            //wa
         }
 
 

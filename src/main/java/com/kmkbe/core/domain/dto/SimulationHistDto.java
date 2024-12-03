@@ -5,7 +5,7 @@ import com.kmkbe.core.domain.entity.SimulationHist;
 import lombok.*;
 
 import java.io.Serializable;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
@@ -30,7 +30,7 @@ public class SimulationHistDto implements Serializable {
 
     private Boolean isUsed;
 
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     private FinancingHdrDto financingHdr;
 }

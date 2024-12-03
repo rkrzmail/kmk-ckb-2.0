@@ -25,6 +25,7 @@ import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import com.kmkbe.nikita.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
@@ -37,7 +38,7 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.security.SignatureException;
 import java.text.ParseException;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -108,8 +109,8 @@ public class CwrService {
 
             return DetailCwrDto.builder()
                     .cwrCode(cwr.getCwrCode())
-                    .cwrStartDate(Date.from(cwr.getCwrStartDate()))
-                    .cwrEndDate(Date.from(cwr.getCwrEndDate()))
+                    .cwrStartDate(Utils.fromInstant(cwr.getCwrStartDate()))
+                    .cwrEndDate(Utils.fromInstant(cwr.getCwrEndDate()))
                     .currency(cwr.getCurrency())
                     .plafondAmt(new BigDecimal(cwr.getPlafondAmt(), MathContext.DECIMAL64))
                     .realisationAmt(new BigDecimal(cwr.getRealisationAmt(), MathContext.DECIMAL64))
@@ -215,8 +216,8 @@ public class CwrService {
                             .facility(inquiryCwr.getFacility())
                             .isRevolving(inquiryCwr.getIsRevolving())
                             .currency(inquiryCwr.getCurrency())
-                            .cwrStartDate(Objects.requireNonNull(DateTimeUtils.cSharpTimeStampToDate(inquiryCwr.getStartDt())).toInstant())
-                            .cwrEndDate(Objects.requireNonNull(DateTimeUtils.cSharpTimeStampToDate(inquiryCwr.getEndDt())).toInstant())
+                            .cwrStartDate(Utils.toInstant(DateTimeUtils.cSharpTimeStampToDate(inquiryCwr.getStartDt())))
+                            .cwrEndDate(Utils.toInstant((DateTimeUtils.cSharpTimeStampToDate(inquiryCwr.getEndDt()))))
                             .plafondAmt(inquiryCwr.getPlafondAmt())
                             .realisationAmt(inquiryCwr.getRealisationAmt())
                             .status(inquiryCwr.getCwrStatDescr())

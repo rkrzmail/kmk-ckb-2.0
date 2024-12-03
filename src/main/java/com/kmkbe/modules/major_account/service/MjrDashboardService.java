@@ -3,6 +3,7 @@ package com.kmkbe.modules.major_account.service;
 import com.kmkbe.core.domain.dto.MjrAccDashboardDto;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.major_account.request.MjrDashboardRequest;
+import com.kmkbe.nikita.utils.Utils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;
@@ -10,7 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -75,7 +76,7 @@ public class MjrDashboardService {
 
             Query query = entityManager.createNativeQuery(sql);
             if (request.getStartDate() == null) {
-                request.setStartDate(Date.from(DateTimeUtils.now().minus(30, java.time.temporal.ChronoUnit.DAYS)));
+                request.setStartDate(Utils.fromInstant((DateTimeUtils.nowLocal().minus(30, java.time.temporal.ChronoUnit.DAYS))));
             }
 
             if (request.getEndDate() == null) {

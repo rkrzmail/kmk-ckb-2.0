@@ -13,7 +13,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.security.SignatureException;
 import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 public class CustomerUtils {
     public static Customer authenticateCustomer(Authentication authentication) throws SignatureException {
@@ -30,7 +30,7 @@ public class CustomerUtils {
         return CustomerMapper.INSTANCE.custDtoFromEntity(authenticateCustomer(authentication));
     }
 
-    public static double calculateStayLength(Instant staySince) {
+    public static double calculateStayLength(LocalDateTime staySince) {
         return BigDecimal.valueOf(Duration.between(
                         staySince,
                         DateTimeUtils.now()

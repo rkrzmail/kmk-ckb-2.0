@@ -7,11 +7,12 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
+import com.kmkbe.nikita.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -88,11 +89,13 @@ public class CustomerPersonalService {
 
             personal.setCustomer(customer);
             personal.setBirthPlace(request.getBirthPlace());
-            personal.setBirthDate(request.getBirthDate().toInstant());
+            personal.setBirthDate(Utils.toInstant( request.getBirthDate()));
+            personal.setBirthDate(Utils.toInstant( request.getBirthDate()));
             personal.setGender(request.getGender());
             personal.setIdentityType(request.getIdentityType());
             personal.setIdentityNo(request.getIdentityNo());
-            personal.setExpiredDate(request.getExpiredDate() != null ? request.getExpiredDate().toInstant() : null);
+            personal.setExpiredDate(request.getExpiredDate() != null ? Utils.toInstant( request.getExpiredDate() ) : null);
+            personal.setExpiredDate(request.getExpiredDate() != null ? Utils.toInstant( request.getExpiredDate() ) : null);
             personal.setMotherMaidenName(request.getMotherMaidenName());
             personal.setMaritalStatus(request.getMaritalStatus());
             personal.setCustModel(request.getCustModel());
@@ -109,8 +112,8 @@ public class CustomerPersonalService {
             }
             personal.setPhone(request.getPhone());
             personal.setOwnershipStatus(request.getOwnershipStatus());
-            personal.setStaySince(request.getStaySince().toInstant());
-            personal.setStayLength(CustomerUtils.calculateStayLength(request.getStaySince().toInstant()));
+            personal.setStaySince(Utils.toInstant(request.getStaySince()));
+            personal.setStayLength(CustomerUtils.calculateStayLength(Utils.toInstant(request.getStaySince())));
             return customerPersonalRepository.save(personal);
         } catch (Exception e) {
             log.error("update: {}", e.getMessage());

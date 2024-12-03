@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -82,11 +82,11 @@ public class Cwr {
 
     @NotNull(message = "Cwr start date cannot be null")
     @Column(name = "cwr_start_date", nullable = false)
-    private Instant cwrStartDate;
+    private LocalDateTime cwrStartDate;
 
     @NotNull(message = "Cwr end date cannot be null")
     @Column(name = "cwr_end_date", nullable = false)
-    private Instant cwrEndDate;
+    private LocalDateTime cwrEndDate;
 
     @NotNull(message = "Plafond amount cannot be null")
     @Column(name = "plafond_amt", nullable = false)
@@ -109,14 +109,14 @@ public class Cwr {
     @NotNull(message = "DtmCrt cannot be null")
     @ColumnDefault("now()")
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
     private String usrUpd;
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
     @OneToMany(mappedBy = "cwr")
     private Set<Agreement> agreements = new LinkedHashSet<>();

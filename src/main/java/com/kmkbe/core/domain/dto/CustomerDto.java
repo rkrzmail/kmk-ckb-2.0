@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -29,7 +29,7 @@ public class CustomerDto {
     private Boolean agreeLegalShare;
     private String custExternalCode;
     private Boolean isActive;
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     private AddressDto address;
 

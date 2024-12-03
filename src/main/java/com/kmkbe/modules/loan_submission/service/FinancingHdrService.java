@@ -19,6 +19,7 @@ import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +30,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.security.SignatureException;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
@@ -87,7 +88,7 @@ public class FinancingHdrService {
                 header.setFinancingAmt(financingAmount);
                 header.setDisburseAmt(disburseAmount);
                 header.setInterestAmt(simulationResult.getInterestFeeAmount().doubleValue()); // not clear
-                header.setFinancingDueDate(simulationResult.getMaxInvoiceDate().toInstant()); // not clear
+                header.setFinancingDueDate(Utils.toInstant( simulationResult.getMaxInvoiceDate())); // not clear
                 header.setProvisionFeeAmt(simulationResult.getProvisionFeeAmount().doubleValue()); // not clear
                 header.setProvisionFeePercentage(simulationResult.getProvisionRate());
                 header.setAdminFeePercentage(simulationResult.getAdminRate());
@@ -208,10 +209,10 @@ public class FinancingHdrService {
                             ? financingDtl.getInvoice().getCustInvNo()
                             : null;
                     Date paidDate = (financingDtl != null && financingDtl.getInvoice() != null)
-                            ? Date.from(financingDtl.getInvoice().getInvoiceDate())
+                            ? Utils.fromInstant(financingDtl.getInvoice().getInvoiceDate())
                             : null;
                     Date dueDate = (financingDtl != null && financingDtl.getInvoice() != null)
-                            ? Date.from(financingDtl.getInvoice().getInvoiceDueDate())
+                            ? Utils.fromInstant(financingDtl.getInvoice().getInvoiceDueDate())
                             : null;
                     BigDecimal paidAmount = (financingDtl != null && financingDtl.getInvoice() != null)
                             ? BigDecimal.valueOf(financingDtl.getInvoice().getInvoiceAmt())
@@ -274,7 +275,7 @@ public class FinancingHdrService {
                             .orElse(null);
 
                     Date paidDate = (financingDtl != null && financingDtl.getInvoice() != null)
-                            ? Date.from(financingDtl.getInvoice().getInvoiceDate())
+                            ? Utils.fromInstant(financingDtl.getInvoice().getInvoiceDate())
                             : null;
                     String color = getColor(e);
                     Customer customer = e.getCustomer();
@@ -288,11 +289,11 @@ public class FinancingHdrService {
                             .agreementNo(agreement.getAgreementCode())
                             .custName(customerName)
                             .bouwheerName(e.getBouwheer().getBouwheerName())
-                            .disburseDate(Date.from(e.getDisburseDate()))
+                            .disburseDate(Utils.fromInstant(e.getDisburseDate()))
                             .paidDate(paidDate)
                             .retentionRefund(BigDecimal.valueOf(disbursementLog.getApAmt()))
                             .paidAmount(BigDecimal.valueOf(disbursementLog.getApPaidAmt()))
-                            .retentionRefundDate(Date.from(disbursementLog.getApDueDate())).
+                            .retentionRefundDate(Utils.fromInstant(disbursementLog.getApDueDate())).
                             status(StatusLabelDto.builder()
                                     .status(mappedFinancingStatus.getStatus())
                                     .statusLabel(mappedFinancingStatus.getLabel())

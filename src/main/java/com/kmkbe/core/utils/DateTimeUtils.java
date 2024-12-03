@@ -4,9 +4,7 @@ import io.netty.util.internal.StringUtil;
 import org.hibernate.query.sqm.TemporalUnit;
 
 import java.text.SimpleDateFormat;
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -39,9 +37,17 @@ public class DateTimeUtils {
             .ofPattern(DATE_RESPONSE_STANDARD_PATTERN)
             .withZone(ZoneId.of("Asia/Jakarta"));
 
-    public static Instant now() {
-        return toZone(Instant.now().plusSeconds( 7*60 * 60), JAKARTA_ZONE);
+    public static LocalDateTime nowLocal() {
+        return LocalDateTime.now();
     }
+    public static Date nowDate() {
+        return new Date();
+    }
+    public static LocalDateTime now() {
+        //return toZone(LocalDateTime.now().plusSeconds( 7*60 * 60), JAKARTA_ZONE);
+        return LocalDateTime.now();
+    }
+
     private static int addTimeZoneCount = 0;
     public static void envMode(String env){
         if (env!=null && env.equalsIgnoreCase("pro")){
@@ -52,13 +58,13 @@ public class DateTimeUtils {
     }
 
 
-    public static Long nowMilliSeconds() {
+/*    public static Long nowMilliSeconds() {
         return toMilliSeconds(now(), true);
-    }
+    }*/
 
-    public static Instant toZone(Instant instant, ZoneId zoneId) {
-        return instant.atZone(zoneId).toInstant();
-    }
+   /* public static LocalDateTime toZone(LocalDateTime LocalDateTime, ZoneId zoneId) {
+        return LocalDateTime.atZone(zoneId).toInstant();
+    }*/
 
     public static OffsetDateTime toStandardDate(OffsetDateTime offsetDateTime) {
         return OffsetDateTime.parse(
@@ -71,17 +77,17 @@ public class DateTimeUtils {
         return DateTimeFormatter.ofPattern(DATE_TIME_STANDARD_PATTERN).format(offsetDateTime);
     }
 
-    public static Long toMilliSeconds(Instant offsetDateTime, boolean is10Digits) {
+  /*  public static Long toMilliSeconds(LocalDateTime offsetDateTime, boolean is10Digits) {
         long milliseconds = offsetDateTime.toEpochMilli();
         if (is10Digits) {
             return milliseconds / 1000; // Ensure 10 digits
         }
 
         return milliseconds;
-    }
+    }*/
 
-    public static String formatToDate(Instant instant) {
-        return DTF_DATE_RESPONSE_STANDARD_FORMATTER.format(instant);
+    public static String formatToDate(LocalDateTime LocalDateTime) {
+        return DTF_DATE_RESPONSE_STANDARD_FORMATTER.format(LocalDateTime);
     }
 
     public static Date cSharpTimeStampToDate(String v) {
@@ -105,22 +111,22 @@ public class DateTimeUtils {
         }
     }
 
-    public static String formatToDateTime(Instant instant) {
-        return DTF_DATE_TIME_STANDARD_FORMATTER.format(instant);
+    public static String formatToDateTime(LocalDateTime LocalDateTime) {
+        return DTF_DATE_TIME_STANDARD_FORMATTER.format(LocalDateTime);
     }
 
-    static Instant getInstantFromMicros(long microsSinceEpoch) {
-        return Instant.ofEpochSecond(
+/*    static LocalDateTime getInstantFromMicros(long microsSinceEpoch) {
+        return LocalDateTime.ofEpochSecond(
                 TimeUnit.MICROSECONDS.toSeconds(microsSinceEpoch),
                 TimeUnit.MICROSECONDS.toNanos(
                         Math.floorMod(microsSinceEpoch, TimeUnit.SECONDS.toMicros(1))
                 )
         );
-    }
+    }*/
 
-    static Instant getInstantFromNanos(long nanosSinceEpoch) {
-        return Instant.ofEpochSecond(0L, nanosSinceEpoch);
-    }
+   /* static LocalDateTime getInstantFromNanos(long nanosSinceEpoch) {
+        return LocalDateTime.ofEpochSecond(0L, nanosSinceEpoch);
+    }*/
 
     public static Date setDateZeroTime(Date date) {
         Calendar calendar = Calendar.getInstance();

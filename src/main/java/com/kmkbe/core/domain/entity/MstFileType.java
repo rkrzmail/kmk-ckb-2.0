@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Set;
 
 @Builder
@@ -61,14 +61,14 @@ public class MstFileType {
 
     //@NotNull
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
     private String usrUpd;
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
     @OneToMany(mappedBy = "fileTypeCode")
     private Set<LegalFile> legalFiles;

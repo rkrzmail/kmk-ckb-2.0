@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @NoArgsConstructor
@@ -43,7 +43,7 @@ public class CustomerPersonal {
     private String birthPlace;
 
     @Column(name = "birthdate")
-    private Instant birthDate;
+    private LocalDateTime birthDate;
 
     @Column(length = 10)
     private String gender;
@@ -55,7 +55,7 @@ public class CustomerPersonal {
     private String identityNo;
 
     @Column
-    private Instant expiredDate;
+    private LocalDateTime expiredDate;
 
     @Column(length = 50)
     private String motherMaidenName;
@@ -100,7 +100,7 @@ public class CustomerPersonal {
     private String ownershipStatus;
 
     @Column
-    private Instant staySince;
+    private LocalDateTime staySince;
 
     @Column // precision = 7, scale = 2
     private Double stayLength;
@@ -109,11 +109,11 @@ public class CustomerPersonal {
     private String usrCrt;
 
     @Column(nullable = false)
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
 
     @Column(length = 50)
     private String usrUpd;
 
     @Column(nullable = false)
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 }

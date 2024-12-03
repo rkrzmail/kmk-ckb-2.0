@@ -18,6 +18,7 @@ import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -153,7 +154,7 @@ public class CustomerDashboardListService {
                                 .custName(e.getCustomer().getCustName())
                                 .bouwheerName(e.getBouwheer().getBouwheerName())
                                 .city(city)
-                                .dueDate(Date.from(e.getFinancingDueDate()))
+                                .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
                                 .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
                                 .branchRecommendedCode(branchRecommendedCode)
                                 .branchRecommended(branchRecommended)
@@ -299,7 +300,7 @@ public class CustomerDashboardListService {
                                 .custName(hdr.getCustomer().getCustName())
                                 .bouwheerName(hdr.getBouwheer().getBouwheerName())
                                 .city(city)
-                                .dueDate(Date.from(hdr.getFinancingDueDate()))
+                                .dueDate(Utils.fromInstant(hdr.getFinancingDueDate()))
                                 .financingAmount(BigDecimal.valueOf(hdr.getFinancingAmt()))
                                 .branchRecommendedCode(branchRecommendedCode)
                                 .branchRecommended(branchRecommended)

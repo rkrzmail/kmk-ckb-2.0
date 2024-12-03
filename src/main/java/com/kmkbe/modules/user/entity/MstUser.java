@@ -9,7 +9,7 @@ import org.hibernate.annotations.ColumnDefault;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -77,14 +77,14 @@ public class MstUser implements UserDetails {
 
     @Builder.Default
     @Column(name = "dtm_crt", nullable = false)
-    private Instant dtmCrt = DateTimeUtils.now();
+    private LocalDateTime dtmCrt = DateTimeUtils.now();
 
     @Size(max = 50)
     @Column(name = "usr_upd", length = 50)
     private String usrUpd;
 
     @Column(name = "dtm_upd")
-    private Instant dtmUpd;
+    private LocalDateTime dtmUpd;
 
     @OneToMany(
             cascade = CascadeType.ALL,

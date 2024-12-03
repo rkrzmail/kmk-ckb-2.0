@@ -11,6 +11,7 @@ import com.kmkbe.core.domain.entity.CustomerPersonal;
 import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
 import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.nikita.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
@@ -22,7 +23,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.ParseException;
 import java.time.Duration;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Map;
@@ -98,7 +99,7 @@ public class CustomerSeederService  {//implements CommandLineRunner
                     .custPersonalCode(UUID.randomUUID())
                     .customer(customer)
                     .birthPlace("Jakarta")
-                    .birthDate(DateTimeUtils.SDF_STANDARD_DATE.parse("1998-01-01").toInstant())
+                    .birthDate(Utils.toInstant(  DateTimeUtils.SDF_STANDARD_DATE.parse("1998-01-01")))
                     .gender(GenderType.PEREMPUAN.toString())
                     .identityType(CustomerIdType.KTP.name())
                     .identityNo("1234567890")
@@ -116,7 +117,7 @@ public class CustomerSeederService  {//implements CommandLineRunner
                     .zipCode("1990")
                     .area("CM")
                     .ownershipStatus("Milik Keluarga") // Milik Keluarga, Milik Sendiri, Sewa, Kost, Dinas, Mess, Saudara Kandung
-                    .staySince(((Date) staySinceLength.get("staySince")).toInstant())
+                    .staySince(Utils.toInstant( ((Date) staySinceLength.get("staySince"))))
                     .stayLength(BigDecimal.valueOf((double) staySinceLength.get("stayLength")).setScale(2, RoundingMode.CEILING).doubleValue())
                     .usrCrt(customer.getUsrCrt())
                     .dtmCrt(customer.getDtmCrt())
@@ -155,7 +156,7 @@ public class CustomerSeederService  {//implements CommandLineRunner
                     .zipCode("1990")
                     .area("CM")
                     .ownershipStatus("Milik Keluarga") // Milik Keluarga, Milik Sendiri, Sewa, Kost, Dinas, Mess, Saudara Kandung
-                    .staySince(((Date) staySinceLength.get("staySince")).toInstant())
+                    .staySince(Utils.toInstant( ((Date) staySinceLength.get("staySince"))))
                     .stayLength(BigDecimal.valueOf((double) staySinceLength.get("stayLength")).setScale(2, RoundingMode.CEILING).doubleValue())
                     .usrCrt(customer.getUsrCrt())
                     .dtmCrt(customer.getDtmCrt())

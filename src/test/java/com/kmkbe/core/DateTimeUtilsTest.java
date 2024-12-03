@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 
 public class DateTimeUtilsTest {
@@ -21,7 +21,7 @@ public class DateTimeUtilsTest {
     @Test
     @DisplayName("should return valid temporal time")
     public void temporalTimeTest() {
-        Instant now = DateTimeUtils.now();
+        LocalDateTime now = DateTimeUtils.now();
         String nowStr = now.toString();
         Assertions.assertNotNull(nowStr);
     }

@@ -13,6 +13,7 @@ import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
 import com.kmkbe.modules.remote.request.PropCriteriaGenericTypeRequest;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
+import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
@@ -21,7 +22,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -91,7 +92,7 @@ public class ExistingCustomerService {
                         isExisting,
                         identityType,
                         identityNo,
-                        Timestamp.from(DateTimeUtils.now())
+                        Timestamp.from(Utils.fromInstant(DateTimeUtils.nowLocal()).toInstant())
                 );
             } else {
                 jdbcTemplate.update(
@@ -99,7 +100,7 @@ public class ExistingCustomerService {
                         isExisting,
                         identityType,
                         identityNo,
-                        Timestamp.from(DateTimeUtils.now()),
+                        Timestamp.from(Utils.fromInstant(DateTimeUtils.nowLocal()).toInstant()),
                         vendorCode
                 );
             }
@@ -119,8 +120,8 @@ public class ExistingCustomerService {
                     "select vendor_code, is_existing, identity_type, identity_no, dtm_crt, dtm_upd from public._existing_customer where vendor_code = ? order by id desc limit 1",
                     (rs, rowNum) -> ExistingCustomerDto.builder()
 
-                            .dtmCrt(Instant.ofEpochMilli(rs.getTimestamp("dtm_crt").getTime()))
-                            .dtmUpd(rs.getTimestamp("dtm_upd") != null ? Instant.ofEpochMilli(rs.getTimestamp("dtm_upd").getTime()) : null)
+                            .dtmCrt(Utils.toInstant(new Date(rs.getTimestamp("dtm_crt").getTime())))
+                            .dtmUpd(rs.getTimestamp("dtm_upd") != null ? Utils.toInstant(new Date(rs.getTimestamp("dtm_upd").getTime())) : null)
                             .build(),
                     vendorCode
             );
@@ -245,8 +246,8 @@ public class ExistingCustomerService {
                             .facility(firstCwr.getFacility())
                             .isRevolving(firstCwr.getIsRevolving())
                             .currency(firstCwr.getCurrency())
-                            .cwrStartDate(Objects.requireNonNull(DateTimeUtils.cSharpTimeStampToDate(firstCwr.getStartDt())).toInstant())
-                            .cwrEndDate(Objects.requireNonNull(DateTimeUtils.cSharpTimeStampToDate(firstCwr.getEndDt())).toInstant())
+                            .cwrStartDate( Utils.toInstant(DateTimeUtils.cSharpTimeStampToDate(firstCwr.getStartDt())))
+                            .cwrEndDate(Utils.toInstant(DateTimeUtils.cSharpTimeStampToDate(firstCwr.getEndDt())))
                             .plafondAmt(firstCwr.getPlafondAmt())
                             .realisationAmt(firstCwr.getRealisationAmt())
                             .status(firstCwr.getCwrStatDescr())

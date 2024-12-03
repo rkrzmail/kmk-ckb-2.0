@@ -3,7 +3,7 @@ package com.kmkbe.core.domain.dto;
 import lombok.*;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -24,6 +24,6 @@ public class AssignmentDto {
     private String custStatus;
     private String status;
     private String statusLabel;
-    private Instant dtmCrt;
+    private LocalDateTime dtmCrt;
     private String agreementDoc;
 }

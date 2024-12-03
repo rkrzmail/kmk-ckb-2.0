@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.UUID;
 
@@ -19,8 +19,8 @@ public class InvoiceDto {
     private String bouwheerInvNo;
     private String custInvNo;
     private String invoiceDescription;
-    private Instant invoiceDate;
-    private Instant invoiceDueDate;
+    private LocalDateTime invoiceDate;
+    private LocalDateTime invoiceDueDate;
     private BigDecimal invoiceAmt;
     private String poNumber;
     private Date postingDate;

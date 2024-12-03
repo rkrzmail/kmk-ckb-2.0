@@ -21,7 +21,9 @@ import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
+import jdk.jshell.execution.Util;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -31,7 +33,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.security.SignatureException;
-import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -155,7 +157,7 @@ public class DistributionSubmissionService {
                                 .custName(e.getCustomer().getCustName())
                                 .bouwheerName(e.getBouwheer().getBouwheerName())
                                 .city(city)
-                                .dueDate(Date.from(e.getFinancingDueDate()))
+                                .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
                                 .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
                                 .branchRecommendedCode(branchRecommendedCode)
                                 .branchRecommended(branchRecommended)
