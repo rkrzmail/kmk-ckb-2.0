@@ -15,6 +15,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface AgreementRepository extends JpaRepository<Agreement, String>, JpaSpecificationExecutor<Agreement> {
+    Optional<Agreement> findTopByAgreementCode(String agreementCode);
+
     Optional<Agreement> findTopByAgreementCodeOrderByAgreementId(String agreementCode);
 
     @Query(

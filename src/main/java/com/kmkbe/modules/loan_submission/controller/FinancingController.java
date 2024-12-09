@@ -11,6 +11,7 @@ import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.loan_submission.service.FinancingDtlService;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.FinancingService;
+import com.kmkbe.modules.loan_submission.service.InquiryDisburseService;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -34,7 +35,7 @@ public class FinancingController {
     private final FinancingHdrService financingHdrService;
     private final FinancingService financingService;
     private final FinancingDtlService financingDtlService;
-
+    private final InquiryDisburseService  inquiryDisburseService;
 
     @PostMapping("/invoice-paid")
     public CommonResult<Object> invoicePaid(
@@ -97,7 +98,12 @@ public class FinancingController {
         if (!apiKey.equalsIgnoreCase("123")) {
             throw new IllegalApiKeyException();
         }
-        financingService.recallApprovalStatus();
+        try {
+            financingService.recallApprovalStatus();
+        } catch (Exception ignored) { }
+        try {
+            inquiryDisburseService.inquiryDisburseAuto();
+        } catch (Exception ignored) { }
         return new CommonResult<>().success(null, "Success Check Approval Status");
     }
 }

@@ -34,6 +34,8 @@ public class BaseRemoteService {
     @Value("${csul.confins.ar.v1}")
     public String confinsArBaseUrl;
 
+    @Value("${csul.confins.ap.v1}")
+    public String confinsAPBaseUrl;
 
     @Value("${csul.confins.payment.v1}")
     public String confinsPaymentBaseUrl;
@@ -120,6 +122,9 @@ public class BaseRemoteService {
         return confinsPaymentBaseUrl + "/PaymentReceive/SubmitPaymentReceiveFromApi";
     }
 
+    public String inquiry_Disburse () {
+        return confinsAPBaseUrl + "/BasePaging/searchAPInquiry";
+    }
 
     public HttpHeaders adInsKeyHeaders() {
         return keyHeaders("AdInsKey", adInsKey);
