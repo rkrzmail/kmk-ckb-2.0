@@ -218,7 +218,7 @@ public class FinancingDtlService {
             InquiryNewInfoAgreementRequest inquiryNewInfoAgreementRequest = new InquiryNewInfoAgreementRequest();
             inquiryNewInfoAgreementRequest.setRequestDateTime(sToday);
             inquiryNewInfoAgreementRequest.setAgrmntNo(noAggrNo);
-            inquiryNewInfoAgreementRequest.setValueDt(sToday);
+            inquiryNewInfoAgreementRequest.setValueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settelmanetDate)));
             inquiryNewInfoAgreementRequest.setRequestDateTime(sToday);
             InquiryNewInfoAgreementDto inquiryNewInfoAgreementDto = inquiryNewInfoAgreement(inquiryNewInfoAgreementRequest);
 
@@ -226,7 +226,7 @@ public class FinancingDtlService {
             InquiryOutstandingBillDetailtRequest inquiryOutstandingBillDetailtRequest = new InquiryOutstandingBillDetailtRequest();
             inquiryOutstandingBillDetailtRequest.setRequestDateTime(sToday);
             inquiryOutstandingBillDetailtRequest.setAgrmntNo(noAggrNo);
-            inquiryOutstandingBillDetailtRequest.setValueDt(sToday);
+            inquiryOutstandingBillDetailtRequest.setValueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settelmanetDate)));
             inquiryOutstandingBillDetailtRequest.setRequestDateTime(sToday);
             InquiryOutstandingBillDetailtDto inquiryOutstandingBillDetailtDto = inquiryOutstandingBillDetailt(inquiryOutstandingBillDetailtRequest);
 
@@ -332,7 +332,9 @@ public class FinancingDtlService {
             submitPaymentReceiveRequest.setExchangeRateAmt(1);
             submitPaymentReceiveRequest.isTempReceiptForm = false;
             submitPaymentReceiveRequest.setWopCode("BANK");
-            submitPaymentReceiveRequest.setValueDt( sToday  );//DateTimeUtils.getDateOnly(settelmanetDate.toString())
+           //submitPaymentReceiveRequest.setValueDt( sToday  );//DateTimeUtils.getDateOnly(settelmanetDate.toString())
+            submitPaymentReceiveRequest.setValueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settelmanetDate)) );
+
             submitPaymentReceiveRequest.setMrPayRecipientCode("CSH");//MrPayRecipientCode
             submitPaymentReceiveRequest.setSuspdNo("");
             ArrayList<SubmitPaymentReceiveRequest.ListPayRcvDApiObj> listPayRcvDApiObjs = new ArrayList<>();

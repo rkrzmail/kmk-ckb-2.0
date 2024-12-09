@@ -187,10 +187,10 @@ public class AuthInternalServices {
             final RefreshToken payload = refreshTokenServices.verify(request.refreshToken());
             refreshTokenServices.invalidate(payload.getRefreshToken().toString());
 
-            Optional<RedisLog> redisLog = redisRepository.findFirstBySession(payload.getRefreshToken().toString());
+            /*Optional<RedisLog> redisLog = redisRepository.findFirstBySession(payload.getRefreshToken().toString());
             if (redisLog.isEmpty()){
                 throw new BadCredentialsException("Invalid token, Multi Login");
-            }
+            }*/
 
             MstUser user = mstUserRepository.findByUserCode(payload.getUserCode())
                     .orElseThrow(() -> new IllegalStateException("Invalid Refresh Token, Entire Internal User doesn't exists. Try to login again."));

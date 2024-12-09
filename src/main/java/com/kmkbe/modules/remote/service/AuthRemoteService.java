@@ -33,7 +33,7 @@ public class AuthRemoteService {
             final HttpEntity<JwtAuthRequest> request = new HttpEntity<>(
                     new JwtAuthRequest(
                             ldapUrlService.authHeaderUsername,
-                            DateTimeUtils.nowDate().getTime()
+                            DateTimeUtils.plusWIB()
                     ),
                     headers
             );

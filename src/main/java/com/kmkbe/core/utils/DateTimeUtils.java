@@ -6,6 +6,7 @@ import org.hibernate.query.sqm.TemporalUnit;
 import java.text.SimpleDateFormat;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -43,6 +44,9 @@ public class DateTimeUtils {
     public static Date nowDate() {
         return new Date();
     }
+    public static long plusWIB() {
+        return  LocalDateTime.now().toEpochSecond(ZoneOffset.ofHours(7));
+    }
     public static LocalDateTime now() {
         //return toZone(LocalDateTime.now().plusSeconds( 7*60 * 60), JAKARTA_ZONE);
         return LocalDateTime.now();
@@ -57,6 +61,10 @@ public class DateTimeUtils {
         }
     }
 
+    public static void main(String[] args) {
+        System.out.println(nowDate().getTime());
+        System.out.println(plusWIB());
+    }
 
 /*    public static Long nowMilliSeconds() {
         return toMilliSeconds(now(), true);
