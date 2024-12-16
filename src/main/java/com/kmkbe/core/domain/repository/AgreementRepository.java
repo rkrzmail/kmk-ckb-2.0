@@ -3,6 +3,8 @@ package com.kmkbe.core.domain.repository;
 import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import io.lettuce.core.dynamic.annotation.Param;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,6 +18,8 @@ import java.util.UUID;
 
 public interface AgreementRepository extends JpaRepository<Agreement, String>, JpaSpecificationExecutor<Agreement> {
     Optional<Agreement> findTopByAgreementCode(String agreementCode);
+
+    List<Agreement> findAllByStatus(@Size(max = 20) @NotNull(message = "Status cannot be null") String status);
 
     Optional<Agreement> findTopByAgreementCodeOrderByAgreementId(String agreementCode);
 

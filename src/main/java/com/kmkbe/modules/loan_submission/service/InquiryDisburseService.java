@@ -98,9 +98,9 @@ public class InquiryDisburseService {
         }
     }
 
-    public void inquiryDisburseAuto  () throws Exception {
+    public void inquiryDisburseAuto  (Agreement agreement) throws Exception {
         try {
-                String aggrNo = "";
+                String aggrNo = agreement.getAgreementCode();
             String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
 
             //inquiryDisburseAuto
@@ -152,6 +152,7 @@ public class InquiryDisburseService {
             inquiryDisburseCriterias.add(inquiryDisburseCriterion);
 
 
+
             inquiryDisburseRequest.setRequestDateTime(sToday);
             inquiryDisburseRequest.setCriteria(inquiryDisburseCriterias);
             InquiryDisburseResult inquiryDisburseResult = inquiryDisburse(inquiryDisburseRequest);//CALL API
@@ -160,23 +161,31 @@ public class InquiryDisburseService {
 
 
 
+
             //insert Table
             try {
                 if (inquiryDisburseResult.getStatusCode().equalsIgnoreCase("200")){
-                    Optional<Agreement>  agreement = agreementRepository.findTopByAgreementCode(aggrNo);
-                    if (agreement.isPresent()){
+                    //Optional<Agreement>  agreement = agreementRepository.findTopByAgreementCode(aggrNo);
+                    //if (agreement.isPresent()){
+                        try {
+
+                            disbursementLogRepository.deleteAll(disbursementLogRepository.findAllByAgreement(agreement));
+                        } catch (Exception ignored) {
+                            ignored.printStackTrace();
+                        }
+
                         DisbursementLog disbursementLog = DisbursementLog.builder().build();
                         disbursementLog.setDisbursementCode(UUID.randomUUID());
-                        disbursementLog.setAgreement(agreement.get());
+                        disbursementLog.setAgreement(agreement);
 
                         InquiryDisburseDatum disburseDatum = inquiryDisburseResult.getData().getFirst();
                         disbursementLog.setApNo(disburseDatum.getAPNo());
                         disbursementLog.setApDesc(disburseDatum.getAPDescr());
                         disbursementLog.setCurrency(disburseDatum.getCurrCode());
                         disbursementLog.setApAmt(disburseDatum.getApAmt());
-                        disbursementLog.setApPaidAmt(disbursementLog.getApPaidAmt());
-                        disbursementLog.setApAmtInprocess(disburseDatum.getAPPaidAmt());
-                        disbursementLog.setApUnpaidAmt(disburseDatum.getAPPaidAmt());
+                        disbursementLog.setApPaidAmt(disburseDatum.getAPPaidAmt());
+                        disbursementLog.setApAmtInprocess(disburseDatum.getAPAmtInProces());
+                        disbursementLog.setApUnpaidAmt(disburseDatum.getUnpaidAmt());
                         disbursementLog.setApTypeCode(disburseDatum.getAPTypeCode());
                         disbursementLog.setApTypeName(disburseDatum.getAPTypeName());
                         disbursementLog.setApDueDate(disburseDatum.getAPDueDt());
@@ -188,7 +197,7 @@ public class InquiryDisburseService {
                         disbursementLog.setUsrUpd("AUTO");
                         disbursementLog.setDtmUpd(DateTimeUtils.now());
                         disbursementLogRepository.save(disbursementLog);
-                    }
+                    //}
 
                 }
             } catch (Exception ignored) {
@@ -202,9 +211,9 @@ public class InquiryDisburseService {
                          if (inquiryDisburseDatum.agreementNo.equalsIgnoreCase(aggrNo)){
                             if (inquiryDisburseDatum.getAPStatCode().equalsIgnoreCase("P")){
                                 //disUpdate Financing Status = Disburse
-                                Optional<Agreement>  agreement = agreementRepository.findTopByAgreementCode(aggrNo);
-                                if (agreement.isPresent()){
-                                    FinancingHdr financingHdr = agreement.get().getFinancingHdr();
+                                //Optional<Agreement>  agreement = agreementRepository.findTopByAgreementCode(aggrNo);
+                                //if (agreement.isPresent()){
+                                    FinancingHdr financingHdr = agreement.getFinancingHdr();
 
                                     if (financingHdr.getFinancingStatus().equalsIgnoreCase("INPROCESS")){
                                         financingHdr.setFinancingStatus("LIVE");//"Disburse"
@@ -213,7 +222,7 @@ public class InquiryDisburseService {
                                         financingHdrRepository.save(financingHdr);
                                     }
 
-                                }
+                               // }
                             }
                          }
                      }

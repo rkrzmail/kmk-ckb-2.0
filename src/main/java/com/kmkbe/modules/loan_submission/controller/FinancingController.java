@@ -38,7 +38,8 @@ public class FinancingController {
     private final InquiryDisburseService  inquiryDisburseService;
 
     @PostMapping("/invoice-paid")
-    public CommonResult<Object> invoicePaid(
+    public CommonResult<Object>
+    invoicePaid(
             Authentication authentication,
             HttpServletRequest httpServletRequest,
             @Valid @RequestBody FinancingInvoicePaidRequest request
@@ -101,9 +102,7 @@ public class FinancingController {
         try {
             financingService.recallApprovalStatus();
         } catch (Exception ignored) { }
-        try {
-            inquiryDisburseService.inquiryDisburseAuto();
-        } catch (Exception ignored) { }
+
         return new CommonResult<>().success(null, "Success Check Approval Status");
     }
 }
