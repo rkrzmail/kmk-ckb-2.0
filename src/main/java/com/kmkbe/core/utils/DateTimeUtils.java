@@ -118,7 +118,56 @@ public class DateTimeUtils {
             return null;
         }
     }
+    private static long s(String date) {
+        try {
+            //dd/mm/yyyy|dd-mm-yyyy|yyyy-mm-dd
+            String sd ="-";String time = "";
+            if (date.contains(".")) {
+                date=date.substring(0,date.indexOf("."));
+            }
+            if (date.contains(":")&& date.length()>=18) {
+                time = " HH:mm:ss";
+            }
+            if (date.contains("-")) {
+                sd = "-";
+            }else if (date.contains("/")) {
+                sd = "/";
+            }
+            if (date.length()>=10) {
+                if (isNumeric(date.substring(0,4))) {
+                    //yyyy-mm-dd
+                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy"+sd+"MM"+sd+"dd"+time);
+                    return simpleDateFormat.parse(date).getTime() ;
+                }else if (isNumeric(date.substring(6,10))) {
+                    //dd/mm/yyyy
+                    SimpleDateFormat simpleDateFormat = new SimpleDateFormat("dd"+sd+"MM"+sd+"yyyy"+time);
+                    return simpleDateFormat.parse(date).getTime() ;
+                }
+            }else{
+                //???
+            }
+        } catch (Exception e) { }
+        return 0;
+    }
+    public static boolean isNumeric(String str) {
+        return str.matches("-?\\d+(\\.\\d+)?");  //match a number with optional '-' and decimal.
+    }
+    private static boolean isDecimalNumber(String str) {
+        return str.matches("^[-+]?[0-9]*.?[0-9]+([eE][-+]?[0-9]+)?$");
+    }
+    public static boolean isLongIntegerNumber(String str) {
+        return str.matches("-?\\d+");
+    }
 
+    public static LocalDateTime formatDateTime(String strDate) {
+        try {
+            return LocalDateTime.parse(strDate, DateTimeFormatter.ofPattern(DATE_TIME_STANDARD_PATTERN));
+        }catch (Exception e) {}
+        try {
+            return LocalDateTime.parse(strDate, DateTimeFormatter.ofPattern(DATE_TIME_RESPONSE_STANDARD_PATTERN));
+        }catch (Exception e) {}
+        return LocalDateTime.now();
+    }
     public static String formatToDateTime(LocalDateTime LocalDateTime) {
         return DTF_DATE_TIME_STANDARD_FORMATTER.format(LocalDateTime);
     }

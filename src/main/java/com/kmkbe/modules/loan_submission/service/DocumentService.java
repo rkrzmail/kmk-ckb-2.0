@@ -822,4 +822,96 @@ public class DocumentService {
             throw e;
         }
     }
+
+
+    public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentDebitur(
+            HttpServletRequest httpServletRequest,
+            Authentication authentication,
+            PaginationRequest request,
+            Boolean isFirst,
+            String custCode
+    ) throws SignatureException {
+        try {
+            if (isFirst != null && isFirst) {
+                //fetchAndMappingDocVendor(authentication);
+            }
+
+            int pageNo = 0, pageSize = 10;
+
+            if (request.getPageNo() != null) {
+                pageNo = request.getPageNo();
+            }
+            if (request.getPageSize() != null) {
+                pageSize = request.getPageSize();
+            }
+
+            if (pageNo > 0) {
+                pageNo = pageNo - 1;
+            }
+
+            Page<MstFileType> page = mstFileTypeRepository.findAllByFileAllocationInOrderByFileTypeIdDesc(
+                    List.of(
+                            "Legal",
+                            "Financing"
+                    ),
+                    PageRequest.of(
+                            pageNo,
+                            pageSize,
+                            Sort.by("fileTypeId").descending()
+                    )
+            );
+
+            List<MstFileTypeDto> result = page.map((file) -> {
+                        MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
+                        LegalFile legalFile = null;
+
+                        try {
+                            Optional<Customer> customer =  customerRepository.findByCustCode(UUID.fromString(custCode));
+                            if (customer.isPresent()) {
+                                legalFile = legalFileService.fetchByMstFileTypeAndCust(customer.get(), file);
+
+                            }
+                        } catch (Exception e) {
+                            log.error("fetchByCust, error {}", e.getMessage());
+                        }
+
+                        if (legalFile != null) {
+                            LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
+                            legalFileDto.setUploadedDate(legalFile.getDtmUpd());
+
+                            String generatedUrl = UriUtils.fileUlr(
+                                    httpServletRequest,
+                                    Math.toIntExact(legalFile.getFileId()),
+                                    UriUtils.DocType.loan
+                            );
+
+                            if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
+                                try {
+                                    URI uri = new URI(legalFile.getFilePath());
+                                    uri = new URI("https", UriUtils.getDomainUrl(httpServletRequest), uri.getPath(), uri.getFragment());
+                                    generatedUrl = uri.toString();
+                                } catch (URISyntaxException e) {
+                                    generatedUrl = legalFile.getFilePath();
+                                }
+                            }
+
+                            legalFileDto.setFileUrl(generatedUrl);
+                            dto.setLegalFile(legalFileDto);
+                        }
+
+                        return dto;
+                    })
+                    .toList();
+
+            return PaginationResult.<MstFileTypeDto>builder()
+                    .currentPage(pageNo + 1)
+                    .totalData(page.getTotalElements())
+                    .totalPage(page.getTotalPages())
+                    .list(result)
+                    .build();
+        } catch (Exception e) {
+            log.error("getAllLoanDocumentRequirement: {}", e.getMessage());
+            throw e;
+        }
+    }
 }

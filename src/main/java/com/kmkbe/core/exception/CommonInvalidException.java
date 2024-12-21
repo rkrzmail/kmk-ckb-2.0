@@ -55,8 +55,8 @@ public class CommonInvalidException extends RuntimeException {
     }
     public static CommonInvalidException invalidEmailOrPin() {
         return CommonInvalidException.builder()
-                .title("Email anda Pin Tidak Cocok")
-                .message("Saat ini email anda pin tidak cocok")
+                .title("Email atau Pin tidak valid")
+                .message("Email atau Pin salah, silahkan masukkan email dan pin yang valid")
                 .action(CommonInvalidException.Action.builder().title("Kembali").uri("/auth/sign-in").build())
                 .headerMessage("User not found")
                 .build();

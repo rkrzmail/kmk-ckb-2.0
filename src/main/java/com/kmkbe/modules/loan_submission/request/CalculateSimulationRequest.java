@@ -34,4 +34,6 @@ public class CalculateSimulationRequest {
 
     @NotEmpty(message = "Invoices is required, Please select at least 1 invoice")
     private  String invoiceDueDate;
+
+    private  Double interest;
 }

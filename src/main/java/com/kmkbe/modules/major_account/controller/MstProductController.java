@@ -44,7 +44,7 @@ public class MstProductController {
     }
 
     @PostMapping(
-            name = "/update/upload",
+            value = "/update/upload",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public CommonResult<Object> postUploadPlacementBranch(
@@ -53,8 +53,8 @@ public class MstProductController {
             @Valid @RequestPart MultipartFile file
     ) throws SignatureException {
         UserInternalUtils.authenticated(authentication);
-        return new CommonResult<>().success(
-                null
-        );
+
+        productService.uploadProduct(httpServletRequest, authentication, file);
+        return new CommonResult<>().success(   null );
     }
 }

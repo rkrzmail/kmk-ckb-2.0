@@ -6,12 +6,16 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.time.LocalDateTime;
 
+
+
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Getter
 @Setter
 @Entity
@@ -23,69 +27,69 @@ public class Product {
     private Long productId;
 
     @Size(max = 3)
-    @NotNull
+   // @NotNull
     @Column(name = "branch_code", nullable = false, length = 3)
     private String branchCode;
 
     @Size(max = 100)
-    @NotNull
+   // @NotNull
     @Column(name = "product_name", nullable = false, length = 100)
     private String productName;
 
-    @NotNull
+   // @NotNull
     @Column(name = "effective_date", nullable = false)
     private LocalDateTime effectiveDate;
 
-    @NotNull
+   // @NotNull
     @Column(name = "ntf_from", nullable = false) //, precision = 17, scale = 2
     private Double ntfFrom;
 
-    @NotNull
+   // @NotNull
     @Column(name = "ntf_to", nullable = false) // , precision = 17, scale = 2
     private Double ntfTo;
 
-    @NotNull
+   // @NotNull
     @Column(name = "effective_rate", nullable = false) // , precision = 5, scale = 2
     private Double effectiveRate;
 
-    @NotNull
+   // @NotNull
     @Column(name = "provision_rate", nullable = false) // , precision = 5, scale = 2
     private Double provisionRate;
 
-    @NotNull
+   // @NotNull
     @Column(name = "survey_fee", nullable = false) // , precision = 17, scale = 2
     private Double surveyFee;
 
-    @NotNull
+   // @NotNull
     @Column(name = "legal_fee", nullable = false) // , precision = 17, scale = 2
     private Double legalFee;
 
-    @NotNull
+   // @NotNull
     @Column(name = "admin_limit_fee", nullable = false) // , precision = 17, scale = 2
     private Double adminLimitFee;
 
-    @NotNull
+   // @NotNull
     @Column(name = "admin_rate", nullable = false) // , precision = 5, scale = 2
     private Double adminRate;
 
-    @NotNull
+   // @NotNull
     @Column(name = "insurance_rate", nullable = false) // , precision = 5, scale = 2
     private Double insuranceRate;
 
-    @NotNull
+   // @NotNull
     @Column(name = "others_fee", nullable = false) //, precision = 17, scale = 2
     private Double othersFee;
 
-    @NotNull
+   // @NotNull
     @Column(name = "is_active", nullable = false)
     private Boolean isActive = false;
 
     @Size(max = 50)
-    @NotNull
+   // @NotNull
     @Column(name = "usr_crt", nullable = false, length = 50)
     private String usrCrt;
 
-    @NotNull
+   // @NotNull
     @Column(name = "dtm_crt", nullable = false)
     private LocalDateTime dtmCrt;
 

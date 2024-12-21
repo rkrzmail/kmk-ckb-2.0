@@ -61,7 +61,7 @@ public class BranchController {
     }
 
     @PostMapping(
-            name = "/placement/upload",
+             value = "/placement/upload",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public CommonResult<Object> postUploadPlacementBranch(
@@ -69,10 +69,10 @@ public class BranchController {
             Authentication authentication,
             @Valid @RequestPart MultipartFile file
     ) {
-        return new CommonResult<>().success(
-                null
-        );
-       // return   branchAreaMappingService.updateBranch(httpServletRequest, file);
+
+        branchAreaMappingService.updateBranch(httpServletRequest, authentication, file);
+        return new CommonResult<>().success(   null );
+
 
     }
 }

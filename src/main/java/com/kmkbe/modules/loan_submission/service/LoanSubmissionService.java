@@ -219,7 +219,6 @@ public class LoanSubmissionService {
             throw e;
         }
     }
-
     public EstimatedDisburseDto calculateDisburse(
             Authentication authentication,
             CalculateSimulationRequest request
@@ -271,6 +270,110 @@ public class LoanSubmissionService {
             double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
             double effective_Rate = product.getEffectiveRate();
             double interestAmount = nilaiPembiayaan * effective_Rate / 100 * tenor / 360;//6 digit
+            double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
+            double jumlahBiaya;
+            double provisionRateFee = product.getProvisionRate() * plafonLimit / 100;
+
+            if (!isCustomerExisting) {
+                jumlahBiaya = provisionRateFee
+                        + product.getSurveyFee()
+                        + product.getLegalFee()
+                        + adminFee
+                        + product.getOthersFee();
+                provisionFeeAmount = new BigDecimal(provisionRateFee).setScale(0, RoundingMode.HALF_UP);
+                surveyFeeAmount = new BigDecimal(product.getSurveyFee()).setScale(0, RoundingMode.HALF_UP);
+                legalFeeAmount = new BigDecimal(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
+                adminFeeAmount = new BigDecimal(adminFee).setScale(0, RoundingMode.HALF_UP);
+                othersFeeAmount = new BigDecimal(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
+            } else {
+                provisionFeeAmount = new BigDecimal(0);
+                surveyFeeAmount = new BigDecimal(0);
+                legalFeeAmount = new BigDecimal(0);
+                adminFeeAmount = new BigDecimal(0);
+                othersFeeAmount = new BigDecimal(0);
+                jumlahBiaya = adminFee + product.getOthersFee();
+            }
+
+            double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
+            final BigDecimal serviceFee = new BigDecimal(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
+            final BigDecimal estimated = new BigDecimal(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
+
+            return EstimatedDisburseDto.builder()
+                    .productId(product.getProductId())
+                    .financingAmount(ntfResult.setScale(0, RoundingMode.HALF_UP)) //yng diajukan
+                    .serviceFeeAmount(serviceFee)
+                    .estimatedDisburseAmount(estimated)
+                    .interestFeeAmount(new BigDecimal(interestAmount).setScale(0, RoundingMode.HALF_UP))//interest
+                    .provisionFeeAmount(provisionFeeAmount)
+                    .adminFeeAmount(adminFeeAmount)
+                    .othersFeeAmount(othersFeeAmount)
+                    .legalFeeAmount(legalFeeAmount)
+                    .surveyFeeAmount(surveyFeeAmount)
+                    .adminRate(adminRate)
+                    .effectiveRate(effectiveRate)
+                    .provisionRate(provisionRate)
+                    .build();
+        } catch (Exception e) {
+            log.error("calculateDisburse, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public EstimatedDisburseDto recalculateDisburse(
+            Authentication authentication,
+            CalculateSimulationRequest request
+    ) throws SignatureException, JsonProcessingException, ParseException {
+        try {
+            final BigDecimal ntfResult = request.getTotalInvoiceAmount()
+                    .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
+            //.setScale(0, RoundingMode.UP);
+
+            final Optional<Product> findProduct = productRepository.findNtfRange(ntfResult.doubleValue());
+
+            if (findProduct.isEmpty()) {
+                return null;
+            }
+
+            final Product product = findProduct.get();
+
+            Double provisionRate = findProduct.get().getProvisionRate(),
+                    effectiveRate = findProduct.get().getEffectiveRate(),
+                    adminRate = findProduct.get().getAdminRate();
+
+
+            boolean isCustomerExisting = false;
+            Cwr validateCwr = null;
+            if (authentication != null || !StringUtil.isNullOrEmpty(request.getToken())) {
+                validateCwr = isCustomerExistingByCwr(authentication, request.getToken());
+                isCustomerExisting = validateCwr != null;
+            }
+
+            BigDecimal
+                    provisionFeeAmount,
+                    adminFeeAmount,
+                    othersFeeAmount,
+                    surveyFeeAmount,
+                    legalFeeAmount;
+
+            int tenor = 90; // (duedate - skr) + gp bouwherr
+            if (request.getBouwheerCode() != null && request.getInvoiceDueDate() != null) {
+                Optional<Bouwheer> bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
+                int top = DateTimeUtils.dateDiffInDay(new Date(), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(request.getInvoiceDueDate()));
+                tenor = top + (bouwheer.map(value -> value.getGracePeriod().intValue()).orElse(0));
+            }
+
+            BigDecimal plafondLimitBigDecimal = validateCwr != null
+                    ? BigDecimal.valueOf(validateCwr.getPlafondAmt())
+                    : ntfResult.multiply(BigDecimal.valueOf(3.0));
+
+            double interest  =  tenor / 360;//6 digit;
+            if (request.getInterest()!=null){
+                interest = request.getInterest();
+            }
+            double plafonLimit = plafondLimitBigDecimal.doubleValue();
+            double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
+            double effective_Rate = product.getEffectiveRate();
+            double interestAmount = nilaiPembiayaan * effective_Rate / 100 * interest;
             double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
             double jumlahBiaya;
             double provisionRateFee = product.getProvisionRate() * plafonLimit / 100;

@@ -4,6 +4,7 @@ import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -17,6 +18,41 @@ public class Utils {
     public static long formatNoExponent(double d){
         return BigDecimal.valueOf(d).longValue();
     }
+    public static double scale(double value, int scale) {
+        BigDecimal decimalValue = BigDecimal.valueOf(value);
+        return decimalValue.setScale(scale, RoundingMode.HALF_UP).doubleValue();
+    }
+
+    public static int getInt(String s) {
+        return getNumber(s).intValue();
+    }
+    public static long getLong(String s) {
+        return getNumber(s).longValue();
+    }
+    public static double getDouble(Object n) {
+        return getNumber(n).doubleValue();
+    }
+    public static float getFloat(String s) {
+        return getNumber(s).floatValue();
+    }
+    public static Number getNumber(Object n) {
+        if (n instanceof Number) {
+            return ((Number)n);
+        }else if (isDecimalNumber(String.valueOf(n))){
+            return Double.valueOf(String.valueOf(n));
+        }
+        return 0;
+    }
+    public static boolean isNumeric(String str) {
+        return str.matches("-?\\d+(\\.\\d+)?");  //match a number with optional '-' and decimal.
+    }
+    private static boolean isDecimalNumber(String str) {
+        return str.matches("^[-+]?[0-9]*.?[0-9]+([eE][-+]?[0-9]+)?$");
+    }
+    public static boolean isLongIntegerNumber(String str) {
+        return str.matches("-?\\d+");
+    }
+
 
     public static void main(String[] args) {
         System.out.println(formatNoExponent(3.14159E6));

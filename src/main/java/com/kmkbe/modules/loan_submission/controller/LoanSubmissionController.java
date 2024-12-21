@@ -110,6 +110,9 @@ public class LoanSubmissionController {
         );
     }
 
+
+
+
     @PostMapping("/simulations/create")
     public CommonResult<CreatedSimulationDto> createSimulation(
             Authentication authentication,
@@ -200,6 +203,35 @@ public class LoanSubmissionController {
                         authentication,
                         request,
                         isFirst
+                )
+        );
+    }
+
+    @GetMapping("/simulations/recalculate")
+    public CommonResult<EstimatedDisburseDto> getReCalculateDisburse(
+            Authentication authentication,
+            CalculateSimulationRequest request
+    ) throws SignatureException, JsonProcessingException, ParseException {
+        return new CommonResult<EstimatedDisburseDto>().success(
+                loanSubmissionService.recalculateDisburse(authentication, request)
+        );
+    }
+
+    @GetMapping("/documents/debitur")
+    public CommonResult<PaginationResult<MstFileTypeDto>> getDocumentDebitur(
+            Authentication authentication,
+            HttpServletRequest httpServletRequest,
+            PaginationRequest request,
+            Boolean isFirst,
+            @RequestParam("custCode") String custCode
+    ) throws Exception {
+        return new CommonResult<PaginationResult<MstFileTypeDto>>().success(
+                documentService.fetchAllLoanDocumentDebitur(
+                        httpServletRequest,
+                        authentication,
+                        request,
+                        isFirst,
+                        custCode
                 )
         );
     }
