@@ -1,9 +1,6 @@
 package com.kmkbe.modules.loan_submission.service;
 
-import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
-import com.kmkbe.core.domain.dto.FinancingHdrDto;
-import com.kmkbe.core.domain.dto.PaidInvoiceDto;
-import com.kmkbe.core.domain.dto.StatusLabelDto;
+import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.FinancingMapper;
 import com.kmkbe.core.domain.model.MappedFinancingStatus;
@@ -31,9 +28,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.security.SignatureException;
 import java.time.LocalDateTime;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -44,6 +39,7 @@ public class FinancingHdrService {
     private final RedisRepository redisRepository;
     private final AgreementRepository agreementRepository;
     private final DisbursementLogRepository disbursementLogRepository;
+    private final FinancingDtlRepository financingDtlRepository;
 
     public FinancingHdr findLastBy(Customer customer) {
         try {
@@ -157,7 +153,40 @@ public class FinancingHdrService {
             throw e;
         }
     }
+    public PaginationResult<PaidInvoiceDto> paidInvoiceNew(
+            PaginationRequest request
+    ) {
+        try {
+            int pageNo = 0, pageSize = 10;
 
+            if (request.getPageNo() != null) {
+                pageNo = request.getPageNo();
+            }
+
+            if (request.getPageSize() != null) {
+                pageSize = request.getPageSize();
+            }
+
+            if (pageNo > 0) {
+                pageNo = pageNo - 1;
+            }
+
+            final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAllByRawOrder(
+                    PageRequest.of(pageNo, pageSize)
+                    //FinancingHdrSpec.bySearchBy(request.getSearchBy(), request.getSearchValue())
+            );
+
+
+
+            return paginatePaidInvoice (
+                    financingHdrs,
+                    pageNo
+            );
+        } catch (Exception e) {
+            log.error("paidInvoice, error {}", e.getMessage());
+            throw e;
+        }
+    }
     public PaginationResult<PaidInvoiceDto> paidInvoice(
             PaginationRequest request
     ) {
@@ -200,10 +229,26 @@ public class FinancingHdrService {
         final List<PaidInvoiceDto> paidInvoiceDto = financingHdrs
                 .stream()
                 .map((e) -> {
-                    FinancingDtl financingDtl = e.getFinancingDtls()
-                            .stream()
-                            .findFirst()
-                            .orElse(null);
+                    FinancingDtl financingDtl = null;
+                    try {
+                        financingDtl = e.getFinancingDtls()
+                                .stream()
+                                .findFirst()
+                                .orElse(null);
+
+                    }catch (Exception e2) {
+
+
+                    }
+
+                    try {
+                        List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdrOrderByDtmCrtDesc(e);
+                        financingDtl =  financingDtls.getFirst();
+
+                    }catch (Exception e2) {
+                        e2.printStackTrace();
+                    }
+
 
                     String invoiceNo = (financingDtl != null && financingDtl.getInvoice() != null)
                             ? financingDtl.getInvoice().getCustInvNo()
@@ -241,6 +286,13 @@ public class FinancingHdrService {
                             .build();
                 })
                 .toList();
+
+        List<PaidInvoiceDto> paidInvoiceDto2 = new ArrayList<>();;
+        for (PaidInvoiceDto invoiceDto : paidInvoiceDto) {
+            if (invoiceDto != null) {
+                paidInvoiceDto2.add(invoiceDto);
+            }
+        }
         return PaginationResult.<PaidInvoiceDto>builder()
                 .currentPage(pageNo + 1)
                 .totalData(financingHdrs.getTotalElements())
@@ -260,19 +312,28 @@ public class FinancingHdrService {
         final List<DisburseInvoiceDto> disburseInvoiceDto = financingHdrs
                 .stream()
                 .map((e) -> {
-                    Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode(e.getFinancingHdrCode());
 
+                    List<Agreement>  agreements = agreementRepository.findByFinancingHdr_FinancingHdrCode(e.getFinancingHdrCode());
 
+                    if (agreements.size() == 0) {
+                        return null;
+                    }
+                    Agreement agreement = agreements.getLast();//las
                     if (agreement == null) {
                         return null;
                     }
 
                     DisbursementLog disbursementLog = disbursementLogRepository.findByAgreement_AgreementCode(agreement.getAgreementCode());
-
-                    FinancingDtl financingDtl = e.getFinancingDtls()
-                            .stream()
-                            .findFirst()
-                            .orElse(null);
+                    if (disbursementLog == null) {
+                        return null;
+                    }
+                    FinancingDtl financingDtl = null;
+                    try {
+                         financingDtl = e.getFinancingDtls()
+                               .stream()
+                               .findFirst()
+                               .orElse(null);
+                   }catch (Exception exception) {}
 
                     Date paidDate = (financingDtl != null && financingDtl.getInvoice() != null)
                             ? Utils.fromInstant(financingDtl.getInvoice().getInvoiceDate())
@@ -292,7 +353,8 @@ public class FinancingHdrService {
                             .disburseDate(Utils.fromInstant(e.getDisburseDate()))
                             .paidDate(paidDate)
                             .retentionRefund(BigDecimal.valueOf(disbursementLog.getApAmt()))
-                            .paidAmount(BigDecimal.valueOf(disbursementLog.getApPaidAmt()))
+                            .paidAmount(BigDecimal.valueOf(disbursementLog.getApPaidAmt()==null?0:disbursementLog.getApPaidAmt()))
+                            .disburseAmount(BigDecimal.valueOf(disbursementLog.getApAmt()))
                             .retentionRefundDate(Utils.fromInstant(disbursementLog.getApDueDate())).
                             status(StatusLabelDto.builder()
                                     .status(mappedFinancingStatus.getStatus())
@@ -303,11 +365,18 @@ public class FinancingHdrService {
                 })
                 .toList();
 
+        List<DisburseInvoiceDto> disburseInvoiceDto2 = new ArrayList<>();;
+        for (DisburseInvoiceDto invoiceDto : disburseInvoiceDto) {
+            if (invoiceDto != null) {
+                disburseInvoiceDto2.add(invoiceDto);
+            }
+        }
+
         return PaginationResult.<DisburseInvoiceDto>builder()
                 .currentPage(pageNo + 1)
                 .totalData(financingHdrs.getTotalElements())
                 .totalPage(financingHdrs.getTotalPages())
-                .list(disburseInvoiceDto)
+                .list(disburseInvoiceDto2)
                 .build();
     }
 

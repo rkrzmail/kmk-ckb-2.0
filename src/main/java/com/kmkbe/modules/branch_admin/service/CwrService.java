@@ -72,7 +72,7 @@ public class CwrService {
             Customer customer = customerRepository.findByCustCode(UUID.fromString(custCode))
                     .orElseThrow(() -> new IllegalStateException("Customer not found or not valid"));
 
-            Page<Cwr> page = cwrRepository.findAllByCustomer(
+            Page<Cwr> page = cwrRepository.findAllByCustomerOrderByDtmUpdDescUsrCrtDesc(
                     customer,
                     PageRequest.of(pageNo, pageSize)
             );
@@ -223,6 +223,9 @@ public class CwrService {
                             .status(inquiryCwr.getCwrStatDescr())
                             .usrCrt(user.getUsername())
                             .dtmCrt(DateTimeUtils.now())
+
+                            .usrUpd(user.getUsername())
+                            .dtmUpd(DateTimeUtils.now())
                             .build();
                     cwrRepository.save(cwr);
                 }

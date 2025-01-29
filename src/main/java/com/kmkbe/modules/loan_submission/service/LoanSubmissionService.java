@@ -57,6 +57,7 @@ public class LoanSubmissionService {
 
     private final JwtLoanSubmissionService jwtLoanSubmissionService;
 
+    private final InvoiceRepository invoiceRepository;
     private final CustomerRemoteService customerRemoteService;
     private final InvoiceRemoteDto invoiceRemoteDto;
     private final CurrencyRemoteService currencyRemoteService;
@@ -133,7 +134,17 @@ public class LoanSubmissionService {
 
             List<PostedInvoiceDto> result = new ArrayList<>();
             for (int i = 0; i < inquiryInvoiceRemote.getRow().size(); i++) {
+                InquiryInvoiceRemoteDto.InvoiceRemoteDto  remoteDto = inquiryInvoiceRemote.getRow().get(i);
                 if (StringUtil.isNullOrEmpty(inquiryInvoiceRemote.getRow().get(i).getPoNumber())) {
+                    continue;
+                }
+
+
+                Optional<Invoice>  invoice =  invoiceRepository.findByBouwheerInvNoAndCustInvNo(
+                        vendorTokenExtractor.getBouwheerCode().toString(),
+                        inquiryInvoiceRemote.getRow().get(i).getReference());
+                if (invoice.isPresent()) {
+                    //invoice sudah direquest
                     continue;
                 }
 
@@ -319,6 +330,29 @@ public class LoanSubmissionService {
         }
     }
 
+    public FinancingHdr viewCulateDisburse(
+            Authentication authentication,
+            String financeCode
+    ) throws SignatureException, JsonProcessingException, ParseException {
+        try {
+
+            Optional<FinancingHdr>  financingHdr =  financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financeCode));
+            if (financingHdr.isPresent()){
+                FinancingHdr financingHdr1 = financingHdr.get();
+                financingHdr1.setCustomer(null);
+                financingHdr1.setBouwheer(null);
+                financingHdr1.setMstBranch(null);
+                financingHdr1.setFinancingDtls(null);
+                financingHdr1.setAgreement(null);
+                return financingHdr1;
+            }
+            return null;
+        } catch (Exception e) {
+            log.error("calculateDisburse, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
     public EstimatedDisburseDto recalculateDisburse(
             Authentication authentication,
             CalculateSimulationRequest request
@@ -424,6 +458,143 @@ public class LoanSubmissionService {
     }
 
     @Transactional
+    public CreatedSimulationDto updateeSimulation(
+            Authentication authentication,
+            CreateSimulationRequest request
+    ) throws Exception {
+      try {
+          final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+
+           /*emailService.sendNotificationChangeLimit(
+                customer,
+                LoanDisburseEmailPayload.builder()
+                        .financingCode(createdFinancing.getFinancingHdrCode().toString())
+                        .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
+                        //.companyName(createdFinancing.getBouwheer().getBouwheerName())
+                        .companyName(createdFinancing.getCustomer().getCustName())
+                        .phoneNumber(phoneNumber)
+                        .tenor(createdFinancing.getTenor())
+                        .financingCode(createdFinancing.getFinancingHdrCode().toString())
+                        .financingDueDate(DateTimeUtils.formatToDate(createdFinancing.getFinancingDueDate()))
+                        .retention(CommonFormattingUtils.formatAmount(createdFinancing.getRetention()))
+                        .financingAmt(CommonFormattingUtils.formatAmount(createdFinancing.getFinancingAmt()))
+                        .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+                        .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getTotalInvoiceAmt()))
+                        .disburseAmt(CommonFormattingUtils.formatAmount(createdFinancing.getDisburseAmt()))
+                        .invoices(invoices)
+                        .build()
+        );*/
+      }catch (Exception e){ }
+
+
+
+
+
+        return  null;
+       /* try {
+            final String bouwheerCode = "";//request.getInvoices().getFirst().getBouwheerCode();
+            final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+            if (customer == null) {
+                throw CommonInvalidException.cannotAccessResource();
+            }
+
+            final Product product = productRepository.findById(request.getProductId()).orElseThrow();
+            final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode))
+                    .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
+
+            final double totalInvoiceAmount = request.getInvoices()
+                    .stream()
+                    .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
+                    .sum();
+
+            final Date maxInvoiceDueDate = request.getInvoices()
+                    .stream()
+                    .map(PostedInvoicePayload::getInvoiceDueDate)
+                    .max(Date::compareTo)
+                    .get();
+
+            final CalculateSimulationRequest simulation = new CalculateSimulationRequest();
+            {
+                simulation.setDisbursePercentage(request.getDisbursePercentage());
+                simulation.setTotalInvoiceAmount(BigDecimal.valueOf(totalInvoiceAmount).setScale(2, RoundingMode.CEILING));
+                simulation.setBouwheerCode(request.getInvoices().getFirst().getBouwheerCode());
+                simulation.setInvoiceDueDate(
+                        DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
+                );
+            }
+
+            final EstimatedDisburseDto calculateDisburse = calculateDisburse(authentication, simulation);
+            if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
+                throw new IllegalStateException("Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
+                        "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
+            }
+
+            final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
+                    .financingAmount(calculateDisburse.getFinancingAmount())
+                    .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
+                    .maxInvoiceDate(maxInvoiceDueDate)
+                    .totalInvoiceAmount(totalInvoiceAmount)
+                    .interestFeeAmount(calculateDisburse.getInterestFeeAmount())
+                    .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
+                    .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
+                    .othersFeeAmount(calculateDisburse.getOthersFeeAmount())
+                    .legalFeeAmount(calculateDisburse.getLegalFeeAmount())
+                    .surveyFeeAmount(calculateDisburse.getSurveyFeeAmount())
+                    .adminRate(calculateDisburse.getAdminRate())
+                    .effectiveRate(calculateDisburse.getEffectiveRate())
+                    .provisionRate(calculateDisburse.getProvisionRate())
+                    .build();
+
+            final FinancingHdr createdFinancingHdr = financingHdrService.create(
+                    authentication,
+                    customer,
+                    bouwheer,
+                    product,
+                    request,
+                    simulationDisburseResult
+            );
+
+           *//* final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, null);
+            final InquiryInvoiceRemoteDto inquiryInvoiceRemote;
+
+            try {
+                inquiryInvoiceRemote = invoiceRemoteDto.inquiryInvoice(vendorTokenExtractor.getVendorCode()).getData();
+                List<InquiryInvoiceRemoteDto.InvoiceRemoteDto> invoiceRemoteDto = inquiryInvoiceRemote.getRow();
+                List<PostedInvoiceDto> postedInvoices = new ArrayList<>();
+                for (InquiryInvoiceRemoteDto.InvoiceRemoteDto invoice : invoiceRemoteDto) {
+                    for (PostedInvoicePayload postedInvoicePayload : request.getInvoices()) {
+                        if (invoice.getReference().equals(postedInvoicePayload.getInvoiceCode())) {
+                            postedInvoices.add(postedInvoicePayload.toPostedInvoiceDto());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                //throw new IllegalStateException("Terjdi kesalahan saat mengambil data invoice dari pihak PT. Trakindo Utama.");
+            }*//*
+
+            final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, request);
+
+            financingDtlService.createBulk(
+                    customer,
+                    bouwheer,
+                    createdFinancingHdr,
+                    request.getInvoices(),
+                    createdInvoices
+            );
+
+            return CreatedSimulationDto.builder()
+                    .productId(request.getProductId())
+                    .financingHdrCode(createdFinancingHdr.getFinancingHdrCode())
+                    .invoices(createdInvoices)
+                    .build();
+        } catch (Exception e) {
+            log.error("createSimulation, error {}", e.getMessage());
+            throw e;
+        }*/
+    }
+
+
+    @Transactional
     public CreatedSimulationDto createSimulation(
             Authentication authentication,
             CreateSimulationRequest request
@@ -464,6 +635,12 @@ public class LoanSubmissionService {
             if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
                 throw new IllegalStateException("Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
                         "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
+            }
+
+
+            if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 50000000){
+                throw new IllegalStateException("Untuk melanjukan pengajuan silahkan tambahkan jumlah invoice yang ingin" +
+                        "diajukan hingga mencapai minimal   Rp 50.000.000");
             }
 
             final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
@@ -556,7 +733,7 @@ public class LoanSubmissionService {
                                             .equalsIgnoreCase(DateTimeUtils.SDF_STANDARD_DATE.format(new Date()))
                             )
             ) {
-                throw new LoanDocMandatoryException("Surat Instruksi Transfer belum di perbaharui, silahkan upload terlebih dahulu");
+                //throw new LoanDocMandatoryException("Surat Instruksi Transfer belum di perbaharui, silahkan upload terlebih dahulu");
             }
 
             List<MstFileType> mandatoryFile = mstFileTypeService.getAllMandatory();

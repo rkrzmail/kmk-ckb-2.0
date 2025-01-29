@@ -65,10 +65,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             "/api/v1/loan-submissions/simulations/percentage",
             "/api/v1/loan-submissions/simulations/calculate",
             "/api/v1/loan-submissions/simulations/recalculate",
+            "/api/v1/loan-submissions/simulations/viewcalculate",
     };
 
     public static final String[] ENDPOINTS_WHITELIST = {
             "/api/v1/auth/sign-in",
+
             "/api/v1/auth/sign-up",
             "/api/v1/auth/forgot-pin",
             "/api/v1/auth/refresh-token",
@@ -191,10 +193,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (request.getRequestURI().toLowerCase().contains("/loan-submissions/create")){
 
             } else if (!redisLog.get().getSession().equalsIgnoreCase(rtoken)){
-                throw new BadCredentialsException("Invalid token, Multi Login");
+                //throw new BadCredentialsException("Invalid token, Multi Login");
             }
         }else{
-            throw new BadCredentialsException("Invalid token, Multi Login");
+            //throw new BadCredentialsException("Invalid token, Multi Login");
         }
 
         if (username != null && authentication == null) {

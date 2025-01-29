@@ -43,6 +43,17 @@ public class MstProductController {
         );
     }
 
+    @GetMapping("/listitem/{id}")
+    public CommonResult<PaginationResult<ProductDto>> getListItem(
+            Authentication authentication, PaginationRequest request,
+              @PathVariable("id") Long id
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
+        return new CommonResult<PaginationResult<ProductDto>>().success(
+                productService.listProductItem(request, id)
+        );
+    }
+
     @PostMapping(
             value = "/update/upload",
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE

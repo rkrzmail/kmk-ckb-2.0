@@ -1,6 +1,7 @@
 package com.kmkbe.modules.loan_submission.controller;
 
 import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
+import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.PaidInvoiceDto;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.CommonResult;
@@ -72,12 +73,22 @@ public class FinancingController {
     }
 
     @GetMapping("/invoices/paid")
-    public CommonResult<PaginationResult<PaidInvoiceDto>> getInvoicePaid(
+    public CommonResult<PaginationResult<PaidInvoiceDto>> getInvoicePaid2(
             Authentication authentication, PaginationRequest request
     ) throws SignatureException {
         UserInternalUtils.authenticated(authentication);
         return new CommonResult<PaginationResult<PaidInvoiceDto>>().success(
                 financingHdrService.paidInvoice(request)
+        );
+    }
+
+    @GetMapping("/invoices/paid/x")
+    public CommonResult<PaginationResult<PaidInvoiceDto>> getInvoicePaid(
+            Authentication authentication, PaginationRequest request
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
+        return new CommonResult<PaginationResult<PaidInvoiceDto>>().success(
+                financingHdrService.paidInvoiceNew(request)
         );
     }
 
@@ -101,7 +112,9 @@ public class FinancingController {
         }
         try {
             financingService.recallApprovalStatus();
-        } catch (Exception ignored) { }
+        } catch (Exception ignored) {
+            ignored.printStackTrace();
+        }
 
         return new CommonResult<>().success(null, "Success Check Approval Status");
     }

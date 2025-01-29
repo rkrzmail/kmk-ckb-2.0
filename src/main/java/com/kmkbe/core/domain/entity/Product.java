@@ -36,6 +36,11 @@ public class Product {
     @Column(name = "product_name", nullable = false, length = 100)
     private String productName;
 
+    @Size(max = 100)
+    // @NotNull
+    @Column(name = "product_code", nullable = false, length = 100)
+    private String productCode;
+
    // @NotNull
     @Column(name = "effective_date", nullable = false)
     private LocalDateTime effectiveDate;

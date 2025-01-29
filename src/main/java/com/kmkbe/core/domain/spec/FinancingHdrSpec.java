@@ -107,4 +107,27 @@ public class FinancingHdrSpec {
             return criteriaBuilder.and(stepStatusPredicate, searchPredicate);
         };
     }
+
+
+    public static Specification<FinancingHdr> bySearchTOCBy(String searchBy, String value) {
+        return (root, query, criteriaBuilder) -> {
+            Join<FinancingHdr, Customer> joinCust = root.join("cust_code", JoinType.INNER);
+            Join<FinancingHdr, Bouwheer> joinBouwheer = root.join("bouwheer_code", JoinType.INNER);
+            Join<FinancingHdr, FinancingDtl> joinDtl = root.join("financing_hdr_code", JoinType.INNER);
+
+            if (searchBy == null || StringUtil.isNullOrEmpty(value)) {
+                return criteriaBuilder.conjunction();
+            }
+
+            return switch (searchBy.toLowerCase()) {
+                case "status" -> criteriaBuilder.and(criteriaBuilder.equal(root.get("financing_status"), value));
+                case "namadebitur" -> criteriaBuilder.and(criteriaBuilder.equal(joinCust.get("cust_name"), value));
+                case "pemberikerja" ->
+                        criteriaBuilder.and(criteriaBuilder.equal(joinBouwheer.get("bouwheer_name"), value));
+                case "noinvoice" -> criteriaBuilder.and(criteriaBuilder.equal(joinDtl.get("invoice_code"), value));
+                case "cabang" -> null;
+                default -> null;
+            };
+        };
+    }
 }

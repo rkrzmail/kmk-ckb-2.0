@@ -98,6 +98,10 @@ public class LegalFileService {
                             + legalFile.getFileName()
             );
 
+            String fileNameX = UriUtils.getBaseUrl(httpServletRequest).replace("http", "https")
+                    + "/api/v1/documents/download/loan/"+legalFile.getFileId()+"?token=";
+            dto.setFileUrl(fileNameX);
+            //https://kmk-win.nikitagenerator.com/api/v1/documents/download/loan/150?token=eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJmYXRoaW1hZG9uQG91dGxvb2suY29tIiwiaXNzIjoiZmF0aGltYWRvbkBvdXRsb29rLmNvbUBEYW5hU2FrdGkiLCJpYXQiOjE3Mzc3Mjk3MjAsImV4cCI6MTczNzczMjcyMCwiYXVkIjoiaHR0cHM6Ly9kZXYxLWRhbmFzYWt0aS5jc3VsZmluYW5jZS5jb20ifQ.70ExT4dgqebg01I-qDcSPpc2Nl8Z7aLR8MeGtXUtzjM
             return dto;
         } catch (Exception e) {
             log.error("create, error {}", e.getMessage());

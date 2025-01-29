@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -35,5 +36,8 @@ public class CustomerPlafondDto {
         private BigDecimal plafond;
         private BigDecimal totalPlafond;
         private BigDecimal availablePlafond;
+
+        private String validityLimitData;
+        private BigDecimal jumlahInvoice;
     }
 }

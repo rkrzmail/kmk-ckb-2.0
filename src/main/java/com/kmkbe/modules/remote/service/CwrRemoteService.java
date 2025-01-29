@@ -120,6 +120,7 @@ public class CwrRemoteService {
         String jsonStr = "";
         String responseStr = null;
         int statusCode = 200;
+
         final String url = baseRemoteService.Los_Generic_GetPagingObjectBySQL();
         try {
             PropCriteriaGenericTypeRequest propCriteria = PropCriteriaGenericTypeRequest.builder()

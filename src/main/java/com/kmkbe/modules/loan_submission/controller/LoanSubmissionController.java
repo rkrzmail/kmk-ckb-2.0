@@ -3,6 +3,7 @@ package com.kmkbe.modules.loan_submission.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -110,7 +111,17 @@ public class LoanSubmissionController {
         );
     }
 
-
+    @PostMapping("/simulations/update")
+    public CommonResult<CreatedSimulationDto> updateSimulation(
+            Authentication authentication,
+             @RequestBody CreateSimulationRequest request
+    ) throws Exception {
+        var result = loanSubmissionService.updateeSimulation(authentication, request);
+        return new CommonResult<CreatedSimulationDto>().success(
+                result,
+                "Simulation Update Successfully"
+        );
+    }
 
 
     @PostMapping("/simulations/create")
@@ -217,13 +228,25 @@ public class LoanSubmissionController {
         );
     }
 
+    @GetMapping("/simulations/viewcalculate/{financeCode}")
+    public CommonResult<FinancingHdr> getViewCalculateDisburse(
+            Authentication authentication,
+            @PathVariable("financeCode") String financeCode
+    ) throws SignatureException, JsonProcessingException, ParseException {
+        return new CommonResult<FinancingHdr>().success(
+                loanSubmissionService.viewCulateDisburse(authentication, financeCode)
+        );
+    }
+
+
     @GetMapping("/documents/debitur")
     public CommonResult<PaginationResult<MstFileTypeDto>> getDocumentDebitur(
             Authentication authentication,
             HttpServletRequest httpServletRequest,
             PaginationRequest request,
             Boolean isFirst,
-            @RequestParam("custCode") String custCode
+            @RequestParam("custCode") String custCode,
+            @RequestParam("financingHdrCode") String financingHdrCode
     ) throws Exception {
         return new CommonResult<PaginationResult<MstFileTypeDto>>().success(
                 documentService.fetchAllLoanDocumentDebitur(
@@ -231,7 +254,8 @@ public class LoanSubmissionController {
                         authentication,
                         request,
                         isFirst,
-                        custCode
+                        custCode,
+                        financingHdrCode
                 )
         );
     }

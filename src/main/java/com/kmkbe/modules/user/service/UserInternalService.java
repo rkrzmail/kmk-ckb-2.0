@@ -47,16 +47,18 @@ public class UserInternalService {
                             .build())
                     .toList();
 
+            String roleCode =  permission
+                    .getAppRoleForm()
+                    .getApplicationRole()
+                    .getRoleCode()
+                    .getRoleCode();
+
             return UserDto.builder()
                     .employeeName(employee.getEmployeeName())
                     .branchCode(employee.getBranch().getBranchCode())
                     .branchName(employee.getBranch().getBranchName())
                     .roleCode(
-                            permission
-                                    .getAppRoleForm()
-                                    .getApplicationRole()
-                                    .getRoleCode()
-                                    .getRoleCode()
+                            roleCode
                     )
                     .isActive(user.getIsActive())
                     .permissions(roles)

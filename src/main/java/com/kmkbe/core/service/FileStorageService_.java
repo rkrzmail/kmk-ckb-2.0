@@ -1,7 +1,6 @@
 package com.kmkbe.core.service;
 
 import com.kmkbe.core.utils.FileUtils;
-import com.kmkbe.modules.user.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
@@ -26,7 +25,7 @@ import java.nio.file.StandardCopyOption;
 @Service
 @Slf4j
 @RequiredArgsConstructor
-public class FileStorageService {
+public class FileStorageService_ {
     private final ServletContext context;
 
     private final Path root = Paths.get("uploads");
@@ -53,29 +52,37 @@ public class FileStorageService {
                 throw new Exception("File cannot be null");
             }
 
-            // Ambil ekstensi file dengan benar dari titik terakhir
-            String ext = getFileExtension(file.getOriginalFilename());
-            log.info("Detected file extension: " + ext);
-
+            String ext = FileUtils.getUploadFileExtension(file);
             if (StringUtil.isNullOrEmpty(ext)) {
                 throw new Exception("File format or extension is not valid, try to upload valid file. Uploaded File: " + name);
             }
 
-            // Validasi ekstensi
-            if (!(ext.equalsIgnoreCase("doc") ||
-                    ext.equalsIgnoreCase("pdf") ||
-                    ext.equalsIgnoreCase("jpg") ||
-                    ext.equalsIgnoreCase("jpeg") ||
-                    ext.equalsIgnoreCase("png"))) {
-                throw new Exception("File format or extension is not valid. Detected extension: " + ext + ". Allowed extensions: doc, pdf, jpg, jpeg, png.");
+            String extString = String.valueOf(ext).toLowerCase();
+            if (extString.equalsIgnoreCase("")||
+                    extString.equalsIgnoreCase("null")||
+                    extString.equalsIgnoreCase("doc")||
+                    extString.equalsIgnoreCase("pdf")||
+                    extString.equalsIgnoreCase("jpg")||
+                    extString.equalsIgnoreCase("jpeg")||
+                    extString.equalsIgnoreCase("png")) {
+                //doc, pdf,jpg, jpeg atau pngs
+            } else{
+                throw new Exception("File format or extension is not valid, try to upload valid file (doc, pdf,jpg, jpeg atau png). Uploaded File: " + name);
             }
 
-            // Ganti spasi dalam nama file dengan garis bawah
-            name = name.replaceAll("\\s", "_");
-            log.info("Processed file name: " + name);
+            if (ext.equals(ext.toUpperCase())) {
+                ext = ext.toLowerCase();
+            }
 
-            // Pastikan nama file memiliki ekstensi yang benar
-            if (!name.endsWith("." + ext)) {
+            /*if (extValidation != null && !ext.equalsIgnoreCase(extValidation)) {
+                throw new Exception("File extension is not valid, expected: " + extValidation + " but got: " + ext);
+            }*/
+
+            String fileNameExt = FileUtils.getFileNameExtension(name);
+            if (StringUtil.isNullOrEmpty(fileNameExt)) {
+                throw new Exception("File format or extension is not valid, try to upload valid file. Uploaded File: " + name);
+            }
+            if (fileNameExt.equals(fileNameExt.toUpperCase())) {
                 name = name.substring(0, name.lastIndexOf(".")) + "." + ext;
             }
 
@@ -83,22 +90,20 @@ public class FileStorageService {
             if (!uploadPath.toFile().exists()) {
                 Files.createDirectories(uploadPath);
             }
-            name = Utils.UUID();//Paths.get(name)
 
-            Path fileDestination = uploadPath.resolve(name)
+            Path fileDestination = uploadPath.resolve(Paths.get(name))
                     .normalize()
                     .toAbsolutePath();
 
             try (InputStream inputStream = file.getInputStream()) {
                 Files.copy(inputStream, fileDestination, StandardCopyOption.REPLACE_EXISTING);
 
-                return  uploadDir + "/" + name;
+                return "/uploads/" + uploadDir + "/" + name;
             } catch (Exception e) {
                 throw new RuntimeException("Could not store the file. Error: " + e.getMessage());
             }
 
         } catch (Exception e) {
-            log.error("Error while saving file: " + e.getMessage(), e);
             throw new RuntimeException(e.getMessage());
         }
     }
@@ -135,57 +140,36 @@ public class FileStorageService {
     public ResponseEntity<Resource> downloadUploadFile(
             HttpServletRequest httpServletRequest,
             String filePath,
-            String fileName,
-            String cd
+            String fileName
     ) {
+        String filePathStr = filePath + "/" + fileName;
+        if (filePathStr.contains("uploads")) {
+            filePathStr = filePathStr.replace("/uploads/", "");
+        }
+
         try {
-            // Tentukan path lengkap file
-            //Path paths = root.resolve(filePath).resolve(fileName).normalize().toAbsolutePath();
-
-
-            Path paths = root.resolve(filePath).normalize()  .toAbsolutePath();
-
-
-            // Validasi apakah file ada dan dapat dibaca
+            Path paths = Paths.get("uploads", filePathStr);
             Resource resource = new UrlResource(paths.toUri());
-            if (!resource.exists() || !resource.isReadable()) {
-                throw new RuntimeException("File not found or not readable: " + paths.toUri());
-            }
-
-            // Tentukan content type
             String contentType = httpServletRequest
                     .getServletContext()
-                    .getMimeType(fileName);
+                    .getMimeType(resource.getFile().getAbsolutePath());
 
-            if (contentType == null) {
-                contentType = "application/octet-stream";
+            if (resource.exists()) {
+                HttpHeaders headers = new HttpHeaders();
+                headers.add("content-disposition", "inline;filename=" + fileName);
+
+                return ResponseEntity.ok()
+                        .contentLength(paths.toFile().length())
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .headers(headers)
+                        .body(resource);
+            } else {
+                throw new RuntimeException("File not found ");
             }
-
-            // Header untuk file response
-            HttpHeaders headers = new HttpHeaders();
-            if (String.valueOf(httpServletRequest.getParameter("cd")).equalsIgnoreCase("attachment")){
-                headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
-            }else{
-                headers.set("Content-Disposition","inline");
-            }
-
-
-            return ResponseEntity.ok()
-                    .contentType(MediaType.parseMediaType(contentType))
-                    .headers(headers)
-                    .body(resource);
-        } catch (Exception e) {
-            throw new RuntimeException("Error occurred while downloading file: " + e.getMessage(), e);
+        } catch (MalformedURLException ex) {
+            throw new RuntimeException("File not found ");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-    }
-
-    /**
-     * Utility method to get the file extension from a filename.
-     */
-    private String getFileExtension(String filename) {
-        if (filename != null && filename.contains(".")) {
-            return filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
-        }
-        return null;
     }
 }

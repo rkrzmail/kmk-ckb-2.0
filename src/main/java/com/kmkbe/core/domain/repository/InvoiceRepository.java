@@ -32,6 +32,9 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID>, JpaSpec
     List<Invoice> findAllByCustomer(
             Customer customer
     );
-
+    Optional<Invoice> findByBouwheerInvNoAndCustInvNo(
+            String bouwheerInvNo,
+            String custInvNo
+    );
 
 }

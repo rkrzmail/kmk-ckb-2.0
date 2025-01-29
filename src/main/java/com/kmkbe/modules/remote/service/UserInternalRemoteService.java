@@ -2,6 +2,7 @@ package com.kmkbe.modules.remote.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.service.LdapUrlService;
 import com.kmkbe.core.utils.AESUtils;
 import com.kmkbe.core.utils.ObjectUtils;
@@ -65,11 +66,13 @@ public class UserInternalRemoteService {
 
             return response.getBody();
         } catch (HttpClientErrorException httpClientErrorException) {
-            return httpClientErrorException.getResponseBodyAs(new ParameterizedTypeReference<>() {
-            });
+            throw CommonInvalidException.invalidPassword();
+           /* return httpClientErrorException.getResponseBodyAs(new ParameterizedTypeReference<>() {
+            });*/
         } catch (Exception e) {
+
             log.error("validateActiveDirectory: {}", e.getMessage());
-            throw e;
+            throw   CommonInvalidException.invalidPassword();
         }
     }
 }

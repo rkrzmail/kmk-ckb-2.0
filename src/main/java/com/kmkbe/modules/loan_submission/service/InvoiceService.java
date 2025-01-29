@@ -17,6 +17,8 @@ import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -154,10 +156,51 @@ public class InvoiceService {
                 pageNo = pageNo - 1;
             }
 
-            final Page<FinancingDtl> financingDtls = financingDtlRepository.findByFinancingHdr(
-                    financingHdr,
-                    PageRequest.of(pageNo, pageSize)
-            );
+             Page<FinancingDtl> financingDtls = null;
+            if (request.getSearchBy() != null) {
+                 final String searchBy = request.getSearchBy();
+                 final String searchValue = request.getSearchValue();
+
+                    financingDtls = financingDtlRepository.findAll(
+                        Specification.where(
+                                FinancingDtlSpec.custInvoiceFilterBy(financingHdr.getFinancingHdrCode() , request.getSearchBy(), request.getSearchValue())
+                        ),
+                        PageRequest.of(pageNo, pageSize)
+                );
+
+                /*    Specification<FinancingDtl> spec = Specification.where((root, query, criteriaBuilder) -> {
+                        return criteriaBuilder.equal(root.get("financingHdr"),   financingHdr  );
+                     });
+
+
+                spec = spec.and((root, query, criteriaBuilder) -> {
+                        // Lakukan join antara Product dan Category
+
+                        Join<FinancingHdr, FinancingDtl> joinDtl = root.join("financingDtls", JoinType.INNER);
+                        Join<FinancingHdr, Customer> joinCust = root.join("customer", JoinType.INNER);
+                        Join<FinancingHdr, Bouwheer> joinBouwheer = root.join("bouwheer", JoinType.INNER);
+                        switch (searchBy){
+                            case "customer":
+                                return criteriaBuilder.like(joinCust.get(searchBy), "%" + searchValue + "%");
+                            default:
+
+                        }
+                        return criteriaBuilder.like(root.get(searchBy), "%" + searchValue + "%");
+                    });
+
+                   financingDtls = financingDtlRepository.findAll(spec,    PageRequest.of(pageNo, pageSize)
+                );*/
+
+            }
+
+            if (financingDtls == null){
+
+                financingDtls = financingDtlRepository.findByFinancingHdr(
+                        financingHdr,
+                        PageRequest.of(pageNo, pageSize)
+                );
+            }
+
 
             return paginateInvoice(
                     financingDtls,

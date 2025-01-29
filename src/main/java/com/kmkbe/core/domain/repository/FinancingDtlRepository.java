@@ -18,6 +18,9 @@ import java.util.UUID;
 public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID>, JpaSpecificationExecutor<FinancingDtl> {
     Optional<List<FinancingDtl>> findAllByFinancingHdr(FinancingHdr financingHdr);
 
+
+    List<FinancingDtl> findAllByFinancingHdrOrderByDtmCrtDesc(FinancingHdr financingHdr);
+
     Optional<FinancingDtl> findFirstByBouwheerInvNo(String bouwheerInvNo);
 
     @Query(

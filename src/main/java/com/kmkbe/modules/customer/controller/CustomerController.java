@@ -190,6 +190,16 @@ public class CustomerController {
         );
     }
 
+    @GetMapping("/plafondcustomer")
+    public CommonResult<CustomerPlafondDto> getPlafondCustomer(
+             Authentication authentication
+    ) throws SignatureException {
+        //UserInternalUtils.authenticated(authentication);
+        return new CommonResult<CustomerPlafondDto>().success(
+                customerDashboardService.plafond(authentication)
+        );
+    }
+
     @GetMapping("/documents/{custCode}")
     public CommonResult<PaginationResult<LegalFileDto>> getDocuments(
             @PathVariable String custCode,

@@ -2,15 +2,10 @@ package com.kmkbe.modules.major_account.service;
 
 import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.StatusLabelDto;
+import com.kmkbe.core.domain.entity.BranchAreaMapping;
 import com.kmkbe.core.domain.entity.FinancingHdr;
-import com.kmkbe.core.domain.model.InvoiceEmailPayload;
-import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
-import com.kmkbe.core.domain.model.MappedFinancingStatus;
-import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.repository.CustomerRepository;
-import com.kmkbe.core.domain.repository.FinancingDtlRepository;
-import com.kmkbe.core.domain.repository.FinancingHdrRepository;
-import com.kmkbe.core.domain.repository.InvoiceRepository;
+import com.kmkbe.core.domain.model.*;
+import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
@@ -50,6 +45,7 @@ public class DistributionSubmissionService {
     private final MstBranchRepository mstBranchRepository;
     private final FinancingHdrService financingHdrService;
     private final CustomerRepository customerRepository;
+    private final BranchAreaMappingRepository branchAreaMappingRepository;
 
     public PaginationResult<DistributionSubmissionDto> submissionDistribution(
             PaginationRequest request
@@ -129,11 +125,9 @@ public class DistributionSubmissionService {
                             currentBranchCode = e.getMstBranch().getBranchCode();
                             currentBranch = e.getMstBranch().getBranchName();
                         } else {
-                            if (
-                                    !StringUtil.isNullOrEmpty(city)
+                           /* if (  !StringUtil.isNullOrEmpty(city)
                                             && !StringUtil.isNullOrEmpty(kelurahan)
-                                            && !StringUtil.isNullOrEmpty(kecamatan)
-                            ) {
+                                            && !StringUtil.isNullOrEmpty(kecamatan) ) {
                                 Optional<MstBranch> findBranch = mstBranchRepository.findTopLikeBranchNameRawQuery(
                                         city,
                                         kelurahan,
@@ -144,8 +138,28 @@ public class DistributionSubmissionService {
                                     branchRecommendedCode = findBranch.get().getBranchCode();
                                     branchRecommended = findBranch.get().getBranchName();
                                 }
-                            }
+                            }*/
                         }
+                        if (branchRecommendedCode == null) {
+                            /*Optional<MstBranch> findBranch = mstBranchRepository.findTopLikeBranchNameRawQuery(
+                                    Utils.valueOf(city),
+                                    Utils.valueOf(kelurahan),
+                                    Utils.valueOf(kecamatan)
+                            );
+
+                            if (findBranch.isPresent()) {
+                                branchRecommendedCode = findBranch.get().getBranchCode();
+                                branchRecommended = findBranch.get().getBranchName();
+                            }*/
+                            Optional<BranchAreaMapping> branchAreaMapping =  branchAreaMappingRepository.findByCityIgnoreCase(Utils.valueOf(city));
+                            if (branchAreaMapping.isPresent()) {
+                                branchRecommendedCode = branchAreaMapping.get().getMstBranch().getBranchCode();
+                                branchRecommended = branchAreaMapping.get().getMstBranch().getBranchName();
+                            }
+
+
+                        }
+
 
                         MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
                                 e,
@@ -204,6 +218,18 @@ public class DistributionSubmissionService {
             FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
                     .orElseThrow(() -> new IllegalStateException("Financing Not Found with given argument"));
 
+            String sring = Utils.valueOf(financingHdr.getFinancingStep()) ;//ASSIGNMENT
+            if (Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("PID")){
+                throw new IllegalStateException("PAID given financingHdrCode");
+            }
+            if (Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("NEW")
+                    ||Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("ASSIGNMENT")
+                    ||Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("ASSIGN")){
+
+            }else{
+                throw new IllegalStateException("Status is not assigned");
+            }
+
             // Major account melakukan assignment leads ke cabang
             financingHdr.setFinancingStatus("INPROCESS");
             financingHdr.setFinancingStep("ASSIGNMENT");
@@ -236,7 +262,7 @@ public class DistributionSubmissionService {
 
                 emailService.sendNotificationBranchAssign(
                         //mstBranch.getEmployees().stream().toList().getFirst().getEmail(),
-                        "vandikalvandi@gmail.com",
+                        "radema.panjaitan@csul.co.id",
                         financingHdr.getBouwheer().getBouwheerName(),
                         mstBranch.getBranchName(),
                         LoanDisburseEmailPayload.builder()

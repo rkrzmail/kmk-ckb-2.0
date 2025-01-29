@@ -1,9 +1,9 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.AssignmentDto;
-import com.kmkbe.core.domain.entity.Agreement;
-import com.kmkbe.core.domain.entity.AgreementFile;
-import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
+import com.kmkbe.core.domain.dto.StatusLabelDto;
+import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.repository.AgreementFileRepository;
 import com.kmkbe.core.domain.repository.AgreementRepository;
@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -182,6 +183,28 @@ public class AssignmentSubmissionService {
                 pageNo = pageNo - 1;
             }
 
+            final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAll(
+                    FinancingHdrSpec.bySearchTOCBy(request.getSearchBy(), request.getSearchValue()),
+                    PageRequest.of(pageNo, pageSize)
+            );
+
+
+            final List<Object> disburseInvoiceDto = financingHdrs
+                    .stream()
+                    .map((e) -> {
+
+
+                        return null;
+
+                    })
+                    .toList();
+
+            List<DisburseInvoiceDto> disburseInvoiceDto2 = new ArrayList<>();;
+           /* for (DisburseInvoiceDto invoiceDto : disburseInvoiceDto) {
+                if (invoiceDto != null) {
+                    disburseInvoiceDto2.add(invoiceDto);
+                }
+            }*/
 
             return PaginationResult.<Object>builder()
                     .currentPage(pageNo + 1)

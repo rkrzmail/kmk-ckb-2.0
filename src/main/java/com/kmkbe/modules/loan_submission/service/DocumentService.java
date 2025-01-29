@@ -4,16 +4,10 @@ import com.kmkbe.core.domain.dto.DocumentTemplateFinancingDto;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.dto.LegalFileDto;
 import com.kmkbe.core.domain.dto.MstFileTypeDto;
-import com.kmkbe.core.domain.entity.AgreementFile;
-import com.kmkbe.core.domain.entity.Customer;
-import com.kmkbe.core.domain.entity.LegalFile;
-import com.kmkbe.core.domain.entity.MstFileType;
+import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.FileTypeMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.repository.AgreementFileRepository;
-import com.kmkbe.core.domain.repository.CustomerRepository;
-import com.kmkbe.core.domain.repository.LegalFileRepository;
-import com.kmkbe.core.domain.repository.MstFileTypeRepository;
+import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.DateTimeUtils;
@@ -56,6 +50,7 @@ public class DocumentService {
     private final LegalFileService legalFileService;
     private final CustomerRemoteService customerRemoteService;
     private final CustomerRepository customerRepository;
+    private final FinancingHdrRepository financingHdrRepository;
 
     public List<DocumentTemplateFinancingDto> fetchDocumentTemplateFinancing(
             Authentication authentication
@@ -198,10 +193,10 @@ public class DocumentService {
                     customer,
                     mstFileType,
                     file,
-                    FileUtils.getFilePathFromFullPath(uploadedPath),
+                    uploadedPath,
                     uploadName
             );
-
+//FileUtils.getFilePathFromFullPath(uploadedPath)
             if (existingFile != null && !existingFile.getFilePath().contains("http")) {
                 //fileStorageService.delete(existingFile.getFilePath() + "/" + existingFile.getFileName(), "");
             }
@@ -232,6 +227,11 @@ public class DocumentService {
     ) {
         try {
             HttpHeaders headers = new HttpHeaders();
+            if (String.valueOf(httpServletRequest.getParameter("cd")).equalsIgnoreCase("attachment")){
+                headers.set("Content-Disposition","attachment; filename=sample.pdf");
+            }else{
+                headers.set("Content-Disposition","inline");
+            }
             LegalFile legalFile = legalFileService.findByFileId(Long.valueOf(id));
             if (legalFile == null) {
                 headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -245,7 +245,8 @@ public class DocumentService {
             return fileStorageService.downloadUploadFile(
                     httpServletRequest,
                     legalFile.getFilePath(),
-                    legalFile.getFileName()
+                    legalFile.getFileName(),
+                    String.valueOf(httpServletRequest.getParameter("cd"))
             );
         } catch (Exception e) {
             log.error("documentByLegalFileId, error {}", e.getMessage());
@@ -273,7 +274,7 @@ public class DocumentService {
             return fileStorageService.downloadUploadFile(
                     httpServletRequest,
                     agreementFile.getFilePath(),
-                    agreementFile.getFileName()
+                    agreementFile.getFileName(), ""
             );
         } catch (Exception e) {
             log.error("agreementDocByAgreementId, error {}", e.getMessage());
@@ -829,7 +830,8 @@ public class DocumentService {
             Authentication authentication,
             PaginationRequest request,
             Boolean isFirst,
-            String custCode
+            String custCode,
+            String financingHdrCode
     ) throws SignatureException {
         try {
             if (isFirst != null && isFirst) {
@@ -866,14 +868,23 @@ public class DocumentService {
                         LegalFile legalFile = null;
 
                         try {
-                            Optional<Customer> customer =  customerRepository.findByCustCode(UUID.fromString(custCode));
+                           /* Optional<Customer> customer =  customerRepository.findByCustCode(UUID.fromString(custCode));
+
                             if (customer.isPresent()) {
                                 legalFile = legalFileService.fetchByMstFileTypeAndCust(customer.get(), file);
+
+                            }*/
+
+                            Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
+                            if (financingHdr.isPresent()) {
+                                legalFile = legalFileService.fetchByMstFileTypeAndCust(financingHdr.get().getCustomer(), file);
 
                             }
                         } catch (Exception e) {
                             log.error("fetchByCust, error {}", e.getMessage());
                         }
+
+
 
                         if (legalFile != null) {
                             LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);

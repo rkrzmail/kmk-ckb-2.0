@@ -97,6 +97,8 @@ public class CwrController {
 
         FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
         if (financingHdr != null) {
+
+
             result = invoiceService.invoiceSubmissionByFinancingHdr(
                     financingHdr,
                     request

@@ -104,16 +104,26 @@ public class CustomerDashboardListService {
                         if (e.getFinancingStatus().equalsIgnoreCase("new")) {
                             color = "#808080";
                         } else if (
-                                e.getFinancingStatus().equalsIgnoreCase("inprocess")
-                                        || e.getFinancingStatus().equalsIgnoreCase("signing")
+                              e.getFinancingStatus().equalsIgnoreCase("signing")
                                         || e.getFinancingStatus().equalsIgnoreCase("signed")
-                                        || e.getFinancingStatus().equalsIgnoreCase("live")
+
                                         || e.getFinancingStatus().equalsIgnoreCase("golive")
 
                         ) {
                             color = "#ccffcc";
-                        } else {
+                        } else if (
+                                e.getFinancingStatus().equalsIgnoreCase("inprocess")
+
+
+                        ) {
                             color = "#FF5C5C";
+                        } else if (
+                                e.getFinancingStatus().equalsIgnoreCase("live")
+
+                        ) {
+                            color = "#808080";
+                        } else {
+                            color = "#ccffcc";
                         }
 
                         if (e.getMstBranch() != null) {
@@ -142,7 +152,7 @@ public class CustomerDashboardListService {
 
                         MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
                                 e,
-                                MappedFinancingStatus.Type.MajorAccount
+                                MappedFinancingStatus.Type.Customer
                         );
                         //Optional<Agreement> agreement = agreementRepository.findTopByFinancingHdr(e.getAgreement().stream().toList()) ;
 

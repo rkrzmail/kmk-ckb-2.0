@@ -158,15 +158,37 @@ public class DateTimeUtils {
     public static boolean isLongIntegerNumber(String str) {
         return str.matches("-?\\d+");
     }
+    public static LocalDateTime formatDateTimeWithNull(String strDate) {
+        try {
+            return LocalDateTime.parse(strDate, DateTimeFormatter.ofPattern(DATE_TIME_STANDARD_PATTERN));
+        }catch (Exception e) {}
+        try {
+            return LocalDate.parse(strDate, DateTimeFormatter.ofPattern(DATE_STANDARD_PATTERN)).atStartOfDay();
+        }catch (Exception e) {}
+        try {
+            return LocalDateTime.parse(strDate, DateTimeFormatter.ofPattern(DATE_TIME_RESPONSE_STANDARD_PATTERN));
+        }catch (Exception e) {}
+        try {
+            return LocalDate.parse(strDate, DateTimeFormatter.ofPattern(DATE_RESPONSE_STANDARD_PATTERN)).atStartOfDay();
+        }catch (Exception e) {}
 
+
+        return null;//kalo format slaha
+    }
     public static LocalDateTime formatDateTime(String strDate) {
         try {
             return LocalDateTime.parse(strDate, DateTimeFormatter.ofPattern(DATE_TIME_STANDARD_PATTERN));
         }catch (Exception e) {}
         try {
+            return LocalDate.parse(strDate, DateTimeFormatter.ofPattern(DATE_STANDARD_PATTERN)).atStartOfDay();
+        }catch (Exception e) {}
+        try {
             return LocalDateTime.parse(strDate, DateTimeFormatter.ofPattern(DATE_TIME_RESPONSE_STANDARD_PATTERN));
         }catch (Exception e) {}
-        return LocalDateTime.now();
+        try {
+            return LocalDate.parse(strDate, DateTimeFormatter.ofPattern(DATE_RESPONSE_STANDARD_PATTERN)).atStartOfDay();
+        }catch (Exception e) {}
+        return LocalDateTime.now();//kalo format slaha
     }
     public static String formatToDateTime(LocalDateTime LocalDateTime) {
         return DTF_DATE_TIME_STANDARD_FORMATTER.format(LocalDateTime);

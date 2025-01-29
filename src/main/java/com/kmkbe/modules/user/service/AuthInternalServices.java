@@ -115,6 +115,8 @@ public class AuthInternalServices {
             } else {
                 user = findUser.get();
             }
+            String jwt ;
+            LoginDto loginDto;
 
             if (user.getIsUserAd()) {
                 if (user.getEmployee() == null) {
@@ -135,32 +137,38 @@ public class AuthInternalServices {
                                     .build()
                     );
 
-                    return new LoginDto(
+                    loginDto =  new LoginDto(
                             jwtService.generateToken(user),
                             refreshTokenResult.getRefreshToken().toString(),
                             jwtService.getExpirationTime()
                     );
+                    jwt = refreshTokenResult.getRefreshToken().toString();
+                }else{
+                    throw CommonInvalidException.invalidPassword();
                 }
 
-                throw CommonInvalidException.invalidInternalUser();
+
+            }else{
+                if (!bCryptPasswordEncoder.matches(request.getPassword(), user.getPassword())) {
+                    throw CommonInvalidException.invalidPassword();
+                }
+
+                final RefreshToken refreshTokenResult = refreshTokenServices.create(
+                        IRefreshTokenServices.User.builder()
+                                .userCode(user.getUserCode())
+                                .build()
+                );
+
+                loginDto = new LoginDto(
+                        jwtService.generateToken(user),
+                        refreshTokenResult.getRefreshToken().toString(),
+                        jwtService.getExpirationTime()
+                );
+                jwt = refreshTokenResult.getRefreshToken().toString();
             }
 
-            if (!bCryptPasswordEncoder.matches(request.getPassword(), user.getPassword())) {
-                throw CommonInvalidException.invalidPassword();
-            }
 
-            final RefreshToken refreshTokenResult = refreshTokenServices.create(
-                    IRefreshTokenServices.User.builder()
-                            .userCode(user.getUserCode())
-                            .build()
-            );
 
-            LoginDto loginDto = new LoginDto(
-                    jwtService.generateToken(user),
-                    refreshTokenResult.getRefreshToken().toString(),
-                    jwtService.getExpirationTime()
-            );
-            String jwt = refreshTokenResult.getRefreshToken().toString();
 
             //benar
             redisAttack.setCountAttack(0);

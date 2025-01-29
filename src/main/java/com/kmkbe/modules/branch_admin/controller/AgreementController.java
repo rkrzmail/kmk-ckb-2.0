@@ -123,7 +123,7 @@ public class AgreementController {
 
         //Branch admin melakukan upload dokumen perjanjian kerjasama
         financingHdr.setFinancingStatus("INPROCESS");
-        financingHdr.setFinancingStep("SIGNING");
+        financingHdr.setFinancingStep("SIGNED");//SIGNING
         financingHdrRepository.save(financingHdr);
 
         return new CommonResult<>().success(

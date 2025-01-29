@@ -57,9 +57,11 @@ public class MstProductService {
                 Product
                 dataEntity =  Product.builder()
                 .productId((long)getAsNumber(row, 0))
+                        .productCode((String)getAsString(row, 1))
                 .branchCode(String.valueOf(((int)getAsNumber(row, 2))))
                 .productName(getAsString(row, 3))//1
-                .effectiveDate(DateTimeUtils.formatDateTime(getAsString(row, 3)))
+
+                .effectiveDate(DateTimeUtils.formatDateTimeWithNull(getAsString(row, 4)))
 
                 .ntfFrom(getAsNumber(row, 5))
                 .ntfTo(getAsNumber(row, 6))
@@ -107,21 +109,26 @@ public class MstProductService {
         return Utils.getDouble(get(row, column));
     }
     public Object get(Row row, int column) {
+        Object object;
         if (row.getCell(column).getCellType() == CellType.NUMERIC){
-            return row.getCell(column).getNumericCellValue();
+            object =  row.getCell(column).getNumericCellValue();
         }else if (row.getCell(column).getCellType() == CellType.STRING){
-            return row.getCell(column).getStringCellValue();
+            object =  row.getCell(column).getStringCellValue();
         }else if (row.getCell(column).getCellType() == CellType.BOOLEAN){
-            return row.getCell(column).getBooleanCellValue();
+            object =  row.getCell(column).getBooleanCellValue();
         }else if (row.getCell(column).getCellType() == CellType.ERROR){
-            return row.getCell(column).getErrorCellValue();
+            object =  row.getCell(column).getErrorCellValue();
         }else if (row.getCell(column).getCellType() == CellType.FORMULA){
-            return row.getCell(column).getCellFormula();
+            object =  row.getCell(column).getCellFormula();
         }else if (row.getCell(column).getCellType() == CellType._NONE){
-            return "";
+            object =  "";
         }else{
-            return null;
+            object = null;
         }
+        if (String.valueOf(object).startsWith("'")){
+            return String.valueOf(object).substring(1);
+        }
+        return object;
 
     }
     public PaginationResult<ProductDto> listProduct(
@@ -152,6 +159,7 @@ public class MstProductService {
            List<ProductDto> result = pagination.stream()
                     .map((e) -> ProductDto.builder()
                             .productId(e.getProductId())
+                            .productCode(e.getProductCode())
                             .productName(e.getProductName())
                             .ntfTo(e.getNtfTo())
                             .ntfFrom(e.getNtfFrom())
@@ -165,6 +173,69 @@ public class MstProductService {
                             .provisionRate(e.getProvisionRate())
                             .effectiveRate(e.getEffectiveRate())
                             .surveyFee(e.getSurveyFee())
+                            .isActive(e.getIsActive())
+                            .status(e.getIsActive()?"ACTIVE":"INACTIVE")
+                            .build())
+                    .toList();
+
+            return PaginationResult.<ProductDto>builder()
+                    .currentPage(pageNo + 1)
+                    .totalData(pagination.getTotalElements())
+                    .totalPage(pagination.getTotalPages())
+                    .list(result)
+                    .build();
+        } catch (Exception e) {
+            log.error("placementBranch: error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public PaginationResult<ProductDto> listProductItem(
+            PaginationRequest request,
+            Long id
+    ) {
+        try {
+            int pageNo = 0, pageSize = 10;
+
+            if (request.getPageNo() != null) {
+                pageNo = request.getPageNo();
+            }
+            if (request.getPageSize() != null) {
+                pageSize = request.getPageSize();
+            }
+
+            if (pageNo > 0) {
+                pageNo = pageNo - 1;
+            }
+
+            pageSize = 1000;
+            Page<Product> pagination = productRepository.findAllByProductId(
+                    PageRequest.of(pageNo, pageSize ),
+                     id
+            );
+
+
+
+
+            List<ProductDto> result = pagination.stream()
+                    .map((e) -> ProductDto.builder()
+                            .productId(e.getProductId())
+                            .productCode(e.getProductCode())
+                            .productName(e.getProductName())
+                            .ntfTo(e.getNtfTo())
+                            .ntfFrom(e.getNtfFrom())
+                            .branchCode(e.getBranchCode())
+                            .effectiveDate(e.getEffectiveDate())
+                            .adminLimitFee(e.getAdminLimitFee())
+                            .adminRate(e.getAdminRate())
+                            .legalFee(e.getLegalFee())
+                            .othersFee(e.getOthersFee())
+                            .insuranceRate(e.getInsuranceRate())
+                            .provisionRate(e.getProvisionRate())
+                            .effectiveRate(e.getEffectiveRate())
+                            .surveyFee(e.getSurveyFee())
+                            .isActive(e.getIsActive())
+                            .status(e.getIsActive()?"ACTIVE":"INACTIVE")
                             .build())
                     .toList();
 

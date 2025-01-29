@@ -238,7 +238,7 @@ public class AuthService {
 
             Optional<RedisLog> redisLog = redisRepository.findFirstBySession(payload.getRefreshToken().toString());
             if (redisLog.isEmpty()){
-                throw new BadCredentialsException("Invalid token, Multi Login");
+               // throw new BadCredentialsException("Invalid token, Multi Login");
             }
 
 

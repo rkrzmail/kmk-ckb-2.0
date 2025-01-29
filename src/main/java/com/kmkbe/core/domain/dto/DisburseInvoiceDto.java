@@ -18,6 +18,7 @@ public class DisburseInvoiceDto {
     private Date paidDate;
     private BigDecimal retentionRefund;
     private BigDecimal paidAmount;
+    private BigDecimal disburseAmount;
     private Date retentionRefundDate;
     private StatusLabelDto status;
 }

@@ -16,6 +16,7 @@ import java.time.LocalDateTime;
 //@NoArgsConstructor
 public class ProductDto implements Serializable {
     private Long productId;
+    private String productCode;
     private String branchCode;
     private String productName;
     private LocalDateTime effectiveDate;
@@ -30,6 +31,7 @@ public class ProductDto implements Serializable {
     private Double insuranceRate;
     private Double othersFee;
     private Boolean isActive;
+    private String status;
     private String usrCrt;
     private LocalDateTime dtmCrt;
     private String usrUpd;

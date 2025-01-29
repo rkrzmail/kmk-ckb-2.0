@@ -179,7 +179,7 @@ public class InquiryDisburseService {
                         disbursementLog.setAgreement(agreement);
 
                         InquiryDisburseDatum disburseDatum = inquiryDisburseResult.getData().getFirst();
-                        disbursementLog.setApNo(disburseDatum.getAPNo());
+                        disbursementLog.setApNo(disburseDatum.getAPNo());//getAPNo
                         disbursementLog.setApDesc(disburseDatum.getAPDescr());
                         disbursementLog.setCurrency(disburseDatum.getCurrCode());
                         disbursementLog.setApAmt(disburseDatum.getApAmt());

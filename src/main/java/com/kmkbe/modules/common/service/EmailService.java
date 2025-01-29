@@ -38,6 +38,8 @@ public class EmailService {
     private static final String M_CUST_LOAN = "M_CUST_LOAN";
     private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";
     private static final String M_BOUWHEER_PAYMENT = "M_BOUWHEER_PAYMENT";
+    private static final String M_CHANGE_LIMIT = "M_CHANGE_LIMIT";
+
 
     private final EmailTemplateRepository emailTemplateRepository;
     private final ConfigRemoteService configRemoteService;
@@ -110,6 +112,44 @@ public class EmailService {
             send(customer.getCustEmail(), obj, M_CUST_ACTIVE);
         } catch (Exception e) {
             log.error("Error sendNotificationActive {}", e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendNotificationChangeLimit(
+            final Customer customer,
+            LoanDisburseEmailPayload payload
+    ) {
+        try {
+            Map<String, Object> args = new HashMap<>();
+            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
+            if (payloadArgs != null) {
+                payloadArgs.remove("invoices");
+                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+            }
+
+            args.put("email", customer.getCustEmail());
+            args.put("name", customer.getCustName());
+            args.put("id_no", customer.getCustIdNo());
+            args.put("additionalArgs", payloadArgs);
+
+            args.put("nama_perusahaan", customer.getCustIdNo());
+            args.put("tanggal_pengajuan", customer.getCustIdNo());
+            args.put("no_hp", customer.getCustIdNo());
+
+
+            args.put("nilai_transaksi", customer.getCustName());
+            args.put("nilai_layanan", customer.getCustName());
+            args.put("nilai_pembiayaan", customer.getCustName());
+            args.put("retensi", customer.getCustIdNo());
+            args.put("tenor", customer.getCustIdNo());
+            args.put("tanggal_jatuh_tempo", customer.getCustIdNo());
+            args.put("total_pencairan", customer.getCustIdNo());
+
+
+            send(customer.getCustEmail(), args, M_CHANGE_LIMIT);
+        } catch (Exception e) {
+            log.error("Error sendNotificationLoanDisbursement {}", e.getMessage());
         }
     }
 

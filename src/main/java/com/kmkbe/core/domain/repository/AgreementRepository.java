@@ -1,6 +1,7 @@
 package com.kmkbe.core.domain.repository;
 
 import com.kmkbe.core.domain.entity.Agreement;
+import com.kmkbe.core.domain.entity.Cwr;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.validation.constraints.NotNull;
@@ -22,6 +23,19 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     List<Agreement> findAllByStatus(@Size(max = 20) @NotNull(message = "Status cannot be null") String status);
 
     Optional<Agreement> findTopByAgreementCodeOrderByAgreementId(String agreementCode);
+
+    @Query(
+            value = """
+                    select
+                        ag.*
+                    from
+                        public.agreement ag
+                            join public.agreement_file agf on ag.agreement_code = agf.agreement_code
+                   
+                    """,
+            nativeQuery = true
+    )
+    List<Agreement> viewApprovalStatusNoPending();
 
     @Query(
             value = """
@@ -64,7 +78,16 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
             Pageable pageable
     );
 
+
+
+
+    List<Agreement> findAllByAgreementCode(  String agreementCode);
+
+    List<Agreement> findAllByCwr(@NotNull(message = "Cwr cannot be null") Cwr cwr);
+
     Optional<Agreement> findTopByFinancingHdr(FinancingHdr financingHdr);
-    Agreement findByFinancingHdr_FinancingHdrCode(UUID financinghdrCode);
+    List<Agreement> findByFinancingHdr_FinancingHdrCode(UUID financinghdrCode);
+
+    //List<Agreement> findAllByStatus(@Size(max = 20) @NotNull(message = "Status cannot be null") String status);
 }
 

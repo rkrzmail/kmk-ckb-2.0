@@ -1,11 +1,16 @@
 package com.kmkbe.modules.remote.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.kmkbe.core.domain.dto.InquiryOutstandingBillDetailtDto;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
 import com.kmkbe.core.domain.dto.InquiryInvoiceRemoteDto;
 import com.kmkbe.modules.remote.request.InquiryRequest;
+import com.kmkbe.nikita.utils.PlainDoubleSerializer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -42,7 +47,32 @@ public class InvoiceRemoteDto {
             );
 
             return response.getBody();
+
+
+           /* final ResponseEntity<String> res = restTemplate.exchange(
+                    baseRemoteService.getBaseMst() + "/sap/listPostedInvoiceByVendorInSAP",
+                    HttpMethod.POST,
+                    requestArgs,
+                    new ParameterizedTypeReference<>() {
+                    }
+            );
+
+            int  o = res.getStatusCode().value();
+            String stsr = String.valueOf(res.getBody());
+            ObjectMapper om = new ObjectMapper();
+            om.registerModule(new JavaTimeModule());
+            // Daftarkan serializer global untuk tipe Double
+  *//*          SimpleModule module = new SimpleModule();
+            SimpleModule simpleModule = module.addSerializer(InquiryInvoiceRemoteDto.class, new InquiryInvoiceRemoteDto());
+            om.registerModule(module);*//*
+
+            BaseSimpleRemoteResponseDto<InquiryInvoiceRemoteDto> root= om.readValue(stsr, BaseSimpleRemoteResponseDto.class);
+            InquiryInvoiceRemoteDto invoiceRemoteDto = root.getData();
+
+            return  root; */
         } catch (Exception e) {
+
+
             log.error("inquiryInvoice, error {}", e.getMessage());
             throw e;
         }

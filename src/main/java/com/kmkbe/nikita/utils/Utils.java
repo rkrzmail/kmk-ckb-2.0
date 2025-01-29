@@ -22,7 +22,18 @@ public class Utils {
         BigDecimal decimalValue = BigDecimal.valueOf(value);
         return decimalValue.setScale(scale, RoundingMode.HALF_UP).doubleValue();
     }
+    public static String valueOf(Object obj) {
+        return (obj == null) ? "" : obj.toString();
+    }
+    public static int getIntCurr(String s) {
+        s = Utils.replace(s, ".", "");
+        s = Utils.replace(s, ",", "");
+        return getNumber(s).intValue();
+    }
 
+    public static String replace(String _text, String _searchStr, String _replacementStr)     {
+        return com.kmkbe.modules.user.utils.Utils.replace(_text, _searchStr, _replacementStr);
+    }
     public static int getInt(String s) {
         return getNumber(s).intValue();
     }
