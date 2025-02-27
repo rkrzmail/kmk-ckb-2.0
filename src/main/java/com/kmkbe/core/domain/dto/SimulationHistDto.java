@@ -27,10 +27,17 @@ public class SimulationHistDto implements Serializable {
     private Double adminAmt;
 
     private Double financingAmt;
-
+    private int no;
     private Boolean isUsed;
 
     private LocalDateTime dtmCrt;
 
+    private Double schema;
+    private Double effetiveRate;
+    private Double adminFee;
+    private Double dibursmentAmt;
+
     private FinancingHdrDto financingHdr;
+
+
 }

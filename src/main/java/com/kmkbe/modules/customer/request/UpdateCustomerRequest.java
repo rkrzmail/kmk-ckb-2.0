@@ -56,6 +56,11 @@ public class UpdateCustomerRequest {
 
         @NotNull(message = "Alamat Kantor is required, key: companyAddress")
         private String companyAddress;
+
+        //@NotNull(message = "directorName is required, key: directorName")
+        private String directorName;
+
+        private String area;
     }
 
     @Getter

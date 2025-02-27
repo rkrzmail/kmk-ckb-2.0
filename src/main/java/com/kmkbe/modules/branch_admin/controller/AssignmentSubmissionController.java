@@ -2,6 +2,8 @@ package com.kmkbe.modules.branch_admin.controller;
 
 import com.kmkbe.core.domain.dto.AssignmentDto;
 import com.kmkbe.core.domain.dto.PostedInvoiceDto;
+import com.kmkbe.core.domain.dto.SimulationHistDto;
+import com.kmkbe.core.domain.entity.SimulationHist;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -46,11 +48,11 @@ public class AssignmentSubmissionController {
     }
 
     @GetMapping("/toc/list/{financingHdrCode}")
-    public CommonResult<PaginationResult<Object>> getTocList(
+    public CommonResult<PaginationResult<SimulationHistDto>> getTocList(
             @PathVariable String financingHdrCode,
             PaginationRequest request
     ) {
-        return new CommonResult<PaginationResult<Object>>()
+        return new CommonResult<PaginationResult<SimulationHistDto>>()
                 .success(
                         assignmentSubmissionService.tocList(financingHdrCode, request)
                 );

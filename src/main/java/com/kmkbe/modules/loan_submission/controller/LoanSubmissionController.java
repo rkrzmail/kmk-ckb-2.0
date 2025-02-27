@@ -110,18 +110,44 @@ public class LoanSubmissionController {
                 loanSubmissionService.calculateDisburse(authentication, request)
         );
     }
+    @GetMapping("/simulations/recalculate")
+    public CommonResult<EstimatedDisburseDto> getReCalculateDisburse(
+            Authentication authentication,
+            HttpServletRequest request
+    ) throws Exception {
+        return new CommonResult<EstimatedDisburseDto>().success(
+                loanSubmissionService.recalculateDisburse(authentication, request)
+        );
+    }
 
-    @PostMapping("/simulations/update")
+
+
+    @GetMapping("/simulations/viewcalculate/{financeCode}/{histCode}")
+    public CommonResult<FinancingHdrDto> getViewCalculateDisburse(
+            Authentication authentication,
+            @PathVariable("financeCode") String financeCode,
+            @PathVariable("histCode") String histCode
+    ) throws SignatureException, JsonProcessingException, ParseException {
+        return new CommonResult<FinancingHdrDto>().success(
+                loanSubmissionService.viewCulateDisburse(authentication, financeCode, histCode)
+        );
+    }
+
+    @GetMapping("/simulations/update")
     public CommonResult<CreatedSimulationDto> updateSimulation(
             Authentication authentication,
-             @RequestBody CreateSimulationRequest request
+            HttpServletRequest request
     ) throws Exception {
-        var result = loanSubmissionService.updateeSimulation(authentication, request);
+        CreatedSimulationDto result = loanSubmissionService.updateSimulation(authentication, request);
+        if (result!=null){
+            int i = 0;
+        }
         return new CommonResult<CreatedSimulationDto>().success(
                 result,
                 "Simulation Update Successfully"
         );
     }
+
 
 
     @PostMapping("/simulations/create")
@@ -218,25 +244,7 @@ public class LoanSubmissionController {
         );
     }
 
-    @GetMapping("/simulations/recalculate")
-    public CommonResult<EstimatedDisburseDto> getReCalculateDisburse(
-            Authentication authentication,
-            CalculateSimulationRequest request
-    ) throws SignatureException, JsonProcessingException, ParseException {
-        return new CommonResult<EstimatedDisburseDto>().success(
-                loanSubmissionService.recalculateDisburse(authentication, request)
-        );
-    }
 
-    @GetMapping("/simulations/viewcalculate/{financeCode}")
-    public CommonResult<FinancingHdr> getViewCalculateDisburse(
-            Authentication authentication,
-            @PathVariable("financeCode") String financeCode
-    ) throws SignatureException, JsonProcessingException, ParseException {
-        return new CommonResult<FinancingHdr>().success(
-                loanSubmissionService.viewCulateDisburse(authentication, financeCode)
-        );
-    }
 
 
     @GetMapping("/documents/debitur")

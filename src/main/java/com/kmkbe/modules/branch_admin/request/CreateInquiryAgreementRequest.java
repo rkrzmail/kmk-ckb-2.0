@@ -28,7 +28,7 @@ public class CreateInquiryAgreementRequest {
 
     /*@NotNull(message = "Payment Date is required, key: paymentDate")
     @NotEmpty(message = "Payment Date is required, key: paymentDate")*/
-    private Date paymentDate;
+    private String paymentDate;
 
     /*@NotNull(message = "Batch is required, key: batch")
     @NotEmpty(message = "Batch is required, key: batch")*/

@@ -1,38 +1,35 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.AssignmentDto;
-import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
-import com.kmkbe.core.domain.dto.StatusLabelDto;
+import com.kmkbe.core.domain.dto.SimulationHistDto;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.repository.AgreementFileRepository;
 import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
+import com.kmkbe.core.domain.repository.SimulationHistRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.spec.FinancingHdrSpec;
-import com.kmkbe.core.utils.HttpUtils;
 import com.kmkbe.core.utils.UriUtils;
+import com.kmkbe.modules.user.entity.MstAppRoleFormUser;
 import com.kmkbe.modules.user.entity.MstUser;
+import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.security.SignatureException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +39,8 @@ public class AssignmentSubmissionService {
     private final MstUserRepository mstUserRepository;
     private final AgreementRepository agreementRepository;
     private final AgreementFileRepository agreementFileRepository;
+    private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
+    private final SimulationHistRepository simulationHistRepository;
 
     public PaginationResult<AssignmentDto> assignmentList(
             HttpServletRequest httpServletRequest,
@@ -63,6 +62,7 @@ public class AssignmentSubmissionService {
                 pageNo = pageNo - 1;
             }
 
+
             MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
             MstUser user = mstUserRepository.findById(authenticateUser.getUserCode()).orElseThrow();
             /*Page<FinancingHdr> financingHdrPage = financingHdrRepository.findByMstBranchOrderByFinancingHdrIdDesc(
@@ -70,9 +70,25 @@ public class AssignmentSubmissionService {
                     PageRequest.of(pageNo, pageSize)
             );*/
 
+
             String financingStatusFilter = null,
                     custNameFilter = null,
                     bouwheerNameFilter = null;
+
+
+
+            //add role
+            Optional<MstAppRoleFormUser> findPermission = mstAppRoleFormUserRepository
+                    .findTopByUserOrderByAppRoleFormUserId(user);
+            MstAppRoleFormUser permission = findPermission
+                    .orElseGet(() -> MstAppRoleFormUser.builder().build());
+            String roleCode =  permission
+                    .getAppRoleForm()
+                    .getApplicationRole()
+                    .getRoleCode()
+                    .getRoleCode();
+
+
 
             if (
                     !StringUtil.isNullOrEmpty(request.getSearchBy())
@@ -101,7 +117,95 @@ public class AssignmentSubmissionService {
                     PageRequest.of(pageNo, pageSize)
             );
 
-            List<AssignmentDto> result = financingHdrPage.stream()
+
+            return SpecPagination.paginationData(new SpecPagination<FinancingHdr, AssignmentDto>(financingHdrPage.stream().toList(), request)
+            {
+                @Override
+                public FinancingHdr search(FinancingHdr data) {
+
+                    if (isSearchBy("financingHdrCode") && equal(data.getFinancingHdrCode().toString())  ){
+                        return data;
+                    }else if (isSearchBy("custName") && like(data.getCustomer().getCustName())  ){
+                        return data;
+                    }else if (isSearchBy("bouwheerName") && like(data.getBouwheer().getBouwheerName())  ){
+                        return data;
+                    }
+
+                    return null;
+                }
+
+                @Override
+                public AssignmentDto eval(FinancingHdr e) {
+                    if (e.getCustomer() == null || e.getBouwheer() == null) {
+                        return null;
+                    }
+
+                    boolean isNewCust = financingHdrRepository
+                            .countByCustomerAndFinancingStatus(
+                                    e.getCustomer(),
+                                    "PAID"
+                            ) == 0;
+
+
+                    MappedFinancingStatus financingStatus;
+                    if (roleCode.equalsIgnoreCase("account_officer")){
+                        financingStatus = new MappedFinancingStatus(
+                                e,
+                                MappedFinancingStatus.Type.AccountOfficer
+                        );
+
+                    }else{
+                        financingStatus = new MappedFinancingStatus(
+                                e,
+                                MappedFinancingStatus.Type.BranchAdmin
+                        );
+                        if (financingStatus.getStatus().equalsIgnoreCase("NEW")){
+                            return null;
+                        }
+                    }
+
+
+
+                    Agreement agreement = agreementRepository.findTopByFinancingHdr(e).orElse(null);
+                    AgreementFile agreementFile = null;
+
+                    String agreementDoc = null, agreementCode = null;
+                    if (agreement != null) {
+                        agreementCode = agreement.getAgreementCode();
+                        agreementFile = agreementFileRepository.findTopByAgreementOrderByAgreementFileId(
+                                agreement
+                        ).orElse(null);
+                    }
+
+                    if (agreementFile != null) {
+                        agreementDoc = UriUtils.fileUlr(
+                                httpServletRequest,
+                                Math.toIntExact(agreementFile.getAgreementFileId()),
+                                UriUtils.DocType.agreement
+                        );
+                    }
+
+                    return AssignmentDto.builder()
+                            .financingHdrCode(e.getFinancingHdrCode())
+                            .agreementCode(agreementCode)
+                            .custCode(e.getCustomer().getCustCode())
+                            .custName(e.getCustomer().getCustName())
+                            .bouwheerName(e.getBouwheer().getBouwheerName())
+                            .verifDate(null)
+                            .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
+                            .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
+                            .custStatus(isNewCust ? "New Customer" : "Existing Customer")
+                            .status(financingStatus.getStatus())
+                            .statusLabel(financingStatus.getLabel())
+                            .agreementDoc(agreementDoc)
+                            .build();
+
+                }
+            });
+
+
+
+            /*List<AssignmentDto> result = financingHdrPage.stream()
                     .filter(e -> e.getCustomer() != null && e.getBouwheer() != null)
                     .map(e -> {
                         boolean isNewCust = financingHdrRepository
@@ -111,10 +215,24 @@ public class AssignmentSubmissionService {
                                 ) == 0;
 
 
-                        MappedFinancingStatus financingStatus = new MappedFinancingStatus(
-                                e,
-                                MappedFinancingStatus.Type.BranchAdmin
-                        );
+                        MappedFinancingStatus financingStatus;
+                        if (roleCode.equalsIgnoreCase("account_officer")){
+                            financingStatus = new MappedFinancingStatus(
+                                    e,
+                                    MappedFinancingStatus.Type.AccountOfficer
+                            );
+
+                        }else{
+                            financingStatus = new MappedFinancingStatus(
+                                    e,
+                                    MappedFinancingStatus.Type.BranchAdmin
+                            );
+                            if (financingStatus.getStatus().equalsIgnoreCase("NEW")){
+                                return null;
+                            }
+                        }
+
+
 
                         Agreement agreement = agreementRepository.findTopByFinancingHdr(e).orElse(null);
                         AgreementFile agreementFile = null;
@@ -152,66 +270,71 @@ public class AssignmentSubmissionService {
                     })
                     .toList();
 
+            List<AssignmentDto> resultNew = new ArrayList<>();
+            for (AssignmentDto assignment : result) {
+                if (assignment !=null ){
+                    resultNew.add(assignment);
+                }
+            }
+
             return PaginationResult.<AssignmentDto>builder()
                     .currentPage(pageNo + 1)
                     .totalData(financingHdrPage.getTotalElements())
                     .totalPage(financingHdrPage.getTotalPages())
-                    .list(result)
-                    .build();
+                    .list(resultNew)
+                    .build();*/
         } catch (Exception e) {
             log.error("assignmentList: error {}", e.getMessage());
             throw e;
         }
     }
 
-    public PaginationResult<Object> tocList(
+    public PaginationResult<SimulationHistDto> tocList(
             String financingHdrCode,
             PaginationRequest request
     ) {
         try {
-            int pageNo = 0, pageSize = 10;
 
-            if (request.getPageNo() != null) {
-                pageNo = request.getPageNo();
-            }
+            Optional<FinancingHdr>  finHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
+            Optional<List<SimulationHist>> simHists =  simulationHistRepository.findAllByFinancingHdr(finHdr.get());
+            return SpecPagination.paginationData(    new SpecPagination<SimulationHist, SimulationHistDto>(simHists, request){
 
-            if (request.getPageSize() != null) {
-                pageSize = request.getPageSize();
-            }
-
-            if (pageNo > 0) {
-                pageNo = pageNo - 1;
-            }
-
-            final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAll(
-                    FinancingHdrSpec.bySearchTOCBy(request.getSearchBy(), request.getSearchValue()),
-                    PageRequest.of(pageNo, pageSize)
-            );
-
-
-            final List<Object> disburseInvoiceDto = financingHdrs
-                    .stream()
-                    .map((e) -> {
-
-
-                        return null;
-
-                    })
-                    .toList();
-
-            List<DisburseInvoiceDto> disburseInvoiceDto2 = new ArrayList<>();;
-           /* for (DisburseInvoiceDto invoiceDto : disburseInvoiceDto) {
-                if (invoiceDto != null) {
-                    disburseInvoiceDto2.add(invoiceDto);
+                @Override
+                public SimulationHist search(SimulationHist e) {
+                    if (isSearchBy("financingAmt") ){
+                        if ( e.getFinancingAmt() ==  Utils.getIntCurr( getSearchValue())){
+                            return e;
+                        }
+                    }
+                    if (isSearchBy("schema") ){
+                        if ( (100-e.getRetention()) == Utils.getIntCurr(getSearchValue())){
+                            return e;
+                        }
+                    }
+                    return null;
                 }
-            }*/
 
-            return PaginationResult.<Object>builder()
-                    .currentPage(pageNo + 1)
-                    .totalData(0L)
-                    .totalPage(1)
-                    .list(new ArrayList<>())
-                    .build();
+                @Override
+                public SimulationHistDto eval(SimulationHist e) {
+                    return SimulationHistDto.builder()
+                            .adminAmt(e.getAdminAmt())
+                            .simulationHistCode(e.getSimulationHistCode())
+                            .financingAmt(e.getFinancingAmt())
+                            .effetiveRate(e.getEffectiveRate())
+                            .dibursmentAmt(e.getEstDisbust())
+                            .schema(100-e.getRetention())
+                            .adminFee(e.getAdminAmt())
+                            .build();
+                }
+
+                @Override
+                public void sort(List<SimulationHistDto> data) {
+                    for (int i = 0; i < data.size(); i++) {
+                        data.get(i).setNo(i+1);
+                    }
+                }
+            });
+
         } catch (Exception e) {
             log.error("tocList: error {}", e.getMessage());
             throw e;

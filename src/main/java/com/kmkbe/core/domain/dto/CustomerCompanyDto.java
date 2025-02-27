@@ -31,4 +31,6 @@ public class CustomerCompanyDto {
     private String ownershipStatus;
     private Date staySince;
     private Double stayLength;
+    private String directorName;
+
 }

@@ -13,6 +13,9 @@ public class MappedFinancingStatus {
     private FinancingHdr financingHdr;
 
     public MappedFinancingStatus(FinancingHdr financingHdr, Type type) {
+        label = "";
+        status = "";
+
         this.financingHdr = financingHdr;
         switch (type) {
             case Customer:
@@ -30,14 +33,51 @@ public class MappedFinancingStatus {
             case Repayment:
                 mappedRepayment();
                 break;
+            case AccountOfficer:
+                mappedAccountOfficer();
+                break;
         }
     }
-
-    private void mappedBranchAdmin() {
+    private void mappedAccountOfficer() {
         if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
             if (financingHdr.getFinancingStep().equalsIgnoreCase("ASSIGNMENT")) {
                 label = "Baru";
                 status = "NEW";
+            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("INPROCESS")) {
+                label = "Preparation";
+                status = "PREPARATION";
+            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("SIGNING")) {
+                label = "Signing";
+                status = "SIGNING";
+            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("SIGNED")) {
+                label = "Signed";
+                status = "SIGNED";
+            }
+        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
+            if (financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")) {
+                label = "Live";
+                status = "LIVE";
+            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("PAID")) {
+                label = "Paid";
+                status = "PAID";
+            }
+        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("COMPLETED")) {
+            if (financingHdr.getFinancingStep().equalsIgnoreCase("REFUND")) {
+                label = "Completed";
+                status = "COMPLETED";
+            }
+        } else {
+            /*label = "Untracked";
+            status = "UNTRACKED";*/
+            label = "New";
+            status = "NEW";
+        }
+    }
+    private void mappedBranchAdmin() {
+        if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
+            if (financingHdr.getFinancingStep().equalsIgnoreCase("ASSIGNMENT")) {
+                label = "Baru";
+                status = "NEW";//no hide
             } else if (financingHdr.getFinancingStep().equalsIgnoreCase("INPROCESS")) {
                 label = "Preparation";
                 status = "PREPARATION";
@@ -195,6 +235,7 @@ public class MappedFinancingStatus {
         MajorAccount,
         BranchAdmin,
         Disbursement,
-        Repayment
+        Repayment,
+        AccountOfficer
     }
 }

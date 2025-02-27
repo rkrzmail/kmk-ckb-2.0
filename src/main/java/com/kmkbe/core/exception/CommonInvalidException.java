@@ -98,6 +98,15 @@ public class CommonInvalidException extends RuntimeException {
                 .build();
     }
 
+    public static CommonInvalidException invalidRole() {
+        return CommonInvalidException.builder()
+                .title("Username Role tidak valid/aktif")
+                .message("Username Role tidak valid/aktif")
+                .action(Action.builder().title("Kembali").uri("/internal/auth/sign-in").build())
+                .headerMessage("Invalid Username and Password")
+                .build();
+    }
+
     public static CommonInvalidException invalidPassword() {
         return CommonInvalidException.builder()
                 .title("Username atau Password tidak valid")

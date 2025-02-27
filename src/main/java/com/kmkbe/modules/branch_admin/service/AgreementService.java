@@ -406,7 +406,12 @@ public class AgreementService {
 
         String email = financingHdr.getBouwheer().getPicEmail();
 
-        try {
+        /*try {
+
+        } catch (Exception igonred) {}*/
+
+        boolean bypass = true;
+        if (!bypass) {
             BaseSimpleRemoteResponseDto<Object> postedResponse = financingRemoteService.postedSubmission(
                     FinancingSubmissionRequest.builder()
                             .vendorCode(customer.getCustExternalCode())
@@ -425,7 +430,7 @@ public class AgreementService {
             ) {
                 email = body.get("email_address").toString();
             }
-        } catch (Exception igonred) {}
+        }
 
 
         /// no trow

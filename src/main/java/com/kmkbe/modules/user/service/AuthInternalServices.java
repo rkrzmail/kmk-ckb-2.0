@@ -16,8 +16,10 @@ import com.kmkbe.core.domain.dto.BaseLdapRemoteResponseDto;
 import com.kmkbe.core.domain.dto.UserInternalRemoteDto;
 import com.kmkbe.modules.remote.request.ActiveDirectoryRemoteRequest;
 import com.kmkbe.modules.remote.service.UserInternalRemoteService;
+import com.kmkbe.modules.user.entity.MstAppRoleFormUser;
 import com.kmkbe.modules.user.entity.MstEmployee;
 import com.kmkbe.modules.user.entity.MstUser;
+import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstEmployeeRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.modules.user.request.LoginInternalRequest;
@@ -48,6 +50,8 @@ public class AuthInternalServices {
     private final RedisAttackRepository redisAttackRepository;
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
+
 
     @Qualifier("DbRefreshTokenServices")
     //@Qualifier("CacheRefreshTokenServices")
@@ -137,6 +141,20 @@ public class AuthInternalServices {
                                     .build()
                     );
 
+
+                    Optional<MstAppRoleFormUser> findPermission = mstAppRoleFormUserRepository
+                            .findTopByUserOrderByAppRoleFormUserId(user);
+                    MstAppRoleFormUser permission = findPermission
+                            .orElseGet(() -> MstAppRoleFormUser.builder().build());
+                    if (findPermission.isPresent()){
+                        if (!findPermission.get().getIsActive()) {
+                            throw CommonInvalidException.invalidRole();
+                        }
+                    }else{
+                        throw CommonInvalidException.invalidRole();
+                    }
+
+
                     loginDto =  new LoginDto(
                             jwtService.generateToken(user),
                             refreshTokenResult.getRefreshToken().toString(),
@@ -158,6 +176,19 @@ public class AuthInternalServices {
                                 .userCode(user.getUserCode())
                                 .build()
                 );
+
+
+                Optional<MstAppRoleFormUser> findPermission = mstAppRoleFormUserRepository
+                        .findTopByUserOrderByAppRoleFormUserId(user);
+                MstAppRoleFormUser permission = findPermission
+                        .orElseGet(() -> MstAppRoleFormUser.builder().build());
+                if (findPermission.isPresent()){
+                    if (!findPermission.get().getIsActive()) {
+                        throw CommonInvalidException.invalidRole();
+                    }
+                }else{
+                    throw CommonInvalidException.invalidRole();
+                }
 
                 loginDto = new LoginDto(
                         jwtService.generateToken(user),

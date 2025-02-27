@@ -8,6 +8,8 @@ import com.kmkbe.core.domain.entity.CustomerCompany;
 import com.kmkbe.core.domain.entity.CustomerPersonal;
 import com.kmkbe.core.domain.mapper.CustomerMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
@@ -28,6 +30,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
 import java.time.Duration;
+import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/customer")
@@ -45,22 +49,54 @@ public class CustomerController {
     private final CustomerDashboardListService customerDashboardListService;
     private final DocumentService documentService;
     private final AgreementService agreementService;
+    private final FinancingHdrRepository financingHdrRepository;
+    private final CustomerRepository customerRepository;
+
 
     @GetMapping
     public CommonResult<CustomerDto> profile(
-            Authentication authentication
+            Authentication authentication,
+            HttpServletRequest request
     ) throws SignatureException, BadCredentialsException, IllegalStateException, IllegalAccessException {
-        Customer customer = CustomerUtils.authenticateCustomer(authentication);
+        Customer customer;
+        String custCode = String.valueOf(request.getParameter("custCode"));
+        if (custCode.equalsIgnoreCase("null")||custCode.equalsIgnoreCase("")){
+            customer = CustomerUtils.authenticateCustomer(authentication);
+        }else{
+            Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString(custCode));
+            if (customerOptional.isPresent()){
+                customer = customerOptional.get();
+            } else{
+                throw new SignatureException("You are not authorized to access this resource");
+            }
+        }
+
+
         CustomerDto result = CustomerMapper.INSTANCE.custDtoFromEntity(customer);
         if (customer.getCompany() != null) {
             result.setAddress(CustomerMapper.addressDtoFromCompany(customer.getCompany()));
             result.setCompany(CustomerMapper.INSTANCE.companyDtoFromEntity(customer.getCompany()));
+            result.getAddress().setArea(customer.getCompany().getArea());
         } else if (customer.getPersonal() != null) {
             result.setAddress(CustomerMapper.addressDtoFromPersonal(customer.getPersonal()));
             result.setPersonal(CustomerMapper.INSTANCE.personalDtoFromEntity(customer.getPersonal()));
         }
+        try {
+            if (result.getAddress() != null) {
+                if (result.getAddress().getArea() == null) {
+                    result.getAddress().setArea("");
+                }
+            }
+            if (result.getCompany() != null) {
+                if (result.getCompany().getDirectorName() == null) {
+                    result.getCompany().setDirectorName("");
+                }
+            }
+        }catch (Exception ignored){}
         return new CommonResult<CustomerDto>().success(result);
     }
+
+
 
     private void setMessageIfError(String data, String message){
         if (Utils.isEmptyOrNull(data)) {
@@ -124,6 +160,25 @@ public class CustomerController {
         return new CommonResult<CustomerDto>().success(result);
     }
 
+    @GetMapping("/profilefap")
+    public CommonResult<ProfileFapDto> getProfileFap(
+            Authentication authentication,
+            HttpServletRequest request
+    ) throws SignatureException {
+        return new CommonResult<ProfileFapDto>().success(
+                customerService.prolifeFAP(authentication, request)
+        );
+    }
+
+    @GetMapping("/profile/sip")
+    public CommonResult<ProfileSITDto> getProfileSit(
+            Authentication authentication,
+            HttpServletRequest request
+    ) throws SignatureException {
+        return new CommonResult<ProfileSITDto>().success(
+                customerService.prolifeSIT(authentication, request)
+        );
+    }
 
     @GetMapping("/invoices")
     public CommonResult<PaginationResult<PostedInvoiceDto>> getPostedInvoices(

@@ -56,14 +56,15 @@ public class DocumentService {
             Authentication authentication
     ) throws Exception {
         try {
+            Customer customer = CustomerUtils.authenticateCustomer(authentication);
             return Arrays.asList(
                     DocumentTemplateFinancingDto.builder()
                             .fileName("Surat Instruksi Transfer (SI)")
-                            .fileUrl("https://google.com")
+                            .fileUrl("/admin/document-sit/"+customer.getCustCode())
                             .build(),
                     DocumentTemplateFinancingDto.builder()
                             .fileName("Formulir Aplikasi Pembiayaan")
-                            .fileUrl("https://google.com")
+                            .fileUrl("/admin/document-fap/"+customer.getCustCode())
                             .build()
             );
         } catch (Exception e) {
@@ -95,12 +96,22 @@ public class DocumentService {
             if (pageNo > 0) {
                 pageNo = pageNo - 1;
             }
+            List<String> fileAllocation = new ArrayList<>();
+            if (String.valueOf(httpServletRequest.getParameter("owner")).equalsIgnoreCase("debitur")){
+                fileAllocation = List.of(
+                        "Legal",
+                        "Financing"
+                );
+            }else{
+                fileAllocation = List.of(
+                        "internal",
+                        "Legal",
+                        "Financing"
+                );
+            }
 
             Page<MstFileType> page = mstFileTypeRepository.findAllByFileAllocationInOrderByFileTypeIdDesc(
-                    List.of(
-                            "Legal",
-                            "Financing"
-                    ),
+                    fileAllocation,
                     PageRequest.of(
                             pageNo,
                             pageSize,
@@ -132,7 +143,8 @@ public class DocumentService {
                                 try {
                                     URI uri = new URI(legalFile.getFilePath());
                                     uri = new URI("https", UriUtils.getDomainUrl(httpServletRequest), uri.getPath(), uri.getFragment());
-                                    generatedUrl = uri.toString();
+                                    //generatedUrl = uri.toString();//byapass
+                                    generatedUrl = legalFile.getFilePath();
                                 } catch (URISyntaxException e) {
                                     generatedUrl = legalFile.getFilePath();
                                 }
@@ -146,11 +158,30 @@ public class DocumentService {
                     })
                     .toList();
 
+            List<MstFileTypeDto> resultSorted = new ArrayList<>();
+            if (String.valueOf(httpServletRequest.getParameter("owner")).equalsIgnoreCase("debitur")) {
+                //sorting
+                for (MstFileTypeDto dto : result) {
+                    if (dto.getLegalFile()!=null && dto.getLegalFile().getUploadedDate()!=null){
+                        //siudah updaload
+                    }else{
+                        resultSorted.add(dto);
+                    }
+                }
+                for (MstFileTypeDto dto : result) {
+                    if (dto.getLegalFile()!=null && dto.getLegalFile().getUploadedDate()!=null){
+                        resultSorted.add(dto);
+                    }
+                }
+            }else{
+                resultSorted = result;
+            }
+
             return PaginationResult.<MstFileTypeDto>builder()
                     .currentPage(pageNo + 1)
                     .totalData(page.getTotalElements())
                     .totalPage(page.getTotalPages())
-                    .list(result)
+                    .list(resultSorted)
                     .build();
         } catch (Exception e) {
             log.error("getAllLoanDocumentRequirement: {}", e.getMessage());
@@ -852,7 +883,7 @@ public class DocumentService {
             }
 
             Page<MstFileType> page = mstFileTypeRepository.findAllByFileAllocationInOrderByFileTypeIdDesc(
-                    List.of(
+                    List.of("Internal",
                             "Legal",
                             "Financing"
                     ),
@@ -900,7 +931,8 @@ public class DocumentService {
                                 try {
                                     URI uri = new URI(legalFile.getFilePath());
                                     uri = new URI("https", UriUtils.getDomainUrl(httpServletRequest), uri.getPath(), uri.getFragment());
-                                    generatedUrl = uri.toString();
+                                    //generatedUrl = uri.toString();
+                                    generatedUrl = legalFile.getFilePath();
                                 } catch (URISyntaxException e) {
                                     generatedUrl = legalFile.getFilePath();
                                 }

@@ -17,10 +17,12 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Optional<List<Product>> findAllByIsActiveOrderByIsActive(Boolean isActive);
 
     @Query(
-            value = "select * from product where ntf_from <= :amount and ntf_to >= :amount",
+            value = "select * from product where ntf_from <= :amount and ntf_to >= :amount AND is_active='t' LIMIT 1;",
             nativeQuery = true
     )
     Optional<Product> findNtfRange(@Param("amount") Double amount);
+
+
 
     default Optional<List<Product>> getAllActive() {
         return findAllByIsActiveOrderByIsActive(true);

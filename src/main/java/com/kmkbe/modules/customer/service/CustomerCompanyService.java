@@ -114,6 +114,10 @@ public class CustomerCompanyService {
             company.setStaySince(Utils.toInstant(request.getStaySince()));
             company.setStayLength(CustomerUtils.calculateStayLength(Utils.toInstant(request.getStaySince())));
 
+            company.setDirectorName(request.getDirectorName());
+
+
+
             return customerCompanyRepository.save(company);
         } catch (Exception e) {
             log.error("update: {}", e.getMessage());

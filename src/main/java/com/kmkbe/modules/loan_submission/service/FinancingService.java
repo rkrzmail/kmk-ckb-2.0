@@ -34,7 +34,10 @@ public class FinancingService {
     private final CustomerRepository customerRepository;
     private final InquiryDisburseService  inquiryDisburseService;
     private final  FinancingDtlService  financingDtlService;
+    private final DisbursementLogRepository disbursementLogRepository;
     private final CwrRemoteService cwrRemoteService;
+
+
     public void recallApprovalStatus() {
         //find all aggremmnet with flag false or null
         List<Agreement> list = agreementRepository.viewApprovalStatusNoPending() ;//viewApprovalStatusPending();
@@ -49,7 +52,9 @@ public class FinancingService {
                             .build();
                 } catch (Exception ignored) {  }
                 try {
-                    financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
+                    //stop bila sudah 200
+                    //financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
+                    //agreement.setApprovalFlag("true");
                 } catch (Exception ignored) {  }
 
                 try {
@@ -61,12 +66,15 @@ public class FinancingService {
                 } catch (Exception ignored) { }
 
                 try {
-                    inquiryDisburseService. inquiryDisburseAuto(agreement);
+                    //stop bila saudha disbur(di log disb ada)
+                    List<DisbursementLog> disbursementLogs = disbursementLogRepository.findAllByAgreement(agreement);
+                    if (disbursementLogs.isEmpty()){
+                        inquiryDisburseService. inquiryDisburseAuto(agreement);
+                    }
                 } catch (Exception ignored) { }
 
 
                 try {
-                    agreement.setApprovalFlag("true");
                     agreementRepository.save(agreement);
                 } catch (Exception ignored) {
                     ignored.printStackTrace();
@@ -106,7 +114,7 @@ public class FinancingService {
     public void updateFinStatusLiveIfGoLive(Agreement agreement) {
         if (agreement.getStatus().equalsIgnoreCase("Live") ){//Ready Golive
             Optional<FinancingHdr> financingHdrO =  financingHdrRepository.findByFinancingHdrCode(agreement.getFinancingHdr().getFinancingHdrCode());
-            if (financingHdrO.isPresent() && financingHdrO.get().getFinancingStep().equalsIgnoreCase("INPROCESS") ) {
+            if (financingHdrO.isPresent() && financingHdrO.get().getFinancingStatus().equalsIgnoreCase("INPROCESS") ) {
                 FinancingHdr financingHdr = financingHdrO.get();
                 financingHdr.setFinancingStatus("LIVE");
                 financingHdr.setFinancingStep("GOLIVE");

@@ -129,6 +129,9 @@ public class CwrService {
         }
     }
 
+
+
+
     public InquiryCwrDto inquiryCwr(String cwrNo) throws JsonProcessingException, ParseException {
         try {
             validateCwr(cwrNo);
@@ -241,6 +244,72 @@ public class CwrService {
         String sample = "{\"rn\":1,\"CwrNo\":\"41450CWR2024626\",\"DebtorType\":\"SINGLE\",\"CustName\":\"JOMON PERSADA NUSANTARA\",\"CustNo\":\"41400001208\",\"StartDt\":\"2023-08-29T00:00:00\",\"EndDt\":\"2024-08-29T00:00:00\",\"CurrStep\":\"Active\",\"LastStep\":\"CWR Activation\",\"CwrTypeDesc\":\"FACTORING\",\"CwrType\":\"FACTORING\",\"CwrStat\":\"ACT\",\"PlafondAmt\":9000000000,\"MrCwrTypeCode\":\"FACTORING\",\"Version\":1,\"AFVersion\":null,\"OfficeCode\":\"414\",\"OfficeName\":\"JAKARTA 3\",\"CwrStatDescr\":\"ACTIVE\",\"Facility\":\"MODAL KERJA\",\"IsRevolving\":true,\"Currency\":\"IDR\",\"RealisationAmt\":1719717561,\"LastApprover\":\"-\",\"GroupName\":null,\"GroupNo\":null,\"IsSuspend\":false,\"ChangeCwrTrxNo\":null}";
         return objectMapper.readValue(sample, new TypeReference<>() {
         });
+    }
+
+    public List<String> inquiryListAggr(String cwrCode) {
+        try {
+
+
+            final List<InquiryCwrRemoteDto> data;
+            List<String> list = new ArrayList<>();
+            try {
+
+                final BaseMstRemoteResponseDto<List<InquiryAgreementByNoCwrRemoteDto>> agreementResponse =
+                        cwrRemoteService
+                                .inquiryAgreementByNoCwr(cwrCode);
+
+                if (  agreementResponse.getData() != null ) {
+                    for (int i = 0; i < agreementResponse.getData().size(); i++) {
+                        InquiryAgreementByNoCwrRemoteDto agreement = agreementResponse.getData().get(i);
+                        if (String.valueOf(agreement.agrmntStat).equalsIgnoreCase("prospect")||
+                                String.valueOf(agreement.agrmntStat).equalsIgnoreCase("Go Live")||
+                                String.valueOf(agreement.agrmntStat).equalsIgnoreCase("Live")){
+                            list.add(agreement.agrmntNo);
+                        }
+                    }
+                }
+
+
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            for (int i = 0; i < 10; i++) {
+
+               // list.add("11111111112");
+            }
+
+           //[
+            //  "11111111112",
+            //  "41350240356",
+            //  "41350240346",
+            //  "41450241703",
+            //  "41350240368",
+            //  "41450241700",
+            //  "41350240403",
+            //  "41350240304",
+            //  "41350240371",
+            //  "41450241710",
+            //  "41350240359",
+            //  "41350240363",
+            //  "41250241657",
+            //  "41350240397",
+            //  "41350240405",
+            //  "41350240364",
+            //  "41350240372",
+            //  "41350241713",
+            //  "41350240370",
+            //  "41350240347",
+            //  "41450241666",
+            //  "41950241610",
+            //]
+
+            return list;
+
+        } catch (Exception e) {
+            log.error("inquiryCwr: error {}", e.getMessage());
+            throw e;
+        }
     }
 
     public void validateCwr(String cwrNo) {

@@ -16,6 +16,7 @@ public class PaidInvoiceDto {
     private String custName;
     private String bouwheerName;
     private Date paidDate;
+
     private Date dueDate;
     private BigDecimal paidAmount;
     private StatusLabelDto status;

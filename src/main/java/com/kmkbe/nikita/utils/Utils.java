@@ -73,6 +73,11 @@ public class Utils {
 
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(calendar.getTime());
     }
+    public static String NowDate() {
+        Calendar calendar = Calendar.getInstance();
+
+        return new SimpleDateFormat("yyyy-MM-dd").format(calendar.getTime());
+    }
 
     public static LocalDateTime toInstant(Date date) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");

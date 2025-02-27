@@ -16,6 +16,7 @@ import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jdk.jshell.execution.Util;
@@ -47,7 +48,122 @@ public class DistributionSubmissionService {
     private final CustomerRepository customerRepository;
     private final BranchAreaMappingRepository branchAreaMappingRepository;
 
+
     public PaginationResult<DistributionSubmissionDto> submissionDistribution(
+            PaginationRequest request
+    ) {
+        try {
+
+            List<FinancingHdr> finHdrAll = financingHdrRepository.findAllByRaw();
+            return SpecPagination.paginationData(new SpecPagination<FinancingHdr, DistributionSubmissionDto>(finHdrAll, request ){
+                @Override
+                public DistributionSubmissionDto eval(FinancingHdr e) {
+                    String city = "", kelurahan = "", kecamatan = "";
+                    if (e.getCustomer() != null) {
+                        if (e.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
+                            if (e.getCustomer().getCompany() != null) {
+                                city = e.getCustomer().getCompany().getCity();
+                                kelurahan = e.getCustomer().getCompany().getKelurahan();
+                                kecamatan = e.getCustomer().getCompany().getKecamatan();
+                            }
+                        } else {
+                            if (e.getCustomer().getPersonal() != null) {
+                                city = e.getCustomer().getPersonal().getCity();
+                                kelurahan = e.getCustomer().getPersonal().getKelurahan();
+                                kecamatan = e.getCustomer().getPersonal().getKecamatan();
+                            }
+                        }
+                    }
+
+                    boolean isNewCust = financingHdrRepository.countByCustomerAndFinancingStatus(e.getCustomer(), "PAID") == 0;
+
+                    String color,
+                            currentBranch = null,
+                            currentBranchCode = null,
+                            branchRecommended = null,
+                            branchRecommendedCode = null;
+                    if (e.getFinancingStatus().equalsIgnoreCase("new")) {
+                        color = "#808080";
+                    } else if (
+                            e.getFinancingStatus().equalsIgnoreCase("inprocess")
+                                    || e.getFinancingStatus().equalsIgnoreCase("signing")
+                                    || e.getFinancingStatus().equalsIgnoreCase("signed")
+                                    || e.getFinancingStatus().equalsIgnoreCase("live")
+                                    || e.getFinancingStatus().equalsIgnoreCase("golive")
+
+                    ) {
+                        color = "#ccffcc";
+                    } else {
+                        color = "#FF5C5C";
+                    }
+
+                    if (e.getMstBranch() != null) {
+                        branchRecommendedCode = e.getMstBranch().getBranchCode();
+                        branchRecommended = e.getMstBranch().getBranchName();
+                        currentBranchCode = e.getMstBranch().getBranchCode();
+                        currentBranch = e.getMstBranch().getBranchName();
+
+                    }
+                    if (branchRecommendedCode == null) {
+
+                        Optional<BranchAreaMapping> branchAreaMapping =  branchAreaMappingRepository.findByCityIgnoreCase(Utils.valueOf(city));
+                        if (branchAreaMapping.isPresent()) {
+                            branchRecommendedCode = branchAreaMapping.get().getMstBranch().getBranchCode();
+                            branchRecommended = branchAreaMapping.get().getMstBranch().getBranchName();
+                        }
+
+
+                    }
+                    MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
+                            e,
+                            MappedFinancingStatus.Type.MajorAccount
+                    );
+
+                    return DistributionSubmissionDto.builder()
+                            .financingHdrCode(e.getFinancingHdrCode().toString())
+                            .custName(e.getCustomer().getCustName())
+                            .bouwheerName(e.getBouwheer().getBouwheerName())
+                            .city(city)
+                            .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
+                            .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
+                            .branchRecommendedCode(branchRecommendedCode)
+                            .branchRecommended(branchRecommended)
+                            .currentBranchCode(currentBranchCode)
+                            .currentBranch(currentBranch)
+                            .custStatus(isNewCust ? "New Customer" : "Existing Customer")
+                            .status(StatusLabelDto.builder()
+                                    .status(mappedFinancingStatus.getStatus())
+                                    .statusLabel(mappedFinancingStatus.getLabel())
+                                    .color(color)
+                                    .build())
+                            .dtmCrt(e.getDtmCrt())
+                            .build();
+                }
+
+                @Override
+                public DistributionSubmissionDto filter(DistributionSubmissionDto data) {
+
+                    if (isSearchBy("Status") && like(data.getStatus().getStatus())  ) {
+                         return data;
+                     }else if (isSearchBy("NamaDebitur") && like(data.getCustName()) ){
+                         return data;
+                     }else if (isSearchBy("PemberiKerja")&& like(data.getBouwheerName()) ){
+                         return data;
+                     }else if (isSearchBy("Cabang")&& like(data.getBouwheerName()) ){
+                         return data;
+                     }
+
+
+                     return null;
+                }
+            });
+
+        } catch (Exception e) {
+            log.error("submissionDistribution: error {}", e.getMessage());
+            throw e;
+        }
+    }
+    public PaginationResult<DistributionSubmissionDto> submissionDistribution_(
             PaginationRequest request
     ) {
         try {

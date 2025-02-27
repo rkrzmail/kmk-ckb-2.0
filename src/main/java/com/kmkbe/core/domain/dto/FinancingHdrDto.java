@@ -56,4 +56,5 @@ public class FinancingHdrDto implements Serializable {
     private Customer customer;
     private Bouwheer bouwheer;
     private List<FinancingDtlDto> details;
+    private SimulationHistDto simulationHist;//optional
 }

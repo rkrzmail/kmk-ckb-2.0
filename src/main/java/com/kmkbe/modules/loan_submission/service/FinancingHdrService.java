@@ -16,6 +16,7 @@ import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
@@ -84,7 +85,7 @@ public class FinancingHdrService {
                 header.setFinancingAmt(financingAmount);
                 header.setDisburseAmt(disburseAmount);
                 header.setInterestAmt(simulationResult.getInterestFeeAmount().doubleValue()); // not clear
-                header.setFinancingDueDate(Utils.toInstant( simulationResult.getMaxInvoiceDate())); // not clear
+                header.setFinancingDueDate(Utils.toInstant(simulationResult.getMaxInvoiceDate())); // not clear
                 header.setProvisionFeeAmt(simulationResult.getProvisionFeeAmount().doubleValue()); // not clear
                 header.setProvisionFeePercentage(simulationResult.getProvisionRate());
                 header.setAdminFeePercentage(simulationResult.getAdminRate());
@@ -105,7 +106,7 @@ public class FinancingHdrService {
                 header.setFinancingStep("");
                 header.setUsrCrt(customer.getCustName());
                 header.setDtmCrt(DateTimeUtils.now());
- 
+
 
                 header = financingHdrRepository.save(header);
 
@@ -153,6 +154,7 @@ public class FinancingHdrService {
             throw e;
         }
     }
+
     public PaginationResult<PaidInvoiceDto> paidInvoiceNew(
             PaginationRequest request
     ) {
@@ -177,8 +179,7 @@ public class FinancingHdrService {
             );
 
 
-
-            return paginatePaidInvoice (
+            return paginatePaidInvoice(
                     financingHdrs,
                     pageNo
             );
@@ -187,6 +188,63 @@ public class FinancingHdrService {
             throw e;
         }
     }
+
+    public PaginationResult<PaidInvoiceDto> listPaidUnpaidInvoice(
+            PaginationRequest request
+    ){
+        try {
+            List<Invoice>  invoices =  invoiceRepository.findAll();
+            return SpecPagination.paginationData(new SpecPagination<Invoice, PaidInvoiceDto>(invoices, request){
+                @Override
+                public PaidInvoiceDto eval(Invoice e) {
+
+                    FinancingDtl financingDtl = e.getFinancingDtl();
+                    FinancingHdr financingHdr = e.getFinancingDtl().getFinancingHdr();
+                    String invoiceNo = (financingDtl != null && financingDtl.getInvoice() != null)
+                            ? financingDtl.getInvoice().getCustInvNo()
+                            : null;
+                    Date paidDate = (financingDtl != null && financingDtl.getInvoice() != null)
+                            ? Utils.fromInstant(financingDtl.getInvoice().getInvoiceDate())
+                            : null;
+                    Date dueDate = (financingDtl != null && financingDtl.getInvoice() != null)
+                            ? Utils.fromInstant(financingDtl.getInvoice().getInvoiceDueDate())
+                            : null;
+                    BigDecimal paidAmount = (financingDtl != null && financingDtl.getInvoice() != null)
+                            ? BigDecimal.valueOf(financingDtl.getInvoice().getInvoiceAmt())
+                            : null;
+                    MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
+                            financingHdr,
+                            MappedFinancingStatus.Type.Repayment
+                    );
+
+                    String color = getColor(financingHdr);
+                    Customer customer = e.getCustomer();
+                    String customerName = customer.getCustName();
+
+                    return PaidInvoiceDto.builder()
+                            .invoiceNo(invoiceNo)
+                            .custName(customerName)
+                            .bouwheerName(e.getBouwheer().getBouwheerName())
+                            .paidDate(paidDate)
+                            .dueDate(dueDate)
+                            .paidAmount(paidAmount)
+                            .status(StatusLabelDto.builder()
+                                    .status(mappedFinancingStatus.getStatus())
+                                    .statusLabel(mappedFinancingStatus.getLabel())
+                                    .color(color)
+                                    .build())
+                            .build();
+                }
+            });
+
+
+
+        } catch (Exception e) {
+            log.error("paidInvoice, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
     public PaginationResult<PaidInvoiceDto> paidInvoice(
             PaginationRequest request
     ) {
@@ -323,10 +381,12 @@ public class FinancingHdrService {
                         return null;
                     }
 
-                    DisbursementLog disbursementLog = disbursementLogRepository.findByAgreement_AgreementCode(agreement.getAgreementCode());
+                    /*DisbursementLog disbursementLog = disbursementLogRepository.findByAgreement_AgreementCode(agreement.getAgreementCode());
                     if (disbursementLog == null) {
                         return null;
-                    }
+                    }*/
+
+
                     FinancingDtl financingDtl = null;
                     try {
                          financingDtl = e.getFinancingDtls()
@@ -352,10 +412,10 @@ public class FinancingHdrService {
                             .bouwheerName(e.getBouwheer().getBouwheerName())
                             .disburseDate(Utils.fromInstant(e.getDisburseDate()))
                             .paidDate(paidDate)
-                            .retentionRefund(BigDecimal.valueOf(disbursementLog.getApAmt()))
-                            .paidAmount(BigDecimal.valueOf(disbursementLog.getApPaidAmt()==null?0:disbursementLog.getApPaidAmt()))
-                            .disburseAmount(BigDecimal.valueOf(disbursementLog.getApAmt()))
-                            .retentionRefundDate(Utils.fromInstant(disbursementLog.getApDueDate())).
+                            //.retentionRefund(BigDecimal.valueOf(disbursementLog.getApAmt()))
+                            //.paidAmount(BigDecimal.valueOf(disbursementLog.getApPaidAmt()==null?0:disbursementLog.getApPaidAmt()))
+                            //.disburseAmount(BigDecimal.valueOf(disbursementLog.getApAmt()))
+                            .retentionRefundDate(DateTimeUtils.nowDate()). // disbursementLog.getApDueDate()
                             status(StatusLabelDto.builder()
                                     .status(mappedFinancingStatus.getStatus())
                                     .statusLabel(mappedFinancingStatus.getLabel())
@@ -398,6 +458,75 @@ public class FinancingHdrService {
         }
         return color;
     }
+
+    public PaginationResult<DisburseInvoiceDto> listdisburseAggrement(PaginationRequest request){
+        try {
+            List<Agreement> agreements = agreementRepository.findAll();
+            return SpecPagination.paginationData(new SpecPagination<Agreement, DisburseInvoiceDto>(agreements, request){
+                @Override
+                public DisburseInvoiceDto eval(Agreement e) {
+                    FinancingHdr financingHdr = e.getFinancingHdr();
+
+
+
+
+
+                    Date paidDate =Utils.fromInstant(financingHdr.getDisburseDate());
+
+                    String color = getColor(financingHdr);
+                    Customer customer = financingHdr.getCustomer();
+                    String customerName = customer.getCustName();
+                    MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
+                            financingHdr,
+                            MappedFinancingStatus.Type.Disbursement
+                    );
+
+                    BigDecimal retentionRefund = BigDecimal.ZERO;;
+                    BigDecimal paidAmount = BigDecimal.ZERO;
+                    BigDecimal disburseAmount = BigDecimal.valueOf(financingHdr.getDisburseAmt());;
+
+                    List<DisbursementLog> disbursementLog = disbursementLogRepository.findAllByAgreement(e);
+                    if (disbursementLog!= null && !disbursementLog.isEmpty()) {
+
+                        paidAmount = BigDecimal.valueOf(disbursementLog.getFirst().getApPaidAmt());
+
+                    }
+
+
+                    if (mappedFinancingStatus.getStatus() == null || mappedFinancingStatus.getStatus().equalsIgnoreCase("")) {
+                        return null;
+                    }
+
+                    return DisburseInvoiceDto.builder()
+                            .agreementNo(e.getAgreementCode())
+                            .custName(customerName)
+                            .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+                            .disburseDate(Utils.fromInstant(financingHdr.getDisburseDate()))
+                            .paidDate(paidDate)
+
+                            .retentionRefund(retentionRefund)
+                            .paidAmount( paidAmount)
+                            .disburseAmount(disburseAmount)
+
+                            .retentionRefundDate(DateTimeUtils.nowDate()). // disbursementLog.getApDueDate()
+                                    status(StatusLabelDto.builder()
+                                    .status(mappedFinancingStatus.getStatus())
+                                    .statusLabel(mappedFinancingStatus.getLabel())
+                                    .color(color)
+                                    .build())
+                            .build();
+                }
+            });
+
+
+
+        } catch (Exception e) {
+            log.error("paidInvoice, error {}", e.getMessage());
+            throw e;
+        }
+
+    }
+
 
     public PaginationResult<DisburseInvoiceDto> disburseInvoice(
             PaginationRequest request,

@@ -3,16 +3,21 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.domain.constant.CustomerIdType;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
+import com.kmkbe.core.domain.dto.ProfileFapDto;
+import com.kmkbe.core.domain.dto.ProfileSITDto;
 import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
 import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -34,6 +39,7 @@ public class CustomerService {
     private final CustomerCompanyRepository customerCompanyRepository;
     private final BCryptPasswordEncoder bcryptEncoder;
     private final JdbcTemplate jdbcTemplate;
+    private final FinancingHdrRepository financingHdrRepository;
 
     public Customer create(
             SignUpRequest request,
@@ -136,4 +142,31 @@ public class CustomerService {
             throw e;
         }
     }
+
+    public ProfileFapDto prolifeFAP(Authentication authentication, HttpServletRequest request){
+            String financingHdrCode = request.getParameter("financingHdrCode");
+
+
+        return null;
+    }
+
+    public ProfileSITDto prolifeSIT(Authentication authentication, HttpServletRequest request){
+        String financingHdrCode = request.getParameter("financingHdrCode");
+
+        Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
+        if(financingHdr.isPresent()) {
+            FinancingHdr hdr = financingHdr.get();
+            hdr.getCustomer().getCustName();
+            if (hdr.getCustomer().getCustTypeCode().equalsIgnoreCase("")){
+                hdr.getCustomer().getCompany().getDirectorName();
+            }
+
+        }
+        return ProfileSITDto.builder()
+                .rt("")
+                .rt("")
+                .namaBank("")
+                .build();
+    }
+
 }

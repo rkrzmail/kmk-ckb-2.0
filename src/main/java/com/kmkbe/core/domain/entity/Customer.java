@@ -74,6 +74,9 @@ public class Customer implements UserDetails {
     @Column
     private Boolean isActive = false;
 
+    @Column(name = "existing_cust")
+    private String existingCust ;
+
     @Column(length = 50)
     private String usrCrt = "SYSTEM";
 
@@ -147,4 +150,6 @@ public class Customer implements UserDetails {
     public boolean isEnabled() {
         return true;
     }
+
+
 }

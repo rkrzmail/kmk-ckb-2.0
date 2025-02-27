@@ -4,11 +4,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.dto.AgreementDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementDto;
 import com.kmkbe.core.domain.entity.Agreement;
+import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
 import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
@@ -26,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SignatureException;
+import java.util.List;
 
 @Validated
 @RestController
@@ -115,16 +118,24 @@ public class AgreementController {
                 .vendorCode(financingHdr.getCustomer().getCustExternalCode())
                 .build();
 
-        try {
+       /* try {
+            //akan dicobal teruis di  shcedule samap 200
             financingRemoteService.updateFinancingStatus(
                     updateFinancingStatusRequest
             );
-        } catch (Exception ignored) {  }
+        } catch (Exception ignored) {  }*/
+        //gagal kalo api bermsalah
+        financingRemoteService.updateFinancingStatus(
+                updateFinancingStatusRequest
+        );
+
 
         //Branch admin melakukan upload dokumen perjanjian kerjasama
         financingHdr.setFinancingStatus("INPROCESS");
         financingHdr.setFinancingStep("SIGNED");//SIGNING
         financingHdrRepository.save(financingHdr);
+
+       //sebelunya auto assing
 
         return new CommonResult<>().success(
                 null,

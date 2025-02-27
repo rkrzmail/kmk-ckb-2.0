@@ -27,6 +27,7 @@ import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,7 @@ public class LoanSubmissionService {
 
     private final JwtLoanSubmissionService jwtLoanSubmissionService;
 
+    private final SimulationHistRepository simulationHistRepository;
     private final InvoiceRepository invoiceRepository;
     private final CustomerRemoteService customerRemoteService;
     private final InvoiceRemoteDto invoiceRemoteDto;
@@ -65,6 +67,8 @@ public class LoanSubmissionService {
 
     private final CustomerCompanyRepository customerCompanyRepository;
     private final CustomerPersonalRepository customerPersonalRepository;
+    private final AgreementRepository  agreementRepository;
+
 
     private final InvoiceService invoiceService;
     private final FinancingHdrService financingHdrService;
@@ -75,7 +79,6 @@ public class LoanSubmissionService {
     private final ImportantNotesService importantNotesService;
     private final FinancingHdrRepository financingHdrRepository;
     private final MstBranchRepository mstBranchRepository;
-
 
     public List<PostedInvoiceDto> fetchActiveInvoice(
             Authentication authentication,
@@ -246,19 +249,37 @@ public class LoanSubmissionService {
             }
 
             final Product product = findProduct.get();
-
             Double provisionRate = findProduct.get().getProvisionRate(),
                     effectiveRate = findProduct.get().getEffectiveRate(),
                     adminRate = findProduct.get().getAdminRate();
-
-
+            boolean byPass = true;
             boolean isCustomerExisting = false;
             Cwr validateCwr = null;
-            if (authentication != null || !StringUtil.isNullOrEmpty(request.getToken())) {
+            if (byPass){
+                isCustomerExisting = true;
+                validateCwr = null;
+
+                try {
+                    final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+                    if (customer != null) {
+                        if (customer.getExistingCust() == null ){
+                            isCustomerExisting = false;
+                        }else{
+                            if (customer.getExistingCust().equalsIgnoreCase("")){
+                                isCustomerExisting = false;
+                            }
+                        }
+                        isCustomerExisting = true;
+                    }else{
+                        isCustomerExisting = false;
+                    }
+                } catch (Exception ignored) {
+
+                }
+            }else if (authentication != null || !StringUtil.isNullOrEmpty(request.getToken())) {
                 validateCwr = isCustomerExistingByCwr(authentication, request.getToken());
                 isCustomerExisting = validateCwr != null;
             }
-
             BigDecimal
                     provisionFeeAmount,
                     adminFeeAmount,
@@ -330,21 +351,64 @@ public class LoanSubmissionService {
         }
     }
 
-    public FinancingHdr viewCulateDisburse(
+    public FinancingHdrDto viewCulateDisburse(
             Authentication authentication,
-            String financeCode
+            String financeCode,
+            String histCode
     ) throws SignatureException, JsonProcessingException, ParseException {
         try {
 
             Optional<FinancingHdr>  financingHdr =  financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financeCode));
             if (financingHdr.isPresent()){
-                FinancingHdr financingHdr1 = financingHdr.get();
-                financingHdr1.setCustomer(null);
-                financingHdr1.setBouwheer(null);
-                financingHdr1.setMstBranch(null);
-                financingHdr1.setFinancingDtls(null);
-                financingHdr1.setAgreement(null);
-                return financingHdr1;
+                FinancingHdr fin = financingHdr.get();
+                /*fin.setCustomer(null);
+                fin.setBouwheer(null);
+                fin.setMstBranch(null);
+                fin.setFinancingDtls(null);
+                fin.setAgreement(null);
+                fin.setSimulationHistories(null);*/
+                FinancingHdrDto financingHdrDto =   FinancingHdrDto.builder()
+                        .financingDate(fin.getFinancingDate())
+                        .adminFeeAmt(fin.getAdminFeeAmt())
+                        .disburseDate(fin.getDisburseDate())
+                        .disburseAmt(fin.getDisburseAmt())
+                        .adminFeePercentage(fin.getAdminFeePercentage())
+                        .adminFeeAmt(fin.getAdminFeeAmt())
+                        .adminLimitAmt(fin.getAdminLimitAmt())
+                        .currencyCode(fin.getCurrencyCode())
+                        .effectiveRate(fin.getEffectiveRate())
+                        .financingAmt(fin.getFinancingAmt())
+                        .financingDueDate(fin.getFinancingDueDate())
+                        .financingStatus(fin.getFinancingStatus())
+                        .financingHdrCode(fin.getFinancingHdrCode())
+                        .retention(fin.getRetention())
+                        .totalInvoiceAmt(fin.getTotalInvoiceAmt())
+                        .interestAmt(fin.getInterestAmt())
+
+
+
+                        .build();
+
+                if (histCode!=null && histCode.length()>=32){
+                    Optional<SimulationHist>  simulationHist = simulationHistRepository.findTopBySimulationHistCode(UUID.fromString(histCode));
+                    if (simulationHist.isPresent()) {
+                        SimulationHist simH = simulationHist.get();
+
+                        SimulationHistDto simulationHistDto = SimulationHistDto.builder()
+                                .schema(100-simH.getRetention())
+                                .effetiveRate(fin.getEffectiveRate())
+                                .dibursmentAmt(simH.getEstDisbust())
+                                .totalInvoiceAmt(simH.getTotalInvoiceAmt())
+                                .adminAmt(simH.getAdminAmt())
+                                .isUsed(simH.getIsUsed())
+                                .retention(simH.getRetention())
+                                .build();
+
+                        financingHdrDto.setSimulationHist(simulationHistDto);
+                    }
+                }
+
+                return financingHdrDto;
             }
             return null;
         } catch (Exception e) {
@@ -355,11 +419,22 @@ public class LoanSubmissionService {
 
     public EstimatedDisburseDto recalculateDisburse(
             Authentication authentication,
-            CalculateSimulationRequest request
-    ) throws SignatureException, JsonProcessingException, ParseException {
+            HttpServletRequest request
+    ) throws Exception {
         try {
-            final BigDecimal ntfResult = request.getTotalInvoiceAmount()
-                    .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
+            int schemaRate = Utils.getInt(request.getParameter("schemaRate"));
+            int intestRate = Utils.getInt(request.getParameter("intestRate"));
+
+            double adminFee   = Utils.getInt(request.getParameter("adminFee"));
+            String financingHdrCode =request.getParameter("financingHdrCode");
+            Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
+            if (financingHdr.isEmpty()){
+                throw new Exception("financingHdr not found");
+            }
+            FinancingHdr finHdr = financingHdr.get();
+            
+            final BigDecimal ntfResult = new BigDecimal(finHdr.getTotalInvoiceAmt())
+                    .multiply(BigDecimal.valueOf(schemaRate / 100.0));
             //.setScale(0, RoundingMode.UP);
 
             final Optional<Product> findProduct = productRepository.findNtfRange(ntfResult.doubleValue());
@@ -375,12 +450,12 @@ public class LoanSubmissionService {
                     adminRate = findProduct.get().getAdminRate();
 
 
-            boolean isCustomerExisting = false;
-            Cwr validateCwr = null;
-            if (authentication != null || !StringUtil.isNullOrEmpty(request.getToken())) {
-                validateCwr = isCustomerExistingByCwr(authentication, request.getToken());
-                isCustomerExisting = validateCwr != null;
+
+            Optional<Agreement> agreements=  agreementRepository.findTopByFinancingHdr(finHdr);
+            if (agreements.isEmpty()){
+                //throw new Exception("agreements not found");
             }
+
 
             BigDecimal
                     provisionFeeAmount,
@@ -389,30 +464,23 @@ public class LoanSubmissionService {
                     surveyFeeAmount,
                     legalFeeAmount;
 
-            int tenor = 90; // (duedate - skr) + gp bouwherr
-            if (request.getBouwheerCode() != null && request.getInvoiceDueDate() != null) {
-                Optional<Bouwheer> bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
-                int top = DateTimeUtils.dateDiffInDay(new Date(), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(request.getInvoiceDueDate()));
-                tenor = top + (bouwheer.map(value -> value.getGracePeriod().intValue()).orElse(0));
-            }
 
-            BigDecimal plafondLimitBigDecimal = validateCwr != null
-                    ? BigDecimal.valueOf(validateCwr.getPlafondAmt())
-                    : ntfResult.multiply(BigDecimal.valueOf(3.0));
+            int tenor  =  finHdr.getTenor().intValue();
 
-            double interest  =  tenor / 360;//6 digit;
-            if (request.getInterest()!=null){
-                interest = request.getInterest();
-            }
-            double plafonLimit = plafondLimitBigDecimal.doubleValue();
+            double interest  = intestRate;
+
             double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
             double effective_Rate = product.getEffectiveRate();
             double interestAmount = nilaiPembiayaan * effective_Rate / 100 * interest;
-            double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
+            //double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
             double jumlahBiaya;
-            double provisionRateFee = product.getProvisionRate() * plafonLimit / 100;
+            double provisionRateFee =  finHdr.getProvisionFeeAmt();//  product.getProvisionRate() * plafonLimit / 100;
 
+
+
+            boolean isCustomerExisting = finHdr.getSurveyFeeAmt().intValue() != 0;
             if (!isCustomerExisting) {
+                //newCustomer
                 jumlahBiaya = provisionRateFee
                         + product.getSurveyFee()
                         + product.getLegalFee()
@@ -427,7 +495,7 @@ public class LoanSubmissionService {
                 provisionFeeAmount = new BigDecimal(0);
                 surveyFeeAmount = new BigDecimal(0);
                 legalFeeAmount = new BigDecimal(0);
-                adminFeeAmount = new BigDecimal(0);
+                adminFeeAmount = new BigDecimal(adminFee).setScale(0, RoundingMode.HALF_UP);
                 othersFeeAmount = new BigDecimal(0);
                 jumlahBiaya = adminFee + product.getOthersFee();
             }
@@ -458,12 +526,75 @@ public class LoanSubmissionService {
     }
 
     @Transactional
-    public CreatedSimulationDto updateeSimulation(
+    public CreatedSimulationDto updateSimulation(
             Authentication authentication,
-            CreateSimulationRequest request
+            HttpServletRequest request
     ) throws Exception {
       try {
-          final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+          String histCode = request.getParameter("histCode");
+          String financingHdrCode =request.getParameter("financingHdrCode");
+          if (histCode !=null && histCode.length()>=32 ){
+              Optional<SimulationHist>  simulationHistOptional =  simulationHistRepository.findTopBySimulationHistCode(UUID.fromString(histCode));
+                if (simulationHistOptional.isPresent()){
+                    SimulationHist simulationHist = simulationHistOptional.get();
+                    Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
+                    if (financingHdr.isEmpty()){
+                        throw new Exception("financingHdr not found");
+                    }
+                    FinancingHdr finHdr = financingHdr.get();
+                    finHdr.setDisburseAmt(simulationHist.getEstDisbust());
+                    finHdr.setRetention(simulationHist.getRetention());
+                    finHdr.setAdminFeeAmt(simulationHist.getAdminAmt());
+                    finHdr.setInterestAmt(simulationHist.getInterestAmt());
+                    finHdr.setEffectiveRate(  simulationHist.getEffectiveRate());
+
+                    financingHdrRepository.save(finHdr);
+
+                    return  null;
+                }else {
+                    throw new Exception("SimulationHist not found");
+                }
+          }
+
+
+          EstimatedDisburseDto estimatedDisburseDto =   recalculateDisburse(authentication, request);
+
+
+          Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
+          if (financingHdr.isEmpty()){
+              throw new Exception("financingHdr not found");
+
+          }
+          int schemaRate = Utils.getInt(request.getParameter("schemaRate"));
+          double intestRate = Utils.getInt(request.getParameter("intestRate"));
+
+          double effRate =   intestRate /100;
+
+          FinancingHdr finHdr = financingHdr.get();
+          finHdr.setDisburseAmt(estimatedDisburseDto.getEstimatedDisburseAmount().doubleValue());
+          finHdr.setRetention(Double.valueOf(100-schemaRate));
+          finHdr.setAdminFeeAmt(estimatedDisburseDto.getAdminFeeAmount().doubleValue());
+          finHdr.setInterestAmt(estimatedDisburseDto.getInterestFeeAmount().doubleValue());
+          finHdr.setEffectiveRate(Double.valueOf(effRate));
+
+          financingHdrRepository.save(finHdr);
+
+
+          SimulationHist simulationHist = SimulationHist.builder()
+                  .simulationHistCode(  UUID.randomUUID())
+                  .financingHdr(finHdr)
+                  .adminAmt(finHdr.getAdminFeeAmt())
+                  .retention(finHdr.getRetention())
+                  .totalInvoiceAmt(finHdr.getTotalInvoiceAmt())
+                  .financingAmt(finHdr.getFinancingAmt())
+                  .effectiveRate(finHdr.getEffectiveRate())
+                  .estDisbust(finHdr.getDisburseAmt())
+                  .interestAmt(finHdr.getInterestAmt())
+                  .usrCrt("system")
+                  .dtmCrt(DateTimeUtils.nowLocal())
+                     .build();
+
+          simulationHistRepository.save(simulationHist);
 
            /*emailService.sendNotificationChangeLimit(
                 customer,
@@ -484,7 +615,10 @@ public class LoanSubmissionService {
                         .invoices(invoices)
                         .build()
         );*/
-      }catch (Exception e){ }
+      }catch (Exception e){
+          e.printStackTrace();
+          throw new Exception(e.getMessage());
+      }
 
 
 
@@ -638,7 +772,7 @@ public class LoanSubmissionService {
             }
 
 
-            if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 50000000){
+            if (calculateDisburse.getFinancingAmount().doubleValue() < 50000000){
                 throw new IllegalStateException("Untuk melanjukan pengajuan silahkan tambahkan jumlah invoice yang ingin" +
                         "diajukan hingga mencapai minimal   Rp 50.000.000");
             }
@@ -744,7 +878,7 @@ public class LoanSubmissionService {
                                 .noneMatch(file -> file.getFileTypeCode().getFileTypeCode().equals(mstFileType.getFileTypeCode()))
                 ) {
 
-                    throw new LoanDocMandatoryException("Harap upload semua dokumen mandatory terlebih dahulu");//AGGREMENT01
+                   // throw new LoanDocMandatoryException("Harap upload semua dokumen mandatory terlebih dahulu");//AGGREMENT01 bypass
                 }
             }
 
@@ -752,8 +886,7 @@ public class LoanSubmissionService {
 
 
 
-            final FinancingHdr financing = financingHdrService.getByCode(request.getFinancingHdrCode());
-            {
+            final FinancingHdr financing = financingHdrService.getByCode(request.getFinancingHdrCode()); {
                 financing.setFinancingStatus(FinancingStatus.NEW.name());
                 financing.setFinancingStep(FinancingStatus.NEW.name());
                 financing.setDtmUpd(DateTimeUtils.now());
@@ -780,6 +913,28 @@ public class LoanSubmissionService {
                     Optional<MstBranch>  mstBranch = mstBranchRepository.findTopLikeBranchNameRawQuery(city,kelurahan,kecamatan);
                     mstBranch.ifPresent(financing::setMstBranch);
                 }catch (Exception ignored){}
+
+
+
+                //set auto ASSIGNMENT
+                try {
+                    List<FinancingHdr>  financingHdrs = financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer);
+                    for (int i = 0; i < financingHdrs.size(); i++) {
+                        FinancingHdr hdr =financingHdrs.get(i);
+                        if (hdr.getMstBranch() != null) {
+                            //update jadi Assign
+                            financing.setFinancingStatus("INPROCESS");
+                            financing.setFinancingStep("ASSIGNMENT");
+                            financing.setMstBranch(hdr.getMstBranch());
+                            financing.setDtmUpd(DateTimeUtils.now());
+                            break;
+                        }
+                    }
+
+                } catch (Exception e) {   }
+
+
+
 
                 financingHdrRepository.save(financing);
             }

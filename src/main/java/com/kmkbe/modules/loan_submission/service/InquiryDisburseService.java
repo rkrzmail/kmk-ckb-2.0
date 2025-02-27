@@ -14,6 +14,8 @@ import com.kmkbe.core.domain.response.InquiryDisburseResult;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
+import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
+import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.nikita.data.Nson;
 import com.kmkbe.nikita.utils.Utils;
 import jakarta.annotation.Nullable;
@@ -50,7 +52,7 @@ public class InquiryDisburseService {
     private final DisbursementLogRepository DisbursementLogRepository;
     private final DisbursementLogRepository disbursementLogRepository;
 
-
+    private final FinancingRemoteService financingRemoteService;
 
     public double getBillingAmount(ArrayList<InquiryOutstandingBillDetailtDto.ListBillingDetail>  listBillingDetails, String billName){
         //BillDetailName = LC Installment Amount
@@ -65,9 +67,6 @@ public class InquiryDisburseService {
     }
 
 
-
-
-
     public InquiryDisburseResult inquiryDisburse ( @Nullable InquiryDisburseRequest inquiryDisburseRequest ) throws JsonProcessingException {
         try {
             final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
@@ -75,8 +74,6 @@ public class InquiryDisburseService {
                     inquiryDisburseRequest,
                     headers
             );
-
-
 
             final ResponseEntity<String> response = restTemplate.exchange(
                     baseRemoteService.inquiry_Disburse(),
@@ -97,8 +94,9 @@ public class InquiryDisburseService {
             throw e;
         }
     }
-
-    public void inquiryDisburseAuto  (Agreement agreement) throws Exception {
+    public boolean inquiryDisburseAuto  (Agreement agreement) throws Exception {
+        boolean result = false;
+        boolean isDisbursP = false;
         try {
                 String aggrNo = agreement.getAgreementCode();
             String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
@@ -155,6 +153,8 @@ public class InquiryDisburseService {
 
             inquiryDisburseRequest.setRequestDateTime(sToday);
             inquiryDisburseRequest.setCriteria(inquiryDisburseCriterias);
+
+
             InquiryDisburseResult inquiryDisburseResult = inquiryDisburse(inquiryDisburseRequest);//CALL API
 
 
@@ -162,54 +162,14 @@ public class InquiryDisburseService {
 
 
 
-            //insert Table
-            try {
-                if (inquiryDisburseResult.getStatusCode().equalsIgnoreCase("200")){
-                    //Optional<Agreement>  agreement = agreementRepository.findTopByAgreementCode(aggrNo);
-                    //if (agreement.isPresent()){
-                        try {
 
-                            disbursementLogRepository.deleteAll(disbursementLogRepository.findAllByAgreement(agreement));
-                        } catch (Exception ignored) {
-                            ignored.printStackTrace();
-                        }
-
-                        DisbursementLog disbursementLog = DisbursementLog.builder().build();
-                        disbursementLog.setDisbursementCode(UUID.randomUUID());
-                        disbursementLog.setAgreement(agreement);
-
-                        InquiryDisburseDatum disburseDatum = inquiryDisburseResult.getData().getFirst();
-                        disbursementLog.setApNo(disburseDatum.getAPNo());//getAPNo
-                        disbursementLog.setApDesc(disburseDatum.getAPDescr());
-                        disbursementLog.setCurrency(disburseDatum.getCurrCode());
-                        disbursementLog.setApAmt(disburseDatum.getApAmt());
-                        disbursementLog.setApPaidAmt(disburseDatum.getAPPaidAmt());
-                        disbursementLog.setApAmtInprocess(disburseDatum.getAPAmtInProces());
-                        disbursementLog.setApUnpaidAmt(disburseDatum.getUnpaidAmt());
-                        disbursementLog.setApTypeCode(disburseDatum.getAPTypeCode());
-                        disbursementLog.setApTypeName(disburseDatum.getAPTypeName());
-                        disbursementLog.setApDueDate(disburseDatum.getAPDueDt());
-                        disbursementLog.setBranchCode(disburseDatum.getOfficeCode());
-                        disbursementLog.setApPaidLocation(disburseDatum.getApPaidLocCode());
-
-                        disbursementLog.setUsrCrt("AUTO");
-                        disbursementLog.setDtmCrt(DateTimeUtils.now());
-                        disbursementLog.setUsrUpd("AUTO");
-                        disbursementLog.setDtmUpd(DateTimeUtils.now());
-                        disbursementLogRepository.save(disbursementLog);
-                    //}
-
-                }
-            } catch (Exception ignored) {
-                //on duplicate update
-                ignored.printStackTrace();
-            }
             try {
                  if (inquiryDisburseResult.getStatusCode().equalsIgnoreCase("200")){
                      for (int i = 0; i < inquiryDisburseResult.getData().size(); i++) {
                          InquiryDisburseDatum inquiryDisburseDatum = inquiryDisburseResult.getData().get(i);
                          if (inquiryDisburseDatum.agreementNo.equalsIgnoreCase(aggrNo)){
                             if (inquiryDisburseDatum.getAPStatCode().equalsIgnoreCase("P")){
+                                isDisbursP = true;
                                 //disUpdate Financing Status = Disburse
                                 //Optional<Agreement>  agreement = agreementRepository.findTopByAgreementCode(aggrNo);
                                 //if (agreement.isPresent()){
@@ -231,9 +191,72 @@ public class InquiryDisburseService {
                 ignored.printStackTrace();
             }
 
+
+            if (inquiryDisburseResult.getStatusCode().equalsIgnoreCase("200") && isDisbursP){
+                List<DisbursementLog> l = disbursementLogRepository.findAllByAgreement(agreement);
+                if (l.isEmpty()){
+                    //send B to mst
+                    UpdateFinancingStatusRequest updateFinancingStatusRequest = null;
+                    try {
+                        updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
+                                .vendorCode(agreement.getFinancingHdr().getCustomer().getCustExternalCode())
+                                .financingCode(agreement.getFinancingHdr().getFinancingHdrCode().toString())
+                                .status(UpdateFinancingStatusRequest.Status.Disburse)
+                                .build();
+                    } catch (Exception ignored) {  }
+                    try {
+                        financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
+                    } catch (Exception ignored) {  }
+
+                }
+            }
+
+            //insert Table
+            try {
+                if (inquiryDisburseResult.getStatusCode().equalsIgnoreCase("200") && isDisbursP){
+                    try {
+
+                        disbursementLogRepository.deleteAll(disbursementLogRepository.findAllByAgreement(agreement));
+                    } catch (Exception ignored) {
+                        ignored.printStackTrace();
+                    }
+
+                    DisbursementLog disbursementLog = DisbursementLog.builder().build();
+                    disbursementLog.setDisbursementCode(UUID.randomUUID());
+                    disbursementLog.setAgreement(agreement);
+
+                    InquiryDisburseDatum disburseDatum = inquiryDisburseResult.getData().getFirst();
+                    disbursementLog.setApNo(disburseDatum.getAPNo());//getAPNo
+                    disbursementLog.setApDesc(disburseDatum.getAPDescr());
+                    disbursementLog.setCurrency(disburseDatum.getCurrCode());
+                    disbursementLog.setApAmt(disburseDatum.getApAmt());
+                    disbursementLog.setApPaidAmt(disburseDatum.getAPPaidAmt());
+                    disbursementLog.setApAmtInprocess(disburseDatum.getAPAmtInProces());
+                    disbursementLog.setApUnpaidAmt(disburseDatum.getUnpaidAmt());
+                    disbursementLog.setApTypeCode(disburseDatum.getAPTypeCode());
+                    disbursementLog.setApTypeName(disburseDatum.getAPTypeName());
+                    disbursementLog.setApDueDate(disburseDatum.getAPDueDt());
+                    disbursementLog.setBranchCode(disburseDatum.getOfficeCode());
+                    disbursementLog.setApPaidLocation(disburseDatum.getApPaidLocCode());
+
+                    disbursementLog.setUsrCrt("AUTO");
+                    disbursementLog.setDtmCrt(DateTimeUtils.now());
+                    disbursementLog.setUsrUpd("AUTO");
+                    disbursementLog.setDtmUpd(DateTimeUtils.now());
+                    disbursementLogRepository.save(disbursementLog);
+                    //}
+
+                }
+            } catch (Exception ignored) {
+                //on duplicate update
+                ignored.printStackTrace();
+            }
+
         } catch (Exception e) {
             log.error("updatePaid, error {}", e.getMessage());
             throw e;
         }
+        return result;
     }
+
 }

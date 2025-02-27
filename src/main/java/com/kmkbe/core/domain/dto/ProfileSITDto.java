@@ -9,7 +9,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AddressDto {
+public class ProfileSITDto {
     private String rt;
     private String rw;
     private String kelurahan;
@@ -18,4 +18,6 @@ public class AddressDto {
     private String province;
     private String zipCode;
     private String area;
+    private String namaBank;
+
 }

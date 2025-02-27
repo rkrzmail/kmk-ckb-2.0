@@ -22,6 +22,10 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
 
     Optional<FinancingHdr> findFirstByCustomerOrderByFinancingHdrIdDesc(Customer customer);
 
+
+    List<FinancingHdr> findAllByCustomer(@NotNull Customer customer);
+    List<FinancingHdr> findAllByCustomerOrderByDtmCrtDesc(@NotNull Customer customer);
+
     Long countByCustomerAndFinancingStatus(Customer customer, String status);
 
     Page<FinancingHdr> findByOrderByFinancingHdrIdDesc(
@@ -131,6 +135,52 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
     Page<FinancingHdr> findAllByRawOrder(
             Pageable pageable
     );
+
+
+    @Query(
+            value = """
+                    select
+                        fh.*
+                    from
+                        public.financing_hdr fh
+                    where
+                        fh.financing_status is not null and
+                        fh.financing_step is not null and
+                        fh.financing_hdr_code in (
+                                                     select
+                                                         fd.financing_hdr_code
+                                                     from
+                                                         public.financing_dtl fd
+                                                             join public.invoice iv on fd.invoice_code = iv.invoice_code
+                                                 )
+                        and nullif(fh.financing_status, '') is not null
+                        and nullif(fh.financing_step, '') is not null
+                    order by
+                        fh.dtm_crt desc
+                    """,
+            countQuery = """
+                    select count(*)
+                    from
+                        financing_hdr fh
+                    where
+                        fh.financing_status is not null and
+                        fh.financing_step is not null and
+                        fh.financing_hdr_code in (
+                                                     select
+                                                         fd.financing_hdr_code
+                                                     from
+                                                         public.financing_dtl fd
+                                                             join public.invoice iv on fd.invoice_code = iv.invoice_code
+                                                 )
+                        and nullif(fh.financing_status, '') is not null
+                        and nullif(fh.financing_step, '') is not null
+                    """,
+            nativeQuery = true
+    )
+    List<FinancingHdr> findAllByRaw(
+
+    );
+
 
 
     @Query(

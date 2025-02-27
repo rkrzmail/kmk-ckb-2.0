@@ -54,8 +54,35 @@ public class ImportantNotesService {
             jdbcTemplate.execute(createTable);
         }
     }
-
     public ImportantNotesDto importantNotesDto() {
+        return ImportantNotesDto.builder()
+                .description("<p>Data yang tersebut di bawah ini terkait Legalitas, Keuangan & informasi transaksi Perusahaan Bapak/Ibu. Perusahaan dan/atau Perseorangan dalam E-procurement dan POST (Purchase Order System Tracking) PT Trakindo Utama (TU), tidak berkeberatan dan memberikan persetujuannya untuk membagikan setiap dan seluruh data legalitas, keuangan, dan informasi transaksi kepada PT Chandra Sakti Utama Leasing (CSULFinance) sebagai anak usaha Grup Tiara Marga Trakindo (TMT) yang memfasilitasi Pembiayaan Tagihan antara vendor dengan TU. Setiap dan seluruh data/informasi tersebut hanya akan dipakai untuk kebutuhan transaksi Pembiayaan Anjak Piutang/Tagihan di CSULFinance.<br>CSULfinance berizin dan diawasi oleh Otoritas Jasa Keuangan (OJK)</p>")
+                .legals(List.of(
+                        "Akta Pendirian",
+                        "Akta Penyesuaian Anggaran Dasar terhadap UU 40/2007 (Jika PT)",
+                        "Akta Perubahan mengenai Modal Ditempatkan dan Disetor",
+                        "Akta Perubahan Maksud dan Tujuan Persero",
+                        "Akta Perubahan Terakhir mengenai Perubahan Susunan Pengurus Perseroan",
+                        "Akta-Akta Perubahan Terakhir Lainnya + SK Persetujuan Menkumhan / Surat Penerimaan Pemberitahuan Perubahan Anggaran Dasar / Data Perseroan (Jika ada)",
+                        "Identitas Pengurus (KTP/Paspor/KITAS)",
+                        "NPWP",
+                        "NIB (RBA)",
+                        "Izin Usaha Lainnya",
+
+                        "Company Profile",
+                        "Rekap Invoice Tagihan Trakindo",
+                        "Rekening Koran",
+                        "PO dari Trakindo",
+                        "FAP (Formulir Aplikasi Pembiayaan)",
+                        "Laporan Keuangan",
+                        "Foto Gedung",
+                        "Pengalaman Kerja",
+                        "Struktur Organisasi",
+                        "Bank Detail"
+                ))
+                .build();
+    }
+    public ImportantNotesDto importantNotesDto_() {
         return ImportantNotesDto.builder()
                 .description("<p>Semua <b>data legalitas, keuangan, & informasi transaksi</b> perusahaan bapak/ibu dalam E-procurement dan POST (Purchase Order System Tracking) PT. Trakindo Utama akan diberikan secara otomatis kepada PT. Chandra Sakti Utama Leasing (CSULfinance) sebagai anak usaha Grup TMT (Tiara Marga Trakindo) yang memfasilitasi pembiayaan tagihan antara vendor dengan PT.Trakindo Utama. Semua data informasi ini dipakai hanya untuk transaksi pembiayaan anjak piutang / tagihan di CSULfinance. \n" +
                         "CSULfinance berizin dan diawasi oleh Otoritas Jasa Keuangan (OJK)</p>")

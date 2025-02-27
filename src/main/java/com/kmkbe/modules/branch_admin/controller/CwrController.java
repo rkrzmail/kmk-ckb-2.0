@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
 import java.text.ParseException;
+import java.util.List;
 
 @Validated
 @RestController
@@ -60,6 +61,18 @@ public class CwrController {
         );
     }
 
+    @GetMapping("/list-agreement/{cwrCode}/{financingHdrCode}")
+    public CommonResult<List<String>> getListAggr(
+            Authentication authentication,
+            @PathVariable("cwrCode") String cwrCode,
+            @PathVariable("financingHdrCode") String financingHdrCode
+
+    ) throws SignatureException  {
+        UserInternalUtils.authenticated(authentication);
+        return new CommonResult<List<String>>().success(
+                cwrService.inquiryListAggr (cwrCode)
+        );
+    }
     @GetMapping("/inquiry")
     public CommonResult<InquiryCwrDto> getInquiryCwr(
             Authentication authentication,

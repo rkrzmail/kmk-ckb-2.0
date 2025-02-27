@@ -78,7 +78,7 @@ public class FinancingController {
     ) throws SignatureException {
         UserInternalUtils.authenticated(authentication);
         return new CommonResult<PaginationResult<PaidInvoiceDto>>().success(
-                financingHdrService.paidInvoice(request)
+                financingHdrService.listPaidUnpaidInvoice(request)
         );
     }
 
@@ -94,12 +94,11 @@ public class FinancingController {
 
     @GetMapping("/invoices/disbursement")
     public CommonResult<PaginationResult<DisburseInvoiceDto>> getDisbursement(
-            Authentication authentication, PaginationRequest request,
-            FinancingHdr financingHdr
+            Authentication authentication, PaginationRequest request
     ) throws SignatureException {
         UserInternalUtils.authenticated(authentication);
         return new CommonResult<PaginationResult<DisburseInvoiceDto>>().success(
-                financingHdrService.disburseInvoice(request, financingHdr)
+                financingHdrService.listdisburseAggrement(request)
         );
     }
 

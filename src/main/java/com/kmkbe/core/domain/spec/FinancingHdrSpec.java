@@ -130,4 +130,28 @@ public class FinancingHdrSpec {
             };
         };
     }
+
+
+    public static Specification<SimulationHist> bySimulationHist(String financing_hdr_code,  String searchBy, String value) {
+        return (root, query, criteriaBuilder) -> {
+
+            root.get("financing_hdr_code").in(financing_hdr_code);
+            // Base conditions for status and step filtering
+            Predicate stepStatusPredicate = criteriaBuilder.equal( root.get("financing_hdr_code"),  financing_hdr_code   );
+
+            // Dynamic search filter based on searchBy and value
+            Predicate searchPredicate;
+
+            if (searchBy == null || value == null || value.isEmpty()) {
+                searchPredicate = criteriaBuilder.conjunction(); // No filter applied
+            } else {
+                // Apply specific filters based on `searchBy` value
+                searchPredicate = criteriaBuilder.conjunction(); // No filter applied
+            }
+
+            // Combine both predicates (step/status and search filters)
+            //return criteriaBuilder.and(stepStatusPredicate, searchPredicate);
+            return stepStatusPredicate;
+        };
+    }
 }

@@ -113,8 +113,11 @@ public class FinancingRemoteService {
             if(StringUtil.isNullOrEmpty(responseStr)){
                 responseStr = objectMapper.writeValueAsString(response.getBody());
             }
-
-            return response.getBody();
+            if (statusCode >= 200 && statusCode < 300) {
+                return response.getBody();
+            }else{
+                throw new RuntimeException("Error while Call MST\n\nDetail:" + response.getBody());
+            }
         } catch (HttpStatusCodeException httpStatusCodeException) {
             String message = "Posted Submission Failed";
             statusCode = httpStatusCodeException.getStatusCode().value();

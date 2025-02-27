@@ -83,7 +83,7 @@ public class CustomerCompany implements Serializable {
     @Column(name = "zipcode", length = 10)
     private String zipCode = "";
 
-    @Column(length = 5)
+    @Column(name = "area", length = 5)
     private String area = "";
 
     @Column(length = 20)
@@ -108,4 +108,8 @@ public class CustomerCompany implements Serializable {
     private String usrUpd;
 
     private LocalDateTime dtmUpd;
+
+    @Column(length = 50)
+    private String directorName;
+
 }

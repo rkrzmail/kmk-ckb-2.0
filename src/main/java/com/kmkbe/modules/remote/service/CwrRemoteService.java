@@ -8,8 +8,10 @@ import com.kmkbe.core.domain.dto.InquiryAgreementCwrDto;
 import com.kmkbe.core.domain.dto.InquiryCwrRemoteDto;
 import com.kmkbe.core.domain.entity.ApiIntegrationLog;
 import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.remote.request.*;
+import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -191,7 +193,7 @@ public class CwrRemoteService {
         try {
             Map<String, Object> request = new HashMap<>();
             request.put("trxNo", cwrNo);
-            request.put("RequestDateTime", new Date());
+            request.put("RequestDateTime", Utils.NowDate());
             jsonStr = ObjectUtils.jsonToStr(request);
             final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
             final HttpEntity<String> requestArgs = new HttpEntity<>(

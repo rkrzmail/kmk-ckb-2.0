@@ -79,4 +79,15 @@ public class SimulationHist {
     @Column(name = "dtm_upd")
     private LocalDateTime dtmUpd;
 
+
+    @Column(name = "effective_rate" )
+    private Double effectiveRate;
+
+
+    @Column(name = "est_disbust")
+    private Double estDisbust;
+
+    @Column(name = "interest_amt")
+    private Double interestAmt;
+
 }

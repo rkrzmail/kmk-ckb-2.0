@@ -15,6 +15,7 @@ public interface DisbursementLogRepository extends JpaRepository<DisbursementLog
     DisbursementLog findByAgreement_AgreementCode(String agreementCode);
 
 
+
     List<DisbursementLog> findAllByAgreement(@NotNull(message = "Agreement cannot be null") Agreement agreement);
 
     void deleteAllByAgreement(@NotNull(message = "Agreement cannot be null") Agreement agreement);
