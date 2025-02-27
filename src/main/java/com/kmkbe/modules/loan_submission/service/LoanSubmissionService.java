@@ -773,7 +773,7 @@ public class LoanSubmissionService {
 
 
             if (calculateDisburse.getFinancingAmount().doubleValue() < 50000000){
-                throw new IllegalStateException("Untuk melanjukan pengajuan silahkan tambahkan jumlah invoice yang ingin" +
+                throw new IllegalStateException("Untuk melanjukan pengajuan silahkan tambahkan jumlah invoice yang ingin" + " " +
                         "diajukan hingga mencapai minimal   Rp 50.000.000");
             }
 

@@ -33,5 +33,14 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findAllByProductId(Pageable pageable, Long productId);
 
 
+    // Query untuk mengambil product terakhir berdasarkan productId
+    @Query("SELECT p FROM Product p ORDER BY p.productId DESC")
+    List<Product> findLatestProduct(Pageable pageable);
+
+    Optional<Product> findByProductCode(String productCode);
+
+    Product findTopByOrderByProductIdDesc();
+
+    Optional<Product> findById(Long productId);
 
 }

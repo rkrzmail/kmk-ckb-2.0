@@ -199,4 +199,10 @@ public class FinancingHdr implements Serializable {
 
     @OneToMany(mappedBy = "financingHdr")
     private Set<Agreement> agreement;
+
+    @Column(name = "fap_date")
+    private LocalDateTime fapDate;
+
+    @Column(name = "fap_status")
+    private String fapStatus;
 }

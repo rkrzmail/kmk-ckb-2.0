@@ -1,10 +1,7 @@
 package com.kmkbe.core.domain.dto;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -13,6 +10,8 @@ import java.time.LocalDateTime;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 //@NoArgsConstructor
 public class ProductDto implements Serializable {
     private Long productId;

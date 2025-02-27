@@ -151,5 +151,6 @@ public class Customer implements UserDetails {
         return true;
     }
 
+    public CustomerCompany getCustomerCompany() {return this.company;}
 
 }

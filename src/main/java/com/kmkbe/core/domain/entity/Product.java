@@ -1,9 +1,6 @@
 package com.kmkbe.core.domain.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -21,8 +18,14 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "product")
 public class Product {
+//    @Id
+//    @ColumnDefault("nextval('product_product_id_seq'::regclass)")
+//    @Column(name = "product_id", nullable = false)
+//    private Long productId;
+
     @Id
     @ColumnDefault("nextval('product_product_id_seq'::regclass)")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // Pastikan auto-generated
     @Column(name = "product_id", nullable = false)
     private Long productId;
 

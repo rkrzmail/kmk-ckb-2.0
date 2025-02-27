@@ -2,6 +2,7 @@ package com.kmkbe.modules.major_account.service;
 
 import com.kmkbe.core.domain.dto.ProductDto;
 import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.core.domain.mapper.ProductMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.ProductRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -15,6 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 
@@ -32,12 +35,14 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class MstProductService {
     private final ProductRepository productRepository;
+    private final ProductMapper productMapper = ProductMapper.INSTANCE;
 
     @Transactional
     public PaginationResult<ProductDto> uploadProduct(    HttpServletRequest httpServletRequest,
@@ -248,6 +253,123 @@ public class MstProductService {
         } catch (Exception e) {
             log.error("placementBranch: error {}", e.getMessage());
             throw e;
+        }
+    }
+
+    //tambah produk
+    @Transactional
+    public ProductDto createProduct(ProductDto productDto) {
+        // Mengonversi ProductDto menjadi Product (Entity)
+        Product product = Product.builder()
+                .productCode(productDto.getProductCode())
+                .branchCode(productDto.getBranchCode())
+                .productName(productDto.getProductName())
+                .effectiveDate(productDto.getEffectiveDate())
+                .ntfFrom(productDto.getNtfFrom())
+                .ntfTo(productDto.getNtfTo())
+                .effectiveRate(productDto.getEffectiveRate())
+                .provisionRate(productDto.getProvisionRate())
+                .surveyFee(productDto.getSurveyFee())
+                .legalFee(productDto.getLegalFee())
+                .adminLimitFee(productDto.getAdminLimitFee())
+                .adminRate(productDto.getAdminRate())
+                .insuranceRate(productDto.getInsuranceRate())
+                .othersFee(productDto.getOthersFee())
+                .isActive(productDto.getIsActive())
+                .usrCrt("SYSTEM")  // atau bisa diganti sesuai dengan user yang menginput
+                .dtmCrt(DateTimeUtils.nowLocal())  // timestamp saat produk dibuat
+                .build();
+
+        // Menyimpan Product ke database
+        Product savedProduct = productRepository.save(product);
+
+        // Mengonversi kembali Product ke ProductDto untuk dikirim ke controller
+        return productMapper.entityToDto(savedProduct);
+    }
+
+
+    // Mendapatkan productCode terakhir
+    public Long getLastProductId() {
+        // Ambil produk terakhir dengan pageable (limit 1)
+        Pageable pageable = PageRequest.of(0, 1);  // Membatasi hanya 1 hasil
+        List<Product> products = productRepository.findLatestProduct(pageable);
+
+        // Ambil productCode dari produk terakhir
+        Product lastProduct = productRepository.findTopByOrderByProductIdDesc();
+        if (lastProduct != null) {
+            return lastProduct.getProductId();
+        }
+        return null;
+    }
+
+    // buat edit
+//    public Optional<Product> getProductById(Long productId) {
+//        return productRepository.findById(productId);
+//    }
+
+
+//    public Product updateProduct(Long productId, Product productDetails) {
+//        // Cari produk berdasarkan ID
+//        Optional<Product> existingProduct = productRepository.findById(productId);
+//
+//        if (existingProduct.isPresent()) {
+//            Product product = existingProduct.get();
+//
+//            // Update fields sesuai dengan data yang diterima
+//            product.setProductName(productDetails.getProductName());
+//            product.setEffectiveDate(productDetails.getEffectiveDate());
+//            product.setEffectiveRate(productDetails.getEffectiveRate());
+//            product.setProvisionRate(productDetails.getProvisionRate());
+//            product.setSurveyFee(productDetails.getSurveyFee());
+//            product.setLegalFee(productDetails.getLegalFee());
+//            product.setAdminRate(productDetails.getAdminRate());
+//            product.setOthersFee(productDetails.getOthersFee());
+//            product.setIsActive(productDetails.getIsActive());
+//
+//            // Simpan perubahan ke database
+//            productRepository.save(product);
+//            return product; // Mengembalikan produk yang sudah diupdate
+//        }
+//
+//        return null; // Jika produk tidak ditemukan
+//    }
+
+    // GET EDIT
+    public Optional<Product> getProductByCode(String productCode) {
+        return productRepository.findByProductCode(productCode);
+    }
+
+    // UPDATE
+    @Transactional
+    public Product updateProduct(String productCode, Product productDetails) {
+        Optional<Product> existingProductOpt = productRepository.findByProductCode(productCode);
+
+        if (existingProductOpt.isPresent()) {
+            Product existingProduct = existingProductOpt.get();
+
+            existingProduct.setProductName(productDetails.getProductName());
+            existingProduct.setProductCode(productDetails.getProductCode());
+            existingProduct.setBranchCode(productDetails.getBranchCode());
+            existingProduct.setEffectiveDate(productDetails.getEffectiveDate());
+            existingProduct.setNtfFrom(productDetails.getNtfFrom());
+            existingProduct.setNtfTo(productDetails.getNtfTo());
+            existingProduct.setEffectiveRate(productDetails.getEffectiveRate());
+            existingProduct.setProvisionRate(productDetails.getProvisionRate());
+            existingProduct.setSurveyFee(productDetails.getSurveyFee());
+            existingProduct.setLegalFee(productDetails.getLegalFee());
+            existingProduct.setAdminLimitFee(productDetails.getAdminLimitFee());
+            existingProduct.setAdminRate(productDetails.getAdminRate());
+            existingProduct.setInsuranceRate(productDetails.getInsuranceRate());
+            existingProduct.setOthersFee(productDetails.getOthersFee());
+            existingProduct.setIsActive(productDetails.getIsActive());
+            existingProduct.setUsrUpd("SYSTEM");
+            existingProduct.setDtmUpd(LocalDateTime.now());
+            // Simpan perubahan ke database
+            productRepository.save(existingProduct);
+
+            return existingProduct;
+        } else {
+            throw new RuntimeException("Product not found with code: " + productCode);
         }
     }
 }
