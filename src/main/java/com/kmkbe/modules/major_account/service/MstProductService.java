@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.RequestPart;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -153,13 +154,13 @@ public class MstProductService {
                 pageNo = pageNo - 1;
             }
 
+//            pageSize = 1000;
+//            Page<Product> pagination = productRepository.findAllByIsActive(
+//                    PageRequest.of(pageNo, pageSize ), true
+//            );
+
             pageSize = 1000;
-            Page<Product> pagination = productRepository.findAllByIsActive(
-                    PageRequest.of(pageNo, pageSize ), true
-            );
-
-
-
+            Page<Product> pagination = productRepository.findAll(PageRequest.of(pageNo, pageSize));
 
            List<ProductDto> result = pagination.stream()
                     .map((e) -> ProductDto.builder()
