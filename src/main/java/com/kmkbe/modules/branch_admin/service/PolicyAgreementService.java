@@ -1,13 +1,17 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.PolicyAgreementDto;
+import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.PolicyAgreement;
 import com.kmkbe.core.domain.entity.PolicyAgreementHistory;
 import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.PolicyAgreementHistoryRepository;
 import com.kmkbe.core.domain.repository.PolicyAgreementRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,7 +37,12 @@ public class PolicyAgreementService {
         policyAgreement.setPolicyContent(policyAgreementDto.getPolicyContent());
         policyAgreement.setVersion(policyAgreementDto.getVersion());
         policyAgreement.setIsActive(policyAgreementDto.getIsActive());
-        policyAgreement.setUsrCrt("SYSTEM");
+//        policyAgreement.setUsrCrt("SYSTEM");
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = (authentication != null) ? authentication.getName() : "UNKNOWN";  // Jika tidak ada user, beri default "UNKNOWN"
+
+        policyAgreement.setUsrCrt(currentUsername);
         policyAgreement.setDtmCrt(LocalDateTime.now());
 
         String generatedPolicyCode = UUID.randomUUID().toString();  // Menghasilkan UUID sebagai policy code
@@ -188,12 +197,14 @@ public class PolicyAgreementService {
         history.setDtmCrt(policy.getDtmCrt());
         policyAgreementHistoryRepository.save(history);
 
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String currentUsername = (authentication != null) ? authentication.getName() : "UNKNOWN";
         policy.setPolicyName(policyAgreementDto.getPolicyName());
         policy.setPolicyDescription(policyAgreementDto.getPolicyDescription());
         policy.setPolicyContent(policyAgreementDto.getPolicyContent());
         policy.setVersion(policy.getVersion() + 1);
         policy.setIsActive(policyAgreementDto.getIsActive());
-        policy.setUsrUpd(policyAgreementDto.getUsrUpd());
+        policy.setUsrUpd(currentUsername);
         policy.setDtmUpd(LocalDateTime.now());
 
         policyAgreementRepository.save(policy);
