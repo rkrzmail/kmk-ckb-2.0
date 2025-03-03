@@ -252,7 +252,7 @@ public class LoanSubmissionService {
             Double provisionRate = findProduct.get().getProvisionRate(),
                     effectiveRate = findProduct.get().getEffectiveRate(),
                     adminRate = findProduct.get().getAdminRate();
-            boolean byPass = true;
+            boolean byPass = false;
             boolean isCustomerExisting = false;
             Cwr validateCwr = null;
             if (byPass){
