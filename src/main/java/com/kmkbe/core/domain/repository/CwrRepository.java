@@ -35,4 +35,7 @@ public interface CwrRepository extends JpaRepository<Cwr, String>, JpaSpecificat
 
     //Optional<Cwr> findTopByCustomerOrderByCwrEndDateDesc(Customer customer);
     Optional<Cwr> findTopByCustomerOrderByDtmUpdDescUsrCrtDesc(Customer customer);
+
+
+    List<Cwr> findAllByStatusIsIn(Iterable<String> strings);
 }

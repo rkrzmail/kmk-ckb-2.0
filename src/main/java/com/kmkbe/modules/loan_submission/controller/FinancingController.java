@@ -117,4 +117,20 @@ public class FinancingController {
 
         return new CommonResult<>().success(null, "Success Check Approval Status");
     }
+
+    @GetMapping("/sch/cwr/status")
+    public CommonResult<Object> schCWR(
+            @RequestParam("apiKey") String apiKey
+    ) {
+        if (!apiKey.equalsIgnoreCase("123")) {
+            throw new IllegalApiKeyException();
+        }
+        try {
+            financingService.recallCWRStatus();
+        } catch (Exception ignored) {
+            ignored.printStackTrace();
+        }
+
+        return new CommonResult<>().success(null, "Success Check CWR Status");
+    }
 }

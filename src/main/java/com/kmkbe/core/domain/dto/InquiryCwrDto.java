@@ -17,4 +17,8 @@ public class InquiryCwrDto {
     private String currency;
     private BigDecimal plafondAmt;
     private BigDecimal loanAmt;
+
+    private String status;
+    private String currStep;
+    private BigDecimal realisationAmt;
 }

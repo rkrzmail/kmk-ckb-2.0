@@ -160,6 +160,10 @@ public class CwrService {
                         .loanAmt(BigDecimal.valueOf(data.getFirst().getRealisationAmt()))
                         .plafondAmt(BigDecimal.valueOf(data.getFirst().getPlafondAmt()))
                         .currency(data.getFirst().getCurrency())
+
+
+                        .realisationAmt(BigDecimal.valueOf(data.getFirst().getRealisationAmt()))
+                        .status(data.getFirst().getCwrStatDescr())
                         .build();
             }
 

@@ -54,6 +54,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     public static final String[] ENDPOINTS_WHITELIST_FINANCING = {
             "/api/v1/financing/invoice-paid",
             "/api/v1/financing/approvals/status",
+            "/api/v1/financing/sch/cwr/status",
     };
 
 

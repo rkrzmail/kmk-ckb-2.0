@@ -1,14 +1,15 @@
 package com.kmkbe.modules.loan_submission.service;
 
-import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
-import com.kmkbe.core.domain.dto.InquiryAgreementCwrDto;
-import com.kmkbe.core.domain.dto.InquiryNewInfoAgreementDto;
+import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
+import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.InquiryNewInfoAgreementRequest;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.modules.branch_admin.service.CwrService;
 import com.kmkbe.modules.remote.request.InquiryAgreementRemoteRequest;
+import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
@@ -20,6 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -36,7 +39,8 @@ public class FinancingService {
     private final  FinancingDtlService  financingDtlService;
     private final DisbursementLogRepository disbursementLogRepository;
     private final CwrRemoteService cwrRemoteService;
-
+    private final CwrRepository cwrRepository;
+    private final CwrService cwrService;
 
     public void recallApprovalStatus() {
         //find all aggremmnet with flag false or null
@@ -136,5 +140,49 @@ public class FinancingService {
         //lihat fi aggement statusnya (Ready Golive) bila iya, updat ejadio LIVE, GOLIVE
         List<Agreement> list = agreementRepository.viewApprovalStatusNoPending();
     }
+    public void recallCWRStatus() {
+        //find all cwr with flag false or null
+        List<String> cwrIn = new ArrayList<>();
+        cwrIn.add("ACTIVE");
+        cwrIn.add("NEW");
+        List<Cwr> list = cwrRepository.findAllByStatusIsIn(cwrIn);//REJECT, CANCEL atau EXPIRED
 
+        if (list != null && !list.isEmpty()) {
+            for (Cwr cwr : list) {
+                try {
+                    BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> response = cwrRemoteService.inquiryCwr(
+                            InquiryCwrRemoteRequest.builder()
+                                    .cwrNo(cwr.getCwrCode())
+                                    .build()
+                    );
+                    final List<InquiryCwrRemoteDto>  data = response.getData();
+                    if (data != null && !data.isEmpty()) {
+                        InquiryCwrDto cwrNo  = InquiryCwrDto.builder()
+                                .cwrStartDate(DateTimeUtils.cSharpTimeStampToDate(data.getFirst().getStartDt()))
+                                .cwrEndDate(DateTimeUtils.cSharpTimeStampToDate(data.getFirst().getEndDt()))
+                                .cwrCode(cwr.getCwrCode())
+                                .loanAmt(BigDecimal.valueOf(data.getFirst().getRealisationAmt()))
+                                .plafondAmt(BigDecimal.valueOf(data.getFirst().getPlafondAmt()))
+                                .currency(data.getFirst().getCurrency())
+
+
+                                .realisationAmt(BigDecimal.valueOf(data.getFirst().getRealisationAmt()))
+                                .status(data.getFirst().getCwrStatDescr())
+                                .build();
+
+                        //StartDt, EndDt, CurrStep, PlafondAmt, CwrStat dan RealisationAmt
+                        cwr.setCwrStartDate(Utils.toInstant(cwrNo.getCwrStartDate()));
+                        cwr.setCwrEndDate(Utils.toInstant(cwrNo.getCwrEndDate()));
+                        cwr.setPlafondAmt(cwrNo.getPlafondAmt().doubleValue());
+
+                        cwr.setRealisationAmt(cwrNo.getRealisationAmt().doubleValue());
+                        cwr.setStatus(cwrNo.getStatus());
+                        cwrRepository.save(cwr);
+                    }
+                }catch (Exception ignored) {  }
+            }
+        }
+
+
+    }
 }
