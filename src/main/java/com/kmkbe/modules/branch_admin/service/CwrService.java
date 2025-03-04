@@ -25,6 +25,7 @@ import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -72,7 +73,7 @@ public class CwrService {
             Customer customer = customerRepository.findByCustCode(UUID.fromString(custCode))
                     .orElseThrow(() -> new IllegalStateException("Customer not found or not valid"));
 
-            Page<Cwr> page = cwrRepository.findAllByCustomerOrderByDtmUpdDescUsrCrtDesc(
+            /*Page<Cwr> page = cwrRepository.findAllByCustomerOrderByDtmUpdDescUsrCrtDesc(
                     customer,
                     PageRequest.of(pageNo, pageSize)
             );
@@ -80,13 +81,48 @@ public class CwrService {
             List<CwrListDto> result = page.stream()
                     .map(CwrMapper.INSTANCE::toDto)
                     .toList();
-
             return PaginationResult.<CwrListDto>builder()
                     .currentPage(pageNo + 1)
                     .totalData(page.getTotalElements())
                     .totalPage(page.getTotalPages())
                     .list(result)
-                    .build();
+                    .build();*/
+
+            List<Cwr> cwrs = cwrRepository.findAllByCustomerOrderByDtmUpdDesc(customer);
+
+
+            List<CwrListDto> result = cwrs.stream()
+                    .map(CwrMapper.INSTANCE::toDto)
+                    .toList();
+            return SpecPagination.paginationData(new SpecPagination<CwrListDto, CwrListDto>(result, request){
+                @Override
+                public CwrListDto search(CwrListDto data) {
+                    if (isSearchBy("office") && like(data.getCustCode())  ){
+                        return data;
+                    }else if (isSearchBy("cwrNo") && like(data.getCwrCode())  ){
+                        return data;
+                    }else if (isSearchBy("cwrStartDate") && like(data.getCwrStartDate().toString())  ){
+                        return data;
+                    }else if (isSearchBy("cwrEndDate") && like(data.getCwrEndDate().toString())  ){
+                        return data;
+                    }else if (isSearchBy("typeCurrency") && like(data.getCurrency())  ){
+                        return data;
+                    }else if (isSearchBy("plafondValue") && like(Double.toString(data.getPlafondAmt()))  ){
+                        return data;
+                    }else if (isSearchBy("submissionValue") && like(data.getRealisationAmt().toString())  ){
+                        return data;
+
+
+                    }
+
+                    return null;
+                }
+
+                @Override
+                public CwrListDto eval(CwrListDto data) {
+                    return data;
+                }
+            });
         } catch (Exception e) {
             log.error("list: error {}", e.getMessage());
             throw e;
