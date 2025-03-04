@@ -40,6 +40,18 @@ public class PolicyAgreementController {
         }
     }
 
+    @GetMapping("/code/{policyCode}")
+    public ResponseEntity<CommonResult<PolicyAgreementDto>> getPolicyAgreementHistoryByCode(@PathVariable String policyCode) {
+        CommonResult<PolicyAgreementDto> result = policyAgreementService.getPolicyAgreementHistoryByCode(policyCode);
+
+        if (result.getIsSuccess()) {
+            return ResponseEntity.ok(result);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
+        }
+    }
+
+
 
     @PutMapping("/{id}")
     public ResponseEntity<CommonResult<PolicyAgreementDto>> updatePolicyAgreement(

@@ -15,10 +15,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class PolicyAgreementService {
@@ -81,6 +78,35 @@ public class PolicyAgreementService {
 
         return dtoList;
     }
+
+    // get code PA history
+    public CommonResult<PolicyAgreementDto> getPolicyAgreementHistoryByCode(String policyCode) {
+        // Mengambil semua entri berdasarkan policyCode
+        List<PolicyAgreementHistory> policyAgreementHistoryList = policyAgreementHistoryRepository.findByPolicyCode(policyCode);
+
+        if (!policyAgreementHistoryList.isEmpty()) {
+            // Mengambil entri dengan versi terbesar
+            PolicyAgreementHistory latestHistory = policyAgreementHistoryList.stream()
+                    .max(Comparator.comparingInt(PolicyAgreementHistory::getVersion))
+                    .orElseThrow(() -> new RuntimeException("No policy history found"));
+
+            // Mapping PolicyAgreementHistory ke PolicyAgreementDto
+            PolicyAgreementDto policyAgreementDto = new PolicyAgreementDto();
+            policyAgreementDto.setPolicyCode(latestHistory.getPolicyCode());
+            policyAgreementDto.setPolicyContent(latestHistory.getPolicyContent());
+            policyAgreementDto.setVersion(latestHistory.getVersion());
+            policyAgreementDto.setUsrCrt(latestHistory.getUsrCrt());
+            policyAgreementDto.setDtmCrt(latestHistory.getDtmCrt());
+
+            // Mengembalikan hasil
+            return new CommonResult<PolicyAgreementDto>().success(policyAgreementDto);
+        } else {
+            // Jika tidak ditemukan, kembalikan hasil gagal
+            return new CommonResult<PolicyAgreementDto>().fail(400, "Policy Agreement History not found");
+        }
+    }
+
+
 
 //    // Update Policy Agreement
 //    public CommonResult<PolicyAgreementDto> updatePolicyAgreement(Long id, PolicyAgreementDto policyAgreementDto) {
