@@ -38,7 +38,8 @@ public class EmailService {
     private static final String M_CUST_LOAN = "M_CUST_LOAN";
     private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";
     private static final String M_BOUWHEER_PAYMENT = "M_BOUWHEER_PAYMENT";
-    private static final String M_CHANGE_LIMIT = "M_CHANGE_LIMIT";
+    private static final String M_CUST_LOAD_CHANGE = "M_CUST_LOAD_CHANGE";
+    private static final String M_CUST_PENCAIRAN = "M_CUST_PENCAIRAN";
 
 
     private final EmailTemplateRepository emailTemplateRepository;
@@ -116,7 +117,7 @@ public class EmailService {
     }
 
     @Async
-    public void sendNotificationChangeLimit(
+    public void sendNotificationLoanChangeLimit(
             final Customer customer,
             LoanDisburseEmailPayload payload
     ) {
@@ -147,9 +148,9 @@ public class EmailService {
             args.put("total_pencairan", customer.getCustIdNo());
 
 
-            send(customer.getCustEmail(), args, M_CHANGE_LIMIT);
+            send(customer.getCustEmail(), args, M_CUST_LOAD_CHANGE);
         } catch (Exception e) {
-            log.error("Error sendNotificationLoanDisbursement {}", e.getMessage());
+            log.error("Error sendNotificationChangeLimit {}", e.getMessage());
         }
     }
 

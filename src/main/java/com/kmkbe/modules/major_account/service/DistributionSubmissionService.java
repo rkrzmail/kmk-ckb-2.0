@@ -377,8 +377,8 @@ public class DistributionSubmissionService {
                                 + financingHdr.getSurveyFeeAmtNett();
 
                 emailService.sendNotificationBranchAssign(
-                        //mstBranch.getEmployees().stream().toList().getFirst().getEmail(),
-                        "radema.panjaitan@csul.co.id",
+                        mstBranch.getEmployees().stream().toList().getFirst().getEmail(),
+                        //"radema.panjaitan@csul.co.id",
                         financingHdr.getBouwheer().getBouwheerName(),
                         mstBranch.getBranchName(),
                         LoanDisburseEmailPayload.builder()
