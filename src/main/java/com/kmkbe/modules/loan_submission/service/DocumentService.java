@@ -133,25 +133,48 @@ public class DocumentService {
                             LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
                             legalFileDto.setUploadedDate(legalFile.getDtmUpd());
 
-                            String generatedUrl = UriUtils.fileUlr(
-                                    httpServletRequest,
-                                    Math.toIntExact(legalFile.getFileId()),
-                                    UriUtils.DocType.loan
-                            );
+                            // Jika fileTypeCode adalah DOC005 atau DOC006, jangan generate URL
+                            if (!"DOC005".equals(file.getFileTypeCode()) && !"DOC006".equals(file.getFileTypeCode())) {
+                                String generatedUrl = UriUtils.fileUlr(
+                                        httpServletRequest,
+                                        Math.toIntExact(legalFile.getFileId()),
+                                        UriUtils.DocType.loan
+                                );
 
-                            if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
-                                try {
-                                    URI uri = new URI(legalFile.getFilePath());
-                                    uri = new URI("https", UriUtils.getDomainUrl(httpServletRequest), uri.getPath(), uri.getFragment());
-                                    //generatedUrl = uri.toString();//byapass
-                                    generatedUrl = legalFile.getFilePath();
-                                } catch (URISyntaxException e) {
+                                if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
                                     generatedUrl = legalFile.getFilePath();
                                 }
+
+                                legalFileDto.setFileUrl(generatedUrl);
+                            } else {
+                                legalFileDto.setFileUrl(null); // Jangan buat URL
                             }
 
-                            legalFileDto.setFileUrl(generatedUrl);
                             dto.setLegalFile(legalFileDto);
+
+//                        if (legalFile != null) {
+//                            LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
+//                            legalFileDto.setUploadedDate(legalFile.getDtmUpd());
+//
+//                            String generatedUrl = UriUtils.fileUlr(
+//                                    httpServletRequest,
+//                                    Math.toIntExact(legalFile.getFileId()),
+//                                    UriUtils.DocType.loan
+//                            );
+//
+//                            if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
+//                                try {
+//                                    URI uri = new URI(legalFile.getFilePath());
+//                                    uri = new URI("https", UriUtils.getDomainUrl(httpServletRequest), uri.getPath(), uri.getFragment());
+//                                    //generatedUrl = uri.toString();//byapass
+//                                    generatedUrl = legalFile.getFilePath();
+//                                } catch (URISyntaxException e) {
+//                                    generatedUrl = legalFile.getFilePath();
+//                                }
+//                            }
+//
+//                            legalFileDto.setFileUrl(generatedUrl);
+//                            dto.setLegalFile(legalFileDto);
                         }
 
                         return dto;
