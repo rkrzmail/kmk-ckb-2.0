@@ -6,6 +6,7 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import org.springframework.data.domain.Page;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 
@@ -106,7 +107,13 @@ public class SpecPagination<D, R> {
     public void sort(List<R> data){
 
     }
-
+    public boolean equalDate(Date value){
+        //value = dd/mm/yyyy
+        return getSearchValue().equalsIgnoreCase(Utils.formatDateView(value) );
+    }
+    public boolean equalNumber(double value){
+        return value == Utils.getDouble(getSearchValue());
+    }
     public boolean like(String value){
         return Utils.valueOf(value).toLowerCase().contains(getSearchValue().toLowerCase());
     }

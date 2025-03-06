@@ -133,8 +133,6 @@ public class CustomerController {
             }
 
 
-
-
             CustomerCompany company = customerCompanyService.update(
                     customer,
                     request.getCompany(),

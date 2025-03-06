@@ -97,19 +97,20 @@ public class CwrService {
             return SpecPagination.paginationData(new SpecPagination<CwrListDto, CwrListDto>(result, request){
                 @Override
                 public CwrListDto search(CwrListDto data) {
-                    if (isSearchBy("office") && like(data.getCustCode())  ){
+                    
+                    if (isSearchBy("office") && like(data.getBouwheerName())  ){
                         return data;
                     }else if (isSearchBy("cwrNo") && like(data.getCwrCode())  ){
                         return data;
-                    }else if (isSearchBy("cwrStartDate") && like(data.getCwrStartDate().toString())  ){
+                    }else if (isSearchBy("cwrStartDate") && equalDate(data.getCwrStartDate())  ){
                         return data;
-                    }else if (isSearchBy("cwrEndDate") && like(data.getCwrEndDate().toString())  ){
+                    }else if (isSearchBy("cwrEndDate") && equalDate(data.getCwrEndDate())  ){
                         return data;
                     }else if (isSearchBy("typeCurrency") && like(data.getCurrency())  ){
                         return data;
-                    }else if (isSearchBy("plafondValue") && like(Double.toString(data.getPlafondAmt()))  ){
+                    }else if (isSearchBy("plafondValue") && equalNumber(data.getPlafondAmt())  ){
                         return data;
-                    }else if (isSearchBy("submissionValue") && like(data.getRealisationAmt().toString())  ){
+                    }else if (isSearchBy("submissionValue") && equalNumber(data.getRealisationAmt())  ){
                         return data;
 
 

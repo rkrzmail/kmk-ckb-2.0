@@ -91,7 +91,9 @@ public class Utils {
     public static String formatDate(Date date) {
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(date.getTime());
     }
-
+    public static String formatDateView(Date date) {
+        return new SimpleDateFormat("dd/MM/yyyy").format(date.getTime());
+    }
     public static Duration dateDuration(Date date1, Date date2) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 

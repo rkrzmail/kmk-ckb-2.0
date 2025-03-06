@@ -20,6 +20,8 @@ public class EstimatedDisburseDto {
     private BigDecimal othersFeeAmount;
     private BigDecimal legalFeeAmount;
     private BigDecimal surveyFeeAmount;
+    private BigDecimal totalInvoiceAmount;
+
     private Double provisionRate;
     private Double effectiveRate;
     private Double adminRate;
