@@ -8,10 +8,13 @@ import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
+import com.kmkbe.modules.remote.service.AuthRemoteService;
+import com.kmkbe.modules.remote.service.EmailAo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
@@ -20,19 +23,32 @@ public class AgreementCodeService {
     @Autowired
     private AgreementRepository agreementRepository;
 
-//    @Autowired
-//    private GeneralSettingDtlRepository generalSettingDtlRepository;
-
     @Autowired
     private FinancingHdrRepository financingHdrRepository;
 
+    @Autowired
+    private EmailAo emailAo;
+
+    @Autowired
+    private AuthRemoteService authRemoteService;
+
+    private String jwtToken;
+
+    private void ensureJwtToken() {
+        if (jwtToken == null) {
+            jwtToken = authRemoteService.fetchAuthJwt().getData();
+            System.out.println("JWT Token fetched: " + jwtToken);
+        }
+    }
+
     public CommonResult<SitDto> getAgreementsByFinancingHdrCode(UUID financingHdrCode) {
+        ensureJwtToken();
+
         List<Agreement> agreements = agreementRepository.findByFinancingHdr_FinancingHdrCode(financingHdrCode);
         if (agreements.isEmpty()) {
-            return new CommonResult<SitDto>().fail(404  , "No agreement found for financingHdrCode: " + financingHdrCode);
+            return new CommonResult<SitDto>().fail(404, "No agreement found for financingHdrCode: " + financingHdrCode);
         }
 
-        // Mengambil elemen pertama dari hasil yang ada di list
         SitDto sitDto = agreements.stream().map(agreement -> {
             Bouwheer bouwheer = agreement.getFinancingHdr().getBouwheer();
             FinancingHdr financingHdr = agreement.getFinancingHdr();
@@ -41,18 +57,18 @@ public class AgreementCodeService {
             String branchCode = financingHdrRepository.findBranchCodeByFinancingHdrCode(financingHdrCode);
             System.out.println("Branch Code: " + branchCode);
 
-            String directorOrCustomerName = "Company".equals(customer.getCustTypeCode())
-                    ? customer.getCustomerCompany().getDirectorName() // Ambil director_name dari CustomerCompany
-                    : customer.getCustName();
+            List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "AO/AM", jwtToken);
+//            String email = emailList.isEmpty() ? "N/A" : emailList.get(0).get("email");
 
-            String gsDtlCode = "BANK001";
+            String employeeName = employeeList.isEmpty() ? "N/A" : toCamelCase(employeeList.get(0).get("employeeName"));
+
+            String directorOrCustomerName = "Company".equals(customer.getCustTypeCode())
+                    ? customer.getCustomerCompany().getDirectorName()
+                    : customer.getCustName();
 
             String bankName = "Bank Mandiri";
             String accountName = "CHANDRA SAKTI UTAMA";
             String accountNo = "1270098142159";
-
-            String findBranchCodeByFinancingHdrCode = branchCode;
-            System.out.println("Branch Code ke 2: " + findBranchCodeByFinancingHdrCode);
 
             return SitDto.builder()
                     .agreementCode(agreement.getAgreementCode())
@@ -76,15 +92,35 @@ public class AgreementCodeService {
                     .custName(customer.getCustName())
                     .DirectorName(directorOrCustomerName)
                     .BranchCode(branchCode)
+//                    .Email(email)
+                    .EmployeeName(employeeName)
                     .build();
-        }).findFirst().orElse(null); // Mengambil elemen pertama, jika ada
+        }).findFirst().orElse(null);
 
-        // Jika tidak ada hasil, kembalikan null
         if (sitDto == null) {
             return new CommonResult<SitDto>().fail(404, "No valid SitDto found.");
         }
 
-        return new CommonResult<SitDto>().success(sitDto); // Mengirimkan objek SitDto langsung tanpa array
+        return new CommonResult<SitDto>().success(sitDto);
     }
 
+    private String toCamelCase(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+
+        text = text.toLowerCase();
+        String[] words = text.split(" ");
+        StringBuilder camelCaseText = new StringBuilder();
+
+        for (String word : words) {
+            if (!word.isEmpty()) {
+                camelCaseText.append(Character.toUpperCase(word.charAt(0)))
+                        .append(word.substring(1))
+                        .append(" ");
+            }
+        }
+
+        return camelCaseText.toString().trim();
+    }
 }
