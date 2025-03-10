@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.entity.EmailTemplate;
 import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
+import com.kmkbe.core.domain.model.PencarianPayload;
 import com.kmkbe.core.domain.repository.EmailTemplateRepository;
 import com.kmkbe.core.domain.repository.ErrorLogRepository;
 import com.kmkbe.core.utils.ObjectUtils;
@@ -179,6 +180,42 @@ public class EmailService {
     }
 
     @Async
+    public void sendNotificationPencairan(
+            String email,
+            String bouwheerName,
+            String branchArea,
+            PencarianPayload payload
+    ) {
+        try {
+            Map<String, Object> args = new HashMap<>();
+            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
+
+            if (payloadArgs != null) {
+                payloadArgs.remove("invoices");
+                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+                payloadArgs.remove("invoice_rows");
+                payloadArgs.put("invoice_rows", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+            }
+
+            args.put("additionalArgs", payloadArgs);
+            args.put("bouwheerName", bouwheerName);
+            args.put("branchArea", branchArea);
+            args.put("email", email);
+
+
+
+            final EmailTemplate template = emailTemplateRepository
+                    .findByEmailTemplateCodeAndIsActive(M_CUST_PENCAIRAN, true);
+            template.setSubjectMail(template.getSubjectMail().replace("{bouwheerName}", bouwheerName));
+            template.setMailTo(email);
+
+            send(args, template);
+        } catch (Exception e) {
+            log.error("Error sendNotificationBranchAssign {}", e.getMessage());
+        }
+    }
+
+    @Async
     public void sendNotificationBranchAssign(
             String email,
             String bouwheerName,
@@ -313,6 +350,13 @@ public class EmailService {
         } else {
             body = body.replace("{branchArea}", "");
         }
+
+        if (args.get("totalFeeAmt") != null) {
+            body = body.replace("{totalFeeAmt}", args.get("totalFeeAmt").toString());
+        } else {
+            body = body.replace("{totalFeeAmt}", "");
+        }
+
 
         if (args.get("additionalArgs") != null) {
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) args.get("additionalArgs")).entrySet()) {
