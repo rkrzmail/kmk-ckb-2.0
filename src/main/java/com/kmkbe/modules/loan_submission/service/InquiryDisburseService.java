@@ -5,18 +5,18 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
-import com.kmkbe.core.domain.mapper.InvoiceMapper;
-import com.kmkbe.core.domain.model.PostedInvoicePayload;
+import com.kmkbe.core.domain.model.InvoiceEmailPayload;
+import com.kmkbe.core.domain.model.PencarianPayload;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.*;
 import com.kmkbe.core.domain.response.InquiryDisburseDatum;
 import com.kmkbe.core.domain.response.InquiryDisburseResult;
 import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
+import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
-import com.kmkbe.nikita.data.Nson;
 import com.kmkbe.nikita.utils.Utils;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
@@ -29,10 +29,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.*;
-import java.util.stream.IntStream;
 
 @Service
 @RequiredArgsConstructor
@@ -43,8 +40,8 @@ public class InquiryDisburseService {
     private final PaymentReceiveHistoryRepository PaymentReceiveHistoryRepository;
     private final PaymentReceiveHistoryRepository paymentReceiveHistoryRepository;
     private final FinancingHdrRepository  financingHdrRepository;
-
-
+    private final EmailService emailService;
+    private final FinancingHdrService financingHdrService;
     private final AgreementRepository agreementRepository;
     private final BaseRemoteService baseRemoteService;
     private final ObjectMapper objectMapper;
@@ -207,6 +204,43 @@ public class InquiryDisburseService {
                     try {
                         financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
                     } catch (Exception ignored) {  }
+
+                    //send email sendNotificationPencairan
+                    try {
+                        FinancingHdr financingHdr = agreement.getFinancingHdr();
+                        final FinancingHdrDto createdFinancing = financingHdrService.dtoFromEntity(financingHdr);
+
+                        final List<InvoiceEmailPayload> invoices = createdFinancing.getDetails()
+                                .stream()
+                                .map((item) ->
+                                        InvoiceEmailPayload.builder()
+                                                //.seq(item.getInvoiceSeqno())
+                                                .invoiceNo(item.getInvoice().getCustInvNo())
+                                                .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
+                                                .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+                                                .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
+                                                .description("Invoice By Trakindo")
+                                                .bouwheerName(createdFinancing.getBouwheer().getBouwheerName())
+                                                .build()
+                                ).toList();
+
+
+
+
+                        emailService.sendNotificationPencairan(
+                                financingHdr.getCustomer().getCustEmail(),
+                                "",
+                                "",
+                                PencarianPayload.builder()
+                                        .account_number( financingHdr.getCustomer().getCustName() )
+                                        .total_disbursement(CommonFormattingUtils.formatAmount(financingHdr.getFinancingAmt()))
+                                        .bank_name( "" )
+                                        .disbursement_date(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
+                                        .invoices(invoices)
+                                        .build()
+                        );
+                    } catch (Exception ignored) {  }
+
 
                 }
             }

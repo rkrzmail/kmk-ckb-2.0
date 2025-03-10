@@ -149,7 +149,7 @@ public class DistributionSubmissionService {
                          return data;
                      }else if (isSearchBy("PemberiKerja")&& like(data.getBouwheerName()) ){
                          return data;
-                     }else if (isSearchBy("Cabang")&& like(data.getBouwheerName()) ){
+                     }else if (isSearchBy("Cabang")&& like(data.getBranchRecommended()) ){
                          return data;
                      }
 
@@ -387,6 +387,7 @@ public class DistributionSubmissionService {
                                 .companyName(financingHdr.getBouwheer().getBouwheerName())
                                 .phoneNumber(financingHdr.getCustomer().getCustMobilePhone())
                                 .tenor(financingHdr.getTenor())
+
                                 .financingCode(financingHdr.getFinancingHdrCode().toString())
                                 .financingDueDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDueDate()))
                                 .retention(CommonFormattingUtils.formatAmount(financingHdr.getRetention()))
