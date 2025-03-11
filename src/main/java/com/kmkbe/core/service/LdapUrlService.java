@@ -39,4 +39,8 @@ public class LdapUrlService {
     public String activeDirectory_validation() {
         return siscaBaseUrlPrivate + "/activedirectory/validation";
     }
+
+    public String email_ao() {
+        return siscaBaseUrlPrivate + "/user-management/get-ao-email";
+    }
 }
