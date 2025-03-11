@@ -245,7 +245,9 @@ public class LoanSubmissionService {
             final Optional<Product> findProduct = productRepository.findNtfRange(ntfResult.doubleValue());
 
             if (findProduct.isEmpty()) {
-                return null;
+               // return null;
+                throw new IllegalStateException("Mohon maaf, Product yang sesuai limit tidak ditemukan");
+
             }
 
             final Product product = findProduct.get();
