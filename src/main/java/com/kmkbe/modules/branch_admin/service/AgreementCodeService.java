@@ -57,7 +57,7 @@ public class AgreementCodeService {
             String branchCode = financingHdrRepository.findBranchCodeByFinancingHdrCode(financingHdrCode);
             System.out.println("Branch Code: " + branchCode);
 
-            List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "AO/AM", jwtToken);
+            List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "RM", jwtToken);
 //            String email = emailList.isEmpty() ? "N/A" : emailList.get(0).get("email");
 
             String employeeName = employeeList.isEmpty() ? "N/A" : toCamelCase(employeeList.get(0).get("employeeName"));
