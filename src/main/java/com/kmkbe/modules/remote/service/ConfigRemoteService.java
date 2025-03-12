@@ -82,7 +82,7 @@ public class ConfigRemoteService {
 
             final ResponseEntity<MailPositionDto> response = restTemplate.exchange(
                     url,
-                    HttpMethod.GET,
+                    HttpMethod.POST,
                     request,
                     new ParameterizedTypeReference<>() {
                     }

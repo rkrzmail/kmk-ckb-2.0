@@ -352,12 +352,6 @@ public class EmailService {
             body = body.replace("{branchArea}", "");
         }
 
-        if (args.get("totalFeeAmt") != null) {
-            body = body.replace("{totalFeeAmt}", args.get("totalFeeAmt").toString());
-        } else {
-            body = body.replace("{totalFeeAmt}", "");
-        }
-
 
         if (args.get("additionalArgs") != null) {
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) args.get("additionalArgs")).entrySet()) {
