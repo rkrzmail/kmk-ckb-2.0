@@ -11,8 +11,10 @@ import java.time.LocalDateTime;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
 
 public class Utils {
     public static long formatNoExponent(double d){
@@ -30,7 +32,17 @@ public class Utils {
         s = Utils.replace(s, ",", "");
         return getNumber(s).intValue();
     }
-
+    public static List<String> splitList(String original, String separator) {
+        List<String> nodes = new ArrayList<>();
+        int index = original.indexOf(separator);
+        while (index >= 0) {
+            nodes.add(original.substring(0, index));
+            original = original.substring(index + separator.length());
+            index = original.indexOf(separator);
+        }
+        nodes.add(original);
+        return nodes;
+    }
     public static String replace(String _text, String _searchStr, String _replacementStr)     {
         return com.kmkbe.modules.user.utils.Utils.replace(_text, _searchStr, _replacementStr);
     }

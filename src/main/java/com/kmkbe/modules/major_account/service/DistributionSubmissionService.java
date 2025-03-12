@@ -2,6 +2,7 @@ package com.kmkbe.modules.major_account.service;
 
 import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.StatusLabelDto;
+import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import com.kmkbe.core.domain.entity.BranchAreaMapping;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.*;
@@ -12,6 +13,7 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.major_account.request.AssignInvoiceToBranchRequest;
+import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
@@ -47,7 +49,7 @@ public class DistributionSubmissionService {
     private final FinancingHdrService financingHdrService;
     private final CustomerRepository customerRepository;
     private final BranchAreaMappingRepository branchAreaMappingRepository;
-
+    private final ConfigRemoteService configRemoteService;
 
     public PaginationResult<DistributionSubmissionDto> submissionDistribution(
             PaginationRequest request
@@ -376,18 +378,41 @@ public class DistributionSubmissionService {
                                 + financingHdr.getProvisionFeeAmt()
                                 + financingHdr.getSurveyFeeAmtNett();
 
+                //getAPI AO,BH
+                MailPositionDto to = configRemoteService.getEmailByPosition("",financingHdr.getMstBranch().getBranchCode(),"BM");
+                MailPositionDto cc = configRemoteService.getEmailByPosition("",financingHdr.getMstBranch().getBranchCode(),"RM");
+                String toEmail = "mstBranch.getEmployees().stream().toList().getFirst().getEmail()";  //"radema.panjaitan@csul.co.id",
+                String ccEmail = null;
+                if (to!=null &&  to.getData()!=null && to.getData().size()>0) {
+                    StringBuilder  stringBuilder = new StringBuilder();
+                    for (int i = 0; i < to.getData().size(); i++) {
+                        stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
+                        stringBuilder.append(to.getData().get(i).getEmail());
+                    }
+                    toEmail = stringBuilder.toString();
+                }
+                if (cc!=null && cc.getData()!=null && cc.getData().size()>0) {
+                    StringBuilder  stringBuilder = new StringBuilder();
+                    for (int i = 0; i < cc.getData().size(); i++) {
+                        stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
+                        stringBuilder.append(cc.getData().get(i).getEmail());
+                    }
+                    ccEmail = stringBuilder.toString();
+                }
+
                 emailService.sendNotificationBranchAssign(
-                        mstBranch.getEmployees().stream().toList().getFirst().getEmail(),
-                        //"radema.panjaitan@csul.co.id",
+                        toEmail,
                         financingHdr.getBouwheer().getBouwheerName(),
                         mstBranch.getBranchName(),
                         LoanDisburseEmailPayload.builder()
                                 .financingCode(financingHdr.getFinancingHdrCode().toString())
                                 .applicationDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
-                                .companyName(financingHdr.getBouwheer().getBouwheerName())
+                                .companyName(financingHdr.getCustomer().getCustName())
+                                .email(financingHdr.getCustomer().getCustEmail())
                                 .phoneNumber(financingHdr.getCustomer().getCustMobilePhone())
                                 .tenor(financingHdr.getTenor())
-
+                                .toEmail(toEmail)
+                                .ccEmail(ccEmail)
                                 .financingCode(financingHdr.getFinancingHdrCode().toString())
                                 .financingDueDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDueDate()))
                                 .retention(CommonFormattingUtils.formatAmount(financingHdr.getRetention()))

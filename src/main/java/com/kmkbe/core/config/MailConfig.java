@@ -2,13 +2,16 @@ package com.kmkbe.core.config;
 
 import com.kmkbe.core.domain.dto.MailRemoteDto;
 import com.kmkbe.core.domain.entity.EmailTemplate;
+import com.kmkbe.nikita.utils.Utils;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Properties;
 
 @Configuration
@@ -61,6 +64,57 @@ public class MailConfig {
             return props;
         }
 
+    public void sendHtmlEmailsWithCC(
+            MailRemoteDto mail,
+            EmailTemplate template,
+            List<String> addTO, List<String> addCC,
+            boolean enabledSsl
+    ) throws MessagingException {
+        Properties properties = getProperties(mail, enabledSsl);
+
+
+        Session session = Session.getDefaultInstance(properties);
+        MimeMessage msg = new MimeMessage(session);
+        msg.setFrom(new InternetAddress(mail.getUsername()));
+
+        if (template.getMailTo() != null && !template.getMailTo().equalsIgnoreCase("")) {
+            InternetAddress[] toAddresses = {new InternetAddress(template.getMailTo())};
+            msg.setRecipients(Message.RecipientType.TO, toAddresses);
+        }
+        if (addTO!=null && !addTO.isEmpty()){
+            InternetAddress[] internetAddresses = new InternetAddress[addTO.size()];
+            for (int i = 0; i < addTO.size(); i++) {
+                internetAddresses[i] = new InternetAddress(addTO.get(i));
+            }
+            msg.addRecipients(Message.RecipientType.TO, internetAddresses );
+        }
+        //add ccc
+        if (addCC!=null && !addCC.isEmpty()){
+            InternetAddress[] internetAddresses = new InternetAddress[addCC.size()];
+            for (int i = 0; i < addCC.size(); i++) {
+                internetAddresses[i] = new InternetAddress(addCC.get(i));
+            }
+            msg.addRecipients(Message.RecipientType.CC, internetAddresses );
+        }
+
+        msg.setSubject(template.getSubjectMail());
+        msg.setSentDate(new Date());
+        //msg.setFrom("noreply_danasakti@csul.co.id");
+
+
+        MimeBodyPart mimeBodyPart = new MimeBodyPart();
+        mimeBodyPart.setContent(template.getBodyMail(), "text/html");
+        Multipart multipart = new MimeMultipart();
+        multipart.addBodyPart(mimeBodyPart);
+        msg.setContent(multipart);
+
+        Transport.send(
+                msg,
+                msg.getAllRecipients(),
+                mail.getUsername(),
+                mail.getPassword()
+        );
+    }
         public void sendHtmlEmail(
                 MailRemoteDto mail,
                 EmailTemplate template,
@@ -73,8 +127,31 @@ public class MailConfig {
             MimeMessage msg = new MimeMessage(session);
             msg.setFrom(new InternetAddress(mail.getUsername()));
 
-        InternetAddress[] toAddresses = {new InternetAddress(template.getMailTo())};
-        msg.setRecipients(Message.RecipientType.TO, toAddresses);
+            String to = template.getMailTo();
+
+            if (to.contains(";")) {
+                List<String> addTO = Utils.splitList(to,";");
+                InternetAddress[] internetAddresses = new InternetAddress[addTO.size()];
+                for (int i = 0; i < addTO.size(); i++) {
+                    internetAddresses[i] = new InternetAddress(addTO.get(i));
+                }
+                msg.addRecipients(Message.RecipientType.TO, internetAddresses );
+            }else{
+                InternetAddress[] toAddresses = {new InternetAddress(to)};
+                msg.setRecipients(Message.RecipientType.TO, toAddresses);
+            }
+
+            String cc = template.getMailCc();
+            if (cc!=null && cc.contains(";")) {
+                List<String> addTO = Utils.splitList(cc,";");
+                InternetAddress[] internetAddresses = new InternetAddress[addTO.size()];
+                for (int i = 0; i < addTO.size(); i++) {
+                    internetAddresses[i] = new InternetAddress(addTO.get(i));
+                }
+                msg.addRecipients(Message.RecipientType.CC, internetAddresses );
+            }
+
+
         msg.setSubject(template.getSubjectMail());
         msg.setSentDate(new Date());
         //msg.setFrom("noreply_danasakti@csul.co.id");

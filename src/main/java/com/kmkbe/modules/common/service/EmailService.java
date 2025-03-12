@@ -239,7 +239,8 @@ public class EmailService {
             final EmailTemplate template = emailTemplateRepository
                     .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN, true);
             template.setSubjectMail(template.getSubjectMail().replace("{bouwheerName}", bouwheerName));
-            template.setMailTo(email);
+            template.setMailTo(payload.getToEmail());
+            template.setMailCc(payload.getCcEmail());
 
             send(args, template);
         } catch (Exception e) {

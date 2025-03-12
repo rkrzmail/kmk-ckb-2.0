@@ -2,6 +2,7 @@ package com.kmkbe.modules.remote.service;
 
 import com.kmkbe.core.domain.dto.BaseLdapRemoteResponseDto;
 import com.kmkbe.core.domain.dto.MailRemoteDto;
+import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -11,6 +12,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
+import java.util.HashMap;
+import java.util.Map;
 
 
 @Service
@@ -57,6 +61,38 @@ public class ConfigRemoteService {
             return response.getBody();
         } catch (Exception e) {
             log.error("fetchEmailInfo: {}", e.getMessage());
+            throw e;
+        }
+    }
+    public MailPositionDto getEmailByPosition(String employeeCode, String branchCode, String type  ) {
+        try {
+            final BaseLdapRemoteResponseDto<String> tokenResponse = authRemoteService.fetchAuthJwt();
+            final String url = siscaUrlWhiteList + "/user-management/get-ao-email";
+            final HttpHeaders headers = new HttpHeaders();
+            headers.setBearerAuth(tokenResponse.getData());
+            final Map<String, String> body  = new HashMap<>();
+            body.put("employeeCode", employeeCode);
+            body.put("branchCode", branchCode);
+            body.put("type", type);
+
+            final HttpEntity<Object> request = new HttpEntity<>(
+                    body,
+                    headers
+            );
+
+            final ResponseEntity<MailPositionDto> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.GET,
+                    request,
+                    new ParameterizedTypeReference<>() {
+                    }
+            );
+
+            System.out.println("Successfully getEmailByPosition");
+
+            return response.getBody();
+        } catch (Exception e) {
+            log.error("getEmailByPosition: {}", e.getMessage());
             throw e;
         }
     }
