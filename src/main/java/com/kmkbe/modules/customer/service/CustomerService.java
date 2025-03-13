@@ -168,22 +168,4 @@ public class CustomerService {
                 .namaBank("")
                 .build();
     }
-
-    // Service untuk melakukan update fapDate dan fapStatus
-    public void updateFapData(UpdateCustomerRequest.UpdateFapRequest request) {
-        // Cari customer berdasarkan custId
-        Optional<Customer> customerOptional = customerRepository.findById(request.getCustId());
-
-        // Jika customer tidak ditemukan, lempar exception
-        Customer customer = customerOptional.orElseThrow(() ->
-                new IllegalArgumentException("Customer tidak ditemukan"));
-
-        // Update fapDate dan fapStatus
-        customer.setFapDate(request.getFapDate());
-        customer.setFapStatus(request.getFapStatus());
-
-        // Simpan perubahan
-        customerRepository.save(customer);
-    }
-
 }

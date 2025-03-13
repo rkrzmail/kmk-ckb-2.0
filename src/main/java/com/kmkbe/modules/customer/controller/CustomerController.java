@@ -277,14 +277,4 @@ public class CustomerController {
         );
     }
 
-    @PutMapping("/update-fap")
-    @Transactional
-    public CommonResult<String> updateFapData(
-            @Valid @RequestBody UpdateCustomerRequest.UpdateFapRequest request
-    ) throws Exception {
-        // Proses update data fapDate dan fapStatus
-        customerService.updateFapData(request);
-
-        return new CommonResult<String>().success("Fap data berhasil diperbarui");
-    }
 }
