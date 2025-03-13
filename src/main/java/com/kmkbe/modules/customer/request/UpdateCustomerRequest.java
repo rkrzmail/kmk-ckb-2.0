@@ -1,11 +1,13 @@
 package com.kmkbe.modules.customer.request;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Null;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+import java.time.LocalDateTime;
 import java.util.Date;
 
 @Getter
@@ -141,5 +143,17 @@ public class UpdateCustomerRequest {
 
         @NotNull(message = "Provinsi is required, key: province")
         private String province;
+    }
+
+    @Getter
+    @Setter
+    @NoArgsConstructor
+    @ToString
+    public static class UpdateFapRequest {
+
+        private Long custId;
+        private LocalDateTime FapDate;
+
+        private String FapStatus;
     }
 }
