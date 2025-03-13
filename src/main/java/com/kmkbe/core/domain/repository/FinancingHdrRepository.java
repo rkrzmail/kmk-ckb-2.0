@@ -294,4 +294,7 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
     // Native query untuk mendapatkan branch_code berdasarkan financing_hdr_code
     @Query(value = "SELECT branch_code FROM financing_hdr WHERE financing_hdr_code = :financingHdrCode", nativeQuery = true)
     String findBranchCodeByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
+
+    @Query("SELECT f FROM FinancingHdr f WHERE f.customer.custCode = :custCode ORDER BY f.financingDate DESC")
+    List<FinancingHdr> findLatestFinancingHdrByCustCode(@Param("custCode") UUID custCode, Pageable pageable);
 }

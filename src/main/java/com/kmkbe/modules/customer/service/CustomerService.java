@@ -16,17 +16,22 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
+import com.kmkbe.modules.customer.request.UpdateFapRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -167,5 +172,32 @@ public class CustomerService {
                 .rt("")
                 .namaBank("")
                 .build();
+    }
+
+    public void updateFapData(UpdateFapRequest request) {
+        String email = request.getEmail();
+
+        Optional<Customer> customerOptional = customerRepository.findByCustEmail(email);
+        if (customerOptional.isPresent()) {
+            Customer customer = customerOptional.get();
+
+            UUID custCode = customer.getCustCode();
+
+            Pageable pageable = PageRequest.of(0, 1);
+            List<FinancingHdr> financingHdrList = financingHdrRepository.findLatestFinancingHdrByCustCode(custCode, pageable);
+
+            if (!financingHdrList.isEmpty()) {
+                FinancingHdr financingHdr = financingHdrList.get(0);
+
+                financingHdr.setFapDate(request.getFapDate());
+                financingHdr.setFapStatus(request.getFapStatus());
+
+                financingHdrRepository.save(financingHdr);
+            } else {
+                throw new IllegalArgumentException("No FinancingHdr found for custCode: " + custCode);
+            }
+        } else {
+            throw new IllegalArgumentException("Customer with email " + email + " not found");
+        }
     }
 }

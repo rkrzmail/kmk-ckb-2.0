@@ -1,6 +1,7 @@
 package com.kmkbe.modules.customer.controller;
 
 import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.entity.Customer;
@@ -13,6 +14,7 @@ import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
+import com.kmkbe.modules.customer.request.UpdateFapRequest;
 import com.kmkbe.modules.customer.service.*;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
@@ -24,12 +26,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
 import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -277,4 +285,15 @@ public class CustomerController {
         );
     }
 
+    @PutMapping("/updateFapData")
+    public ResponseEntity<String> updateFapData(@RequestBody UpdateFapRequest request) {
+        try {
+            customerService.updateFapData(request);
+            return ResponseEntity.ok("Fap data updated successfully");
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
+    }
+
 }
+
