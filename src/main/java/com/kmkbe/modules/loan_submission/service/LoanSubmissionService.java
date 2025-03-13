@@ -552,7 +552,7 @@ public class LoanSubmissionService {
                     finHdr.setAdminFeeAmt(simulationHist.getAdminAmt());
                     finHdr.setInterestAmt(simulationHist.getInterestAmt());
                     finHdr.setEffectiveRate(  simulationHist.getEffectiveRate());
-
+                    finHdr.setFinancingAmt(simulationHist.getFinancingAmt());
                     financingHdrRepository.save(finHdr);
 
                     return  null;
@@ -581,7 +581,7 @@ public class LoanSubmissionService {
           finHdr.setAdminFeeAmt(estimatedDisburseDto.getAdminFeeAmount().doubleValue());
           finHdr.setInterestAmt(estimatedDisburseDto.getInterestFeeAmount().doubleValue());
           finHdr.setEffectiveRate(Double.valueOf(effRate));
-
+          finHdr.setFinancingAmt(estimatedDisburseDto.getFinancingAmount().doubleValue());
           financingHdrRepository.save(finHdr);
 
 
