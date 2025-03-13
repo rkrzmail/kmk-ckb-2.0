@@ -379,9 +379,11 @@ public class DistributionSubmissionService {
                                 + financingHdr.getSurveyFeeAmtNett();
 
                 //getAPI AO,BH
-                MailPositionDto to = configRemoteService.getEmailByPosition("",financingHdr.getMstBranch().getBranchCode(),"BM");
-                MailPositionDto cc = configRemoteService.getEmailByPosition("",financingHdr.getMstBranch().getBranchCode(),"RM");
-                String toEmail = "mstBranch.getEmployees().stream().toList().getFirst().getEmail()";  //"radema.panjaitan@csul.co.id",
+                MailPositionDto to = configRemoteService.getEmailByPosition("",financingHdr.getMstBranch().getBranchCode(),"BM/BOH");
+                MailPositionDto ccRM = configRemoteService.getEmailByPosition("",financingHdr.getMstBranch().getBranchCode(),"RM");
+                MailPositionDto ccAO = configRemoteService.getEmailByPosition("",financingHdr.getMstBranch().getBranchCode(),"AO/AM");
+
+                String toEmail = mstBranch.getEmployees().stream().toList().getFirst().getEmail();  //"radema.panjaitan@csul.co.id",
                 String ccEmail = null;
                 if (to!=null &&  to.getData()!=null && to.getData().size()>0) {
                     StringBuilder  stringBuilder = new StringBuilder();
@@ -391,15 +393,21 @@ public class DistributionSubmissionService {
                     }
                     toEmail = stringBuilder.toString();
                 }
-                if (cc!=null && cc.getData()!=null && cc.getData().size()>0) {
-                    StringBuilder  stringBuilder = new StringBuilder();
-                    for (int i = 0; i < cc.getData().size(); i++) {
+                StringBuilder  stringBuilder = new StringBuilder();
+                if (ccRM!=null && ccRM.getData()!=null && ccRM.getData().size()>0) {
+                     for (int i = 0; i < ccRM.getData().size(); i++) {
                         stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
-                        stringBuilder.append(cc.getData().get(i).getEmail());
+                        stringBuilder.append(ccRM.getData().get(i).getEmail());
                     }
                     ccEmail = stringBuilder.toString();
                 }
-
+                if (ccAO!=null && ccAO.getData()!=null && ccAO.getData().size()>0) {
+                    for (int i = 0; i < ccAO.getData().size(); i++) {
+                        stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
+                        stringBuilder.append(ccAO.getData().get(i).getEmail());
+                    }
+                    ccEmail = stringBuilder.toString();
+                }
                 emailService.sendNotificationBranchAssign(
                         toEmail,
                         financingHdr.getBouwheer().getBouwheerName(),

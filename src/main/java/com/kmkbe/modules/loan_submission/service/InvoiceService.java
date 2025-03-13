@@ -342,6 +342,7 @@ public class InvoiceService {
                                 .bouwheerName(e.getFinancingHdr().getBouwheer().getBouwheerName())
                                 .customerInvoiceNo(e.getInvoice().getCustInvNo())
                                 .bouwheerInvoiceNo(e.getInvoice().getBouwheerInvNo())
+                                .poNumber(e.getInvoice().getPoNumber())
                                 .invoiceDate(Utils.fromInstant(e.getInvoice().getInvoiceDate()))
                                 .invoiceDueDate(Utils.fromInstant(e.getInvoice().getInvoiceDueDate()))
                                 .invoiceAmount(BigDecimal.valueOf(e.getInvoice().getInvoiceAmt()))
