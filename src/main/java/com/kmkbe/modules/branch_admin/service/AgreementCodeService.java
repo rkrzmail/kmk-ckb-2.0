@@ -16,6 +16,8 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class AgreementCodeService {
@@ -35,10 +37,8 @@ public class AgreementCodeService {
     private String jwtToken;
 
     private void ensureJwtToken() {
-        if (jwtToken == null) {
-            jwtToken = authRemoteService.fetchAuthJwt().getData();
-            System.out.println("JWT Token fetched: " + jwtToken);
-        }
+        jwtToken = authRemoteService.fetchAuthJwt().getData();
+//        System.out.println("JWT Token fetched: " + jwtToken);
     }
 
     public CommonResult<SitDto> getAgreementsByFinancingHdrCode(UUID financingHdrCode) {
@@ -55,7 +55,7 @@ public class AgreementCodeService {
             Customer customer = agreement.getFinancingHdr().getCustomer();
 
             String branchCode = financingHdrRepository.findBranchCodeByFinancingHdrCode(financingHdrCode);
-            System.out.println("Branch Code: " + branchCode);
+//            System.out.println("Branch Code: " + branchCode);
 
             List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "RM", jwtToken);
 //            String email = emailList.isEmpty() ? "N/A" : emailList.get(0).get("email");
