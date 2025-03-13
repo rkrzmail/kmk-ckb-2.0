@@ -89,6 +89,12 @@ public class Customer implements UserDetails {
     @Column
     private LocalDateTime dtmUpd;
 
+    @Column
+    private LocalDateTime FapDate;
+
+    @Column
+    private String FapStatus;
+
     @OneToOne(
             mappedBy = "customer",
             fetch = FetchType.EAGER
