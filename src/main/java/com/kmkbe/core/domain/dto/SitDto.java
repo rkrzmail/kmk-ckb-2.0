@@ -33,9 +33,10 @@ public class SitDto {
 //    private String MstBranch;
     private String Email;
     private String EmployeeName;
+    private String fapStatus;
 
 
-    public SitDto(String agreementCode, String bouwheerName, String legalAddress, String rt, String rw, String kelurahan, String kecamatan, String city, String province, String zipcode, String area, String picName, LocalDateTime fapDate, double totalInvoiceAmt, LocalDateTime financingDueDate, String DirectorName, String bankName, String accountName, String accountNo, String custName, String BranchCode, String Email, String EmployeeName) {
+    public SitDto(String agreementCode, String bouwheerName, String legalAddress, String rt, String rw, String kelurahan, String kecamatan, String city, String province, String zipcode, String area, String picName, LocalDateTime fapDate, double totalInvoiceAmt, LocalDateTime financingDueDate, String DirectorName, String bankName, String accountName, String accountNo, String custName, String BranchCode, String Email, String EmployeeName, String fapStatus) {
         this.agreementCode = agreementCode;
         this.bouwheerName = bouwheerName;
         this.legalAddress = legalAddress;
@@ -61,6 +62,7 @@ public class SitDto {
 //        this.MstBranch = mstBranch;
         this.Email = Email;
         this.EmployeeName = EmployeeName;
+        this.fapStatus = fapStatus;
 
     }
 
@@ -255,6 +257,14 @@ public class SitDto {
 
     public void setEmail(String email) {
         this.Email = email;
+    }
+
+    public String getFapStatus() {
+        return fapStatus;
+    }
+
+    public void setFapStatus(String fapStatus) {
+        this.fapStatus = fapStatus;
     }
 
     public String getEmployeeName() {

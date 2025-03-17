@@ -84,6 +84,7 @@ public class AgreementCodeService {
                     .area(bouwheer.getArea())
                     .picName(bouwheer.getPicName())
                     .fapDate(financingHdr.getFapDate())
+                    .fapStatus(financingHdr.getFapStatus())
                     .totalInvoiceAmt(financingHdr.getTotalInvoiceAmt())
                     .financingDueDate(financingHdr.getFinancingDueDate())
                     .bankName(bankName)
