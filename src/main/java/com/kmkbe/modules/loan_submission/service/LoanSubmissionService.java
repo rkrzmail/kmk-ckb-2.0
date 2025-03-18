@@ -372,6 +372,13 @@ public class LoanSubmissionService {
                 fin.setFinancingDtls(null);
                 fin.setAgreement(null);
                 fin.setSimulationHistories(null);*/
+                double effectiveRate = fin.getEffectiveRate();
+                if (effectiveRate< 1) {
+                    effectiveRate = effectiveRate * 100;
+                }else if (effectiveRate > 100){
+                    effectiveRate  = Math.floor(effectiveRate  / 100);
+                }
+
                 FinancingHdrDto financingHdrDto =   FinancingHdrDto.builder()
                         .financingDate(fin.getFinancingDate())
                         .adminFeeAmt(fin.getAdminFeeAmt())
@@ -381,7 +388,7 @@ public class LoanSubmissionService {
                         .adminFeeAmt(fin.getAdminFeeAmt())
                         .adminLimitAmt(fin.getAdminLimitAmt())
                         .currencyCode(fin.getCurrencyCode())
-                        .effectiveRate(fin.getEffectiveRate())
+                        .effectiveRate(effectiveRate)
                         .financingAmt(fin.getFinancingAmt())
                         .financingDueDate(fin.getFinancingDueDate())
                         .financingStatus(fin.getFinancingStatus())
@@ -398,10 +405,16 @@ public class LoanSubmissionService {
                     Optional<SimulationHist>  simulationHist = simulationHistRepository.findTopBySimulationHistCode(UUID.fromString(histCode));
                     if (simulationHist.isPresent()) {
                         SimulationHist simH = simulationHist.get();
+                        effectiveRate = simH.getEffectiveRate();
+                        if (effectiveRate< 1) {
+                            effectiveRate = effectiveRate * 100;
+                        }else if (effectiveRate > 100){
+                            effectiveRate  = Math.floor(effectiveRate  / 100);
+                        }
 
                         SimulationHistDto simulationHistDto = SimulationHistDto.builder()
                                 .schema(100-simH.getRetention())
-                                .effetiveRate(fin.getEffectiveRate())
+                                .effetiveRate(effectiveRate)
                                 .dibursmentAmt(simH.getEstDisbust())
                                 .totalInvoiceAmt(simH.getTotalInvoiceAmt())
                                 .adminAmt(simH.getAdminAmt())
@@ -476,6 +489,12 @@ public class LoanSubmissionService {
 
             double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
             double effective_Rate = product.getEffectiveRate();
+            if (effective_Rate < 1) {
+                effective_Rate = effective_Rate *100;
+            }else  if (effective_Rate > 100) {
+                effective_Rate = Math.floor(effective_Rate/100);
+            }
+
             double interestAmount = nilaiPembiayaan * effective_Rate / 100 * interest;
             //double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
             double jumlahBiaya;
@@ -551,7 +570,13 @@ public class LoanSubmissionService {
                     finHdr.setRetention(simulationHist.getRetention());
                     finHdr.setAdminFeeAmt(simulationHist.getAdminAmt());
                     finHdr.setInterestAmt(simulationHist.getInterestAmt());
-                    finHdr.setEffectiveRate(  simulationHist.getEffectiveRate());
+                    if (simulationHist.getEffectiveRate() < 1) {
+                        finHdr.setEffectiveRate(simulationHist.getEffectiveRate() * 100);
+                    }else if (simulationHist.getEffectiveRate() > 100){
+                        finHdr.setEffectiveRate(Math.floor(simulationHist.getEffectiveRate() / 100));
+                    }else{
+                        finHdr.setEffectiveRate(  simulationHist.getEffectiveRate());
+                    }
                     finHdr.setFinancingAmt(simulationHist.getFinancingAmt());
                     financingHdrRepository.save(finHdr);
 
@@ -984,6 +1009,13 @@ public class LoanSubmissionService {
                                     }
                                     ccEmail = stringBuilder.toString();
                                 }
+
+                                String phone = hdr.getCustomer().getCustMobilePhone();
+                                if (hdr.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
+                                    if (hdr.getCustomer().getCompany() !=null ){
+                                        phone = hdr.getCustomer().getCompany().getPhone();
+                                    }
+                                }
                                 emailService.sendNotificationBranchAssign(
                                         toEmail,
                                         hdr.getBouwheer().getBouwheerName(),
@@ -993,7 +1025,7 @@ public class LoanSubmissionService {
                                                 .applicationDate(DateTimeUtils.formatToDate(hdr.getFinancingDate()))
                                                 .companyName(hdr.getCustomer().getCustName())
                                                 .email(hdr.getCustomer().getCustEmail())
-                                                .phoneNumber(hdr.getCustomer().getCustMobilePhone())
+                                                .phoneNumber(phone)
                                                 .tenor(hdr.getTenor())
                                                 .toEmail(toEmail)
                                                 .ccEmail(ccEmail)

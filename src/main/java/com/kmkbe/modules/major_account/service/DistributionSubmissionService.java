@@ -123,7 +123,7 @@ public class DistributionSubmissionService {
 
                     return DistributionSubmissionDto.builder()
                             .financingHdrCode(e.getFinancingHdrCode().toString())
-                            .custName(e.getCustomer().getCustName())
+                            .custName("")//e.getCustomer().getCustName()
                             .bouwheerName(e.getBouwheer().getBouwheerName())
                             .city(city)
                             .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
@@ -408,6 +408,13 @@ public class DistributionSubmissionService {
                     }
                     ccEmail = stringBuilder.toString();
                 }
+
+                String phone = financingHdr.getCustomer().getCustMobilePhone();
+                if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
+                    if (financingHdr.getCustomer().getCompany() !=null ){
+                        phone = financingHdr.getCustomer().getCompany().getPhone();
+                    }
+                }
                 emailService.sendNotificationBranchAssign(
                         toEmail,
                         financingHdr.getBouwheer().getBouwheerName(),
@@ -417,7 +424,7 @@ public class DistributionSubmissionService {
                                 .applicationDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
                                 .companyName(financingHdr.getCustomer().getCustName())
                                 .email(financingHdr.getCustomer().getCustEmail())
-                                .phoneNumber(financingHdr.getCustomer().getCustMobilePhone())
+                                .phoneNumber(phone)
                                 .tenor(financingHdr.getTenor())
                                 .toEmail(toEmail)
                                 .ccEmail(ccEmail)
