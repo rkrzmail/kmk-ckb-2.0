@@ -124,10 +124,13 @@ public class AgreementController {
                     updateFinancingStatusRequest
             );
         } catch (Exception ignored) {  }*/
-        //gagal kalo api bermsalah
-        financingRemoteService.updateFinancingStatus(
-                updateFinancingStatusRequest
-        );
+        boolean bypass = true;
+        if (!bypass) {
+            //gagal kalo api bermsalah
+            financingRemoteService.updateFinancingStatus(
+                    updateFinancingStatusRequest
+            );
+        }
 
 
         //Branch admin melakukan upload dokumen perjanjian kerjasama
