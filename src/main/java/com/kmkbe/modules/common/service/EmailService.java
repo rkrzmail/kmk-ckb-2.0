@@ -234,7 +234,7 @@ public class EmailService {
             args.put("additionalArgs", payloadArgs);
             args.put("bouwheerName", bouwheerName);
             args.put("branchArea", branchArea);
-            args.put("email", email);
+            args.put("email", payload.getEmail());
 
             final EmailTemplate template = emailTemplateRepository
                     .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN, true);
