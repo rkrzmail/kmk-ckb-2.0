@@ -950,17 +950,18 @@ public class LoanSubmissionService {
                 try {
                     List<FinancingHdr>  financingHdrs = financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer);
                     for (int t = 0; t < financingHdrs.size(); t++) {
-                        FinancingHdr hdr =financingHdrs.get(t);
-                        if (hdr.getMstBranch() != null) {
+                        MstBranch hdrBranch = financingHdrs.get(t).getMstBranch();
+
+                        if (hdrBranch != null) {
                             //update jadi Assign
                             financing.setFinancingStatus("INPROCESS");
                             financing.setFinancingStep("ASSIGNMENT");
-                            financing.setMstBranch(hdr.getMstBranch());
+                            financing.setMstBranch(hdrBranch);
                             financing.setDtmUpd(DateTimeUtils.now());
                             //send email
 
                             try {
-                                final List<InvoiceEmailPayload> invoices = hdr.getFinancingDtls()
+                                final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
                                         .stream()
                                         .map((item) ->
                                                 InvoiceEmailPayload.builder()
@@ -969,22 +970,22 @@ public class LoanSubmissionService {
                                                         .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                                                         .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
                                                         .description("Invoice By Trakindo")
-                                                        .bouwheerName(hdr.getBouwheer().getBouwheerName())
+                                                        .bouwheerName(financing.getBouwheer().getBouwheerName())
                                                         .build()
                                         ).toList();
                                 final double totalFeeAmt =
-                                        hdr.getAdminFeeAmt()
-                                                + hdr.getLegalFeeAmtNett()
-                                                + hdr.getInsuranceFeeAmt()
-                                                + hdr.getOthersFeeAmt()
-                                                + hdr.getProvisionFeeAmt()
-                                                + hdr.getSurveyFeeAmtNett();
+                                        financing.getAdminFeeAmt()
+                                                + financing.getLegalFeeAmtNett()
+                                                + financing.getInsuranceFeeAmt()
+                                                + financing.getOthersFeeAmt()
+                                                + financing.getProvisionFeeAmt()
+                                                + financing.getSurveyFeeAmtNett();
                                 //getAPI AO,BH
-                                MailPositionDto to = configRemoteService.getEmailByPosition("",hdr.getMstBranch().getBranchCode(),"BM/BOH");
-                                MailPositionDto ccRM = configRemoteService.getEmailByPosition("",hdr.getMstBranch().getBranchCode(),"RM");
-                                MailPositionDto ccAO = configRemoteService.getEmailByPosition("",hdr.getMstBranch().getBranchCode(),"AO/AM");
+                                MailPositionDto to = configRemoteService.getEmailByPosition("",hdrBranch.getBranchCode(),"BM/BOH");
+                                MailPositionDto ccRM = configRemoteService.getEmailByPosition("",hdrBranch.getBranchCode(),"RM");
+                                MailPositionDto ccAO = configRemoteService.getEmailByPosition("",hdrBranch.getBranchCode(),"AO/AM");
 
-                                String toEmail = hdr.getMstBranch().getEmployees().stream().toList().getFirst().getEmail();  //"radema.panjaitan@csul.co.id",
+                                String toEmail = hdrBranch.getEmployees().stream().toList().getFirst().getEmail();  //"radema.panjaitan@csul.co.id",
                                 String ccEmail = null;
                                 if (to!=null &&  to.getData()!=null && to.getData().size()>0) {
                                     StringBuilder  stringBuilder = new StringBuilder();
@@ -1010,32 +1011,32 @@ public class LoanSubmissionService {
                                     ccEmail = stringBuilder.toString();
                                 }
 
-                                String phone = hdr.getCustomer().getCustMobilePhone();
-                                if (hdr.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
-                                    if (hdr.getCustomer().getCompany() !=null ){
-                                        phone = hdr.getCustomer().getCompany().getPhone();
+                                String phone = financing.getCustomer().getCustMobilePhone();
+                                if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
+                                    if (financing.getCustomer().getCompany() !=null ){
+                                        phone = financing.getCustomer().getCompany().getPhone();
                                     }
                                 }
                                 emailService.sendNotificationBranchAssign(
                                         toEmail,
-                                        hdr.getBouwheer().getBouwheerName(),
-                                        hdr.getMstBranch().getBranchName(),
+                                        financing.getBouwheer().getBouwheerName(),
+                                        financing.getMstBranch().getBranchName(),
                                         LoanDisburseEmailPayload.builder()
-                                                .financingCode(hdr.getFinancingHdrCode().toString())
-                                                .applicationDate(DateTimeUtils.formatToDate(hdr.getFinancingDate()))
-                                                .companyName(hdr.getCustomer().getCustName())
-                                                .email(hdr.getCustomer().getCustEmail())
+                                                .financingCode(financing.getFinancingHdrCode().toString())
+                                                .applicationDate(DateTimeUtils.formatToDate(financing.getFinancingDate()))
+                                                .companyName(financing.getCustomer().getCustName())
+                                                .email(financing.getCustomer().getCustEmail())
                                                 .phoneNumber(phone)
-                                                .tenor(hdr.getTenor())
+                                                .tenor(financing.getTenor())
                                                 .toEmail(toEmail)
                                                 .ccEmail(ccEmail)
-                                                .financingCode(hdr.getFinancingHdrCode().toString())
-                                                .financingDueDate(DateTimeUtils.formatToDate(hdr.getFinancingDueDate()))
-                                                .retention(CommonFormattingUtils.formatAmount(hdr.getRetention()))
-                                                .financingAmt(CommonFormattingUtils.formatAmount(hdr.getFinancingAmt()))
+                                                .financingCode(financing.getFinancingHdrCode().toString())
+                                                .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
+                                                .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
+                                                .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
                                                 .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-                                                .invoiceAmt(CommonFormattingUtils.formatAmount(hdr.getTotalInvoiceAmt()))
-                                                .disburseAmt(CommonFormattingUtils.formatAmount(hdr.getDisburseAmt()))
+                                                .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
+                                                .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
                                                 .invoices(invoices)
                                                 .build()
                                 );
