@@ -81,6 +81,7 @@ public class LoanSubmissionService {
     private final ImportantNotesService importantNotesService;
     private final FinancingHdrRepository financingHdrRepository;
     private final MstBranchRepository mstBranchRepository;
+    private final CustomerRepository customerRepository;
 
     public List<PostedInvoiceDto> fetchActiveInvoice(
             Authentication authentication,
@@ -900,16 +901,16 @@ public class LoanSubmissionService {
             CreateLoanApplicationRequest request
     ) throws Exception {
         try {
-            final Customer customer = CustomerUtils.authenticateCustomer(authentication);
-            if (customer == null) {
+            final Customer custCOde = CustomerUtils.authenticateCustomer(authentication);
+            if (custCOde == null) {
                 throw CommonInvalidException.cannotAccessResource();
             }
 
-            if (!bcryptEncoder.matches(request.getPin(), customer.getCustPin())) {
+            if (!bcryptEncoder.matches(request.getPin(), custCOde.getCustPin())) {
                 throw new BadCredentialsException("Pin is invalid, try to entry right pin");
             }
 
-            List<LegalFile> legalFiles = legalFileRepository.findAllByCustCode(customer);
+            List<LegalFile> legalFiles = legalFileRepository.findAllByCustCode(custCOde);
             if (
                     legalFiles
                             .stream()
@@ -937,7 +938,7 @@ public class LoanSubmissionService {
             }
 
 
-
+            Customer customer = customerRepository.findByCustCode(custCOde.getCustCode()).get();
 
 
             final FinancingHdr financing = financingHdrService.getByCode(request.getFinancingHdrCode()); {
@@ -1143,6 +1144,7 @@ public class LoanSubmissionService {
             );
 
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("createLoanSubmission, error {}", e.getMessage());
             throw e;
         }

@@ -211,7 +211,7 @@ public class EmailService {
 
             send(args, template);
         } catch (Exception e) {
-            log.error("Error sendNotificationBranchAssign {}", e.getMessage());
+            log.error("Error sendNotificationPencairan {}", e.getMessage());
         }
     }
 
@@ -355,7 +355,7 @@ public class EmailService {
 
         if (args.get("additionalArgs") != null) {
             for (Map.Entry<?, ?> entry : ((Map<?, ?>) args.get("additionalArgs")).entrySet()) {
-                body = body.replace("{" + entry.getKey() + "}", entry.getValue().toString());
+                body = body.replace("{" + entry.getKey() + "}", String.valueOf(entry.getValue()));
             }
         }
 

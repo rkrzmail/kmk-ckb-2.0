@@ -240,7 +240,7 @@ public class InquiryDisburseService {
                                         .invoices(invoices)
                                         .build()
                         );
-                    } catch (Exception ignored) {  }
+                    } catch (Exception ignored) {    ignored.printStackTrace(); }
 
 
                 }
