@@ -207,7 +207,8 @@ public class InquiryDisburseService {
 
                     //send email sendNotificationPencairan
                     try {
-                        FinancingHdr financingHdr = agreement.getFinancingHdr();
+                        //FinancingHdr financingHdr = agreement.getFinancingHdr();
+                        FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(agreement.getFinancingHdr().getFinancingHdrCode()).get();
                         final FinancingHdrDto createdFinancing = financingHdrService.dtoFromEntity(financingHdr);
 
                         final List<InvoiceEmailPayload> invoices = createdFinancing.getDetails()
@@ -220,7 +221,7 @@ public class InquiryDisburseService {
                                                 .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                                                 .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
                                                 .description("Invoice By Trakindo")
-                                                .bouwheerName(createdFinancing.getBouwheer().getBouwheerName())
+                                                .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
                                                 .build()
                                 ).toList();
 
