@@ -16,6 +16,7 @@ import com.kmkbe.core.utils.HttpUtils;
 import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
+import com.kmkbe.nikita.utils.SpecPagination;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -73,6 +74,145 @@ public class DocumentService {
         }
     }
 
+//    public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
+//            HttpServletRequest httpServletRequest,
+//            Authentication authentication,
+//            PaginationRequest request,
+//            Boolean isFirst
+//    ) throws SignatureException {
+//        try {
+//            if (isFirst != null && isFirst) {
+//                //fetchAndMappingDocVendor(authentication);
+//            }
+//
+//            int pageNo = 0, pageSize = 10;
+//
+//            if (request.getPageNo() != null) {
+//                pageNo = request.getPageNo();
+//            }
+//            if (request.getPageSize() != null) {
+//                pageSize = request.getPageSize();
+//            }
+//
+//            if (pageNo > 0) {
+//                pageNo = pageNo - 1;
+//            }
+//            List<String> fileAllocation = new ArrayList<>();
+//            if (String.valueOf(httpServletRequest.getParameter("owner")).equalsIgnoreCase("debitur")){
+//                fileAllocation = List.of(
+//                        "Legal",
+//                        "Financing"
+//                );
+//            }else{
+//                fileAllocation = List.of(
+//                        "internal",
+//                        "Legal",
+//                        "Financing"
+//                );
+//            }
+//
+//            Page<MstFileType> page = mstFileTypeRepository.findAllByFileAllocationInOrderByFileTypeIdDesc(
+//                    fileAllocation,
+//                    PageRequest.of(
+//                            pageNo,
+//                            pageSize,
+//                            Sort.by("fileTypeId").descending()
+//                    )
+//            );
+//
+//            List<MstFileTypeDto> result = page.map((file) -> {
+//                        MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
+//                        LegalFile legalFile = null;
+//
+//                        try {
+//                            legalFile = legalFileService.fetchByMstFileTypeAndCust(CustomerUtils.authenticateCustomer(authentication), file);
+//                        } catch (Exception e) {
+//                            log.error("fetchByCust, error {}", e.getMessage());
+//                        }
+//
+//                        if (legalFile != null) {
+//                            LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
+//                            legalFileDto.setUploadedDate(legalFile.getDtmUpd());
+//
+//                            // Jika fileTypeCode adalah DOC005 atau DOC006, jangan generate URL
+//                            if (!"DOC005".equals(file.getFileTypeCode()) && !"DOC006".equals(file.getFileTypeCode())) {
+//                                String generatedUrl = UriUtils.fileUlr(
+//                                        httpServletRequest,
+//                                        Math.toIntExact(legalFile.getFileId()),
+//                                        UriUtils.DocType.loan
+//                                );
+//
+//                                if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
+//                                    generatedUrl = legalFile.getFilePath();
+//                                }
+//
+//                                legalFileDto.setFileUrl(generatedUrl);
+//                            } else {
+//                                legalFileDto.setFileUrl(null); // Jangan buat URL
+//                            }
+//
+//                            dto.setLegalFile(legalFileDto);
+//
+////                        if (legalFile != null) {
+////                            LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
+////                            legalFileDto.setUploadedDate(legalFile.getDtmUpd());
+////
+////                            String generatedUrl = UriUtils.fileUlr(
+////                                    httpServletRequest,
+////                                    Math.toIntExact(legalFile.getFileId()),
+////                                    UriUtils.DocType.loan
+////                            );
+////
+////                            if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
+////                                try {
+////                                    URI uri = new URI(legalFile.getFilePath());
+////                                    uri = new URI("https", UriUtils.getDomainUrl(httpServletRequest), uri.getPath(), uri.getFragment());
+////                                    //generatedUrl = uri.toString();//byapass
+////                                    generatedUrl = legalFile.getFilePath();
+////                                } catch (URISyntaxException e) {
+////                                    generatedUrl = legalFile.getFilePath();
+////                                }
+////                            }
+////
+////                            legalFileDto.setFileUrl(generatedUrl);
+////                            dto.setLegalFile(legalFileDto);
+//                        }
+//
+//                        return dto;
+//                    })
+//                    .toList();
+//
+//            List<MstFileTypeDto> resultSorted = new ArrayList<>();
+//            if (String.valueOf(httpServletRequest.getParameter("owner")).equalsIgnoreCase("debitur")) {
+//                //sorting
+//                for (MstFileTypeDto dto : result) {
+//                    if (dto.getLegalFile()!=null && dto.getLegalFile().getUploadedDate()!=null){
+//                        //siudah updaload
+//                    }else{
+//                        resultSorted.add(dto);
+//                    }
+//                }
+//                for (MstFileTypeDto dto : result) {
+//                    if (dto.getLegalFile()!=null && dto.getLegalFile().getUploadedDate()!=null){
+//                        resultSorted.add(dto);
+//                    }
+//                }
+//            }else{
+//                resultSorted = result;
+//            }
+//
+//            return PaginationResult.<MstFileTypeDto>builder()
+//                    .currentPage(pageNo + 1)
+//                    .totalData(page.getTotalElements())
+//                    .totalPage(page.getTotalPages())
+//                    .list(resultSorted)
+//                    .build();
+//        } catch (Exception e) {
+//            log.error("getAllLoanDocumentRequirement: {}", e.getMessage());
+//            throw e;
+//        }
+//    }
+
     public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
             HttpServletRequest httpServletRequest,
             Authentication authentication,
@@ -96,13 +236,14 @@ public class DocumentService {
             if (pageNo > 0) {
                 pageNo = pageNo - 1;
             }
+
             List<String> fileAllocation = new ArrayList<>();
-            if (String.valueOf(httpServletRequest.getParameter("owner")).equalsIgnoreCase("debitur")){
+            if (String.valueOf(httpServletRequest.getParameter("owner")).equalsIgnoreCase("debitur")) {
                 fileAllocation = List.of(
                         "Legal",
                         "Financing"
                 );
-            }else{
+            } else {
                 fileAllocation = List.of(
                         "internal",
                         "Legal",
@@ -110,6 +251,7 @@ public class DocumentService {
                 );
             }
 
+            // Mengambil data awal dari repository
             Page<MstFileType> page = mstFileTypeRepository.findAllByFileAllocationInOrderByFileTypeIdDesc(
                     fileAllocation,
                     PageRequest.of(
@@ -119,6 +261,7 @@ public class DocumentService {
                     )
             );
 
+            // Mengubah hasil dari MstFileType ke MstFileTypeDto
             List<MstFileTypeDto> result = page.map((file) -> {
                         MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
                         LegalFile legalFile = null;
@@ -151,61 +294,31 @@ public class DocumentService {
                             }
 
                             dto.setLegalFile(legalFileDto);
-
-//                        if (legalFile != null) {
-//                            LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
-//                            legalFileDto.setUploadedDate(legalFile.getDtmUpd());
-//
-//                            String generatedUrl = UriUtils.fileUlr(
-//                                    httpServletRequest,
-//                                    Math.toIntExact(legalFile.getFileId()),
-//                                    UriUtils.DocType.loan
-//                            );
-//
-//                            if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
-//                                try {
-//                                    URI uri = new URI(legalFile.getFilePath());
-//                                    uri = new URI("https", UriUtils.getDomainUrl(httpServletRequest), uri.getPath(), uri.getFragment());
-//                                    //generatedUrl = uri.toString();//byapass
-//                                    generatedUrl = legalFile.getFilePath();
-//                                } catch (URISyntaxException e) {
-//                                    generatedUrl = legalFile.getFilePath();
-//                                }
-//                            }
-//
-//                            legalFileDto.setFileUrl(generatedUrl);
-//                            dto.setLegalFile(legalFileDto);
                         }
 
                         return dto;
                     })
                     .toList();
 
-            List<MstFileTypeDto> resultSorted = new ArrayList<>();
-            if (String.valueOf(httpServletRequest.getParameter("owner")).equalsIgnoreCase("debitur")) {
-                //sorting
-                for (MstFileTypeDto dto : result) {
-                    if (dto.getLegalFile()!=null && dto.getLegalFile().getUploadedDate()!=null){
-                        //siudah updaload
-                    }else{
-                        resultSorted.add(dto);
+            // Menggunakan SpecPagination untuk filter dan pagination
+            return SpecPagination.paginationData(new SpecPagination<MstFileTypeDto, MstFileTypeDto>(result, request) {
+                @Override
+                public MstFileTypeDto search(MstFileTypeDto data) {
+                    // Pencarian berdasarkan fileTypeDesc atau legalFile.fileName
+                    if (isSearchBy("fileTypeDesc") && like(data.getFileTypeDesc())) {
+                        return data;
+                    } else if (isSearchBy("legalFile.fileName") && like(data.getLegalFile().getFileName())) {
+                        return data;
                     }
+                    return null; // Tidak ditemukan
                 }
-                for (MstFileTypeDto dto : result) {
-                    if (dto.getLegalFile()!=null && dto.getLegalFile().getUploadedDate()!=null){
-                        resultSorted.add(dto);
-                    }
-                }
-            }else{
-                resultSorted = result;
-            }
 
-            return PaginationResult.<MstFileTypeDto>builder()
-                    .currentPage(pageNo + 1)
-                    .totalData(page.getTotalElements())
-                    .totalPage(page.getTotalPages())
-                    .list(resultSorted)
-                    .build();
+                @Override
+                public MstFileTypeDto eval(MstFileTypeDto data) {
+                    return data; // Kembalikan data yang sudah dievaluasi
+                }
+            });
+
         } catch (Exception e) {
             log.error("getAllLoanDocumentRequirement: {}", e.getMessage());
             throw e;
