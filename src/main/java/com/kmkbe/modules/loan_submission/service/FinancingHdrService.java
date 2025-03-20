@@ -193,6 +193,9 @@ public class FinancingHdrService {
             PaginationRequest request
     ){
         try {
+
+            request.setPageSize(1000);
+
             List<Invoice>  invoices =  invoiceRepository.findAll();
             return SpecPagination.paginationData(new SpecPagination<Invoice, PaidInvoiceDto>(invoices, request){
                 @Override
