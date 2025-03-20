@@ -458,7 +458,9 @@ public class LoanSubmissionService {
             final Optional<Product> findProduct = productRepository.findNtfRange(ntfResult.doubleValue());
 
             if (findProduct.isEmpty()) {
-                return null;
+               // return null;
+                throw new IllegalStateException("Mohon maaf, Product yang sesuai limit tidak ditemukan");
+
             }
 
             final Product product = findProduct.get();
@@ -485,19 +487,21 @@ public class LoanSubmissionService {
 
             int tenor  =  finHdr.getTenor().intValue();
 
-            double interest  = intestRate;
+
 
             double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
             double effective_Rate = product.getEffectiveRate();
+            effective_Rate = intestRate;//kiriman dari client
+
             if (effective_Rate < 1) {
                 effective_Rate = effective_Rate *100;
             }else  if (effective_Rate > 100) {
                 effective_Rate = Math.floor(effective_Rate/100);
             }
 
-            double interestAmount = nilaiPembiayaan * effective_Rate / 100 * interest;
+            double interestAmount = nilaiPembiayaan * effective_Rate / 100 ;
             //double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
-            double jumlahBiaya;
+            double jumlahBiaya = 0;
             double provisionRateFee =  finHdr.getProvisionFeeAmt();//  product.getProvisionRate() * plafonLimit / 100;
 
 
@@ -544,7 +548,7 @@ public class LoanSubmissionService {
                     .provisionRate(provisionRate)
                     .build();
         } catch (Exception e) {
-            log.error("calculateDisburse, error {}", e.getMessage());
+            log.error("recalculateDisburse, error {}", e.getMessage());
             throw e;
         }
     }
@@ -601,29 +605,49 @@ public class LoanSubmissionService {
           double effRate =   intestRate /100;
 
           FinancingHdr finHdr = financingHdr.get();
-          finHdr.setDisburseAmt(estimatedDisburseDto.getEstimatedDisburseAmount().doubleValue());
+          /*finHdr.setDisburseAmt(estimatedDisburseDto.getEstimatedDisburseAmount().doubleValue());
           finHdr.setRetention(Double.valueOf(100-schemaRate));
           finHdr.setAdminFeeAmt(estimatedDisburseDto.getAdminFeeAmount().doubleValue());
           finHdr.setInterestAmt(estimatedDisburseDto.getInterestFeeAmount().doubleValue());
           finHdr.setEffectiveRate(Double.valueOf(effRate));
           finHdr.setFinancingAmt(estimatedDisburseDto.getFinancingAmount().doubleValue());
-          financingHdrRepository.save(finHdr);
+          //financingHdrRepository.save(finHdr);tidak jadi insert*/
 
 
           SimulationHist simulationHist = SimulationHist.builder()
                   .simulationHistCode(  UUID.randomUUID())
                   .financingHdr(finHdr)
-                  .adminAmt(finHdr.getAdminFeeAmt())
-                  .retention(finHdr.getRetention())
+                  .adminAmt(estimatedDisburseDto.getAdminFeeAmount().doubleValue())
+                  .retention((double) (100 - schemaRate))
                   .totalInvoiceAmt(finHdr.getTotalInvoiceAmt())
-                  .financingAmt(finHdr.getFinancingAmt())
-                  .effectiveRate(finHdr.getEffectiveRate())
-                  .estDisbust(finHdr.getDisburseAmt())
-                  .interestAmt(finHdr.getInterestAmt())
+                  .financingAmt(estimatedDisburseDto.getFinancingAmount().doubleValue())
+                  .effectiveRate(effRate)
+                  .estDisbust(estimatedDisburseDto.getEstimatedDisburseAmount().doubleValue())
+                  .interestAmt(estimatedDisburseDto.getInterestFeeAmount().doubleValue())
                   .usrCrt("system")
                   .dtmCrt(DateTimeUtils.nowLocal())
                      .build();
 
+
+
+          String histCodeUpdate =request.getParameter("histCodeUpdate");
+          if (histCodeUpdate !=null && histCodeUpdate.length()>=32 ) {
+              Optional<SimulationHist> simulationHistOptional = simulationHistRepository.findTopBySimulationHistCode(UUID.fromString(histCodeUpdate));
+              if (simulationHistOptional.isPresent()) {
+                  simulationHist = simulationHistOptional.get();
+
+                  simulationHist.setAdminAmt(estimatedDisburseDto.getAdminFeeAmount().doubleValue());
+                  simulationHist.setRetention((double) (100 - schemaRate));
+                  simulationHist.setTotalInvoiceAmt(finHdr.getTotalInvoiceAmt());
+                  simulationHist.setFinancingAmt(estimatedDisburseDto.getFinancingAmount().doubleValue());
+                  simulationHist.setEffectiveRate(effRate);
+                  simulationHist.setEstDisbust(estimatedDisburseDto.getEstimatedDisburseAmount().doubleValue());
+                  simulationHist.setInterestAmt(estimatedDisburseDto.getInterestFeeAmount().doubleValue());
+                  simulationHist.setUsrUpd("system");
+                  simulationHist.setDtmUpd(DateTimeUtils.nowLocal());
+
+              }
+          }
           simulationHistRepository.save(simulationHist);
 
            /*emailService.sendNotificationChangeLimit(
@@ -1104,8 +1128,7 @@ public class LoanSubmissionService {
                     LoanDisburseEmailPayload.builder()
                             .financingCode(createdFinancing.getFinancingHdrCode().toString())
                             .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
-                            //.companyName(createdFinancing.getBouwheer().getBouwheerName())
-                            .companyName(createdFinancing.getCustomer().getCustName())
+                            .companyName(customer.getCustName())//createdFinancing.getBouwheer().getBouwheerName()
                             .phoneNumber(phoneNumber)
                             .tenor(createdFinancing.getTenor())
                             .financingCode(createdFinancing.getFinancingHdrCode().toString())
