@@ -224,6 +224,10 @@ public class FinancingHdrService {
                     Customer customer = e.getCustomer();
                     String customerName = customer.getCustName();
 
+                    if (mappedFinancingStatus.getStatus() == null || mappedFinancingStatus.getStatus().equalsIgnoreCase("")) {
+                        return null; // Jika status tidak valid, abaikan data ini
+                    }
+
                     return PaidInvoiceDto.builder()
                             .invoiceNo(invoiceNo)
                             .custName(customerName)
@@ -464,6 +468,7 @@ public class FinancingHdrService {
 
     public PaginationResult<DisburseInvoiceDto> listdisburseAggrement(PaginationRequest request){
         try {
+            request.setPageSize(1000);
             List<Agreement> agreements = agreementRepository.findAll();
             return SpecPagination.paginationData(new SpecPagination<Agreement, DisburseInvoiceDto>(agreements, request){
                 @Override

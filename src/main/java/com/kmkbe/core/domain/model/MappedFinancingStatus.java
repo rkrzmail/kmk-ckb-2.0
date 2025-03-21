@@ -225,8 +225,9 @@ public class MappedFinancingStatus {
         } else {
             /* label = "Untracked";
             status = "UNTRACKED";*/
-            label = "New";
-            status = "NEW";
+//            label = "New";
+//            status = "NEW";
+            return;
         }
     }
 
