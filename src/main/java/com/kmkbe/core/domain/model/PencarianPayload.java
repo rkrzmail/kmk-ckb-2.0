@@ -13,7 +13,7 @@ public class PencarianPayload {
     private String account_number;
     private String disbursement_date;
     private String total_disbursement;
-
+    private String loan_number;//aggerNo
 
     private List<InvoiceEmailPayload> invoices;
 }

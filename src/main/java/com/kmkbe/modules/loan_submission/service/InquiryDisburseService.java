@@ -225,17 +225,17 @@ public class InquiryDisburseService {
                                                 .build()
                                 ).toList();
 
-
-
+                        String agreementCode = agreement.getAgreementCode();
 
                         emailService.sendNotificationPencairan(
                                 financingHdr.getCustomer().getCustEmail(),
                                 "",
                                 "",
                                 PencarianPayload.builder()
+                                        .loan_number(agreementCode)
                                         .account_number( financingHdr.getCustomer().getCustName() )
                                         .total_disbursement(CommonFormattingUtils.formatAmount(financingHdr.getFinancingAmt()))
-                                        .bank_name( "" )
+                                        .bank_name( "Mandiri" )
                                         .disbursement_date(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
                                         .invoices(invoices)
                                         .build()

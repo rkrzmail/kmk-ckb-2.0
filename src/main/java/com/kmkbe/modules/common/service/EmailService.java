@@ -37,6 +37,7 @@ public class EmailService {
     private static final String M_CUST_CHANGE_OTP = "M_CUST_CHANGE_OTP";
     private static final String M_CUST_ACTIVE = "M_CUST_ACTIVE";
     private static final String M_CUST_LOAN = "M_CUST_LOAN";
+    private static final String M_CUST_LOAN_SUBMITED = "M_CUST_LOAN_SUBMITED";
     private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";
     private static final String M_BOUWHEER_PAYMENT = "M_BOUWHEER_PAYMENT";
     private static final String M_CUST_LOAD_CHANGE = "M_CUST_LOAD_CHANGE";
@@ -179,6 +180,29 @@ public class EmailService {
         }
     }
 
+    @Async
+    public void sendNotificationLoanSubmited(
+            final Customer customer,
+            LoanDisburseEmailPayload payload
+    ) {
+        try {
+            Map<String, Object> args = new HashMap<>();
+            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
+            if (payloadArgs != null) {
+                payloadArgs.remove("invoices");
+                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+            }
+
+            args.put("email", customer.getCustEmail());
+            args.put("name", customer.getCustName());
+            args.put("id_no", customer.getCustIdNo());
+            args.put("additionalArgs", payloadArgs);
+
+            send(customer.getCustEmail(), args, M_CUST_LOAN_SUBMITED);
+        } catch (Exception e) {
+            log.error("Error sendNotificationLoanDisbursement {}", e.getMessage());
+        }
+    }
     @Async
     public void sendNotificationPencairan(
             String email,

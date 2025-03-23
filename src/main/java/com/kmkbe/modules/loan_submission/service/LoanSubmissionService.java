@@ -1124,7 +1124,7 @@ public class LoanSubmissionService {
                 }
             }
 
-            emailService.sendNotificationLoanDisbursement(
+            emailService.sendNotificationLoanSubmited(
                     customer,
                     LoanDisburseEmailPayload.builder()
                             .financingCode(createdFinancing.getFinancingHdrCode().toString())
