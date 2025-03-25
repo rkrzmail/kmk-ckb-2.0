@@ -180,12 +180,38 @@ public class EmailService {
         }
     }
 
+//    @Async
+//    public void sendNotificationLoanSubmited(
+//            final Customer customer,
+//            LoanDisburseEmailPayload payload
+//    ) {
+//        try {
+//            Map<String, Object> args = new HashMap<>();
+//            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
+//            if (payloadArgs != null) {
+//                payloadArgs.remove("invoices");
+//                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+//            }
+//
+//            args.put("email", customer.getCustEmail());
+//            args.put("name", customer.getCustName());
+//            args.put("id_no", customer.getCustIdNo());
+//            args.put("additionalArgs", payloadArgs);
+//
+//            send(customer.getCustEmail(), args, M_CUST_LOAN_SUBMITED);
+//        } catch (Exception e) {
+//            log.error("Error sendNotificationLoanDisbursement {}", e.getMessage());
+//        }
+//    }
+
     @Async
     public void sendNotificationLoanSubmited(
             final Customer customer,
             LoanDisburseEmailPayload payload
     ) {
         try {
+            EmailTemplate template = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(M_CUST_LOAN_SUBMITED, true);
+
             Map<String, Object> args = new HashMap<>();
             Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
             if (payloadArgs != null) {
@@ -193,16 +219,39 @@ public class EmailService {
                 payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
             }
 
-            args.put("email", customer.getCustEmail());
+//            args.put("email", customer.getCustEmail());
+            args.put("email", "tedyaditia047@gmail.com");
             args.put("name", customer.getCustName());
             args.put("id_no", customer.getCustIdNo());
             args.put("additionalArgs", payloadArgs);
 
-            send(customer.getCustEmail(), args, M_CUST_LOAN_SUBMITED);
+            // tambah data lain supaya masuk args
+            args.put("financingCode", payload.getFinancingCode());
+            args.put("companyName", payload.getCompanyName());
+            args.put("phoneNumber", payload.getPhoneNumber());
+            args.put("applicationDate", payload.getApplicationDate());
+            args.put("invoiceAmt", payload.getInvoiceAmt());
+            args.put("retention", payload.getRetention());
+            args.put("financingAmt", payload.getFinancingAmt());
+            args.put("totalFeeAmt", payload.getTotalFeeAmt());
+            args.put("disburseAmt", payload.getDisburseAmt());
+            args.put("tenor", payload.getTenor());
+            args.put("financingDueDate", payload.getFinancingDueDate());
+
+            String bodyMail = mappingBody(template.getBodyMail(), args);
+
+            template.setBodyMail(bodyMail);
+            template.setMailTo("tedyaditia047@gmail.com");
+//            template.setMailTo(customer.getCustEmail());
+
+//            sendMailMessage(template, customer.getCustEmail());
+            sendMailMessage(template, "tedyaditia047@gmail.com");
+
         } catch (Exception e) {
-            log.error("Error sendNotificationLoanDisbursement {}", e.getMessage());
+            log.error("Error sendNotificationLoanSubmited {}", e.getMessage());
         }
     }
+
     @Async
     public void sendNotificationPencairan(
             String email,
