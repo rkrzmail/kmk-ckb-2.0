@@ -219,8 +219,8 @@ public class EmailService {
                 payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
             }
 
-//            args.put("email", customer.getCustEmail());
-            args.put("email", "tedyaditia047@gmail.com");
+            args.put("email", customer.getCustEmail());
+//            args.put("email", "tedyaditia047@gmail.com");
             args.put("name", customer.getCustName());
             args.put("id_no", customer.getCustIdNo());
             args.put("additionalArgs", payloadArgs);
@@ -241,11 +241,11 @@ public class EmailService {
             String bodyMail = mappingBody(template.getBodyMail(), args);
 
             template.setBodyMail(bodyMail);
-            template.setMailTo("tedyaditia047@gmail.com");
-//            template.setMailTo(customer.getCustEmail());
+//            template.setMailTo("tedyaditia047@gmail.com");
+            template.setMailTo(customer.getCustEmail());
 
-//            sendMailMessage(template, customer.getCustEmail());
-            sendMailMessage(template, "tedyaditia047@gmail.com");
+            sendMailMessage(template, customer.getCustEmail());
+//            sendMailMessage(template, "tedyaditia047@gmail.com");
 
         } catch (Exception e) {
             log.error("Error sendNotificationLoanSubmited {}", e.getMessage());
