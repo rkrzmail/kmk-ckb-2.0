@@ -197,7 +197,7 @@ public class AgreementController {
                 }
             }
 
-
+            //kirim email setelah  pengajuan debitur telah disetujui (setelah uoload kontark)
             emailService.sendNotificationLoanDisbursement(
                     customer,
                     LoanDisburseEmailPayload.builder()

@@ -5,10 +5,7 @@ import com.kmkbe.core.config.MailConfig;
 import com.kmkbe.core.domain.dto.MailRemoteDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.EmailTemplate;
-import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
-import com.kmkbe.core.domain.model.InvoiceEmailPayload;
-import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
-import com.kmkbe.core.domain.model.PencarianPayload;
+import com.kmkbe.core.domain.model.*;
 import com.kmkbe.core.domain.repository.EmailTemplateRepository;
 import com.kmkbe.core.domain.repository.ErrorLogRepository;
 import com.kmkbe.core.utils.ObjectUtils;
@@ -36,12 +33,14 @@ public class EmailService {
     private static final String M_CUST_NEW_OTP = "M_CUST_NEW_OTP";
     private static final String M_CUST_CHANGE_OTP = "M_CUST_CHANGE_OTP";
     private static final String M_CUST_ACTIVE = "M_CUST_ACTIVE";
-    private static final String M_CUST_LOAN = "M_CUST_LOAN";
-    private static final String M_CUST_LOAN_SUBMITED = "M_CUST_LOAN_SUBMITED";
-    private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";
+    private static final String M_CUST_LOAN = "M_CUST_LOAN";//(3)
+    private static final String M_CUST_LOAN_SUBMITED = "M_CUST_LOAN_SUBMITED";//(4)
+    private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";//(2)
     private static final String M_BOUWHEER_PAYMENT = "M_BOUWHEER_PAYMENT";
     private static final String M_CUST_LOAD_CHANGE = "M_CUST_LOAD_CHANGE";
-    private static final String M_CUST_PENCAIRAN = "M_CUST_PENCAIRAN";
+    private static final String M_CUST_PENCAIRAN = "M_CUST_PENCAIRAN";//(5)
+    private static final String M_SIM_LOAN = "M_SIM_LOAN";//(1)
+
 
 
     private final EmailTemplateRepository emailTemplateRepository;
@@ -61,6 +60,54 @@ public class EmailService {
     @Value("${testing.mail.password}")
     private String testingMailPassword;
 
+
+    @Async
+    public void sendPerubahanSimulasi(
+            final Customer customer,
+            LoanDisburseEmailPayload payload
+    ) {
+        try {
+            EmailTemplate template = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(M_SIM_LOAN, true);
+
+            Map<String, Object> args = new HashMap<>();
+            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
+            if (payloadArgs != null) {
+                payloadArgs.remove("invoices");
+                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+            }
+
+            args.put("email", customer.getCustEmail());
+//            args.put("email", "tedyaditia047@gmail.com");
+            args.put("name", customer.getCustName());
+            args.put("id_no", customer.getCustIdNo());
+            args.put("additionalArgs", payloadArgs);
+
+            // tambah data lain supaya masuk args
+            args.put("financingCode", payload.getFinancingCode());
+            args.put("companyName", payload.getCompanyName());
+            args.put("phoneNumber", payload.getPhoneNumber());
+            args.put("applicationDate", payload.getApplicationDate());
+            args.put("invoiceAmt", payload.getInvoiceAmt());
+            args.put("retention", payload.getRetention());
+            args.put("financingAmt", payload.getFinancingAmt());
+            args.put("totalFeeAmt", payload.getTotalFeeAmt());
+            args.put("disburseAmt", payload.getDisburseAmt());
+            args.put("tenor", payload.getTenor());
+            args.put("financingDueDate", payload.getFinancingDueDate());
+
+            String bodyMail = mappingBody(template.getBodyMail(), args);
+
+            template.setBodyMail(bodyMail);
+//            template.setMailTo("tedyaditia047@gmail.com");
+            template.setMailTo(customer.getCustEmail());
+
+            sendMailMessage(template, customer.getCustEmail());
+//            sendMailMessage(template, "tedyaditia047@gmail.com");
+
+        } catch (Exception e) {
+            log.error("Error sendNotificationLoanSubmited {}", e.getMessage());
+        }
+    }
 
     public EmailService(
             EmailTemplateRepository emailTemplateRepository,

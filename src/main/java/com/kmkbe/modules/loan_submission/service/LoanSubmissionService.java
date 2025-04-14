@@ -585,6 +585,73 @@ public class LoanSubmissionService {
                     finHdr.setFinancingAmt(simulationHist.getFinancingAmt());
                     financingHdrRepository.save(finHdr);
 
+                    //send email Perubahan Simuilasi Ke debitur
+                    try {
+                        final FinancingHdr financing = finHdr;
+                        Customer customer = financing.getCustomer();
+
+
+                        final FinancingHdrDto createdFinancing = financingHdrService.dtoFromEntity(financing);
+
+                        final List<InvoiceEmailPayload> invoices = createdFinancing.getDetails()
+                                .stream()
+                                .map((item) ->
+                                        InvoiceEmailPayload.builder()
+                                                //.seq(item.getInvoiceSeqno())
+                                                .invoiceNo(item.getInvoice().getCustInvNo())
+                                                .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
+                                                .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+                                                .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
+                                                .description("Invoice By Trakindo")
+                                                .bouwheerName(createdFinancing.getBouwheer().getBouwheerName())
+                                                .build()
+                                ).toList();
+
+
+                        final double totalFeeAmt =
+                                createdFinancing.getAdminFeeAmt()
+                                        + createdFinancing.getLegalFeeAmtNett()
+                                        + createdFinancing.getInsuranceFeeAmt()
+                                        + createdFinancing.getOthersFeeAmt()
+                                        + createdFinancing.getProvisionFeeAmt()
+                                        + createdFinancing.getSurveyFeeAmtNett();
+
+                        String phoneNumber = createdFinancing.getCustomer().getCustMobilePhone();
+                        if(createdFinancing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
+                            Optional<CustomerCompany> customerCompany = customerCompanyRepository.findByCustomer(createdFinancing.getCustomer());
+                            if (customerCompany.isPresent()){
+                                if (customerCompany.get().getPhone()!=null && !customerCompany.get().getPhone().equalsIgnoreCase("")){
+                                    phoneNumber = customerCompany.get().getPhone();
+                                }
+                            }
+                        }else{
+                            Optional<CustomerPersonal> customerPersonal = customerPersonalRepository.findByCustomer(createdFinancing.getCustomer());
+                            if (customerPersonal.isPresent()){
+                                if (customerPersonal.get().getPhone()!=null && !customerPersonal.get().getPhone().equalsIgnoreCase("")){
+                                    phoneNumber = customerPersonal.get().getPhone();
+                                }
+                            }
+                        }
+                        emailService.sendPerubahanSimulasi(
+                                customer,
+                                LoanDisburseEmailPayload.builder()
+                                        .financingCode(createdFinancing.getFinancingHdrCode().toString())
+                                        .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
+                                        .companyName(customer.getCustName())//createdFinancing.getBouwheer().getBouwheerName()
+                                        .phoneNumber(phoneNumber)
+                                        .tenor(createdFinancing.getTenor())
+                                        .financingCode(createdFinancing.getFinancingHdrCode().toString())
+                                        .financingDueDate(DateTimeUtils.formatToDate(createdFinancing.getFinancingDueDate()))
+                                        .retention(CommonFormattingUtils.formatAmount(createdFinancing.getRetention()))
+                                        .financingAmt(CommonFormattingUtils.formatAmount(createdFinancing.getFinancingAmt()))
+                                        .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+                                        .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getTotalInvoiceAmt()))
+                                        .disburseAmt(CommonFormattingUtils.formatAmount(createdFinancing.getDisburseAmt()))
+                                        .invoices(invoices)
+                                        .build()
+                        );
+                    }catch (Exception e){}
+
                     return  null;
                 }else {
                     throw new Exception("SimulationHist not found");
@@ -1042,6 +1109,8 @@ public class LoanSubmissionService {
                                         phone = financing.getCustomer().getCompany().getPhone();
                                     }
                                 }
+
+                                //kirim email assign dan re assign
                                 emailService.sendNotificationBranchAssign(
                                         toEmail,
                                         financing.getBouwheer().getBouwheerName(),
@@ -1124,6 +1193,7 @@ public class LoanSubmissionService {
                 }
             }
 
+            //kirim email setelah submit debitur
             emailService.sendNotificationLoanSubmited(
                     customer,
                     LoanDisburseEmailPayload.builder()

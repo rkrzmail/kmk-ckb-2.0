@@ -415,6 +415,8 @@ public class DistributionSubmissionService {
                         phone = financingHdr.getCustomer().getCompany().getPhone();
                     }
                 }
+
+                //kirim email assign dan re assign
                 emailService.sendNotificationBranchAssign(
                         toEmail,
                         financingHdr.getBouwheer().getBouwheerName(),

@@ -205,7 +205,7 @@ public class InquiryDisburseService {
                         financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
                     } catch (Exception ignored) {  }
 
-                    //send email sendNotificationPencairan
+                    //send email sendNotification Pencairan
                     try {
                         //FinancingHdr financingHdr = agreement.getFinancingHdr();
                         FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(agreement.getFinancingHdr().getFinancingHdrCode()).get();
@@ -227,6 +227,8 @@ public class InquiryDisburseService {
 
                         String agreementCode = agreement.getAgreementCode();
 
+
+                        //kirim email pencarian berhasil ke debitur (terjadi sekali saat mengisi disbursementLog pertama kali)
                         emailService.sendNotificationPencairan(
                                 financingHdr.getCustomer().getCustEmail(),
                                 "",
