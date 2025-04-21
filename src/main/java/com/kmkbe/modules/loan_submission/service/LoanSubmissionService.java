@@ -92,6 +92,7 @@ public class LoanSubmissionService {
             final InquiryInvoiceRemoteDto inquiryInvoiceRemote;
 
             try {
+                //ambil data dari api
                 inquiryInvoiceRemote = invoiceRemoteDto.inquiryInvoice(vendorTokenExtractor.getVendorCode()).getData();
             } catch (Exception e) {
                 throw new IllegalStateException("Terjdi kesalahan saat mengambil data invoice dari pihak PT. Trakindo Utama.");
@@ -138,13 +139,14 @@ public class LoanSubmissionService {
             final SimpleDateFormat sdfNoSeperator = new SimpleDateFormat("yyyyMMdd");
             //double baseUsdToIdr = currencyRemoteService.fetchIdrFrom("usd");
 
+
+            //jika data banyak berpotensi timeout
             List<PostedInvoiceDto> result = new ArrayList<>();
             for (int i = 0; i < inquiryInvoiceRemote.getRow().size(); i++) {
                 InquiryInvoiceRemoteDto.InvoiceRemoteDto  remoteDto = inquiryInvoiceRemote.getRow().get(i);
                 if (StringUtil.isNullOrEmpty(inquiryInvoiceRemote.getRow().get(i).getPoNumber())) {
-                    continue;
+                    continue;//hide yng po nya kosong
                 }
-
 
                 Optional<Invoice>  invoice =  invoiceRepository.findByBouwheerInvNoAndCustInvNo(
                         vendorTokenExtractor.getBouwheerCode().toString(),
