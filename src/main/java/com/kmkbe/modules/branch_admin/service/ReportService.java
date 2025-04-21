@@ -19,4 +19,7 @@ public class ReportService {
         return customerRepository.findVisitorData();
     }
 
+    public List<ProyeksiDto> getProyeksiReport() {
+        return  customerRepository.findProyeksiData();
+    }
 }

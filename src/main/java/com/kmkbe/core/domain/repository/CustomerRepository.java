@@ -34,4 +34,11 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
             "JOIN Bouwheer b ON cwr.bouwheer.bouwheerCode = b.bouwheerCode")
     List<VisitorDto> findVisitorData();
 
+    @Query("SELECT new com.kmkbe.core.domain.dto.ProyeksiDto(c.custName, e.isExisting, b.bouwheerName, cwr.cwrCode)" +
+            "FROM ExistingCustomer e " +
+            "JOIN CustomerCompany cc ON e.identityNo = cc.identityNo " +
+            "JOIN Customer c ON cc.customer.custCode = c.custCode " +
+            "JOIN Cwr cwr ON cc.customer.custCode = cwr.customer.custCode " +
+            "JOIN Bouwheer b ON cwr.bouwheer.bouwheerCode = b.bouwheerCode ")
+    List<ProyeksiDto> findProyeksiData();
 }

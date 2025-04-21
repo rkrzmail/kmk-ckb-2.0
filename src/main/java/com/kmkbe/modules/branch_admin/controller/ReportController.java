@@ -24,4 +24,10 @@ public class ReportController {
         List<VisitorDto> visitorData = reportService.getVisitorReport();
         return new CommonResult<List<VisitorDto>>().success(visitorData);
     }
+
+    @GetMapping("/proyeksi")
+    public CommonResult<List<ProyeksiDto>> getProyeksiReport() {
+        List<ProyeksiDto> proyeksiData = reportService.getProyeksiReport();
+        return new CommonResult<List<ProyeksiDto>>().success(proyeksiData);
+    }
 }
