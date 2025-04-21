@@ -30,4 +30,10 @@ public class ReportController {
         List<ProyeksiDto> proyeksiData = reportService.getProyeksiReport();
         return new CommonResult<List<ProyeksiDto>>().success(proyeksiData);
     }
+
+    @GetMapping("/duedate")
+    public CommonResult<List<DuedateDto>> getDuedateReport() {
+        List<DuedateDto> duedateData = reportService.getDuedateReport();
+        return new CommonResult<List<DuedateDto>>().success(duedateData);
+    }
 }

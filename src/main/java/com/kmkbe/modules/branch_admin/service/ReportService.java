@@ -22,4 +22,8 @@ public class ReportService {
     public List<ProyeksiDto> getProyeksiReport() {
         return  customerRepository.findProyeksiData();
     }
+
+    public List<DuedateDto> getDuedateReport() {
+        return customerRepository.findDuedateData();
+    }
 }

@@ -41,4 +41,9 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
             "JOIN Cwr cwr ON cc.customer.custCode = cwr.customer.custCode " +
             "JOIN Bouwheer b ON cwr.bouwheer.bouwheerCode = b.bouwheerCode ")
     List<ProyeksiDto> findProyeksiData();
+
+    @Query("SELECT new com.kmkbe.core.domain.dto.DuedateDto(custName, custIdNo )" +
+            "FROM Customer " +
+            "WHERE custIdTypeCode = 'NPWP' ")
+    List<DuedateDto> findDuedateData();
 }
