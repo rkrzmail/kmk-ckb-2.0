@@ -148,13 +148,14 @@ public class LoanSubmissionService {
                     continue;//hide yng po nya kosong
                 }
 
-                Optional<Invoice>  invoice =  invoiceRepository.findByBouwheerInvNoAndCustInvNo(
+                /// hide check
+                /*Optional<Invoice>  invoice =  invoiceRepository.findByBouwheerInvNAndCustInvNo(
                         vendorTokenExtractor.getBouwheerCode().toString(),
                         inquiryInvoiceRemote.getRow().get(i).getReference());
                 if (invoice.isPresent()) {
                     //invoice sudah direquest
                     continue;
-                }
+                }*/
 
                 Date invDate, invDueDate;
                 try {
