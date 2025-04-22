@@ -22,18 +22,21 @@ public class ReportController {
     @GetMapping("/visitor")
     public CommonResult<List<VisitorDto>> getVisitorReport() {
         List<VisitorDto> visitorData = reportService.getVisitorReport();
-        return new CommonResult<List<VisitorDto>>().success(visitorData);
+        Integer count = visitorData != null ? (int) visitorData.size() : 0;
+        return new CommonResult<List<VisitorDto>>().successWithCount(visitorData,count);
     }
 
     @GetMapping("/proyeksi")
     public CommonResult<List<ProyeksiDto>> getProyeksiReport() {
         List<ProyeksiDto> proyeksiData = reportService.getProyeksiReport();
-        return new CommonResult<List<ProyeksiDto>>().success(proyeksiData);
+        Integer count = proyeksiData != null ? (int) proyeksiData.size() : 0;
+        return new CommonResult<List<ProyeksiDto>>().successWithCount(proyeksiData,count);
     }
 
     @GetMapping("/duedate")
     public CommonResult<List<DuedateDto>> getDuedateReport() {
         List<DuedateDto> duedateData = reportService.getDuedateReport();
-        return new CommonResult<List<DuedateDto>>().success(duedateData);
+        Integer count = duedateData != null ? (int) duedateData.size() : 0;
+        return new CommonResult<List<DuedateDto>>().successWithCount(duedateData,count);
     }
 }
