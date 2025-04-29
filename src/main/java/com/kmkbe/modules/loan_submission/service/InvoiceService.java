@@ -17,6 +17,9 @@ import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.Query;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
@@ -480,4 +483,5 @@ public class InvoiceService {
                 .list(results)
                 .build();
     }
+
 }

@@ -27,4 +27,7 @@ public interface MstFileTypeRepository extends JpaRepository<MstFileType, String
             List<String> fileAllocation,
             Pageable pageable
     );
+
+    List<MstFileType> findAllByFileAllocationInOrderByFileTypeIdDesc(List<String> fileAllocation);
+
 }

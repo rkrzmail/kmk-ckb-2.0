@@ -213,117 +213,89 @@ public class DocumentService {
 //        }
 //    }
 
-    public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
-            HttpServletRequest httpServletRequest,
-            Authentication authentication,
-            PaginationRequest request,
-            Boolean isFirst
-    ) throws SignatureException {
-        try {
-            if (isFirst != null && isFirst) {
-                //fetchAndMappingDocVendor(authentication);
-            }
+public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
+        HttpServletRequest httpServletRequest,
+        Authentication authentication,
+        PaginationRequest request,
+        Boolean isFirst
+) throws SignatureException {
+    try {
+        if (isFirst != null && isFirst) {
+            //fetchAndMappingDocVendor(authentication);
+        }
 
-            int pageNo = 0, pageSize = 10;
+        List<String> fileAllocation = new ArrayList<>();
+        if ("debitur".equalsIgnoreCase(String.valueOf(httpServletRequest.getParameter("owner")))) {
+            fileAllocation = List.of("Legal", "Financing");
+        } else {
+            fileAllocation = List.of("internal", "Legal", "Financing");
+        }
 
-            if (request.getPageNo() != null) {
-                pageNo = request.getPageNo();
-            }
-            if (request.getPageSize() != null) {
-                pageSize = request.getPageSize();
-            }
+        // Fetch ALL data tanpa paging
+        List<MstFileType> allData = mstFileTypeRepository.findAllByFileAllocationInOrderByFileTypeIdDesc(fileAllocation);
 
-            if (pageNo > 0) {
-                pageNo = pageNo - 1;
-            }
+        // Mapping ke DTO
+        List<MstFileTypeDto> result = allData.stream().map((file) -> {
+                    MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
+                    LegalFile legalFile = null;
 
-            List<String> fileAllocation = new ArrayList<>();
-            if (String.valueOf(httpServletRequest.getParameter("owner")).equalsIgnoreCase("debitur")) {
-                fileAllocation = List.of(
-                        "Legal",
-                        "Financing"
-                );
-            } else {
-                fileAllocation = List.of(
-                        "internal",
-                        "Legal",
-                        "Financing"
-                );
-            }
+                    try {
+                        legalFile = legalFileService.fetchByMstFileTypeAndCust(CustomerUtils.authenticateCustomer(authentication), file);
+                    } catch (Exception e) {
+                        log.error("fetchByCust, error {}", e.getMessage());
+                    }
 
-            // Mengambil data awal dari repository
-            Page<MstFileType> page = mstFileTypeRepository.findAllByFileAllocationInOrderByFileTypeIdDesc(
-                    fileAllocation,
-                    PageRequest.of(
-                            pageNo,
-                            pageSize,
-                            Sort.by("fileTypeId").descending()
-                    )
-            );
+                    if (legalFile != null) {
+                        LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
+                        legalFileDto.setUploadedDate(legalFile.getDtmUpd());
 
-            // Mengubah hasil dari MstFileType ke MstFileTypeDto
-            List<MstFileTypeDto> result = page.map((file) -> {
-                        MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
-                        LegalFile legalFile = null;
+                        if (!"DOC005".equals(file.getFileTypeCode()) && !"DOC006".equals(file.getFileTypeCode())) {
+                            String generatedUrl = UriUtils.fileUlr(
+                                    httpServletRequest,
+                                    Math.toIntExact(legalFile.getFileId()),
+                                    UriUtils.DocType.loan
+                            );
 
-                        try {
-                            legalFile = legalFileService.fetchByMstFileTypeAndCust(CustomerUtils.authenticateCustomer(authentication), file);
-                        } catch (Exception e) {
-                            log.error("fetchByCust, error {}", e.getMessage());
-                        }
-
-                        if (legalFile != null) {
-                            LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
-                            legalFileDto.setUploadedDate(legalFile.getDtmUpd());
-
-                            // Jika fileTypeCode adalah DOC005 atau DOC006, jangan generate URL
-                            if (!"DOC005".equals(file.getFileTypeCode()) && !"DOC006".equals(file.getFileTypeCode())) {
-                                String generatedUrl = UriUtils.fileUlr(
-                                        httpServletRequest,
-                                        Math.toIntExact(legalFile.getFileId()),
-                                        UriUtils.DocType.loan
-                                );
-
-                                if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
-                                    generatedUrl = legalFile.getFilePath();
-                                }
-
-                                legalFileDto.setFileUrl(generatedUrl);
-                            } else {
-                                legalFileDto.setFileUrl(null); // Jangan buat URL
+                            if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
+                                generatedUrl = legalFile.getFilePath();
                             }
 
-                            dto.setLegalFile(legalFileDto);
+                            legalFileDto.setFileUrl(generatedUrl);
+                        } else {
+                            legalFileDto.setFileUrl(null);
                         }
 
-                        return dto;
-                    })
-                    .toList();
-
-            // Menggunakan SpecPagination untuk filter dan pagination
-            return SpecPagination.paginationData(new SpecPagination<MstFileTypeDto, MstFileTypeDto>(result, request) {
-                @Override
-                public MstFileTypeDto search(MstFileTypeDto data) {
-                    // Pencarian berdasarkan fileTypeDesc atau legalFile.fileName
-                    if (isSearchBy("fileTypeDesc") && like(data.getFileTypeDesc())) {
-                        return data;
-                    } else if (isSearchBy("legalFile.fileName") && like(data.getLegalFile().getFileName())) {
-                        return data;
+                        dto.setLegalFile(legalFileDto);
                     }
-                    return null; // Tidak ditemukan
-                }
 
-                @Override
-                public MstFileTypeDto eval(MstFileTypeDto data) {
-                    return data; // Kembalikan data yang sudah dievaluasi
-                }
-            });
+                    return dto;
+                })
+                .toList();
 
-        } catch (Exception e) {
-            log.error("getAllLoanDocumentRequirement: {}", e.getMessage());
-            throw e;
-        }
+        // Baru lakukan filtering + pagination di SpecPagination
+        return SpecPagination.paginationData(new SpecPagination<MstFileTypeDto, MstFileTypeDto>(result, request) {
+            @Override
+            public MstFileTypeDto search(MstFileTypeDto data) {
+                if (isSearchBy("fileTypeDesc") && like(data.getFileTypeDesc())) {
+                    return data;
+                } else if (isSearchBy("legalFile.fileName") && data.getLegalFile() != null && like(data.getLegalFile().getFileName())) {
+                    return data;
+                }
+                return null;
+            }
+
+            @Override
+            public MstFileTypeDto eval(MstFileTypeDto data) {
+                return data;
+            }
+        });
+
+    } catch (Exception e) {
+        log.error("getAllLoanDocumentRequirement: {}", e.getMessage(), e);
+        throw e;
     }
+}
+
 
     @Transactional
     public LegalFileDto uploadLoanDocument(
