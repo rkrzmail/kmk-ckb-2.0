@@ -123,7 +123,8 @@ public class DistributionSubmissionService {
 
                     return DistributionSubmissionDto.builder()
                             .financingHdrCode(e.getFinancingHdrCode().toString())
-                            .custName("")//e.getCustomer().getCustName()
+//                            .custName("")//e.getCustomer().getCustName()
+                            .custName(e.getCustomer().getCustName())
                             .bouwheerName(e.getBouwheer().getBouwheerName())
                             .city(city)
                             .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
