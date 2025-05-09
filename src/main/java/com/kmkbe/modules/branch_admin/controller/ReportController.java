@@ -1,6 +1,7 @@
 package com.kmkbe.modules.branch_admin.controller;
 
 import com.kmkbe.core.domain.dto.ProyeksiReportDto;
+import com.kmkbe.core.domain.dto.SummaryByBranchDto;
 import com.kmkbe.core.domain.dto.VisitorDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
@@ -42,4 +43,13 @@ public class ReportController {
         );
     }
 
+    @GetMapping("/summary/branch")
+    public CommonResult<PaginationResult<SummaryByBranchDto>> getlistSummaryByBranch(
+            Authentication authentication, PaginationRequest request
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
+        return new CommonResult<PaginationResult<SummaryByBranchDto>>().success(
+                reportService.getSummaryByBranch(request)
+        );
+    }
 }

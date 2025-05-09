@@ -110,4 +110,50 @@ public class ReportService {
         }
     }
 
+    public PaginationResult<SummaryByBranchDto> getSummaryByBranch(PaginationRequest request) {
+        try {
+            // Default pagination values
+            int pageNo = 0, pageSize = 10;
+
+            // Set pagination values from request
+            if (request.getPageNo() != null) {
+                pageNo = request.getPageNo();
+            }
+            if (request.getPageSize() != null) {
+                pageSize = request.getPageSize();
+            }
+
+            // Adjust for zero-based pagination
+            if (pageNo > 0) {
+                pageNo = pageNo - 1;
+            }
+
+            // Fetch data with pagination
+            Page<SummaryByBranchDto> pagination = customerRepository.findSummaryByCustCode(PageRequest.of(pageNo, pageSize));
+
+            // Map the results into a list
+            List<SummaryByBranchDto> result = pagination.stream()
+                    .map(e -> new SummaryByBranchDto(
+                            e.getDebtorName(),
+                            e.getNpwp(),
+                            e.getBouwheerName(),
+                            e.getTotalPencairan(),
+                            e.getJumlahPlafonAmount(),
+                            e.getTotalUtilizationAmount(),
+                            e.getTotalNilaiRetensi()
+                    ))
+                    .collect(Collectors.toList());
+
+            // Return the paginated result
+            return PaginationResult.<SummaryByBranchDto>builder()
+                    .currentPage(pageNo + 1)  // Add 1 to page number since it’s zero-indexed
+                    .totalData(pagination.getTotalElements())
+                    .totalPage(pagination.getTotalPages())
+                    .list(result)
+                    .build();
+        } catch (Exception e) {
+            throw e;  // Handle exceptions properly in real-world code
+        }
+    }
+
 }
