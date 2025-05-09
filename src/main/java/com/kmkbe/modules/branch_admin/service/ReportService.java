@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ReportService {
@@ -60,6 +61,50 @@ public class ReportService {
                     .totalPage(pagination.getTotalPages())
                     .list(result)
                     .build();
+        } catch (Exception e) {
+            throw e;
+        }
+    }
+
+    public PaginationResult<ProyeksiReportDto> getProyeksiReport(PaginationRequest request) {
+        try {
+            int pageNo = 0, pageSize = 10;
+
+            if (request.getPageNo() != null) {
+                pageNo = request.getPageNo();
+            }
+            if (request.getPageSize() != null) {
+                pageSize = request.getPageSize();
+            }
+
+            if (pageNo > 0) {
+                pageNo = pageNo - 1;
+            }
+
+            // Use the Pageable object to manage pagination
+            Page<ProyeksiReportDto> pagination = customerRepository.findActiveCustomersWithInvoiceDetails(PageRequest.of(pageNo, pageSize));
+
+            // Collecting the results into a list
+            List<ProyeksiReportDto> result = pagination.stream()
+                    .map(e -> new ProyeksiReportDto(
+                            e.getDebtorName(),
+                            e.getDebtorStatus(),
+                            e.getBouwheerName(),
+                            e.getInvoiceNo(),
+                            e.getAmountInvoice(),
+                            e.getAmountFinancing(),
+                            e.getInvoiceDueDate(),
+                            e.getEffectiveDate()
+                    ))
+                    .collect(Collectors.toList());
+
+            return PaginationResult.<ProyeksiReportDto>builder()
+                    .currentPage(pageNo + 1)
+                    .totalData(pagination.getTotalElements())
+                    .totalPage(pagination.getTotalPages())
+                    .list(result)
+                    .build();
+
         } catch (Exception e) {
             throw e;
         }

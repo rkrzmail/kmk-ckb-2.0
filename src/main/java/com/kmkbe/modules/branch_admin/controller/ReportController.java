@@ -1,5 +1,6 @@
 package com.kmkbe.modules.branch_admin.controller;
 
+import com.kmkbe.core.domain.dto.ProyeksiReportDto;
 import com.kmkbe.core.domain.dto.VisitorDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
@@ -28,6 +29,16 @@ public class ReportController {
         UserInternalUtils.authenticated(authentication);
         return new CommonResult<PaginationResult<VisitorDto>>().success(
                 reportService.getVisitorReport(request)
+        );
+    }
+
+    @GetMapping("/proyeksi")
+    public CommonResult<PaginationResult<ProyeksiReportDto>> getlistProyeksi(
+            Authentication authentication, PaginationRequest request
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
+        return new CommonResult<PaginationResult<ProyeksiReportDto>>().success(
+                reportService.getProyeksiReport(request)
         );
     }
 
