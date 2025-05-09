@@ -1,12 +1,22 @@
 package com.kmkbe.core.domain.dto;
 
-import lombok.Builder;
-import lombok.Getter;
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import lombok.*;
 
-@Builder
+import java.io.Serializable;
+import java.time.LocalDateTime;
+
+@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Getter
-public class VisitorDto {
+@Setter
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class VisitorDto implements Serializable {
+    private Long visitorId;
+    private String vendorCode;
     private String debtorName;
-    private Boolean debtorStatus;
+    private String debtorStatus;
     private String bouwheerName;
+    private LocalDateTime visitDate;
 }

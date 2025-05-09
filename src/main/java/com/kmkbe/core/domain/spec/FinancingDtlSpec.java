@@ -167,7 +167,7 @@ public class FinancingDtlSpec {
 //    }
 public static Specification<FinancingDtl> custInvoiceFilterBy(UUID financeHdrCode, String searchBy, String searchValue) {
     return (root, query, cb) -> {
-        Join<FinancingDtl, Invoice> joinInvoice = root.join("invoice", JoinType.LEFT);
+        Join<FinancingDtl, Invoice> joinInvoice = root.join("invoice", JoinType.INNER);
         Join<FinancingDtl, FinancingHdr> joinFinancingHdr = root.join("financingHdr", JoinType.INNER);
         Join<FinancingHdr, Customer> joinCustomer = joinFinancingHdr.join("customer", JoinType.INNER);
         Join<FinancingHdr, Agreement> joinAgreement = joinFinancingHdr.join("agreement", JoinType.INNER);
