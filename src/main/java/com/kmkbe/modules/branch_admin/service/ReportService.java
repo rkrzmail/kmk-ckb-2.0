@@ -1,28 +1,47 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.Visitor;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.repository.CustomerRepository;
-import com.kmkbe.core.domain.repository.VisitorRepository;
+import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.modules.major_account.service.MstBranchService;
+import com.kmkbe.modules.remote.service.AuthRemoteService;
+import com.kmkbe.modules.remote.service.EmailAo;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class ReportService {
 
     @Autowired
-    private VisitorRepository visitorRepository;
+    private FinancingHdrRepository financingHdrRepository;
+
     @Autowired
     private CustomerRepository customerRepository;
 
+    @Autowired
+    private VisitorRepository visitorRepository;
+
+    @Autowired
+    private MstBranchService mstBranchService;
+
+    @Autowired
+    private AuthRemoteService authRemoteService;
+
+    @Autowired
+    private EmailAo emailAo;
+
+    private String jwtToken;
+
+    private void ensureJwtToken() {
+        jwtToken = authRemoteService.fetchAuthJwt().getData();
+    }
 
     public PaginationResult<VisitorDto>getVisitorReport(
             PaginationRequest request
@@ -112,10 +131,8 @@ public class ReportService {
 
     public PaginationResult<SummaryByBranchDto> getSummaryByBranch(PaginationRequest request) {
         try {
-            // Default pagination values
             int pageNo = 0, pageSize = 10;
 
-            // Set pagination values from request
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
             }
@@ -123,15 +140,12 @@ public class ReportService {
                 pageSize = request.getPageSize();
             }
 
-            // Adjust for zero-based pagination
             if (pageNo > 0) {
                 pageNo = pageNo - 1;
             }
 
-            // Fetch data with pagination
             Page<SummaryByBranchDto> pagination = customerRepository.findSummaryByCustCode(PageRequest.of(pageNo, pageSize));
 
-            // Map the results into a list
             List<SummaryByBranchDto> result = pagination.stream()
                     .map(e -> new SummaryByBranchDto(
                             e.getDebtorName(),
@@ -144,16 +158,87 @@ public class ReportService {
                     ))
                     .collect(Collectors.toList());
 
-            // Return the paginated result
             return PaginationResult.<SummaryByBranchDto>builder()
-                    .currentPage(pageNo + 1)  // Add 1 to page number since it’s zero-indexed
+                    .currentPage(pageNo + 1)
                     .totalData(pagination.getTotalElements())
                     .totalPage(pagination.getTotalPages())
                     .list(result)
                     .build();
         } catch (Exception e) {
-            throw e;  // Handle exceptions properly in real-world code
+            throw e;
         }
     }
 
+    public PaginationResult<SummaryByAODto> getAllReportBranchByAO(PaginationRequest request) {
+        try {
+            // Setup pagination
+            int pageNo = 0, pageSize = 10;
+
+            if (request.getPageNo() != null) {
+                pageNo = request.getPageNo();
+            }
+            if (request.getPageSize() != null) {
+                pageSize = request.getPageSize();
+            }
+
+            if (pageNo > 0) {
+                pageNo = pageNo - 1;
+            }
+
+            ensureJwtToken();
+
+            Page<Object[]> dataPage = financingHdrRepository.findFinancingDataByFinancingHdrCode(PageRequest.of(pageNo, pageSize));
+
+            List<SummaryByAODto> reportList = new ArrayList<>();
+            for (Object[] result : dataPage) {
+                double totalDisbursement = (Double) result[0];
+                double totalUtilizationAmount = (Double) result[1];
+                String customerName = (String) result[2];
+                String bouwheerName = (String) result[3];
+                double plafondAmount = (Double) result[4];
+                double retentionAmount = (Double) result[5];
+                String branchCode = (String) result[6];
+
+                String branchName = getBranchNameByCode(branchCode);
+
+                List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "AO/AM", jwtToken);
+                String employeeName = employeeList.isEmpty() ? "N/A" : employeeList.get(0).get("employeeName");
+
+                SummaryByAODto report = new SummaryByAODto(
+                        employeeName,
+                        branchName,
+                        customerName,
+                        bouwheerName,
+                        totalDisbursement,
+                        plafondAmount,
+                        totalUtilizationAmount,
+                        retentionAmount
+                );
+
+                reportList.add(report);
+            }
+
+            return PaginationResult.<SummaryByAODto>builder()
+                    .currentPage(pageNo + 1)
+                    .totalData(dataPage.getTotalElements())
+                    .totalPage(dataPage.getTotalPages())
+                    .list(reportList)
+                    .build();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching report for all branches by AO", e);
+        }
+    }
+
+    // Helper method to get the branch name using branchCode from mstBranchService
+    private String getBranchNameByCode(String branchCode) {
+        List<BranchDto> branches = mstBranchService.branchList(null);
+        for (BranchDto branch : branches) {
+            if (branch.getBranchCode().equals(branchCode)) {
+                return branch.getBranchName();
+            }
+        }
+        return "Unknown Branch";
+    }
 }
+

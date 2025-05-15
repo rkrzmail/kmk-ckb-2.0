@@ -1,5 +1,6 @@
 package com.kmkbe.core.domain.repository;
 
+import com.kmkbe.core.domain.dto.SummaryByAODto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.modules.user.entity.MstBranch;
@@ -297,4 +298,13 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
 
     @Query("SELECT f FROM FinancingHdr f WHERE f.customer.custCode = :custCode ORDER BY f.financingDate DESC")
     List<FinancingHdr> findLatestFinancingHdrByCustCode(@Param("custCode") UUID custCode, Pageable pageable);
+
+    @Query("SELECT DISTINCT f.disburseAmt, f.financingAmt, c.custName, b.bouwheerName, cwr.plafondAmt, p.retentionAmt, f.mstBranch.branchCode " +
+            "FROM FinancingHdr f " +
+            "JOIN Customer c ON f.customer.custCode = c.custCode " +
+            "JOIN Bouwheer b ON f.bouwheer.bouwheerCode = b.bouwheerCode " +
+            "JOIN Cwr cwr ON c.custCode = cwr.customer.custCode " +
+            "JOIN Agreement a ON a.financingHdr.financingHdrCode = f.financingHdrCode " +
+            "JOIN PaymentReceiveHistory p ON p.agreementCode = a.agreementCode")
+    Page<Object[]> findFinancingDataByFinancingHdrCode(Pageable pageable);
 }

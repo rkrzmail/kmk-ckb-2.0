@@ -23,7 +23,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByCustEmailAndCustPin(String email, String pin);
 
-    @Query("SELECT new com.kmkbe.core.domain.dto.ProyeksiReportDto(c.custName, " +
+    @Query("SELECT DISTINCT new com.kmkbe.core.domain.dto.ProyeksiReportDto(c.custName, " +
             "CASE WHEN c.existingCust IS NULL THEN NULL END, " +
             "b.bouwheerName, i.custInvNo, i.invoiceAmt, f.financingAmt, i.invoiceDueDate, f.financingDate) " +
             "FROM Customer c " +
@@ -33,7 +33,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
             "WHERE c.isActive = true")
     Page<ProyeksiReportDto> findActiveCustomersWithInvoiceDetails(Pageable pageable);
 
-    @Query("SELECT new com.kmkbe.core.domain.dto.SummaryByBranchDto(" +
+    @Query("SELECT DISTINCT new com.kmkbe.core.domain.dto.SummaryByBranchDto(" +
             "c.custName, " +
             "c.custIdNo, " +
             "b.bouwheerName, " +
