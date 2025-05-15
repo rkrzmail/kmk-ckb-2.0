@@ -1,5 +1,6 @@
 package com.kmkbe.modules.branch_admin.service;
 
+
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.Visitor;
 import com.kmkbe.core.domain.model.PaginationResult;
@@ -13,11 +14,16 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class ReportService {
+
+    private static final Logger log = LoggerFactory.getLogger(ReportService.class);
 
     @Autowired
     private FinancingHdrRepository financingHdrRepository;
@@ -239,6 +245,83 @@ public class ReportService {
             }
         }
         return "Unknown Branch";
+    }
+
+    public PaginationResult<SummaryDetailDto> getSummaryDetail(PaginationRequest request) {
+        try {
+            int pageNo = 0, pageSize = 10;
+
+            if (request.getPageNo() != null) {
+                pageNo = request.getPageNo();
+            }
+            if (request.getPageSize() != null) {
+                pageSize = request.getPageSize();
+            }
+
+            if (pageNo > 0) {
+                pageNo = pageNo - 1;
+            }
+
+            ensureJwtToken();
+
+            // Fetch paginated data
+            Page<Object[]> dataPage = financingHdrRepository.findSummaryByCustCode(PageRequest.of(pageNo, pageSize));
+
+            List<SummaryDetailDto> reportList = new ArrayList<>();
+            for (Object[] result : dataPage) {
+                String debtorName = (String) result[0];
+                String npwp = (String) result[1];
+                String debtorStatus = (String) result[2];
+                String bouwheerName = (String) result[3];
+                String branchCode = (String) result[4];
+                String cwrCode = (String) result[5];
+                String agreementCode = (String) result[6];
+                long utilizationSeqNoCount = (long) result[7];
+                double persenPencairan = (double) result[8];
+                double jumlahPlafonAmount = (double) result[9];
+                double totalUtilizationAmount = (double) result[10];
+                double sisaPlafon = (double) result[11];
+                double adminPencairanFee = (double) result[12];
+                double factoringFee = (double) result[13];
+                double utilizationDate = (double) result[14];
+                LocalDateTime disburseDate = (LocalDateTime) result[15];
+                String danaSaktiStatus = (String) result[16];
+                LocalDateTime invoiceDueDate = (LocalDateTime) result[17];
+                LocalDateTime tanggalAktivasi = (LocalDateTime) result[18];
+                LocalDateTime tanggalPengajuan = (LocalDateTime) result[19];
+                LocalDateTime goliveDate = (LocalDateTime) result[20];
+
+                // Get the branch name
+                String branchName = getBranchNameByCode(branchCode);
+
+                List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "AO/AM", jwtToken);
+                String employeeName = employeeList.isEmpty() ? "N/A" : employeeList.get(0).get("employeeName");
+
+
+               SummaryDetailDto report = new  SummaryDetailDto(
+                        debtorName, npwp, debtorStatus, bouwheerName,
+                        employeeName,
+                        branchName,
+                        cwrCode, agreementCode, utilizationSeqNoCount, persenPencairan,
+                        jumlahPlafonAmount, totalUtilizationAmount, sisaPlafon,
+                        adminPencairanFee, factoringFee, utilizationDate,
+                        disburseDate, danaSaktiStatus, invoiceDueDate,
+                        tanggalAktivasi, tanggalPengajuan, goliveDate
+                );
+                reportList.add(report);
+            }
+
+
+            return PaginationResult.<SummaryDetailDto>builder()
+                    .currentPage(pageNo + 1)
+                    .totalData(dataPage.getTotalElements())
+                    .totalPage(dataPage.getTotalPages())
+                    .list(reportList)
+                    .build();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching summary details", e);
+        }
     }
 }
 

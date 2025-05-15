@@ -98,6 +98,9 @@ public class Agreement {
     @Column(name = "approval_flag")
     private String approvalFlag;
 
+    @Column(name = "golive_date")
+    private LocalDateTime goliveDate;
+
     @OneToOne(mappedBy = "agreement")
     private AgreementFile agreementFile;
 

@@ -307,4 +307,37 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             "JOIN Agreement a ON a.financingHdr.financingHdrCode = f.financingHdrCode " +
             "JOIN PaymentReceiveHistory p ON p.agreementCode = a.agreementCode")
     Page<Object[]> findFinancingDataByFinancingHdrCode(Pageable pageable);
+
+    @Query("SELECT DISTINCT " +
+            "c.custName, " +
+            "c.custIdNo, " +
+            "c.existingCust, " +
+            "b.bouwheerName, " +
+            "f.mstBranch.branchCode, " +
+            "cwr.cwrCode, " +
+            "a.agreementCode, " +
+            "(SELECT COUNT(*) FROM Cwr c WHERE LENGTH(c.cwrCode) > 1), " +
+            "f.retention, " +
+            "cwr.plafondAmt, " +
+            "f.financingAmt, " +
+            "cwr.plafondAmt - cwr.realisationAmt, " +
+            "f.adminFeeAmt, " +
+            "f.othersFeeAmt, " +
+            "f.financingAmt, " +
+            "f.disburseDate, " +
+            "f.financingStatus, " +
+            "i.invoiceDueDate, " +
+            "c.dtmUpd, " +
+            "f.financingDate, " +
+            "ac.goliveDate " +
+            "FROM FinancingHdr f " +
+            "JOIN Customer c ON f.customer.custCode = c.custCode " +
+            "JOIN Bouwheer b ON f.bouwheer.bouwheerCode = b.bouwheerCode " +
+            "JOIN Cwr cwr ON cwr.customer.custCode = c.custCode " +
+            "JOIN Agreement a ON a.financingHdr.financingHdrCode = f.financingHdrCode " +
+            "JOIN Agreement ac ON ac.agreementCode = a.agreementCode " +
+            "JOIN Invoice i ON i.customer.custCode = c.custCode " +
+            "WHERE c.isActive = TRUE")
+    Page<Object[]> findSummaryByCustCode(Pageable pageable);
+//    List<SummaryByAODto> findSummaryByCustCode(Pageable pageable);
 }
