@@ -264,7 +264,6 @@ public class ReportService {
 
             ensureJwtToken();
 
-            // Fetch paginated data
             Page<Object[]> dataPage = financingHdrRepository.findSummaryByCustCode(PageRequest.of(pageNo, pageSize));
 
             List<SummaryDetailDto> reportList = new ArrayList<>();
@@ -291,7 +290,6 @@ public class ReportService {
                 LocalDateTime tanggalPengajuan = (LocalDateTime) result[19];
                 LocalDateTime goliveDate = (LocalDateTime) result[20];
 
-                // Get the branch name
                 String branchName = getBranchNameByCode(branchCode);
 
                 List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "AO/AM", jwtToken);
@@ -313,6 +311,69 @@ public class ReportService {
 
 
             return PaginationResult.<SummaryDetailDto>builder()
+                    .currentPage(pageNo + 1)
+                    .totalData(dataPage.getTotalElements())
+                    .totalPage(dataPage.getTotalPages())
+                    .list(reportList)
+                    .build();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error fetching summary details", e);
+        }
+    }
+
+    public PaginationResult<ReportDueDateDto> getDueDateDetail(PaginationRequest request) {
+        try {
+            int pageNo = 0, pageSize = 10;
+
+            if (request.getPageNo() != null) {
+                pageNo = request.getPageNo();
+            }
+            if (request.getPageSize() != null) {
+                pageSize = request.getPageSize();
+            }
+
+            if (pageNo > 0) {
+                pageNo = pageNo - 1;
+            }
+
+            ensureJwtToken();
+
+            Page<Object[]> dataPage = customerRepository.findDueDate(PageRequest.of(pageNo, pageSize));
+
+            List<ReportDueDateDto> reportList = new ArrayList<>();
+            for (Object[] result : dataPage) {
+                String debtorName = (String) result[0];
+                String npwp = (String) result[1];
+                String bouwheerName = (String) result[2];
+                String branchCode = (String) result[3];
+                String agreementNo = (String) result[4];
+                LocalDateTime goliveDate = (LocalDateTime) result[5];
+                long utilizationSeqNo = (long) result[6];
+                double utilizationAmount = (double) result[7];
+                double osAr = (double) result[8];
+                double effectiveRate = (double) result[9];
+                double retentionAmount = (double) result[10];
+                double lcAmount = (double) result[11];
+                LocalDateTime invoiceDueDate = (LocalDateTime) result[12];
+                LocalDateTime settlementDate = (LocalDateTime) result[13];
+                String financingStatus = (String) result[14];
+
+                String branchName = getBranchNameByCode(branchCode);
+
+                List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "AO/AM", jwtToken);
+                String employeeName = employeeList.isEmpty() ? "N/A" : employeeList.get(0).get("employeeName");
+
+                ReportDueDateDto report = new ReportDueDateDto(
+                        debtorName, npwp, bouwheerName, employeeName, branchName,
+                        agreementNo, goliveDate, utilizationSeqNo, utilizationAmount,
+                        osAr, effectiveRate, retentionAmount, lcAmount, invoiceDueDate, settlementDate, financingStatus
+                );
+                reportList.add(report);
+            }
+
+
+            return PaginationResult.<ReportDueDateDto>builder()
                     .currentPage(pageNo + 1)
                     .totalData(dataPage.getTotalElements())
                     .totalPage(dataPage.getTotalPages())

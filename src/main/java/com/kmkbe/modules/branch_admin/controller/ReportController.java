@@ -70,4 +70,14 @@ public class ReportController {
                 reportService.getSummaryDetail(request)
         );
     }
+
+    @GetMapping("/duedate")
+    public CommonResult<PaginationResult<ReportDueDateDto>> getAllContractDueDate(
+            Authentication authentication, PaginationRequest request
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
+        return new CommonResult<PaginationResult<ReportDueDateDto>>().success(
+                reportService.getDueDateDetail(request)
+        );
+    }
 }
