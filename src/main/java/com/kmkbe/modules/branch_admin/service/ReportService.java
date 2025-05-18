@@ -53,7 +53,7 @@ public class ReportService {
             PaginationRequest request
     ) {
         try {
-            int pageNo = 0, pageSize = 10;
+            int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -93,7 +93,7 @@ public class ReportService {
 
     public PaginationResult<ProyeksiReportDto> getProyeksiReport(PaginationRequest request) {
         try {
-            int pageNo = 0, pageSize = 10;
+            int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -137,7 +137,7 @@ public class ReportService {
 
     public PaginationResult<SummaryByBranchDto> getSummaryByBranch(PaginationRequest request) {
         try {
-            int pageNo = 0, pageSize = 10;
+            int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -178,7 +178,7 @@ public class ReportService {
     public PaginationResult<SummaryByAODto> getAllReportBranchByAO(PaginationRequest request) {
         try {
             // Setup pagination
-            int pageNo = 0, pageSize = 10;
+            int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -249,7 +249,7 @@ public class ReportService {
 
     public PaginationResult<SummaryDetailDto> getSummaryDetail(PaginationRequest request) {
         try {
-            int pageNo = 0, pageSize = 10;
+            int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -324,7 +324,7 @@ public class ReportService {
 
     public PaginationResult<ReportDueDateDto> getDueDateDetail(PaginationRequest request) {
         try {
-            int pageNo = 0, pageSize = 10;
+            int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
