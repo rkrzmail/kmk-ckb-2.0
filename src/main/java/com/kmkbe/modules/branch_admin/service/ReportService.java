@@ -249,7 +249,7 @@ public class ReportService {
 
     public PaginationResult<SummaryDetailDto> getSummaryDetail(PaginationRequest request) {
         try {
-            int pageNo = 0, pageSize = Integer.MAX_VALUE;
+            int pageNo = 0, pageSize = 10;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
