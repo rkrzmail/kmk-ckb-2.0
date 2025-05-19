@@ -66,19 +66,18 @@ public class ReportService {
                 pageNo = pageNo - 1;
             }
 
-            pageSize = 1000;
-            Page<Visitor> pagination = visitorRepository.findAll(PageRequest.of(pageNo, pageSize));
+            Page<VisitorDto> pagination = visitorRepository.getDebtorVisitStats(PageRequest.of(pageNo, pageSize));
 
             List<VisitorDto> result = pagination.stream()
-                    .map((e) -> VisitorDto.builder()
-                            .visitorId(e.getVisitorId())
-                            .vendorCode(e.getVendorCode())
-                            .debtorName(e.getDebtorName())
-                            .debtorStatus(e.getDebtorStatus())
-                            .bouwheerName(e.getBouwheerName())
-                            .visitDate(e.getVisitDate())
-                            .build())
-                    .toList();
+                    .map(e -> new VisitorDto(
+                            e.getDebtorName(),
+                            e.getDebtorStatus(),
+                            e.getBouwheerName(),
+                            e.getPeriodStart(),
+                            e.getPeriodEnd(),
+                            e.getCountVisit()
+                    ))
+                    .collect(Collectors.toList());
 
             return PaginationResult.<VisitorDto>builder()
                     .currentPage(pageNo + 1)

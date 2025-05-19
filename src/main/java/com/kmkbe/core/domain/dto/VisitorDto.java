@@ -13,10 +13,10 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class VisitorDto implements Serializable {
-    private Long visitorId;
-    private String vendorCode;
     private String debtorName;
     private String debtorStatus;
     private String bouwheerName;
-    private LocalDateTime visitDate;
+    private LocalDateTime periodStart;
+    private LocalDateTime periodEnd;
+    private Long countVisit;
 }
