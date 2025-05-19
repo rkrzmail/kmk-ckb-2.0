@@ -299,7 +299,7 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
     @Query("SELECT f FROM FinancingHdr f WHERE f.customer.custCode = :custCode ORDER BY f.financingDate DESC")
     List<FinancingHdr> findLatestFinancingHdrByCustCode(@Param("custCode") UUID custCode, Pageable pageable);
 
-    @Query("SELECT DISTINCT f.disburseAmt, f.financingAmt, c.custName, b.bouwheerName, cwr.plafondAmt, p.retentionAmt, f.mstBranch.branchCode " +
+    @Query("SELECT f.disburseAmt, f.financingAmt, c.custName, b.bouwheerName, cwr.plafondAmt, p.retentionAmt, f.mstBranch.branchCode " +
             "FROM FinancingHdr f " +
             "JOIN Customer c ON f.customer.custCode = c.custCode " +
             "JOIN Bouwheer b ON f.bouwheer.bouwheerCode = b.bouwheerCode " +
@@ -308,7 +308,7 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             "JOIN PaymentReceiveHistory p ON p.agreementCode = a.agreementCode")
     Page<Object[]> findFinancingDataByFinancingHdrCode(Pageable pageable);
 
-    @Query("SELECT DISTINCT " +
+    @Query("SELECT " +
             "c.custName, " +
             "c.custIdNo, " +
             "c.existingCust, " +

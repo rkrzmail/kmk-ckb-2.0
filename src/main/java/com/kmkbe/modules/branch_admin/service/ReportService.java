@@ -53,7 +53,7 @@ public class ReportService {
             PaginationRequest request
     ) {
         try {
-            int pageNo = 0, pageSize = Integer.MAX_VALUE;
+            int pageNo = 0, pageSize = 10;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -93,7 +93,7 @@ public class ReportService {
 
     public PaginationResult<ProyeksiReportDto> getProyeksiReport(PaginationRequest request) {
         try {
-            int pageNo = 0, pageSize = Integer.MAX_VALUE;
+            int pageNo = 0, pageSize = 10;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -137,7 +137,7 @@ public class ReportService {
 
     public PaginationResult<SummaryByBranchDto> getSummaryByBranch(PaginationRequest request) {
         try {
-            int pageNo = 0, pageSize = Integer.MAX_VALUE;
+            int pageNo = 0, pageSize = 10;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -153,15 +153,19 @@ public class ReportService {
             Page<SummaryByBranchDto> pagination = customerRepository.findSummaryByCustCode(PageRequest.of(pageNo, pageSize));
 
             List<SummaryByBranchDto> result = pagination.stream()
-                    .map(e -> new SummaryByBranchDto(
-                            e.getDebtorName(),
-                            e.getNpwp(),
-                            e.getBouwheerName(),
-                            e.getTotalPencairan(),
-                            e.getJumlahPlafonAmount(),
-                            e.getTotalUtilizationAmount(),
-                            e.getTotalNilaiRetensi()
-                    ))
+                    .map(e -> {
+                        String branchName = getBranchNameByCode(e.getBranchCode());
+                        return new SummaryByBranchDto(
+                                e.getDebtorName(),
+                                branchName,
+                                e.getNpwp(),
+                                e.getBouwheerName(),
+                                e.getTotalPencairan(),
+                                e.getPlafondAmount(),
+                                e.getUtilizationAmount(),
+                                e.getRetentionAmt()
+                        );
+                    })
                     .collect(Collectors.toList());
 
             return PaginationResult.<SummaryByBranchDto>builder()
@@ -171,14 +175,14 @@ public class ReportService {
                     .list(result)
                     .build();
         } catch (Exception e) {
-            throw e;
+            throw new RuntimeException("Error fetching summary by branch", e);
         }
     }
 
     public PaginationResult<SummaryByAODto> getAllReportBranchByAO(PaginationRequest request) {
         try {
             // Setup pagination
-            int pageNo = 0, pageSize = Integer.MAX_VALUE;
+            int pageNo = 0, pageSize = 10;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -324,7 +328,7 @@ public class ReportService {
 
     public PaginationResult<ReportDueDateDto> getDueDateDetail(PaginationRequest request) {
         try {
-            int pageNo = 0, pageSize = Integer.MAX_VALUE;
+            int pageNo = 0, pageSize = 10;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
