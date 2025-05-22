@@ -6,6 +6,7 @@ import com.kmkbe.core.domain.entity.Visitor;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.major_account.service.MstBranchService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
@@ -106,7 +107,7 @@ public class ReportService {
             }
 
             // Use the Pageable object to manage pagination
-            Page<ProyeksiReportDto> pagination = customerRepository.findActiveCustomersWithInvoiceDetails(PageRequest.of(pageNo, pageSize));
+            Page<ProyeksiReportDto> pagination = customerRepository.findActiveCustomersWithInvoiceDetails(PageRequest.of(pageNo, pageSize), DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()), DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate()));
 
             // Collecting the results into a list
             List<ProyeksiReportDto> result = pagination.stream()

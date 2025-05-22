@@ -22,7 +22,7 @@ import javax.net.ssl.SSLSession;
 public class KmkbeApplication {
 
     public static void main(String[] args) {
-       /* HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
+        /* HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() {
             public boolean verify(String hostname, SSLSession session) {
                 return true;
             }

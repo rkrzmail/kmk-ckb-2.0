@@ -4,6 +4,7 @@ import com.kmkbe.core.domain.dto.ProyeksiReportDto;
 import com.kmkbe.core.domain.dto.ReportDueDateDto;
 import com.kmkbe.core.domain.dto.SummaryByBranchDto;
 import com.kmkbe.core.domain.entity.Customer;
+import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -24,15 +25,15 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByCustEmailAndCustPin(String email, String pin);
 
-    @Query("SELECT new com.kmkbe.core.domain.dto.ProyeksiReportDto(c.custName, " +
+    @Query(nativeQuery = true, value = "SELECT new com.kmkbe.core.domain.dto.ProyeksiReportDto(c.custName, " +
             "c.existingCust, " +
             "b.bouwheerName, i.custInvNo, i.invoiceAmt, f.financingAmt, i.invoiceDueDate, f.financingDate) " +
             "FROM Customer c " +
             "JOIN Invoice i ON c.custCode = i.customer.custCode " +
             "JOIN FinancingHdr f ON i.customer.custCode = f.customer.custCode " +
             "JOIN Bouwheer b ON f.bouwheer.bouwheerCode = b.bouwheerCode " +
-            "WHERE c.isActive = true")
-    Page<ProyeksiReportDto> findActiveCustomersWithInvoiceDetails(Pageable pageable);
+            "WHERE c.isActive = true AND Date(i.invoice_due_date::date) BETWEEN :startDate AND :endDate")
+    Page<ProyeksiReportDto> findActiveCustomersWithInvoiceDetails(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
 
     @Query("SELECT new com.kmkbe.core.domain.dto.SummaryByBranchDto(" +
             "c.custName, " +
