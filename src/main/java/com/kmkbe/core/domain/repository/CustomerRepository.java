@@ -25,14 +25,28 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByCustEmailAndCustPin(String email, String pin);
 
-    @Query(nativeQuery = true, value = "SELECT new com.kmkbe.core.domain.dto.ProyeksiReportDto(c.custName, " +
-            "c.existingCust, " +
-            "b.bouwheerName, i.custInvNo, i.invoiceAmt, f.financingAmt, i.invoiceDueDate, f.financingDate) " +
-            "FROM Customer c " +
-            "JOIN Invoice i ON c.custCode = i.customer.custCode " +
-            "JOIN FinancingHdr f ON i.customer.custCode = f.customer.custCode " +
-            "JOIN Bouwheer b ON f.bouwheer.bouwheerCode = b.bouwheerCode " +
-            "WHERE c.isActive = true AND Date(i.invoice_due_date::date) BETWEEN :startDate AND :endDate")
+    @Query(nativeQuery = true, value = "SELECT DISTINCT\n" +
+            "       c.cust_name AS debtor_name, \n" +
+            "    c.existing_cust AS debtor_status, \n" +
+            "    b.bouwheer_name AS bouwheer_name, \n" +
+            "    i.cust_inv_no AS invoice_no, \n" +
+            "    i.invoice_amt AS amount_invoice, \n" +
+            "    f.financing_amt AS amount_financing, \n" +
+            "    i.invoice_due_date AS invoice_due_date, \n" +
+            "    f.financing_date AS effective_date\n" +
+            "FROM \n" +
+            "    financing_hdr f \n" +
+            "LEFT  JOIN \n" +
+            "    customer c ON f.cust_code = c.cust_code\n" +
+            "LEFT JOIN \n" +
+            "    financing_dtl  fd ON f.financing_hdr_code = fd.financing_hdr_code\n" +
+            "LEFT JOIN \n" +
+            "    invoice i ON fd.invoice_code = i.invoice_code\n" +
+            "\n" +
+            "LEFT JOIN \n" +
+            "    bouwheer b ON f.bouwheer_code = b.bouwheer_code\n" +
+            "    \n" +
+            "WHERE  Date(i.invoice_due_date) BETWEEN :startDate AND :endDate    ")
     Page<ProyeksiReportDto> findActiveCustomersWithInvoiceDetails(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
 
     @Query("SELECT new com.kmkbe.core.domain.dto.SummaryByBranchDto(" +

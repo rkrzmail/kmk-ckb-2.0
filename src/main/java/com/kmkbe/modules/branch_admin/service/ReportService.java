@@ -107,7 +107,7 @@ public class ReportService {
             }
 
             // Use the Pageable object to manage pagination
-            Page<ProyeksiReportDto> pagination = customerRepository.findActiveCustomersWithInvoiceDetails(PageRequest.of(pageNo, pageSize), DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()), DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate()));
+            Page<ProyeksiReportDto> pagination = customerRepository.findActiveCustomersWithInvoiceDetails(PageRequest.of(pageNo, pageSize), DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()),DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate()) );
 
             // Collecting the results into a list
             List<ProyeksiReportDto> result = pagination.stream()
