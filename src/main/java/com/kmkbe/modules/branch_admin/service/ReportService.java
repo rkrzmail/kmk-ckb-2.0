@@ -197,7 +197,7 @@ public class ReportService {
 
             ensureJwtToken();
 
-            Page<Object[]> dataPage = financingHdrRepository.findFinancingDataByFinancingHdrCode(PageRequest.of(pageNo, pageSize));
+            Page<Object[]> dataPage = financingHdrRepository.findFinancingDataByFinancingHdrCode(PageRequest.of(pageNo, pageSize) , DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()),DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate()));
             List<SummaryByAODto> reportList = new ArrayList<>();
             for (Object[] result : dataPage) {
                 double totalDisbursement = (Double) result[0];
@@ -214,14 +214,14 @@ public class ReportService {
                 String employeeName = employeeList.isEmpty() ? "N/A" : employeeList.get(0).get("employeeName");
 
                 SummaryByAODto report = new SummaryByAODto(
-                        employeeName,
-                        branchName,
+                        totalDisbursement,
+                        totalUtilizationAmount,
                         customerName,
                         bouwheerName,
-                        totalDisbursement,
                         plafondAmount,
-                        totalUtilizationAmount,
-                        retentionAmount
+                        retentionAmount,
+                        branchName,
+                        employeeName
                 );
 
                 reportList.add(report);
