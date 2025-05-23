@@ -267,7 +267,7 @@ public class ReportService {
 
             ensureJwtToken();
 
-            Page<Object[]> dataPage = financingHdrRepository.findSummaryByCustCode(PageRequest.of(pageNo, pageSize));
+            Page<Object[]> dataPage = financingHdrRepository.findSummaryByCustCode(PageRequest.of(pageNo, pageSize), DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()),DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate()));
 
             List<SummaryDetailDto> reportList = new ArrayList<>();
             for (Object[] result : dataPage) {

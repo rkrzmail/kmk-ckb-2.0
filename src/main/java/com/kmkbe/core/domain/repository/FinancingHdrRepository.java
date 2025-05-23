@@ -339,8 +339,9 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             "JOIN Agreement a ON a.financingHdr.financingHdrCode = f.financingHdrCode " +
             "JOIN Agreement ac ON ac.agreementCode = a.agreementCode " +
             "JOIN Invoice i ON i.customer.custCode = c.custCode " +
-            "WHERE c.isActive = TRUE")
-    Page<Object[]> findSummaryByCustCode(Pageable pageable);
+            "WHERE DATE(f.financingDate) BETWEEN :startDate AND :endDate " )
+//            "WHERE c.isActive = TRUE")
+    Page<Object[]> findSummaryByCustCode(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
 
     @Query("SELECT NEW com.kmkbe.core.domain.dto.ProyeksiReportDto(" +
             "c.custName, " +
