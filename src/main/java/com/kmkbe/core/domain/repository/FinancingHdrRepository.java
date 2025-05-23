@@ -2,6 +2,7 @@ package com.kmkbe.core.domain.repository;
 
 import com.kmkbe.core.domain.dto.ProyeksiReportDto;
 import com.kmkbe.core.domain.dto.SummaryByAODto;
+import com.kmkbe.core.domain.dto.SummaryByBranchDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.modules.user.entity.MstBranch;
@@ -358,5 +359,22 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             "WHERE DATE(i.invoiceDueDate) BETWEEN :startDate AND :endDate")
     Page<ProyeksiReportDto> findActiveCustomersWithInvoiceDetails(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
 
+    @Query("SELECT new com.kmkbe.core.domain.dto.SummaryByBranchDto(" +
+            "c.custName, " +
+            "f.mstBranch.branchCode, " +
+            "c.custIdNo, " +
+            "b.bouwheerName, " +
+            "f.disburseAmt, " +
+            "cwr.plafondAmt, " +
+            "f.financingAmt, " +
+            "p.retentionAmt) " +
+            "FROM FinancingHdr f " +
+            "JOIN Customer c ON f.customer.custCode = c.custCode " +
+            "JOIN Bouwheer b ON f.bouwheer.bouwheerCode = b.bouwheerCode " +
+            "JOIN Cwr cwr ON f.customer.custCode = cwr.customer.custCode " +
+            "JOIN Agreement a ON a.financingHdr.financingHdrCode = f.financingHdrCode " +
+            "JOIN PaymentReceiveHistory p ON p.agreementCode = a.agreementCode " +
+            "WHERE DATE(f.financingDate) BETWEEN :startDate AND :endDate AND c.custIdTypeCode = 'NPWP'")
+    Page<SummaryByBranchDto> findSummaryBranch(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
 
 }

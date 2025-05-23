@@ -25,24 +25,24 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByCustEmailAndCustPin(String email, String pin);
 
-    @Query("SELECT new com.kmkbe.core.domain.dto.SummaryByBranchDto(" +
-            "c.custName, " +
-            "f.mstBranch.branchCode, " +
-            "c.custIdNo, " +
-            "b.bouwheerName, " +
-            "f.disburseAmt, " +
-            "cwr.plafondAmt, " +
-            "f.financingAmt, " +
-            "p.retentionAmt) " +
-            "FROM Customer c " +
-            "JOIN FinancingHdr f ON c.custCode = f.customer.custCode " +
-            "JOIN Bouwheer b ON b.bouwheerCode = f.bouwheer.bouwheerCode " +
-            "JOIN Cwr cwr ON c.custCode = cwr.customer.custCode " +
-            "JOIN Agreement a ON a.financingHdr.financingHdrCode = f.financingHdrCode " +
-            "JOIN PaymentReceiveHistory p ON p.agreementCode = a.agreementCode " +
-            "WHERE c.isActive = true " +
-            "AND c.custIdTypeCode = 'NPWP'")
-    Page<SummaryByBranchDto> findSummaryByCustCode(Pageable pageable);
+//    @Query("SELECT new com.kmkbe.core.domain.dto.SummaryByBranchDto(" +
+//            "c.custName, " +
+//            "f.mstBranch.branchCode, " +
+//            "c.custIdNo, " +
+//            "b.bouwheerName, " +
+//            "f.disburseAmt, " +
+//            "cwr.plafondAmt, " +
+//            "f.financingAmt, " +
+//            "p.retentionAmt) " +
+//            "FROM Customer c " +
+//            "JOIN FinancingHdr f ON c.custCode = f.customer.custCode " +
+//            "JOIN Bouwheer b ON b.bouwheerCode = f.bouwheer.bouwheerCode " +
+//            "JOIN Cwr cwr ON c.custCode = cwr.customer.custCode " +
+//            "JOIN Agreement a ON a.financingHdr.financingHdrCode = f.financingHdrCode " +
+//            "JOIN PaymentReceiveHistory p ON p.agreementCode = a.agreementCode " +
+//            "WHERE c.isActive = true " +
+//            "AND c.custIdTypeCode = 'NPWP'")
+//    Page<SummaryByBranchDto> findSummaryByCustCode(Pageable pageable);
 
     @Query("SELECT " +
             "c.custName, " +

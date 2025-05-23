@@ -150,7 +150,7 @@ public class ReportService {
                 pageNo = pageNo - 1;
             }
 
-            Page<SummaryByBranchDto> pagination = customerRepository.findSummaryByCustCode(PageRequest.of(pageNo, pageSize));
+            Page<SummaryByBranchDto> pagination = financingHdrRepository.findSummaryBranch(PageRequest.of(pageNo, pageSize), DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()),DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate()));
 
             List<SummaryByBranchDto> result = pagination.stream()
                     .map(e -> {
