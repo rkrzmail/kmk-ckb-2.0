@@ -1,6 +1,7 @@
 package com.kmkbe.core.domain.request;
 
 import lombok.*;
+import org.springframework.format.annotation.DateTimeFormat;
 
 import java.util.Date;
 
@@ -10,8 +11,10 @@ import java.util.Date;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PaginationRequest {
-    private Date startDate = new Date();
-    private Date endDate = new Date();
+    @DateTimeFormat(pattern = "dd/MM/yyyy")
+    private Date startDate;
+    @DateTimeFormat(pattern = "dd/MM/yyyy")
+    private Date endDate;
     private String searchBy;;
     private String searchValue;
     private Integer pageNo;

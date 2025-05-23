@@ -1,5 +1,6 @@
 package com.kmkbe.core.domain.repository;
 
+import com.kmkbe.core.domain.dto.ProyeksiReportDto;
 import com.kmkbe.core.domain.dto.SummaryByAODto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
@@ -308,7 +309,7 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             "JOIN PaymentReceiveHistory p ON p.agreementCode = a.agreementCode")
     Page<Object[]> findFinancingDataByFinancingHdrCode(Pageable pageable);
 
-    @Query("SELECT " +
+    @Query("SELECT distinct " +
             "c.custName, " +
             "c.custIdNo, " +
             "c.existingCust, " +
@@ -339,5 +340,23 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             "JOIN Invoice i ON i.customer.custCode = c.custCode " +
             "WHERE c.isActive = TRUE")
     Page<Object[]> findSummaryByCustCode(Pageable pageable);
-//    List<SummaryByAODto> findSummaryByCustCode(Pageable pageable);
+
+    @Query("SELECT NEW com.kmkbe.core.domain.dto.ProyeksiReportDto(" +
+            "c.custName, " +
+            "c.existingCust, " +
+            "b.bouwheerName, " +
+            "i.custInvNo, " +
+            "i.invoiceAmt, " +
+            "f.financingAmt, " +
+            "i.invoiceDueDate, " +
+            "f.financingDate) " +
+            "FROM FinancingHdr f " +
+            "LEFT JOIN Customer c ON f.customer.custCode = c.custCode " +
+            "LEFT JOIN FinancingDtl fd ON f.financingHdrCode = fd.financingHdr.financingHdrCode " +
+            "LEFT JOIN Invoice i ON fd.invoice.invoiceCode = i.invoiceCode " +
+            "LEFT JOIN Bouwheer b ON f.bouwheer.bouwheerCode = b.bouwheerCode " +
+            "WHERE DATE(i.invoiceDueDate) BETWEEN :startDate AND :endDate")
+    Page<ProyeksiReportDto> findActiveCustomersWithInvoiceDetails(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
+
+
 }
