@@ -179,7 +179,7 @@ public class ReportService {
         }
     }
 
-    public PaginationResult<SummaryByAODto> getAllReportBranchByAO(PaginationRequest request) {
+        public PaginationResult<SummaryByAODto> getAllReportBranchByAO(PaginationRequest request) {
         try {
             // Setup pagination
             int pageNo = 0, pageSize = 10;
@@ -198,7 +198,6 @@ public class ReportService {
             ensureJwtToken();
 
             Page<Object[]> dataPage = financingHdrRepository.findFinancingDataByFinancingHdrCode(PageRequest.of(pageNo, pageSize));
-
             List<SummaryByAODto> reportList = new ArrayList<>();
             for (Object[] result : dataPage) {
                 double totalDisbursement = (Double) result[0];
@@ -343,7 +342,8 @@ public class ReportService {
 
             ensureJwtToken();
 
-            Page<Object[]> dataPage = customerRepository.findDueDate(PageRequest.of(pageNo, pageSize));
+            Page<Object[]> dataPage = customerRepository.findDueDate(PageRequest.of(pageNo, pageSize), DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()),DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate()));
+
 
             List<ReportDueDateDto> reportList = new ArrayList<>();
             for (Object[] result : dataPage) {
