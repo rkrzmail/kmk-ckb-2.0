@@ -341,7 +341,7 @@ public class ReportService {
 
             ensureJwtToken();
 
-            Page<Object[]> dataPage = customerRepository.findDueDate(PageRequest.of(pageNo, pageSize), DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()),DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate()));
+            Page<Object[]> dataPage = financingHdrRepository.findDueDateReport(PageRequest.of(pageNo, pageSize), DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()),DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate()));
 
 
             List<ReportDueDateDto> reportList = new ArrayList<>();
