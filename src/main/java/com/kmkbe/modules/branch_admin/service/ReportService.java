@@ -54,7 +54,7 @@ public class ReportService {
             PaginationRequest request
     ) {
         try {
-            int pageNo = 0, pageSize = 10;
+            int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -93,7 +93,7 @@ public class ReportService {
 
     public PaginationResult<ProyeksiReportDto> getProyeksiReport(PaginationRequest request) {
         try {
-            int pageNo = 0, pageSize = 10;
+            int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -137,7 +137,7 @@ public class ReportService {
 
     public PaginationResult<SummaryByBranchDto> getSummaryByBranch(PaginationRequest request) {
         try {
-            int pageNo = 0, pageSize = 10;
+            int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -182,7 +182,7 @@ public class ReportService {
         public PaginationResult<SummaryByAODto> getAllReportBranchByAO(PaginationRequest request) {
         try {
             // Setup pagination
-            int pageNo = 0, pageSize = 10;
+            int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -252,7 +252,7 @@ public class ReportService {
 
     public PaginationResult<SummaryDetailDto> getSummaryDetail(PaginationRequest request) {
         try {
-            int pageNo = 0, pageSize = 10;
+            int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();
@@ -285,13 +285,12 @@ public class ReportService {
                 double sisaPlafon = (double) result[11];
                 double adminPencairanFee = (double) result[12];
                 double factoringFee = (double) result[13];
-                double utilizationDate = (double) result[14];
-                LocalDateTime disburseDate = (LocalDateTime) result[15];
-                String danaSaktiStatus = (String) result[16];
-                LocalDateTime invoiceDueDate = (LocalDateTime) result[17];
-                LocalDateTime tanggalAktivasi = (LocalDateTime) result[18];
-                LocalDateTime tanggalPengajuan = (LocalDateTime) result[19];
-                LocalDateTime goliveDate = (LocalDateTime) result[20];
+                LocalDateTime utilizationDate = (LocalDateTime) result[14];
+                String danaSaktiStatus = (String) result[15];
+                LocalDateTime invoiceDueDate = (LocalDateTime) result[16];
+                LocalDateTime tanggalAktivasi = (LocalDateTime) result[17];
+                LocalDateTime tanggalPengajuan = (LocalDateTime) result[18];
+                LocalDateTime goliveDate = (LocalDateTime) result[19];
 
                 String branchName = getBranchNameByCode(branchCode);
 
@@ -306,7 +305,7 @@ public class ReportService {
                         cwrCode, agreementCode, utilizationSeqNoCount, persenPencairan,
                         jumlahPlafonAmount, totalUtilizationAmount, sisaPlafon,
                         adminPencairanFee, factoringFee, utilizationDate,
-                        disburseDate, danaSaktiStatus, invoiceDueDate,
+                        danaSaktiStatus, invoiceDueDate,
                         tanggalAktivasi, tanggalPengajuan, goliveDate
                 );
                 reportList.add(report);
@@ -327,7 +326,7 @@ public class ReportService {
 
     public PaginationResult<ReportDueDateDto> getDueDateDetail(PaginationRequest request) {
         try {
-            int pageNo = 0, pageSize = 10;
+            int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
                 pageNo = request.getPageNo();

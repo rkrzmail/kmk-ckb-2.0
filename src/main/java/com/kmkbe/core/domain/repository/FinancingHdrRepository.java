@@ -319,14 +319,13 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             "f.mstBranch.branchCode, " +
             "cwr.cwrCode, " +
             "a.agreementCode, " +
-            "(SELECT COUNT(*) FROM Cwr c WHERE LENGTH(c.cwrCode) > 1), " +
+            "(SELECT COUNT(*) FROM Cwr c WHERE LENGTH(c.cwrCode) > 1)," +
             "f.retention, " +
             "cwr.plafondAmt, " +
             "f.financingAmt, " +
             "cwr.plafondAmt - cwr.realisationAmt, " +
             "f.adminFeeAmt, " +
             "f.othersFeeAmt, " +
-            "f.financingAmt, " +
             "f.disburseDate, " +
             "f.financingStatus, " +
             "i.invoiceDueDate, " +
@@ -336,11 +335,11 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             "FROM FinancingHdr f " +
             "JOIN Customer c ON f.customer.custCode = c.custCode " +
             "JOIN Bouwheer b ON f.bouwheer.bouwheerCode = b.bouwheerCode " +
-            "JOIN Cwr cwr ON cwr.customer.custCode = c.custCode " +
             "JOIN Agreement a ON a.financingHdr.financingHdrCode = f.financingHdrCode " +
+            "JOIN Cwr cwr ON cwr.cwrCode = a.cwr.cwrCode " +
             "JOIN Agreement ac ON ac.agreementCode = a.agreementCode " +
             "JOIN Invoice i ON i.customer.custCode = c.custCode " +
-            "WHERE DATE(f.financingDate) BETWEEN :startDate AND :endDate " )
+            "WHERE DATE(f.financingDate) BETWEEN :startDate AND :endDate")
 //            "WHERE c.isActive = TRUE")
     Page<Object[]> findSummaryByCustCode(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
 

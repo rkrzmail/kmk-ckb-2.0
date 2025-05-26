@@ -28,8 +28,7 @@ public class SummaryDetailDto implements Serializable {
     private double sisaPlafon;
     private double adminPencairanFee;
     private double factoringFee;
-    private double utilizationDate;
-    private LocalDateTime disburseDate;
+    private LocalDateTime utilizationDate;
     private String danaSaktiStatus;
     private LocalDateTime invoiceDueDate;
     private LocalDateTime tanggalAktivasi;
@@ -39,8 +38,8 @@ public class SummaryDetailDto implements Serializable {
     public SummaryDetailDto(String debtorName, String npwp, String debtorStatus, String bouwheerName, String aoName,
                             String branch, String cwrCode, String agreementCode, long utilizationSeqNoCount, double persenPencairan,
                             double jumlahPlafonAmount, double totalUtilizationAmount, double sisaPlafon,
-                            double adminPencairanFee, double factoringFee, double utilizationDate,
-                            LocalDateTime disburseDate, String danaSaktiStatus, LocalDateTime invoiceDueDate,
+                            double adminPencairanFee, double factoringFee, LocalDateTime utilizationDate,
+                            String danaSaktiStatus, LocalDateTime invoiceDueDate,
                             LocalDateTime tanggalAktivasi, LocalDateTime tanggalPengajuan, LocalDateTime goliveDate
     ) {
         this.debtorName = debtorName;
@@ -59,7 +58,6 @@ public class SummaryDetailDto implements Serializable {
         this.adminPencairanFee = adminPencairanFee;
         this.factoringFee = factoringFee;
         this.utilizationDate = utilizationDate;
-        this.disburseDate = disburseDate;
         this.danaSaktiStatus = danaSaktiStatus;
         this.invoiceDueDate = invoiceDueDate;
         this.tanggalAktivasi = tanggalAktivasi;
