@@ -311,37 +311,37 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             "WHERE DATE(f.financingDate) BETWEEN :startDate AND :endDate")
     Page<Object[]> findFinancingDataByFinancingHdrCode(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
 
-    @Query("SELECT distinct " +
-            "c.custName, " +
-            "c.custIdNo, " +
-            "c.existingCust, " +
-            "b.bouwheerName, " +
-            "f.mstBranch.branchCode, " +
-            "cwr.cwrCode, " +
-            "a.agreementCode, " +
-            "(SELECT COUNT(*) FROM Cwr c WHERE LENGTH(c.cwrCode) > 1)," +
-            "f.retention, " +
-            "cwr.plafondAmt, " +
-            "f.financingAmt, " +
-            "cwr.plafondAmt - cwr.realisationAmt, " +
-            "f.adminFeeAmt, " +
-            "f.othersFeeAmt, " +
-            "f.disburseDate, " +
-            "f.financingStatus, " +
-            "i.invoiceDueDate, " +
-            "c.dtmUpd, " +
-            "f.financingDate, " +
-            "ac.goliveDate " +
-            "FROM FinancingHdr f " +
-            "JOIN Customer c ON f.customer.custCode = c.custCode " +
-            "JOIN Bouwheer b ON f.bouwheer.bouwheerCode = b.bouwheerCode " +
-            "JOIN Agreement a ON a.financingHdr.financingHdrCode = f.financingHdrCode " +
-            "JOIN Cwr cwr ON cwr.cwrCode = a.cwr.cwrCode " +
-            "JOIN Agreement ac ON ac.agreementCode = a.agreementCode " +
-            "JOIN Invoice i ON i.customer.custCode = c.custCode " +
-            "WHERE DATE(f.financingDate) BETWEEN :startDate AND :endDate")
-//            "WHERE c.isActive = TRUE")
-    Page<Object[]> findSummaryByCustCode(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
+//    @Query("SELECT distinct " +
+//            "c.custName, " +
+//            "c.custIdNo, " +
+//            "c.existingCust, " +
+//            "b.bouwheerName, " +
+//            "f.mstBranch.branchCode, " +
+//            "cwr.cwrCode, " +
+//            "a.agreementCode, " +
+//            "(SELECT COUNT(*) FROM Cwr c WHERE LENGTH(c.cwrCode) > 1)," +
+//            "f.retention, " +
+//            "cwr.plafondAmt, " +
+//            "f.financingAmt, " +
+//            "cwr.plafondAmt - cwr.realisationAmt, " +
+//            "f.adminFeeAmt, " +
+//            "f.othersFeeAmt, " +
+//            "f.disburseDate, " +
+//            "f.financingStatus, " +
+//            "i.invoiceDueDate, " +
+//            "c.dtmUpd, " +
+//            "f.financingDate, " +
+//            "ac.goliveDate " +
+//            "FROM FinancingHdr f " +
+//            "JOIN Customer c ON f.customer.custCode = c.custCode " +
+//            "JOIN Bouwheer b ON f.bouwheer.bouwheerCode = b.bouwheerCode " +
+//            "JOIN Agreement a ON a.financingHdr.financingHdrCode = f.financingHdrCode " +
+//            "JOIN Cwr cwr ON cwr.cwrCode = a.cwr.cwrCode " +
+//            "JOIN Agreement ac ON ac.agreementCode = a.agreementCode " +
+//            "JOIN Invoice i ON i.customer.custCode = c.custCode " +
+//            "WHERE DATE(f.financingDate) BETWEEN :startDate AND :endDate")
+////            "WHERE c.isActive = TRUE")
+//    Page<Object[]> findSummaryByCustCode(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
 
     @Query("SELECT NEW com.kmkbe.core.domain.dto.ProyeksiReportDto(" +
             "c.custName, " +
@@ -385,7 +385,9 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             "f.mstBranch.branchCode, " +
             "a.agreementCode, " +
             "ph.goliveDate, " +
-            "(SELECT COUNT(*) FROM Cwr c WHERE LENGTH(c.cwrCode) > 1), " +
+//            "(SELECT COUNT(*) FROM Cwr c WHERE LENGTH(c.cwrCode) > 1), " +
+            "(SELECT COUNT(DISTINCT a1.agreementCode) " +
+            "FROM Agreement a1 WHERE a1.financingHdr.financingHdrCode = f.financingHdrCode) AS agreementCodeCount, " +
             "f.financingAmt, " +
             "(ph.totalInvAmt - ph.interestAmt), " +
             "f.effectiveRate, " +
@@ -402,5 +404,57 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             "WHERE DATE(ph.dueDate) BETWEEN :startDate AND :endDate")
 //            "WHERE c.isActive = TRUE")
     Page<Object[]> findDueDateReport(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
+
+    @Query("SELECT " +
+            "c.custName, " +
+            "c.custIdNo, " +
+            "c.existingCust, " +
+            "b.bouwheerName, " +
+            "f.mstBranch.branchCode, " +
+            "cwr.cwrCode, " +
+            "a.agreementCode, " +
+            "COUNT(DISTINCT a.agreementCode) AS agreementCodeCount, " +  // Menghitung jumlah agreement_code per cwr_code
+            "f.retention, " +
+            "cwr.plafondAmt, " +
+            "f.financingAmt, " +
+            "cwr.plafondAmt - cwr.realisationAmt AS sisaPlafond, " +
+            "f.adminFeeAmt, " +
+            "f.othersFeeAmt, " +
+            "f.disburseDate, " +
+            "f.financingStatus, " +
+            "i.invoiceDueDate, " +
+            "c.dtmUpd, " +
+            "f.financingDate, " +
+            "ac.goliveDate " +  // Di sini hanya join Agreement untuk goliveDate
+            "FROM FinancingHdr f " +
+            "JOIN Customer c ON f.customer.custCode = c.custCode " +
+            "JOIN Bouwheer b ON f.bouwheer.bouwheerCode = b.bouwheerCode " +
+            "JOIN Agreement a ON a.financingHdr.financingHdrCode = f.financingHdrCode " +
+            "JOIN Cwr cwr ON cwr.cwrCode = a.cwr.cwrCode " +
+            "JOIN Invoice i ON i.customer.custCode = c.custCode " +
+            "LEFT JOIN Agreement ac ON ac.agreementCode = a.agreementCode " +  // Diubah jadi LEFT JOIN untuk menghindari data yang hilang
+            "WHERE DATE(f.financingDate) BETWEEN :startDate AND :endDate " +
+            "AND a.status = 'Live' " +  // Pastikan hanya mengambil customer yang aktif
+            "GROUP BY " +
+            "c.custName, " +
+            "c.custIdNo, " +
+            "c.existingCust, " +
+            "b.bouwheerName, " +
+            "f.mstBranch.branchCode, " +
+            "cwr.cwrCode, " +
+            "a.agreementCode, " +
+            "f.retention, " +
+            "cwr.plafondAmt, " +
+            "cwr.realisationAmt, " +
+            "f.financingAmt, " +
+            "f.adminFeeAmt, " +
+            "f.othersFeeAmt, " +
+            "f.disburseDate, " +
+            "f.financingStatus, " +
+            "i.invoiceDueDate, " +
+            "c.dtmUpd, " +
+            "f.financingDate, " +
+            "ac.goliveDate")
+    Page<Object[]> findSummaryByCustCode(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
 
 }

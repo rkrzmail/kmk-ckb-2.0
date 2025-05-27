@@ -384,7 +384,7 @@ public class ReportService {
                     .build();
 
         } catch (Exception e) {
-            throw new RuntimeException("Error fetching summary details", e);
+            throw new RuntimeException("Error fetching report due date", e);
         }
     }
 }
