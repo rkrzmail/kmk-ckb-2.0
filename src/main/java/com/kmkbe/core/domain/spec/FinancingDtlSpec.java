@@ -170,7 +170,7 @@ public static Specification<FinancingDtl> custInvoiceFilterBy(UUID financeHdrCod
         Join<FinancingDtl, Invoice> joinInvoice = root.join("invoice", JoinType.INNER);
         Join<FinancingDtl, FinancingHdr> joinFinancingHdr = root.join("financingHdr", JoinType.INNER);
         Join<FinancingHdr, Customer> joinCustomer = joinFinancingHdr.join("customer", JoinType.INNER);
-        Join<FinancingHdr, Agreement> joinAgreement = joinFinancingHdr.join("agreement", JoinType.INNER);
+        Join<FinancingHdr, Agreement> joinAgreement = joinFinancingHdr.join("agreement", JoinType.LEFT);
         Join<FinancingHdr, Bouwheer> joinBouwheer = joinFinancingHdr.join("bouwheer", JoinType.INNER);
 
         Predicate predicate = cb.equal(joinFinancingHdr.get("financingHdrCode"), financeHdrCode);
@@ -255,6 +255,7 @@ public static Specification<FinancingDtl> custInvoiceFilterBy(UUID financeHdrCod
                             break;
                     }
                     break;
+
             }
         }
 
