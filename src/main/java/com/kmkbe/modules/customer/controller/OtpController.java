@@ -179,4 +179,38 @@ public class OtpController {
     ) throws Exception {
         return new CommonResult<RequestOtpDto>().success(otpService.resend(request, OtpService.OtpType.CHANGE_PIN));
     }
+
+    @PostMapping("/generate")
+    public CommonResult<String> generateOtp(@RequestBody RequestOtpRequest request) {
+        try {
+            // Generate OTP for the provided email
+            otpService.resendOtpForEmail(request.email(), OtpService.OtpType.SIGNUP); // Directly generate OTP and send it
+            return new CommonResult<String>().success("OTP has been sent to the email address: " + request.email());
+        } catch (Exception e) {
+            return new CommonResult<String>().fail(400,"Error generating OTP: " + e.getMessage());
+        }
+    }
+
+    // New endpoint to resend OTP without checking the customer (using JSON body)
+    @PostMapping("/resend")
+    public CommonResult<String> resendOtp(@RequestBody RequestOtpRequest request) {
+        try {
+            // Resend OTP for the provided email
+            otpService.resendOtpForEmail(request.email(), OtpService.OtpType.SIGNUP); // Resend OTP to the email
+            return new CommonResult<String>().success("OTP has been resent to the email address: " + request.email());
+        } catch (Exception e) {
+            return new CommonResult<String>().fail(400,"Error resending OTP: " + e.getMessage());
+        }
+    }
+
+    @PostMapping("/verify")
+    public CommonResult<String> verifyOtp(@RequestBody VerifyOtpRequest request) {
+        try {
+            // Verify the OTP for the provided email
+            otpService.verifyOtp(request.email(), request.otp());  // Validate OTP
+            return new CommonResult<String>().success("OTP verified successfully.");
+        } catch (Exception e) {
+            return new CommonResult<String>().fail(400,"Error verifying OTP: " + e.getMessage());
+        }
+    }
 }

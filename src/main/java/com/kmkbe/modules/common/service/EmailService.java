@@ -31,6 +31,7 @@ public class EmailService {
     private static final int EMAIL_PRIORITY = 2;
 
     private static final String M_CUST_NEW_OTP = "M_CUST_NEW_OTP";
+    private static final String M_CUST_VERIFY = "M_CUST_VERIFY";
     private static final String M_CUST_CHANGE_OTP = "M_CUST_CHANGE_OTP";
     private static final String M_CUST_ACTIVE = "M_CUST_ACTIVE";
     private static final String M_CUST_LOAN = "M_CUST_LOAN";//(3)
@@ -135,6 +136,35 @@ public class EmailService {
             log.error("Error sendOtp {}", e.getMessage());
         }
     }
+
+    //new for otp account info
+    @Async
+    public void sendOtp2(String email, String otpCode) {
+        try {
+            Map<String, Object> obj = new HashMap<>();
+            obj.put("otp_code", otpCode);
+            obj.put("email", email);
+
+            send(email, obj, M_CUST_VERIFY);
+        } catch (Exception e) {
+            log.error("Error sending OTP to email {}: {}", email, e.getMessage());
+        }
+    }
+
+    @Async
+    public void sendOtpChangePin2(String email, String otpCode) {
+        try {
+            Map<String, Object> obj = new HashMap<>();
+            obj.put("otp_code", otpCode);
+            obj.put("email", email);
+
+            send(email, obj, M_CUST_VERIFY);
+        } catch (Exception e) {
+            log.error("Error sendOtpChangePin {}", e.getMessage());
+        }
+    }
+
+    // done
 
     @Async
     public void sendOtpChangePin(Customer customer, String otpCode) {

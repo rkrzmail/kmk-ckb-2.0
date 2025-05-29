@@ -252,4 +252,76 @@ public class OtpService {
             }
         }
     }
+
+    // New Method to generate OTP without customer lookup
+    @Transactional
+    public OtpLog generateOtpForEmail(String email, OtpType type) throws Exception {
+        final LocalDateTime now = DateTimeUtils.now();
+        final OtpLog otpLog = new OtpLog();
+        otpLog.setEmail(email); // Directly set the email
+        otpLog.setGeneratedDate(now);
+        otpLog.setExpiredDate(now.plus(5, ChronoUnit.MINUTES)); // OTP expires in 5 minutes
+        otpLog.setIsUsed(false);
+        otpLog.setOtpCode(genOtp()); // Generate OTP
+
+        // Set a default value for 'usr_crt' field (e.g., "system")
+        otpLog.setUsrCrt("system");  // Set a default value for user who created the OTP
+        otpLog.setDtmCrt(now);
+
+        otpRepository.save(otpLog);
+
+        // Send OTP based on the type (SIGNUP or CHANGE_PIN)
+        if (type == OtpType.SIGNUP) {
+            emailService.sendOtp2(email, otpLog.getOtpCode()); // Send OTP to the provided email
+        } else if (type == OtpType.CHANGE_PIN) {
+            emailService.sendOtpChangePin2(email, otpLog.getOtpCode()); // Send PIN change OTP email
+        }
+
+        return otpLog;
+    }
+
+    // Resend OTP functionality (same as create, but without customer validation)
+    public RequestOtpDto resendOtpForEmail(String email, OtpType type) throws Exception {
+        final OtpLog otpLog = generateOtpForEmail(email, type);  // Directly generate OTP without customer validation
+
+        return new RequestOtpDto(
+                genRequestId2(email, otpLog),  // Generate request ID for OTP
+                email,
+                otpLog.getExpiredDate()  // OTP expiration date
+        );
+    }
+
+    public String genRequestId2(String email, OtpLog otpLog) {
+        return bcryptEncoder.encode(email + otpLog.getOtpLogId()); // Generating request ID
+    }
+
+    @Transactional
+    public String verifyOtp(String email, String otpCode) throws Exception {
+        final Optional<OtpLog> otpLogOptional = otpRepository.findTopByEmailAndOtpCodeOrderByDtmCrtDesc(email, otpCode);
+
+        if (otpLogOptional.isEmpty()) {
+            throw new IllegalStateException("No OTP found for this email.");
+        }
+
+        OtpLog otpLog = otpLogOptional.get();
+
+        // Check if the OTP is expired
+        if (DateTimeUtils.now().isAfter(otpLog.getExpiredDate())) {
+            throw new IllegalStateException("OTP has expired.");
+        }
+
+        // Compare the entered OTP with the OTP stored in the database
+        if (!otpLog.getOtpCode().equals(otpCode)) {
+            throw new IllegalStateException("Incorrect OTP.");
+        }
+
+        // Mark the OTP as used
+        otpLog.setIsUsed(true);
+        otpLog.setUsrUpd("system"); // Or any user identifier
+        otpLog.setDtmUpd(DateTimeUtils.now());
+
+        otpRepository.save(otpLog); // Save the updated OTP log
+
+        return "OTP verification successful!";
+    }
 }

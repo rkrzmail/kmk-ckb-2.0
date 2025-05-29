@@ -414,7 +414,7 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             "cwr.cwrCode, " +
             "a.agreementCode, " +
             "COUNT(DISTINCT a.agreementCode) AS agreementCodeCount, " +  // Menghitung jumlah agreement_code per cwr_code
-            "f.retention, " +
+            "100 - f.retention, " +
             "cwr.plafondAmt, " +
             "f.financingAmt, " +
             "cwr.plafondAmt - cwr.realisationAmt AS sisaPlafond, " +
