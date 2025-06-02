@@ -210,24 +210,26 @@ public static Specification<FinancingDtl> custInvoiceFilterBy(UUID financeHdrCod
                 case "invoicedate":
                     Expression<String> invoiceDateStr = cb.function("TO_CHAR", String.class,
                             joinInvoice.get("invoiceDate"),
-                            cb.literal("YYYY-MM-DD") // atau "YYYY-MM" kalau kamu mau cari per bulan
-                    );
+                            cb.literal("DD/MM/YYYY"));
                     predicate = cb.and(predicate,
                             cb.like(invoiceDateStr, "%" + normalizedSearchValue + "%"));
                     break;
                 case "invoiceduedate":
                     Expression<String> invoiceDueDateStr = cb.function("TO_CHAR", String.class,
                             joinInvoice.get("invoiceDueDate"),
-                            cb.literal("YYYY-MM-DD") // atau "YYYY-MM" kalau kamu mau cari per bulan
-                    );
+                            cb.literal("DD/MM/YYYY"));
                     predicate = cb.and(predicate,
                             cb.like(invoiceDueDateStr, "%" + normalizedSearchValue + "%"));
                     break;
                 case "invoiceamount":
-                    Expression<String> invoiceAmountStr = cb.function("TO_CHAR", String.class, joinInvoice.get("invoiceAmt"), cb.literal("999999999.99"));
+                    Expression<String> invoiceAmountStr = cb.function("TO_CHAR", String.class,
+                            joinInvoice.get("invoiceAmt"),
+                            cb.literal("999999999.99"));
+                    String cleanedAmount = normalizeInvoiceAmount(searchValue);
                     predicate = cb.and(predicate,
-                            cb.like(cb.lower(invoiceAmountStr), "%" + normalizedSearchValue.toLowerCase() + "%"));
+                            cb.like(invoiceAmountStr, "%" + cleanedAmount + "%"));
                     break;
+
                 case "status":
                     switch (normalizedSearchValue) {
                         case "new":
@@ -271,5 +273,15 @@ public static Specification<FinancingDtl> custInvoiceFilterBy(UUID financeHdrCod
                 .trim();
     }
 
+    private static String normalizeInvoiceAmount(String input) {
+        if (input == null) return "";
 
+        // Hapus "IDR" (case insensitive), spasi, dan titik
+        String cleaned = input.toUpperCase()
+                .replace("IDR", "")
+                .replaceAll("[\\.\\s]", "")  // hapus titik dan spasi
+                .trim();
+
+        return cleaned;
+    }
 }
