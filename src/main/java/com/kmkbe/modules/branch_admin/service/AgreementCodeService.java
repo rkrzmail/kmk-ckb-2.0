@@ -15,9 +15,8 @@ import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
 
 @Service
 public class AgreementCodeService {
@@ -38,15 +37,54 @@ public class AgreementCodeService {
 
     private void ensureJwtToken() {
         jwtToken = authRemoteService.fetchAuthJwt().getData();
-//        System.out.println("JWT Token fetched: " + jwtToken);
     }
 
     public CommonResult<SitDto> getAgreementsByFinancingHdrCode(UUID financingHdrCode) {
         ensureJwtToken();
 
         List<Agreement> agreements = agreementRepository.findByFinancingHdr_FinancingHdrCode(financingHdrCode);
+
         if (agreements.isEmpty()) {
-            return new CommonResult<SitDto>().fail(404, "No agreement found for financingHdrCode: " + financingHdrCode);
+            Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findByFinancingHdrCode(financingHdrCode);
+
+            if (!financingHdrOptional.isPresent()) {
+                return new CommonResult<SitDto>().fail(404, "No data found for financingHdrCode: " + financingHdrCode);
+            }
+
+            FinancingHdr financingHdr = financingHdrOptional.get();
+
+            Customer customer = financingHdr.getCustomer();
+            String directorOrCustomerName = "Company".equals(customer.getCustTypeCode())
+                    ? customer.getCustomerCompany().getDirectorName()
+                    : customer.getCustName();
+
+            String branchCode = financingHdrRepository.findBranchCodeByFinancingHdrCode(financingHdrCode);
+            List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "RM", jwtToken);
+            String employeeName = employeeList.isEmpty() ? "N/A" : toCamelCase(employeeList.get(0).get("employeeName"));
+
+            SitDto sitDto = SitDto.builder()
+                    .custName(customer.getCustName())
+                    .DirectorName(directorOrCustomerName)
+                    .BranchCode(branchCode)
+                    .EmployeeName(employeeName)
+                    .agreementCode("-")
+                    .bouwheerName("PT. TRAKINDO UTAMA")
+                    .legalAddress("Jl. Raya Cilandak Kko No.1")
+                    .rt("13")
+                    .rw("5")
+                    .kelurahan("Ragunan")
+                    .kecamatan("Pasar Minggu")
+                    .city("Jakarta Selatan")
+                    .province("DKI Jakarta")
+                    .zipcode("12550")
+                    .area("JKT")
+                    .picName("PT. TRAKINDO UTAMA")
+                    .bankName("Bank Mandiri")
+                    .accountName("CHANDRA SAKTI UTAMA")
+                    .accountNo("1270098142159")
+                    .build();
+
+            return new CommonResult<SitDto>().success(sitDto);
         }
 
         SitDto sitDto = agreements.stream().map(agreement -> {
@@ -55,11 +93,8 @@ public class AgreementCodeService {
             Customer customer = agreement.getFinancingHdr().getCustomer();
 
             String branchCode = financingHdrRepository.findBranchCodeByFinancingHdrCode(financingHdrCode);
-//            System.out.println("Branch Code: " + branchCode);
 
             List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "RM", jwtToken);
-//            String email = emailList.isEmpty() ? "N/A" : emailList.get(0).get("email");
-
             String employeeName = employeeList.isEmpty() ? "N/A" : toCamelCase(employeeList.get(0).get("employeeName"));
 
             String directorOrCustomerName = "Company".equals(customer.getCustTypeCode())
@@ -93,7 +128,6 @@ public class AgreementCodeService {
                     .custName(customer.getCustName())
                     .DirectorName(directorOrCustomerName)
                     .BranchCode(branchCode)
-//                    .Email(email)
                     .EmployeeName(employeeName)
                     .build();
         }).findFirst().orElse(null);
