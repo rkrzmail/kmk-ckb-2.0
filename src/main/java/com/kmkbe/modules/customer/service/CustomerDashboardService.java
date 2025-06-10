@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.domain.dto.CustomerDashboardDto;
 import com.kmkbe.core.domain.dto.CustomerPlafondDto;
 import com.kmkbe.core.domain.dto.CwrListDto;
+import com.kmkbe.core.domain.dto.SignerPersonDto;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.CwrMapper;
 import com.kmkbe.core.domain.repository.AgreementRepository;
@@ -196,6 +197,38 @@ public class CustomerDashboardService {
             return new CustomerDashboardDto.Agreement();
         } catch (Exception e) {
             log.error("agreementDashboard: error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+    public SignerPersonDto dashboardsigner(String financingHdrCode  ) {
+        try {
+            FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+
+            final String address, phoneNo;
+            if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
+                address = financingHdr.getCustomer().getCompany() == null ? "" : String.valueOf(financingHdr.getCustomer().getCompany().getCompanyAddress());
+                phoneNo = financingHdr.getCustomer().getCompany() == null ? "" :financingHdr.getCustomer().getCompany().getPhone();
+            } else {
+                address = financingHdr.getCustomer().getPersonal() == null ? "" : String.valueOf(financingHdr.getCustomer().getPersonal().getLegalAddress());
+                phoneNo = financingHdr.getCustomer().getPersonal() == null ? "" :financingHdr.getCustomer().getPersonal().getPhone();
+            }
+
+            return SignerPersonDto.builder()
+                    .financingHdrCode(financingHdr.getFinancingHdrCode())
+                    .bouwheerCode(financingHdr.getBouwheer().getBouwheerCode())
+                    .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+                    .custCode(financingHdr.getCustomer().getCustCode())
+                    .custName(financingHdr.getCustomer().getCustName())
+                    .custIdTypeCode(financingHdr.getCustomer().getCustIdTypeCode())
+                    .custIdNo(financingHdr.getCustomer().getCustIdNo())
+                    .email(financingHdr.getCustomer().getCustEmail())
+                    .custTypeCode(financingHdr.getCustomer().getCustTypeCode())
+                    .address(address)
+                    .phoneNo(phoneNo)
+                    .build();
+        } catch (Exception e) {
+            log.error("detailSubmissionDistribution: error {}", e.getMessage());
             throw e;
         }
     }
