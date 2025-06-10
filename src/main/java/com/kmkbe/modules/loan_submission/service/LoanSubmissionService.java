@@ -454,7 +454,7 @@ public class LoanSubmissionService {
                 throw new Exception("financingHdr not found");
             }
             FinancingHdr finHdr = financingHdr.get();
-            
+
             final BigDecimal ntfResult = new BigDecimal(finHdr.getTotalInvoiceAmt())
                     .multiply(BigDecimal.valueOf(schemaRate / 100.0));
             //.setScale(0, RoundingMode.UP);
@@ -1040,7 +1040,7 @@ public class LoanSubmissionService {
                 }catch (Exception ignored){}
 
 
-
+                boolean isAutoASSIGNMENT = false;
                 //set auto ASSIGNMENT
                 try {
                     List<FinancingHdr>  financingHdrs = financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer);
@@ -1048,6 +1048,7 @@ public class LoanSubmissionService {
                         MstBranch hdrBranch = financingHdrs.get(t).getMstBranch();
 
                         if (hdrBranch != null) {
+
                             //update jadi Assign
                             financing.setFinancingStatus("INPROCESS");
                             financing.setFinancingStep("ASSIGNMENT");
@@ -1113,6 +1114,7 @@ public class LoanSubmissionService {
                                     }
                                 }
 
+                                isAutoASSIGNMENT = true;
                                 //kirim email assign dan re assign
                                 emailService.sendNotificationBranchAssign(
                                         toEmail,
@@ -1146,7 +1148,68 @@ public class LoanSubmissionService {
 
                 } catch (Exception e) {   }
 
+                if (!isAutoASSIGNMENT){
+                    //sed to major account
+                    try {
+                        String mjrEmail = "radema.panjaitan@csul.co.id";
 
+                        final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
+                                .stream()
+                                .map((item) ->
+                                        InvoiceEmailPayload.builder()
+                                                .invoiceNo(item.getInvoice().getCustInvNo())
+                                                .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
+                                                .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+                                                .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
+                                                .description("Invoice By Trakindo")
+                                                .bouwheerName(financing.getBouwheer().getBouwheerName())
+                                                .build()
+                                ).toList();
+                        final double totalFeeAmt =
+                                financing.getAdminFeeAmt()
+                                        + financing.getLegalFeeAmtNett()
+                                        + financing.getInsuranceFeeAmt()
+                                        + financing.getOthersFeeAmt()
+                                        + financing.getProvisionFeeAmt()
+                                        + financing.getSurveyFeeAmtNett();
+                        //getAPI AO,BH
+                        String toEmail =  "radema.panjaitan@csul.co.id";
+                        String ccEmail = "";
+
+                        String phone = financing.getCustomer().getCustMobilePhone();
+                        if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
+                            if (financing.getCustomer().getCompany() !=null ){
+                                phone = financing.getCustomer().getCompany().getPhone();
+                            }
+                        }
+                        //kirim email assign dan re assign
+                        emailService.sendNotificationMajorAccount(
+                                mjrEmail,
+                                financing.getBouwheer().getBouwheerName(),
+                                financing.getMstBranch().getBranchName(),
+                                LoanDisburseEmailPayload.builder()
+                                        .financingCode(financing.getFinancingHdrCode().toString())
+                                        .applicationDate(DateTimeUtils.formatToDate(financing.getFinancingDate()))
+                                        .companyName(financing.getCustomer().getCustName())
+                                        .email(financing.getCustomer().getCustEmail())
+                                        .phoneNumber(phone)
+                                        .tenor(financing.getTenor())
+                                        .toEmail(toEmail)
+                                        .ccEmail(ccEmail)
+                                        .financingCode(financing.getFinancingHdrCode().toString())
+                                        .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
+                                        .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
+                                        .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
+                                        .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+                                        .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
+                                        .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
+                                        .invoices(invoices)
+                                        .build()
+                        );
+                    } catch (Exception e) {
+
+                    }
+                }
 
 
                 financingHdrRepository.save(financing);

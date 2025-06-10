@@ -449,7 +449,38 @@ public class EmailService {
             log.error("Error sendNotificationBranchAssign {}", e.getMessage());
         }
     }
+    @Async
+    public void sendNotificationMajorAccount(
+            String email,
+            String bouwheerName,
+            String branchArea,
+            LoanDisburseEmailPayload payload
+    ) {
+        try {
+            Map<String, Object> args = new HashMap<>();
+            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
 
+            if (payloadArgs != null) {
+                payloadArgs.remove("invoices");
+                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+            }
+
+            args.put("additionalArgs", payloadArgs);
+            args.put("bouwheerName", bouwheerName);
+            args.put("branchArea", branchArea);
+            args.put("email", payload.getEmail());
+
+            final EmailTemplate template = emailTemplateRepository
+                    .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN, true);
+            template.setSubjectMail(template.getSubjectMail().replace("{bouwheerName}", bouwheerName));
+            template.setMailTo(payload.getToEmail());
+            template.setMailCc(payload.getCcEmail());
+
+            send(args, template);
+        } catch (Exception e) {
+            log.error("Error sendNotificationBranchAssign {}", e.getMessage());
+        }
+    }
     @Async
     public void sendNotificationBouwheerPayment(
             String email,
