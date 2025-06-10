@@ -295,5 +295,16 @@ public class CustomerController {
         }
     }
 
+    @GetMapping("/signer/{financingHdrCode}")
+    public CommonResult<SignerPersonDto> getSigner(
+            @PathVariable String financingHdrCode,Authentication authentication
+
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
+        return new CommonResult<SignerPersonDto>().success(
+                customerDashboardService.dashboardsigner(financingHdrCode)
+        );
+    }
+
 }
 
