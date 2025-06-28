@@ -295,14 +295,14 @@ public class CustomerController {
         }
     }
 
-    @GetMapping("/signer/{financingHdrCode}")
-    public CommonResult<SignerPersonDto> getSigner(
+    @GetMapping("/perjanjian/{financingHdrCode}")
+    public CommonResult<CustomerPerjanjianDto> getPerjanjian(
             @PathVariable String financingHdrCode,Authentication authentication
 
     ) throws SignatureException {
         UserInternalUtils.authenticated(authentication);
-        return new CommonResult<SignerPersonDto>().success(
-                customerDashboardService.dashboardsigner(financingHdrCode)
+        return new CommonResult<CustomerPerjanjianDto>().success(
+                customerDashboardService.perjanjian(financingHdrCode)
         );
     }
 

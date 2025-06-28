@@ -1,9 +1,6 @@
 package com.kmkbe.modules.customer.service;
 
-import com.kmkbe.core.domain.dto.CustomerDashboardDto;
-import com.kmkbe.core.domain.dto.CustomerPlafondDto;
-import com.kmkbe.core.domain.dto.CwrListDto;
-import com.kmkbe.core.domain.dto.SignerPersonDto;
+import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.CwrMapper;
 import com.kmkbe.core.domain.repository.AgreementRepository;
@@ -201,7 +198,7 @@ public class CustomerDashboardService {
         }
     }
 
-    public SignerPersonDto dashboardsigner(String financingHdrCode  ) {
+    public CustomerPerjanjianDto perjanjian( String financingHdrCode  ) {
         try {
             FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
 
@@ -214,7 +211,12 @@ public class CustomerDashboardService {
                 phoneNo = financingHdr.getCustomer().getPersonal() == null ? "" :financingHdr.getCustomer().getPersonal().getPhone();
             }
 
-            return SignerPersonDto.builder()
+            Page<Cwr> page = cwrRepository.findAllByCustomerOrderByDtmUpdDescUsrCrtDesc(
+                    financingHdr.getCustomer(),
+                    PageRequest.of(0, 10)
+            );
+
+            return CustomerPerjanjianDto.builder()
                     .financingHdrCode(financingHdr.getFinancingHdrCode())
                     .bouwheerCode(financingHdr.getBouwheer().getBouwheerCode())
                     .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
@@ -226,6 +228,12 @@ public class CustomerDashboardService {
                     .custTypeCode(financingHdr.getCustomer().getCustTypeCode())
                     .address(address)
                     .phoneNo(phoneNo)
+                    .perjanjian(CustomerPerjanjianDto.PerjanjianDto.builder()
+                            .perjanjianBerjalan(0)
+                            .perjanjianBerakhir(0)
+                            .totalPerjanjian(0)
+                            .build())
+
                     .build();
         } catch (Exception e) {
             log.error("detailSubmissionDistribution: error {}", e.getMessage());

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
@@ -13,16 +14,13 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SignerPersonDto {
-    private UUID financingHdrCode;
-    private UUID bouwheerCode;
-    private UUID custCode;
-    private String bouwheerName;
-    private String custName;
-    private String custIdTypeCode;
-    private String custIdNo;
-    private String email;
-    private String custTypeCode;
-    private String address;
-    private String phoneNo;
-
+    private Long karyawanId;
+    private String karyawanName;
+    private String jabatan ;
+    private String signerStatus;
+    private String signhubStatus;
+    private String usrCrt;
+    private LocalDateTime dtmCrt;
+    private String usrUpd;
+    private LocalDateTime dtmUpd;
 }
