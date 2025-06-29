@@ -1,20 +1,22 @@
 package com.kmkbe.modules.branch_admin.controller;
 
 import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.core.domain.entity.Debtor;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.branch_admin.service.AssignmentSubmissionService;
 import com.kmkbe.modules.branch_admin.service.SignerService;
+import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
 import java.util.List;
@@ -47,9 +49,20 @@ public class SignerController {
     }
 
     @GetMapping("/person/list")
-    public CommonResult<List<SignerPersonDto>> getSignerPersonList() {
-        List<SignerPersonDto> signerPersonList  = signerService.signerPersonList();
-        return new CommonResult<List<SignerPersonDto>>().success(signerPersonList);
+    public CommonResult<List<DebtorDto>> getSignerPersonList() {
+        List<DebtorDto> signerPersonList  = signerService.signerPersonList();
+        return new CommonResult<List<DebtorDto>>().success(signerPersonList);
     }
 
+    @PostMapping("/person")
+    public CommonResult<DebtorDto> createDebtor(
+            Authentication authentication,
+            @RequestBody DebtorDto debtorDto
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
+
+        DebtorDto createdDebtor = signerService.createDebtor(debtorDto);
+
+        return new CommonResult<DebtorDto>().success(createdDebtor);
+    }
 }

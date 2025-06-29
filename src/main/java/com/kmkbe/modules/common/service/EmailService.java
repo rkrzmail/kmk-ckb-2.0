@@ -41,6 +41,7 @@ public class EmailService {
     private static final String M_CUST_LOAD_CHANGE = "M_CUST_LOAD_CHANGE";
     private static final String M_CUST_PENCAIRAN = "M_CUST_PENCAIRAN";//(5)
     private static final String M_SIM_LOAN = "M_SIM_LOAN";//(1)
+    private static final String M_INV_LINK = "M_INV_LINK";
 
 
 
@@ -702,4 +703,24 @@ public class EmailService {
             );
         }
     }
+
+    @Async
+    public void sendInvitationLinkEmail(String toEmail, String invitationLink) {
+        try {
+            EmailTemplate template = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(M_INV_LINK, true);
+
+            Map<String, Object> args = new HashMap<>();
+            args.put("invitationLink", invitationLink);
+
+            String bodyMail = mappingBody(template.getBodyMail(), args);
+            template.setBodyMail(bodyMail);
+            template.setMailTo(toEmail); // Email penerima dari parameter
+
+            sendMailMessage(template, toEmail);
+        } catch (Exception e) {
+            log.error("Error sendInvitationLinkEmail: {}", e.getMessage());
+        }
+    }
+
+
 }

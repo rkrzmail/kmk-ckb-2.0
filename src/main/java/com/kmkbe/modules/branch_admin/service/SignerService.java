@@ -2,33 +2,38 @@ package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
-import com.kmkbe.core.domain.model.MappedFinancingStatus;
+import com.kmkbe.core.domain.mapper.DebtorMapper;
+import com.kmkbe.core.domain.mapper.ProductMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
-import com.kmkbe.core.utils.UriUtils;
-import com.kmkbe.modules.user.entity.MstAppRoleFormUser;
+import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.user.entity.MstUser;
-import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.nikita.utils.SpecPagination;
-import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.math.BigDecimal;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.Map;
+
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
 
 @Service
 @RequiredArgsConstructor
@@ -36,11 +41,18 @@ import java.util.UUID;
 public class SignerService {
     private final FinancingHdrRepository financingHdrRepository;
     private final MstUserRepository mstUserRepository;
-    private final AgreementRepository agreementRepository;
-    private final AgreementFileRepository agreementFileRepository;
-    private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
-    private final SimulationHistRepository simulationHistRepository;
     private final SignerPersonRepository signerPersonRepository;
+    private final RestTemplate restTemplate;
+    private final DebtorRepository debtorRepository;
+    private final DebtorMapper debtorMapper = DebtorMapper.INSTANCE;
+    private final EmailService emailService;
+
+    private final String apiKey = "YiByHB@CSUL_DEV";
+    private final String callerId = "USER@AD-INS.COM";
+    private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
+    private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
+
+
 
     public PaginationResult<SignerDto> assignmentList(
             HttpServletRequest httpServletRequest,
@@ -146,28 +158,131 @@ public class SignerService {
         }
     }
 
-    public List<SignerPersonDto> signerPersonList() {
+    public List<DebtorDto> signerPersonList() {
         // Ambil semua data PolicyAgreement
-        List<SignerPerson> SignerPerson = signerPersonRepository.findAll();
+        List<Debtor> Debtor = debtorRepository.findAll();
 
         // Convert list entity ke DTO tanpa builder
-        List<SignerPersonDto> dtoList = new ArrayList<>();
+        List<DebtorDto> dtoList = new ArrayList<>();
 
-        for (SignerPerson signer : SignerPerson) {
-            SignerPersonDto signerPersonDto = new SignerPersonDto();
-            signerPersonDto.setKaryawanId(signer.getKaryawanId());
-            signerPersonDto.setKaryawanName(signer.getKaryawanName());
-            signerPersonDto.setJabatan(signer.getJabatan());
-            signerPersonDto.setSignerStatus(signer.getSignerStatus());
-            signerPersonDto.setSignhubStatus(signer.getSignhubStatus());
-            signerPersonDto.setUsrCrt(signer.getUsrCrt());
-            signerPersonDto.setDtmCrt(signer.getDtmCrt());
-            signerPersonDto.setUsrUpd(signer.getUsrUpd());
-            signerPersonDto.setDtmUpd(signer.getDtmUpd());
+        for (Debtor signer : Debtor) {
+            DebtorDto debtorDto = new DebtorDto();
+            debtorDto.setDebtorId(signer.getDebtorId());
+            debtorDto.setDebtorName(signer.getDebtorName());
+            debtorDto.setKaryawanName(signer.getKaryawanName());
+            debtorDto.setJabatan(signer.getJabatan());
+            debtorDto.setIdentityNo(signer.getIdentityNo());
+            debtorDto.setEmail(signer.getEmail());
+            debtorDto.setNoTelp(signer.getNoTelp());
+            debtorDto.setTempatLahir(signer.getTempatLahir());
+            debtorDto.setTanggalLahir(signer.getTanggalLahir());
+            debtorDto.setJenisKelamin(signer.getJenisKelamin());
+            debtorDto.setAlamat(signer.getAlamat());
+            debtorDto.setRt(signer.getRt());
+            debtorDto.setRw(signer.getRw());
+            debtorDto.setKodePos(signer.getKodePos());
+            debtorDto.setKelurahan(signer.getKelurahan());
+            debtorDto.setKecamatan(signer.getKecamatan());
+            debtorDto.setKota(signer.getKota());
+            debtorDto.setActive(signer.getIsActive());
+            debtorDto.setSignerStatus(signer.getSignerStatus());
+            debtorDto.setSignhubStatus(signer.getSignhubStatus());
+            debtorDto.setEmailDebtor(signer.getEmailDebtor());
 
-            dtoList.add(signerPersonDto);
+            dtoList.add(debtorDto);
         }
 
         return dtoList;
+    }
+
+    @Transactional
+    public DebtorDto createDebtor(DebtorDto debtorDto) {
+
+        // 1. Check Registration
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("x-api-key", apiKey);
+
+        Map<String, Object> checkBody = new HashMap<>();
+        checkBody.put("audit", Map.of("callerId", callerId));
+        checkBody.put("dataType", "NIK");
+        checkBody.put("userData", debtorDto.getIdentityNo());
+
+        HttpEntity<Map<String, Object>> checkRequest = new HttpEntity<>(checkBody, headers);
+        ResponseEntity<Map> checkResponse = restTemplate.postForEntity(registerUrl, checkRequest, Map.class);
+
+        System.out.println("===== [CHECK REGISTRATION RESPONSE] =====");
+        System.out.println(checkResponse.getBody()); // log seluruh response
+        System.out.println("==========================================");
+
+        Map<String, Object> status = (Map<String, Object>) checkResponse.getBody().get("status");
+
+        if (status != null && ((Integer) status.get("code")) == 8165) {
+            // 2. Generate Invitation Link
+            Map<String, Object> generateBody = new HashMap<>();
+            generateBody.put("provinsi", "DKI JAKARTA");
+            generateBody.put("kota", debtorDto.getKota());
+            generateBody.put("kelurahan", debtorDto.getKelurahan());
+            generateBody.put("tmpLahir", debtorDto.getTempatLahir());
+            generateBody.put("alamat", debtorDto.getAlamat());
+            generateBody.put("tglLahir", debtorDto.getTanggalLahir());
+            generateBody.put("nama", debtorDto.getDebtorName());
+            generateBody.put("kecamatan", debtorDto.getKecamatan());
+            generateBody.put("tlp", debtorDto.getNoTelp());
+            generateBody.put("jenisKelamin", debtorDto.getJenisKelamin().equalsIgnoreCase("L") ? "M" : "F");
+            generateBody.put("idKtp", debtorDto.getIdentityNo());
+            generateBody.put("kodePos", debtorDto.getKodePos());
+            generateBody.put("email", debtorDto.getEmail());
+            generateBody.put("type", "EMPLOYEE");
+            generateBody.put("audit", Map.of("callerId", "USERBAF"));
+
+            HttpEntity<Map<String, Object>> generateRequest = new HttpEntity<>(generateBody, headers);
+            ResponseEntity<Map> generateResponse = restTemplate.postForEntity(generateLinkUrl, generateRequest, Map.class);
+
+            System.out.println("===== [GENERATE INVITATION LINK RESPONSE] =====");
+            System.out.println(generateResponse.getBody()); // log seluruh response
+            System.out.println("================================================");
+
+            Map<String, Object> genResponse = generateResponse.getBody();
+            String invitationLink = (String) genResponse.get("link");
+
+            if (invitationLink != null) {
+                System.out.println(">> INVITATION LINK GENERATED: " + invitationLink);
+                emailService.sendInvitationLinkEmail(debtorDto.getEmailDebtor(), invitationLink);
+                System.out.println("email tujuan : " + debtorDto.getEmailDebtor());
+            } else {
+                System.out.println(">> WARNING: Invitation link tidak tersedia!");
+            }
+        } else {
+            System.out.println(">> NIK ditemukan, tidak perlu generate link.");
+        }
+
+        // 3. Simpan ke DB
+        Debtor debtor = Debtor.builder()
+                .debtorName(debtorDto.getDebtorName())
+                .karyawanName(debtorDto.getKaryawanName())
+                .jabatan(debtorDto.getJabatan())
+                .identityNo(debtorDto.getIdentityNo())
+                .email(debtorDto.getEmail())
+                .noTelp(debtorDto.getNoTelp())
+                .tempatLahir(debtorDto.getTempatLahir())
+                .tanggalLahir(debtorDto.getTanggalLahir())
+                .jenisKelamin(debtorDto.getJenisKelamin())
+                .alamat(debtorDto.getAlamat())
+                .rt(debtorDto.getRt())
+                .rw(debtorDto.getRw())
+                .kodePos(debtorDto.getKodePos())
+                .kelurahan(debtorDto.getKelurahan())
+                .kecamatan(debtorDto.getKecamatan())
+                .kota(debtorDto.getKota())
+                .isActive(true)
+                .signerStatus("PENDING")
+                .signhubStatus("PENDING")
+                .emailDebtor(debtorDto.getEmailDebtor())
+                .build();
+
+        Debtor savedDebtor = debtorRepository.save(debtor);
+
+        return debtorMapper.entityToDto(savedDebtor);
     }
 }
