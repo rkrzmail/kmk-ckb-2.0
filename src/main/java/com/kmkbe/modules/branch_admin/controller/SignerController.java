@@ -15,6 +15,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -64,5 +65,13 @@ public class SignerController {
         DebtorDto createdDebtor = signerService.createDebtor(debtorDto);
 
         return new CommonResult<DebtorDto>().success(createdDebtor);
+    }
+
+    @GetMapping("/getSigners")  // Ganti dari @PostMapping
+    public CommonResult<PersonDto> getSigners(Authentication authentication
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication);
+        PersonDto getSigner = signerService.getSignersFromExternalApi(); // Tanpa parameter
+        return new CommonResult<PersonDto>().success(getSigner);
     }
 }

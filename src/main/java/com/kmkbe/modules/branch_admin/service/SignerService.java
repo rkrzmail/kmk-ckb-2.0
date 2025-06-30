@@ -3,11 +3,9 @@ package com.kmkbe.modules.branch_admin.service;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.DebtorMapper;
-import com.kmkbe.core.domain.mapper.ProductMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
-import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstUserRepository;
@@ -18,22 +16,21 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.security.SignatureException;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -51,7 +48,10 @@ public class SignerService {
     private final String callerId = "USER@AD-INS.COM";
     private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
     private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
+    private final String confinsUrl = "https://confins.csulfinance.com/api/mou/v1/CwrSigner/GetListCwrSignerForUpdatebyCustNoAndCwrNo";
 
+    @Value("${csul.confins.adinskey}")
+    private String adInsKey;
 
 
     public PaginationResult<SignerDto> assignmentList(
@@ -284,5 +284,74 @@ public class SignerService {
         Debtor savedDebtor = debtorRepository.save(debtor);
 
         return debtorMapper.entityToDto(savedDebtor);
+    }
+
+    public PersonDto getSignersFromExternalApi() {
+        String custNo = "41000001137"; //hardcode sementara
+        String cwrNo = "41350CWR2024454"; //hardcode sementara
+        String requestDateTime = LocalDate.now().toString();
+
+        SignerRequestDto externalRequest = new SignerRequestDto(
+                custNo,
+                cwrNo,
+                requestDateTime
+        );
+
+        try {
+            ExternalApiResponse response = callExternalApi(externalRequest);
+            return mapToPersonDto(response);
+
+        } catch (Exception e) {
+            PersonDto errorDto = new PersonDto();
+            errorDto.setStatusCode("500");
+            errorDto.setMessage("Error calling external API");
+            return errorDto;
+        }
+    }
+
+    private ExternalApiResponse callExternalApi(SignerRequestDto request) {
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("AdInsKey", adInsKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<SignerRequestDto> entity = new HttpEntity<>(request, headers);
+
+        ResponseEntity<ExternalApiResponse> response = restTemplate.exchange(
+                confinsUrl,
+                HttpMethod.POST,
+                entity,
+                ExternalApiResponse.class);
+
+//        System.out.println("Raw Response Body: " + response.getBody());
+
+        return response.getBody();
+    }
+
+    private PersonDto mapToPersonDto(ExternalApiResponse externalResponse) {
+        PersonDto result = new PersonDto();
+
+        if (externalResponse != null) {
+            result.setStatusCode(externalResponse.getStatusCode());
+            result.setMessage(externalResponse.getMessage());
+
+            if (externalResponse.getReturnObject() != null) {
+                result.setSigners(
+                        externalResponse.getReturnObject().stream()
+                                .map(externalSigner -> {
+                                    PersonDto.Signer signer = new PersonDto.Signer();
+                                    signer.setCwrSignerId(externalSigner.getCwrSignerId());
+                                    signer.setCwrCustId(externalSigner.getCwrCustId());
+                                    signer.setSignerType(externalSigner.getSignerType());
+                                    signer.setSignerName(externalSigner.getSignerName());
+                                    signer.setSignerPosition(externalSigner.getSignerPosition());
+                                    return signer;
+                                })
+                                .collect(Collectors.toList())
+                );
+            }
+        }
+
+//        System.out.println("Hasil mapping: " + result); // Log hasil mapping
+        return result;
     }
 }
