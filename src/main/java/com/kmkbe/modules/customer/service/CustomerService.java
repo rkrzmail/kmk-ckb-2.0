@@ -132,7 +132,7 @@ public class CustomerService {
     ) throws SignatureException {
         try {
             Customer customer = CustomerUtils.authenticateCustomer(authentication);
-            //customer.setCustEmail(request.getCustEmail());
+            customer.setCustEmail(request.getCustEmail());
             if (!customer.getCustTypeCode().equalsIgnoreCase(request.getCustTypeCode())) {
                 throw new IllegalArgumentException("Can't update customerTypeCode, please ensure valid payload");
             }
