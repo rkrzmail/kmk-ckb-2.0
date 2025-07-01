@@ -705,20 +705,36 @@ public class EmailService {
     }
 
     @Async
-    public void sendInvitationLinkEmail(String toEmail, String invitationLink) {
+    public void sendInvitationLinkEmail(String toEmail, String invitationLink, String debtorName) {
         try {
+            if (invitationLink == null) {
+                throw new IllegalArgumentException("Invitation link cannot be null");
+            }
+
             EmailTemplate template = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(M_INV_LINK, true);
+
+            // Debug log
+            log.info("Original template body: {}", template.getBodyMail());
+            log.info("Invitation link to be inserted: {}", invitationLink);
 
             Map<String, Object> args = new HashMap<>();
             args.put("invitationLink", invitationLink);
+            // Jika template membutuhkan name juga
+            args.put("name", "Customer"); // atau nilai default jika tidak ada
 
-            String bodyMail = mappingBody(template.getBodyMail(), args);
+            String bodyMail = template.getBodyMail()
+                    .replace("${invitationLink}", invitationLink)
+                    .replace("${name}", debtorName);
+
+            // Debug log
+            log.info("Processed template body: {}", bodyMail);
+
             template.setBodyMail(bodyMail);
-            template.setMailTo(toEmail); // Email penerima dari parameter
+            template.setMailTo(toEmail);
 
             sendMailMessage(template, toEmail);
         } catch (Exception e) {
-            log.error("Error sendInvitationLinkEmail: {}", e.getMessage());
+            log.error("Error sendInvitationLinkEmail: {}", e.getMessage(), e);
         }
     }
 

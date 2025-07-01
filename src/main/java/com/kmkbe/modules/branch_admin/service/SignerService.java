@@ -6,6 +6,8 @@ import com.kmkbe.core.domain.mapper.DebtorMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.exception.ApiBusinessException;
+import com.kmkbe.core.exception.DebtorCreationException;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstUserRepository;
@@ -158,14 +160,14 @@ public class SignerService {
         }
     }
 
-    public List<DebtorDto> signerPersonList() {
-        // Ambil semua data PolicyAgreement
-        List<Debtor> Debtor = debtorRepository.findAll();
+    public List<DebtorDto> signerPersonList(String financingHdrCode) {
+        // Ambil data Debtor berdasarkan financingHdrCode
+        List<Debtor> debtors = debtorRepository.findByFinancingHdrCode(financingHdrCode);
 
         // Convert list entity ke DTO tanpa builder
         List<DebtorDto> dtoList = new ArrayList<>();
 
-        for (Debtor signer : Debtor) {
+        for (Debtor signer : debtors) {
             DebtorDto debtorDto = new DebtorDto();
             debtorDto.setDebtorId(signer.getDebtorId());
             debtorDto.setDebtorName(signer.getDebtorName());
@@ -188,6 +190,7 @@ public class SignerService {
             debtorDto.setSignerStatus(signer.getSignerStatus());
             debtorDto.setSignhubStatus(signer.getSignhubStatus());
             debtorDto.setEmailDebtor(signer.getEmailDebtor());
+            debtorDto.setFinancingHdrCode(signer.getFinancingHdrCode());
 
             dtoList.add(debtorDto);
         }
@@ -195,69 +198,152 @@ public class SignerService {
         return dtoList;
     }
 
+
+//    @Transactional
+//    public Map<String, Object> createDebtor(DebtorDto debtorDto) {
+//        try {
+//            // 1. Prepare API request headers
+//            HttpHeaders headers = new HttpHeaders();
+//            headers.setContentType(MediaType.APPLICATION_JSON);
+//            headers.set("x-api-key", apiKey);
+//
+//            // 2. Call Registration API
+//            Map<String, Object> registerResponse = callRegistrationApi(debtorDto, headers);
+//            log.info("Register API Response: {}", registerResponse);
+//
+//            // 3. Call Invitation API
+//            Map<String, Object> inviteResponse = callInvitationApi(debtorDto, headers);
+//            log.info("Invite API Response: {}", inviteResponse);
+//
+//            String invitationLink = (String) inviteResponse.get("link");
+//            if (invitationLink == null) {
+//                throw new RuntimeException("Gagal generate link undangan");
+//            }
+//
+//            // 4. Kirim email undangan
+//            emailService.sendInvitationLinkEmail(debtorDto.getEmailDebtor(), invitationLink, debtorDto.getDebtorName());
+//
+//            // 5. Simpan ke database
+//            DebtorDto savedDebtor = saveDebtor(debtorDto);
+//
+//            // 6. Return response sederhana
+//            return Map.of(
+//                    "isSuccess", true,
+//                    "code", 200,
+//                    "message", "NIK belum terdaftar. Link registrasi telah dikirim ke email " + debtorDto.getEmailDebtor() + " dan data telah tersimpan"
+//            );
+//
+//        } catch (Exception e) {
+//            log.error("Error: {}", e.getMessage());
+//            throw new RuntimeException("Gagal membuat debtor. Alasan: " + e.getMessage());
+//        }
+//    }
+
     @Transactional
     public DebtorDto createDebtor(DebtorDto debtorDto) {
+        try {
+            // 1. Header
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-api-key", apiKey);
 
-        // 1. Check Registration
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        headers.set("x-api-key", apiKey);
+            // regis
+            Map<String, Object> registerResponse = callRegistrationApi(debtorDto, headers);
+            log.info("Register API Response: {}", registerResponse);
 
-        Map<String, Object> checkBody = new HashMap<>();
-        checkBody.put("audit", Map.of("callerId", callerId));
-        checkBody.put("dataType", "NIK");
-        checkBody.put("userData", debtorDto.getIdentityNo());
-
-        HttpEntity<Map<String, Object>> checkRequest = new HttpEntity<>(checkBody, headers);
-        ResponseEntity<Map> checkResponse = restTemplate.postForEntity(registerUrl, checkRequest, Map.class);
-
-        System.out.println("===== [CHECK REGISTRATION RESPONSE] =====");
-        System.out.println(checkResponse.getBody()); // log seluruh response
-        System.out.println("==========================================");
-
-        Map<String, Object> status = (Map<String, Object>) checkResponse.getBody().get("status");
-
-        if (status != null && ((Integer) status.get("code")) == 8165) {
-            // 2. Generate Invitation Link
-            Map<String, Object> generateBody = new HashMap<>();
-            generateBody.put("provinsi", "DKI JAKARTA");
-            generateBody.put("kota", debtorDto.getKota());
-            generateBody.put("kelurahan", debtorDto.getKelurahan());
-            generateBody.put("tmpLahir", debtorDto.getTempatLahir());
-            generateBody.put("alamat", debtorDto.getAlamat());
-            generateBody.put("tglLahir", debtorDto.getTanggalLahir());
-            generateBody.put("nama", debtorDto.getDebtorName());
-            generateBody.put("kecamatan", debtorDto.getKecamatan());
-            generateBody.put("tlp", debtorDto.getNoTelp());
-            generateBody.put("jenisKelamin", debtorDto.getJenisKelamin().equalsIgnoreCase("L") ? "M" : "F");
-            generateBody.put("idKtp", debtorDto.getIdentityNo());
-            generateBody.put("kodePos", debtorDto.getKodePos());
-            generateBody.put("email", debtorDto.getEmail());
-            generateBody.put("type", "EMPLOYEE");
-            generateBody.put("audit", Map.of("callerId", "USERBAF"));
-
-            HttpEntity<Map<String, Object>> generateRequest = new HttpEntity<>(generateBody, headers);
-            ResponseEntity<Map> generateResponse = restTemplate.postForEntity(generateLinkUrl, generateRequest, Map.class);
-
-            System.out.println("===== [GENERATE INVITATION LINK RESPONSE] =====");
-            System.out.println(generateResponse.getBody()); // log seluruh response
-            System.out.println("================================================");
-
-            Map<String, Object> genResponse = generateResponse.getBody();
-            String invitationLink = (String) genResponse.get("link");
-
-            if (invitationLink != null) {
-                System.out.println(">> INVITATION LINK GENERATED: " + invitationLink);
-                emailService.sendInvitationLinkEmail(debtorDto.getEmailDebtor(), invitationLink);
-                System.out.println("email tujuan : " + debtorDto.getEmailDebtor());
-            } else {
-                System.out.println(">> WARNING: Invitation link tidak tersedia!");
+            // 2. Generate invitation link
+            Map<String, Object> inviteResponse = callInvitationApi(debtorDto, headers);
+            String invitationLink = (String) inviteResponse.get("link");
+            if (invitationLink == null) {
+                throw new RuntimeException("Gagal generate link undangan");
             }
-        } else {
-            System.out.println(">> NIK ditemukan, tidak perlu generate link.");
+
+            // 3. Kirim email
+            emailService.sendInvitationLinkEmail(
+                    debtorDto.getEmailDebtor(),
+                    invitationLink,
+                    debtorDto.getDebtorName()
+            );
+
+            // 4. Simpan ke database dan return DebtorDto
+            return saveDebtor(debtorDto);
+
+        } catch (Exception e) {
+            log.error("Error: {}", e.getMessage());
+            throw new RuntimeException("Gagal membuat debtor: " + e.getMessage());
+        }
+    }
+
+    private Map<String, Object> callRegistrationApi(DebtorDto debtorDto, HttpHeaders headers) {
+        Map<String, Object> requestBody = Map.of(
+                "audit", Map.of("callerId", callerId),
+                "dataType", "NIK",
+                "userData", debtorDto.getIdentityNo()
+        );
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                registerUrl,
+                new HttpEntity<>(requestBody, headers),
+                Map.class
+        );
+
+        Map<String, Object> responseBody = response.getBody();
+        if (responseBody == null) {
+            throw new RuntimeException("API registrasi tidak memberikan response");
         }
 
-        // 3. Simpan ke DB
+        // Handle error responses
+        if (responseBody.containsKey("status")) {
+            Map<String, Object> status = (Map<String, Object>) responseBody.get("status");
+            if (!status.get("code").equals(8165)) { // Jika bukan success code
+                throw new RuntimeException((String) status.get("message"));
+            }
+        }
+
+        return responseBody;
+    }
+
+    private Map<String, Object> callInvitationApi(DebtorDto debtorDto, HttpHeaders headers) {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("provinsi", "DKI JAKARTA");
+        requestBody.put("kota", debtorDto.getKota());
+        requestBody.put("kelurahan", debtorDto.getKelurahan());
+        requestBody.put("tmpLahir", debtorDto.getTempatLahir());
+        requestBody.put("alamat", debtorDto.getAlamat());
+        requestBody.put("tglLahir", debtorDto.getTanggalLahir());
+        requestBody.put("nama", debtorDto.getDebtorName());
+        requestBody.put("kecamatan", debtorDto.getKecamatan());
+        requestBody.put("tlp", debtorDto.getNoTelp());
+        requestBody.put("jenisKelamin", debtorDto.getJenisKelamin().equalsIgnoreCase("L") ? "M" : "F");
+        requestBody.put("idKtp", debtorDto.getIdentityNo());
+        requestBody.put("kodePos", debtorDto.getKodePos());
+        requestBody.put("email", debtorDto.getEmail());
+        requestBody.put("type", "EMPLOYEE");
+        requestBody.put("audit", Map.of("callerId", "USERBAF"));
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                generateLinkUrl,
+                new HttpEntity<>(requestBody, headers),
+                Map.class
+        );
+
+        Map<String, Object> responseBody = response.getBody();
+        if (responseBody == null) {
+            throw new RuntimeException("API undangan tidak memberikan response");
+        }
+
+        // Handle error responses
+        if (responseBody.containsKey("status")) {
+            Map<String, Object> status = (Map<String, Object>) responseBody.get("status");
+            if (!status.get("code").equals(0)) { // Jika bukan success code
+                throw new RuntimeException((String) status.get("message"));
+            }
+        }
+
+        return responseBody;
+    }
+
+    private DebtorDto saveDebtor(DebtorDto debtorDto) {
         Debtor debtor = Debtor.builder()
                 .debtorName(debtorDto.getDebtorName())
                 .karyawanName(debtorDto.getKaryawanName())
@@ -279,11 +365,10 @@ public class SignerService {
                 .signerStatus("PENDING")
                 .signhubStatus("PENDING")
                 .emailDebtor(debtorDto.getEmailDebtor())
+                .financingHdrCode(debtorDto.getFinancingHdrCode())
                 .build();
 
-        Debtor savedDebtor = debtorRepository.save(debtor);
-
-        return debtorMapper.entityToDto(savedDebtor);
+        return debtorMapper.entityToDto(debtorRepository.save(debtor));
     }
 
     public PersonDto getSignersFromExternalApi() {

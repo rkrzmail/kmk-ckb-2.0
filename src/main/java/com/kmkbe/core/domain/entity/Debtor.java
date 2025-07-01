@@ -80,4 +80,7 @@ public class Debtor {
     @Column(name = "email_debtor", nullable = false)
     private String emailDebtor;
 
+    @Column(name = "financing_hdr_code", nullable = true)
+    private String financingHdrCode;
+
 }

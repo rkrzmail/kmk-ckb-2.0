@@ -35,4 +35,5 @@ public class DebtorDto implements Serializable {
     private String signerStatus;
     private String signhubStatus;
     private String emailDebtor;
+    private String financingHdrCode;
 }

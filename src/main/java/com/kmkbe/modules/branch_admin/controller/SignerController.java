@@ -49,26 +49,30 @@ public class SignerController {
                 );
     }
 
-    @GetMapping("/person/list")
-    public CommonResult<List<DebtorDto>> getSignerPersonList() {
-        List<DebtorDto> signerPersonList  = signerService.signerPersonList();
+    @GetMapping("/person/list/{financingHdrCode}")
+    public CommonResult<List<DebtorDto>> getSignerPersonList(
+            @PathVariable String financingHdrCode) {
+        List<DebtorDto> signerPersonList = signerService.signerPersonList(financingHdrCode);
         return new CommonResult<List<DebtorDto>>().success(signerPersonList);
     }
 
+
     @PostMapping("/person")
-    public CommonResult<DebtorDto> createDebtor(
-            Authentication authentication,
-            @RequestBody DebtorDto debtorDto
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-
-        DebtorDto createdDebtor = signerService.createDebtor(debtorDto);
-
-        return new CommonResult<DebtorDto>().success(createdDebtor);
+    public CommonResult<String> createDebtor(@RequestBody DebtorDto debtorDto) {
+        try {
+            signerService.createDebtor(debtorDto);
+            return new CommonResult<String>()
+                    .success("NIK belum terdaftar. Link registrasi telah dikirim ke email " +
+                            debtorDto.getEmailDebtor());
+        } catch (Exception e) {
+            return new CommonResult<String>()
+                    .fail(400, e.getMessage());
+        }
     }
 
     @GetMapping("/getSigners")  // Ganti dari @PostMapping
-    public CommonResult<PersonDto> getSigners(Authentication authentication
+    public CommonResult<PersonDto> getSigners(
+            Authentication authentication
     ) throws SignatureException {
         UserInternalUtils.authenticated(authentication);
         PersonDto getSigner = signerService.getSignersFromExternalApi(); // Tanpa parameter
