@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.exception.ApiBusinessException;
 import com.kmkbe.core.exception.DebtorCreationException;
+import com.kmkbe.modules.branch_admin.request.FileUploadRequest;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstUserRepository;
@@ -26,8 +27,14 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.security.SignatureException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -44,6 +51,7 @@ public class SignerService {
     private final EmailService emailService;
     private final AgreementRepository agreementRepository;
     private final CustomerRepository customerRepository;
+    private final AgreementFileSigningRepository agreementFileSigningRepository;
 
     private final String apiKey = "YiByHB@CSUL_DEV";
     private final String callerId = "USER@AD-INS.COM";
@@ -196,47 +204,6 @@ public class SignerService {
 
         return dtoList;
     }
-
-
-//    @Transactional
-//    public Map<String, Object> createDebtor(DebtorDto debtorDto) {
-//        try {
-//            // 1. Prepare API request headers
-//            HttpHeaders headers = new HttpHeaders();
-//            headers.setContentType(MediaType.APPLICATION_JSON);
-//            headers.set("x-api-key", apiKey);
-//
-//            // 2. Call Registration API
-//            Map<String, Object> registerResponse = callRegistrationApi(debtorDto, headers);
-//            log.info("Register API Response: {}", registerResponse);
-//
-//            // 3. Call Invitation API
-//            Map<String, Object> inviteResponse = callInvitationApi(debtorDto, headers);
-//            log.info("Invite API Response: {}", inviteResponse);
-//
-//            String invitationLink = (String) inviteResponse.get("link");
-//            if (invitationLink == null) {
-//                throw new RuntimeException("Gagal generate link undangan");
-//            }
-//
-//            // 4. Kirim email undangan
-//            emailService.sendInvitationLinkEmail(debtorDto.getEmailDebtor(), invitationLink, debtorDto.getDebtorName());
-//
-//            // 5. Simpan ke database
-//            DebtorDto savedDebtor = saveDebtor(debtorDto);
-//
-//            // 6. Return response sederhana
-//            return Map.of(
-//                    "isSuccess", true,
-//                    "code", 200,
-//                    "message", "NIK belum terdaftar. Link registrasi telah dikirim ke email " + debtorDto.getEmailDebtor() + " dan data telah tersimpan"
-//            );
-//
-//        } catch (Exception e) {
-//            log.error("Error: {}", e.getMessage());
-//            throw new RuntimeException("Gagal membuat debtor. Alasan: " + e.getMessage());
-//        }
-//    }
 
     @Transactional
     public DebtorDto createDebtor(DebtorDto debtorDto) {
@@ -461,4 +428,41 @@ public class SignerService {
         );
         return result;
     }
+
+    @Transactional
+    public AgreementFileSigning uploadAgreementFile(FileUploadRequest request) throws IOException {
+        // Validasi
+        if (request.getFile() == null || request.getFile().isEmpty()) {
+            throw new IllegalArgumentException("File tidak boleh kosong");
+        }
+
+        // Buat direktori upload jika belum ada
+        Path uploadPath = Paths.get("uploads");
+        if (!Files.exists(uploadPath)) {
+            Files.createDirectories(uploadPath);
+        }
+
+        // Generate nama file unik
+        String originalFilename = request.getFile().getOriginalFilename();
+        String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+        String newFilename = UUID.randomUUID() + fileExtension;
+
+        // Simpan file
+        Path targetPath = uploadPath.resolve(newFilename);
+        Files.copy(request.getFile().getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+
+        // Simpan ke database
+        AgreementFileSigning fileSigning = new AgreementFileSigning();
+        fileSigning.setAgreementCode(request.getAgreementCode());
+        fileSigning.setFileName(request.getFileName());
+        fileSigning.setFileTypeCode(request.getFileTypeCode());
+        fileSigning.setFilePath(targetPath.toString());
+        fileSigning.setStamp(request.getIsStamp());
+        fileSigning.setUsrCrt("SYSTEM");
+        fileSigning.setDtmCrt(LocalDateTime.now());
+
+        return agreementFileSigningRepository.save(fileSigning);
+    }
+
+
 }

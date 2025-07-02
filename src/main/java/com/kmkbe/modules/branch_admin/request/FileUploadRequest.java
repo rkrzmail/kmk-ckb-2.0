@@ -1,0 +1,15 @@
+package com.kmkbe.modules.branch_admin.request;
+
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.web.multipart.MultipartFile;
+
+@Getter
+@Setter
+public class FileUploadRequest {
+    private String agreementCode;       // agreement no
+    private String fileName;           // nama dokumen
+    private String fileTypeCode;       // nomor dokumen
+    private MultipartFile file;        // file content
+    private Boolean isStamp;          // butuh materai
+}
