@@ -28,10 +28,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.security.SignatureException;
 import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -45,6 +42,8 @@ public class SignerService {
     private final DebtorRepository debtorRepository;
     private final DebtorMapper debtorMapper = DebtorMapper.INSTANCE;
     private final EmailService emailService;
+    private final AgreementRepository agreementRepository;
+    private final CustomerRepository customerRepository;
 
     private final String apiKey = "YiByHB@CSUL_DEV";
     private final String callerId = "USER@AD-INS.COM";
@@ -371,26 +370,38 @@ public class SignerService {
         return debtorMapper.entityToDto(debtorRepository.save(debtor));
     }
 
-    public PersonDto getSignersFromExternalApi() {
-        String custNo = "41000001137"; //hardcode sementara
-        String cwrNo = "41350CWR2024454"; //hardcode sementara
-        String requestDateTime = LocalDate.now().toString();
-
-        SignerRequestDto externalRequest = new SignerRequestDto(
-                custNo,
-                cwrNo,
-                requestDateTime
-        );
+    public PersonDto getSignersFromExternalApi(String financingHdrCode) {
+        boolean useHardcode = true; // Ganti nilai ini untuk switch mode
 
         try {
-            ExternalApiResponse response = callExternalApi(externalRequest);
+            String custNo;
+            String cwrNo;
+
+            if (useHardcode) {
+                // Hardcode values
+                custNo = "41000001137";
+                cwrNo = "41350CWR2024454";
+                log.info("Menggunakan data hardcode - custNo: {}, cwrNo: {}", custNo, cwrNo);
+            } else {
+                // Ambil dari database
+                UUID uuid = UUID.fromString(financingHdrCode);
+                Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid)
+                        .orElseThrow(() -> new RuntimeException("Agreement not found"));
+
+                custNo = agreement.getCwr().getCustomer().getCustNo();
+                cwrNo = agreement.getCwr().getCwrCode();
+                log.info("Menggunakan data database - custNo: {}, cwrNo: {}", custNo, cwrNo);
+            }
+
+            SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
+            ExternalApiResponse response = callExternalApi(request);
             return mapToPersonDto(response);
 
         } catch (Exception e) {
-            PersonDto errorDto = new PersonDto();
-            errorDto.setStatusCode("500");
-            errorDto.setMessage("Error calling external API");
-            return errorDto;
+            PersonDto error = new PersonDto();
+            error.setStatusCode("500");
+            error.setMessage("Error: " + e.getMessage());
+            return error;
         }
     }
 
@@ -415,28 +426,39 @@ public class SignerService {
     private PersonDto mapToPersonDto(ExternalApiResponse externalResponse) {
         PersonDto result = new PersonDto();
 
-        if (externalResponse != null) {
-            result.setStatusCode(externalResponse.getStatusCode());
-            result.setMessage(externalResponse.getMessage());
-
-            if (externalResponse.getReturnObject() != null) {
-                result.setSigners(
-                        externalResponse.getReturnObject().stream()
-                                .map(externalSigner -> {
-                                    PersonDto.Signer signer = new PersonDto.Signer();
-                                    signer.setCwrSignerId(externalSigner.getCwrSignerId());
-                                    signer.setCwrCustId(externalSigner.getCwrCustId());
-                                    signer.setSignerType(externalSigner.getSignerType());
-                                    signer.setSignerName(externalSigner.getSignerName());
-                                    signer.setSignerPosition(externalSigner.getSignerPosition());
-                                    return signer;
-                                })
-                                .collect(Collectors.toList())
-                );
-            }
+        if (externalResponse == null) {
+            result.setStatusCode("500");
+            result.setMessage("No response from external API");
+            result.setSigners(List.of());
+            return result;
         }
 
-//        System.out.println("Hasil mapping: " + result); // Log hasil mapping
+        result.setStatusCode(externalResponse.getStatusCode());
+        result.setMessage(externalResponse.getMessage());
+
+        if (externalResponse.getReturnObject() == null || externalResponse.getReturnObject().isEmpty()) {
+            result.setMessage("Tidak ada data signer yang tersedia");
+            result.setSigners(List.of());
+            return result;
+        }
+
+        result.setSigners(
+                externalResponse.getReturnObject().stream()
+                        .map(extSigner -> {
+                            PersonDto.Signer signer = new PersonDto.Signer();
+                            signer.setCwrSignerId(extSigner.getCwrSignerId());
+                            signer.setCwrCustId(extSigner.getCwrCustId());
+                            signer.setSignerType(extSigner.getSignerType());
+                            signer.setSignerName(extSigner.getSignerName());
+                            signer.setSignerPosition(extSigner.getSignerPosition());
+
+//                            signer.setIdentityNo("");
+//                            signer.setSignerEndDt(null);
+
+                            return signer;
+                        })
+                        .toList()
+        );
         return result;
     }
 }

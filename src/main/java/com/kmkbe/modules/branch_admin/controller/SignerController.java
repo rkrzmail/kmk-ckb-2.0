@@ -70,12 +70,10 @@ public class SignerController {
         }
     }
 
-    @GetMapping("/getSigners")  // Ganti dari @PostMapping
+    @GetMapping("/getSigners/{financingHdrCode}")
     public CommonResult<PersonDto> getSigners(
-            Authentication authentication
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-        PersonDto getSigner = signerService.getSignersFromExternalApi(); // Tanpa parameter
-        return new CommonResult<PersonDto>().success(getSigner);
+            @PathVariable String financingHdrCode) {
+        PersonDto result = signerService.getSignersFromExternalApi(financingHdrCode);
+        return new CommonResult<PersonDto>().success(result);
     }
 }

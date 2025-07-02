@@ -229,9 +229,9 @@ public class CustomerDashboardService {
                     .address(address)
                     .phoneNo(phoneNo)
                     .perjanjian(CustomerPerjanjianDto.PerjanjianDto.builder()
-                            .perjanjianBerjalan(0)
-                            .perjanjianBerakhir(0)
-                            .totalPerjanjian(0)
+                            .perjanjianBerjalan(9)
+                            .perjanjianBerakhir(9)
+                            .totalPerjanjian(9)
                             .build())
 
                     .build();

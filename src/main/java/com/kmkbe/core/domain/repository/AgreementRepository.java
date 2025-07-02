@@ -91,5 +91,12 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     List<Agreement> findByFinancingHdr_FinancingHdrCode(UUID financinghdrCode);
 
     //List<Agreement> findAllByStatus(@Size(max = 20) @NotNull(message = "Status cannot be null") String status);
+
+
+    @Query("SELECT a FROM Agreement a " +
+            "JOIN FETCH a.cwr " +
+            "JOIN FETCH a.cwr.customer " +
+            "WHERE a.financingHdr.financingHdrCode = :financingHdrCode") // Nama parameter harus sama
+    Optional<Agreement> findByFinancingHdr_FinancingHdrCode2(@Param("financingHdrCode") UUID financingHdrCode);
 }
 
