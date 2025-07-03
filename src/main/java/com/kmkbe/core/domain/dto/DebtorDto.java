@@ -31,7 +31,7 @@ public class DebtorDto implements Serializable {
     private String kelurahan;
     private String kecamatan;
     private String kota;
-    private boolean isActive;
+    private Boolean isActive;
     private String signerStatus;
     private String signhubStatus;
     private String emailDebtor;

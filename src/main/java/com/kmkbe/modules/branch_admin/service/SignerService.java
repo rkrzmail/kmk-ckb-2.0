@@ -193,7 +193,7 @@ public class SignerService {
             debtorDto.setKelurahan(signer.getKelurahan());
             debtorDto.setKecamatan(signer.getKecamatan());
             debtorDto.setKota(signer.getKota());
-            debtorDto.setActive(signer.getIsActive());
+            debtorDto.setIsActive(signer.getIsActive());
             debtorDto.setSignerStatus(signer.getSignerStatus());
             debtorDto.setSignhubStatus(signer.getSignhubStatus());
             debtorDto.setEmailDebtor(signer.getEmailDebtor());
@@ -327,7 +327,7 @@ public class SignerService {
                 .kelurahan(debtorDto.getKelurahan())
                 .kecamatan(debtorDto.getKecamatan())
                 .kota(debtorDto.getKota())
-                .isActive(true)
+                .isActive(debtorDto.getIsActive())
                 .signerStatus("PENDING")
                 .signhubStatus("PENDING")
                 .emailDebtor(debtorDto.getEmailDebtor())
