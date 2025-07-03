@@ -26,6 +26,7 @@ import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -327,7 +328,8 @@ public class SignerService {
                 .kelurahan(debtorDto.getKelurahan())
                 .kecamatan(debtorDto.getKecamatan())
                 .kota(debtorDto.getKota())
-                .isActive(debtorDto.getIsActive())
+//                .isActive(debtorDto.getIsActive())
+                .isActive(true)
                 .signerStatus("PENDING")
                 .signhubStatus("PENDING")
                 .emailDebtor(debtorDto.getEmailDebtor())
@@ -464,5 +466,31 @@ public class SignerService {
         return agreementFileSigningRepository.save(fileSigning);
     }
 
+    public List<SignerAgreementDto> signerAgreement(String financingHdrCode) {
+        try {
+            UUID uuid = UUID.fromString(financingHdrCode);
 
+            List<Agreement> agreements = agreementRepository.findByFinancingHdr_FinancingHdrCode(uuid);
+
+            if (agreements.isEmpty()) {
+                // Return list dengan pesan khusus
+                return Collections.singletonList(
+                        new SignerAgreementDto(
+                                "NOT_FOUND",
+                                "FinancingHdrCode " + financingHdrCode + " tidak memiliki agreement"
+                        )
+                );
+            }
+
+            return agreements.stream()
+                    .map(agreement -> new SignerAgreementDto(
+                            agreement.getAgreementCode(),
+                            agreement.getFinancingHdr().getFinancingHdrCode().toString()
+                    ))
+                    .toList();
+
+        } catch (IllegalArgumentException e) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Format UUID tidak valid");
+        }
+    }
 }

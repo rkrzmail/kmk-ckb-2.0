@@ -31,7 +31,7 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
                     from
                         public.agreement ag
                             join public.agreement_file agf on ag.agreement_code = agf.agreement_code
-                   
+                    
                     """,
             nativeQuery = true
     )
@@ -78,25 +78,16 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
             Pageable pageable
     );
 
-
-
-
-
-
-    List<Agreement> findAllByAgreementCode(  String agreementCode);
-
     List<Agreement> findAllByCwr(@NotNull(message = "Cwr cannot be null") Cwr cwr);
 
     Optional<Agreement> findTopByFinancingHdr(FinancingHdr financingHdr);
     List<Agreement> findByFinancingHdr_FinancingHdrCode(UUID financinghdrCode);
 
-    //List<Agreement> findAllByStatus(@Size(max = 20) @NotNull(message = "Status cannot be null") String status);
-
-
     @Query("SELECT a FROM Agreement a " +
             "JOIN FETCH a.cwr " +
             "JOIN FETCH a.cwr.customer " +
-            "WHERE a.financingHdr.financingHdrCode = :financingHdrCode") // Nama parameter harus sama
+            "JOIN FETCH a.financingHdr " +
+            "WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
     Optional<Agreement> findByFinancingHdr_FinancingHdrCode2(@Param("financingHdrCode") UUID financingHdrCode);
 }
 

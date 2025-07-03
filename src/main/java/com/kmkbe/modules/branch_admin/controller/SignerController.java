@@ -100,4 +100,12 @@ public class SignerController {
                             .fail(400, "Gagal upload file: " + e.getMessage()));
         }
     }
+
+    @GetMapping("/signer-agreement/{financingHdrCode}")
+    public CommonResult<List<SignerAgreementDto>> getAgreement(
+            @PathVariable String financingHdrCode) {
+        List<SignerAgreementDto> signerAgreement = signerService.signerAgreement(financingHdrCode);
+        return new CommonResult<List<SignerAgreementDto>>().success(signerAgreement);
+    }
+
 }
