@@ -3,6 +3,7 @@ package com.kmkbe.modules.branch_admin.service;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.DebtorMapper;
+import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -26,6 +27,7 @@ import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -431,42 +433,87 @@ public class SignerService {
         return result;
     }
 
-    @Transactional
-    public AgreementFileSigning uploadAgreementFile(FileUploadRequest request) throws IOException {
-        // Validasi
-        if (request.getFile() == null || request.getFile().isEmpty()) {
-            throw new IllegalArgumentException("File tidak boleh kosong");
+//    @Transactional
+//    public AgreementFileSigning uploadAgreementFile(FileUploadRequest request) throws IOException {
+//        if (request.getFile() == null || request.getFile().isEmpty()) {
+//            throw new IllegalArgumentException("File tidak boleh kosong");
+//        }
+//
+//        Path uploadPath = Paths.get("uploads");
+//        if (!Files.exists(uploadPath)) {
+//            Files.createDirectories(uploadPath);
+//        }
+//
+//        String originalFilename = request.getFile().getOriginalFilename();
+//        String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
+//        String newFilename = UUID.randomUUID() + fileExtension;
+//
+//        Path targetPath = uploadPath.resolve(newFilename);
+//        Files.copy(request.getFile().getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
+//
+//        AgreementFileSigning fileSigning = new AgreementFileSigning();
+//        fileSigning.setAgreementCode(request.getAgreementCode());
+//        fileSigning.setFileName(request.getFileName());
+//        fileSigning.setFileTypeCode(request.getFileTypeCode());
+//        fileSigning.setFilePath(targetPath.toString());
+//        fileSigning.setStamp(request.getIsStamp());
+//        fileSigning.setUsrCrt("SYSTEM");
+//        fileSigning.setDtmCrt(LocalDateTime.now());
+//
+//        return agreementFileSigningRepository.save(fileSigning);
+//    }
+
+    public CommonResult<AgreementFileSigning> uploadFileHandler(FileUploadRequest request) {
+        try {
+            // 1. Validasi
+            if (request.getFile() == null || request.getFile().isEmpty()) {
+                return new CommonResult<AgreementFileSigning>()
+                        .fail(400, "File harus diupload");
+            }
+
+            if (request.getAgreementCode() == null || request.getAgreementCode().isEmpty()) {
+                return new CommonResult<AgreementFileSigning>()
+                        .fail(400, "Agreement tidak boleh kosong");
+            }
+
+            if (request.getFileName() == null || request.getFileName().isEmpty()) {
+                return new CommonResult<AgreementFileSigning>()
+                        .fail(400, "Nama Document tidak boleh kosong");
+            }
+
+            if (request.getFileTypeCode() == null || request.getFileTypeCode().isEmpty()) {
+                return new CommonResult<AgreementFileSigning>()
+                        .fail(400, "No Document tidak boleh kosong");
+            }
+
+            // 2. Upload file
+            String filename = "file_" + System.currentTimeMillis() + "_" + request.getFile().getOriginalFilename();
+            Path path = Paths.get("uploads/" + filename);
+            Files.createDirectories(path.getParent());
+            Files.copy(request.getFile().getInputStream(), path);
+
+            // 3. Simpan ke database
+            AgreementFileSigning entity = new AgreementFileSigning();
+            entity.setAgreementCode(request.getAgreementCode());
+            entity.setFileTypeCode(request.getFileTypeCode());
+            entity.setFileName(request.getFileName());
+            entity.setFilePath(path.toString());
+            entity.setStamp(Boolean.parseBoolean(request.getIsStamp()));
+            entity.setUsrCrt("SYSTEM"); // Default value
+            entity.setDtmCrt(LocalDateTime.now()); // Auto timestamp
+
+            AgreementFileSigning savedFile = agreementFileSigningRepository.save(entity);
+
+            return new CommonResult<AgreementFileSigning>()
+                    .success(savedFile);
+
+        } catch (Exception e) {
+            return new CommonResult<AgreementFileSigning>()
+                    .fail(500, "Error: " + e.getMessage());
         }
-
-        // Buat direktori upload jika belum ada
-        Path uploadPath = Paths.get("uploads");
-        if (!Files.exists(uploadPath)) {
-            Files.createDirectories(uploadPath);
-        }
-
-        // Generate nama file unik
-        String originalFilename = request.getFile().getOriginalFilename();
-        String fileExtension = originalFilename.substring(originalFilename.lastIndexOf("."));
-        String newFilename = UUID.randomUUID() + fileExtension;
-
-        // Simpan file
-        Path targetPath = uploadPath.resolve(newFilename);
-        Files.copy(request.getFile().getInputStream(), targetPath, StandardCopyOption.REPLACE_EXISTING);
-
-        // Simpan ke database
-        AgreementFileSigning fileSigning = new AgreementFileSigning();
-        fileSigning.setAgreementCode(request.getAgreementCode());
-        fileSigning.setFileName(request.getFileName());
-        fileSigning.setFileTypeCode(request.getFileTypeCode());
-        fileSigning.setFilePath(targetPath.toString());
-        fileSigning.setStamp(request.getIsStamp());
-        fileSigning.setUsrCrt("SYSTEM");
-        fileSigning.setDtmCrt(LocalDateTime.now());
-
-        return agreementFileSigningRepository.save(fileSigning);
     }
 
-    public List<SignerAgreementDto> signerAgreement(String financingHdrCode) {
+            public List<SignerAgreementDto> signerAgreement(String financingHdrCode) {
         try {
             UUID uuid = UUID.fromString(financingHdrCode);
 

@@ -84,21 +84,27 @@ public class SignerController {
         return new CommonResult<PersonDto>().success(result);
     }
 
-    @PostMapping(value = "/upload-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<CommonResult<AgreementFileSigning>> uploadFile(
-            @ModelAttribute FileUploadRequest request) {
+//    @PostMapping(value = "/upload-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+//    public ResponseEntity<CommonResult<AgreementFileSigning>> uploadFile(
+//            @ModelAttribute FileUploadRequest request) {
+//
+//        try {
+//            AgreementFileSigning result = signerService.uploadAgreementFile(request);
+//            return ResponseEntity.ok()
+//                    .body(new CommonResult<AgreementFileSigning>()
+//                            .success(result));
+//        } catch (IOException e) {
+//            log.error("Gagal upload file: {}", e.getMessage(), e);
+//            return ResponseEntity.badRequest()
+//                    .body(new CommonResult<AgreementFileSigning>()
+//                            .fail(400, "Gagal upload file: " + e.getMessage()));
+//        }
+//    }
 
-        try {
-            AgreementFileSigning result = signerService.uploadAgreementFile(request);
-            return ResponseEntity.ok()
-                    .body(new CommonResult<AgreementFileSigning>()
-                            .success(result));
-        } catch (IOException e) {
-            log.error("Gagal upload file: {}", e.getMessage(), e);
-            return ResponseEntity.badRequest()
-                    .body(new CommonResult<AgreementFileSigning>()
-                            .fail(400, "Gagal upload file: " + e.getMessage()));
-        }
+    @PostMapping(value = "/upload-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public CommonResult<AgreementFileSigning> uploadFile(
+            @ModelAttribute FileUploadRequest request) {
+        return signerService.uploadFileHandler(request);
     }
 
     @GetMapping("/signer-agreement/{financingHdrCode}")
