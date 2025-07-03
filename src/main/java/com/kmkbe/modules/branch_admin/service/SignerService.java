@@ -280,7 +280,7 @@ public class SignerService {
         requestBody.put("nama", debtorDto.getDebtorName());
         requestBody.put("kecamatan", debtorDto.getKecamatan());
         requestBody.put("tlp", debtorDto.getNoTelp());
-        requestBody.put("jenisKelamin", debtorDto.getJenisKelamin().equalsIgnoreCase("L") ? "M" : "F");
+        requestBody.put("jenisKelamin", debtorDto.getJenisKelamin());
         requestBody.put("idKtp", debtorDto.getIdentityNo());
         requestBody.put("kodePos", debtorDto.getKodePos());
         requestBody.put("email", debtorDto.getEmail());
