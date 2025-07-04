@@ -211,16 +211,21 @@ public class SignerService {
     @Transactional
     public DebtorDto createDebtor(DebtorDto debtorDto) {
         try {
+
+            log.info("createDebtor: {}", debtorDto);
+
             // 1. Header
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("x-api-key", apiKey);
 
             // regis
+            log.info("Calling Registration API for debtor with identityNo: {}", debtorDto.getIdentityNo());
             Map<String, Object> registerResponse = callRegistrationApi(debtorDto, headers);
             log.info("Register API Response: {}", registerResponse);
 
             // 2. Generate invitation link
+            log.info("Calling Invitation API for debtor: {}", debtorDto.getDebtorName());
             Map<String, Object> inviteResponse = callInvitationApi(debtorDto, headers);
             String invitationLink = (String) inviteResponse.get("link");
             if (invitationLink == null) {
@@ -228,6 +233,7 @@ public class SignerService {
             }
 
             // 3. Kirim email
+            log.info("Sending invitation email to: {}", debtorDto.getEmailDebtor());
             emailService.sendInvitationLinkEmail(
                     debtorDto.getEmailDebtor(),
                     invitationLink,
@@ -235,6 +241,7 @@ public class SignerService {
             );
 
             // 4. Simpan ke database dan return DebtorDto
+            log.info("Saving debtor to the database: {}", debtorDto);
             return saveDebtor(debtorDto);
 
         } catch (Exception e) {
@@ -257,6 +264,7 @@ public class SignerService {
         );
 
         Map<String, Object> responseBody = response.getBody();
+        log.info("Registration API Response Body: {}", responseBody);
         if (responseBody == null) {
             throw new RuntimeException("API registrasi tidak memberikan response");
         }
@@ -297,6 +305,7 @@ public class SignerService {
         );
 
         Map<String, Object> responseBody = response.getBody();
+        log.info("Invitation API Response Body: {}", responseBody);
         if (responseBody == null) {
             throw new RuntimeException("API undangan tidak memberikan response");
         }
@@ -313,6 +322,7 @@ public class SignerService {
     }
 
     private DebtorDto saveDebtor(DebtorDto debtorDto) {
+        log.info("Saving debtor to database: {}", debtorDto);
         Debtor debtor = Debtor.builder()
                 .debtorName(debtorDto.getDebtorName())
                 .karyawanName(debtorDto.getKaryawanName())
@@ -330,8 +340,8 @@ public class SignerService {
                 .kelurahan(debtorDto.getKelurahan())
                 .kecamatan(debtorDto.getKecamatan())
                 .kota(debtorDto.getKota())
-//                .isActive(debtorDto.getIsActive())
-                .isActive(true)
+                .isActive(debtorDto.getIsActive())
+//                .isActive(true)
                 .signerStatus("PENDING")
                 .signhubStatus("PENDING")
                 .emailDebtor(debtorDto.getEmailDebtor())
