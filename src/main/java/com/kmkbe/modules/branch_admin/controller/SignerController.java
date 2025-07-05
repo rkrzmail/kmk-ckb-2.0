@@ -63,6 +63,18 @@ public class SignerController {
         return new CommonResult<List<DebtorDto>>().success(signerPersonList);
     }
 
+    @GetMapping("/person/{id}")
+    public ResponseEntity<CommonResult<DebtorDto>> getPersonDetail(
+            @PathVariable Long id) {
+        CommonResult<DebtorDto> result = signerService.detailSigner(id);
+
+        if (result.getIsSuccess()) {
+            return ResponseEntity.ok(result);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
+        }
+    }
+
 
     @PostMapping("/person")
     public CommonResult<String> createDebtor(@RequestBody DebtorDto debtorDto) {

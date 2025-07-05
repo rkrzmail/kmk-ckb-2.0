@@ -198,6 +198,7 @@ public class SignerService {
             debtorDto.setKota(signer.getKota());
             debtorDto.setIsActive(signer.getIsActive());
             debtorDto.setSignerStatus(signer.getSignerStatus());
+
             debtorDto.setSignhubStatus(signer.getSignhubStatus());
             debtorDto.setEmailDebtor(signer.getEmailDebtor());
             debtorDto.setFinancingHdrCode(signer.getFinancingHdrCode());
@@ -206,6 +207,48 @@ public class SignerService {
         }
 
         return dtoList;
+    }
+
+    public CommonResult<DebtorDto> detailSigner(Long id) {
+        // Cek apakah policy agreement ditemukan
+        Optional<Debtor> personDetail = debtorRepository.findById(id);
+
+        if (personDetail.isPresent()) {
+            Debtor debtor = personDetail.get();
+
+            // Mapping PolicyAgreement ke PolicyAgreementDto
+            DebtorDto debtorDto = new DebtorDto();
+            debtorDto.setDebtorId(debtor.getDebtorId());
+            debtorDto.setDebtorName(debtor.getDebtorName());
+            debtorDto.setKaryawanName(debtor.getKaryawanName());
+            debtorDto.setJabatan(debtor.getJabatan());
+            debtorDto.setIdentityNo(debtor.getIdentityNo());
+            debtorDto.setEmail(debtor.getEmail());
+            debtorDto.setNoTelp(debtor.getNoTelp());
+            debtorDto.setTempatLahir(debtor.getTempatLahir());
+            debtorDto.setTanggalLahir(debtor.getTanggalLahir());
+            debtorDto.setJenisKelamin(debtor.getJenisKelamin());
+            debtorDto.setAlamat(debtor.getAlamat());
+            debtorDto.setRt(debtor.getRt());
+            debtorDto.setRw(debtor.getRw());
+            debtorDto.setKodePos(debtor.getKodePos());
+            debtorDto.setKelurahan(debtor.getKelurahan());
+            debtorDto.setKecamatan(debtor.getKecamatan());
+            debtorDto.setKota(debtor.getKota());
+            debtorDto.setIsActive(debtor.getIsActive());
+            debtorDto.setSignerStatus(debtor.getSignerStatus());
+            debtorDto.setSignhubStatus(debtor.getSignhubStatus());
+            debtorDto.setEmailDebtor(debtor.getEmailDebtor());
+            debtorDto.setFinancingHdrCode(debtor.getFinancingHdrCode());
+
+
+
+            // Mengembalikan hasil
+            return new CommonResult<DebtorDto>().success(debtorDto);
+        } else {
+            // Jika tidak ditemukan, kembalikan hasil gagal
+            return new CommonResult<DebtorDto>().fail(400,"Signer tidak ditemukan dengan ID: " + id);
+        }
     }
 
     @Transactional
