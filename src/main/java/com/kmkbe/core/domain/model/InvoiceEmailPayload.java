@@ -2,6 +2,7 @@ package com.kmkbe.core.domain.model;
 
 import lombok.Builder;
 import lombok.Getter;
+import org.apache.commons.lang3.StringEscapeUtils;
 
 import java.util.List;
 
@@ -27,6 +28,9 @@ public class InvoiceEmailPayload {
      */
     private String invoiceAmt;
 
+    public static String esc(String s){
+        return StringEscapeUtils.escapeEcmaScript(s);
+    }
     public static String toHtmlListBody(List<InvoiceEmailPayload> payloads) {
         if (payloads.isEmpty()) {
             return "";
@@ -40,15 +44,15 @@ public class InvoiceEmailPayload {
             if (i % 2 == 0) {
                 result.append("<tr>").append("\n");
             } else {
-                result.append("<tr style=" + "\"background-color: #E7ECFF;\"" + ">").append("\n");
+                result.append("<tr style=\"background-color: #E7ECFF;\">").append("\n");
             }
 
-            result.append("<td>").append(payload.getInvoiceNo()).append("</td>").append("\n");
-            result.append("<td>").append(payload.getDescription()).append("</td>").append("\n");
-            result.append("<td>").append(payload.getBouwheerName()).append("</td>").append("\n");
-            result.append("<td>").append(payload.getInvoiceDate()).append("</td>").append("\n");
-            result.append("<td>").append(payload.getInvoiceDueDate()).append("</td>").append("\n");
-            result.append("<td>").append(payload.getInvoiceAmt()).append("</td>").append("\n");
+            result.append("<td>").append(esc(payload.getInvoiceNo())).append("</td>").append("\n");
+            result.append("<td>").append(esc(payload.getDescription())).append("</td>").append("\n");
+            result.append("<td>").append(esc(payload.getBouwheerName())).append("</td>").append("\n");
+            result.append("<td>").append(esc(payload.getInvoiceDate())).append("</td>").append("\n");
+            result.append("<td>").append(esc(payload.getInvoiceDueDate())).append("</td>").append("\n");
+            result.append("<td>").append(esc(payload.getInvoiceAmt())).append("</td>").append("\n");
             result.append("</tr>").append("\n");
         }
         return result.toString();
