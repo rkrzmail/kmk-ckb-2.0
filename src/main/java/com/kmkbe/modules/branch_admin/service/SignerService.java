@@ -4,17 +4,22 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.DebtorMapper;
 import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.exception.ApiBusinessException;
 import com.kmkbe.core.exception.DebtorCreationException;
+import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.branch_admin.request.FileUploadRequest;
 import com.kmkbe.modules.common.service.EmailService;
+import com.kmkbe.modules.user.entity.MstAppRoleFormUser;
 import com.kmkbe.modules.user.entity.MstUser;
+import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.nikita.utils.SpecPagination;
+import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -31,11 +36,13 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.security.SignatureException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -47,14 +54,15 @@ import java.util.stream.Collectors;
 public class SignerService {
     private final FinancingHdrRepository financingHdrRepository;
     private final MstUserRepository mstUserRepository;
-    private final SignerPersonRepository signerPersonRepository;
     private final RestTemplate restTemplate;
     private final DebtorRepository debtorRepository;
     private final DebtorMapper debtorMapper = DebtorMapper.INSTANCE;
     private final EmailService emailService;
     private final AgreementRepository agreementRepository;
-    private final CustomerRepository customerRepository;
     private final AgreementFileSigningRepository agreementFileSigningRepository;
+    private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
+    private final AgreementFileRepository agreementFileRepository;
+    private final BouwheerRepository bouwheerRepository;
 
     private final String apiKey = "YiByHB@CSUL_DEV";
     private final String callerId = "USER@AD-INS.COM";
@@ -66,7 +74,111 @@ public class SignerService {
     private String adInsKey;
 
 
-    public PaginationResult<SignerDto> assignmentList(
+//    public PaginationResult<SignerDto> assignmentList(
+//            HttpServletRequest httpServletRequest,
+//            Authentication authentication,
+//            PaginationRequest request
+//    ) throws SignatureException {
+//        try {
+//            int pageNo = 0, pageSize = 10;
+//
+//            if (request.getPageNo() != null) {
+//                pageNo = request.getPageNo();
+//            }
+//
+//            if (request.getPageSize() != null) {
+//                pageSize = request.getPageSize();
+//            }
+//
+//            if (pageNo > 0) {
+//                pageNo = pageNo - 1;
+//            }
+//
+//
+//            MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
+//            MstUser user = mstUserRepository.findById(authenticateUser.getUserCode()).orElseThrow();
+//
+//
+//            String financingStatusFilter = null,
+//                    custNameFilter = null,
+//                    bouwheerNameFilter = null;
+//
+//
+//            if (
+//                    !StringUtil.isNullOrEmpty(request.getSearchBy())
+//                            && !StringUtil.isNullOrEmpty(request.getSearchValue())
+//            ) {
+//                switch (request.getSearchBy().toLowerCase()) {
+//                    case "status":
+//                        financingStatusFilter = request.getSearchValue();
+//                        break;
+//                    case "namadebitur":
+//                        custNameFilter = request.getSearchValue();
+//                        break;
+//                    case "pemberikerja":
+//                        bouwheerNameFilter = request.getSearchValue();
+//                        break;
+//                    case "cabang":
+//                        break;
+//                }
+//            }
+//
+//            Page<FinancingHdr> financingHdrPage = financingHdrRepository.findAllAssignmentFinancingRaw(
+//                    user.getEmployee().getBranch().getBranchCode(),
+//                    financingStatusFilter,
+//                    custNameFilter,
+//                    bouwheerNameFilter,
+//                    PageRequest.of(pageNo, pageSize)
+//            );
+//
+//
+//            return SpecPagination.paginationData(new SpecPagination<FinancingHdr, SignerDto>(financingHdrPage.stream().toList(), request)
+//            {
+//                @Override
+//                public FinancingHdr search(FinancingHdr data) {
+//
+//                    if (isSearchBy("financingHdrCode") && equal(data.getFinancingHdrCode().toString())  ){
+//                        return data;
+//                    }else if (isSearchBy("custName") && like(data.getCustomer().getCustName())  ){
+//                        return data;
+//                    }else if (isSearchBy("bouwheerName") && like(data.getBouwheer().getBouwheerName())  ){
+//                        return data;
+//                    }
+//
+//                    return null;
+//                }
+//
+//                @Override
+//                public SignerDto eval(FinancingHdr e) {
+//                    if (e.getCustomer() == null || e.getBouwheer() == null) {
+//                        return null;
+//                    }
+//
+//                    boolean isNewCust = financingHdrRepository
+//                            .countByCustomerAndFinancingStatus(
+//                                    e.getCustomer(),
+//                                    "PAID"
+//                            ) == 0;
+//
+//
+//
+//                    return SignerDto.builder()
+//                            .financingHdrCode(e.getFinancingHdrCode())
+//                            .custCode(e.getCustomer().getCustCode())
+//                            .custName(e.getCustomer().getCustName())
+//                            .bouwheerName(e.getBouwheer().getBouwheerName())
+//                            .custStatus(isNewCust ? "New Customer" : "Existing Customer")
+//                            .build();
+//                }
+//            });
+//
+//        } catch (Exception e) {
+//            log.error("assignmentList: error {}", e.getMessage());
+//            throw e;
+//        }
+//    }
+
+    public PaginationResult<AssignmentDto> assignmentList(
             HttpServletRequest httpServletRequest,
             Authentication authentication,
             PaginationRequest request
@@ -89,11 +201,29 @@ public class SignerService {
 
             MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
             MstUser user = mstUserRepository.findById(authenticateUser.getUserCode()).orElseThrow();
+            /*Page<FinancingHdr> financingHdrPage = financingHdrRepository.findByMstBranchOrderByFinancingHdrIdDesc(
+                    user.getEmployee().getBranch(),
+                    PageRequest.of(pageNo, pageSize)
+            );*/
 
 
             String financingStatusFilter = null,
                     custNameFilter = null,
                     bouwheerNameFilter = null;
+
+
+
+            //add role
+            Optional<MstAppRoleFormUser> findPermission = mstAppRoleFormUserRepository
+                    .findTopByUserOrderByAppRoleFormUserId(user);
+            MstAppRoleFormUser permission = findPermission
+                    .orElseGet(() -> MstAppRoleFormUser.builder().build());
+            String roleCode =  permission
+                    .getAppRoleForm()
+                    .getApplicationRole()
+                    .getRoleCode()
+                    .getRoleCode();
+
 
 
             if (
@@ -124,7 +254,7 @@ public class SignerService {
             );
 
 
-            return SpecPagination.paginationData(new SpecPagination<FinancingHdr, SignerDto>(financingHdrPage.stream().toList(), request)
+            return SpecPagination.paginationData(new SpecPagination<FinancingHdr, AssignmentDto>(financingHdrPage.stream().toList(), request)
             {
                 @Override
                 public FinancingHdr search(FinancingHdr data) {
@@ -141,7 +271,7 @@ public class SignerService {
                 }
 
                 @Override
-                public SignerDto eval(FinancingHdr e) {
+                public AssignmentDto eval(FinancingHdr e) {
                     if (e.getCustomer() == null || e.getBouwheer() == null) {
                         return null;
                     }
@@ -153,17 +283,142 @@ public class SignerService {
                             ) == 0;
 
 
+                    MappedFinancingStatus financingStatus;
+                    if (roleCode.equalsIgnoreCase("account_officer")){
+                        financingStatus = new MappedFinancingStatus(
+                                e,
+                                MappedFinancingStatus.Type.AccountOfficer
+                        );
 
-                    return SignerDto.builder()
+                    }else{
+                        financingStatus = new MappedFinancingStatus(
+                                e,
+                                MappedFinancingStatus.Type.BranchAdmin
+                        );
+                        if (financingStatus.getStatus().equalsIgnoreCase("NEW")){
+                            return null;
+                        }
+                    }
+
+
+
+                    Agreement agreement = agreementRepository.findTopByFinancingHdr(e).orElse(null);
+                    AgreementFile agreementFile = null;
+
+                    String agreementDoc = null, agreementCode = null;
+                    if (agreement != null) {
+                        agreementCode = agreement.getAgreementCode();
+                        agreementFile = agreementFileRepository.findTopByAgreementOrderByAgreementFileId(
+                                agreement
+                        ).orElse(null);
+                    }
+
+                    if (agreementFile != null) {
+                        agreementDoc = UriUtils.fileUlr(
+                                httpServletRequest,
+                                Math.toIntExact(agreementFile.getAgreementFileId()),
+                                UriUtils.DocType.agreement
+                        );
+                    }
+
+                    return AssignmentDto.builder()
                             .financingHdrCode(e.getFinancingHdrCode())
+                            .agreementCode(agreementCode)
                             .custCode(e.getCustomer().getCustCode())
                             .custName(e.getCustomer().getCustName())
                             .bouwheerName(e.getBouwheer().getBouwheerName())
+                            .verifDate(null)
+                            .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
+                            .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
                             .custStatus(isNewCust ? "New Customer" : "Existing Customer")
+                            .status(financingStatus.getStatus())
+                            .statusLabel(financingStatus.getLabel())
+                            .agreementDoc(agreementDoc)
                             .build();
+
                 }
             });
 
+
+
+            /*List<AssignmentDto> result = financingHdrPage.stream()
+                    .filter(e -> e.getCustomer() != null && e.getBouwheer() != null)
+                    .map(e -> {
+                        boolean isNewCust = financingHdrRepository
+                                .countByCustomerAndFinancingStatus(
+                                        e.getCustomer(),
+                                        "PAID"
+                                ) == 0;
+
+
+                        MappedFinancingStatus financingStatus;
+                        if (roleCode.equalsIgnoreCase("account_officer")){
+                            financingStatus = new MappedFinancingStatus(
+                                    e,
+                                    MappedFinancingStatus.Type.AccountOfficer
+                            );
+
+                        }else{
+                            financingStatus = new MappedFinancingStatus(
+                                    e,
+                                    MappedFinancingStatus.Type.BranchAdmin
+                            );
+                            if (financingStatus.getStatus().equalsIgnoreCase("NEW")){
+                                return null;
+                            }
+                        }
+
+
+
+                        Agreement agreement = agreementRepository.findTopByFinancingHdr(e).orElse(null);
+                        AgreementFile agreementFile = null;
+
+                        String agreementDoc = null, agreementCode = null;
+                        if (agreement != null) {
+                            agreementCode = agreement.getAgreementCode();
+                            agreementFile = agreementFileRepository.findTopByAgreementOrderByAgreementFileId(
+                                    agreement
+                            ).orElse(null);
+                        }
+
+                        if (agreementFile != null) {
+                            agreementDoc = UriUtils.fileUlr(
+                                    httpServletRequest,
+                                    Math.toIntExact(agreementFile.getAgreementFileId()),
+                                    UriUtils.DocType.agreement
+                            );
+                        }
+
+                        return AssignmentDto.builder()
+                                .financingHdrCode(e.getFinancingHdrCode())
+                                .agreementCode(agreementCode)
+                                .custCode(e.getCustomer().getCustCode())
+                                .custName(e.getCustomer().getCustName())
+                                .bouwheerName(e.getBouwheer().getBouwheerName())
+                                .verifDate(null)
+                                .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
+                                .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
+                                .custStatus(isNewCust ? "New Customer" : "Existing Customer")
+                                .status(financingStatus.getStatus())
+                                .statusLabel(financingStatus.getLabel())
+                                .agreementDoc(agreementDoc)
+                                .build();
+                    })
+                    .toList();
+
+            List<AssignmentDto> resultNew = new ArrayList<>();
+            for (AssignmentDto assignment : result) {
+                if (assignment !=null ){
+                    resultNew.add(assignment);
+                }
+            }
+
+            return PaginationResult.<AssignmentDto>builder()
+                    .currentPage(pageNo + 1)
+                    .totalData(financingHdrPage.getTotalElements())
+                    .totalPage(financingHdrPage.getTotalPages())
+                    .list(resultNew)
+                    .build();*/
         } catch (Exception e) {
             log.error("assignmentList: error {}", e.getMessage());
             throw e;
@@ -394,41 +649,6 @@ public class SignerService {
         return debtorMapper.entityToDto(debtorRepository.save(debtor));
     }
 
-//    public PersonDto getSignersFromExternalApi(String financingHdrCode) {
-//        boolean useHardcode = true; // Ganti nilai ini untuk switch mode
-//
-//        try {
-//            String custNo;
-//            String cwrNo;
-//
-//            if (useHardcode) {
-//                // Hardcode values
-//                custNo = "41000001137";
-//                cwrNo = "41350CWR2024454";
-//                log.info("Menggunakan data hardcode - custNo: {}, cwrNo: {}", custNo, cwrNo);
-//            } else {
-//                // Ambil dari database
-//                UUID uuid = UUID.fromString(financingHdrCode);
-//                Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid)
-//                        .orElseThrow(() -> new RuntimeException("Agreement not found"));
-//
-//                custNo = agreement.getCwr().getCustomer().getCustNo();
-//                cwrNo = agreement.getCwr().getCwrCode();
-//                log.info("Menggunakan data database - custNo: {}, cwrNo: {}", custNo, cwrNo);
-//            }
-//
-//            SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
-//            ExternalApiResponse response = callExternalApi(request);
-//            return mapToPersonDto(response);
-//
-//        } catch (Exception e) {
-//            PersonDto error = new PersonDto();
-//            error.setStatusCode("500");
-//            error.setMessage("Error: " + e.getMessage());
-//            return error;
-//        }
-//    }
-
     public PersonDto getSignersFromExternalApi(String financingHdrCode) {
         boolean useHardcode = true; // Ganti nilai ini untuk switch mode
 
@@ -441,44 +661,6 @@ public class SignerService {
                 custNo = "41000001137";
                 cwrNo = "41350CWR2024454";
                 log.info("Menggunakan data hardcode - custNo: {}, cwrNo: {}", custNo, cwrNo);
-
-                // Return data hardcode langsung ketika useHardcode = true
-                PersonDto hardcodedResult = new PersonDto();
-                hardcodedResult.setStatusCode("200");
-                hardcodedResult.setMessage("Success");
-
-                // Buat data signer hardcode
-                List<PersonDto.Signer> hardcodedSigners = new ArrayList<>();
-
-                // Signer 1
-                PersonDto.Signer signer1 = new PersonDto.Signer();
-                signer1.setCwrSignerId(1737);
-                signer1.setCwrCustId(4848);
-                signer1.setSignerType("MFSIGNER");
-                signer1.setSignerName("ANDIKA PRASETYO JUDIANTO");
-                signer1.setSignerPosition("CREDIT MANAGEMENT GENERAL MANAGER");
-                hardcodedSigners.add(signer1);
-
-                // Signer 2
-                PersonDto.Signer signer2 = new PersonDto.Signer();
-                signer2.setCwrSignerId(1738);
-                signer2.setCwrCustId(4848);
-                signer2.setSignerType("SHAREHOLDER");
-                signer2.setSignerName("NURWA*****");
-                signer2.setSignerPosition("DIREKTUR");
-                hardcodedSigners.add(signer2);
-
-                PersonDto.Signer signer3 = new PersonDto.Signer();
-                signer3.setCwrSignerId(1738);
-                signer3.setCwrCustId(4848);
-                signer3.setSignerType("SHAREHOLDER");
-                signer3.setSignerName("ABDUL");
-                signer3.setSignerPosition("SUPERVISOR");
-                hardcodedSigners.add(signer3);
-
-                hardcodedResult.setSigners(hardcodedSigners);
-                return hardcodedResult;
-
             } else {
                 // Ambil dari database
                 UUID uuid = UUID.fromString(financingHdrCode);
@@ -488,49 +670,122 @@ public class SignerService {
                 custNo = agreement.getCwr().getCustomer().getCustNo();
                 cwrNo = agreement.getCwr().getCwrCode();
                 log.info("Menggunakan data database - custNo: {}, cwrNo: {}", custNo, cwrNo);
-
-                SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
-                ExternalApiResponse response = callExternalApi(request);
-                return mapToPersonDto(response);
             }
 
+            SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
+            ExternalApiResponse response = callExternalApi(request);
+            return mapToPersonDto(response);
+
         } catch (Exception e) {
-            // Return format yang konsisten meskipun error
             PersonDto error = new PersonDto();
-            error.setStatusCode("200"); // Tetap 200 karena ini adalah response sukses dari API Anda
-            error.setMessage("Success");
-
-            // Tetap berikan data hardcode meskipun ada error
-            List<PersonDto.Signer> hardcodedSigners = new ArrayList<>();
-
-            PersonDto.Signer signer1 = new PersonDto.Signer();
-            signer1.setCwrSignerId(1737);
-            signer1.setCwrCustId(4848);
-            signer1.setSignerType("MFSIGNER");
-            signer1.setSignerName("ANDIKA PRASETYO JUDIANTO");
-            signer1.setSignerPosition("CREDIT MANAGEMENT GENERAL MANAGER");
-            hardcodedSigners.add(signer1);
-
-            PersonDto.Signer signer2 = new PersonDto.Signer();
-            signer2.setCwrSignerId(1738);
-            signer2.setCwrCustId(4848);
-            signer2.setSignerType("SHAREHOLDER");
-            signer2.setSignerName("NURWA*****");
-            signer2.setSignerPosition("DIREKTUR");
-            hardcodedSigners.add(signer2);
-
-            PersonDto.Signer signer3 = new PersonDto.Signer();
-            signer3.setCwrSignerId(1738);
-            signer3.setCwrCustId(4848);
-            signer3.setSignerType("SHAREHOLDER");
-            signer3.setSignerName("ABDUL");
-            signer3.setSignerPosition("SUPERVISOR");
-            hardcodedSigners.add(signer3);
-
-            error.setSigners(hardcodedSigners);
+            error.setStatusCode("500");
+            error.setMessage("Error: " + e.getMessage());
             return error;
         }
     }
+
+//    public PersonDto getSignersFromExternalApi(String financingHdrCode) {
+//        boolean useHardcode = true; // Ganti nilai ini untuk switch mode
+//
+//        try {
+//            String custNo;
+//            String cwrNo;
+//
+//            if (useHardcode) {
+//                // Hardcode values
+//                custNo = "41000001137";
+//                cwrNo = "41350CWR2024454";
+//                log.info("Menggunakan data hardcode - custNo: {}, cwrNo: {}", custNo, cwrNo);
+//
+//                // Return data hardcode langsung ketika useHardcode = true
+//                PersonDto hardcodedResult = new PersonDto();
+//                hardcodedResult.setStatusCode("200");
+//                hardcodedResult.setMessage("Success");
+//
+//                // Buat data signer hardcode
+//                List<PersonDto.Signer> hardcodedSigners = new ArrayList<>();
+//
+//                // Signer 1
+//                PersonDto.Signer signer1 = new PersonDto.Signer();
+//                signer1.setCwrSignerId(1737);
+//                signer1.setCwrCustId(4848);
+//                signer1.setSignerType("MFSIGNER");
+//                signer1.setSignerName("ANDIKA PRASETYO JUDIANTO");
+//                signer1.setSignerPosition("CREDIT MANAGEMENT GENERAL MANAGER");
+//                hardcodedSigners.add(signer1);
+//
+//                // Signer 2
+//                PersonDto.Signer signer2 = new PersonDto.Signer();
+//                signer2.setCwrSignerId(1738);
+//                signer2.setCwrCustId(4848);
+//                signer2.setSignerType("SHAREHOLDER");
+//                signer2.setSignerName("NURWA*****");
+//                signer2.setSignerPosition("DIREKTUR");
+//                hardcodedSigners.add(signer2);
+//
+//                PersonDto.Signer signer3 = new PersonDto.Signer();
+//                signer3.setCwrSignerId(1738);
+//                signer3.setCwrCustId(4848);
+//                signer3.setSignerType("SHAREHOLDER");
+//                signer3.setSignerName("ABDUL");
+//                signer3.setSignerPosition("SUPERVISOR");
+//                hardcodedSigners.add(signer3);
+//
+//                hardcodedResult.setSigners(hardcodedSigners);
+//                return hardcodedResult;
+//
+//            } else {
+//                // Ambil dari database
+//                UUID uuid = UUID.fromString(financingHdrCode);
+//                Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid)
+//                        .orElseThrow(() -> new RuntimeException("Agreement not found"));
+//
+//                custNo = agreement.getCwr().getCustomer().getCustNo();
+//                cwrNo = agreement.getCwr().getCwrCode();
+//                log.info("Menggunakan data database - custNo: {}, cwrNo: {}", custNo, cwrNo);
+//
+//                SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
+//                ExternalApiResponse response = callExternalApi(request);
+//                return mapToPersonDto(response);
+//            }
+//
+//        } catch (Exception e) {
+//            // Return format yang konsisten meskipun error
+//            PersonDto error = new PersonDto();
+//            error.setStatusCode("200"); // Tetap 200 karena ini adalah response sukses dari API Anda
+//            error.setMessage("Success");
+//
+//            // Tetap berikan data hardcode meskipun ada error
+//            List<PersonDto.Signer> hardcodedSigners = new ArrayList<>();
+//
+//            PersonDto.Signer signer1 = new PersonDto.Signer();
+//            signer1.setCwrSignerId(1737);
+//            signer1.setCwrCustId(4848);
+//            signer1.setSignerType("MFSIGNER");
+//            signer1.setSignerName("ANDIKA PRASETYO JUDIANTO");
+//            signer1.setSignerPosition("CREDIT MANAGEMENT GENERAL MANAGER");
+//            hardcodedSigners.add(signer1);
+//
+//            PersonDto.Signer signer2 = new PersonDto.Signer();
+//            signer2.setCwrSignerId(1738);
+//            signer2.setCwrCustId(4848);
+//            signer2.setSignerType("SHAREHOLDER");
+//            signer2.setSignerName("NURWA*****");
+//            signer2.setSignerPosition("DIREKTUR");
+//            hardcodedSigners.add(signer2);
+//
+//            PersonDto.Signer signer3 = new PersonDto.Signer();
+//            signer3.setCwrSignerId(1738);
+//            signer3.setCwrCustId(4848);
+//            signer3.setSignerType("SHAREHOLDER");
+//            signer3.setSignerName("ABDUL");
+//            signer3.setSignerPosition("SUPERVISOR");
+//            hardcodedSigners.add(signer3);
+//
+//            error.setSigners(hardcodedSigners);
+//            return error;
+//        }
+//    }
 
     private ExternalApiResponse callExternalApi(SignerRequestDto request) {
         HttpHeaders headers = new HttpHeaders();

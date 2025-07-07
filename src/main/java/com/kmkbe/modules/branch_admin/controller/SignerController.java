@@ -41,12 +41,12 @@ public class SignerController {
     private final SignerService signerService;
 
     @GetMapping("/list")
-    public CommonResult<PaginationResult<SignerDto>> getAssignmentList(
+    public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
             HttpServletRequest httpServletRequest,
             Authentication authentication,
             PaginationRequest request
     ) throws SignatureException {
-        return new CommonResult<PaginationResult<SignerDto>>()
+        return new CommonResult<PaginationResult<AssignmentDto>>()
                 .success(
                         signerService.assignmentList(
                                 httpServletRequest,
@@ -95,23 +95,6 @@ public class SignerController {
         PersonDto result = signerService.getSignersFromExternalApi(financingHdrCode);
         return new CommonResult<PersonDto>().success(result);
     }
-
-//    @PostMapping(value = "/upload-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-//    public ResponseEntity<CommonResult<AgreementFileSigning>> uploadFile(
-//            @ModelAttribute FileUploadRequest request) {
-//
-//        try {
-//            AgreementFileSigning result = signerService.uploadAgreementFile(request);
-//            return ResponseEntity.ok()
-//                    .body(new CommonResult<AgreementFileSigning>()
-//                            .success(result));
-//        } catch (IOException e) {
-//            log.error("Gagal upload file: {}", e.getMessage(), e);
-//            return ResponseEntity.badRequest()
-//                    .body(new CommonResult<AgreementFileSigning>()
-//                            .fail(400, "Gagal upload file: " + e.getMessage()));
-//        }
-//    }
 
     @PostMapping(value = "/upload-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CommonResult<AgreementFileSigning> uploadFile(
