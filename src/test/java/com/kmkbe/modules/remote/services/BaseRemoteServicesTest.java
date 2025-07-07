@@ -41,7 +41,7 @@ abstract class BaseRemoteServicesTest {
 
         baseRemoteService = new BaseRemoteService(
                 "https://confins.csulfinance.com/api/fou/v1",
-                "https://confins.csulfinance.com/api/mou/v1",
+                "http://confins.csulfinance.com/api/mou/v1",
                 "QXMwZjF0VWVOc1BOTER4T2xKcGZhbnkvSk5kS3dYR2M3NVI3WGJLTDlCOFNZUz0="
         );
         ldapUrlService = new LdapUrlService(
