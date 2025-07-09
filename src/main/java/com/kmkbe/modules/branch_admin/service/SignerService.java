@@ -28,6 +28,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.*;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -41,6 +42,7 @@ import java.security.SignatureException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Service
@@ -226,41 +228,161 @@ public class SignerService {
         }
     }
 
+//    public List<DebtorDto> signerPersonList(String financingHdrCode) {
+//        List<Debtor> debtors = debtorRepository.findByFinancingHdrCode(financingHdrCode);
+//
+//        List<DebtorDto> dtoList = new ArrayList<>();
+//
+//        for (Debtor signer : debtors) {
+//            DebtorDto debtorDto = new DebtorDto();
+//            debtorDto.setDebtorId(signer.getDebtorId());
+//            debtorDto.setDebtorName(signer.getDebtorName());
+//            debtorDto.setKaryawanName(signer.getKaryawanName());
+//            debtorDto.setJabatan(signer.getJabatan());
+//            debtorDto.setIdentityNo(signer.getIdentityNo());
+//            debtorDto.setEmail(signer.getEmail());
+//            debtorDto.setNoTelp(signer.getNoTelp());
+//            debtorDto.setTempatLahir(signer.getTempatLahir());
+//            debtorDto.setTanggalLahir(signer.getTanggalLahir());
+//            debtorDto.setJenisKelamin(signer.getJenisKelamin());
+//            debtorDto.setAlamat(signer.getAlamat());
+//            debtorDto.setRt(signer.getRt());
+//            debtorDto.setRw(signer.getRw());
+//            debtorDto.setKodePos(signer.getKodePos());
+//            debtorDto.setKelurahan(signer.getKelurahan());
+//            debtorDto.setKecamatan(signer.getKecamatan());
+//            debtorDto.setKota(signer.getKota());
+//            debtorDto.setIsActive(signer.getIsActive());
+//            debtorDto.setSignerStatus(signer.getSignerStatus());
+//
+//            debtorDto.setSignhubStatus(signer.getSignhubStatus());
+//            debtorDto.setEmailDebtor(signer.getEmailDebtor());
+//            debtorDto.setFinancingHdrCode(signer.getFinancingHdrCode());
+//
+//            dtoList.add(debtorDto);
+//        }
+//
+//        return dtoList;
+//    }
+
+
     public List<DebtorDto> signerPersonList(String financingHdrCode) {
         List<Debtor> debtors = debtorRepository.findByFinancingHdrCode(financingHdrCode);
 
-        List<DebtorDto> dtoList = new ArrayList<>();
+        List<CompletableFuture<DebtorDto>> futures = debtors.stream()
+                .map(this::processDebtorAsync)
+                .collect(Collectors.toList());
 
-        for (Debtor signer : debtors) {
-            DebtorDto debtorDto = new DebtorDto();
-            debtorDto.setDebtorId(signer.getDebtorId());
-            debtorDto.setDebtorName(signer.getDebtorName());
-            debtorDto.setKaryawanName(signer.getKaryawanName());
-            debtorDto.setJabatan(signer.getJabatan());
-            debtorDto.setIdentityNo(signer.getIdentityNo());
-            debtorDto.setEmail(signer.getEmail());
-            debtorDto.setNoTelp(signer.getNoTelp());
-            debtorDto.setTempatLahir(signer.getTempatLahir());
-            debtorDto.setTanggalLahir(signer.getTanggalLahir());
-            debtorDto.setJenisKelamin(signer.getJenisKelamin());
-            debtorDto.setAlamat(signer.getAlamat());
-            debtorDto.setRt(signer.getRt());
-            debtorDto.setRw(signer.getRw());
-            debtorDto.setKodePos(signer.getKodePos());
-            debtorDto.setKelurahan(signer.getKelurahan());
-            debtorDto.setKecamatan(signer.getKecamatan());
-            debtorDto.setKota(signer.getKota());
-            debtorDto.setIsActive(signer.getIsActive());
-            debtorDto.setSignerStatus(signer.getSignerStatus());
+        CompletableFuture<Void> allOf = CompletableFuture.allOf(
+                futures.toArray(new CompletableFuture[0])
+        );
 
-            debtorDto.setSignhubStatus(signer.getSignhubStatus());
-            debtorDto.setEmailDebtor(signer.getEmailDebtor());
-            debtorDto.setFinancingHdrCode(signer.getFinancingHdrCode());
+        try {
+            allOf.join();
 
-            dtoList.add(debtorDto);
+            return futures.stream()
+                    .map(CompletableFuture::join)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error processing debtors", e);
         }
+    }
 
-        return dtoList;
+    @Async("taskExecutor")
+    public CompletableFuture<DebtorDto> processDebtorAsync(Debtor signer) {
+        DebtorDto debtorDto = mapDebtorToDto(signer);
+        checkRegistrationStatus(debtorDto, signer.getIdentityNo());
+        return CompletableFuture.completedFuture(debtorDto);
+    }
+
+    private DebtorDto mapDebtorToDto(Debtor signer) {
+        DebtorDto debtorDto = new DebtorDto();
+        debtorDto.setDebtorId(signer.getDebtorId());
+        debtorDto.setDebtorName(signer.getDebtorName());
+        debtorDto.setKaryawanName(signer.getKaryawanName());
+        debtorDto.setJabatan(signer.getJabatan());
+        debtorDto.setIdentityNo(signer.getIdentityNo());
+        debtorDto.setEmail(signer.getEmail());
+        debtorDto.setNoTelp(signer.getNoTelp());
+        debtorDto.setTempatLahir(signer.getTempatLahir());
+        debtorDto.setTanggalLahir(signer.getTanggalLahir());
+        debtorDto.setJenisKelamin(signer.getJenisKelamin());
+        debtorDto.setAlamat(signer.getAlamat());
+        debtorDto.setRt(signer.getRt());
+        debtorDto.setRw(signer.getRw());
+        debtorDto.setKodePos(signer.getKodePos());
+        debtorDto.setKelurahan(signer.getKelurahan());
+        debtorDto.setKecamatan(signer.getKecamatan());
+        debtorDto.setKota(signer.getKota());
+        debtorDto.setIsActive(signer.getIsActive());
+        debtorDto.setEmailDebtor(signer.getEmailDebtor());
+        debtorDto.setFinancingHdrCode(signer.getFinancingHdrCode());
+
+        return debtorDto;
+    }
+
+    private void checkRegistrationStatus(DebtorDto debtorDto, String identityNo) {
+        try {
+            Map<String, Object> requestBody = new HashMap<>();
+            Map<String, String> audit = new HashMap<>();
+            audit.put("callerId", callerId);
+            requestBody.put("audit", audit);
+            requestBody.put("dataType", "NIK");
+            requestBody.put("userData", identityNo);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("x-api-key", apiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
+
+            ResponseEntity<Map> response = restTemplate.exchange(
+                    registerUrl,
+                    HttpMethod.POST,
+                    entity,
+                    Map.class
+            );
+
+            if (response.getStatusCode() == HttpStatus.OK) {
+                Map<String, Object> responseBody = response.getBody();
+
+                if (responseBody != null && responseBody.containsKey("status")) {
+                    Map<String, Object> status = (Map<String, Object>) responseBody.get("status");
+                    Integer code = (Integer) status.get("code");
+
+                    if (code != null && code == 0 && responseBody.containsKey("registrationData")) {
+                        List<Map<String, Object>> registrationData = (List<Map<String, Object>>) responseBody.get("registrationData");
+                        if (registrationData != null && !registrationData.isEmpty()) {
+                            Map<String, Object> firstRegistration = registrationData.get(0);
+                            String registrationStatus = firstRegistration.get("registrationStatus").toString();
+
+                            if ("1".equals(registrationStatus)) {
+                                debtorDto.setSignerStatus("not active");
+                                debtorDto.setSignhubStatus("registered");
+                            } else if ("2".equals(registrationStatus)) {
+                                debtorDto.setSignerStatus("active");
+                                debtorDto.setSignhubStatus("registered");
+                            } else {
+                                debtorDto.setSignerStatus("not active");
+                                debtorDto.setSignhubStatus("not register");
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+
+            // Default fallback
+            debtorDto.setSignerStatus("not active");
+            debtorDto.setSignhubStatus("not register");
+
+        } catch (Exception e) {
+            debtorDto.setSignerStatus("not active");
+            debtorDto.setSignhubStatus("not register");
+            System.err.println("Error checking registration for NIK: " + identityNo);
+            e.printStackTrace();
+        }
     }
 
     public CommonResult<DebtorDto> detailSigner(Long id) {
