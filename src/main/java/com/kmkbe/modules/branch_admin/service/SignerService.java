@@ -8,8 +8,6 @@ import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
-import com.kmkbe.core.exception.ApiBusinessException;
-import com.kmkbe.core.exception.DebtorCreationException;
 import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.branch_admin.request.FileUploadRequest;
 import com.kmkbe.modules.common.service.EmailService;
@@ -33,17 +31,13 @@ import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.security.SignatureException;
-import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -69,7 +63,7 @@ public class SignerService {
     private final String callerId = "USER@AD-INS.COM";
     private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
     private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
-    private final String confinsUrl = "https://confins.csulfinance.com/api/mou/v1/CwrSigner/GetListCwrSignerForUpdatebyCustNoAndCwrNo";
+    private final String confinsUrl = "http://confins.csulfinance.com/api/mou/v1/CwrSigner/GetListCwrSignerForUpdatebyCustNoAndCwrNo";
 
     @Value("${csul.confins.adinskey}")
     private String adInsKey;
@@ -439,45 +433,10 @@ public class SignerService {
         return debtorMapper.entityToDto(debtorRepository.save(debtor));
     }
 
-//    public PersonDto getSignersFromExternalApi(String financingHdrCode) {
-//        boolean useHardcode = true; // Ganti nilai ini untuk switch mode
-//
-//        try {
-//            String custNo;
-//            String cwrNo;
-//
-//            if (useHardcode) {
-//                // Hardcode values
-//                custNo = "41000001137";
-//                cwrNo = "41350CWR2024454";
-//                log.info("Menggunakan data hardcode - custNo: {}, cwrNo: {}", custNo, cwrNo);
-//            } else {
-//                // Ambil dari database
-//                UUID uuid = UUID.fromString(financingHdrCode);
-//                Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid)
-//                        .orElseThrow(() -> new RuntimeException("Agreement not found"));
-//
-//                custNo = agreement.getCwr().getCustomer().getCustNo();
-//                cwrNo = agreement.getCwr().getCwrCode();
-//                log.info("Menggunakan data database - custNo: {}, cwrNo: {}", custNo, cwrNo);
-//            }
-//
-//            SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
-//            ExternalApiResponse response = callExternalApi(request);
-//            return mapToPersonDto(response);
-//
-//        } catch (Exception e) {
-//            PersonDto error = new PersonDto();
-//            error.setStatusCode("500");
-//            error.setMessage("Error: " + e.getMessage());
-//            return error;
-//        }
-//    }
-
-    // HARDCODE RESPONSE
+    // GET DARI CONFINS
 
     public PersonDto getSignersFromExternalApi(String financingHdrCode) {
-        boolean useHardcode = true;
+        boolean useHardcode = true; // Ganti nilai ini untuk switch mode
 
         try {
             String custNo;
@@ -487,32 +446,6 @@ public class SignerService {
                 custNo = "41000001137";
                 cwrNo = "41350CWR2024454";
                 log.info("Menggunakan data hardcode - custNo: {}, cwrNo: {}", custNo, cwrNo);
-
-                PersonDto hardcodedResult = new PersonDto();
-                hardcodedResult.setStatusCode("200");
-                hardcodedResult.setMessage("Success");
-
-                List<PersonDto.Signer> hardcodedSigners = new ArrayList<>();
-
-                PersonDto.Signer signer1 = new PersonDto.Signer();
-                signer1.setCwrSignerId(1737);
-                signer1.setCwrCustId(4848);
-                signer1.setSignerType("MFSIGNER");
-                signer1.setSignerName("ANDIKA PRASETYO JUDIANTO");
-                signer1.setSignerPosition("CREDIT MANAGEMENT GENERAL MANAGER");
-                hardcodedSigners.add(signer1);
-
-                PersonDto.Signer signer2 = new PersonDto.Signer();
-                signer2.setCwrSignerId(1738);
-                signer2.setCwrCustId(4848);
-                signer2.setSignerType("SHAREHOLDER");
-                signer2.setSignerName("NURWA*****");
-                signer2.setSignerPosition("DIREKTUR");
-                hardcodedSigners.add(signer2);
-
-                hardcodedResult.setSigners(hardcodedSigners);
-                return hardcodedResult;
-
             } else {
                 UUID uuid = UUID.fromString(financingHdrCode);
                 Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid)
@@ -521,38 +454,99 @@ public class SignerService {
                 custNo = agreement.getCwr().getCustomer().getCustNo();
                 cwrNo = agreement.getCwr().getCwrCode();
                 log.info("Menggunakan data database - custNo: {}, cwrNo: {}", custNo, cwrNo);
-
-                SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
-                ExternalApiResponse response = callExternalApi(request);
-                return mapToPersonDto(response);
             }
+
+            SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
+            ExternalApiResponse response = callExternalApi(request);
+            return mapToPersonDto(response);
 
         } catch (Exception e) {
             PersonDto error = new PersonDto();
-            error.setStatusCode("200");
-            error.setMessage("Success");
-            List<PersonDto.Signer> hardcodedSigners = new ArrayList<>();
-
-            PersonDto.Signer signer1 = new PersonDto.Signer();
-            signer1.setCwrSignerId(1737);
-            signer1.setCwrCustId(4848);
-            signer1.setSignerType("MFSIGNER");
-            signer1.setSignerName("ANDIKA PRASETYO JUDIANTO");
-            signer1.setSignerPosition("CREDIT MANAGEMENT GENERAL MANAGER");
-            hardcodedSigners.add(signer1);
-
-            PersonDto.Signer signer2 = new PersonDto.Signer();
-            signer2.setCwrSignerId(1738);
-            signer2.setCwrCustId(4848);
-            signer2.setSignerType("SHAREHOLDER");
-            signer2.setSignerName("NURWA*****");
-            signer2.setSignerPosition("DIREKTUR");
-            hardcodedSigners.add(signer2);
-
-            error.setSigners(hardcodedSigners);
+            error.setStatusCode("500");
+            error.setMessage("Error: " + e.getMessage());
             return error;
         }
     }
+
+    // HARDCODE RESPONSE
+
+//    public PersonDto getSignersFromExternalApi(String financingHdrCode) {
+//        boolean useHardcode = true;
+//
+//        try {
+//            String custNo;
+//            String cwrNo;
+//
+//            if (useHardcode) {
+//                custNo = "41000001137";
+//                cwrNo = "41350CWR2024454";
+//                log.info("Menggunakan data hardcode - custNo: {}, cwrNo: {}", custNo, cwrNo);
+//
+//                PersonDto hardcodedResult = new PersonDto();
+//                hardcodedResult.setStatusCode("200");
+//                hardcodedResult.setMessage("Success");
+//
+//                List<PersonDto.Signer> hardcodedSigners = new ArrayList<>();
+//
+//                PersonDto.Signer signer1 = new PersonDto.Signer();
+//                signer1.setCwrSignerId(1737);
+//                signer1.setCwrCustId(4848);
+//                signer1.setSignerType("MFSIGNER");
+//                signer1.setSignerName("ANDIKA PRASETYO JUDIANTO");
+//                signer1.setSignerPosition("CREDIT MANAGEMENT GENERAL MANAGER");
+//                hardcodedSigners.add(signer1);
+//
+//                PersonDto.Signer signer2 = new PersonDto.Signer();
+//                signer2.setCwrSignerId(1738);
+//                signer2.setCwrCustId(4848);
+//                signer2.setSignerType("SHAREHOLDER");
+//                signer2.setSignerName("NURWA*****");
+//                signer2.setSignerPosition("DIREKTUR");
+//                hardcodedSigners.add(signer2);
+//
+//                hardcodedResult.setSigners(hardcodedSigners);
+//                return hardcodedResult;
+//
+//            } else {
+//                UUID uuid = UUID.fromString(financingHdrCode);
+//                Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid)
+//                        .orElseThrow(() -> new RuntimeException("Agreement not found"));
+//
+//                custNo = agreement.getCwr().getCustomer().getCustNo();
+//                cwrNo = agreement.getCwr().getCwrCode();
+//                log.info("Menggunakan data database - custNo: {}, cwrNo: {}", custNo, cwrNo);
+//
+//                SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
+//                ExternalApiResponse response = callExternalApi(request);
+//                return mapToPersonDto(response);
+//            }
+//
+//        } catch (Exception e) {
+//            PersonDto error = new PersonDto();
+//            error.setStatusCode("200");
+//            error.setMessage("Success");
+//            List<PersonDto.Signer> hardcodedSigners = new ArrayList<>();
+//
+//            PersonDto.Signer signer1 = new PersonDto.Signer();
+//            signer1.setCwrSignerId(1737);
+//            signer1.setCwrCustId(4848);
+//            signer1.setSignerType("MFSIGNER");
+//            signer1.setSignerName("ANDIKA PRASETYO JUDIANTO");
+//            signer1.setSignerPosition("CREDIT MANAGEMENT GENERAL MANAGER");
+//            hardcodedSigners.add(signer1);
+//
+//            PersonDto.Signer signer2 = new PersonDto.Signer();
+//            signer2.setCwrSignerId(1738);
+//            signer2.setCwrCustId(4848);
+//            signer2.setSignerType("SHAREHOLDER");
+//            signer2.setSignerName("NURWA*****");
+//            signer2.setSignerPosition("DIREKTUR");
+//            hardcodedSigners.add(signer2);
+//
+//            error.setSigners(hardcodedSigners);
+//            return error;
+//        }
+//    }
 
     private ExternalApiResponse callExternalApi(SignerRequestDto request) {
         HttpHeaders headers = new HttpHeaders();
@@ -715,5 +709,79 @@ public class SignerService {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid financingHdrCode format: " + financingHdrCode);
         }
+    }
+
+
+
+    public SignerCheckResultDto compareSigners(String financingHdrCode) {
+
+        List<String> dbSigners = getSignersFromDatabase(financingHdrCode);
+
+        List<String> externalApiSigners = getSignersFromExternalApi2(financingHdrCode);
+
+        SignerCheckResultDto result = createComparisonResult(dbSigners, externalApiSigners);
+
+        return result;
+    }
+
+    private List<String> getSignersFromDatabase(String financingHdrCode) {
+        try {
+            List<Debtor> debtors = debtorRepository.findByFinancingHdrCode(financingHdrCode);
+
+            return debtors.stream()
+                    .map(Debtor::getKaryawanName)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get signers from database: " + e.getMessage());
+        }
+    }
+
+    private List<String> getSignersFromExternalApi2(String financingHdrCode) {
+        try {
+            UUID uuid = UUID.fromString(financingHdrCode);
+            Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid)
+                    .orElseThrow(() -> new RuntimeException("Agreement not found"));
+
+//            String custNo = agreement.getCwr().getCustomer().getCustNo();
+//            String cwrNo = agreement.getCwr().getCwrCode();
+
+            //hardcode
+            String custNo = "41000001137";
+            String cwrNo = "41350CWR2024454";
+
+            SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
+            ExternalApiResponse response = callExternalApi(request);
+
+            return response.getReturnObject().stream()
+                    .map(signer -> signer.getSignerName())
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get signers from external API: " + e.getMessage());
+        }
+    }
+
+    private SignerCheckResultDto createComparisonResult(List<String> dbSigners, List<String> externalApiSigners) {
+        SignerCheckResultDto result = new SignerCheckResultDto();
+        result.setAllSigners(externalApiSigners);
+
+        List<String> matched = new ArrayList<>();
+        List<String> unmatched = new ArrayList<>();
+
+        for (String signer : externalApiSigners) {
+            if (dbSigners.contains(signer)) {
+                matched.add(signer);
+            } else {
+                unmatched.add(signer);
+            }
+        }
+
+        result.setMatchedSigners(matched);
+        result.setUnmatchedSigners(unmatched);
+
+        return result;
     }
 }

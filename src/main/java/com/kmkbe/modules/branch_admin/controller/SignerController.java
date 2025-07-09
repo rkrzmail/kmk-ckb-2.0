@@ -116,4 +116,18 @@ public class SignerController {
         return new CommonResult<List<SignerDocDto>>().success(signerDocList);
     }
 
+    @GetMapping("/check-signer/{financingHdrCode}")
+    public CommonResult<SignerCheckResultDto> checkSigners(
+            @PathVariable String financingHdrCode) {
+        SignerCheckResultDto result = signerService.compareSigners(financingHdrCode);
+
+        if (result.getUnmatchedSigners().isEmpty()) {
+            return new CommonResult<SignerCheckResultDto>()
+                    .success(result, "Tidak ada perubahan signer pada confins");
+        } else {
+            return new CommonResult<SignerCheckResultDto>()
+                    .fail(400, "Ada perubahan data signer pada confins", result);
+        }
+    }
+
 }
