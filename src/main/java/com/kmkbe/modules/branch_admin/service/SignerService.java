@@ -21,6 +21,7 @@ import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -949,6 +950,49 @@ public class SignerService {
 
         } catch (IllegalArgumentException e) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Format UUID tidak valid");
+        }
+    }
+
+    public List<SignerDocDto> signerDocList(String financingHdrCode) {
+        try {
+            // 1. Convert String to UUID
+            UUID financingHdrUuid = UUID.fromString(financingHdrCode);
+
+            // 2. Dapatkan agreement_code dari financing_hdr_code
+            List<Agreement> agreements = agreementRepository.findByFinancingHdr_FinancingHdrCode(financingHdrUuid);
+
+            if (agreements.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrUuid)
+                    .orElseThrow(() -> new EntityNotFoundException("Financing header not found"));
+
+            String bowheerName = financingHdr.getBouwheer().getBouwheerName();
+
+            // 3. Dapatkan semua agreement_code yang terkait
+            List<String> agreementCodes = agreements.stream()
+                    .map(Agreement::getAgreementCode)
+                    .collect(Collectors.toList());
+
+            // 4. Ambil data dari agreement_file_signing
+            List<AgreementFileSigning> fileSignings = agreementFileSigningRepository.findByAgreementCodes(agreementCodes);
+
+            // 5. Map ke DTO
+            return fileSignings.stream()
+                    .map(signing -> SignerDocDto.builder()
+                            .agreementFileId(signing.getAgreementFileId()) // pastikan ini field yang benar
+                            .agreementCode(signing.getAgreementCode())
+                            .bowheerName(bowheerName)
+                            .verifDate(signing.getDtmCrt() != null ?
+                                    signing.getDtmCrt().toString() : null)
+                            .status("Menunggu TTD") // di-hardcode atau dari entity?
+                            .agreementDoc(signing.getFilePath())
+                            .build())
+                    .collect(Collectors.toList());
+
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid financingHdrCode format: " + financingHdrCode);
         }
     }
 }

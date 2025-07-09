@@ -109,4 +109,11 @@ public class SignerController {
         return new CommonResult<List<SignerAgreementDto>>().success(signerAgreement);
     }
 
+    @GetMapping("/signer-doc/list/{financingHdrCode}")
+    public CommonResult<List<SignerDocDto>> getSignerDocList(
+            @PathVariable String financingHdrCode) {
+        List<SignerDocDto> signerDocList = signerService.signerDocList(financingHdrCode);
+        return new CommonResult<List<SignerDocDto>>().success(signerDocList);
+    }
+
 }
