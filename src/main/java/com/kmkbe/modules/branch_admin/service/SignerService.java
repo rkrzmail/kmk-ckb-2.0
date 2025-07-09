@@ -558,7 +558,7 @@ public class SignerService {
     // GET DARI CONFINS
 
     public PersonDto getSignersFromExternalApi(String financingHdrCode) {
-        boolean useHardcode = true; // Ganti nilai ini untuk switch mode
+        boolean useHardcode = false; // Ganti nilai ini untuk switch mode
 
         try {
             String custNo;
