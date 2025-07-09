@@ -866,12 +866,12 @@ public class SignerService {
             Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid)
                     .orElseThrow(() -> new RuntimeException("Agreement not found"));
 
-//            String custNo = agreement.getCwr().getCustomer().getCustNo();
-//            String cwrNo = agreement.getCwr().getCwrCode();
+            String custNo = agreement.getCwr().getCustomer().getCustNo();
+            String cwrNo = agreement.getCwr().getCwrCode();
 
             //hardcode
-            String custNo = "41000001137";
-            String cwrNo = "41350CWR2024454";
+//            String custNo = "41000001137";
+//            String cwrNo = "41350CWR2024454";
 
             SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
             ExternalApiResponse response = callExternalApi(request);
