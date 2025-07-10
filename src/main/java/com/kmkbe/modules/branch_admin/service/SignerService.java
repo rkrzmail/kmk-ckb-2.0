@@ -546,8 +546,8 @@ public class SignerService {
                 .kecamatan(debtorDto.getKecamatan())
                 .kota(debtorDto.getKota())
                 .isActive(debtorDto.getIsActive())
-                .signerStatus("PENDING")
-                .signhubStatus("PENDING")
+                .signerStatus("not active")
+                .signhubStatus("not register")
                 .emailDebtor(debtorDto.getEmailDebtor())
                 .financingHdrCode(debtorDto.getFinancingHdrCode())
                 .build();
