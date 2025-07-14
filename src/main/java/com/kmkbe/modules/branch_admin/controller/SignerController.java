@@ -77,9 +77,11 @@ public class SignerController {
 
 
     @PostMapping("/person")
-    public CommonResult<String> createDebtor(@RequestBody DebtorDto debtorDto) {
+    public CommonResult<String> createDebtor(
+            @RequestBody DebtorDto debtorDto,
+            Authentication authentication) {
         try {
-            signerService.createDebtor(debtorDto);
+            signerService.createDebtor(debtorDto, authentication);
             return new CommonResult<String>()
                     .success("NIK belum terdaftar. Link registrasi telah dikirim ke email " +
                             debtorDto.getEmailDebtor());
@@ -98,8 +100,10 @@ public class SignerController {
 
     @PostMapping(value = "/upload-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public CommonResult<AgreementFileSigning> uploadFile(
-            @ModelAttribute FileUploadRequest request) {
-        return signerService.uploadFileHandler(request);
+            @ModelAttribute FileUploadRequest request,
+            Authentication authentication
+    ) {
+        return signerService.uploadFileHandler(request, authentication);
     }
 
     @GetMapping("/signer-agreement/{financingHdrCode}")

@@ -36,4 +36,12 @@ public class DebtorDto implements Serializable {
     private String signhubStatus;
     private String emailDebtor;
     private String financingHdrCode;
+    private String registrationMessage;
+
+    public String getRegistrationMessage() {
+        return registrationMessage;
+    }
+    public void setRegistrationMessage(String registrationMessage) {
+        this.registrationMessage = registrationMessage;
+    }
 }

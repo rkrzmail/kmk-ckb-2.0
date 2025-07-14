@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.branch_admin.request.FileUploadRequest;
 import com.kmkbe.modules.common.service.EmailService;
@@ -35,9 +36,6 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.SignatureException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -60,6 +58,7 @@ public class SignerService {
     private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
     private final AgreementFileRepository agreementFileRepository;
     private final BouwheerRepository bouwheerRepository;
+    private final FileStorageService fileStorageService;
 
     private final String apiKey = "YiByHB@CSUL_DEV";
     private final String callerId = "USER@AD-INS.COM";
@@ -421,10 +420,13 @@ public class SignerService {
     }
 
     @Transactional
-    public DebtorDto createDebtor(DebtorDto debtorDto) {
+    public DebtorDto createDebtor(DebtorDto debtorDto, Authentication authentication) {
         try {
-
             log.info("createDebtor: {}", debtorDto);
+
+            String username = authentication != null ?
+                    authentication.getName() :
+                    "SYSTEM"; // Fallback
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -434,22 +436,51 @@ public class SignerService {
             Map<String, Object> registerResponse = callRegistrationApi(debtorDto, headers);
             log.info("Register API Response: {}", registerResponse);
 
-            log.info("Calling Invitation API for debtor: {}", debtorDto.getDebtorName());
-            Map<String, Object> inviteResponse = callInvitationApi(debtorDto, headers);
-            String invitationLink = (String) inviteResponse.get("link");
-            if (invitationLink == null) {
-                throw new RuntimeException("Gagal generate link undangan");
+            // Cek status registrasi
+            String registrationStatus = "0"; // Default untuk format lama (8165)
+
+            // Handle format baru dengan registrationData
+            if (registerResponse.containsKey("registrationData")) {
+                List<Map<String, Object>> registrationData = (List<Map<String, Object>>) registerResponse.get("registrationData");
+                if (registrationData != null && !registrationData.isEmpty()) {
+                    registrationStatus = (String) registrationData.get(0).get("registrationStatus");
+                }
             }
 
-            log.info("Sending invitation email to: {}", debtorDto.getEmailDebtor());
-            emailService.sendInvitationLinkEmail(
-                    debtorDto.getEmailDebtor(),
-                    invitationLink,
-                    debtorDto.getDebtorName()
-            );
+            // Simpan debtor ke database (dilakukan di semua case)
+            DebtorDto savedDebtor = saveDebtor(debtorDto);
 
-            log.info("Saving debtor to the database: {}", debtorDto);
-            return saveDebtor(debtorDto);
+            // Handle berdasarkan status registrasi
+            switch (registrationStatus) {
+                case "0":
+                    // Lanjut ke proses invitation
+                    log.info("Calling Invitation API for debtor: {}", debtorDto.getDebtorName());
+                    Map<String, Object> inviteResponse = callInvitationApi(debtorDto, headers, username);
+                    String invitationLink = (String) inviteResponse.get("link");
+                    if (invitationLink == null) {
+                        throw new RuntimeException("Gagal generate link undangan");
+                    }
+
+                    log.info("Sending invitation email to: {}", debtorDto.getEmailDebtor());
+                    emailService.sendInvitationLinkEmail(
+                            debtorDto.getEmailDebtor(),
+                            invitationLink,
+                            debtorDto.getDebtorName()
+                    );
+
+                    savedDebtor.setRegistrationMessage("Registrasi berhasil dan undangan telah dikirim");
+                    break;
+                case "1":
+                    savedDebtor.setRegistrationMessage("Akun sudah registrasi, namun belum di aktivasi");
+                    break;
+                case "2":
+                    savedDebtor.setRegistrationMessage("Signer person sudah register dan aktivasi");
+                    break;
+                default:
+                    throw new RuntimeException("Status registrasi tidak dikenali: " + registrationStatus);
+            }
+
+            return savedDebtor;
 
         } catch (Exception e) {
             log.error("Error: {}", e.getMessage());
@@ -476,6 +507,12 @@ public class SignerService {
             throw new RuntimeException("API registrasi tidak memberikan response");
         }
 
+        // Handle response format baru dengan registrationData
+        if (responseBody.containsKey("registrationData")) {
+            return responseBody;
+        }
+
+        // Handle response format lama dengan status code 8165
         if (responseBody.containsKey("status")) {
             Map<String, Object> status = (Map<String, Object>) responseBody.get("status");
             if (!status.get("code").equals(8165)) {
@@ -486,7 +523,7 @@ public class SignerService {
         return responseBody;
     }
 
-    private Map<String, Object> callInvitationApi(DebtorDto debtorDto, HttpHeaders headers) {
+    private Map<String, Object> callInvitationApi(DebtorDto debtorDto, HttpHeaders headers, String username) {
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("provinsi", "DKI JAKARTA");
         requestBody.put("kota", debtorDto.getKota());
@@ -502,13 +539,14 @@ public class SignerService {
         requestBody.put("kodePos", debtorDto.getKodePos());
         requestBody.put("email", debtorDto.getEmail());
         requestBody.put("type", "EMPLOYEE");
-        requestBody.put("audit", Map.of("callerId", "USERBAF"));
+        requestBody.put("audit", Map.of("callerId", username));
 
         ResponseEntity<Map> response = restTemplate.postForEntity(
                 generateLinkUrl,
                 new HttpEntity<>(requestBody, headers),
                 Map.class
         );
+        log.info("Invitation API Request Body: {}", requestBody);
 
         Map<String, Object> responseBody = response.getBody();
         log.info("Invitation API Response Body: {}", responseBody);
@@ -721,50 +759,98 @@ public class SignerService {
         return result;
     }
 
-    public CommonResult<AgreementFileSigning> uploadFileHandler(FileUploadRequest request) {
+//    public CommonResult<AgreementFileSigning> uploadFileHandler(FileUploadRequest request) {
+//        try {
+//            if (request.getFile() == null || request.getFile().isEmpty()) {
+//                return new CommonResult<AgreementFileSigning>()
+//                        .fail(400, "File harus diupload");
+//            }
+//
+//            if (request.getAgreementCode() == null || request.getAgreementCode().isEmpty()) {
+//                return new CommonResult<AgreementFileSigning>()
+//                        .fail(400, "Agreement tidak boleh kosong");
+//            }
+//
+//            if (request.getFileName() == null || request.getFileName().isEmpty()) {
+//                return new CommonResult<AgreementFileSigning>()
+//                        .fail(400, "Nama Document tidak boleh kosong");
+//            }
+//
+//            if (request.getFileTypeCode() == null || request.getFileTypeCode().isEmpty()) {
+//                return new CommonResult<AgreementFileSigning>()
+//                        .fail(400, "No Document tidak boleh kosong");
+//            }
+//
+//            String filename = "file_" + System.currentTimeMillis() + "_" + request.getFile().getOriginalFilename();
+//            Path path = Paths.get("uploads/" + filename);
+//            Files.createDirectories(path.getParent());
+//            Files.copy(request.getFile().getInputStream(), path);
+//
+//            AgreementFileSigning entity = new AgreementFileSigning();
+//            entity.setAgreementCode(request.getAgreementCode());
+//            entity.setFileTypeCode(request.getFileTypeCode());
+//            entity.setFileName(request.getFileName());
+//            entity.setFilePath(path.toString());
+//            entity.setStamp(Boolean.parseBoolean(request.getIsStamp()));
+//            entity.setUsrCrt("SYSTEM");
+//            entity.setDtmCrt(LocalDateTime.now());
+//
+//            AgreementFileSigning savedFile = agreementFileSigningRepository.save(entity);
+//
+//            return new CommonResult<AgreementFileSigning>()
+//                    .success(savedFile);
+//
+//        } catch (Exception e) {
+//            return new CommonResult<AgreementFileSigning>()
+//                    .fail(500, "Error: " + e.getMessage());
+//        }
+//    }
+
+    // use fileStorageService
+    public CommonResult<AgreementFileSigning> uploadFileHandler(FileUploadRequest request, Authentication authentication) {
         try {
             if (request.getFile() == null || request.getFile().isEmpty()) {
-                return new CommonResult<AgreementFileSigning>()
-                        .fail(400, "File harus diupload");
+                return new CommonResult<AgreementFileSigning>().fail(400, "File harus diupload");
             }
-
             if (request.getAgreementCode() == null || request.getAgreementCode().isEmpty()) {
-                return new CommonResult<AgreementFileSigning>()
-                        .fail(400, "Agreement tidak boleh kosong");
+                return new  CommonResult<AgreementFileSigning>().fail(400, "Agreement tidak boleh kosong");
             }
-
             if (request.getFileName() == null || request.getFileName().isEmpty()) {
-                return new CommonResult<AgreementFileSigning>()
-                        .fail(400, "Nama Document tidak boleh kosong");
+                return new  CommonResult<AgreementFileSigning>().fail(400, "Nama Document tidak boleh kosong");
             }
-
             if (request.getFileTypeCode() == null || request.getFileTypeCode().isEmpty()) {
-                return new CommonResult<AgreementFileSigning>()
-                        .fail(400, "No Document tidak boleh kosong");
+                return new  CommonResult<AgreementFileSigning>().fail(400, "No Document tidak boleh kosong");
             }
 
-            String filename = "file_" + System.currentTimeMillis() + "_" + request.getFile().getOriginalFilename();
-            Path path = Paths.get("uploads/" + filename);
-            Files.createDirectories(path.getParent());
-            Files.copy(request.getFile().getInputStream(), path);
+            String uploadDir = "agreements/" + request.getAgreementCode();
+            String uploadName = "file_" + System.currentTimeMillis() + "_" + request.getFile().getOriginalFilename();
+
+            String filePath = fileStorageService.save(
+                    request.getFile(),
+                    uploadDir,
+                    uploadName,
+                    null
+            );
+
+            String username = authentication != null ?
+                    authentication.getName() :
+                    "SYSTEM"; // Fallback
 
             AgreementFileSigning entity = new AgreementFileSigning();
             entity.setAgreementCode(request.getAgreementCode());
             entity.setFileTypeCode(request.getFileTypeCode());
             entity.setFileName(request.getFileName());
-            entity.setFilePath(path.toString());
+            entity.setFilePath(filePath);
             entity.setStamp(Boolean.parseBoolean(request.getIsStamp()));
-            entity.setUsrCrt("SYSTEM");
+            entity.setUsrCrt(username);
             entity.setDtmCrt(LocalDateTime.now());
 
             AgreementFileSigning savedFile = agreementFileSigningRepository.save(entity);
 
-            return new CommonResult<AgreementFileSigning>()
-                    .success(savedFile);
+            return new  CommonResult<AgreementFileSigning>().success(savedFile);
 
         } catch (Exception e) {
-            return new CommonResult<AgreementFileSigning>()
-                    .fail(500, "Error: " + e.getMessage());
+            return new  CommonResult<AgreementFileSigning>().fail(500, "Error: " + e.getMessage());
         }
     }
 
