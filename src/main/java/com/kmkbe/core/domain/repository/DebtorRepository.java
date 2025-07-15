@@ -11,6 +11,8 @@ import java.util.Optional;
 public interface DebtorRepository extends JpaRepository<Debtor, Long> {
 
 
+    Optional<Debtor> findByEmail(String email);
+
     List<Debtor> findByFinancingHdrCode(String financingHdrCode);
 
 
