@@ -15,4 +15,7 @@ public interface AgreementFileSigningRepository extends JpaRepository<AgreementF
 
     @Query("SELECT a FROM AgreementFileSigning a WHERE a.agreementCode IN :agreementCodes")
     List<AgreementFileSigning> findByAgreementCodes(@Param("agreementCodes") List<String> agreementCodes);
+
+    @Query("SELECT a.documentId FROM AgreementFileSigning a WHERE a.agreementCode = :agreementCode")
+    String findDocumentIdByAgreementCode(@Param("agreementCode") String agreementCode);
 }

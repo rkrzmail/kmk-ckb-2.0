@@ -34,6 +34,8 @@ import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpClientErrorException;
+import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -67,6 +69,8 @@ public class SignerService {
     private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
     private final String confinsUrl = "http://confins.csulfinance.com/api/mou/v1/CwrSigner/GetListCwrSignerForUpdatebyCustNoAndCwrNo";
     private final String sendDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/sendDocumentSigning";
+    private final String downloadDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/downloadDocument";
+
 
     @Value("${csul.confins.adinskey}")
     private String adInsKey;
@@ -774,7 +778,7 @@ public class SignerService {
             Debtor debtor = getDebtorData(request.getAgreementCode());
 
             Map<String, Object> requestBody = new LinkedHashMap<>();
-            requestBody.put("tenantCode", "ADINS");
+            requestBody.put("tenantCode", "CSUL");
             requestBody.put("psreCode", "VIDA");
 
             Map<String, String> audit = new LinkedHashMap<>();
@@ -1007,5 +1011,98 @@ public class SignerService {
         result.setUnmatchedSigners(unmatched);
 
         return result;
+    }
+
+    public ResponseEntity<ApiResponse<?>> downloadDocument(String agreementCode, Authentication authentication) {
+        try {
+            String username = authentication != null ? authentication.getName() : "SYSTEM";
+
+            // 1. Validasi agreementCode
+            if (agreementCode == null || agreementCode.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(new ApiResponse<>(false, "Agreement code is required", null, null, null));
+            }
+
+            // 2. Get documentId from database
+            String documentId = agreementFileSigningRepository.findDocumentIdByAgreementCode(agreementCode);
+
+            if (documentId == null) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(new ApiResponse<>(false, "Document not found in database", null, null, null));
+            }
+
+            // 3. Prepare external API request
+            HttpHeaders requestHeaders = new HttpHeaders();
+            requestHeaders.set("X-api-Key", apiKey);
+            requestHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+            Map<String, Object> requestBody = new LinkedHashMap<>();
+            Map<String, String> audit = new LinkedHashMap<>();
+            audit.put("callerId", username);
+            requestBody.put("audit", audit);
+            requestBody.put("documentId", documentId);
+
+            HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, requestHeaders);
+
+            // 4. Call external API
+            RestTemplate restTemplate = new RestTemplate();
+            ResponseEntity<ExternalDownloadResponse> response;
+
+            try {
+                response = restTemplate.exchange(
+                        downloadDoc,
+                        HttpMethod.POST,
+                        requestEntity,
+                        ExternalDownloadResponse.class);
+            } catch (HttpClientErrorException | HttpServerErrorException e) {
+                log.error("External API error: {}", e.getResponseBodyAsString());
+                return ResponseEntity.status(e.getStatusCode())
+                        .body(new ApiResponse<>(false, "External API error", null, null, e.getResponseBodyAsString()));
+            }
+
+            // 5. Handle response
+            ExternalDownloadResponse responseBody = response.getBody();
+            if (responseBody == null) {
+                return ResponseEntity.internalServerError()
+                        .body(new ApiResponse<>(false, "Empty response from external API", null, null, null));
+            }
+
+            int externalStatusCode = responseBody.getStatus().getCode();
+            String externalMessage = responseBody.getStatus().getMessage();
+
+            // Handle semua case dalam format JSON
+            if (externalStatusCode == 0) { // Success
+                try {
+                    byte[] pdfBytes = Base64.getDecoder().decode(responseBody.getPdfBase64());
+                    String base64Pdf = responseBody.getPdfBase64(); // Return as base64 string
+
+                    return ResponseEntity.ok()
+                            .body(new ApiResponse<>(true, "Document retrieved successfully",
+                                    Map.of(
+                                            "filename", "document_" + agreementCode + ".pdf",
+                                            "content", base64Pdf,
+                                            "length", pdfBytes.length
+                                    ),
+                                    externalStatusCode,
+                                    externalMessage));
+                } catch (IllegalArgumentException e) {
+                    log.error("Invalid Base64 content", e);
+                    return ResponseEntity.internalServerError()
+                            .body(new ApiResponse<>(false, "Invalid document format", null, null, null));
+                }
+            } else {
+                // Untuk semua error case
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse<>(false, "Document processing failed",
+                                null,
+                                externalStatusCode,
+                                externalMessage));
+            }
+
+        } catch (Exception e) {
+            log.error("Unexpected error", e);
+            return ResponseEntity.internalServerError()
+                    .body(new ApiResponse<>(false, "Internal server error: " + e.getMessage(), null, null, null));
+        }
     }
 }

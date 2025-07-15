@@ -51,6 +51,9 @@ public class AgreementFileSigning {
     @Column(name = "dtm_upd")
     private LocalDateTime dtmUpd;
 
+    @Column(name = "document_id")
+    private String documentId;
+
     // Getters and Setters
     public Long getAgreementFileId() { return agreementFileId; }
     public void setAgreementFileId(Long agreementFileId) { this.agreementFileId = agreementFileId; }
@@ -74,6 +77,9 @@ public class AgreementFileSigning {
     public void setStamp(boolean stamp) {
         isStamp = stamp;
     }
+
+    public String getDocumentId() { return documentId; }
+    public void setDocumentId(String documentId) { this.documentId = documentId; }
 
 
 }
