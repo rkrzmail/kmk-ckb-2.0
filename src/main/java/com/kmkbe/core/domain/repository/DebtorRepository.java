@@ -16,6 +16,9 @@ public interface DebtorRepository extends JpaRepository<Debtor, Long> {
     List<Debtor> findByFinancingHdrCode(String financingHdrCode);
 
 
-    @Query("SELECT d FROM Debtor d WHERE d.financingHdrCode = :financingHdrCode ORDER BY d.debtorId DESC")
-    Optional<Debtor> findTopByFinancingHdrCodeOrderByIdDesc(@Param("financingHdrCode") String financingHdrCode);
+//    @Query("SELECT d FROM Debtor d WHERE d.financingHdrCode = :financingHdrCode ORDER BY d.debtorId DESC")
+//    Optional<Debtor> findTopByFinancingHdrCodeOrderByDtmCrtDesc(@Param("financingHdrCode") String financingHdrCode);
+
+    Optional<Debtor> findTopByFinancingHdrCodeOrderByDtmCrtDesc(String financingHdrCode);
+
 }

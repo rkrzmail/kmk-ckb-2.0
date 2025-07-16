@@ -553,6 +553,8 @@ public class SignerService {
                 .signhubStatus("not register")
                 .emailDebtor(debtorDto.getEmailDebtor())
                 .financingHdrCode(debtorDto.getFinancingHdrCode())
+                .usrCrt(username)
+                .dtmCrt(LocalDateTime.now())
                 .build();
 
         Debtor savedDebtor = debtorRepository.save(debtor);
@@ -766,6 +768,7 @@ public class SignerService {
                     "SYSTEM";
 
             AgreementFileSigning entity = new AgreementFileSigning();
+            entity.setDocumentId("");
             entity.setAgreementCode(request.getAgreementCode());
             entity.setFileTypeCode(request.getFileTypeCode());
             entity.setFileName(request.getFileName());
@@ -775,6 +778,16 @@ public class SignerService {
             entity.setDtmCrt(LocalDateTime.now());
 
             AgreementFileSigning savedFile = agreementFileSigningRepository.save(entity);
+
+            notifDebtorRepository.save(NotifDebtor.builder()
+                    .financingHdrCode(agreementRepository.findByAgreementCode(request.getAgreementCode())
+                            .map(agreement -> agreement.getFinancingHdr().getFinancingHdrCode().toString())
+                            .orElseThrow(() -> new RuntimeException("Agreement dengan code " + request.getAgreementCode() + " tidak ditemukan")))
+                    .notification("Permintaan Tanda Tangan Dokumen")
+                    .description("Dokumen yang memerlukan tanda tangan "+ getDebtorData(request.getAgreementCode()).getKaryawanName() +", telah tersedia. Mohon segera menandatangani dokumen tersebut atau menghubungi pihak terkait.")
+                    .usrCrt(username)
+                    .dtmCrt(LocalDateTime.now())
+                    .build());
 
             callExternalSigningAPI(request, username);
 
@@ -870,8 +883,9 @@ public class SignerService {
                 })
                 .orElseThrow(() -> new RuntimeException("Agreement dengan code " + agreementCode + " tidak ditemukan")));
 
-        Debtor debtor = debtorRepository.findTopByFinancingHdrCodeOrderByIdDesc(financingHdrCode)
+        Debtor debtor = debtorRepository.findTopByFinancingHdrCodeOrderByDtmCrtDesc(financingHdrCode)
                 .orElseThrow(() -> new RuntimeException("Data debtors tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
+
 
         if (debtor.getIdentityNo() == null || debtor.getIdentityNo().isEmpty()) {
             throw new RuntimeException("NIK kosong untuk debtors dengan financingHdrCode: " + financingHdrCode);

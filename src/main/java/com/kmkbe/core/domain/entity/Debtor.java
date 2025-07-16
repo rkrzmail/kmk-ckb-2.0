@@ -83,4 +83,9 @@ public class Debtor {
     @Column(name = "financing_hdr_code", nullable = true)
     private String financingHdrCode;
 
+    @Column(name = "usr_crt", nullable = true)
+    private String usrCrt;
+
+    @Column(name = "dtm_crt", nullable = true)
+    private LocalDateTime dtmCrt;
 }
