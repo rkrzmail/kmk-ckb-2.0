@@ -305,19 +305,13 @@ public class CustomerController {
     }
 
     @GetMapping("/notif")
-    public CommonResult<List<NotifDebtor>> getAllNotifDebtors(
-            Authentication authentication
-    ) throws SignatureException  {
-        UserInternalUtils.authenticated(authentication); // autentikasi internal
+    public CommonResult<List<NotifDebtor>> getAllNotifDebtors(){
         List<NotifDebtor> data = customerDashboardService.getAllNotifDebtors();
         return new CommonResult<List<NotifDebtor>>().success(data);
     }
 
     @DeleteMapping("/notif")
-    public CommonResult<String> deleteAllNotifDebtors(
-            Authentication authentication
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication); // autentikasi internal
+    public CommonResult<String> deleteAllNotifDebtors() {
         customerDashboardService.deleteAllNotifDebtors();
         return new CommonResult<String>().success("All Notification records have been deleted.");
     }
