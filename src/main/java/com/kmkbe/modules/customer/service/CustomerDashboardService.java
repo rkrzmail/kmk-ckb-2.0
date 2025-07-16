@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.CwrMapper;
 import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.CwrRepository;
+import com.kmkbe.core.domain.repository.NotifDebtorRepository;
 import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
@@ -33,6 +34,7 @@ public class CustomerDashboardService {
     private final CwrRepository cwrRepository;
     private final EntityManager entityManager;
     private final AgreementRepository agreementRepository;
+    private final NotifDebtorRepository notifDebtorRepository;
 
     public CustomerPlafondDto plafond( Authentication authentication  ) throws SignatureException {
         Customer customer = CustomerUtils.authenticateCustomer(authentication);
@@ -239,5 +241,13 @@ public class CustomerDashboardService {
             log.error("detailSubmissionDistribution: error {}", e.getMessage());
             throw e;
         }
+    }
+
+    public List<NotifDebtor> getAllNotifDebtors() {
+        return notifDebtorRepository.findAll();
+    }
+
+    public void deleteAllNotifDebtors() {
+        notifDebtorRepository.deleteAll();
     }
 }

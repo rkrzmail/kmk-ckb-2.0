@@ -1,12 +1,9 @@
 package com.kmkbe.modules.customer.controller;
 
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.constant.CustomerType;
-import com.kmkbe.core.domain.entity.Customer;
-import com.kmkbe.core.domain.entity.CustomerCompany;
-import com.kmkbe.core.domain.entity.CustomerPersonal;
 import com.kmkbe.core.domain.mapper.CustomerMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.CustomerRepository;
@@ -38,6 +35,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -304,6 +302,24 @@ public class CustomerController {
         return new CommonResult<CustomerPerjanjianDto>().success(
                 customerDashboardService.perjanjian(financingHdrCode)
         );
+    }
+
+    @GetMapping("/notif")
+    public CommonResult<List<NotifDebtor>> getAllNotifDebtors(
+            Authentication authentication
+    ) throws SignatureException  {
+        UserInternalUtils.authenticated(authentication); // autentikasi internal
+        List<NotifDebtor> data = customerDashboardService.getAllNotifDebtors();
+        return new CommonResult<List<NotifDebtor>>().success(data);
+    }
+
+    @DeleteMapping("/notif")
+    public CommonResult<String> deleteAllNotifDebtors(
+            Authentication authentication
+    ) throws SignatureException {
+        UserInternalUtils.authenticated(authentication); // autentikasi internal
+        customerDashboardService.deleteAllNotifDebtors();
+        return new CommonResult<String>().success("All Notification records have been deleted.");
     }
 
 }
