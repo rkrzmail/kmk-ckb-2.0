@@ -62,6 +62,7 @@ public class SignerService {
     private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
     private final AgreementFileRepository agreementFileRepository;
     private final FileStorageService fileStorageService;
+    private final NotifDebtorRepository notifDebtorRepository;
 
     private final String apiKey = "YiByHB@CSUL_DEV";
     private final String callerId = "USER@AD-INS.COM";
@@ -413,7 +414,7 @@ public class SignerService {
                 }
             }
 
-            DebtorDto savedDebtor = saveDebtor(debtorDto);
+            DebtorDto savedDebtor = saveDebtor(debtorDto, username);
 
             switch (registrationStatus) {
                 case "0":
@@ -528,7 +529,7 @@ public class SignerService {
         return responseBody;
     }
 
-    private DebtorDto saveDebtor(DebtorDto debtorDto) {
+    private DebtorDto saveDebtor(DebtorDto debtorDto, String username) {
         log.info("Saving debtor to database: {}", debtorDto);
         Debtor debtor = Debtor.builder()
                 .debtorName(debtorDto.getDebtorName())
@@ -554,7 +555,18 @@ public class SignerService {
                 .financingHdrCode(debtorDto.getFinancingHdrCode())
                 .build();
 
-        return debtorMapper.entityToDto(debtorRepository.save(debtor));
+        Debtor savedDebtor = debtorRepository.save(debtor);
+
+        // Simpan ke notif_debtor
+        notifDebtorRepository.save(NotifDebtor.builder()
+                .notification("Terdapat Perubahan Signer Person")
+                .description("Signer Person telah berubah. Pastikan signer yang didaftarkan sesuai dan berwenang menandatangani dokumen perjanjian.")
+                .financingHdrCode(debtorDto.getFinancingHdrCode())
+                .usrCrt(username)
+                .dtmCrt(LocalDateTime.now())
+                .build());
+
+        return debtorMapper.entityToDto(savedDebtor);
     }
 
     // GET DARI CONFINS
