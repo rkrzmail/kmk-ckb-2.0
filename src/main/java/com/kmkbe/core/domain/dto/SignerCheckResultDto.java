@@ -10,7 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SignerCheckResultDto {
-    private List<String> allSigners;          // Semua signer dari API eksternal
-    private List<String> matchedSigners;     // Yang match dengan database
+    private List<String> ConfinsSigners;          // Semua signer dari API eksternal
+    private List<String> DBSigners;     // Yang match dengan database
     private List<String> unmatchedSigners;
 }

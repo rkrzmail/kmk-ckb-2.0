@@ -795,6 +795,9 @@ public class SignerService {
             entity.setStamp(false);
             entity.setUsrCrt(username);
             entity.setDtmCrt(LocalDateTime.now());
+            entity.setSigner("");
+            entity.setDocumentId("");
+
 
             AgreementFileSigning savedFile = agreementFileSigningRepository.save(entity);
 
@@ -1083,7 +1086,7 @@ public class SignerService {
 
     private SignerCheckResultDto createComparisonResult(List<String> dbSigners, List<String> externalApiSigners) {
         SignerCheckResultDto result = new SignerCheckResultDto();
-        result.setAllSigners(externalApiSigners);
+        result.setConfinsSigners(externalApiSigners);
 
         List<String> matched = new ArrayList<>();
         List<String> unmatched = new ArrayList<>();
@@ -1096,7 +1099,7 @@ public class SignerService {
             }
         }
 
-        result.setMatchedSigners(matched);
+        result.setDBSigners(matched);
         result.setUnmatchedSigners(unmatched);
 
         return result;
