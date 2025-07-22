@@ -37,8 +37,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.SignatureException;
 import java.time.LocalDate;
@@ -63,6 +65,7 @@ public class SignerService {
     private final AgreementFileRepository agreementFileRepository;
     private final FileStorageService fileStorageService;
     private final NotifDebtorRepository notifDebtorRepository;
+    private final CwrRepository cwrRepository;
 
     private final String apiKey = "YiByHB@CSUL_DEV";
     private final String callerId = "USER@AD-INS.COM";
@@ -801,9 +804,12 @@ public class SignerService {
     private void callExternalSigningAPI(FileUploadRequest request, String username) {
         try {
             Debtor debtor = getDebtorData(request.getAgreementCode());
+            String branchCode = getBranchCodeFromAgreement(request.getAgreementCode());
+            String base64File = convertFileToBase64(request.getFile());
 
+            // 1. Prepare original request body
             Map<String, Object> requestBody = new LinkedHashMap<>();
-            requestBody.put("tenantCode", "CSUL");
+            requestBody.put("tenantCode", "CSUL_DEV");
             requestBody.put("psreCode", "VIDA");
 
             Map<String, String> audit = new LinkedHashMap<>();
@@ -813,14 +819,14 @@ public class SignerService {
             List<Map<String, Object>> requests = new ArrayList<>();
             Map<String, Object> documentRequest = new LinkedHashMap<>();
             documentRequest.put("referenceNo", request.getAgreementCode());
-            documentRequest.put("documentTemplateCode", "DOC-TEST");
+            documentRequest.put("documentTemplateCode", "PERJANJIAN_1A");
             documentRequest.put("documentName", request.getFileName());
-            documentRequest.put("officeCode", "1231");
+            documentRequest.put("officeCode", branchCode);
             documentRequest.put("officeName", "JAKARTA");
-            documentRequest.put("regionCode", "0702");
+            documentRequest.put("regionCode", branchCode);
             documentRequest.put("regionName", username);
-            documentRequest.put("businessLineCode", "MGTRKON2");
-            documentRequest.put("businessLineName", "Multiguna Barang Motor Konvensional");
+            documentRequest.put("businessLineCode", "CBU");
+            documentRequest.put("businessLineName", "Corporate Business Unit");
 
             List<Map<String, String>> signers = new ArrayList<>();
             Map<String, String> signer = new LinkedHashMap<>();
@@ -832,21 +838,35 @@ public class SignerService {
             signer.put("seqNo", "0");
             signers.add(signer);
 
+            documentRequest.put("documentFile", base64File);
             documentRequest.put("signers", signers);
             documentRequest.put("isSequence", "");
             documentRequest.put("useSignQR", "");
             requests.add(documentRequest);
             requestBody.put("requests", requests);
 
-            ObjectMapper mapper = new ObjectMapper();
-            String requestBodyJson = mapper.writeValueAsString(requestBody);
-            log.info("Request Body to e-sign API: {}", requestBodyJson);
+            // 2. Create sanitized version for logging
+            Map<String, Object> logRequestBody = new LinkedHashMap<>(requestBody);
+            List<Map<String, Object>> logRequests = new ArrayList<>();
 
+            Map<String, Object> logDocumentRequest = new LinkedHashMap<>(documentRequest);
+            logDocumentRequest.put("documentFile", "[BASE64_PDF_REDACTED]"); // Redact the base64
+
+            logRequests.add(logDocumentRequest);
+            logRequestBody.put("requests", logRequests);
+
+            // 3. Log the sanitized version
+            ObjectMapper mapper = new ObjectMapper();
+            String requestBodyLog = mapper.writeValueAsString(logRequestBody);
+            log.info("Request Body to e-sign API (documentFile redacted): {}", requestBodyLog);
+
+            // 4. Proceed with original request
             HttpHeaders headers = new HttpHeaders();
             headers.set("x-api-key", apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            HttpEntity<String> entity = new HttpEntity<>(requestBodyJson, headers);
+            // Use original requestBody (with actual base64) for API call
+            HttpEntity<String> entity = new HttpEntity<>(mapper.writeValueAsString(requestBody), headers);
             RestTemplate restTemplate = new RestTemplate();
 
             String apiUrl = sendDoc;
@@ -871,6 +891,33 @@ public class SignerService {
             log.error("Error calling e-sign API: {}", e.getMessage(), e);
             throw new RuntimeException("Gagal memanggil API e-sign: " + e.getMessage());
         }
+    }
+
+    private String convertFileToBase64(MultipartFile file) throws IOException {
+        byte[] fileBytes = file.getBytes();
+        return Base64.getEncoder().encodeToString(fileBytes);
+    }
+
+    private String getBranchCodeFromAgreement(String agreementCode) {
+        // Langsung query branch_code dari agreement -> financing_hdr -> cwr
+        return agreementRepository.findByAgreementCode(agreementCode)
+                .map(agreement -> {
+                    if (agreement.getFinancingHdr() == null) {
+                        throw new RuntimeException("FinancingHdr tidak ditemukan untuk agreement " + agreementCode);
+                    }
+                    String cwrCode = agreement.getCwr().getCwrCode();
+
+                    // Query branch_code dari cwr
+                    return cwrRepository.findByCwrCode(cwrCode)
+                            .map(cwr -> {
+                                if (cwr.getBranchCode() == null || cwr.getBranchCode().isEmpty()) {
+                                    throw new RuntimeException("Branch code kosong untuk cwr " + cwrCode);
+                                }
+                                return cwr.getBranchCode();
+                            })
+                            .orElseThrow(() -> new RuntimeException("Cwr dengan code " + cwrCode + " tidak ditemukan"));
+                })
+                .orElseThrow(() -> new RuntimeException("Agreement dengan code " + agreementCode + " tidak ditemukan"));
     }
 
     private Debtor getDebtorData(String agreementCode) {

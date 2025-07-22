@@ -40,4 +40,6 @@ public interface CwrRepository extends JpaRepository<Cwr, String>, JpaSpecificat
 
 
     List<Cwr> findAllByStatusIsIn(Iterable<String> strings);
+
+    Optional<Cwr> findByCwrCode(String cwrCode);
 }
