@@ -325,25 +325,41 @@ public class SignerService {
                     if (code != null && code == 0 && responseBody.containsKey("registrationData")) {
                         List<Map<String, Object>> registrationData = (List<Map<String, Object>>) responseBody.get("registrationData");
                         if (registrationData != null && !registrationData.isEmpty()) {
-                            Map<String, Object> firstRegistration = registrationData.get(0);
-                            String registrationStatus = firstRegistration.get("registrationStatus").toString();
+                            // Cari data untuk vendor Vida
+                            Map<String, Object> vidaRegistration = registrationData.stream()
+                                    .filter(data -> "Vida".equals(data.get("vendor")))
+                                    .findFirst()
+                                    .orElse(null);
 
-                            if ("1".equals(registrationStatus)) {
-                                debtorDto.setSignerStatus("not active");
-                                debtorDto.setSignhubStatus("registered");
-                            } else if ("2".equals(registrationStatus)) {
-                                debtorDto.setSignerStatus("active");
-                                debtorDto.setSignhubStatus("registered");
-                            } else {
-                                debtorDto.setSignerStatus("not active");
-                                debtorDto.setSignhubStatus("not register");
+                            if (vidaRegistration != null) {
+                                String registrationStatus = vidaRegistration.get("registrationStatus").toString();
+
+                                // Aturan status berdasarkan klarifikasi Anda
+                                switch (registrationStatus) {
+                                    case "0":
+                                        debtorDto.setSignerStatus("not active");
+                                        debtorDto.setSignhubStatus("not register");
+                                        break;
+                                    case "1":
+                                        debtorDto.setSignerStatus("not active");
+                                        debtorDto.setSignhubStatus("registered");
+                                        break;
+                                    case "2":
+                                        debtorDto.setSignerStatus("active");
+                                        debtorDto.setSignhubStatus("registered");
+                                        break;
+                                    default: // Untuk status tidak dikenal
+                                        debtorDto.setSignerStatus("not active");
+                                        debtorDto.setSignhubStatus("not register");
+                                }
+                                return;
                             }
-                            return;
                         }
                     }
                 }
             }
 
+            // Default jika tidak memenuhi kondisi di atas
             debtorDto.setSignerStatus("not active");
             debtorDto.setSignhubStatus("not register");
 
