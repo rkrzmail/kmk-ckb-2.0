@@ -57,6 +57,9 @@ public class AgreementFileSigning {
     @Column(name = "signer")
     private String signer;
 
+    @Column(name = "identity_no")
+    private String identityNo;
+
     // Getters and Setters
     public Long getAgreementFileId() { return agreementFileId; }
     public void setAgreementFileId(Long agreementFileId) { this.agreementFileId = agreementFileId; }
@@ -86,4 +89,7 @@ public class AgreementFileSigning {
 
     public String getSigner() { return signer; }
     public void setSigner(String signer) { this.signer = signer; }
+
+    public String getIdentityNo() { return identityNo; }
+    public void setIdentityNo(String identityNo) { this.identityNo = identityNo; }
 }
