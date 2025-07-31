@@ -6,13 +6,21 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.branch_admin.service.ReportService;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
+import jakarta.servlet.ServletOutputStream;
+import jakarta.servlet.http.HttpServletResponse;
+import net.sf.jasperreports.engine.JRException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.*;
 import org.springframework.security.core.Authentication;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/v1/report")
@@ -20,6 +28,8 @@ public class ReportController {
 
     @Autowired
     private ReportService reportService;
+
+    private final Map<String, byte[]> reportCache = new ConcurrentHashMap<>();
 
     @GetMapping("/visitor")
     public CommonResult<PaginationResult<VisitorDto>> getlistVisitor(
@@ -80,4 +90,38 @@ public class ReportController {
                 reportService.getDueDateDetail(request)
         );
     }
+
+    @GetMapping("/preview")
+    public ResponseEntity<byte[]> previewReport() {
+        try {
+            byte[] pdfBytes = reportService.generateReport();
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=preview.pdf")
+                    .body(pdfBytes);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(("Error generating report: " + e.getMessage()).getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    @GetMapping("/download-pdf")
+    public void downloadPdf(HttpServletResponse response) {
+        try {
+            byte[] pdfBytes = reportService.generateReport();
+            response.setContentType("application/pdf");
+            response.setHeader("Content-Disposition", "attachment; filename=\"report.pdf\"");
+            response.setContentLength(pdfBytes.length);
+
+            ServletOutputStream outputStream = response.getOutputStream();
+            outputStream.write(pdfBytes);
+            outputStream.flush();
+            outputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        }
+    }
+
 }

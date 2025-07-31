@@ -10,16 +10,23 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.major_account.service.MstBranchService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
+import jakarta.annotation.PostConstruct;
+import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.util.JRLoader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
+import java.io.*;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.ResourceUtils;
 
 @Service
 public class ReportService {
@@ -43,6 +50,8 @@ public class ReportService {
 
     @Autowired
     private EmailAo emailAo;
+
+    private JasperReport cachedReport;
 
     private String jwtToken;
 
@@ -386,6 +395,65 @@ public class ReportService {
         } catch (Exception e) {
             throw new RuntimeException("Error fetching report due date", e);
         }
+    }
+
+    public byte[] generateReport() throws JRException, IOException {
+        InputStream reportStream = getClass().getResourceAsStream("/Reports/main_report.jrxml");
+        if (reportStream == null) {
+            throw new FileNotFoundException("main_report.jrxml tidak ditemukan di /Reports");
+        }
+        JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+
+        Map<String, Object> params = new HashMap<>();
+        params.put("SUBREPORT_DIR", getClass().getResource("/Reports/").toString());
+
+        params.put("AppNo", "APP-2023-00567");
+        params.put("TglDokumen", "15/07/2023");
+        params.put("NoDokumen", "DOC/2023/00789");
+        params.put("TempatTanggal", "Jakarta, 15 Juli 2023");
+        params.put("DebtorName", "PT. Maju Jaya Abadi");
+        params.put("JenisDebitur", "Perusahaan");
+        params.put("TipePerusahaan", "PT");
+        params.put("NPWP", "01.234.567.8-912.345");
+        params.put("Alamat", "Jl. Sudirman No. 123, Jakarta Selatan");
+        params.put("Email", "finance@majujaya.com");
+        params.put("Telepon", "021-12345678");
+        params.put("BankName", "Bank Central Asia");
+        params.put("BankAccNo", "1234567890");
+        params.put("BankAccName", "PT. Maju Jaya Abadi");
+        params.put("NamaKaryawan", "Budi Santoso");
+        params.put("Jabatan", "Account Manager");
+        params.put("AgrmntNo", "AGR/2023/00567");
+        params.put("AgmtNo", "AGR/2023/00567"); // Duplikat dengan nama berbeda
+        params.put("Facility", "Factoring dengan Recourse");
+        params.put("Tenor", "90 Hari");
+        params.put("PeriodeBerlaku", "15 Juli 2023 - 15 Oktober 2023");
+        params.put("NtfAmt", "500000000");
+        params.put("DiskontoAmt", "25000000");
+        params.put("MaxAllocatedRefundAmt", "475000000");
+        params.put("TotalRetentionAmt", "15000000");
+        params.put("TotalInvcAmt", "500000000");
+        params.put("NtfAmt-Total", "500000000");
+        params.put("AppFeeAmtFactoring", "5000000");
+        params.put("AppFeeAmtAdministration", "3000000");
+        params.put("TotalFeeAmt", "8000000");
+        params.put("AppFeeAmt", "8000000");
+        params.put("Administration+Factoring", "8000000");
+        params.put("TotalPembayaran", "492000000");
+        params.put("InvoiceDueDate", "15/10/2023");
+        params.put("LobCode", "FCT");
+        params.put("ProdOfferingName", "Factoring Reguler");
+        params.put("EffectiveRatePrcnt", "12.5");
+        params.put("InstAmt", "164000000");
+        params.put("GracePeriodLc", "5 Hari");
+        params.put("NamaGMFinance", "Dewi Kartini");
+        params.put("NamaDirektur", "Hendrawan Susilo");
+        params.put("NamaGMFinanceCSUL", "Ahmad Fauzi");
+        params.put("NamaAreaSalesManager", "Rina Permata");
+
+        JRDataSource dataSource = new JREmptyDataSource();
+        JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, params, dataSource);
+        return JasperExportManager.exportReportToPdf(jasperPrint);
     }
 }
 

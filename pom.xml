@@ -214,6 +214,12 @@
             <version>2.14.0</version> <!-- Make sure to use a version compatible with your Jackson core -->
         </dependency>
 
+        <dependency>
+            <groupId>net.sf.jasperreports</groupId>
+            <artifactId>jasperreports</artifactId>
+            <version>6.20.0</version>
+        </dependency>
+
     </dependencies>
     <build>
         <plugins>

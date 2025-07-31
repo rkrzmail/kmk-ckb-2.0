@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.20.6.final using JasperReports Library version 6.20.6-5c96b6aa8a39ac1dc6b6bea4b81168e16dd39231  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="main_report" pageWidth="595" pageHeight="842" columnWidth="451" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c56b7714-5e56-4621-9f95-dadcbbd9e9ce">
+	<parameter name="AppNo" class="java.lang.String"/>
+	<parameter name="TglDokumen" class="java.lang.String"/>
+	<parameter name="DebtorName" class="java.lang.String"/>
+	<parameter name="BankName" class="java.lang.String"/>
+	<parameter name="BankAccNo" class="java.lang.String"/>
+	<parameter name="BankAccName" class="java.lang.String"/>
+	<parameter name="NamaKaryawan" class="java.lang.String"/>
+	<parameter name="Jabatan" class="java.lang.String"/>
+	<parameter name="AgrmntNo" class="java.lang.String"/>
+	<parameter name="Facility" class="java.lang.String"/>
+	<parameter name="Tenor" class="java.lang.String"/>
+	<parameter name="NtfAmt" class="java.lang.String"/>
+	<parameter name="DiskontoAmt" class="java.lang.String"/>
+	<parameter name="MaxAllocatedRefundAmt" class="java.lang.String"/>
+	<parameter name="InvoiceDueDate" class="java.lang.String"/>
+	<parameter name="TotalRetentionAmt" class="java.lang.String"/>
+	<parameter name="AppFeeAmtFactoring" class="java.lang.String"/>
+	<parameter name="AppFeeAmtAdministration" class="java.lang.String"/>
+	<parameter name="LobCode" class="java.lang.String"/>
+	<parameter name="ProdOfferingName" class="java.lang.String"/>
+	<parameter name="EffectiveRatePrcnt" class="java.lang.String"/>
+	<parameter name="TotalFeeAmt" class="java.lang.String"/>
+	<parameter name="AppFeeAmt" class="java.lang.String"/>
+	<parameter name="GracePeriodLc" class="java.lang.String"/>
+	<parameter name="TotalInvcAmt" class="java.lang.String"/>
+	<parameter name="InstAmt" class="java.lang.String"/>
+	<parameter name="AgmtNo" class="java.lang.String"/>
+	<parameter name="Administration+Factoring" class="java.lang.String"/>
+	<parameter name="NtfAmt-Total" class="java.lang.String"/>
+	<parameter name="JenisDebitur" class="java.lang.String"/>
+	<parameter name="TipePerusahaan" class="java.lang.String"/>
+	<parameter name="NPWP" class="java.lang.String"/>
+	<parameter name="Alamat" class="java.lang.String"/>
+	<parameter name="Email" class="java.lang.String"/>
+	<parameter name="Telepon" class="java.lang.String"/>
+	<parameter name="NoDokumen" class="java.lang.String"/>
+	<parameter name="TempatTanggal" class="java.lang.String"/>
+	<parameter name="NamaGMFinance" class="java.lang.String"/>
+	<parameter name="TotalPembayaran" class="java.lang.String"/>
+	<parameter name="PeriodeBerlaku" class="java.lang.String"/>
+	<parameter name="NamaDirektur" class="java.lang.String"/>
+	<parameter name="NamaGMFinanceCSUL" class="java.lang.String"/>
+	<parameter name="NamaAreaSalesManager" class="java.lang.String"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<pageHeader>
+		<band splitType="Stretch"/>
+	</pageHeader>
+	<columnHeader>
+		<band splitType="Stretch"/>
+	</columnHeader>
+	<detail>
+		<band height="842">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" isRemoveLineWhenBlank="true" uuid="7210dd48-9f85-42c9-9f33-4465c59e7d8f"/>
+				<subreportParameter name="AppNo">
+					<subreportParameterExpression><![CDATA[$P{AppNo}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TglDokumen">
+					<subreportParameterExpression><![CDATA[$P{TglDokumen}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="DebtorName">
+					<subreportParameterExpression><![CDATA[$P{DebtorName}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="BankName">
+					<subreportParameterExpression><![CDATA[$P{BankName}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="BankAccNo">
+					<subreportParameterExpression><![CDATA[$P{BankAccNo}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="BankAccName">
+					<subreportParameterExpression><![CDATA[$P{BankAccName}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NamaKaryawan">
+					<subreportParameterExpression><![CDATA[$P{NamaKaryawan}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Jabatan">
+					<subreportParameterExpression><![CDATA[$P{Jabatan}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat1.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="c7167121-8133-47a7-867b-23297589a9ad"/>
+			</break>
+		</band>
+		<band height="842" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" uuid="71b650d6-b37e-46af-804c-7be3ab0fdc38"/>
+				<subreportParameter name="AgrmntNo">
+					<subreportParameterExpression><![CDATA[$P{AgrmntNo}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="AppNo">
+					<subreportParameterExpression><![CDATA[$P{AppNo}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TglDokumen">
+					<subreportParameterExpression><![CDATA[$P{TglDokumen}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="DebtorName">
+					<subreportParameterExpression><![CDATA[$P{DebtorName}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat2.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="99a2ed00-6226-491b-9841-8a8efad4519b"/>
+			</break>
+		</band>
+		<band height="842" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" uuid="92f00938-068b-4f98-b55d-ae139f17dfc7"/>
+				<subreportParameter name="AgrmntNo">
+					<subreportParameterExpression><![CDATA[$P{AgrmntNo}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TglDokumen">
+					<subreportParameterExpression><![CDATA[$P{TglDokumen}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="DebtorName">
+					<subreportParameterExpression><![CDATA[$P{DebtorName}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Facility">
+					<subreportParameterExpression><![CDATA[$P{Facility}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Tenor">
+					<subreportParameterExpression><![CDATA[$P{Tenor}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NtfAmt">
+					<subreportParameterExpression><![CDATA[$P{NtfAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="DiskontoAmt">
+					<subreportParameterExpression><![CDATA[$P{DiskontoAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="MaxAllocatedRefundAmt">
+					<subreportParameterExpression><![CDATA[$P{MaxAllocatedRefundAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="InvoiceDueDate">
+					<subreportParameterExpression><![CDATA[$P{InvoiceDueDate}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TotalRetentionAmt">
+					<subreportParameterExpression><![CDATA[$P{TotalRetentionAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="AppFeeAmtFactoring">
+					<subreportParameterExpression><![CDATA[$P{AppFeeAmtFactoring}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="AppFeeAmtAdministration">
+					<subreportParameterExpression><![CDATA[$P{AppFeeAmtAdministration}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat3.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="c425e1ad-88a4-4d42-9335-d423dfd27cae"/>
+			</break>
+		</band>
+		<band height="842" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" uuid="449025d4-b4bc-4130-b76e-4311e3e03ec8"/>
+				<subreportParameter name="LobCode">
+					<subreportParameterExpression><![CDATA[$P{LobCode}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="ProdOfferingName">
+					<subreportParameterExpression><![CDATA[$P{ProdOfferingName}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NtfAmt">
+					<subreportParameterExpression><![CDATA[$P{NtfAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="EffectiveRatePrcnt">
+					<subreportParameterExpression><![CDATA[$P{EffectiveRatePrcnt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Tenor">
+					<subreportParameterExpression><![CDATA[$P{Tenor}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TotalFeeAmt">
+					<subreportParameterExpression><![CDATA[$P{TotalFeeAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="AppFeeAmt">
+					<subreportParameterExpression><![CDATA[$P{AppFeeAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat4.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="a352e950-db6e-47c0-a669-7c6c466ccc75"/>
+			</break>
+		</band>
+		<band height="842" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" uuid="91e72857-af76-4cf3-8015-66c4c65118de"/>
+				<subreportParameter name="GracePeriodLc">
+					<subreportParameterExpression><![CDATA[$P{GracePeriodLc}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TotalInvcAmt">
+					<subreportParameterExpression><![CDATA[$P{TotalInvcAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NtfAmt">
+					<subreportParameterExpression><![CDATA[$P{NtfAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="MaxAllocatedRefundAmt">
+					<subreportParameterExpression><![CDATA[$P{MaxAllocatedRefundAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="DiskontoAmt">
+					<subreportParameterExpression><![CDATA[$P{DiskontoAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TotalRetentionAmt">
+					<subreportParameterExpression><![CDATA[$P{TotalRetentionAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Tenor">
+					<subreportParameterExpression><![CDATA[$P{Tenor}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="InstAmt">
+					<subreportParameterExpression><![CDATA[$P{InstAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TotalFeeAmt">
+					<subreportParameterExpression><![CDATA[$P{TotalFeeAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat4b.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="684679e9-9209-4249-8d23-a6aeab1d21c3"/>
+			</break>
+		</band>
+		<band height="842" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" uuid="3378ee84-c5cf-44b0-9887-e4bfebe0d176"/>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat4c.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="eec72e82-4ceb-4f1c-91c7-4439928bf1b7"/>
+			</break>
+		</band>
+		<band height="842" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" uuid="d0d75409-c286-49fe-aa18-b58d5376f27b"/>
+				<subreportParameter name="AgmtNo">
+					<subreportParameterExpression><![CDATA[$P{AgmtNo}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TglDokumen">
+					<subreportParameterExpression><![CDATA[$P{TglDokumen}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NtfAmt">
+					<subreportParameterExpression><![CDATA[$P{NtfAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="DebtorName">
+					<subreportParameterExpression><![CDATA[$P{DebtorName}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="AppFeeAmtAdministration">
+					<subreportParameterExpression><![CDATA[$P{AppFeeAmtAdministration}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="AppFeeAmtFactoring">
+					<subreportParameterExpression><![CDATA[$P{AppFeeAmtFactoring}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Administration+Factoring">
+					<subreportParameterExpression><![CDATA[$P{Administration+Factoring}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NtfAmt-Total">
+					<subreportParameterExpression><![CDATA[$P{NtfAmt-Total}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat5.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="c94cd125-20b7-454e-962d-6c14bd251548"/>
+			</break>
+		</band>
+		<band height="842" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" uuid="c7fdb18f-46ae-4c98-a066-08413f4aefbf"/>
+				<subreportParameter name="DebtorName">
+					<subreportParameterExpression><![CDATA[$P{DebtorName}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat6.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="98ec2166-c967-45fa-9864-462ce47bfa88"/>
+			</break>
+		</band>
+		<band height="842" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" uuid="74c7b436-a56a-4edf-8d7b-2342cc8a570e"/>
+				<subreportParameter name="JenisDebitur">
+					<subreportParameterExpression><![CDATA[$P{JenisDebitur}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NamaDebitur">
+					<subreportParameterExpression><![CDATA[$P{DebtorName}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TipePerusahaan">
+					<subreportParameterExpression><![CDATA[$P{TipePerusahaan}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NPWP">
+					<subreportParameterExpression><![CDATA[$P{NPWP}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Alamat">
+					<subreportParameterExpression><![CDATA[$P{Alamat}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Email">
+					<subreportParameterExpression><![CDATA[$P{Email}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Telepon">
+					<subreportParameterExpression><![CDATA[$P{Telepon}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat7.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="1243fe39-cd5b-431c-b169-4b7ab65cd9e9"/>
+			</break>
+		</band>
+		<band height="842" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" uuid="5b49f401-e711-42ca-815b-37abfb0de64a"/>
+				<subreportParameter name="NoDokumen">
+					<subreportParameterExpression><![CDATA[$P{NoDokumen}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TempatTanggal">
+					<subreportParameterExpression><![CDATA[$P{TempatTanggal}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NamaGMFinance">
+					<subreportParameterExpression><![CDATA[$P{NamaGMFinance}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TotalPembayaran">
+					<subreportParameterExpression><![CDATA[$P{TotalPembayaran}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="PeriodeBerlaku">
+					<subreportParameterExpression><![CDATA[$P{PeriodeBerlaku}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NamaDebitur">
+					<subreportParameterExpression><![CDATA[$P{DebtorName}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NamaDirektur">
+					<subreportParameterExpression><![CDATA[$P{NamaDirektur}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NamaGMFinanceCSUL">
+					<subreportParameterExpression><![CDATA[$P{NamaGMFinanceCSUL}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NamaAreaSalesManager">
+					<subreportParameterExpression><![CDATA[$P{NamaAreaSalesManager}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat8.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="9a208b31-0856-4351-93ff-5cab26e29bf8"/>
+			</break>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>
