@@ -450,6 +450,29 @@ public class ReportService {
         params.put("NamaDirektur", "Hendrawan Susilo");
         params.put("NamaGMFinanceCSUL", "Ahmad Fauzi");
         params.put("NamaAreaSalesManager", "Rina Permata");
+        params.put("no","1");
+        params.put("customer","Debtor Name");
+        params.put("nomor_perjanjian","FINE0016496");
+        params.put("tanggal_perjanjian","25/10/2024");
+        params.put("nomor_invoice","0082498008270");
+        params.put("tanggal_invoice","02/09/2024");
+        params.put("jumlah_piutang","1,084,154.0");
+        params.put("description","Invoice By Trakindo");
+        params.put("bouwheer","PT. Trakindo Utama");
+        params.put("invoice_duedate","25/10/2024");
+        params.put("invoice_amt","12,986,340.0");
+
+        // <parameter name="no" class="java.lang.String"/>
+        //	<parameter name="customer" class="java.lang.String"/>
+        //	<parameter name="nomor_perjanjian" class="java.lang.String"/>
+        //	<parameter name="tanggal_perjanjian" class="java.lang.String"/>
+        //	<parameter name="nomor_invoice" class="java.lang.String"/>
+        //	<parameter name="tanggal_invoice" class="java.lang.String"/>
+        //	<parameter name="jumlah_piutang" class="java.lang.String"/>
+        //	<parameter name="description" class="java.lang.String"/>
+        //	<parameter name="bouwheer" class="java.lang.String"/>
+        //	<parameter name="invoice_duedate" class="java.lang.String"/>
+        //	<parameter name="invoice_amt" class="java.lang.String"/>
 
         JRDataSource dataSource = new JREmptyDataSource();
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, params, dataSource);

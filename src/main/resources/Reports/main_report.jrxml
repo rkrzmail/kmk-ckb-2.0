@@ -44,6 +44,17 @@
 	<parameter name="NamaDirektur" class="java.lang.String"/>
 	<parameter name="NamaGMFinanceCSUL" class="java.lang.String"/>
 	<parameter name="NamaAreaSalesManager" class="java.lang.String"/>
+	<parameter name="no" class="java.lang.String"/>
+	<parameter name="customer" class="java.lang.String"/>
+	<parameter name="nomor_perjanjian" class="java.lang.String"/>
+	<parameter name="tanggal_perjanjian" class="java.lang.String"/>
+	<parameter name="nomor_invoice" class="java.lang.String"/>
+	<parameter name="tanggal_invoice" class="java.lang.String"/>
+	<parameter name="jumlah_piutang" class="java.lang.String"/>
+	<parameter name="description" class="java.lang.String"/>
+	<parameter name="bouwheer" class="java.lang.String"/>
+	<parameter name="invoice_duedate" class="java.lang.String"/>
+	<parameter name="invoice_amt" class="java.lang.String"/>
 	<parameter name="SUBREPORT_DIR" class="java.lang.String"/>
 	<queryString>
 		<![CDATA[]]>
@@ -90,6 +101,37 @@
 			</subreport>
 			<break>
 				<reportElement x="0" y="841" width="595" height="1" uuid="c7167121-8133-47a7-867b-23297589a9ad"/>
+			</break>
+		</band>
+		<band height="842" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" uuid="0dc37497-820a-428c-a0d7-68faf379c6af"/>
+				<subreportParameter name="no">
+					<subreportParameterExpression><![CDATA[$P{no}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="customer">
+					<subreportParameterExpression><![CDATA[$P{customer}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="nomor_perjanjian">
+					<subreportParameterExpression><![CDATA[$P{nomor_perjanjian}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="tanggal_perjanjian">
+					<subreportParameterExpression><![CDATA[$P{tanggal_perjanjian}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="nomor_invoice">
+					<subreportParameterExpression><![CDATA[$P{nomor_invoice}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="tanggal_invoice">
+					<subreportParameterExpression><![CDATA[$P{tanggal_invoice}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="jumlah_piutang">
+					<subreportParameterExpression><![CDATA[$P{jumlah_piutang}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "table1.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="e2b5b344-1962-4b8e-9cf4-4c76e51df43d"/>
 			</break>
 		</band>
 		<band height="842" splitType="Stretch">
@@ -158,6 +200,25 @@
 			</subreport>
 			<break>
 				<reportElement x="0" y="841" width="595" height="1" uuid="c425e1ad-88a4-4d42-9335-d423dfd27cae"/>
+			</break>
+		</band>
+		<band height="842" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" uuid="0dc37497-820a-428c-a0d7-68faf379c6af"/>
+				<subreportParameter name="nomor_invoice">
+					<subreportParameterExpression><![CDATA[$P{nomor_invoice}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="tanggal_invoice">
+					<subreportParameterExpression><![CDATA[$P{tanggal_invoice}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="invoice_duedate">
+					<subreportParameterExpression><![CDATA[$P{invoice_duedate}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "table2.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="e2b5b344-1962-4b8e-9cf4-4c76e51df43d"/>
 			</break>
 		</band>
 		<band height="842" splitType="Stretch">
@@ -351,6 +412,34 @@
 			</subreport>
 			<break>
 				<reportElement x="0" y="841" width="595" height="1" uuid="9a208b31-0856-4351-93ff-5cab26e29bf8"/>
+			</break>
+		</band>
+		<band height="842" splitType="Stretch">
+			<subreport>
+				<reportElement x="0" y="0" width="595" height="842" uuid="0dc37497-820a-428c-a0d7-68faf379c6af"/>
+				<subreportParameter name="nomor_invoice">
+					<subreportParameterExpression><![CDATA[$P{nomor_invoice}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="description">
+					<subreportParameterExpression><![CDATA[$P{description}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="bouwheer">
+					<subreportParameterExpression><![CDATA[$P{bouwheer}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="tanggal_invoice">
+					<subreportParameterExpression><![CDATA[$P{tanggal_invoice}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="invoice_duedate">
+					<subreportParameterExpression><![CDATA[$P{invoice_duedate}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="invoice_amt">
+					<subreportParameterExpression><![CDATA[$P{invoice_amt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "table3.jasper"]]></subreportExpression>
+			</subreport>
+			<break>
+				<reportElement x="0" y="841" width="595" height="1" uuid="e2b5b344-1962-4b8e-9cf4-4c76e51df43d"/>
 			</break>
 		</band>
 	</detail>
