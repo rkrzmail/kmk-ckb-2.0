@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
@@ -91,14 +92,23 @@ public class ReportController {
         );
     }
 
-    @GetMapping("/preview")
-    public ResponseEntity<byte[]> previewReport() {
+    @GetMapping("/preview/{financingHdrCode}")
+    public ResponseEntity<byte[]> previewReport(
+            @PathVariable String financingHdrCode
+    ) {
+
         try {
-            byte[] pdfBytes = reportService.generateReport();
+            byte[] pdfBytes = reportService.generateReport(financingHdrCode);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=preview.pdf")
                     .body(pdfBytes);
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body((e.getMessage()).getBytes());
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest()
+                    .body(e.getMessage().getBytes());
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -107,9 +117,9 @@ public class ReportController {
     }
 
     @GetMapping("/download-pdf")
-    public void downloadPdf(HttpServletResponse response) {
+    public void downloadPdf(HttpServletResponse response, @PathVariable String financingHdrCode) {
         try {
-            byte[] pdfBytes = reportService.generateReport();
+            byte[] pdfBytes = reportService.generateReport(financingHdrCode);
             response.setContentType("application/pdf");
             response.setHeader("Content-Disposition", "attachment; filename=\"report.pdf\"");
             response.setContentLength(pdfBytes.length);

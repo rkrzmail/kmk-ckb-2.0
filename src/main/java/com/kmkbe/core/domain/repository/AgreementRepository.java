@@ -91,8 +91,12 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     Optional<Agreement> findByFinancingHdr_FinancingHdrCode2(@Param("financingHdrCode") UUID financingHdrCode);
 
     @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
-    List<Agreement> findByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
+    Optional<Agreement> findByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
 
     Optional<Agreement> findByAgreementCode(String agreementCode);
+
+    @Query("SELECT a.agreementCode FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
+    Optional<String> findAgreementCodeByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
+
 }
 

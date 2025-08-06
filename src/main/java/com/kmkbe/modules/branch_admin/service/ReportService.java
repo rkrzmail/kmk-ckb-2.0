@@ -2,10 +2,12 @@ package com.kmkbe.modules.branch_admin.service;
 
 
 import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.Visitor;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.service.ExternalApiService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.major_account.service.MstBranchService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
@@ -50,6 +52,12 @@ public class ReportService {
 
     @Autowired
     private EmailAo emailAo;
+
+    @Autowired
+    private AgreementRepository agreementRepo;
+
+    @Autowired
+    private ExternalApiService externalApiService;
 
     private JasperReport cachedReport;
 
@@ -397,17 +405,32 @@ public class ReportService {
         }
     }
 
-    public byte[] generateReport() throws JRException, IOException {
-        InputStream reportStream = getClass().getResourceAsStream("/Reports/main_report.jrxml");
-        if (reportStream == null) {
-            throw new FileNotFoundException("main_report.jrxml tidak ditemukan di /Reports");
+    public byte[] generateReport(String financingHdrCode) throws JRException, IOException {
+
+        UUID financingHdrUuid;
+        try {
+            financingHdrUuid = UUID.fromString(financingHdrCode);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid financingHdrCode format");
         }
-        JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+
+        Agreement agreement = agreementRepo.findByFinancingHdrCode(financingHdrUuid)
+                .orElseThrow(() -> new NoSuchElementException(
+                        "Data Agreement tidak ditemukan untuk: " + financingHdrCode
+                ));
+
+        AppResponse apiResponse = externalApiService.getAppByAppNo(agreement.getApplicationCode());
+
+        String agreementCode = agreementRepo
+                .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode))
+                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
+        FinancialDataResponse financialData = externalApiService.getFinancialData(agreementCode);
 
         Map<String, Object> params = new HashMap<>();
+        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
         params.put("SUBREPORT_DIR", getClass().getResource("/Reports/").toString());
 
-        params.put("AppNo", "APP-2023-00567");
+        params.put("AppNo", apiResponse.getAppNo());
         params.put("TglDokumen", "15/07/2023");
         params.put("NoDokumen", "DOC/2023/00789");
         params.put("TempatTanggal", "Jakarta, 15 Juli 2023");
@@ -424,27 +447,39 @@ public class ReportService {
         params.put("NamaKaryawan", "Budi Santoso");
         params.put("Jabatan", "Account Manager");
         params.put("AgrmntNo", "AGR/2023/00567");
-        params.put("AgmtNo", "AGR/2023/00567"); // Duplikat dengan nama berbeda
+        params.put("AgmtNo", "AGR/2023/00567");
         params.put("Facility", "Factoring dengan Recourse");
-        params.put("Tenor", "90 Hari");
+        params.put("Tenor", apiResponse.getTenor());
         params.put("PeriodeBerlaku", "15 Juli 2023 - 15 Oktober 2023");
-        params.put("NtfAmt", "500000000");
+        params.put("NtfAmt", findata.getNtfAmount()); // financial data
         params.put("DiskontoAmt", "25000000");
-        params.put("MaxAllocatedRefundAmt", "475000000");
+        params.put("MaxAllocatedRefundAmt", findata.getMaxRefundAmount()); // financial data
         params.put("TotalRetentionAmt", "15000000");
         params.put("TotalInvcAmt", "500000000");
         params.put("NtfAmt-Total", "500000000");
-        params.put("AppFeeAmtFactoring", "5000000");
-        params.put("AppFeeAmtAdministration", "3000000");
-        params.put("TotalFeeAmt", "8000000");
+
+//        params.put("AppFeeAmtFactoring", "5000000"); // financial data
+//        params.put("AppFeeAmtAdministration", "3000000"); // financial data
+        financialData.getFeeList().forEach(fee -> {
+            if (fee.getFeeTypeName() != null) {
+                if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA FACTORING")) {
+                    params.put("AppFeeAmtFactoring", fee.getFeeAmount());
+                }
+                else if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA ADMINISTRASI PENCAIRAN")) {
+                    params.put("AppFeeAmtAdministration", fee.getFeeAmount());
+                }
+            }
+        });
+
+        params.put("TotalFeeAmt", findata.getTotalFeeAmount()); // financial data
         params.put("AppFeeAmt", "8000000");
         params.put("Administration+Factoring", "8000000");
         params.put("TotalPembayaran", "492000000");
         params.put("InvoiceDueDate", "15/10/2023");
-        params.put("LobCode", "FCT");
-        params.put("ProdOfferingName", "Factoring Reguler");
-        params.put("EffectiveRatePrcnt", "12.5");
-        params.put("InstAmt", "164000000");
+        params.put("LobCode", apiResponse.getLobCode());
+        params.put("ProdOfferingName", apiResponse.getProdOfferingName());
+        params.put("EffectiveRatePrcnt", findata.getEffectiveRate()); // financial data
+        params.put("InstAmt", findata.getInstallmentAmount()); // financial data
         params.put("GracePeriodLc", "5 Hari");
         params.put("NamaGMFinance", "Dewi Kartini");
         params.put("NamaDirektur", "Hendrawan Susilo");
@@ -462,17 +497,11 @@ public class ReportService {
         params.put("invoice_duedate","25/10/2024");
         params.put("invoice_amt","12,986,340.0");
 
-        // <parameter name="no" class="java.lang.String"/>
-        //	<parameter name="customer" class="java.lang.String"/>
-        //	<parameter name="nomor_perjanjian" class="java.lang.String"/>
-        //	<parameter name="tanggal_perjanjian" class="java.lang.String"/>
-        //	<parameter name="nomor_invoice" class="java.lang.String"/>
-        //	<parameter name="tanggal_invoice" class="java.lang.String"/>
-        //	<parameter name="jumlah_piutang" class="java.lang.String"/>
-        //	<parameter name="description" class="java.lang.String"/>
-        //	<parameter name="bouwheer" class="java.lang.String"/>
-        //	<parameter name="invoice_duedate" class="java.lang.String"/>
-        //	<parameter name="invoice_amt" class="java.lang.String"/>
+        InputStream reportStream = getClass().getResourceAsStream("/Reports/main_report.jrxml");
+        if (reportStream == null) {
+            throw new FileNotFoundException("main_report.jrxml tidak ditemukan di /Reports");
+        }
+        JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
 
         JRDataSource dataSource = new JREmptyDataSource();
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, params, dataSource);
