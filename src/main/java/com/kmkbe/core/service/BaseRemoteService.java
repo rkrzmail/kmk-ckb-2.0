@@ -46,6 +46,9 @@ public class BaseRemoteService {
     @Value("${security.api.key}")
     public String apiKey;
 
+    @Value("${csul.confins.los.fwd}")
+    public String confinsLosFwd;
+
     public BaseRemoteService() {
     }
 
@@ -92,6 +95,10 @@ public class BaseRemoteService {
 
     public String Los_Agreement_GetListAgreementDetailForCwrByCwrNo() {
         return confinsLosBaseUrl + "/Agrmnt/GetListAgrmntDetailForCwrByCwrNo";
+    }
+
+    public String Los_Agreement_GetListAgreementDetailForCwrNo_forward() {
+        return confinsLosFwd;
     }
 
     public String Fou_Generic_GetPagingObjectBySQL() {
