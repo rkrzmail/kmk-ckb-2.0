@@ -1,5 +1,6 @@
 package com.kmkbe.core.domain.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.List;
@@ -8,11 +9,13 @@ import java.util.List;
 public class SignerRequestDto {
     private String custNo;
     private String cwrNo;
+
+    @JsonProperty("RequestDateTime")
     private String RequestDateTime;
 
-    public SignerRequestDto(String custNo, String cwrNo, String requestDateTime) {
+    public SignerRequestDto(String custNo, String cwrNo, String RequestDateTime) {
         this.custNo = custNo;
         this.cwrNo = cwrNo;
-        this.RequestDateTime = requestDateTime;
+        this.RequestDateTime = RequestDateTime;
     }
 }

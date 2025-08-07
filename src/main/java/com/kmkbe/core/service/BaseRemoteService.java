@@ -106,7 +106,7 @@ public class BaseRemoteService {
     }
 
     public String Mou_GetSigner_forward() {
-        return confinsLosFwd;
+        return confinsMouFwd;
     }
 
     public String Fou_Generic_GetPagingObjectBySQL() {
