@@ -49,6 +49,10 @@ public class BaseRemoteService {
     @Value("${csul.confins.los.fwd}")
     public String confinsLosFwd;
 
+    @Value("${csul.confins.mou.fwd}")
+    public String confinsMouFwd;
+
+
     public BaseRemoteService() {
     }
 
@@ -98,6 +102,10 @@ public class BaseRemoteService {
     }
 
     public String Los_Agreement_GetListAgreementDetailForCwrNo_forward() {
+        return confinsLosFwd;
+    }
+
+    public String Mou_GetSigner_forward() {
         return confinsLosFwd;
     }
 

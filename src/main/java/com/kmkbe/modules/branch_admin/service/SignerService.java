@@ -9,6 +9,7 @@ import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.branch_admin.request.FileUploadRequest;
@@ -74,9 +75,9 @@ public class SignerService {
     private final String callerId = "USER@AD-INS.COM";
     private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
     private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
-    private final String confinsUrl = "http://confins.csulfinance.com/api/mou/v1/CwrSigner/GetListCwrSignerForUpdatebyCustNoAndCwrNo";
     private final String sendDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/sendDocumentSigning";
     private final String downloadDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/downloadDocument";
+    private final BaseRemoteService baseRemoteService;
 
 
     @Value("${csul.confins.adinskey}")
@@ -716,7 +717,7 @@ public class SignerService {
         HttpEntity<SignerRequestDto> entity = new HttpEntity<>(request, headers);
 
         ResponseEntity<ExternalApiResponse> response = restTemplate.exchange(
-                confinsUrl,
+                baseRemoteService.Mou_GetSigner_forward(),
                 HttpMethod.POST,
                 entity,
                 ExternalApiResponse.class);
