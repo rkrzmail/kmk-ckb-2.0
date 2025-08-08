@@ -15,8 +15,14 @@ import java.util.Collections;
 public class ExternalApiService {
     private final RestTemplate restTemplate;
 
-    @Value("${csul.confins.los.v1}")
-    private String losUrl;
+//    @Value("${csul.confins.los.v1}")
+//    private String losUrl;
+
+    @Value("${csul.confins.los.getRekening}")
+    public String getRekening;
+
+    @Value("${csul.confins.los.getAppNo}")
+    public String getAppNo;
 
     @Value("${csul.confins.corelos.v1}")
     private String coreLosUrl;
@@ -36,7 +42,7 @@ public class ExternalApiService {
             headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
             ResponseEntity<AppResponse> response = restTemplate.exchange(
-                    losUrl + "/Application/GetAppByAppNo",
+                    getAppNo,
                     HttpMethod.POST,
                     new HttpEntity<>(request, headers),
                     AppResponse.class
@@ -132,7 +138,7 @@ public class ExternalApiService {
             headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
             ResponseEntity<RekDebiturResponse> response = restTemplate.exchange(
-                    losUrl + "/DisbInfo/GetDisburseFctrByAppNo",
+                    getRekening,
                     HttpMethod.POST,
                     new HttpEntity<>(request, headers),
                     RekDebiturResponse.class
