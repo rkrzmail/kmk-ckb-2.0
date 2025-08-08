@@ -15,17 +15,18 @@ import java.util.Collections;
 public class ExternalApiService {
     private final RestTemplate restTemplate;
 
-//    @Value("${csul.confins.los.v1}")
-//    private String losUrl;
-
     @Value("${csul.confins.los.getRekening}")
-    public String getRekening;
+    public String getRekeningUrl;
 
     @Value("${csul.confins.los.getAppNo}")
-    public String getAppNo;
+    public String getAppNoUrl;
 
-    @Value("${csul.confins.corelos.v1}")
-    private String coreLosUrl;
+    @Value("${csul.confins.corelos.getFactoring}")
+    public String getFactoringUrl;
+
+    @Value("${csul.confins.corelos.getFinData}")
+    public String getFinDataUrl;
+
 
     @Value("${csul.confins.adinskey}")
     private String apiKey;
@@ -42,7 +43,7 @@ public class ExternalApiService {
             headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
             ResponseEntity<AppResponse> response = restTemplate.exchange(
-                    getAppNo,
+                    getAppNoUrl,
                     HttpMethod.POST,
                     new HttpEntity<>(request, headers),
                     AppResponse.class
@@ -72,7 +73,7 @@ public class ExternalApiService {
 
             // 3. Call API
             ResponseEntity<FinancialDataResponse> response = restTemplate.exchange(
-                    coreLosUrl + "/AgrmntFinData/GetFinancialDataByAgrmntNoForView",
+                    getFinDataUrl,
                     HttpMethod.POST,
                     new HttpEntity<>(request, headers),
                     FinancialDataResponse.class
@@ -106,7 +107,7 @@ public class ExternalApiService {
 
             // 3. Call API
             ResponseEntity<AppFactoringResponse> response = restTemplate.exchange(
-                    coreLosUrl + "/AppFctr/GetAppFctrByAppId",
+                    getFactoringUrl,
                     HttpMethod.POST,
                     new HttpEntity<>(request, headers),
                     AppFactoringResponse.class
@@ -138,7 +139,7 @@ public class ExternalApiService {
             headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
             ResponseEntity<RekDebiturResponse> response = restTemplate.exchange(
-                    getRekening,
+                    getRekeningUrl,
                     HttpMethod.POST,
                     new HttpEntity<>(request, headers),
                     RekDebiturResponse.class
