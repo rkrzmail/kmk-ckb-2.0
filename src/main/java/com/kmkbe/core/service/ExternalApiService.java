@@ -1,9 +1,6 @@
 package com.kmkbe.core.service;
 
-import com.kmkbe.core.domain.dto.AppRequest;
-import com.kmkbe.core.domain.dto.AppResponse;
-import com.kmkbe.core.domain.dto.FinancialDataRequest;
-import com.kmkbe.core.domain.dto.FinancialDataResponse;
+import com.kmkbe.core.domain.dto.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
@@ -19,7 +16,7 @@ public class ExternalApiService {
     private final RestTemplate restTemplate;
 
     @Value("${csul.confins.los.v1}")
-    private String apiUrl;
+    private String losUrl;
 
     @Value("${csul.confins.corelos.v1}")
     private String coreLosUrl;
@@ -39,7 +36,7 @@ public class ExternalApiService {
             headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
             ResponseEntity<AppResponse> response = restTemplate.exchange(
-                    apiUrl + "/Application/GetAppByAppNo",
+                    losUrl + "/Application/GetAppByAppNo",
                     HttpMethod.POST,
                     new HttpEntity<>(request, headers),
                     AppResponse.class
@@ -86,6 +83,68 @@ public class ExternalApiService {
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to get financial data: " + e.getMessage());
+        }
+    }
+
+    public AppFactoringResponse getAppFactoringData(Integer appId) {
+        try {
+            // 1. Prepare Request
+            AppFactoringRequest request = new AppFactoringRequest();
+            request.setId(appId); // AppId dari API pertama
+            request.setRequestDateTime(LocalDate.now().toString());
+
+            // 2. Set Headers
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("AdInsKey", apiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            // 3. Call API
+            ResponseEntity<AppFactoringResponse> response = restTemplate.exchange(
+                    coreLosUrl + "/AppFctr/GetAppFctrByAppId",
+                    HttpMethod.POST,
+                    new HttpEntity<>(request, headers),
+                    AppFactoringResponse.class
+            );
+
+            // 4. Validate Response
+            if (response.getStatusCode() != HttpStatus.OK ||
+                    response.getBody() == null ||
+                    !"200".equals(response.getBody().getHeader().getStatusCode())) {
+                throw new RuntimeException("Invalid response from AppFctr API");
+            }
+
+            return response.getBody();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get AppFctr data for AppId: " + appId, e);
+        }
+    }
+
+    public RekDebiturResponse getRekDebitur(String applicationCode) {
+        try {
+            RekDebiturRequest request = new RekDebiturRequest();
+            request.setTrxNo(applicationCode);
+            request.setRequestDateTime(LocalDate.now().toString());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("AdInsKey", apiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            ResponseEntity<RekDebiturResponse> response = restTemplate.exchange(
+                    losUrl + "/DisbInfo/GetDisburseFctrByAppNo",
+                    HttpMethod.POST,
+                    new HttpEntity<>(request, headers),
+                    RekDebiturResponse.class
+            );
+            if (response.getBody() == null || response.getBody().getHeader() == null) {
+                throw new RuntimeException("Invalid API response structure");
+            }
+
+            return response.getBody();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to call Confins API: " + e.getMessage());
         }
     }
 

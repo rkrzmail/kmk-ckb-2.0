@@ -5,6 +5,9 @@ import lombok.Data;
 
 @Data
 public class AppResponse {
+    @JsonProperty("AppId")
+    private Integer appId;
+
     @JsonProperty("AppNo")
     private String appNo;
 

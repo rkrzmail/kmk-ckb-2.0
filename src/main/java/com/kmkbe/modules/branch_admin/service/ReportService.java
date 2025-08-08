@@ -419,8 +419,18 @@ public class ReportService {
                         "Data Agreement tidak ditemukan untuk: " + financingHdrCode
                 ));
 
+        // getAppbyAppNo
         AppResponse apiResponse = externalApiService.getAppByAppNo(agreement.getApplicationCode());
+        Integer appId = apiResponse.getAppId();
 
+        //getNomor Rek Debitur
+        RekDebiturResponse BankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
+        RekDebiturResponse.BankAccount dataRekening = BankResponse.getBankAccounts().get(0);
+
+        // getAppFctr
+        AppFactoringResponse factoringData = externalApiService.getAppFactoringData(appId);
+
+        // getFinancialData
         String agreementCode = agreementRepo
                 .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode))
                 .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
@@ -441,9 +451,9 @@ public class ReportService {
         params.put("Alamat", "Jl. Sudirman No. 123, Jakarta Selatan");
         params.put("Email", "finance@majujaya.com");
         params.put("Telepon", "021-12345678");
-        params.put("BankName", "Bank Central Asia");
-        params.put("BankAccNo", "1234567890");
-        params.put("BankAccName", "PT. Maju Jaya Abadi");
+        params.put("BankName", dataRekening.getBankName());
+        params.put("BankAccNo", dataRekening.getAccNo());
+        params.put("BankAccName", dataRekening.getAccName());
         params.put("NamaKaryawan", "Budi Santoso");
         params.put("Jabatan", "Account Manager");
         params.put("AgrmntNo", "AGR/2023/00567");
@@ -452,10 +462,10 @@ public class ReportService {
         params.put("Tenor", apiResponse.getTenor());
         params.put("PeriodeBerlaku", "15 Juli 2023 - 15 Oktober 2023");
         params.put("NtfAmt", findata.getNtfAmount());
-        params.put("DiskontoAmt", "25000000");
+        params.put("DiskontoAmt", factoringData.getDiskontoAmount());
         params.put("MaxAllocatedRefundAmt", findata.getMaxRefundAmount());
-        params.put("TotalRetentionAmt", "15000000");
-        params.put("TotalInvcAmt", "500000000");
+        params.put("TotalRetentionAmt", factoringData.getTotalRetentionAmount());
+        params.put("TotalInvcAmt", factoringData.getTotalInvoiceAmount());
         params.put("NtfAmt-Total", "500000000");
 
         financialData.getFeeList().forEach(fee -> {
