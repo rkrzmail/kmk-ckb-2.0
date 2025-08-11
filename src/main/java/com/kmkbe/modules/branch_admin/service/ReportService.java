@@ -22,7 +22,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -419,6 +421,9 @@ public class ReportService {
                         "Data Agreement tidak ditemukan untuk: " + financingHdrCode
                 ));
 
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("id", "ID"));
+        String tanggalDokumen = LocalDate.now().format(formatter);
+
         // getAppbyAppNo
         AppResponse apiResponse = externalApiService.getAppByAppNo(agreement.getApplicationCode());
         Integer appId = apiResponse.getAppId();
@@ -446,38 +451,62 @@ public class ReportService {
         //getlistcwrbouwheerno
         CwrListBwhrResponse bouwheerData = externalApiService.getListCwrBwhr(cwrCode, cwrBwhr.getCwrBouwheerCustNo());
 
+        // get bouwheer name
+        String debtorName = agreementRepo.findCustNameByFinancingHdrCode(financingHdrUuid)
+                .orElse("Debtor Name");
+
+        //get karyawan
+        Map<String, Object> result = agreementRepo
+                .findCwrCodeAndCustNo(UUID.fromString(financingHdrCode))
+                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
+        String cwrCodeResult = (String) result.get("cwrCode");
+        String custNoResult = (String) result.get("custNo");
+        SignerApiResponse signerData = externalApiService.getKaryawan(cwrCodeResult, custNoResult);
+        String namaKaryawan = Optional.ofNullable(signerData.getReturnObject())
+                .filter(list -> !list.isEmpty())
+                .map(list -> list.get(0))
+                .map(SignerApiResponse.SignerData::getSignerName)
+                .orElse("Tidak tersedia");
+
+        String jabatan = Optional.ofNullable(signerData.getReturnObject())
+                .filter(list -> !list.isEmpty())
+                .map(list -> list.get(0))
+                .map(SignerApiResponse.SignerData::getSignerPosition)
+                .orElse("Tidak tersedia");
+
         Map<String, Object> params = new HashMap<>();
         FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
         params.put("SUBREPORT_DIR", getClass().getResource("/Reports/").toString());
 
+        //lembar 1 (cwrNo & cwr -StartDate belum ada)
         params.put("AppNo", apiResponse.getAppNo());
-        params.put("TglDokumen", "15/07/2023");
-        params.put("NoDokumen", "DOC/2023/00789");
-        params.put("TempatTanggal", "Jakarta, 15 Juli 2023");
-        params.put("DebtorName", "PT. Maju Jaya Abadi");
-        params.put("JenisDebitur", "Perusahaan");
-        params.put("TipePerusahaan", "PT");
-        params.put("NPWP", "01.234.567.8-912.345");
-        params.put("Alamat", "Jl. Sudirman No. 123, Jakarta Selatan");
-        params.put("Email", "finance@majujaya.com");
-        params.put("Telepon", "021-12345678");
+        params.put("TglDokumen", tanggalDokumen);
+        params.put("DebtorName", debtorName);
         params.put("BankName", dataRekening.getBankName());
         params.put("BankAccNo", dataRekening.getAccNo());
         params.put("BankAccName", dataRekening.getAccName());
-        params.put("NamaKaryawan", "Budi Santoso");
-        params.put("Jabatan", "Account Manager");
-        params.put("AgrmntNo", "AGR/2023/00567");
-        params.put("AgmtNo", "AGR/2023/00567");
-        params.put("Facility", "Factoring dengan Recourse");
+        params.put("NamaKaryawan", namaKaryawan);
+        params.put("Jabatan", jabatan);
+
+        // lembar 2 table
+        params.put("no","null");
+        params.put("customer","null");
+        params.put("nomor_perjanjian","null");
+        params.put("tanggal_perjanjian","null");
+        params.put("nomor_invoice","null");
+        params.put("tanggal_invoice","null");
+        params.put("jumlah_piutang","null");
+
+        // lembar 3 (cwrNo & cwr -StartDate belum ada)
+        params.put("AgrmntNo", agreementCode);
+
+        //lembar 4
+        params.put("Facility", "null");
         params.put("Tenor", apiResponse.getTenor());
-        params.put("PeriodeBerlaku", "15 Juli 2023 - 15 Oktober 2023");
         params.put("NtfAmt", findata.getNtfAmount());
         params.put("DiskontoAmt", factoringData.getDiskontoAmount());
         params.put("MaxAllocatedRefundAmt", findata.getMaxRefundAmount());
         params.put("TotalRetentionAmt", factoringData.getTotalRetentionAmount());
-        params.put("TotalInvcAmt", factoringData.getTotalInvoiceAmount());
-        params.put("NtfAmt-Total", "500000000");
-
         financialData.getFeeList().forEach(fee -> {
             if (fee.getFeeTypeName() != null) {
                 if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA FACTORING")) {
@@ -489,31 +518,53 @@ public class ReportService {
             }
         });
 
-        params.put("TotalFeeAmt", findata.getTotalFeeAmount());
-        params.put("AppFeeAmt", "8000000");
-        params.put("Administration+Factoring", "8000000");
-        params.put("TotalPembayaran", "492000000");
-        params.put("InvoiceDueDate", "15/10/2023");
+        // lembar 5 (tabel)
+        params.put("invoice_duedate","null");
+
+        //lembar 6
         params.put("LobCode", apiResponse.getLobCode());
         params.put("ProdOfferingName", apiResponse.getProdOfferingName());
         params.put("EffectiveRatePrcnt", findata.getEffectiveRate());
+        params.put("TotalFeeAmt", findata.getTotalFeeAmount());
+        params.put("AppFeeAmt", "null");
+
+        // lembar 7
+        params.put("TotalInvcAmt", factoringData.getTotalInvoiceAmount());
+        params.put("GracePeriodLc", "null");
         params.put("InstAmt", findata.getInstallmentAmount());
-        params.put("GracePeriodLc", "5 Hari");
-        params.put("NamaGMFinance", "Dewi Kartini");
-        params.put("NamaDirektur", "Hendrawan Susilo");
-        params.put("NamaGMFinanceCSUL", "Ahmad Fauzi");
-        params.put("NamaAreaSalesManager", "Rina Permata");
-        params.put("no","1");
-        params.put("customer","Debtor Name");
-        params.put("nomor_perjanjian","FINE0016496");
-        params.put("tanggal_perjanjian","25/10/2024");
-        params.put("nomor_invoice","0082498008270");
-        params.put("tanggal_invoice","02/09/2024");
-        params.put("jumlah_piutang","1,084,154.0");
-        params.put("description","Invoice By Trakindo");
-        params.put("bouwheer","PT. Trakindo Utama");
-        params.put("invoice_duedate","25/10/2024");
-        params.put("invoice_amt","12,986,340.0");
+
+        // lembar 9
+        params.put("AgmtNo", "null");
+        params.put("Administration+Factoring", "null");
+        params.put("NtfAmt-Total", "null");
+
+        //lembar 10
+
+        // lembar 11
+        // fap
+        params.put("JenisDebitur", "null");
+        params.put("TipePerusahaan", "null");
+        params.put("NPWP", "null");
+        params.put("Alamat", "null");
+        params.put("Email", "null");
+        params.put("Telepon", "null");
+
+        //lembar12
+        // sit
+        params.put("NoDokumen", agreementCode);
+        params.put("TempatTanggal", "null");
+        params.put("PeriodeBerlaku", "null");
+        params.put("NamaGMFinance", "null");
+        params.put("NamaDirektur", "null");
+        params.put("NamaGMFinanceCSUL", "null");
+        params.put("NamaAreaSalesManager", "null");
+        params.put("TotalPembayaran", "null");
+
+        // lembar 13 tabel
+        params.put("description","null");
+        params.put("bouwheer","null");
+        params.put("InvoiceDueDate", "null");
+        params.put("invoice_amt","null");
 
         InputStream reportStream = getClass().getResourceAsStream("/Reports/main_report.jrxml");
         if (reportStream == null) {

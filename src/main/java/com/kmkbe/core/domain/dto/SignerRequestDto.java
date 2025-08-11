@@ -2,12 +2,15 @@ package com.kmkbe.core.domain.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
+@NoArgsConstructor
 @Data
 public class SignerRequestDto {
     private String custNo;
+
     private String cwrNo;
 
     @JsonProperty("RequestDateTime")

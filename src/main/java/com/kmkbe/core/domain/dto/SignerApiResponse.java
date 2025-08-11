@@ -6,17 +6,20 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class CwrListBwhrResponse {
+public class SignerApiResponse {
     @JsonProperty("ReturnObject")
-    private List<ListData> cwrListBouwheerCustNo;
+    private List<SignerData> returnObject;
 
     @JsonProperty("HeaderObj")
     private RekDebiturResponse.Header header;
 
     @Data
-    public static class ListData {
-        @JsonProperty("CooperationAgreementNo")
-        private String CooperationAgreementNo;
+    public static class SignerData {
+        @JsonProperty("SignerName")
+        private String signerName;
+
+        @JsonProperty("SignerPosition")
+        private String signerPosition;
     }
 
     @Data

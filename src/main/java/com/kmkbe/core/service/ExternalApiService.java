@@ -33,6 +33,8 @@ public class ExternalApiService {
     @Value("${csul.confins.mou.getlistcwrbwhr}")
     public String getListCwrbwhrUrl;
 
+    @Value("${csul.confins.mou.fwd}")
+    public String getSignerUrl;
 
     @Value("${csul.confins.adinskey}")
     private String apiKey;
@@ -206,6 +208,35 @@ public class ExternalApiService {
                     HttpMethod.POST,
                     new HttpEntity<>(request, headers),
                     CwrListBwhrResponse.class
+            );
+            if (response.getBody() == null || response.getBody().getHeader() == null) {
+                throw new RuntimeException("Invalid API response structure");
+            }
+
+            return response.getBody();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to call Confins API: " + e.getMessage());
+        }
+    }
+
+    public SignerApiResponse getKaryawan(String CwrCode, String CustNo) {
+        try {
+            SignerRequestDto request = new SignerRequestDto();
+            request.setCwrNo(CwrCode);
+            request.setCustNo(CustNo);
+            request.setRequestDateTime(LocalDate.now().toString());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("AdInsKey", apiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            ResponseEntity<SignerApiResponse> response = restTemplate.exchange(
+                    getSignerUrl,
+                    HttpMethod.POST,
+                    new HttpEntity<>(request, headers),
+                    SignerApiResponse.class
             );
             if (response.getBody() == null || response.getBody().getHeader() == null) {
                 throw new RuntimeException("Invalid API response structure");
