@@ -12,10 +12,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public interface AgreementRepository extends JpaRepository<Agreement, String>, JpaSpecificationExecutor<Agreement> {
     Optional<Agreement> findTopByAgreementCode(String agreementCode);
@@ -120,6 +117,22 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         WHERE a.financing_hdr_code = :financingHdrCode
         """, nativeQuery = true)
     Optional<Map<String, Object>> findCwrCodeAndCustNo(@Param("financingHdrCode") UUID financingHdrCode);
+
+    @Query("SELECT a.facility FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
+    String findFaciltyByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
+
+    @Query(value = """
+        SELECT i.invoice_due_date AS invoiceDueDate
+        FROM agreement a
+        JOIN cwr w ON a.cwr_code = w.cwr_code
+        JOIN customer c ON w.cust_code = c.cust_code
+        JOIN invoice i ON c.cust_code = i.cust_code
+        WHERE a.financing_hdr_code = :financingHdrCode
+        ORDER BY i.invoice_due_date DESC
+        LIMIT 1
+        """, nativeQuery = true)
+    Optional<Date> findInvoiceDueDateByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
+
 
 }
 

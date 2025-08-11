@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.21.2.final using JasperReports Library version 6.21.2-8434a0bd7c3bbc37cbf916f2968d35e4b165821a  -->
+<!-- Created with Jaspersoft Studio version 6.20.6.final using JasperReports Library version 6.20.6-5c96b6aa8a39ac1dc6b6bea4b81168e16dd39231  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="main_report" pageWidth="595" pageHeight="842" columnWidth="451" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="c56b7714-5e56-4621-9f95-dadcbbd9e9ce">
 	<parameter name="AppNo" class="java.lang.String"/>
 	<parameter name="TglDokumen" class="java.lang.String"/>
@@ -17,19 +17,18 @@
 	<parameter name="MaxAllocatedRefundAmt" class="java.lang.String"/>
 	<parameter name="InvoiceDueDate" class="java.lang.String"/>
 	<parameter name="TotalRetentionAmt" class="java.lang.String"/>
-	<parameter name="AppFeeAmtFactoring" class="java.lang.String"/>
-	<parameter name="AppFeeAmtAdministration" class="java.lang.String"/>
+	<parameter name="AppFeeAmtFactoring" class="java.lang.Number"/>
+	<parameter name="AppFeeAmtAdministration" class="java.lang.Number"/>
 	<parameter name="LobCode" class="java.lang.String"/>
 	<parameter name="ProdOfferingName" class="java.lang.String"/>
 	<parameter name="EffectiveRatePrcnt" class="java.lang.String"/>
 	<parameter name="TotalFeeAmt" class="java.lang.String"/>
-	<parameter name="AppFeeAmt" class="java.lang.String"/>
 	<parameter name="GracePeriodLc" class="java.lang.String"/>
 	<parameter name="TotalInvcAmt" class="java.lang.String"/>
 	<parameter name="InstAmt" class="java.lang.String"/>
 	<parameter name="AgmtNo" class="java.lang.String"/>
-	<parameter name="Administration+Factoring" class="java.lang.String"/>
-	<parameter name="NtfAmt-Total" class="java.lang.String"/>
+	<parameter name="Administration+Factoring" class="java.lang.Number"/>
+	<parameter name="NtfAmt-Total" class="java.lang.Number"/>
 	<parameter name="JenisDebitur" class="java.lang.String"/>
 	<parameter name="TipePerusahaan" class="java.lang.String"/>
 	<parameter name="NPWP" class="java.lang.String"/>
@@ -50,12 +49,16 @@
 	<parameter name="tanggal_perjanjian" class="java.lang.String"/>
 	<parameter name="nomor_invoice" class="java.lang.String"/>
 	<parameter name="tanggal_invoice" class="java.lang.String"/>
-	<parameter name="jumlah_piutang" class="java.lang.String"/>
+	<parameter name="jumlah_piutang" class="java.lang.Number"/>
 	<parameter name="description" class="java.lang.String"/>
 	<parameter name="bouwheer" class="java.lang.String"/>
 	<parameter name="invoice_duedate" class="java.lang.String"/>
 	<parameter name="invoice_amt" class="java.lang.String"/>
-	<parameter name="SUBREPORT_DIR" class="java.lang.String"/>
+	<parameter name="Cwr" class="java.lang.String"/>
+	<parameter name="Cwr-Date" class="java.lang.String"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA["C:\\Users\\it.project1\\JaspersoftWorkspace\\MyReports\\"]]></defaultValueExpression>
+	</parameter>
 	<queryString>
 		<![CDATA[]]>
 	</queryString>
@@ -86,6 +89,12 @@
 				</subreportParameter>
 				<subreportParameter name="BankAccNo">
 					<subreportParameterExpression><![CDATA[$P{BankAccNo}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Cwr">
+					<subreportParameterExpression><![CDATA[$P{Cwr}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Cwr-Date">
+					<subreportParameterExpression><![CDATA[$P{Cwr-Date}]]></subreportParameterExpression>
 				</subreportParameter>
 				<subreportParameter name="BankAccName">
 					<subreportParameterExpression><![CDATA[$P{BankAccName}]]></subreportParameterExpression>
@@ -148,6 +157,12 @@
 				</subreportParameter>
 				<subreportParameter name="DebtorName">
 					<subreportParameterExpression><![CDATA[$P{DebtorName}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Cwr">
+					<subreportParameterExpression><![CDATA[$P{Cwr}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Cwr-Date">
+					<subreportParameterExpression><![CDATA[$P{Cwr-Date}]]></subreportParameterExpression>
 				</subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat2.jasper"]]></subreportExpression>
@@ -242,9 +257,6 @@
 				<subreportParameter name="TotalFeeAmt">
 					<subreportParameterExpression><![CDATA[$P{TotalFeeAmt}]]></subreportParameterExpression>
 				</subreportParameter>
-				<subreportParameter name="AppFeeAmt">
-					<subreportParameterExpression><![CDATA[$P{AppFeeAmt}]]></subreportParameterExpression>
-				</subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat4.jasper"]]></subreportExpression>
 			</subreport>
@@ -278,6 +290,12 @@
 				</subreportParameter>
 				<subreportParameter name="InstAmt">
 					<subreportParameterExpression><![CDATA[$P{InstAmt}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="AppFeeAmtAdministration">
+					<subreportParameterExpression><![CDATA[$P{AppFeeAmtAdministration}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="AppFeeAmtFactoring">
+					<subreportParameterExpression><![CDATA[$P{AppFeeAmtFactoring}]]></subreportParameterExpression>
 				</subreportParameter>
 				<subreportParameter name="TotalFeeAmt">
 					<subreportParameterExpression><![CDATA[$P{TotalFeeAmt}]]></subreportParameterExpression>

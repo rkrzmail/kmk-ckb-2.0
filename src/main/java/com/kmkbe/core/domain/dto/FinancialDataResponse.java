@@ -40,6 +40,10 @@ public class FinancialDataResponse {
 
         @JsonProperty("TotalFeeAmt")
         private String totalFeeAmount;
+
+        @JsonProperty("GracePeriod")
+        private String gracePeriod;
+
     }
 
     @Data
