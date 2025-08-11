@@ -27,6 +27,12 @@ public class ExternalApiService {
     @Value("${csul.confins.corelos.getFinData}")
     public String getFinDataUrl;
 
+    @Value("${csul.confins.mou.getcwrbwhr}")
+    public String getCwrbwhrUrl;
+
+    @Value("${csul.confins.mou.getlistcwrbwhr}")
+    public String getListCwrbwhrUrl;
+
 
     @Value("${csul.confins.adinskey}")
     private String apiKey;
@@ -143,6 +149,63 @@ public class ExternalApiService {
                     HttpMethod.POST,
                     new HttpEntity<>(request, headers),
                     RekDebiturResponse.class
+            );
+            if (response.getBody() == null || response.getBody().getHeader() == null) {
+                throw new RuntimeException("Invalid API response structure");
+            }
+
+            return response.getBody();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to call Confins API: " + e.getMessage());
+        }
+    }
+
+    public CwrBwhrResponse getCwrBwhr(String CwrCode) {
+        try {
+            CwrBwhrRequest request = new CwrBwhrRequest();
+            request.setTrxNo(CwrCode);
+            request.setRequestDateTime(LocalDate.now().toString());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("AdInsKey", apiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            ResponseEntity<CwrBwhrResponse> response = restTemplate.exchange(
+                    getCwrbwhrUrl,
+                    HttpMethod.POST,
+                    new HttpEntity<>(request, headers),
+                    CwrBwhrResponse.class
+            );
+            if (response.getBody() == null || response.getBody().getHeader() == null) {
+                throw new RuntimeException("Invalid API response structure");
+            }
+
+            return response.getBody();
+
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to call Confins API: " + e.getMessage());
+        }
+    }
+
+    public CwrListBwhrResponse getListCwrBwhr(String CwrCode, String CwrBouwheerCustNo) {
+        try {
+            CwrListBwhrRequest request = new CwrListBwhrRequest();
+            request.setCwrNo(CwrCode);
+            request.setCwrBouwheerCustNo(CwrBouwheerCustNo);
+            request.setRequestDateTime(LocalDate.now().toString());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("AdInsKey", apiKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
+
+            ResponseEntity<CwrListBwhrResponse> response = restTemplate.exchange(
+                    getListCwrbwhrUrl,
+                    HttpMethod.POST,
+                    new HttpEntity<>(request, headers),
+                    CwrListBwhrResponse.class
             );
             if (response.getBody() == null || response.getBody().getHeader() == null) {
                 throw new RuntimeException("Invalid API response structure");

@@ -436,6 +436,16 @@ public class ReportService {
                 .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
         FinancialDataResponse financialData = externalApiService.getFinancialData(agreementCode);
 
+        //getcwrbouwheerNo
+        String cwrCode = agreementRepo
+                .findCwrCodeByFinancingHdrCode(UUID.fromString(financingHdrCode))
+                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
+        CwrBwhrResponse cwrBwhrData = externalApiService.getCwrBwhr(cwrCode);
+        CwrBwhrResponse.ListCwrBwhr cwrBwhr = cwrBwhrData.getCwrBouwheerCustNos().get(0);
+
+        //getlistcwrbouwheerno
+        CwrListBwhrResponse bouwheerData = externalApiService.getListCwrBwhr(cwrCode, cwrBwhr.getCwrBouwheerCustNo());
+
         Map<String, Object> params = new HashMap<>();
         FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
         params.put("SUBREPORT_DIR", getClass().getResource("/Reports/").toString());
