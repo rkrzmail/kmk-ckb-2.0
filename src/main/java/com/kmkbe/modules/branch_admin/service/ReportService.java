@@ -4,6 +4,7 @@ package com.kmkbe.modules.branch_admin.service;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.Visitor;
+import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -22,6 +23,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -40,6 +42,9 @@ public class ReportService {
 
     @Autowired
     private FinancingHdrRepository financingHdrRepository;
+
+    @Autowired
+    private AgreementCodeService agreementCodeService;
 
     @Autowired
     private CustomerRepository customerRepository;
@@ -486,6 +491,10 @@ public class ReportService {
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
         String formattedDate = sdf.format(invoiceDueDate);
 
+        // get fap
+        Optional<Map<String, Object>> debtorData = agreementRepo.finddetailDebtor(UUID.fromString(financingHdrCode));
+        Map<String, Object> data = debtorData.orElseGet(Collections::emptyMap);
+
         Map<String, Object> params = new HashMap<>();
 //        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
         params.put("SUBREPORT_DIR", getClass().getResource("/Reports/").toString());
@@ -512,7 +521,7 @@ public class ReportService {
         params.put("tanggal_perjanjian","null");
         params.put("nomor_invoice","null");
         params.put("tanggal_invoice","null");
-        params.put("jumlah_piutang", null);
+        params.put("jumlah_piutang", "null");
 
         // lembar 3 (cwrNo & cwr -StartDate belum ada)
 //        params.put("AgrmntNo", agreementCode);
@@ -528,8 +537,8 @@ public class ReportService {
         params.put("MaxAllocatedRefundAmt", "123000000");
         params.put("TotalRetentionAmt", factoringData.getTotalRetentionAmount());
         // ubah param kedua appfeeamt menjadi double
-        params.put("AppFeeAmtFactoring", 10000);
-        params.put("AppFeeAmtAdministration", 120000);
+        params.put("AppFeeAmtFactoring", "10000");
+        params.put("AppFeeAmtAdministration", "120000");
 //        financialData.getFeeList().forEach(fee -> {
 //            if (fee.getFeeTypeName() != null) {
 //                if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA FACTORING")) {
@@ -563,31 +572,46 @@ public class ReportService {
         // lembar 9
 //        params.put("AgmtNo", agreementCode);
         params.put("AgmtNo", "01201021011");
-        params.put("Administration+Factoring", 100000); // diganti double
-        params.put("NtfAmt-Total", 400000); // diganti double
+        params.put("Administration+Factoring", "10000"); // diganti double
+        params.put("NtfAmt-Total", "400000"); // diganti double
 
         //lembar 10
 
         // lembar 11
-        // fap
-        params.put("JenisDebitur", "null");
-        params.put("TipePerusahaan", "null");
-        params.put("NPWP", "null");
-        params.put("Alamat", "null");
-        params.put("Email", "null");
-        params.put("Telepon", "null");
+        // fap1
+        params.put("JenisDebitur", "Badan Usaha"); // Badan Usaha
+        params.put("TipePerusahaan", data.getOrDefault("cust_company_type", "-").toString()); // Company
+        params.put("NPWP", data.getOrDefault("cust_id_no", "-").toString()); // customer
+        params.put("Alamat", data.getOrDefault("company_address", "-").toString()); // Company
+        params.put("Email", data.getOrDefault("cust_email", "-").toString()); // customer
+        params.put("Telepon", data.getOrDefault("phone", "-").toString()); //company
 
         //lembar12
         // sit
-//        params.put("NoDokumen", agreementCode);
-        params.put("NoDokumen", "0123121222");
-        params.put("TempatTanggal", "null");
-        params.put("PeriodeBerlaku", "null");
-        params.put("NamaGMFinance", "null");
-        params.put("NamaDirektur", "null");
-        params.put("NamaGMFinanceCSUL", "null");
-        params.put("NamaAreaSalesManager", "null");
-        params.put("TotalPembayaran", "null");
+        CommonResult<SitDto> sitData = agreementCodeService.getAgreementsByFinancingHdrCode(UUID.fromString(financingHdrCode));
+        if (sitData.getCode() == 200 && sitData.getData() != null) {
+            SitDto sitDto = sitData.getData();
+
+            DecimalFormat currency = new DecimalFormat("#,##0.00");
+            String totalPembayaran = currency.format(sitDto.getTotalInvoiceAmt());
+
+            DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("id", "ID"));
+            String periodeBerlaku = sitDto.getFinancingDueDate() != null
+                    ? sitDto.getFinancingDueDate().format(dateFormat)
+                    : "-";
+
+        params.put("NoDokumen", sitDto.getAgreementCode());
+        params.put("TempatTanggal", tanggalDokumen);
+        params.put("PeriodeBerlaku", periodeBerlaku);
+        params.put("NamaGMFinance", debtorName);
+        params.put("NamaDirektur", sitDto.getDirectorName());
+        params.put("NamaGMFinanceCSUL", debtorName);
+        params.put("NamaAreaSalesManager", sitDto.getEmployeeName());
+        params.put("TotalPembayaran", totalPembayaran);
+        } else {
+            // Handle error case
+            throw new RuntimeException("Failed to get agreement data: " + (sitData.getMessage() != null ? sitData.getMessage() : ""));
+        }
 
         // lembar 13 tabel
         params.put("description","null");

@@ -133,6 +133,20 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         """, nativeQuery = true)
     Optional<Date> findInvoiceDueDateByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
 
+    @Query(value = """
+        SELECT 
+            c.cust_id_no,
+            c.cust_email,
+            cc.cust_company_type,
+            cc.company_address,
+            cc.phone
+        FROM agreement a
+        JOIN cwr w ON a.cwr_code = w.cwr_code
+        JOIN customer c ON w.cust_code = c.cust_code
+        JOIN customer_company cc ON w.cust_code = cc.cust_code
+        WHERE a.financing_hdr_code = :financingHdrCode
+        """, nativeQuery = true)
+    Optional<Map<String, Object>> finddetailDebtor(@Param("financingHdrCode") UUID financingHdrCode);
 
 }
 

@@ -17,8 +17,8 @@
 	<parameter name="MaxAllocatedRefundAmt" class="java.lang.String"/>
 	<parameter name="InvoiceDueDate" class="java.lang.String"/>
 	<parameter name="TotalRetentionAmt" class="java.lang.String"/>
-	<parameter name="AppFeeAmtFactoring" class="java.lang.Number"/>
-	<parameter name="AppFeeAmtAdministration" class="java.lang.Number"/>
+	<parameter name="AppFeeAmtFactoring" class="java.lang.String"/>
+	<parameter name="AppFeeAmtAdministration" class="java.lang.String"/>
 	<parameter name="LobCode" class="java.lang.String"/>
 	<parameter name="ProdOfferingName" class="java.lang.String"/>
 	<parameter name="EffectiveRatePrcnt" class="java.lang.String"/>
@@ -27,8 +27,8 @@
 	<parameter name="TotalInvcAmt" class="java.lang.String"/>
 	<parameter name="InstAmt" class="java.lang.String"/>
 	<parameter name="AgmtNo" class="java.lang.String"/>
-	<parameter name="Administration+Factoring" class="java.lang.Number"/>
-	<parameter name="NtfAmt-Total" class="java.lang.Number"/>
+	<parameter name="Administration+Factoring" class="java.lang.String"/>
+	<parameter name="NtfAmt-Total" class="java.lang.String"/>
 	<parameter name="JenisDebitur" class="java.lang.String"/>
 	<parameter name="TipePerusahaan" class="java.lang.String"/>
 	<parameter name="NPWP" class="java.lang.String"/>
@@ -49,7 +49,7 @@
 	<parameter name="tanggal_perjanjian" class="java.lang.String"/>
 	<parameter name="nomor_invoice" class="java.lang.String"/>
 	<parameter name="tanggal_invoice" class="java.lang.String"/>
-	<parameter name="jumlah_piutang" class="java.lang.Number"/>
+	<parameter name="jumlah_piutang" class="java.lang.String"/>
 	<parameter name="description" class="java.lang.String"/>
 	<parameter name="bouwheer" class="java.lang.String"/>
 	<parameter name="invoice_duedate" class="java.lang.String"/>
@@ -57,7 +57,6 @@
 	<parameter name="Cwr" class="java.lang.String"/>
 	<parameter name="Cwr-Date" class="java.lang.String"/>
 	<parameter name="SUBREPORT_DIR" class="java.lang.String">
-		<defaultValueExpression><![CDATA["C:\\Users\\it.project1\\JaspersoftWorkspace\\MyReports\\"]]></defaultValueExpression>
 	</parameter>
 	<queryString>
 		<![CDATA[]]>
@@ -254,6 +253,12 @@
 				<subreportParameter name="Tenor">
 					<subreportParameterExpression><![CDATA[$P{Tenor}]]></subreportParameterExpression>
 				</subreportParameter>
+				<subreportParameter name="AppFeeAmtFactoring">
+                	<subreportParameterExpression><![CDATA[$P{AppFeeAmtFactoring}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="AppFeeAmtAdministration">
+                    <subreportParameterExpression><![CDATA[$P{AppFeeAmtAdministration}]]></subreportParameterExpression>
+                </subreportParameter>
 				<subreportParameter name="TotalFeeAmt">
 					<subreportParameterExpression><![CDATA[$P{TotalFeeAmt}]]></subreportParameterExpression>
 				</subreportParameter>

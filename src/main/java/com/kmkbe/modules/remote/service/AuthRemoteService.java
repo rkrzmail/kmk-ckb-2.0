@@ -8,10 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -29,6 +26,7 @@ public class AuthRemoteService {
         try {
             final HttpHeaders headers = new HttpHeaders();
             headers.setBasicAuth(ldapUrlService.authHeaderUsername, ldapUrlService.authHeaderPassword);
+            headers.setContentType(MediaType.APPLICATION_JSON);
 
             final HttpEntity<JwtAuthRequest> request = new HttpEntity<>(
                     new JwtAuthRequest(
