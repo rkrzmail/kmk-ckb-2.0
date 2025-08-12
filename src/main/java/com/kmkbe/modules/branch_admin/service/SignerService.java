@@ -449,11 +449,11 @@ public class SignerService {
                         throw new RuntimeException("Gagal generate link undangan");
                     }
 
-                    log.info("Sending invitation email to: {}", debtorDto.getEmailDebtor());
+                    log.info("Sending invitation email to: {}", debtorDto.getEmail());
                     emailService.sendInvitationLinkEmail(
-                            debtorDto.getEmailDebtor(),
+                            debtorDto.getEmail(),
                             invitationLink,
-                            debtorDto.getDebtorName()
+                            debtorDto.getKaryawanName()
                     );
 
                     savedDebtor.setRegistrationMessage("Registrasi berhasil dan undangan telah dikirim");
@@ -519,7 +519,7 @@ public class SignerService {
         requestBody.put("tmpLahir", debtorDto.getTempatLahir());
         requestBody.put("alamat", debtorDto.getAlamat());
         requestBody.put("tglLahir", debtorDto.getTanggalLahir());
-        requestBody.put("nama", debtorDto.getDebtorName());
+        requestBody.put("nama", debtorDto.getKaryawanName());
         requestBody.put("kecamatan", debtorDto.getKecamatan());
         requestBody.put("tlp", debtorDto.getNoTelp());
         requestBody.put("jenisKelamin", debtorDto.getJenisKelamin());

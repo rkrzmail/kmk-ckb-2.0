@@ -705,7 +705,7 @@ public class EmailService {
     }
 
     @Async
-    public void sendInvitationLinkEmail(String toEmail, String invitationLink, String debtorName) {
+    public void sendInvitationLinkEmail(String toEmail, String invitationLink, String karyawanName) {
         try {
             if (invitationLink == null) {
                 throw new IllegalArgumentException("Invitation link cannot be null");
@@ -724,7 +724,7 @@ public class EmailService {
 
             String bodyMail = template.getBodyMail()
                     .replace("${invitationLink}", invitationLink)
-                    .replace("${name}", debtorName);
+                    .replace("${name}", karyawanName);
 
             // Debug log
             log.info("Processed template body: {}", bodyMail);

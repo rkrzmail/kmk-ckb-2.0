@@ -77,7 +77,7 @@ public class SignerController {
             signerService.createDebtor(debtorDto, authentication);
             return new CommonResult<String>()
                     .success("NIK belum terdaftar. Link registrasi telah dikirim ke email " +
-                            debtorDto.getEmailDebtor());
+                            debtorDto.getEmail());
         } catch (Exception e) {
             return new CommonResult<String>()
                     .fail(400, e.getMessage());
