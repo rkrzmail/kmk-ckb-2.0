@@ -52,6 +52,9 @@ public class BaseRemoteService {
     @Value("${csul.confins.mou.fwd}")
     public String confinsMouFwd;
 
+    @Value("${csul.confins.fou.getzipcode}")
+    public String confinsFouFwd;
+
 
     public BaseRemoteService() {
     }

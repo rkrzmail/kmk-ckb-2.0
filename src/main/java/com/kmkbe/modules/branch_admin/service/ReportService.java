@@ -15,6 +15,7 @@ import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
 import jakarta.annotation.PostConstruct;
 import net.sf.jasperreports.engine.*;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.jasperreports.engine.util.JRLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
@@ -454,7 +455,7 @@ public class ReportService {
         CwrBwhrResponse cwrBwhrData = externalApiService.getCwrBwhr(cwrCode);
         CwrBwhrResponse.ListCwrBwhr cwrBwhr = cwrBwhrData.getCwrBouwheerCustNos().get(0);
 
-        //getlistcwrbouwheerno
+        //getlisttable1
         CwrListBwhrResponse bouwheerData = externalApiService.getListCwrBwhr(cwrCode, cwrBwhr.getCwrBouwheerCustNo());
 
         // get bouwheer name
@@ -510,13 +511,36 @@ public class ReportService {
         params.put("Jabatan", jabatan);
 
         // lembar 2 table
-        params.put("no","1");
-        params.put("customer","Debtor Company");
-        params.put("nomor_perjanjian","Y5SFS");
-        params.put("tanggal_perjanjian","01-01-2024");
-        params.put("nomor_invoice","MI-243655");
-        params.put("tanggal_invoice","29-12-2024");
-        params.put("jumlah_piutang", "1265400000.00");
+//        params.put("no","1");
+//        params.put("customer","Debtor Company");
+//        params.put("nomor_perjanjian","Y5SFS");
+//        params.put("tanggal_perjanjian","01-01-2024");
+//        params.put("nomor_invoice","MI-243655");
+//        params.put("tanggal_invoice","29-12-2024");
+//        params.put("jumlah_piutang", "1265400000.00");
+
+        List<Map<String, String>> tableData = new ArrayList<>();
+        Map<String, String> row1 = new HashMap<>();
+        row1.put("no", "1");
+        row1.put("customer", "Debtor Company");
+        row1.put("nomor_perjanjian", "Y5SFS");
+        row1.put("tanggal_perjanjian", "01-01-2024");
+        row1.put("nomor_invoice", "MI-243655");
+        row1.put("tanggal_invoice", "29-12-2024");
+        row1.put("jumlah_piutang", "1265400000.00");
+        tableData.add(row1);
+
+        Map<String, String> row2 = new HashMap<>();
+        row2.put("no", "2");
+        row2.put("customer", "Debtor Company");
+        row2.put("nomor_perjanjian", "Y5SFS");
+        row2.put("tanggal_perjanjian", "01-01-2024");
+        row2.put("nomor_invoice", "MI-243655");
+        row2.put("tanggal_invoice", "29-12-2024");
+        row2.put("jumlah_piutang", "1265400000.00");
+        tableData.add(row2);
+
+        params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
 
         // lembar 3
         params.put("AgrmntNo", agreementCode);

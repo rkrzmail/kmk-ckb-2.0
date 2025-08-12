@@ -17,6 +17,9 @@ public class CwrListBwhrResponse {
     public static class ListData {
         @JsonProperty("CooperationAgreementNo")
         private String CooperationAgreementNo;
+
+        @JsonProperty("StartPeriod")
+        private String StartPeriod;
     }
 
     @Data

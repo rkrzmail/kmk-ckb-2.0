@@ -93,7 +93,8 @@ public class MstRemoteService {
                     headers
             );
 
-            String url = baseRemoteService.Fou_Generic_GetPagingObjectBySQL();
+//            String url = baseRemoteService.Fou_Generic_GetPagingObjectBySQL();
+            String url = baseRemoteService.confinsFouFwd;
             final ResponseEntity<BaseMstRemoteResponseDto<List<AreaRemoteDto>>> response = restTemplate.exchange(
                     url,
                     HttpMethod.POST,

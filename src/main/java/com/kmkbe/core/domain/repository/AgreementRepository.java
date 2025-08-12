@@ -148,5 +148,17 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         """, nativeQuery = true)
     Optional<Map<String, Object>> finddetailDebtor(@Param("financingHdrCode") UUID financingHdrCode);
 
+    @Query(value = """
+        SELECT DISTINCT 
+            i.cust_inv_no,
+            i.invoice_date,
+            i.invoice_amt
+        FROM agreement a
+        JOIN cwr w ON a.cwr_code = w.cwr_code
+        JOIN invoice i ON w.cust_code = i.cust_code
+        WHERE a.financing_hdr_code = :financingHdrCode
+        """, nativeQuery = true)
+    Optional<Map<String, Object>> finddetailInv(@Param("financingHdrCode") UUID financingHdrCode);
+
 }
 
