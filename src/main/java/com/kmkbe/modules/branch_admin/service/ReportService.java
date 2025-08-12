@@ -515,13 +515,13 @@ public class ReportService {
         params.put("Cwr-Date","20-01-2025");
 
         // lembar 2 table
-        params.put("no","null");
-        params.put("customer","null");
-        params.put("nomor_perjanjian","null");
-        params.put("tanggal_perjanjian","null");
-        params.put("nomor_invoice","null");
-        params.put("tanggal_invoice","null");
-        params.put("jumlah_piutang", "null");
+        params.put("no","1");
+        params.put("customer","Debtor Company");
+        params.put("nomor_perjanjian","Y5SFS");
+        params.put("tanggal_perjanjian","01-01-2024");
+        params.put("nomor_invoice","MI-243655");
+        params.put("tanggal_invoice","29-12-2024");
+        params.put("jumlah_piutang", "1265400000.00");
 
         // lembar 3 (cwrNo & cwr -StartDate belum ada)
 //        params.put("AgrmntNo", agreementCode);
@@ -614,10 +614,10 @@ public class ReportService {
         }
 
         // lembar 13 tabel
-        params.put("description","null");
-        params.put("bouwheer","null");
+        params.put("description","Invoice By Trakindo");
+        params.put("bouwheer","PT. Trakindo Utama");
         params.put("InvoiceDueDate", formattedDate); // campur lembar 4
-        params.put("invoice_amt","null");
+        params.put("invoice_amt","1265400000.00");
 
         InputStream reportStream = getClass().getResourceAsStream("/Reports/main_report.jrxml");
         if (reportStream == null) {
