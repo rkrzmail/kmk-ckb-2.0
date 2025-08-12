@@ -435,17 +435,17 @@ public class ReportService {
         Integer appId = apiResponse.getAppId();
 
         //getNomor Rek Debitur
-//        RekDebiturResponse BankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
-//        RekDebiturResponse.BankAccount dataRekening = BankResponse.getBankAccounts().get(0);
+        RekDebiturResponse BankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
+        RekDebiturResponse.BankAccount dataRekening = BankResponse.getBankAccounts().get(0);
 
         // getAppFctr
         AppFactoringResponse factoringData = externalApiService.getAppFactoringData(appId);
 
         // getFinancialData
-//        String agreementCode = agreementRepo
-//                .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode))
-//                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
-//        FinancialDataResponse financialData = externalApiService.getFinancialData(agreementCode);
+        String agreementCode = agreementRepo
+                .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode))
+                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
+        FinancialDataResponse financialData = externalApiService.getFinancialData(agreementCode);
 
         //getcwrbouwheerNo
         String cwrCode = agreementRepo
@@ -496,23 +496,18 @@ public class ReportService {
         Map<String, Object> data = debtorData.orElseGet(Collections::emptyMap);
 
         Map<String, Object> params = new HashMap<>();
-//        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
+        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
         params.put("SUBREPORT_DIR", getClass().getResource("/Reports/").toString());
 
-        //lembar 1 (cwrNo & cwr -StartDate belum ada)
+        //lembar 1
         params.put("AppNo", apiResponse.getAppNo());
         params.put("TglDokumen", tanggalDokumen);
         params.put("DebtorName", debtorName);
-//        params.put("BankName", dataRekening.getBankName());
-//        params.put("BankAccNo", dataRekening.getAccNo());
-//        params.put("BankAccName", dataRekening.getAccName());
-        params.put("BankName", "Bank Central Asia");
-        params.put("BankAccNo", "7005592119");
-        params.put("BankAccName", "PT. Megah Utama");
+        params.put("BankName", dataRekening.getBankName());
+        params.put("BankAccNo", dataRekening.getAccNo());
+        params.put("BankAccName", dataRekening.getAccName());
         params.put("NamaKaryawan", namaKaryawan);
         params.put("Jabatan", jabatan);
-        params.put("Cwr","01920193311");
-        params.put("Cwr-Date","20-01-2025");
 
         // lembar 2 table
         params.put("no","1");
@@ -523,32 +518,26 @@ public class ReportService {
         params.put("tanggal_invoice","29-12-2024");
         params.put("jumlah_piutang", "1265400000.00");
 
-        // lembar 3 (cwrNo & cwr -StartDate belum ada)
-//        params.put("AgrmntNo", agreementCode);
-        params.put("AgrmntNo", "0120100200");
+        // lembar 3
+        params.put("AgrmntNo", agreementCode);
 
         //lembar 4
         params.put("Facility", facility);
         params.put("Tenor", apiResponse.getTenor());
-//        params.put("NtfAmt", findata.getNtfAmount());
-        params.put("NtfAmt", "7000000");
+        params.put("NtfAmt", findata.getNtfAmount());
         params.put("DiskontoAmt", factoringData.getDiskontoAmount());
-//        params.put("MaxAllocatedRefundAmt", findata.getMaxRefundAmount());
-        params.put("MaxAllocatedRefundAmt", "123000000");
+        params.put("MaxAllocatedRefundAmt", findata.getMaxRefundAmount());
         params.put("TotalRetentionAmt", factoringData.getTotalRetentionAmount());
-        // ubah param kedua appfeeamt menjadi double
-        params.put("AppFeeAmtFactoring", "10000");
-        params.put("AppFeeAmtAdministration", "120000");
-//        financialData.getFeeList().forEach(fee -> {
-//            if (fee.getFeeTypeName() != null) {
-//                if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA FACTORING")) {
-//                    params.put("AppFeeAmtFactoring", fee.getFeeAmount());
-//                }
-//                else if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA ADMINISTRASI PENCAIRAN")) {
-//                    params.put("AppFeeAmtAdministration", fee.getFeeAmount());
-//                }
-//            }
-//        });
+        financialData.getFeeList().forEach(fee -> {
+            if (fee.getFeeTypeName() != null) {
+                if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA FACTORING")) {
+                    params.put("AppFeeAmtFactoring", fee.getFeeAmount());
+                }
+                else if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA ADMINISTRASI PENCAIRAN")) {
+                    params.put("AppFeeAmtAdministration", fee.getFeeAmount());
+                }
+            }
+        });
 
         // lembar 5 (tabel)
         params.put("invoice_duedate", formattedDate);
@@ -556,35 +545,27 @@ public class ReportService {
         //lembar 6
         params.put("LobCode", apiResponse.getLobCode());
         params.put("ProdOfferingName", apiResponse.getProdOfferingName());
-//        params.put("EffectiveRatePrcnt", findata.getEffectiveRate());
-//        params.put("TotalFeeAmt", findata.getTotalFeeAmount());
-        params.put("EffectiveRatePrcnt", "130000");
-        params.put("TotalFeeAmt", "510000000");
-//        params.put("AppFeeAmt", "null"); // rubah template tambahkan 2 param, appFeeAmt factoring & admin
+        params.put("EffectiveRatePrcnt", findata.getEffectiveRate());
+        params.put("TotalFeeAmt", findata.getTotalFeeAmount());
 
         // lembar 7
         params.put("TotalInvcAmt", factoringData.getTotalInvoiceAmount());
-//        params.put("GracePeriodLc", findata.getGracePeriod());
-//        params.put("InstAmt", findata.getInstallmentAmount());
-        params.put("GracePeriodLc", "0");
-        params.put("InstAmt", "10000");
+        params.put("GracePeriodLc", findata.getGracePeriod());
+        params.put("InstAmt", findata.getInstallmentAmount());
 
         // lembar 9
-//        params.put("AgmtNo", agreementCode);
-        params.put("AgmtNo", "01201021011");
-        params.put("Administration+Factoring", "10000"); // diganti double
-        params.put("NtfAmt-Total", "400000"); // diganti double
-
-        //lembar 10
+        params.put("AgmtNo", agreementCode);
+        params.put("Administration+Factoring", "10000");
+        params.put("NtfAmt-Total", "400000");
 
         // lembar 11
         // fap1
-        params.put("JenisDebitur", "Badan Usaha"); // Badan Usaha
-        params.put("TipePerusahaan", data.getOrDefault("cust_company_type", "-").toString()); // Company
-        params.put("NPWP", data.getOrDefault("cust_id_no", "-").toString()); // customer
-        params.put("Alamat", data.getOrDefault("company_address", "-").toString()); // Company
-        params.put("Email", data.getOrDefault("cust_email", "-").toString()); // customer
-        params.put("Telepon", data.getOrDefault("phone", "-").toString()); //company
+        params.put("JenisDebitur", "Badan Usaha");
+        params.put("TipePerusahaan", data.getOrDefault("cust_company_type", "-").toString());
+        params.put("NPWP", data.getOrDefault("cust_id_no", "-").toString());
+        params.put("Alamat", data.getOrDefault("company_address", "-").toString());
+        params.put("Email", data.getOrDefault("cust_email", "-").toString());
+        params.put("Telepon", data.getOrDefault("phone", "-").toString());
 
         //lembar12
         // sit
@@ -609,15 +590,32 @@ public class ReportService {
         params.put("NamaAreaSalesManager", sitDto.getEmployeeName());
         params.put("TotalPembayaran", totalPembayaran);
         } else {
-            // Handle error case
             throw new RuntimeException("Failed to get agreement data: " + (sitData.getMessage() != null ? sitData.getMessage() : ""));
         }
 
         // lembar 13 tabel
         params.put("description","Invoice By Trakindo");
         params.put("bouwheer","PT. Trakindo Utama");
-        params.put("InvoiceDueDate", formattedDate); // campur lembar 4
+        params.put("InvoiceDueDate", formattedDate);
         params.put("invoice_amt","1265400000.00");
+
+
+//        hardcode
+//        params.put("BankName", "Bank Central Asia");
+//        params.put("BankAccNo", "7005592119");
+//        params.put("BankAccName", "PT. Megah Utama");
+//        params.put("Cwr","01920193311");
+//        params.put("Cwr-Date","20-01-2025");
+//        params.put("AgrmntNo", "0120100200");
+//        params.put("NtfAmt", "7000000");
+//        params.put("MaxAllocatedRefundAmt", "123000000");
+//        params.put("EffectiveRatePrcnt", "130000");
+//        params.put("TotalFeeAmt", "510000000");
+//        params.put("AppFeeAmtFactoring", "10000");
+//        params.put("AppFeeAmtAdministration", "120000");
+//        params.put("GracePeriodLc", "0");
+//        params.put("InstAmt", "10000");
+//        params.put("AgmtNo", "01201021011");
 
         InputStream reportStream = getClass().getResourceAsStream("/Reports/main_report.jrxml");
         if (reportStream == null) {
