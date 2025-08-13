@@ -463,6 +463,8 @@ public class EmailService {
                 payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
             }
 
+            log.info("ini isi invoice: {}", payloadArgs.get("invoices"));
+
             args.put("additionalArgs", payloadArgs);
             args.put("bouwheerName", bouwheerName);
             args.put("branchArea", branchArea);

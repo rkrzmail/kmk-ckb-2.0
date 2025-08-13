@@ -19,4 +19,5 @@ public class SignerDocDto implements Serializable {
     private String verifDate;
     private String status;
     private String agreementDoc;
+    private String documentId;
 }

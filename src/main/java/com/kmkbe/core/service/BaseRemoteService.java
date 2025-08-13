@@ -58,6 +58,12 @@ public class BaseRemoteService {
     @Value("${csul.confins.fou.getcalculate}")
     public String confinsFouCalculcate;
 
+    @Value("${csul.confins.mou.getpagingSQL}")
+    public String confinsMouGetPagingSQL;
+
+    @Value("${csul.confins.los.getpagingSQL}")
+    public String confinsLosGetPagingSQL;
+
 
     public BaseRemoteService() {
     }

@@ -1032,6 +1032,8 @@ public class SignerService {
 
             List<AgreementFileSigning> fileSignings = agreementFileSigningRepository.findByAgreementCodes(agreementCodes);
 
+            log.info("ini agreement code: " + agreementCodes);
+
             return fileSignings.stream()
                     .map(signing -> SignerDocDto.builder()
                             .agreementFileId(signing.getAgreementFileId())
@@ -1039,8 +1041,9 @@ public class SignerService {
                             .bowheerName(bowheerName)
                             .verifDate(signing.getDtmCrt() != null ?
                                     signing.getDtmCrt().toString() : null)
-                            .status("Menunggu TTD") // di-hardcode atau dari entity?
+                            .status("Menunggu TTD") // ambil status dari esignhub
                             .agreementDoc(signing.getFilePath())
+                            .documentId(signing.getDocumentId())
                             .build())
                     .collect(Collectors.toList());
 

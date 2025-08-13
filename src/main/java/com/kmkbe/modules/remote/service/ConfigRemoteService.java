@@ -88,6 +88,7 @@ public class ConfigRemoteService {
                     }
             );
 
+            log.info("ini response {}", response.getBody());
             System.out.println("Successfully getEmailByPosition");
 
             return response.getBody();
