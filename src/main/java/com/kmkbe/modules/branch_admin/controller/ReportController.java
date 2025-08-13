@@ -92,13 +92,14 @@ public class ReportController {
         );
     }
 
-    @GetMapping("/preview/{financingHdrCode}")
+    @GetMapping("/preview/{financingHdrCode}/{agreementCode}")
     public ResponseEntity<byte[]> previewReport(
-            @PathVariable String financingHdrCode
+            @PathVariable String financingHdrCode,
+            @PathVariable String agreementCode
     ) {
 
         try {
-            byte[] pdfBytes = reportService.generateReport(financingHdrCode);
+            byte[] pdfBytes = reportService.generateReport(financingHdrCode, agreementCode);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=preview.pdf")
@@ -116,10 +117,10 @@ public class ReportController {
         }
     }
 
-    @GetMapping("/download-pdf")
-    public void downloadPdf(HttpServletResponse response, @PathVariable String financingHdrCode) {
+    @GetMapping("/download-pdf/{financingHdrCode}/{agreementCode}")
+    public void downloadPdf(HttpServletResponse response, @PathVariable String financingHdrCode, @PathVariable String agreementCode) {
         try {
-            byte[] pdfBytes = reportService.generateReport(financingHdrCode);
+            byte[] pdfBytes = reportService.generateReport(financingHdrCode, agreementCode);
             response.setContentType("application/pdf");
             response.setHeader("Content-Disposition", "attachment; filename=\"report.pdf\"");
             response.setContentLength(pdfBytes.length);

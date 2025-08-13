@@ -87,25 +87,25 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
             "WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
     Optional<Agreement> findByFinancingHdr_FinancingHdrCode2(@Param("financingHdrCode") UUID financingHdrCode);
 
-    @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
-    Optional<Agreement> findByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
+    @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
+    Optional<Agreement> findByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
     Optional<Agreement> findByAgreementCode(String agreementCode);
 
-    @Query("SELECT a.agreementCode FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
-    Optional<String> findAgreementCodeByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
+    @Query("SELECT a.agreementCode FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
+    Optional<String> findAgreementCodeByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
-    @Query("SELECT a.cwr.cwrCode FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
-    Optional<String> findCwrCodeByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
+    @Query("SELECT a.cwr.cwrCode FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
+    Optional<String> findCwrCodeByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
     @Query("""
         SELECT cu.custName
         FROM Agreement a
         JOIN Cwr c ON a.cwr.cwrCode = c.cwrCode
         JOIN Customer cu ON c.customer.custCode = cu.custCode
-        WHERE a.financingHdr.financingHdrCode = :financingHdrCode
+        WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode
     """)
-    Optional<String> findCustNameByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
+    Optional<String> findCustNameByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
     @Query(value = """
         SELECT 
@@ -114,12 +114,12 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         FROM agreement a
         JOIN cwr w ON a.cwr_code = w.cwr_code
         JOIN customer c ON w.cust_code = c.cust_code
-        WHERE a.financing_hdr_code = :financingHdrCode
+        WHERE a.financing_hdr_code = :financingHdrCode 
         """, nativeQuery = true)
     Optional<Map<String, Object>> findCwrCodeAndCustNo(@Param("financingHdrCode") UUID financingHdrCode);
 
-    @Query("SELECT a.facility FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
-    String findFaciltyByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
+    @Query("SELECT a.facility FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
+    String findFaciltyByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
     @Query(value = """
         SELECT i.invoice_due_date AS invoiceDueDate
@@ -127,11 +127,11 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         JOIN cwr w ON a.cwr_code = w.cwr_code
         JOIN customer c ON w.cust_code = c.cust_code
         JOIN invoice i ON c.cust_code = i.cust_code
-        WHERE a.financing_hdr_code = :financingHdrCode
+        WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
         ORDER BY i.invoice_due_date DESC
         LIMIT 1
         """, nativeQuery = true)
-    Optional<Date> findInvoiceDueDateByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
+    Optional<Date> findInvoiceDueDateByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
     @Query(value = """
         SELECT 
@@ -144,9 +144,9 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         JOIN cwr w ON a.cwr_code = w.cwr_code
         JOIN customer c ON w.cust_code = c.cust_code
         JOIN customer_company cc ON w.cust_code = cc.cust_code
-        WHERE a.financing_hdr_code = :financingHdrCode
+        WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
         """, nativeQuery = true)
-    Optional<Map<String, Object>> finddetailDebtor(@Param("financingHdrCode") UUID financingHdrCode);
+    Optional<Map<String, Object>> finddetailDebtor(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
     @Query(value = """
         SELECT DISTINCT 
@@ -156,9 +156,9 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         FROM agreement a
         JOIN cwr w ON a.cwr_code = w.cwr_code
         JOIN invoice i ON w.cust_code = i.cust_code
-        WHERE a.financing_hdr_code = :financingHdrCode
+        WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
         """, nativeQuery = true)
-    Optional<Map<String, Object>> finddetailInv(@Param("financingHdrCode") UUID financingHdrCode);
+    Optional<Map<String, Object>> finddetailInv(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
 }
 

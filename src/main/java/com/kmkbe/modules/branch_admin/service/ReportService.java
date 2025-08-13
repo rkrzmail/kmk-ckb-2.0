@@ -416,7 +416,7 @@ public class ReportService {
         }
     }
 
-    public byte[] generateReport(String financingHdrCode) throws JRException, IOException {
+    public byte[] generateReport(String financingHdrCode, String agreementCode) throws JRException, IOException {
 
         UUID financingHdrUuid;
         try {
@@ -425,7 +425,7 @@ public class ReportService {
             throw new IllegalArgumentException("Invalid financingHdrCode format");
         }
 
-        Agreement agreement = agreementRepo.findByFinancingHdrCode(financingHdrUuid)
+        Agreement agreement = agreementRepo.findByFinancingHdrCode(financingHdrUuid, agreementCode)
                 .orElseThrow(() -> new NoSuchElementException(
                         "Data Agreement tidak ditemukan untuk: " + financingHdrCode
                 ));
@@ -445,14 +445,14 @@ public class ReportService {
         AppFactoringResponse factoringData = externalApiService.getAppFactoringData(appId);
 
         // getFinancialData
-        String agreementCode = agreementRepo
-                .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode))
+        String agrmntCode = agreementRepo
+                .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
                 .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
-        FinancialDataResponse financialData = externalApiService.getFinancialData(agreementCode);
+        FinancialDataResponse financialData = externalApiService.getFinancialData(agrmntCode);
 
         //getcwrbouwheerNo
         String cwrCode = agreementRepo
-                .findCwrCodeByFinancingHdrCode(UUID.fromString(financingHdrCode))
+                .findCwrCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
                 .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
         CwrBwhrResponse cwrBwhrData = externalApiService.getCwrBwhr(cwrCode);
         CwrBwhrResponse.ListCwrBwhr cwrBwhr = cwrBwhrData.getCwrBouwheerCustNos().get(0);
@@ -461,7 +461,7 @@ public class ReportService {
         CwrListBwhrResponse bouwheerData = externalApiService.getListCwrBwhr(cwrCode, cwrBwhr.getCwrBouwheerCustNo());
 
         // get bouwheer name
-        String debtorName = agreementRepo.findCustNameByFinancingHdrCode(financingHdrUuid)
+        String debtorName = agreementRepo.findCustNameByFinancingHdrCode(financingHdrUuid, agreementCode)
                 .orElse("Debtor Name");
 
         //get karyawan
@@ -487,10 +487,10 @@ public class ReportService {
 //                .orElse("Tidak tersedia");
 
         // get facility
-        String facility = agreementRepo.findFaciltyByFinancingHdrCode(UUID.fromString(financingHdrCode));
+        String facility = agreementRepo.findFaciltyByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode);
 
         // get invoice due date
-        Date invoiceDueDate = agreementRepo.findInvoiceDueDateByFinancingHdrCode(UUID.fromString(financingHdrCode))
+        Date invoiceDueDate = agreementRepo.findInvoiceDueDateByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
                 .orElseThrow(() -> new RuntimeException("Invoice due date tidak ditemukan"));
 
         // Format tanggal jika perlu
@@ -498,7 +498,7 @@ public class ReportService {
         String formattedDate = sdf.format(invoiceDueDate);
 
         // get fap
-        Optional<Map<String, Object>> debtorData = agreementRepo.finddetailDebtor(UUID.fromString(financingHdrCode));
+        Optional<Map<String, Object>> debtorData = agreementRepo.finddetailDebtor(UUID.fromString(financingHdrCode), agreementCode);
         Map<String, Object> data = debtorData.orElseGet(Collections::emptyMap);
 
         Map<String, Object> params = new HashMap<>();
@@ -539,7 +539,7 @@ public class ReportService {
         params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
 
         // lembar 3
-        params.put("AgrmntNo", agreementCode);
+        params.put("AgrmntNo", agrmntCode);
 
         //lembar 4
         params.put("Facility", facility);
@@ -574,7 +574,7 @@ public class ReportService {
         params.put("InstAmt", findata.getInstallmentAmount());
 
         // lembar 9
-        params.put("AgmtNo", agreementCode);
+        params.put("AgmtNo", agrmntCode);
         params.put("Administration+Factoring", "10000");
         params.put("NtfAmt-Total", "400000");
 
