@@ -71,6 +71,8 @@ public class ReportService {
     private JasperReport cachedReport;
 
     private String jwtToken;
+    @Autowired
+    private DebtorRepository debtorRepository;
 
     private void ensureJwtToken() {
         jwtToken = authRemoteService.fetchAuthJwt().getData();
@@ -463,23 +465,26 @@ public class ReportService {
                 .orElse("Debtor Name");
 
         //get karyawan
-        Map<String, Object> result = agreementRepo
-                .findCwrCodeAndCustNo(UUID.fromString(financingHdrCode))
-                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
-        String cwrCodeResult = (String) result.get("cwrCode");
-        String custNoResult = (String) result.get("custNo");
-        SignerApiResponse signerData = externalApiService.getKaryawan(cwrCodeResult, custNoResult);
-        String namaKaryawan = Optional.ofNullable(signerData.getReturnObject())
-                .filter(list -> !list.isEmpty())
-                .map(list -> list.get(0))
-                .map(SignerApiResponse.SignerData::getSignerName)
-                .orElse("Tidak tersedia");
+        Optional<Map<String, Object>> karyawanData = debtorRepository.findKaryawanByFinancingHdrCode(financingHdrCode);
+        Map<String, Object> Kdata = karyawanData.orElseGet(Collections::emptyMap);
 
-        String jabatan = Optional.ofNullable(signerData.getReturnObject())
-                .filter(list -> !list.isEmpty())
-                .map(list -> list.get(0))
-                .map(SignerApiResponse.SignerData::getSignerPosition)
-                .orElse("Tidak tersedia");
+//        Map<String, Object> result = agreementRepo
+//                .findCwrCodeAndCustNo(UUID.fromString(financingHdrCode))
+//                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
+//        String cwrCodeResult = (String) result.get("cwrCode");
+//        String custNoResult = (String) result.get("custNo");
+//        SignerApiResponse signerData = externalApiService.getKaryawan(cwrCodeResult, custNoResult);
+//        String namaKaryawan = Optional.ofNullable(signerData.getReturnObject())
+//                .filter(list -> !list.isEmpty())
+//                .map(list -> list.get(0))
+//                .map(SignerApiResponse.SignerData::getSignerName)
+//                .orElse("Tidak tersedia");
+//
+//        String jabatan = Optional.ofNullable(signerData.getReturnObject())
+//                .filter(list -> !list.isEmpty())
+//                .map(list -> list.get(0))
+//                .map(SignerApiResponse.SignerData::getSignerPosition)
+//                .orElse("Tidak tersedia");
 
         // get facility
         String facility = agreementRepo.findFaciltyByFinancingHdrCode(UUID.fromString(financingHdrCode));
@@ -507,17 +512,8 @@ public class ReportService {
         params.put("BankName", dataRekening.getBankName());
         params.put("BankAccNo", dataRekening.getAccNo());
         params.put("BankAccName", dataRekening.getAccName());
-        params.put("NamaKaryawan", namaKaryawan);
-        params.put("Jabatan", jabatan);
-
-        // lembar 2 table
-//        params.put("no","1");
-//        params.put("customer","Debtor Company");
-//        params.put("nomor_perjanjian","Y5SFS");
-//        params.put("tanggal_perjanjian","01-01-2024");
-//        params.put("nomor_invoice","MI-243655");
-//        params.put("tanggal_invoice","29-12-2024");
-//        params.put("jumlah_piutang", "1265400000.00");
+        params.put("NamaKaryawan", Kdata.getOrDefault("Karyawan_name", "-").toString());
+        params.put("Jabatan", Kdata.getOrDefault("Jabatan", "-").toString());
 
         List<Map<String, String>> tableData = new ArrayList<>();
         Map<String, String> row1 = new HashMap<>();
