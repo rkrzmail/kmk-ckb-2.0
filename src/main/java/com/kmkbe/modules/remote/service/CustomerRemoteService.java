@@ -44,7 +44,8 @@ public class CustomerRemoteService {
         String jsonStr = "";
         String responseStr = null;
         int statusCode = 200;
-        final String url = baseRemoteService.CustObj_GetListKeyValueActiveByCode();
+//        final String url = baseRemoteService.CustObj_GetListKeyValueActiveByCode();
+        final String url = baseRemoteService.confinsFouCalculcate;
         try {
             jsonStr = ObjectUtils.jsonToStr(params);
             //params.setRandom(DateTimeUtils.now()+"");
@@ -53,6 +54,9 @@ public class CustomerRemoteService {
                     jsonStr,
                     headers
             );
+            log.info("ini Request Body: {}", jsonStr);
+            log.info("ini Header: {}", headers);
+
 
             final ResponseEntity<CustomerRemoteDto> response = restTemplate.exchange(
                     url,
@@ -62,6 +66,7 @@ public class CustomerRemoteService {
                     }
             );
 
+            log.info("ini URL: {}", url);
 
 
             statusCode = response.getStatusCode().value();
@@ -69,6 +74,7 @@ public class CustomerRemoteService {
             if (StringUtil.isNullOrEmpty(responseStr)) {
                 responseStr = objectMapper.writeValueAsString(response.getBody());
             }
+            log.info("Response: {}", responseStr);
 
             return response.getBody();
         } catch (HttpStatusCodeException httpStatusCodeException) {
@@ -80,6 +86,7 @@ public class CustomerRemoteService {
             if (errorObj != null) {
                 message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
             }
+
 
             throw new RuntimeException("Error while perform action to Confins\nDetail:" + message);
         } catch (Exception e) {
