@@ -596,7 +596,7 @@ public class SignerService {
 
     // GET DARI CONFINS
 
-    public PersonDto getSignersFromExternalApi(String financingHdrCode) {
+    public PersonDto getSignersFromExternalApi(String financingHdrCode, String agreementNo) {
         boolean useHardcode = false; // Ganti nilai ini untuk switch mode
 
         try {
@@ -609,7 +609,7 @@ public class SignerService {
                 log.info("Menggunakan data hardcode - custNo: {}, cwrNo: {}", custNo, cwrNo);
             } else {
                 UUID uuid = UUID.fromString(financingHdrCode);
-                Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid)
+                Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid, agreementNo)
                         .orElseThrow(() -> new RuntimeException("Agreement not found"));
 
                 custNo = agreement.getCwr().getCustomer().getCustNo();
@@ -1054,11 +1054,11 @@ public class SignerService {
 
 
 
-    public SignerCheckResultDto compareSigners(String financingHdrCode) {
+    public SignerCheckResultDto compareSigners(String financingHdrCode, String agreementNo) {
 
         List<String> dbSigners = getSignersFromDatabase(financingHdrCode);
 
-        List<String> externalApiSigners = getSignersFromExternalApi2(financingHdrCode);
+        List<String> externalApiSigners = getSignersFromExternalApi2(financingHdrCode, agreementNo);
 
         SignerCheckResultDto result = createComparisonResult(dbSigners, externalApiSigners);
 
@@ -1079,10 +1079,10 @@ public class SignerService {
         }
     }
 
-    private List<String> getSignersFromExternalApi2(String financingHdrCode) {
+    private List<String> getSignersFromExternalApi2(String financingHdrCode, String agreementNo) {
         try {
             UUID uuid = UUID.fromString(financingHdrCode);
-            Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid)
+            Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid, agreementNo)
                     .orElseThrow(() -> new RuntimeException("Agreement not found"));
 
             String custNo = agreement.getCwr().getCustomer().getCustNo();

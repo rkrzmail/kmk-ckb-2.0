@@ -84,8 +84,12 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
             "JOIN FETCH a.cwr " +
             "JOIN FETCH a.cwr.customer " +
             "JOIN FETCH a.financingHdr " +
-            "WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
-    Optional<Agreement> findByFinancingHdr_FinancingHdrCode2(@Param("financingHdrCode") UUID financingHdrCode);
+            "WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementNo")
+    Optional<Agreement> findByFinancingHdr_FinancingHdrCode2(@Param("financingHdrCode") UUID financingHdrCode, String agreementNo);
+
+    @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
+    Optional<Agreement> findAgreement(@Param("financingHdrCode") UUID financingHdrCode);
+
 
     @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
     Optional<Agreement> findByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);

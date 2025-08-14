@@ -25,7 +25,9 @@ public class CustomerPerjanjianDto {
     private String custTypeCode;
     private String address;
     private String phoneNo;
+    private String agreementCode;
     private PerjanjianDto perjanjian;
+
 
     @Getter
     @Setter

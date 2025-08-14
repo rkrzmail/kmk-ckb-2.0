@@ -604,9 +604,9 @@ public class ReportService {
         params.put("NoDokumen", sitDto.getAgreementCode());
         params.put("TempatTanggal", tanggalDokumen);
         params.put("PeriodeBerlaku", periodeBerlaku);
-        params.put("NamaGMFinance", debtorName);
+        params.put("NamaGMFinance", "General Manager Finance PT. Trakindo Utama");
         params.put("NamaDirektur", sitDto.getDirectorName());
-        params.put("NamaGMFinanceCSUL", debtorName);
+        params.put("NamaGMFinanceCSUL", "");
         params.put("NamaAreaSalesManager", sitDto.getEmployeeName());
         params.put("TotalPembayaran", totalPembayaran);
         } else {

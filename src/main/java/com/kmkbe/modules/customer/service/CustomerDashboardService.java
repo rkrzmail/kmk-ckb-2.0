@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -204,6 +205,10 @@ public class CustomerDashboardService {
         try {
             FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
 
+            UUID uuid = UUID.fromString(financingHdrCode);
+            Agreement agreement = agreementRepository.findAgreement(uuid)
+                    .orElseThrow(() -> new RuntimeException("Agreement not found"));
+
             final String address, phoneNo;
             if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
                 address = financingHdr.getCustomer().getCompany() == null ? "" : String.valueOf(financingHdr.getCustomer().getCompany().getCompanyAddress());
@@ -230,6 +235,7 @@ public class CustomerDashboardService {
                     .custTypeCode(financingHdr.getCustomer().getCustTypeCode())
                     .address(address)
                     .phoneNo(phoneNo)
+                    .agreementCode(agreement.getAgreementCode())
                     .perjanjian(CustomerPerjanjianDto.PerjanjianDto.builder()
                             .perjanjianBerjalan(9)
                             .perjanjianBerakhir(9)

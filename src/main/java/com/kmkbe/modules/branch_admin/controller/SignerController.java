@@ -84,10 +84,11 @@ public class SignerController {
         }
     }
 
-    @GetMapping("/getSigners/{financingHdrCode}")
+    @GetMapping("/getSigners/{financingHdrCode}/{agreementNo}")
     public CommonResult<PersonDto> getSigners(
-            @PathVariable String financingHdrCode) {
-        PersonDto result = signerService.getSignersFromExternalApi(financingHdrCode);
+            @PathVariable String financingHdrCode,
+            @PathVariable String agreementNo) {
+        PersonDto result = signerService.getSignersFromExternalApi(financingHdrCode, agreementNo);
         return new CommonResult<PersonDto>().success(result);
     }
 
@@ -113,10 +114,11 @@ public class SignerController {
         return new CommonResult<List<SignerDocDto>>().success(signerDocList);
     }
 
-    @GetMapping("/check-signer/{financingHdrCode}")
+    @GetMapping("/check-signer/{financingHdrCode}/{agreementNo}")
     public CommonResult<SignerCheckResultDto> checkSigners(
-            @PathVariable String financingHdrCode) {
-        SignerCheckResultDto result = signerService.compareSigners(financingHdrCode);
+            @PathVariable String financingHdrCode,
+            @PathVariable String agreementNo) {
+        SignerCheckResultDto result = signerService.compareSigners(financingHdrCode, agreementNo);
 
         if (result.getUnmatchedSigners().isEmpty()) {
             return new CommonResult<SignerCheckResultDto>()
