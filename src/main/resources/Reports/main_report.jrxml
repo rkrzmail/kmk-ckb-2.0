@@ -41,7 +41,6 @@
 	<parameter name="TotalPembayaran" class="java.lang.String"/>
 	<parameter name="PeriodeBerlaku" class="java.lang.String"/>
 	<parameter name="NamaDirektur" class="java.lang.String"/>
-	<parameter name="NamaGMFinanceCSUL" class="java.lang.String"/>
 	<parameter name="NamaAreaSalesManager" class="java.lang.String"/>
 	<parameter name="description" class="java.lang.String"/>
 	<parameter name="bouwheer" class="java.lang.String"/>
@@ -52,7 +51,9 @@
 	<parameter name="nomor_invoice" class="java.lang.String"/>
 	<parameter name="tanggal_invoice" class="java.lang.String"/>
 	<parameter name="tableDataSource" class="net.sf.jasperreports.engine.JRDataSource"/>
-	<parameter name="SUBREPORT_DIR" class="java.lang.String"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+		<defaultValueExpression><![CDATA["C:\\Users\\it.project1\\JaspersoftWorkspace\\MyReports\\"]]></defaultValueExpression>
+	</parameter>
 	<queryString>
 		<![CDATA[]]>
 	</queryString>
@@ -289,6 +290,12 @@
 		<band height="842" splitType="Stretch">
 			<subreport>
 				<reportElement x="0" y="0" width="595" height="842" uuid="3378ee84-c5cf-44b0-9887-e4bfebe0d176"/>
+				<subreportParameter name="NamaKaryawan">
+					<subreportParameterExpression><![CDATA[$P{NamaKaryawan}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Jabatan">
+					<subreportParameterExpression><![CDATA[$P{Jabatan}]]></subreportParameterExpression>
+				</subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat4c.jasper"]]></subreportExpression>
 			</subreport>
@@ -397,9 +404,6 @@
 				</subreportParameter>
 				<subreportParameter name="NamaDirektur">
 					<subreportParameterExpression><![CDATA[$P{NamaDirektur}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="NamaGMFinanceCSUL">
-					<subreportParameterExpression><![CDATA[$P{NamaGMFinanceCSUL}]]></subreportParameterExpression>
 				</subreportParameter>
 				<subreportParameter name="NamaAreaSalesManager">
 					<subreportParameterExpression><![CDATA[$P{NamaAreaSalesManager}]]></subreportParameterExpression>
