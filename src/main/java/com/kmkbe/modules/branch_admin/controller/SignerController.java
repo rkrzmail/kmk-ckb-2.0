@@ -107,8 +107,9 @@ public class SignerController {
 
     @GetMapping("/signer-doc/list/{financingHdrCode}")
     public CommonResult<List<SignerDocDto>> getSignerDocList(
-            @PathVariable String financingHdrCode) {
-        List<SignerDocDto> signerDocList = signerService.signerDocList(financingHdrCode);
+            @PathVariable String financingHdrCode,
+            Authentication authentication) {
+        List<SignerDocDto> signerDocList = signerService.signerDocList(financingHdrCode, authentication);
         return new CommonResult<List<SignerDocDto>>().success(signerDocList);
     }
 

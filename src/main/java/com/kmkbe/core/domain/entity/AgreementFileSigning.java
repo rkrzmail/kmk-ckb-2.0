@@ -75,7 +75,7 @@ public class AgreementFileSigning {
 
     public String stamp() {return stamp;}
     public void setStamp(String stamp) {
-        stamp = stamp;
+        this.stamp = stamp;
     }
 
     public String getDocumentId() { return documentId; }

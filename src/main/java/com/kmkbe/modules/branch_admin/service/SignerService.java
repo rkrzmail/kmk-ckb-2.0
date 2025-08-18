@@ -66,10 +66,10 @@ public class SignerService {
     private final NotifDebtorRepository notifDebtorRepository;
 
     private final String apiKey = "YiByHB@CSUL_DEV";
-    private final String callerId = "USER@AD-INS.COM";
     private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
     private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
     private final String downloadDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/downloadDocument";
+    private final String checkDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/checkStatusSigning";
     private final BaseRemoteService baseRemoteService;
     @Value("${csul.confins.adinskey}")
     private String adinsKey;
@@ -756,41 +756,6 @@ public class SignerService {
         }
     }
 
-    public List<SignerDocDto> signerDocList(String financingHdrCode) {
-        try {
-            UUID financingHdrUuid = UUID.fromString(financingHdrCode);
-
-            List<Agreement> agreements = agreementRepository.findByFinancingHdr_FinancingHdrCode(financingHdrUuid);
-
-            if (agreements.isEmpty()) {
-                return Collections.emptyList();
-            }
-
-            FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrUuid)
-                    .orElseThrow(() -> new EntityNotFoundException("Financing header not found"));
-
-            String bowheerName = financingHdr.getBouwheer().getBouwheerName();
-
-            List<AgreementFileSigning> fileSignings = agreementFileSigningRepository.findByFinancing(financingHdrCode);
-
-
-            return fileSignings.stream()
-                    .map(signing -> SignerDocDto.builder()
-                            .agreementFileId(signing.getAgreementFileId())
-                            .agreementCode(signing.getAgreementCode())
-                            .bowheerName(bowheerName)
-                            .verifDate(signing.getDtmCrt() != null ?
-                                    signing.getDtmCrt().toString() : null)
-                            .status(signing.stamp())
-                            .documentId(signing.getDocumentId())
-                            .build())
-                    .collect(Collectors.toList());
-
-        } catch (IllegalArgumentException e) {
-            throw new IllegalArgumentException("Invalid financingHdrCode format: " + financingHdrCode);
-        }
-    }
-
     public SignerCheckResultDto compareSigners(String financingHdrCode, String agreementNo) {
 
         List<String> dbSigners = getSignersFromDatabase(financingHdrCode);
@@ -947,5 +912,113 @@ public class SignerService {
             return ResponseEntity.internalServerError()
                     .body(new ApiResponse<>(false, "Internal server error: " + e.getMessage(), null, null, null));
         }
+    }
+
+    @Transactional
+    public List<SignerDocDto> signerDocList(String financingHdrCode, Authentication authentication) {
+        try {
+            UUID financingHdrUuid = UUID.fromString(financingHdrCode);
+            List<Agreement> agreements = agreementRepository.findByFinancingHdr_FinancingHdrCode(financingHdrUuid);
+
+            if (agreements.isEmpty()) {
+                return Collections.emptyList();
+            }
+
+            String username = authentication != null ? authentication.getName() : "SYSTEM";
+            FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrUuid)
+                    .orElseThrow(() -> new EntityNotFoundException("Financing header not found"));
+
+            String bowheerName = financingHdr.getBouwheer().getBouwheerName();
+            List<AgreementFileSigning> fileSignings = agreementFileSigningRepository.findByFinancing(financingHdrCode);
+
+            // 1. Update status dari API eksternal
+            checkExternalSigningStatus(fileSignings, username);
+
+            // 2. Ambil data TERBARU dari database setelah update
+            fileSignings = agreementFileSigningRepository.findByFinancing(financingHdrCode);
+
+            // 3. Mapping ke DTO
+            return fileSignings.stream()
+                    .map(signing -> SignerDocDto.builder()
+                            .agreementFileId(signing.getAgreementFileId())
+                            .agreementCode(signing.getAgreementCode())
+                            .bowheerName(bowheerName)
+                            .verifDate(signing.getDtmCrt() != null ?
+                                    signing.getDtmCrt().toString() : null)
+                            .status(signing.stamp()) // Pastikan ini mengambil dari entity yang sudah diupdate
+                            .documentId(signing.getDocumentId())
+                            .build())
+                    .collect(Collectors.toList());
+
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Invalid financingHdrCode format: " + financingHdrCode);
+        }
+    }
+
+    private void checkExternalSigningStatus(List<AgreementFileSigning> fileSignings, String username) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        for (AgreementFileSigning signing : fileSignings) {
+            try {
+                // Buat request
+                Map<String, Object> request = new HashMap<>();
+                Map<String, String> audit = new HashMap<>();
+                audit.put("callerId", username);
+                request.put("audit", audit);
+                request.put("refNumber", signing.getAgreementCode());
+                request.put("byPassActiveCheck", 0);
+
+                // Set header
+                HttpHeaders headers = new HttpHeaders();
+                headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.set("x-api-key", apiKey);
+
+                // Panggil API
+                ResponseEntity<Map> response = restTemplate.exchange(
+                        checkDoc,
+                        HttpMethod.POST,
+                        new HttpEntity<>(request, headers),
+                        Map.class
+                );
+
+                // Proses response
+                if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+                    Map<String, Object> responseBody = response.getBody();
+                    List<Map<String, Object>> statusSigning = (List<Map<String, Object>>) responseBody.get("statusSigning");
+
+                    if (statusSigning != null) {
+                        for (Map<String, Object> status : statusSigning) {
+                            if (signing.getDocumentId().equals(status.get("documentId"))) {
+                                List<Map<String, String>> signers = (List<Map<String, String>>) status.get("signer");
+                                String newStatus = determineStatusFromSigners(signers);
+                                signing.setStamp(newStatus);
+                                break;
+                            }
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                signing.setStamp("Menunggu TTD");
+            } finally {
+                // PASTIKAN save dilakukan
+                AgreementFileSigning updated =agreementFileSigningRepository.save(signing);
+                log.info("Updated signing id={} stamp={}", updated.getAgreementFileId(), updated.getStamp());
+            }
+        }
+    }
+
+    private String determineStatusFromSigners(List<Map<String, String>> signers) {
+        if (signers == null || signers.isEmpty()) {
+            return "Menunggu TTD";
+        }
+
+        for (Map<String, String> signer : signers) {
+            String signStatus = signer.get("signStatus");
+            if ("1".equals(signStatus)) return "SIGNED";
+            if ("2".equals(signStatus)) return "FAILED";
+            if ("3".equals(signStatus)) return "IN_PROGRESS";
+        }
+
+        return "Menunggu TTD";
     }
 }
