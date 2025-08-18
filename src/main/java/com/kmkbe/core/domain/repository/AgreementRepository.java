@@ -113,14 +113,13 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
 
     @Query(value = """
         SELECT 
-            w.cwr_code AS cwrCode,
-            c.cust_no AS custNo
+            w.cwr_code,
+            w.cwr_start_date
         FROM agreement a
         JOIN cwr w ON a.cwr_code = w.cwr_code
-        JOIN customer c ON w.cust_code = c.cust_code
-        WHERE a.financing_hdr_code = :financingHdrCode 
+        WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
         """, nativeQuery = true)
-    Optional<Map<String, Object>> findCwrCodeAndCustNo(@Param("financingHdrCode") UUID financingHdrCode);
+    Optional<Map<String, Object>> findCwrCodeAndDate(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
     @Query("SELECT a.facility FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
     String findFaciltyByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
@@ -163,6 +162,13 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
         """, nativeQuery = true)
     Optional<Map<String, Object>> finddetailInv(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
+
+    @Query("SELECT a FROM Agreement a " +
+            "JOIN FETCH a.cwr " +
+            "JOIN FETCH a.cwr.customer " +
+            "JOIN FETCH a.financingHdr " +
+            "WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
+    Optional<Agreement> findCwr(@Param("financingHdrCode") UUID financingHdrCode);
 
 }
 

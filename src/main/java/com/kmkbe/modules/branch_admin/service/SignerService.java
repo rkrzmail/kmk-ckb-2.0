@@ -14,7 +14,6 @@ import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.branch_admin.request.FileUploadRequest;
 import com.kmkbe.modules.common.service.EmailService;
-import com.kmkbe.modules.common.service.RotationCounterService;
 import com.kmkbe.modules.user.entity.MstAppRoleFormUser;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
@@ -22,7 +21,6 @@ import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
-import io.micrometer.common.util.StringUtils;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -49,7 +47,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Service
@@ -66,18 +63,16 @@ public class SignerService {
     private final AgreementFileSigningRepository agreementFileSigningRepository;
     private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
     private final AgreementFileRepository agreementFileRepository;
-    private final FileStorageService fileStorageService;
     private final NotifDebtorRepository notifDebtorRepository;
-    private final CwrRepository cwrRepository;
-    private final RotationCounterService rotationCounterService;
 
     private final String apiKey = "YiByHB@CSUL_DEV";
     private final String callerId = "USER@AD-INS.COM";
     private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
     private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
-    private final String sendDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/sendDocumentSigning";
     private final String downloadDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/downloadDocument";
     private final BaseRemoteService baseRemoteService;
+    @Value("${csul.confins.adinskey}")
+    private String adinsKey;
 
 
     @Value("${csul.confins.adinskey}")
@@ -244,8 +239,11 @@ public class SignerService {
     public List<DebtorDto> signerPersonList(String financingHdrCode) {
         List<Debtor> debtors = debtorRepository.findByFinancingHdrCode(financingHdrCode);
 
+//        List<CompletableFuture<DebtorDto>> futures = debtors.stream()
+//                .map(this::processDebtorAsync)
+//                .collect(Collectors.toList());
         List<CompletableFuture<DebtorDto>> futures = debtors.stream()
-                .map(this::processDebtorAsync)
+                .map(debtor -> processDebtorAsync(debtor, debtor.getFinancingHdrCode()))
                 .collect(Collectors.toList());
 
         CompletableFuture<Void> allOf = CompletableFuture.allOf(
@@ -265,9 +263,9 @@ public class SignerService {
     }
 
     @Async("taskExecutor")
-    public CompletableFuture<DebtorDto> processDebtorAsync(Debtor signer) {
+    public CompletableFuture<DebtorDto> processDebtorAsync(Debtor signer, String financingHdrCode) {
         DebtorDto debtorDto = mapDebtorToDto(signer);
-        checkRegistrationStatus(debtorDto, signer.getIdentityNo());
+        checkRegistrationStatus(debtorDto, signer.getIdentityNo(), financingHdrCode);
         return CompletableFuture.completedFuture(debtorDto);
     }
 
@@ -297,8 +295,10 @@ public class SignerService {
         return debtorDto;
     }
 
-    private void checkRegistrationStatus(DebtorDto debtorDto, String identityNo) {
+    private void checkRegistrationStatus(DebtorDto debtorDto, String identityNo, String financingHdrCode) {
         try {
+
+            debtorDto.setSignhubStatus("not register");
             Map<String, Object> requestBody = new HashMap<>();
             Map<String, String> audit = new HashMap<>();
             audit.put("callerId", callerId);
@@ -329,7 +329,6 @@ public class SignerService {
                     if (code != null && code == 0 && responseBody.containsKey("registrationData")) {
                         List<Map<String, Object>> registrationData = (List<Map<String, Object>>) responseBody.get("registrationData");
                         if (registrationData != null && !registrationData.isEmpty()) {
-                            // Cari data untuk vendor Vida
                             Map<String, Object> vidaRegistration = registrationData.stream()
                                     .filter(data -> "Vida".equals(data.get("vendor")))
                                     .findFirst()
@@ -337,40 +336,81 @@ public class SignerService {
 
                             if (vidaRegistration != null) {
                                 String registrationStatus = vidaRegistration.get("registrationStatus").toString();
-
-                                // Aturan status berdasarkan klarifikasi Anda
                                 switch (registrationStatus) {
                                     case "0":
-                                        debtorDto.setSignerStatus("not active");
                                         debtorDto.setSignhubStatus("not register");
                                         break;
                                     case "1":
-                                        debtorDto.setSignerStatus("not active");
-                                        debtorDto.setSignhubStatus("registered");
+                                        debtorDto.setSignhubStatus("pending");
                                         break;
                                     case "2":
-                                        debtorDto.setSignerStatus("active");
-                                        debtorDto.setSignhubStatus("registered");
+                                        debtorDto.setSignhubStatus("active");
                                         break;
-                                    default: // Untuk status tidak dikenal
-                                        debtorDto.setSignerStatus("not active");
+                                    default:
                                         debtorDto.setSignhubStatus("not register");
                                 }
-                                return;
                             }
                         }
                     }
                 }
             }
 
-            // Default jika tidak memenuhi kondisi di atas
-            debtorDto.setSignerStatus("not active");
-            debtorDto.setSignhubStatus("not register");
+            checkSignerStatus(debtorDto, financingHdrCode);
 
         } catch (Exception e) {
             debtorDto.setSignerStatus("not active");
             debtorDto.setSignhubStatus("not register");
             System.err.println("Error checking registration for NIK: " + identityNo);
+            e.printStackTrace();
+        }
+    }
+
+    private void checkSignerStatus(DebtorDto debtorDto, String financingHdrCode) {
+        try {
+
+            Agreement agreement = agreementRepository.findCwr(UUID.fromString(financingHdrCode))
+                    .orElseThrow(() -> new RuntimeException("Agreement not found"));
+
+            Map<String, String> signerRequestBody = new HashMap<>();
+            signerRequestBody.put("custNo", agreement.getCwr().getCustomer().getCustNo());
+            signerRequestBody.put("cwrNo", agreement.getCwr().getCwrCode());
+            signerRequestBody.put("RequestDateTime", LocalDate.now().toString());
+
+            log.info("ini custNo: " + agreement.getCwr().getCustomer().getCustNo());
+            log.info("ini cwrNo: " + agreement.getCwr().getCwrCode());
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.set("AdInsKey", adinsKey);
+            headers.setContentType(MediaType.APPLICATION_JSON);
+
+            HttpEntity<Map<String, String>> signerEntity = new HttpEntity<>(signerRequestBody, headers);
+
+            ResponseEntity<Map> signerResponse = restTemplate.exchange(
+                    "http://172.21.10.149:8083/mou_getsigner.php",
+                    HttpMethod.POST,
+                    signerEntity,
+                    Map.class
+            );
+
+            if (signerResponse.getStatusCode() == HttpStatus.OK) {
+                Map<String, Object> signerResponseBody = signerResponse.getBody();
+                if (signerResponseBody != null && signerResponseBody.containsKey("ReturnObject")) {
+                    List<Map<String, Object>> returnObject = (List<Map<String, Object>>) signerResponseBody.get("ReturnObject");
+
+                    boolean isSignerFound = returnObject.stream()
+                            .anyMatch(signer -> debtorDto.getKaryawanName().equalsIgnoreCase(signer.get("SignerName").toString()));
+
+                    log.info("ini isi debtorDto.getKaryawanName() : " + debtorDto.getKaryawanName());
+                    debtorDto.setSignerStatus(isSignerFound ? "active" : "not active");
+                } else {
+                    debtorDto.setSignerStatus("not active");
+                }
+            } else {
+                debtorDto.setSignerStatus("not active");
+            }
+        } catch (Exception e) {
+            debtorDto.setSignerStatus("not active");
+            System.err.println("Error checking signer status for: " + debtorDto.getKaryawanName());
             e.printStackTrace();
         }
     }
@@ -414,6 +454,11 @@ public class SignerService {
     public DebtorDto createDebtor(DebtorDto debtorDto, Authentication authentication) {
         try {
             log.info("createDebtor: {}", debtorDto);
+
+            // Cek duplikasi identityNo
+            if (debtorRepository.existsByIdentityNo(debtorDto.getIdentityNo())) {
+                throw new RuntimeException("NIK yang digunakan sudah terdaftar");
+            }
 
             String username = authentication != null ?
                     authentication.getName() :
@@ -472,7 +517,7 @@ public class SignerService {
 
         } catch (Exception e) {
             log.error("Error: {}", e.getMessage());
-            throw new RuntimeException("Gagal membuat debtor: " + e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
     }
 
@@ -629,86 +674,6 @@ public class SignerService {
         }
     }
 
-    // HARDCODE RESPONSE
-
-//    public PersonDto getSignersFromExternalApi(String financingHdrCode) {
-//        boolean useHardcode = true;
-//
-//        try {
-//            String custNo;
-//            String cwrNo;
-//
-//            if (useHardcode) {
-//                custNo = "41000001137";
-//                cwrNo = "41350CWR2024454";
-//                log.info("Menggunakan data hardcode - custNo: {}, cwrNo: {}", custNo, cwrNo);
-//
-//                PersonDto hardcodedResult = new PersonDto();
-//                hardcodedResult.setStatusCode("200");
-//                hardcodedResult.setMessage("Success");
-//
-//                List<PersonDto.Signer> hardcodedSigners = new ArrayList<>();
-//
-//                PersonDto.Signer signer1 = new PersonDto.Signer();
-//                signer1.setCwrSignerId(1737);
-//                signer1.setCwrCustId(4848);
-//                signer1.setSignerType("MFSIGNER");
-//                signer1.setSignerName("ANDIKA PRASETYO JUDIANTO");
-//                signer1.setSignerPosition("CREDIT MANAGEMENT GENERAL MANAGER");
-//                hardcodedSigners.add(signer1);
-//
-//                PersonDto.Signer signer2 = new PersonDto.Signer();
-//                signer2.setCwrSignerId(1738);
-//                signer2.setCwrCustId(4848);
-//                signer2.setSignerType("SHAREHOLDER");
-//                signer2.setSignerName("NURWA*****");
-//                signer2.setSignerPosition("DIREKTUR");
-//                hardcodedSigners.add(signer2);
-//
-//                hardcodedResult.setSigners(hardcodedSigners);
-//                return hardcodedResult;
-//
-//            } else {
-//                UUID uuid = UUID.fromString(financingHdrCode);
-//                Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid)
-//                        .orElseThrow(() -> new RuntimeException("Agreement not found"));
-//
-//                custNo = agreement.getCwr().getCustomer().getCustNo();
-//                cwrNo = agreement.getCwr().getCwrCode();
-//                log.info("Menggunakan data database - custNo: {}, cwrNo: {}", custNo, cwrNo);
-//
-//                SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
-//                ExternalApiResponse response = callExternalApi(request);
-//                return mapToPersonDto(response);
-//            }
-//
-//        } catch (Exception e) {
-//            PersonDto error = new PersonDto();
-//            error.setStatusCode("200");
-//            error.setMessage("Success");
-//            List<PersonDto.Signer> hardcodedSigners = new ArrayList<>();
-//
-//            PersonDto.Signer signer1 = new PersonDto.Signer();
-//            signer1.setCwrSignerId(1737);
-//            signer1.setCwrCustId(4848);
-//            signer1.setSignerType("MFSIGNER");
-//            signer1.setSignerName("ANDIKA PRASETYO JUDIANTO");
-//            signer1.setSignerPosition("CREDIT MANAGEMENT GENERAL MANAGER");
-//            hardcodedSigners.add(signer1);
-//
-//            PersonDto.Signer signer2 = new PersonDto.Signer();
-//            signer2.setCwrSignerId(1738);
-//            signer2.setCwrCustId(4848);
-//            signer2.setSignerType("SHAREHOLDER");
-//            signer2.setSignerName("NURWA*****");
-//            signer2.setSignerPosition("DIREKTUR");
-//            hardcodedSigners.add(signer2);
-//
-//            error.setSigners(hardcodedSigners);
-//            return error;
-//        }
-//    }
-
     private ExternalApiResponse callExternalApi(SignerRequestDto request) {
         HttpHeaders headers = new HttpHeaders();
         headers.set("AdInsKey", adInsKey);
@@ -760,230 +725,6 @@ public class SignerService {
         return result;
     }
 
-    // use fileStorageService
-    @Transactional
-    public CommonResult<AgreementFileSigning> uploadFileHandler(FileUploadRequest request, Authentication authentication) {
-        String filePath = null;
-
-        try {
-
-            if (request.getFile() == null || request.getFile().isEmpty()) {
-                return new CommonResult<AgreementFileSigning>().fail(400, "File is empty");
-            }
-
-            if (request.getFile() == null || request.getFile().isEmpty()) {
-                return new CommonResult<AgreementFileSigning>().fail(400, "File harus diupload");
-            }
-            if (request.getAgreementCode() == null || request.getAgreementCode().isEmpty()) {
-                return new  CommonResult<AgreementFileSigning>().fail(400, "Agreement tidak boleh kosong");
-            }
-            if (request.getFileName() == null || request.getFileName().isEmpty()) {
-                return new  CommonResult<AgreementFileSigning>().fail(400, "Nama Document tidak boleh kosong");
-            }
-            if (request.getFileTypeCode() == null || request.getFileTypeCode().isEmpty()) {
-                return new  CommonResult<AgreementFileSigning>().fail(400, "No Document tidak boleh kosong");
-            }
-
-            long rotationCount = rotationCounterService.getAndIncrement(request.getAgreementCode());
-
-            String username = authentication != null ? authentication.getName() : "SYSTEM";
-            Debtor debtor = getConsistentDebtorForAgreement(request.getAgreementCode(), rotationCount);
-
-            String uploadDir = "agreements/" + request.getAgreementCode();
-            String uploadName = "file_" + System.currentTimeMillis() + "_" + request.getFile().getOriginalFilename();
-
-            filePath = fileStorageService.save(
-                    request.getFile(),
-                    uploadDir,
-                    uploadName,
-                    null
-            );
-
-            String documentId = callExternalSigningAPI(request, username,debtor);
-
-            AgreementFileSigning entity = new AgreementFileSigning();
-            entity.setAgreementCode(request.getAgreementCode());
-            entity.setFileTypeCode(request.getFileTypeCode());
-            entity.setFileName(request.getFileName());
-            entity.setFilePath(filePath);
-            entity.setStamp(false);
-            entity.setUsrCrt(username);
-            entity.setDtmCrt(LocalDateTime.now());
-            entity.setSigner(debtor.getKaryawanName());
-            entity.setIdentityNo(debtor.getIdentityNo());
-            entity.setDocumentId("");
-
-            entity.setDocumentId(documentId);
-            AgreementFileSigning savedFile = agreementFileSigningRepository.save(entity);
-
-            notifDebtorRepository.save(NotifDebtor.builder()
-                    .financingHdrCode(agreementRepository.findByAgreementCode(request.getAgreementCode())
-                              .map(agreement -> agreement.getFinancingHdr().getFinancingHdrCode().toString())
-                            .orElseThrow(() -> new RuntimeException("Agreement dengan code " + request.getAgreementCode() + " tidak ditemukan")))
-                    .notification("Permintaan Tanda Tangan Dokumen")
-                    .description("Dokumen yang memerlukan tanda tangan "+ debtor.getKaryawanName() +", telah tersedia. Mohon segera menandatangani dokumen tersebut atau menghubungi pihak terkait.")
-                    .usrCrt(username)
-                    .dtmCrt(LocalDateTime.now())
-                    .build());
-
-            return new  CommonResult<AgreementFileSigning>().success(savedFile);
-
-        } catch (Exception e) {
-            if (filePath != null) {
-                try {
-                    String filename = filePath.substring(filePath.lastIndexOf("/") + 1);
-                    fileStorageService.delete(filename, request.getAgreementCode());
-                } catch (Exception ex) {
-                    log.error("Gagal menghapus file: {}", ex.getMessage());
-                }
-            }
-            return new  CommonResult<AgreementFileSigning>().fail(500, "Error: " + e.getMessage());
-        }
-    }
-
-    private String callExternalSigningAPI(FileUploadRequest request, String username, Debtor debtor) {
-        try {
-            String branchCode = getBranchCodeFromAgreement(request.getAgreementCode());
-            String base64File = convertFileToBase64(request.getFile());
-
-            Map<String, Object> requestBody = new LinkedHashMap<>();
-            requestBody.put("tenantCode", "CSUL_DEV");
-            requestBody.put("psreCode", "VIDA");
-
-            Map<String, String> audit = new LinkedHashMap<>();
-            audit.put("callerId", username);
-            requestBody.put("audit", audit);
-
-            List<Map<String, Object>> requests = new ArrayList<>();
-            Map<String, Object> documentRequest = new LinkedHashMap<>();
-            documentRequest.put("referenceNo", request.getAgreementCode());
-            documentRequest.put("documentTemplateCode", "PERJANJIAN_1A");
-            documentRequest.put("documentName", request.getFileName());
-            documentRequest.put("officeCode", branchCode);
-            documentRequest.put("officeName", "JAKARTA");
-            documentRequest.put("regionCode", branchCode);
-            documentRequest.put("regionName", username);
-            documentRequest.put("businessLineCode", "CBU");
-            documentRequest.put("businessLineName", "Corporate Business Unit");
-
-            List<Map<String, String>> signers = new ArrayList<>();
-            Map<String, String> signer = new LinkedHashMap<>();
-            signer.put("signAction", "mt");
-            signer.put("signerType", "CUST");
-            signer.put("idKtp", debtor.getIdentityNo());
-            signer.put("tlp", debtor.getNoTelp());
-            signer.put("email", debtor.getEmail());
-            signer.put("seqNo", "0");
-            signers.add(signer);
-
-            documentRequest.put("documentFile", base64File);
-            documentRequest.put("signers", signers);
-            documentRequest.put("isSequence", "");
-            documentRequest.put("useSignQR", "");
-            requests.add(documentRequest);
-            requestBody.put("requests", requests);
-
-            Map<String, Object> logRequestBody = new LinkedHashMap<>(requestBody);
-            List<Map<String, Object>> logRequests = new ArrayList<>();
-
-            Map<String, Object> logDocumentRequest = new LinkedHashMap<>(documentRequest);
-            logDocumentRequest.put("documentFile", "[BASE64_PDF_REDACTED]"); // Redact the base64
-
-            logRequests.add(logDocumentRequest);
-            logRequestBody.put("requests", logRequests);
-
-            ObjectMapper mapper = new ObjectMapper();
-            String requestBodyLog = mapper.writeValueAsString(logRequestBody);
-            log.info("Request Body to e-sign API (documentFile redacted): {}", requestBodyLog);
-
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("x-api-key", apiKey);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-
-            HttpEntity<String> entity = new HttpEntity<>(mapper.writeValueAsString(requestBody), headers);
-            RestTemplate restTemplate = new RestTemplate();
-
-            String apiUrl = sendDoc;
-            ResponseEntity<Map> response = restTemplate.postForEntity(apiUrl, entity, Map.class);
-
-            if (!response.getStatusCode().is2xxSuccessful()) {
-                throw new RuntimeException("Gagal memanggil API e-sign. Status: " + response.getStatusCodeValue());
-            }
-
-            Map<String, Object> responseBody = response.getBody();
-            if (responseBody == null || !responseBody.containsKey("status")) {
-                throw new RuntimeException("Invalid response from e-sign API");
-            }
-
-            Map<String, Object> status = (Map<String, Object>) responseBody.get("status");
-            int code = (int) status.get("code");
-            if (code != 0) {
-                String errorMsg = (String) status.getOrDefault("message", "Unknown error");
-                throw new RuntimeException("Gagal memproses e-sign. Kode: " + code + ", Pesan: " + errorMsg);
-            }
-
-            List<Map<String, Object>> documents = (List<Map<String, Object>>) responseBody.get("documents");
-            if (documents == null || documents.isEmpty()) {
-                throw new RuntimeException("Tidak ada documentId dalam response");
-            }
-
-            return (String) documents.get(0).get("documentId");
-
-        } catch (Exception e) {
-            log.error("Error calling e-sign API: {}", e.getMessage(), e);
-            throw new RuntimeException("Gagal memanggil API e-sign: " + e.getMessage());
-        }
-    }
-
-    private String convertFileToBase64(MultipartFile file) throws IOException {
-        byte[] fileBytes = file.getBytes();
-        return Base64.getEncoder().encodeToString(fileBytes);
-    }
-
-    private String getBranchCodeFromAgreement(String agreementCode) {
-        return agreementRepository.findByAgreementCode(agreementCode)
-                .map(agreement -> {
-                    if (agreement.getFinancingHdr() == null) {
-                        throw new RuntimeException("FinancingHdr tidak ditemukan untuk agreement " + agreementCode);
-                    }
-                    String cwrCode = agreement.getCwr().getCwrCode();
-
-                    return cwrRepository.findByCwrCode(cwrCode)
-                            .map(cwr -> {
-                                if (cwr.getBranchCode() == null || cwr.getBranchCode().isEmpty()) {
-                                    throw new RuntimeException("Branch code kosong untuk cwr " + cwrCode);
-                                }
-                                return cwr.getBranchCode();
-                            })
-                            .orElseThrow(() -> new RuntimeException("Cwr dengan code " + cwrCode + " tidak ditemukan"));
-                })
-                .orElseThrow(() -> new RuntimeException("Agreement dengan code " + agreementCode + " tidak ditemukan"));
-    }
-
-    private Debtor getConsistentDebtorForAgreement(String agreementCode, Long rotationCount) {
-        String financingHdrCode = agreementRepository.findByAgreementCode(agreementCode)
-                .orElseThrow(() -> new RuntimeException("Agreement not found"))
-                .getFinancingHdr().getFinancingHdrCode().toString();
-
-        List<Debtor> allDebtors = debtorRepository.findByFinancingHdrCodeOrderByDtmCrtDesc(financingHdrCode);
-
-        List<String> uniqueIdentityNos = allDebtors.stream()
-                .map(Debtor::getIdentityNo)
-                .distinct()
-                .collect(Collectors.toList());
-
-        if (uniqueIdentityNos.isEmpty()){
-            throw new RuntimeException("Debtor tidak ditemukan");
-        }
-
-        String selectedIdentityNo = uniqueIdentityNos.get((int)(rotationCount % uniqueIdentityNos.size()));
-
-        return allDebtors.stream()
-                .filter(d -> d.getIdentityNo().equals(selectedIdentityNo))
-                .findFirst()
-                .orElseThrow(() -> new RuntimeException("Data tidak konsisten untuk NIK: " + selectedIdentityNo));
-    }
-
     public List<SignerAgreementDto> signerAgreement(String financingHdrCode) {
         try {
             UUID uuid = UUID.fromString(financingHdrCode);
@@ -1026,13 +767,8 @@ public class SignerService {
 
             String bowheerName = financingHdr.getBouwheer().getBouwheerName();
 
-            List<String> agreementCodes = agreements.stream()
-                    .map(Agreement::getAgreementCode)
-                    .collect(Collectors.toList());
+            List<AgreementFileSigning> fileSignings = agreementFileSigningRepository.findByFinancing(financingHdrCode);
 
-            List<AgreementFileSigning> fileSignings = agreementFileSigningRepository.findByAgreementCodes(agreementCodes);
-
-            log.info("ini agreement code: " + agreementCodes);
 
             return fileSignings.stream()
                     .map(signing -> SignerDocDto.builder()
@@ -1041,7 +777,7 @@ public class SignerService {
                             .bowheerName(bowheerName)
                             .verifDate(signing.getDtmCrt() != null ?
                                     signing.getDtmCrt().toString() : null)
-                            .status("Menunggu TTD") // ambil status dari esignhub
+                            .status(signing.isStamp())
                             .agreementDoc(signing.getFilePath())
                             .documentId(signing.getDocumentId())
                             .build())
@@ -1051,8 +787,6 @@ public class SignerService {
             throw new IllegalArgumentException("Invalid financingHdrCode format: " + financingHdrCode);
         }
     }
-
-
 
     public SignerCheckResultDto compareSigners(String financingHdrCode, String agreementNo) {
 
@@ -1130,13 +864,11 @@ public class SignerService {
         try {
             String username = authentication != null ? authentication.getName() : "SYSTEM";
 
-            // 1. Validasi agreementCode
             if (agreementCode == null || agreementCode.trim().isEmpty()) {
                 return ResponseEntity.badRequest()
                         .body(new ApiResponse<>(false, "Agreement code is required", null, null, null));
             }
 
-            // 2. Get documentId from database
             String documentId = agreementFileSigningRepository.findDocumentIdByAgreementCode(agreementCode);
 
             if (documentId == null) {
@@ -1144,7 +876,6 @@ public class SignerService {
                         .body(new ApiResponse<>(false, "Document not found in database", null, null, null));
             }
 
-            // 3. Prepare external API request
             HttpHeaders requestHeaders = new HttpHeaders();
             requestHeaders.set("X-api-Key", apiKey);
             requestHeaders.setContentType(MediaType.APPLICATION_JSON);
@@ -1157,7 +888,6 @@ public class SignerService {
 
             HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, requestHeaders);
 
-            // 4. Call external API
             RestTemplate restTemplate = new RestTemplate();
             ResponseEntity<ExternalDownloadResponse> response;
 
@@ -1173,7 +903,6 @@ public class SignerService {
                         .body(new ApiResponse<>(false, "External API error", null, null, e.getResponseBodyAsString()));
             }
 
-            // 5. Handle response
             ExternalDownloadResponse responseBody = response.getBody();
             if (responseBody == null) {
                 return ResponseEntity.internalServerError()
@@ -1183,7 +912,6 @@ public class SignerService {
             int externalStatusCode = responseBody.getStatus().getCode();
             String externalMessage = responseBody.getStatus().getMessage();
 
-            // Handle semua case dalam format JSON
             if (externalStatusCode == 0) { // Success
                 try {
                     byte[] pdfBytes = Base64.getDecoder().decode(responseBody.getPdfBase64());
@@ -1204,7 +932,6 @@ public class SignerService {
                             .body(new ApiResponse<>(false, "Invalid document format", null, null, null));
                 }
             } else {
-                // Untuk semua error case
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                         .body(new ApiResponse<>(false, "Document processing failed",
                                 null,

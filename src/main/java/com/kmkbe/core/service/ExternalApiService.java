@@ -39,6 +39,8 @@ public class ExternalApiService {
     @Value("${csul.confins.adinskey}")
     private String apiKey;
 
+    private String xapiKey = "YiByHB@CSUL_DEV";
+
     public AppResponse getAppByAppNo(String applicationCode) {
         try {
             AppRequest request = new AppRequest();
@@ -247,6 +249,29 @@ public class ExternalApiService {
         } catch (Exception e) {
             throw new RuntimeException("Failed to call Confins API: " + e.getMessage());
         }
+    }
+
+    public ExternalSigningResponse callEsignApi(ExternalSigningRequest request) {
+        String esignUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/sendDocumentSigning";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("x-api-key", xapiKey);
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<ExternalSigningRequest> httpEntity = new HttpEntity<>(request, headers);
+
+        ResponseEntity<ExternalSigningResponse> response = restTemplate.exchange(
+                esignUrl,
+                HttpMethod.POST,
+                httpEntity,
+                ExternalSigningResponse.class
+        );
+
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            throw new RuntimeException("Failed to call e-sign API: " + response.getStatusCode());
+        }
+
+        return response.getBody();
     }
 
 }

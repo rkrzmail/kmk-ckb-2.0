@@ -35,7 +35,7 @@ public class AgreementFileSigning {
     private String filePath;
 
     @Column(name = "is_stamp")
-    private boolean isStamp;
+    private String isStamp;
 
     @Column(name = "usr_crt")
     private String usrCrt;
@@ -60,6 +60,9 @@ public class AgreementFileSigning {
     @Column(name = "identity_no")
     private String identityNo;
 
+    @Column(name = "financing_hdr_code")
+    private String financingHdrCode;
+
     // Getters and Setters
     public Long getAgreementFileId() { return agreementFileId; }
     public void setAgreementFileId(Long agreementFileId) { this.agreementFileId = agreementFileId; }
@@ -76,11 +79,11 @@ public class AgreementFileSigning {
     public String getFilePath() { return filePath; }
     public void setFilePath(String filePath) { this.filePath = filePath; }
 
-    public boolean isStamp() {
+    public String isStamp() {
         return isStamp;
     }
 
-    public void setStamp(boolean stamp) {
+    public void setStamp(String stamp) {
         isStamp = stamp;
     }
 
@@ -92,4 +95,7 @@ public class AgreementFileSigning {
 
     public String getIdentityNo() { return identityNo; }
     public void setIdentityNo(String identityNo) { this.identityNo = identityNo; }
+
+    public String getFinancingHdrCode() { return financingHdrCode; }
+    public void setFinancingHdrCode(String financingHdrCode) { this.financingHdrCode = financingHdrCode; }
 }

@@ -79,8 +79,13 @@ public class SignerController {
                     .success("NIK belum terdaftar. Link registrasi telah dikirim ke email " +
                             debtorDto.getEmail());
         } catch (Exception e) {
+            String errorMessage = e.getMessage();
+            if (errorMessage.contains("NIK sudah terdaftar")) {
+                return new CommonResult<String>()
+                        .fail(409, errorMessage); // 409 Conflict lebih sesuai untuk duplikasi data
+            }
             return new CommonResult<String>()
-                    .fail(400, e.getMessage());
+                    .fail(400, errorMessage);
         }
     }
 
@@ -90,14 +95,6 @@ public class SignerController {
             @PathVariable String agreementNo) {
         PersonDto result = signerService.getSignersFromExternalApi(financingHdrCode, agreementNo);
         return new CommonResult<PersonDto>().success(result);
-    }
-
-    @PostMapping(value = "/upload-file", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public CommonResult<AgreementFileSigning> uploadFile(
-            @ModelAttribute FileUploadRequest request,
-            Authentication authentication
-    ) {
-        return signerService.uploadFileHandler(request, authentication);
     }
 
     @GetMapping("/signer-agreement/{financingHdrCode}")

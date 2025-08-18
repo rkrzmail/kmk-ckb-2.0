@@ -3,6 +3,8 @@ package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.Agreement;
+import com.kmkbe.core.domain.entity.AgreementFileSigning;
+import com.kmkbe.core.domain.entity.Debtor;
 import com.kmkbe.core.domain.entity.Visitor;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
@@ -21,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
@@ -48,10 +51,13 @@ public class ReportService {
     private AgreementCodeService agreementCodeService;
 
     @Autowired
-    private CustomerRepository customerRepository;
+    private AgreementFileSigningRepository agreementFileSigningRepository;
 
     @Autowired
     private VisitorRepository visitorRepository;
+
+    @Autowired
+    private CwrRepository cwrRepository;
 
     @Autowired
     private MstBranchService mstBranchService;
@@ -68,7 +74,6 @@ public class ReportService {
     @Autowired
     private ExternalApiService externalApiService;
 
-    private JasperReport cachedReport;
 
     private String jwtToken;
     @Autowired
@@ -457,6 +462,14 @@ public class ReportService {
         CwrBwhrResponse cwrBwhrData = externalApiService.getCwrBwhr(cwrCode);
         CwrBwhrResponse.ListCwrBwhr cwrBwhr = cwrBwhrData.getCwrBouwheerCustNos().get(0);
 
+        //getCWR and Date
+        Optional<Map<String, Object>> cwrData = agreementRepo.findCwrCodeAndDate(UUID.fromString(financingHdrCode), agreementCode);
+        Map<String, Object> Cdata = cwrData.orElseGet(Collections::emptyMap);
+        SimpleDateFormat Csdf = new SimpleDateFormat("dd-MM-yyyy");
+        String formattedCwrDate = cwrData
+                .map(data -> Csdf.format(data.get("cwr_start_date"))) // asumsi langsung bisa diformat
+                .orElse("-");
+
         //getlisttable1
         CwrListBwhrResponse bouwheerData = externalApiService.getListCwrBwhr(cwrCode, cwrBwhr.getCwrBouwheerCustNo());
 
@@ -467,24 +480,6 @@ public class ReportService {
         //get karyawan
         Optional<Map<String, Object>> karyawanData = debtorRepository.findKaryawanByFinancingHdrCode(financingHdrCode);
         Map<String, Object> Kdata = karyawanData.orElseGet(Collections::emptyMap);
-
-//        Map<String, Object> result = agreementRepo
-//                .findCwrCodeAndCustNo(UUID.fromString(financingHdrCode))
-//                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
-//        String cwrCodeResult = (String) result.get("cwrCode");
-//        String custNoResult = (String) result.get("custNo");
-//        SignerApiResponse signerData = externalApiService.getKaryawan(cwrCodeResult, custNoResult);
-//        String namaKaryawan = Optional.ofNullable(signerData.getReturnObject())
-//                .filter(list -> !list.isEmpty())
-//                .map(list -> list.get(0))
-//                .map(SignerApiResponse.SignerData::getSignerName)
-//                .orElse("Tidak tersedia");
-//
-//        String jabatan = Optional.ofNullable(signerData.getReturnObject())
-//                .filter(list -> !list.isEmpty())
-//                .map(list -> list.get(0))
-//                .map(SignerApiResponse.SignerData::getSignerPosition)
-//                .orElse("Tidak tersedia");
 
         // get facility
         String facility = agreementRepo.findFaciltyByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode);
@@ -509,6 +504,8 @@ public class ReportService {
         params.put("AppNo", apiResponse.getAppNo());
         params.put("TglDokumen", tanggalDokumen);
         params.put("DebtorName", debtorName);
+        params.put("Cwr", Cdata.getOrDefault("cwr_code", "-").toString());
+        params.put("Cwr-Date", formattedCwrDate);
         params.put("BankName", dataRekening.getBankName());
         params.put("BankAccNo", dataRekening.getAccNo());
         params.put("BankAccName", dataRekening.getAccName());
@@ -516,26 +513,34 @@ public class ReportService {
         params.put("Jabatan", Kdata.getOrDefault("Jabatan", "-").toString());
 
         List<Map<String, String>> tableData = new ArrayList<>();
-        Map<String, String> row1 = new HashMap<>();
-        row1.put("no", "1");
-        row1.put("customer", "Debtor Company");
-        row1.put("nomor_perjanjian", "Y5SFS");
-        row1.put("tanggal_perjanjian", "01-01-2024");
-        row1.put("nomor_invoice", "MI-243655");
-        row1.put("tanggal_invoice", "29-12-2024");
-        row1.put("jumlah_piutang", "1265400000.00");
-        tableData.add(row1);
+        if (bouwheerData != null &&
+                bouwheerData.getCwrListBouwheerCustNo() != null &&
+                !bouwheerData.getCwrListBouwheerCustNo().isEmpty()) {
 
-        Map<String, String> row2 = new HashMap<>();
-        row2.put("no", "2");
-        row2.put("customer", "Debtor Company");
-        row2.put("nomor_perjanjian", "Y5SFS");
-        row2.put("tanggal_perjanjian", "01-01-2024");
-        row2.put("nomor_invoice", "MI-243655");
-        row2.put("tanggal_invoice", "29-12-2024");
-        row2.put("jumlah_piutang", "1265400000.00");
-        tableData.add(row2);
+            int counter = 1;
+            for (CwrListBwhrResponse.ListData Bdata : bouwheerData.getCwrListBouwheerCustNo()) {
+                Map<String, String> row = new HashMap<>();
+                row.put("no", String.valueOf(counter++));
+                row.put("customer", debtorName);
+                row.put("nomor_perjanjian", Bdata.getCooperationAgreementNo());
+                row.put("tanggal_perjanjian", Bdata.getStartPeriod());
+                row.put("nomor_invoice", "MI-243655");
+                row.put("tanggal_invoice", "29-12-2024");
+                row.put("jumlah_piutang", "1265400000.00");
 
+                tableData.add(row);
+            }
+        } else {
+            Map<String, String> emptyRow = new HashMap<>();
+            emptyRow.put("no", "1");
+            emptyRow.put("customer", "No Data Available");
+            emptyRow.put("nomor_perjanjian", "No Data Available");
+            emptyRow.put("tanggal_perjanjian", "No Data Available");
+            emptyRow.put("nomor_invoice", "No Data Available");
+            emptyRow.put("tanggal_invoice", "No Data Available");
+            emptyRow.put("jumlah_piutang", "No Data Available");
+            tableData.add(emptyRow);
+        }
         params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
 
         // lembar 3
@@ -647,5 +652,147 @@ public class ReportService {
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, params, dataSource);
         return JasperExportManager.exportReportToPdf(jasperPrint);
     }
-}
 
+    public SigningResponse sendDocumentForSigning(
+            String financingHdrCode,
+            String agreementCode,
+            Authentication authentication) {
+
+        try {
+            byte[] pdfBytes = generateReport(financingHdrCode, agreementCode);
+
+            String username = authentication != null ? authentication.getName() : "SYSTEM";
+
+            ExternalSigningRequest request = prepareSigningRequest(
+                    financingHdrCode,
+                    agreementCode,
+                    pdfBytes,
+                    username
+            );
+
+
+
+            ExternalSigningResponse esignResponse = externalApiService.callEsignApi(request);
+
+            if (esignResponse.getStatus().getCode() == 0) {
+                saveToDatabase(
+                        agreementCode,
+                        esignResponse.getDocuments().get(0).getDocumentId(),
+                        username,
+                        financingHdrCode
+                );
+
+                return SigningResponse.builder()
+                        .success(true)
+                        .documentId(esignResponse.getDocuments().get(0).getDocumentId())
+                        .message("Document sent for signing successfully")
+                        .build();
+            } else {
+                String errorMessage = esignResponse.getStatus().getMessage();
+                throw new RuntimeException("E-sign API error: " + errorMessage);
+            }
+        } catch (Exception e) {
+            return SigningResponse.builder()
+                    .success(false)
+                    .documentId(null)
+                    .message(e.getMessage())
+                    .build();
+        }
+    }
+
+    private ExternalSigningRequest prepareSigningRequest(
+            String financingHdrCode,
+            String agreementCode,
+            byte[] pdfBytes,
+            String username
+    ) {
+        String branchCode = getBranchCodeFromAgreement(agreementCode);
+
+        Agreement agreement = agreementRepo.findByAgreementCode(agreementCode)
+                .orElseThrow(() -> new RuntimeException("Agreement not found"));
+
+        String base64Pdf = Base64.getEncoder().encodeToString(pdfBytes);
+
+        return ExternalSigningRequest.builder()
+                .tenantCode("CSUL_DEV")
+                .psreCode("VIDA")
+                .audit(new ExternalSigningRequest.Audit(username))
+                .requests(List.of(
+                        ExternalSigningRequest.DocumentRequest.builder()
+                                .referenceNo(agreementCode)
+                                .documentTemplateCode("PERJANJIAN_1A")
+                                .documentName("DOKUMEN PERJANJIAN KONTRAK")
+                                .officeCode(branchCode)
+                                .officeName(username)
+                                .regionCode(branchCode)
+                                .regionName("JAKARTA")
+                                .businessLineCode("CBU")
+                                .businessLineName("Corporate Business Unit")
+                                .signers(prepareSigners(agreement, financingHdrCode))
+                                .documentFile(base64Pdf)
+                                .build()
+                ))
+                .build();
+    }
+
+    private List<ExternalSigningRequest.Signer> prepareSigners(Agreement agreement, String financingHdrCode) {
+        List<ExternalSigningRequest.Signer> signers = new ArrayList<>();
+
+        Debtor debtor = debtorRepository
+                .findActiveSignerByFinancingHdrCode(financingHdrCode)
+                .orElseThrow(() -> new RuntimeException("Tidak ada data signer active dari financingHdr = " + financingHdrCode));
+
+        signers.add(ExternalSigningRequest.Signer.builder()
+                        .signAction("mt")
+                        .signerType("CUST")
+                        .idKtp(debtor.getIdentityNo())
+                        .tlp(debtor.getNoTelp())
+                        .email(debtor.getEmail())
+                        .seqNo("0")
+                        .build());
+        return signers;
+    }
+
+    private void saveToDatabase(String agreementCode, String documentId, String username, String financingHdrCode) {
+
+        Debtor debtor = debtorRepository
+                .findActiveSignerByFinancingHdrCode(financingHdrCode)
+                .orElseThrow(() -> new RuntimeException("Tidak ada data signer active dari financingHdr = " + financingHdrCode));
+
+        AgreementFileSigning entity = AgreementFileSigning.builder()
+                .agreementCode(agreementCode)
+                .fileTypeCode("E_SIGN_DOC")
+                .fileName("PERJANJIAN_1A_" + agreementCode + ".pdf")
+                .filePath("")
+                .isStamp("Not Signed")
+                .usrCrt(username)
+                .dtmCrt(LocalDateTime.now())
+                .signer(debtor.getKaryawanName())
+                .identityNo(debtor.getIdentityNo())
+                .documentId(documentId)
+                .build();
+
+        agreementFileSigningRepository.save(entity);
+
+    }
+
+    private String getBranchCodeFromAgreement(String agreementCode) {
+        return agreementRepo.findByAgreementCode(agreementCode)
+                .map(agreement -> {
+                    if (agreement.getFinancingHdr() == null) {
+                        throw new RuntimeException("FinancingHdr tidak ditemukan untuk agreement " + agreementCode);
+                    }
+                    String cwrCode = agreement.getCwr().getCwrCode();
+
+                    return cwrRepository.findByCwrCode(cwrCode)
+                            .map(cwr -> {
+                                if (cwr.getBranchCode() == null || cwr.getBranchCode().isEmpty()) {
+                                    throw new RuntimeException("Branch code kosong untuk cwr " + cwrCode);
+                                }
+                                return cwr.getBranchCode();
+                            })
+                            .orElseThrow(() -> new RuntimeException("Cwr dengan code " + cwrCode + " tidak ditemukan"));
+                })
+                .orElseThrow(() -> new RuntimeException("Agreement dengan code " + agreementCode + " tidak ditemukan"));
+    }
+}

@@ -13,8 +13,8 @@ import java.util.Optional;
 
 public interface AgreementFileSigningRepository extends JpaRepository<AgreementFileSigning, Long> {
 
-    @Query("SELECT a FROM AgreementFileSigning a WHERE a.agreementCode IN :agreementCodes")
-    List<AgreementFileSigning> findByAgreementCodes(@Param("agreementCodes") List<String> agreementCodes);
+    @Query("SELECT a FROM AgreementFileSigning a WHERE a.financingHdrCode = :financingHdrCode")
+    List<AgreementFileSigning> findByFinancing(@Param("financingHdrCode") String financingHdrCode);
 
     @Query("SELECT a.documentId FROM AgreementFileSigning a WHERE a.agreementCode = :agreementCode")
     String findDocumentIdByAgreementCode(@Param("agreementCode") String agreementCode);

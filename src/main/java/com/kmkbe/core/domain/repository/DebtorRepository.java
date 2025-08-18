@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface DebtorRepository extends JpaRepository<Debtor, Long> {
-
+    boolean existsByIdentityNo(String identityNo);
 
     Optional<Debtor> findByEmail(String email);
 
@@ -28,4 +28,10 @@ public interface DebtorRepository extends JpaRepository<Debtor, Long> {
     WHERE d.financing_hdr_code = :financingHdrCode
     """, nativeQuery = true)
     Optional<Map<String, Object>> findKaryawanByFinancingHdrCode(@Param("financingHdrCode") String financingHdrCode);
+
+    @Query("SELECT d FROM Debtor d " +
+            "WHERE d.financingHdrCode = :financingHdrCode " +
+            "AND d.signerStatus = 'active'")
+    Optional<Debtor> findActiveSignerByFinancingHdrCode(@Param("financingHdrCode") String financingHdrCode);
+
 }

@@ -135,4 +135,20 @@ public class ReportController {
         }
     }
 
+    @PostMapping("/send-doc/{financingHdrCode}/{agreementCode}")
+    public ResponseEntity<SigningResponse> sendForSigning(
+            @PathVariable String financingHdrCode,
+            @PathVariable String agreementCode,
+            Authentication authentication
+    ) {
+
+        SigningResponse response = reportService.sendDocumentForSigning(
+                financingHdrCode,
+                agreementCode,
+                authentication
+        );
+
+        return ResponseEntity.ok(response);
+    }
+
 }
