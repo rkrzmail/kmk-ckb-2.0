@@ -71,17 +71,14 @@ public class ExternalApiService {
 
     public FinancialDataResponse getFinancialData(String agreementCode) {
         try {
-            // 1. Prepare Request
             FinancialDataRequest request = new FinancialDataRequest();
             request.setTrxNo(agreementCode);
             request.setRequestDateTime(LocalDate.now().toString());
 
-            // 2. Set Headers
             HttpHeaders headers = new HttpHeaders();
             headers.set("AdInsKey", apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // 3. Call API
             ResponseEntity<FinancialDataResponse> response = restTemplate.exchange(
                     getFinDataUrl,
                     HttpMethod.POST,
@@ -89,7 +86,6 @@ public class ExternalApiService {
                     FinancialDataResponse.class
             );
 
-            // 4. Validate Response
             if (response.getBody() == null ||
                     response.getBody().getHeader() == null ||
                     !"200".equals(response.getBody().getHeader().getStatusCode())) {
@@ -105,17 +101,14 @@ public class ExternalApiService {
 
     public AppFactoringResponse getAppFactoringData(Integer appId) {
         try {
-            // 1. Prepare Request
             AppFactoringRequest request = new AppFactoringRequest();
-            request.setId(appId); // AppId dari API pertama
+            request.setId(appId);
             request.setRequestDateTime(LocalDate.now().toString());
 
-            // 2. Set Headers
             HttpHeaders headers = new HttpHeaders();
             headers.set("AdInsKey", apiKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
 
-            // 3. Call API
             ResponseEntity<AppFactoringResponse> response = restTemplate.exchange(
                     getFactoringUrl,
                     HttpMethod.POST,
@@ -123,7 +116,6 @@ public class ExternalApiService {
                     AppFactoringResponse.class
             );
 
-            // 4. Validate Response
             if (response.getStatusCode() != HttpStatus.OK ||
                     response.getBody() == null ||
                     !"200".equals(response.getBody().getHeader().getStatusCode())) {

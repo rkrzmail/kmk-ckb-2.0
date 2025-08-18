@@ -376,7 +376,6 @@ public class SignerService {
             debtorDto.setSignerStatus("not active");
             debtorDto.setSignhubStatus("not register");
 
-            // Kalau error, update ke DB juga
             Debtor debtor = debtorRepository.findById(debtorDto.getDebtorId())
                     .orElse(null);
             if (debtor != null) {
@@ -480,7 +479,6 @@ public class SignerService {
         try {
             log.info("createDebtor: {}", debtorDto);
 
-            // Cek duplikasi identityNo
             if (debtorRepository.existsByIdentityNo(debtorDto.getIdentityNo())) {
                 throw new RuntimeException("NIK yang digunakan sudah terdaftar");
             }
@@ -497,7 +495,6 @@ public class SignerService {
             Map<String, Object> registerResponse = callRegistrationApi(debtorDto, headers, username);
             log.info("Register API Response: {}", registerResponse);
 
-            // Cek status registrasi
             String registrationStatus = "0";
 
             if (registerResponse.containsKey("registrationData")) {
@@ -511,7 +508,6 @@ public class SignerService {
 
             switch (registrationStatus) {
                 case "0":
-                    // Lanjut ke proses invitation
                     log.info("Calling Invitation API for debtor: {}", debtorDto.getDebtorName());
                     Map<String, Object> inviteResponse = callInvitationApi(debtorDto, headers, username);
                     String invitationLink = (String) inviteResponse.get("link");
@@ -565,12 +561,10 @@ public class SignerService {
             throw new RuntimeException("API registrasi tidak memberikan response");
         }
 
-        // Handle response format baru dengan registrationData
         if (responseBody.containsKey("registrationData")) {
             return responseBody;
         }
 
-        // Handle response format lama dengan status code 8165
         if (responseBody.containsKey("status")) {
             Map<String, Object> status = (Map<String, Object>) responseBody.get("status");
             if (!status.get("code").equals(8165)) {
@@ -652,7 +646,6 @@ public class SignerService {
 
         Debtor savedDebtor = debtorRepository.save(debtor);
 
-        // Simpan ke notif_debtor
         notifDebtorRepository.save(NotifDebtor.builder()
                 .notification("Terdapat Perubahan Signer Person")
                 .description("Signer Person telah berubah. Pastikan signer yang didaftarkan sesuai dan berwenang menandatangani dokumen perjanjian.")
@@ -664,7 +657,6 @@ public class SignerService {
         return debtorMapper.entityToDto(savedDebtor);
     }
 
-    // GET DARI CONFINS
 
     public PersonDto getSignersFromExternalApi(String financingHdrCode, String agreementNo) {
         boolean useHardcode = false; // Ganti nilai ini untuk switch mode
@@ -904,7 +896,7 @@ public class SignerService {
             if (externalStatusCode == 0) { // Success
                 try {
                     byte[] pdfBytes = Base64.getDecoder().decode(responseBody.getPdfBase64());
-                    String base64Pdf = responseBody.getPdfBase64(); // Return as base64 string
+                    String base64Pdf = responseBody.getPdfBase64();
 
                     return ResponseEntity.ok()
                             .body(new ApiResponse<>(true, "Document retrieved successfully",
@@ -952,13 +944,10 @@ public class SignerService {
             String bowheerName = financingHdr.getBouwheer().getBouwheerName();
             List<AgreementFileSigning> fileSignings = agreementFileSigningRepository.findByFinancing(financingHdrCode);
 
-            // 1. Update status dari API eksternal
             checkExternalSigningStatus(fileSignings, username);
 
-            // 2. Ambil data TERBARU dari database setelah update
             fileSignings = agreementFileSigningRepository.findByFinancing(financingHdrCode);
 
-            // 3. Mapping ke DTO
             return fileSignings.stream()
                     .map(signing -> SignerDocDto.builder()
                             .agreementFileId(signing.getAgreementFileId())
@@ -966,7 +955,7 @@ public class SignerService {
                             .bowheerName(bowheerName)
                             .verifDate(signing.getDtmCrt() != null ?
                                     signing.getDtmCrt().toString() : null)
-                            .status(signing.stamp()) // Pastikan ini mengambil dari entity yang sudah diupdate
+                            .status(signing.stamp())
                             .documentId(signing.getDocumentId())
                             .build())
                     .collect(Collectors.toList());
@@ -981,7 +970,6 @@ public class SignerService {
 
         for (AgreementFileSigning signing : fileSignings) {
             try {
-                // Buat request
                 Map<String, Object> request = new HashMap<>();
                 Map<String, String> audit = new HashMap<>();
                 audit.put("callerId", username);
@@ -989,12 +977,10 @@ public class SignerService {
                 request.put("refNumber", signing.getAgreementCode());
                 request.put("byPassActiveCheck", 0);
 
-                // Set header
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
                 headers.set("x-api-key", apiKey);
 
-                // Panggil API
                 ResponseEntity<Map> response = restTemplate.exchange(
                         checkDoc,
                         HttpMethod.POST,
@@ -1002,7 +988,6 @@ public class SignerService {
                         Map.class
                 );
 
-                // Proses response
                 if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
                     Map<String, Object> responseBody = response.getBody();
                     List<Map<String, Object>> statusSigning = (List<Map<String, Object>>) responseBody.get("statusSigning");
@@ -1021,7 +1006,6 @@ public class SignerService {
             } catch (Exception e) {
                 signing.setStamp("Menunggu TTD");
             } finally {
-                // PASTIKAN save dilakukan
                 AgreementFileSigning updated =agreementFileSigningRepository.save(signing);
                 log.info("Updated signing id={} stamp={}", updated.getAgreementFileId(), updated.getStamp());
             }

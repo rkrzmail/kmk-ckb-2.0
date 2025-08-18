@@ -139,10 +139,8 @@ public class ReportService {
                 pageNo = pageNo - 1;
             }
 
-            // Use the Pageable object to manage pagination
             Page<ProyeksiReportDto> pagination = financingHdrRepository.findActiveCustomersWithInvoiceDetails(PageRequest.of(pageNo, pageSize), DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()),DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate()) );
 
-            // Collecting the results into a list
             List<ProyeksiReportDto> result = pagination.stream()
                     .map(e -> new ProyeksiReportDto(
                             e.getDebtorName(),
@@ -214,7 +212,6 @@ public class ReportService {
 
         public PaginationResult<SummaryByAODto> getAllReportBranchByAO(PaginationRequest request) {
         try {
-            // Setup pagination
             int pageNo = 0, pageSize = Integer.MAX_VALUE;
 
             if (request.getPageNo() != null) {
@@ -272,7 +269,6 @@ public class ReportService {
         }
     }
 
-    // Helper method to get the branch name using branchCode from mstBranchService
     private String getBranchNameByCode(String branchCode) {
         List<BranchDto> branches = mstBranchService.branchList(null);
         for (BranchDto branch : branches) {
@@ -467,7 +463,7 @@ public class ReportService {
         Map<String, Object> Cdata = cwrData.orElseGet(Collections::emptyMap);
         SimpleDateFormat Csdf = new SimpleDateFormat("dd-MM-yyyy");
         String formattedCwrDate = cwrData
-                .map(data -> Csdf.format(data.get("cwr_start_date"))) // asumsi langsung bisa diformat
+                .map(data -> Csdf.format(data.get("cwr_start_date")))
                 .orElse("-");
 
         //getlisttable1
@@ -488,7 +484,6 @@ public class ReportService {
         Date invoiceDueDate = agreementRepo.findInvoiceDueDateByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
                 .orElseThrow(() -> new RuntimeException("Invoice due date tidak ditemukan"));
 
-        // Format tanggal jika perlu
         SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
         String formattedDate = sdf.format(invoiceDueDate);
 

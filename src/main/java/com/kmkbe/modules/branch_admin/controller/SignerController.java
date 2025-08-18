@@ -83,7 +83,7 @@ public class SignerController {
             String errorMessage = e.getMessage();
             if (errorMessage.contains("NIK sudah terdaftar")) {
                 return new CommonResult<String>()
-                        .fail(409, errorMessage); // 409 Conflict lebih sesuai untuk duplikasi data
+                        .fail(409, errorMessage);
             }
             return new CommonResult<String>()
                     .fail(400, errorMessage);
