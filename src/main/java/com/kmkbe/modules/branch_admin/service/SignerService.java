@@ -845,7 +845,7 @@ public class SignerService {
             }
 
             HttpHeaders requestHeaders = new HttpHeaders();
-            requestHeaders.set("X-api-Key", apiKey);
+            requestHeaders.set("x-api-Key", apiKey);
             requestHeaders.setContentType(MediaType.APPLICATION_JSON);
 
             Map<String, Object> requestBody = new LinkedHashMap<>();
