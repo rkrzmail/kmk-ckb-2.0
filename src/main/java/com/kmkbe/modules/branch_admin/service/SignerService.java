@@ -236,14 +236,18 @@ public class SignerService {
         }
     }
 
-    public List<DebtorDto> signerPersonList(String financingHdrCode) {
+    public List<DebtorDto> signerPersonList(String financingHdrCode, Authentication authentication) {
+        String username = authentication != null ?
+                authentication.getName() :
+                "SYSTEM";
+
         List<Debtor> debtors = debtorRepository.findByFinancingHdrCode(financingHdrCode);
 
 //        List<CompletableFuture<DebtorDto>> futures = debtors.stream()
 //                .map(this::processDebtorAsync)
 //                .collect(Collectors.toList());
         List<CompletableFuture<DebtorDto>> futures = debtors.stream()
-                .map(debtor -> processDebtorAsync(debtor, debtor.getFinancingHdrCode()))
+                .map(debtor -> processDebtorAsync(debtor, debtor.getFinancingHdrCode(), username))
                 .collect(Collectors.toList());
 
         CompletableFuture<Void> allOf = CompletableFuture.allOf(
@@ -263,9 +267,9 @@ public class SignerService {
     }
 
     @Async("taskExecutor")
-    public CompletableFuture<DebtorDto> processDebtorAsync(Debtor signer, String financingHdrCode) {
+    public CompletableFuture<DebtorDto> processDebtorAsync(Debtor signer, String financingHdrCode, String username) {
         DebtorDto debtorDto = mapDebtorToDto(signer);
-        checkRegistrationStatus(debtorDto, signer.getIdentityNo(), financingHdrCode);
+        checkRegistrationStatus(debtorDto, signer.getIdentityNo(), financingHdrCode, username);
         return CompletableFuture.completedFuture(debtorDto);
     }
 
@@ -295,13 +299,13 @@ public class SignerService {
         return debtorDto;
     }
 
-    private void checkRegistrationStatus(DebtorDto debtorDto, String identityNo, String financingHdrCode) {
+    private void checkRegistrationStatus(DebtorDto debtorDto, String identityNo, String financingHdrCode, String username) {
         try {
 
             debtorDto.setSignhubStatus("not register");
             Map<String, Object> requestBody = new HashMap<>();
             Map<String, String> audit = new HashMap<>();
-            audit.put("callerId", callerId);
+            audit.put("callerId", username);
             requestBody.put("audit", audit);
             requestBody.put("dataType", "NIK");
             requestBody.put("userData", identityNo);
@@ -469,7 +473,7 @@ public class SignerService {
             headers.set("x-api-key", apiKey);
 
             log.info("Calling Registration API for debtor with identityNo: {}", debtorDto.getIdentityNo());
-            Map<String, Object> registerResponse = callRegistrationApi(debtorDto, headers);
+            Map<String, Object> registerResponse = callRegistrationApi(debtorDto, headers, username);
             log.info("Register API Response: {}", registerResponse);
 
             // Cek status registrasi
@@ -521,9 +525,9 @@ public class SignerService {
         }
     }
 
-    private Map<String, Object> callRegistrationApi(DebtorDto debtorDto, HttpHeaders headers) {
+    private Map<String, Object> callRegistrationApi(DebtorDto debtorDto, HttpHeaders headers, String username) {
         Map<String, Object> requestBody = Map.of(
-                "audit", Map.of("callerId", callerId),
+                "audit", Map.of("callerId", username),
                 "dataType", "NIK",
                 "userData", debtorDto.getIdentityNo()
         );
@@ -777,8 +781,7 @@ public class SignerService {
                             .bowheerName(bowheerName)
                             .verifDate(signing.getDtmCrt() != null ?
                                     signing.getDtmCrt().toString() : null)
-                            .status(signing.isStamp())
-                            .agreementDoc(signing.getFilePath())
+                            .status(signing.stamp())
                             .documentId(signing.getDocumentId())
                             .build())
                     .collect(Collectors.toList());

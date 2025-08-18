@@ -51,8 +51,9 @@ public class SignerController {
 
     @GetMapping("/person/list/{financingHdrCode}")
     public CommonResult<List<DebtorDto>> getSignerPersonList(
-            @PathVariable String financingHdrCode) {
-        List<DebtorDto> signerPersonList = signerService.signerPersonList(financingHdrCode);
+            @PathVariable String financingHdrCode,
+            Authentication authentication) {
+        List<DebtorDto> signerPersonList = signerService.signerPersonList(financingHdrCode, authentication);
         return new CommonResult<List<DebtorDto>>().success(signerPersonList);
     }
 

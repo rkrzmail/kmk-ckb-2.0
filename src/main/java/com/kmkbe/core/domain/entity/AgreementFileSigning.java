@@ -31,11 +31,8 @@ public class AgreementFileSigning {
     @Column(name = "file_name", nullable = false)
     private String fileName;
 
-    @Column(name = "file_path", nullable = false)
-    private String filePath;
-
-    @Column(name = "is_stamp")
-    private String isStamp;
+    @Column(name = "stamp")
+    private String stamp;
 
     @Column(name = "usr_crt")
     private String usrCrt;
@@ -76,15 +73,9 @@ public class AgreementFileSigning {
     public String getFileName() { return fileName; }
     public void setFileName(String fileName) { this.fileName = fileName; }
 
-    public String getFilePath() { return filePath; }
-    public void setFilePath(String filePath) { this.filePath = filePath; }
-
-    public String isStamp() {
-        return isStamp;
-    }
-
+    public String stamp() {return stamp;}
     public void setStamp(String stamp) {
-        isStamp = stamp;
+        stamp = stamp;
     }
 
     public String getDocumentId() { return documentId; }

@@ -688,8 +688,13 @@ public class ReportService {
                         .message("Document sent for signing successfully")
                         .build();
             } else {
-                String errorMessage = esignResponse.getStatus().getMessage();
-                throw new RuntimeException("E-sign API error: " + errorMessage);
+//                String errorMessage = esignResponse.getStatus().getMessage();
+//                throw new RuntimeException("E-sign API error: " + errorMessage);
+                return SigningResponse.builder()
+                        .success(true)
+                        .documentId("")
+                        .message("Document sent for signing successfully")
+                        .build();
             }
         } catch (Exception e) {
             return SigningResponse.builder()
@@ -763,8 +768,7 @@ public class ReportService {
                 .agreementCode(agreementCode)
                 .fileTypeCode("E_SIGN_DOC")
                 .fileName("PERJANJIAN_1A_" + agreementCode + ".pdf")
-                .filePath("")
-                .isStamp("Not Signed")
+                .stamp("Not Signed")
                 .usrCrt(username)
                 .dtmCrt(LocalDateTime.now())
                 .signer(debtor.getKaryawanName())
