@@ -18,4 +18,8 @@ public interface AgreementFileSigningRepository extends JpaRepository<AgreementF
 
     @Query("SELECT a.documentId FROM AgreementFileSigning a WHERE a.agreementCode = :agreementCode")
     String findDocumentIdByAgreementCode(@Param("agreementCode") String agreementCode);
+
+    long countByFinancingHdrCode(String financingHdrCode);
+
+    long countByFinancingHdrCodeAndStamp(String financingHdrCode, String stamp);
 }

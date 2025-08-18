@@ -1014,9 +1014,9 @@ public class SignerService {
 
         for (Map<String, String> signer : signers) {
             String signStatus = signer.get("signStatus");
-            if ("1".equals(signStatus)) return "SIGNED";
-            if ("2".equals(signStatus)) return "FAILED";
-            if ("3".equals(signStatus)) return "IN_PROGRESS";
+            if ("1".equals(signStatus)) return "signed";
+            if ("2".equals(signStatus)) return "Sign Failed";
+            if ("3".equals(signStatus)) return "Signing in Process";
         }
 
         return "Menunggu TTD";

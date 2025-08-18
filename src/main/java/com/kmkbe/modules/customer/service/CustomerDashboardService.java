@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.CwrMapper;
+import com.kmkbe.core.domain.repository.AgreementFileSigningRepository;
 import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.CwrRepository;
 import com.kmkbe.core.domain.repository.NotifDebtorRepository;
@@ -36,6 +37,7 @@ public class CustomerDashboardService {
     private final EntityManager entityManager;
     private final AgreementRepository agreementRepository;
     private final NotifDebtorRepository notifDebtorRepository;
+    private final AgreementFileSigningRepository agreementFileSigningRepository;
 
     public CustomerPlafondDto plafond( Authentication authentication  ) throws SignatureException {
         Customer customer = CustomerUtils.authenticateCustomer(authentication);
@@ -223,6 +225,10 @@ public class CustomerDashboardService {
                     PageRequest.of(0, 10)
             );
 
+            long total = agreementFileSigningRepository.countByFinancingHdrCode(financingHdrCode);
+            long berjalan = agreementFileSigningRepository.countByFinancingHdrCodeAndStamp(financingHdrCode, "SIGNING IN PROCESS");
+            long berakhir = agreementFileSigningRepository.countByFinancingHdrCodeAndStamp(financingHdrCode, "SIGNED");
+
             return CustomerPerjanjianDto.builder()
                     .financingHdrCode(financingHdr.getFinancingHdrCode())
                     .bouwheerCode(financingHdr.getBouwheer().getBouwheerCode())
@@ -237,9 +243,9 @@ public class CustomerDashboardService {
                     .phoneNo(phoneNo)
                     .agreementCode(agreement.getAgreementCode())
                     .perjanjian(CustomerPerjanjianDto.PerjanjianDto.builder()
-                            .perjanjianBerjalan(9)
-                            .perjanjianBerakhir(9)
-                            .totalPerjanjian(9)
+                            .perjanjianBerjalan((int)berjalan)
+                            .perjanjianBerakhir((int)berakhir)
+                            .totalPerjanjian((int)total)
                             .build())
 
                     .build();
