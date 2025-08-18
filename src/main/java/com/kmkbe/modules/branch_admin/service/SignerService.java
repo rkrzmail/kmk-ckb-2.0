@@ -236,6 +236,7 @@ public class SignerService {
         }
     }
 
+
     public List<DebtorDto> signerPersonList(String financingHdrCode, Authentication authentication) {
         String username = authentication != null ?
                 authentication.getName() :
@@ -243,9 +244,6 @@ public class SignerService {
 
         List<Debtor> debtors = debtorRepository.findByFinancingHdrCode(financingHdrCode);
 
-//        List<CompletableFuture<DebtorDto>> futures = debtors.stream()
-//                .map(this::processDebtorAsync)
-//                .collect(Collectors.toList());
         List<CompletableFuture<DebtorDto>> futures = debtors.stream()
                 .map(debtor -> processDebtorAsync(debtor, debtor.getFinancingHdrCode(), username))
                 .collect(Collectors.toList());
@@ -299,7 +297,8 @@ public class SignerService {
         return debtorDto;
     }
 
-    private void checkRegistrationStatus(DebtorDto debtorDto, String identityNo, String financingHdrCode, String username) {
+    @Transactional
+    protected void checkRegistrationStatus(DebtorDto debtorDto, String identityNo, String financingHdrCode, String username) {
         try {
 
             debtorDto.setSignhubStatus("not register");
@@ -323,6 +322,8 @@ public class SignerService {
                     Map.class
             );
 
+            String finalSignhubStatus = "not register";
+
             if (response.getStatusCode() == HttpStatus.OK) {
                 Map<String, Object> responseBody = response.getBody();
 
@@ -342,16 +343,16 @@ public class SignerService {
                                 String registrationStatus = vidaRegistration.get("registrationStatus").toString();
                                 switch (registrationStatus) {
                                     case "0":
-                                        debtorDto.setSignhubStatus("not register");
+                                        finalSignhubStatus = "not register";
                                         break;
                                     case "1":
-                                        debtorDto.setSignhubStatus("pending");
+                                        finalSignhubStatus = "pending";
                                         break;
                                     case "2":
-                                        debtorDto.setSignhubStatus("active");
+                                        finalSignhubStatus = "active";
                                         break;
                                     default:
-                                        debtorDto.setSignhubStatus("not register");
+                                        finalSignhubStatus = "not register";
                                 }
                             }
                         }
@@ -359,11 +360,31 @@ public class SignerService {
                 }
             }
 
+            debtorDto.setSignhubStatus(finalSignhubStatus);
+
             checkSignerStatus(debtorDto, financingHdrCode);
+
+            Debtor debtor = debtorRepository.findById(debtorDto.getDebtorId())
+                    .orElseThrow(() -> new RuntimeException("Debtor not found with id " + debtorDto.getDebtorId()));
+
+            debtor.setSignhubStatus(finalSignhubStatus);
+            debtor.setSignerStatus(debtorDto.getSignerStatus());
+
+            debtorRepository.save(debtor);
 
         } catch (Exception e) {
             debtorDto.setSignerStatus("not active");
             debtorDto.setSignhubStatus("not register");
+
+            // Kalau error, update ke DB juga
+            Debtor debtor = debtorRepository.findById(debtorDto.getDebtorId())
+                    .orElse(null);
+            if (debtor != null) {
+                debtor.setSignerStatus("not active");
+                debtor.setSignhubStatus("not register");
+                debtorRepository.save(debtor);
+            }
+
             System.err.println("Error checking registration for NIK: " + identityNo);
             e.printStackTrace();
         }
