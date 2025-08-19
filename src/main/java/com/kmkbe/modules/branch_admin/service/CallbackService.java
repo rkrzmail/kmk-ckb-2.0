@@ -23,7 +23,6 @@ public class CallbackService {
             case "DOCUMENT_SIGN_COMPLETE":
                 handleDocumentSignComplete(request);
                 break;
-            // Tambahkan case lain sesuai kebutuhan
             default:
                 throw new IllegalArgumentException("Unknown callback type: " + request.getCallbackType());
         }
@@ -34,7 +33,7 @@ public class CallbackService {
         Debtor debtor = debtorRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Debtor not found with email: " + email));
 
-        debtor.setSignhubStatus("exist");
+        debtor.setSignhubStatus("active");
 //        debtor.setSignerStatus("active");
         debtorRepository.save(debtor);
 
@@ -43,7 +42,6 @@ public class CallbackService {
 
     private void handleDocumentSignComplete(CallbackRequest request) {
         String documentId = request.getData().getDocumentId();
-        // Implementasi update status dokumen menjadi "Signed"
         log.info("Document {} has been fully signed", documentId);
     }
 }

@@ -42,16 +42,11 @@
 	<parameter name="PeriodeBerlaku" class="java.lang.String"/>
 	<parameter name="NamaDirektur" class="java.lang.String"/>
 	<parameter name="NamaAreaSalesManager" class="java.lang.String"/>
-	<parameter name="description" class="java.lang.String"/>
-	<parameter name="bouwheer" class="java.lang.String"/>
-	<parameter name="invoice_duedate" class="java.lang.String"/>
-	<parameter name="invoice_amt" class="java.lang.String"/>
 	<parameter name="Cwr" class="java.lang.String"/>
 	<parameter name="Cwr-Date" class="java.lang.String"/>
-	<parameter name="nomor_invoice" class="java.lang.String"/>
-	<parameter name="tanggal_invoice" class="java.lang.String"/>
 	<parameter name="tableDataSource" class="net.sf.jasperreports.engine.JRDataSource"/>
 	<parameter name="tableDataSource2" class="net.sf.jasperreports.engine.JRDataSource"/>
+	<parameter name="tableDataSource3" class="net.sf.jasperreports.engine.JRDataSource"/>
 	<parameter name="SUBREPORT_DIR" class="java.lang.String"></parameter>
 	<queryString>
 		<![CDATA[]]>
@@ -408,25 +403,7 @@
 		<band height="842" splitType="Stretch">
 			<subreport>
 				<reportElement x="0" y="0" width="595" height="842" uuid="0dc37497-820a-428c-a0d7-68faf379c6af"/>
-				<subreportParameter name="nomor_invoice">
-					<subreportParameterExpression><![CDATA[$P{nomor_invoice}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="description">
-					<subreportParameterExpression><![CDATA[$P{description}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="bouwheer">
-					<subreportParameterExpression><![CDATA[$P{bouwheer}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="tanggal_invoice">
-					<subreportParameterExpression><![CDATA[$P{tanggal_invoice}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="invoice_duedate">
-					<subreportParameterExpression><![CDATA[$P{invoice_duedate}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="invoice_amt">
-					<subreportParameterExpression><![CDATA[$P{invoice_amt}]]></subreportParameterExpression>
-				</subreportParameter>
-				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<dataSourceExpression><![CDATA[$P{tableDataSource3}]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "table3.jasper"]]></subreportExpression>
 			</subreport>
 			<break>

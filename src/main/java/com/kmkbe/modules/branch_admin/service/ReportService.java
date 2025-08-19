@@ -2,16 +2,15 @@ package com.kmkbe.modules.branch_admin.service;
 
 
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.core.domain.entity.Agreement;
-import com.kmkbe.core.domain.entity.AgreementFileSigning;
-import com.kmkbe.core.domain.entity.Debtor;
-import com.kmkbe.core.domain.entity.Visitor;
+import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.ExternalApiService;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
+import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
@@ -74,11 +73,16 @@ public class ReportService {
     private EmailAo emailAo;
 
     @Autowired
+    private InvoiceService invoiceService;
+
+    @Autowired
     private AgreementRepository agreementRepo;
 
     @Autowired
     private ExternalApiService externalApiService;
 
+    @Autowired
+    private FinancingHdrService financingHdrService;
 
     private String jwtToken;
     @Autowired
@@ -611,9 +615,6 @@ public class ReportService {
         }
 
         params.put("tableDataSource2", new JRBeanCollectionDataSource(tableData2));
-//        params.put("nomor_invoice", "");
-//        params.put("tanggal_invoice", "");
-//        params.put("invoice_duedate", "");
 
         //lembar 6
         params.put("LobCode", apiResponse.getLobCode());
@@ -671,10 +672,43 @@ public class ReportService {
         }
 
         // lembar 13 tabel
-        params.put("description","Invoice By Trakindo");
-        params.put("bouwheer","PT. Trakindo Utama");
-        params.put("InvoiceDueDate", formattedDate);
-        params.put("invoice_amt","1265400000.00");
+        List<Map<String, String>> tableData3 = new ArrayList<>();
+
+        FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+        PaginationResult<PostedInvoiceDto> invoiceResult = invoiceService.invoiceSubmissionByFinancingHdr( financingHdr,  // you need to have this FinancingHdr object available
+                new PaginationRequest()
+        );
+        if (invoiceResult != null && invoiceResult.getList() != null && !invoiceResult.getList().isEmpty()) {
+            for (PostedInvoiceDto invoice : invoiceResult.getList()) {
+                Map<String, String> row = new HashMap<>();
+                row.put("nomor_invoice", invoice.getCustomerInvoiceNo() != null ? invoice.getCustomerInvoiceNo() : "-");
+                row.put("tanggal_invoice", fmtDateObj(invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : "-"));
+                row.put("invoice_amt", fmtRupiah(invoice.getInvoiceAmount() != null ? invoice.getInvoiceAmount().toString() : "-"));
+                row.put("description", invoice.getInvoiceDescription() != null ? invoice.getInvoiceDescription() : "-");
+                row.put("bouwheer", invoice.getBouwheerName() != null ? invoice.getBouwheerName() : "-");
+                row.put("invoice_duedate", fmtDateObj(invoice.getInvoiceDueDate() != null ? invoice.getInvoiceDueDate() : "-"));
+                tableData3.add(row);
+            }
+        } else {
+            // Add empty row if no data
+            Map<String, String> emptyRow = new HashMap<>();
+            emptyRow.put("nomor_invoice", "No Data Available");
+            emptyRow.put("tanggal_invoice", "No Data Available");
+            emptyRow.put("invoice_amt", "No Data Available");
+            emptyRow.put("description", "No Data Available");
+            emptyRow.put("bouwheer", "No Data Available");
+            emptyRow.put("invoice_duedate", "No Data Available");
+            tableData3.add(emptyRow);
+        }
+
+        params.put("tableDataSource3", new JRBeanCollectionDataSource(tableData3));
+
+//        params.put("nomor_invoice", formattedDate);
+//        params.put("invoice_amt","1265400000.00");
+//        params.put("description","Invoice By Trakindo");
+//        params.put("bouwheer","PT. Trakindo Utama");
+//        params.put("InvoiceDueDate", formattedDate);
+//        params.put("invoice_amt","1265400000.00");
 
 
 //        hardcode
@@ -856,8 +890,8 @@ public class ReportService {
                 .requests(List.of(
                         ExternalSigningRequest.DocumentRequest.builder()
                                 .referenceNo(agreementCode)
-                                .documentTemplateCode("PERJANJIAN_1A")
-                                .documentName("DOKUMEN PERJANJIAN KONTRAK")
+                                .documentTemplateCode("DATA TEST DANA SAKTI")
+                                .documentName("DOKUMEN SAKTI")
                                 .officeCode(branchCode)
                                 .officeName(username)
                                 .regionCode(branchCode)
