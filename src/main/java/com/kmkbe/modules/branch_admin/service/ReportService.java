@@ -829,13 +829,8 @@ public class ReportService {
                         .message("Document sent for signing successfully")
                         .build();
             } else {
-//                String errorMessage = esignResponse.getStatus().getMessage();
-//                throw new RuntimeException("E-sign API error: " + errorMessage);
-                return SigningResponse.builder()
-                        .success(true)
-                        .documentId("")
-                        .message("Document sent for signing successfully")
-                        .build();
+                String errorMessage = esignResponse.getStatus().getMessage();
+                throw new RuntimeException("E-sign API error: " + errorMessage);
             }
         } catch (Exception e) {
             return SigningResponse.builder()
