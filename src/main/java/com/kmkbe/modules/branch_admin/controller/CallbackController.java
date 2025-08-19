@@ -5,11 +5,10 @@ import com.kmkbe.modules.branch_admin.request.CallbackRequest;
 import com.kmkbe.modules.branch_admin.service.CallbackService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @Slf4j
 @RestController
@@ -18,9 +17,18 @@ import org.springframework.web.bind.annotation.RestController;
 public class CallbackController {
     private final CallbackService callbackService;
 
+    @Value("${app.api.key}")
+    private String expectedApiKey;
+
     @PostMapping("/callback")
-    public ResponseEntity<CommonResult<String>> handleCallback(@RequestBody CallbackRequest request) {
-        log.info("Received callback from eSignHub: {}", request);
+    public ResponseEntity<CommonResult<String>> handleCallback(
+            @RequestHeader("x-api-key") String apiKey,
+            @RequestBody CallbackRequest request) {
+
+        if (!expectedApiKey.equals(apiKey)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new CommonResult<String>().fail(401, "Invalid API Key"));
+        }
 
         try {
             callbackService.processCallback(request);
@@ -30,4 +38,5 @@ public class CallbackController {
             return ResponseEntity.badRequest().body(new CommonResult<String>().fail(400, e.getMessage()));
         }
     }
+
 }

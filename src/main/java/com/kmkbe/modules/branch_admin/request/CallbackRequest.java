@@ -7,6 +7,7 @@ public class CallbackRequest {
     private String callbackType;
     private CallbackData data;
     private String message;
+    private String timeStamp;
 
     @Data
     public static class CallbackData {

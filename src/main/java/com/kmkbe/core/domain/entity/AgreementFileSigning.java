@@ -60,6 +60,9 @@ public class AgreementFileSigning {
     @Column(name = "financing_hdr_code")
     private String financingHdrCode;
 
+    @Column(name = "email_signer")
+    private String emailSigner;
+
     // Getters and Setters
     public Long getAgreementFileId() { return agreementFileId; }
     public void setAgreementFileId(Long agreementFileId) { this.agreementFileId = agreementFileId; }
@@ -89,4 +92,7 @@ public class AgreementFileSigning {
 
     public String getFinancingHdrCode() { return financingHdrCode; }
     public void setFinancingHdrCode(String financingHdrCode) { this.financingHdrCode = financingHdrCode; }
+
+    public String getEmailSigner() { return emailSigner; }
+    public void setEmailSigner(String emailSigner) { this.emailSigner = emailSigner; }
 }

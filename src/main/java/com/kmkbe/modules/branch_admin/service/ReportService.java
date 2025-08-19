@@ -937,6 +937,7 @@ public class ReportService {
                 .usrCrt(username)
                 .dtmCrt(LocalDateTime.now())
                 .signer(debtor.getKaryawanName())
+                .emailSigner(debtor.getEmail())
                 .identityNo(debtor.getIdentityNo())
                 .documentId(documentId)
                 .build();

@@ -108,6 +108,7 @@ public class SecurityConfig {
                         }
                 )
                 .authorizeHttpRequests(auth -> {
+                            auth.requestMatchers("/api/v1/digital-sign/callback").permitAll();
                             auth.requestMatchers(JwtAuthenticationFilter.ENDPOINTS_WHITELIST).permitAll();
 
                             //determine dev env should has Swaggers access freely
