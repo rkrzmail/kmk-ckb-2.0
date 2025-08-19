@@ -27,7 +27,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.io.*;
+import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -38,6 +40,9 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.ResourceUtils;
+
+import static com.kmkbe.core.utils.CommonFormattingUtils.formatAmount;
+import static com.kmkbe.nikita.utils.Utils.formatDate;
 
 @Service
 public class ReportService {
@@ -468,7 +473,6 @@ public class ReportService {
 
         //getlisttable1
         CwrListBwhrResponse bouwheerData = externalApiService.getListCwrBwhr(cwrCode, cwrBwhr.getCwrBouwheerCustNo());
-
         // get bouwheer name
         String debtorName = agreementRepo.findCustNameByFinancingHdrCode(financingHdrUuid, agreementCode)
                 .orElse("Debtor Name");
@@ -507,25 +511,48 @@ public class ReportService {
         params.put("NamaKaryawan", Kdata.getOrDefault("Karyawan_name", "-").toString());
         params.put("Jabatan", Kdata.getOrDefault("Jabatan", "-").toString());
 
+        // tabel
+        int counter = 1;
         List<Map<String, String>> tableData = new ArrayList<>();
-        if (bouwheerData != null &&
-                bouwheerData.getCwrListBouwheerCustNo() != null &&
-                !bouwheerData.getCwrListBouwheerCustNo().isEmpty()) {
 
-            int counter = 1;
-            for (CwrListBwhrResponse.ListData Bdata : bouwheerData.getCwrListBouwheerCustNo()) {
-                Map<String, String> row = new HashMap<>();
-                row.put("no", String.valueOf(counter++));
-                row.put("customer", debtorName);
-                row.put("nomor_perjanjian", Bdata.getCooperationAgreementNo());
-                row.put("tanggal_perjanjian", Bdata.getStartPeriod());
-                row.put("nomor_invoice", "MI-243655");
-                row.put("tanggal_invoice", "29-12-2024");
-                row.put("jumlah_piutang", "1265400000.00");
+        List<CwrListBwhrResponse.ListData> bwList =
+                Optional.ofNullable(bouwheerData)
+                        .map(CwrListBwhrResponse::getCwrListBouwheerCustNo)
+                        .orElse(Collections.emptyList());
 
-                tableData.add(row);
-            }
-        } else {
+        List<Map<String, Object>> invoiceList =
+                Optional.ofNullable(
+                        agreementRepo.finddetailInv(UUID.fromString(financingHdrCode), agreementCode)
+                ).orElse(Collections.emptyList());
+
+        CwrListBwhrResponse.ListData bouwheer = !bwList.isEmpty() ? bwList.get(0) : null;
+
+        BigDecimal totalPiutang = BigDecimal.ZERO;
+
+        for (Map<String, Object> inv : invoiceList) {
+            BigDecimal amt = inv.get("invoice_amt") != null ? new BigDecimal(inv.get("invoice_amt").toString()) : BigDecimal.ZERO;
+            totalPiutang = totalPiutang.add(amt);
+        }
+
+        for (Map<String, Object> inv : invoiceList) {
+
+            Map<String, String> row = new HashMap<>();
+            row.put("no", String.valueOf(counter++));
+            row.put("customer", debtorName);
+
+            // dari bouwheerData
+            row.put("nomor_perjanjian", bouwheer != null ? Objects.toString(bouwheer.getCooperationAgreementNo(), "-") : "-");
+            row.put("tanggal_perjanjian", bouwheer != null ? fmtDateObj(bouwheer.getStartPeriod()) : "-");
+
+            // dari invoiceList
+            row.put("nomor_invoice", inv != null ? Objects.toString(inv.get("cust_inv_no"), "-") : "-");
+            row.put("tanggal_invoice", fmtDateObj(inv != null ? inv.get("invoice_date") : null));
+            row.put("jumlah_piutang", fmtRupiah(inv != null ? inv.get("invoice_amt") : null));
+            row.put("total_piutang", fmtRupiah(totalPiutang));
+
+            tableData.add(row);
+        }
+        if (tableData.isEmpty()) {
             Map<String, String> emptyRow = new HashMap<>();
             emptyRow.put("no", "1");
             emptyRow.put("customer", "No Data Available");
@@ -534,9 +561,44 @@ public class ReportService {
             emptyRow.put("nomor_invoice", "No Data Available");
             emptyRow.put("tanggal_invoice", "No Data Available");
             emptyRow.put("jumlah_piutang", "No Data Available");
+            emptyRow.put("total_piutang", "No Data Available");
             tableData.add(emptyRow);
         }
+
         params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
+
+//        List<Map<String, String>> tableData = new ArrayList<>();
+//        if (bouwheerData != null &&
+//                bouwheerData.getCwrListBouwheerCustNo() != null &&
+//                !bouwheerData.getCwrListBouwheerCustNo().isEmpty()) {
+//
+//            int counter = 1;
+//            for (CwrListBwhrResponse.ListData Bdata : bouwheerData.getCwrListBouwheerCustNo()) {
+//                SimpleDateFormat idf = new SimpleDateFormat("dd-MM-yyyy");
+//                String formatDate = idf.format(Bdata.getStartPeriod());
+//                Map<String, String> row = new HashMap<>();
+//                row.put("no", String.valueOf(counter++));
+//                row.put("customer", debtorName);
+//                row.put("nomor_perjanjian", Bdata.getCooperationAgreementNo());
+//                row.put("tanggal_perjanjian", formatDate);
+//                row.put("nomor_invoice", "MI-243655");
+//                row.put("tanggal_invoice", "29-12-2024");
+//                row.put("jumlah_piutang", "1265400000.00");
+//
+//                tableData.add(row);
+//            }
+//        }else {
+//            Map<String, String> emptyRow = new HashMap<>();
+//            emptyRow.put("no", "1");
+//            emptyRow.put("customer", "No Data Available");
+//            emptyRow.put("nomor_perjanjian", "No Data Available");
+//            emptyRow.put("tanggal_perjanjian", "No Data Available");
+//            emptyRow.put("nomor_invoice", "No Data Available");
+//            emptyRow.put("tanggal_invoice", "No Data Available");
+//            emptyRow.put("jumlah_piutang", "No Data Available");
+//            tableData.add(emptyRow);
+//        }
+//        params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
 
         // lembar 3
         params.put("AgrmntNo", agrmntCode);
@@ -551,10 +613,10 @@ public class ReportService {
         financialData.getFeeList().forEach(fee -> {
             if (fee.getFeeTypeName() != null) {
                 if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA FACTORING")) {
-                    params.put("AppFeeAmtFactoring", fee.getFeeAmount());
+                    params.put("AppFeeAmtFactoring", fmtRupiah(fee.getFeeAmount()));
                 }
                 else if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA ADMINISTRASI PENCAIRAN")) {
-                    params.put("AppFeeAmtAdministration", fee.getFeeAmount());
+                    params.put("AppFeeAmtAdministration", fmtRupiah(fee.getFeeAmount()));
                 }
             }
         });
@@ -646,6 +708,90 @@ public class ReportService {
         JRDataSource dataSource = new JREmptyDataSource();
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, params, dataSource);
         return JasperExportManager.exportReportToPdf(jasperPrint);
+    }
+
+    private static String fmtDateObj(Object val) {
+        if (val == null) return "-";
+
+        final String targetFormat = "dd-MM-yyyy";
+        java.time.format.DateTimeFormatter outFmt = java.time.format.DateTimeFormatter.ofPattern(targetFormat);
+
+        try {
+            // Kalau sudah java.util.Date
+            if (val instanceof java.util.Date) {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(targetFormat);
+                return sdf.format((java.util.Date) val);
+            }
+
+            // Kalau LocalDate
+            if (val instanceof java.time.LocalDate) {
+                return ((java.time.LocalDate) val).format(outFmt);
+            }
+
+            // Kalau LocalDateTime
+            if (val instanceof java.time.LocalDateTime) {
+                return ((java.time.LocalDateTime) val).toLocalDate().format(outFmt);
+            }
+
+            // Kalau String
+            if (val instanceof String) {
+                String s = ((String) val).trim();
+                if (s.isEmpty()) return "-";
+
+                // Coba parse ISO LocalDateTime "2024-01-01T00:00:00"
+                try {
+                    java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(
+                            s,
+                            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+                    );
+                    return ldt.toLocalDate().format(outFmt);
+                } catch (Exception ignore) {}
+
+                // Coba parse ISO LocalDate "2024-01-01"
+                try {
+                    java.time.LocalDate ld = java.time.LocalDate.parse(s);
+                    return ld.format(outFmt);
+                } catch (Exception ignore) {}
+
+                // Coba parse langsung sebagai java.util.Date
+                try {
+                    java.text.SimpleDateFormat inSdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    java.util.Date d = inSdf.parse(s);
+                    java.text.SimpleDateFormat outSdf = new java.text.SimpleDateFormat(targetFormat);
+                    return outSdf.format(d);
+                } catch (Exception ignore) {}
+            }
+
+            // fallback kalau semua gagal
+            return val.toString();
+        } catch (Exception e) {
+            return "-";
+        }
+    }
+
+
+    private static String fmtAmount(Object val) {
+        if (val == null) return "0.00";
+        try {
+            java.math.BigDecimal bd = (val instanceof java.math.BigDecimal)
+                    ? (java.math.BigDecimal) val
+                    : new java.math.BigDecimal(val.toString().replace(",", ""));
+            return bd.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+        } catch (Exception e) {
+            return "0.00";
+        }
+    }
+
+    private String fmtRupiah(Object amount) {
+        if (amount == null) return "-";
+        try {
+            BigDecimal value = new BigDecimal(amount.toString());
+            NumberFormat numberFormat = NumberFormat.getNumberInstance(new Locale("id", "ID"));
+            numberFormat.setMaximumFractionDigits(0); // buang koma desimal
+            return "Rp" + numberFormat.format(value);
+        } catch (Exception e) {
+            return "-";
+        }
     }
 
     public SigningResponse sendDocumentForSigning(

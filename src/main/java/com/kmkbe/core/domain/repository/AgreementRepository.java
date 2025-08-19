@@ -160,8 +160,9 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         JOIN cwr w ON a.cwr_code = w.cwr_code
         JOIN invoice i ON w.cust_code = i.cust_code
         WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
+        LIMIT 10
         """, nativeQuery = true)
-    Optional<Map<String, Object>> finddetailInv(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
+    List<Map<String, Object>> finddetailInv(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
     @Query("SELECT a FROM Agreement a " +
             "JOIN FETCH a.cwr " +

@@ -27,6 +27,8 @@ public interface DebtorRepository extends JpaRepository<Debtor, Long> {
     FROM debtors d
     WHERE d.financing_hdr_code = :financingHdrCode
         AND d.signer_status = 'active'
+    ORDER BY d.dtm_crt DESC
+    LIMIT 1
     """, nativeQuery = true)
     Optional<Map<String, Object>> findKaryawanByFinancingHdrCode(@Param("financingHdrCode") String financingHdrCode);
 
