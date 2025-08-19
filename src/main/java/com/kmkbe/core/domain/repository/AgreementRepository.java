@@ -155,6 +155,7 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         SELECT DISTINCT 
             i.cust_inv_no,
             i.invoice_date,
+            i.invoice_due_date,
             i.invoice_amt
         FROM agreement a
         JOIN cwr w ON a.cwr_code = w.cwr_code

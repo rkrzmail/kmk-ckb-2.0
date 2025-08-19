@@ -51,9 +51,8 @@
 	<parameter name="nomor_invoice" class="java.lang.String"/>
 	<parameter name="tanggal_invoice" class="java.lang.String"/>
 	<parameter name="tableDataSource" class="net.sf.jasperreports.engine.JRDataSource"/>
-	<parameter name="SUBREPORT_DIR" class="java.lang.String">
-		<defaultValueExpression><![CDATA["C:\\Users\\it.project1\\JaspersoftWorkspace\\MyReports\\"]]></defaultValueExpression>
-	</parameter>
+	<parameter name="tableDataSource2" class="net.sf.jasperreports.engine.JRDataSource"/>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String"></parameter>
 	<queryString>
 		<![CDATA[]]>
 	</queryString>
@@ -194,16 +193,7 @@
 		<band height="842" splitType="Stretch">
 			<subreport>
 				<reportElement x="0" y="0" width="595" height="842" uuid="0dc37497-820a-428c-a0d7-68faf379c6af"/>
-				<subreportParameter name="nomor_invoice">
-					<subreportParameterExpression><![CDATA[$P{nomor_invoice}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="tanggal_invoice">
-					<subreportParameterExpression><![CDATA[$P{tanggal_invoice}]]></subreportParameterExpression>
-				</subreportParameter>
-				<subreportParameter name="invoice_duedate">
-					<subreportParameterExpression><![CDATA[$P{invoice_duedate}]]></subreportParameterExpression>
-				</subreportParameter>
-				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
+				<dataSourceExpression><![CDATA[$P{tableDataSource2}]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} + "table2.jasper"]]></subreportExpression>
 			</subreport>
 			<break>

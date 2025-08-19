@@ -528,6 +528,8 @@ public class ReportService {
         CwrListBwhrResponse.ListData bouwheer = !bwList.isEmpty() ? bwList.get(0) : null;
 
         BigDecimal totalPiutang = BigDecimal.ZERO;
+        BigDecimal appFeeFactoring = BigDecimal.ZERO;
+        BigDecimal appFeeAdministration = BigDecimal.ZERO;
 
         for (Map<String, Object> inv : invoiceList) {
             BigDecimal amt = inv.get("invoice_amt") != null ? new BigDecimal(inv.get("invoice_amt").toString()) : BigDecimal.ZERO;
@@ -567,39 +569,6 @@ public class ReportService {
 
         params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
 
-//        List<Map<String, String>> tableData = new ArrayList<>();
-//        if (bouwheerData != null &&
-//                bouwheerData.getCwrListBouwheerCustNo() != null &&
-//                !bouwheerData.getCwrListBouwheerCustNo().isEmpty()) {
-//
-//            int counter = 1;
-//            for (CwrListBwhrResponse.ListData Bdata : bouwheerData.getCwrListBouwheerCustNo()) {
-//                SimpleDateFormat idf = new SimpleDateFormat("dd-MM-yyyy");
-//                String formatDate = idf.format(Bdata.getStartPeriod());
-//                Map<String, String> row = new HashMap<>();
-//                row.put("no", String.valueOf(counter++));
-//                row.put("customer", debtorName);
-//                row.put("nomor_perjanjian", Bdata.getCooperationAgreementNo());
-//                row.put("tanggal_perjanjian", formatDate);
-//                row.put("nomor_invoice", "MI-243655");
-//                row.put("tanggal_invoice", "29-12-2024");
-//                row.put("jumlah_piutang", "1265400000.00");
-//
-//                tableData.add(row);
-//            }
-//        }else {
-//            Map<String, String> emptyRow = new HashMap<>();
-//            emptyRow.put("no", "1");
-//            emptyRow.put("customer", "No Data Available");
-//            emptyRow.put("nomor_perjanjian", "No Data Available");
-//            emptyRow.put("tanggal_perjanjian", "No Data Available");
-//            emptyRow.put("nomor_invoice", "No Data Available");
-//            emptyRow.put("tanggal_invoice", "No Data Available");
-//            emptyRow.put("jumlah_piutang", "No Data Available");
-//            tableData.add(emptyRow);
-//        }
-//        params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
-
         // lembar 3
         params.put("AgrmntNo", agrmntCode);
 
@@ -610,19 +579,41 @@ public class ReportService {
         params.put("DiskontoAmt", factoringData.getDiskontoAmount());
         params.put("MaxAllocatedRefundAmt", findata.getMaxRefundAmount());
         params.put("TotalRetentionAmt", factoringData.getTotalRetentionAmount());
-        financialData.getFeeList().forEach(fee -> {
+        for (var fee : financialData.getFeeList()) {
             if (fee.getFeeTypeName() != null) {
                 if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA FACTORING")) {
-                    params.put("AppFeeAmtFactoring", fmtRupiah(fee.getFeeAmount()));
-                }
-                else if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA ADMINISTRASI PENCAIRAN")) {
-                    params.put("AppFeeAmtAdministration", fmtRupiah(fee.getFeeAmount()));
+                    appFeeFactoring = new BigDecimal(fee.getFeeAmount()); // konversi dari String
+                    params.put("AppFeeAmtFactoring", fmtRupiah(appFeeFactoring));
+                } else if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA ADMINISTRASI PENCAIRAN")) {
+                    appFeeAdministration = new BigDecimal(fee.getFeeAmount());
+                    params.put("AppFeeAmtAdministration", fmtRupiah(appFeeAdministration));
                 }
             }
-        });
+        }
 
         // lembar 5 (tabel)
-        params.put("invoice_duedate", formattedDate);
+        List<Map<String, String>> tableData2 = new ArrayList<>();
+
+        for (Map<String, Object> inv : invoiceList) {
+            Map<String, String> row = new HashMap<>();
+            row.put("nomor_invoice", inv != null ? Objects.toString(inv.get("cust_inv_no"), "-") : "-");
+            row.put("tanggal_invoice", fmtDateObj(inv != null ? inv.get("invoice_date") : null));
+            row.put("invoice_duedate", fmtDateObj(inv != null ? inv.get("invoice_due_date") : null));
+            tableData2.add(row);
+        }
+
+        if (tableData2.isEmpty()) {
+            Map<String, String> emptyRow = new HashMap<>();
+            emptyRow.put("nomor_invoice", "No Data Available");
+            emptyRow.put("tanggal_invoice", "No Data Available");
+            emptyRow.put("invoice_duedate", "No Data Available");
+            tableData2.add(emptyRow);
+        }
+
+        params.put("tableDataSource2", new JRBeanCollectionDataSource(tableData2));
+//        params.put("nomor_invoice", "");
+//        params.put("tanggal_invoice", "");
+//        params.put("invoice_duedate", "");
 
         //lembar 6
         params.put("LobCode", apiResponse.getLobCode());
@@ -636,9 +627,13 @@ public class ReportService {
         params.put("InstAmt", findata.getInstallmentAmount());
 
         // lembar 9
+
         params.put("AgmtNo", agrmntCode);
-        params.put("Administration+Factoring", "10000");
-        params.put("NtfAmt-Total", "400000");
+        BigDecimal administrationFactoring = appFeeFactoring.add(appFeeAdministration);
+        params.put("Administration+Factoring", administrationFactoring.toString());
+        BigDecimal ntfAmt = new BigDecimal(findata.getNtfAmount());
+        BigDecimal ntfAmtTotal = ntfAmt.subtract(administrationFactoring);
+        params.put("NtfAmt-Total", ntfAmtTotal.toString());
 
         // lembar 11
         // fap1
