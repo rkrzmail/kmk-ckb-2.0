@@ -42,12 +42,25 @@
 	<parameter name="PeriodeBerlaku" class="java.lang.String"/>
 	<parameter name="NamaDirektur" class="java.lang.String"/>
 	<parameter name="NamaAreaSalesManager" class="java.lang.String"/>
+	<parameter name="description" class="java.lang.String"/>
+	<parameter name="bouwheer" class="java.lang.String"/>
+	<parameter name="invoice_duedate" class="java.lang.String"/>
+	<parameter name="invoice_amt" class="java.lang.String"/>
 	<parameter name="Cwr" class="java.lang.String"/>
 	<parameter name="Cwr-Date" class="java.lang.String"/>
+	<parameter name="nomor_invoice" class="java.lang.String"/>
+	<parameter name="tanggal_invoice" class="java.lang.String"/>
+	<parameter name="AppFeeInsurance" class="java.lang.String"/>
+	<parameter name="AppFeeCreditInsurance" class="java.lang.String"/>
+	<parameter name="JabatanSigner" class="java.lang.String"/>
+	<parameter name="IdentitySigner" class="java.lang.String"/>
+	<parameter name="AlamatSigner" class="java.lang.String"/>
+	<parameter name="NamaPerusahaan" class="java.lang.String"/>
 	<parameter name="tableDataSource" class="net.sf.jasperreports.engine.JRDataSource"/>
 	<parameter name="tableDataSource2" class="net.sf.jasperreports.engine.JRDataSource"/>
 	<parameter name="tableDataSource3" class="net.sf.jasperreports.engine.JRDataSource"/>
-	<parameter name="SUBREPORT_DIR" class="java.lang.String"></parameter>
+	<parameter name="SUBREPORT_DIR" class="java.lang.String">
+	</parameter>
 	<queryString>
 		<![CDATA[]]>
 	</queryString>
@@ -178,6 +191,12 @@
 				<subreportParameter name="AppFeeAmtAdministration">
 					<subreportParameterExpression><![CDATA[$P{AppFeeAmtAdministration}]]></subreportParameterExpression>
 				</subreportParameter>
+				<subreportParameter name="NamaKaryawan">
+					<subreportParameterExpression><![CDATA[$P{NamaKaryawan}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Jabatan">
+					<subreportParameterExpression><![CDATA[$P{Jabatan}]]></subreportParameterExpression>
+				</subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat3.jasper"]]></subreportExpression>
 			</subreport>
@@ -218,6 +237,12 @@
 				</subreportParameter>
 				<subreportParameter name="AppFeeAmtAdministration">
 					<subreportParameterExpression><![CDATA[$P{AppFeeAmtAdministration}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="AppFeeInsurance">
+					<subreportParameterExpression><![CDATA[$P{AppFeeInsurance}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="AppFeeCreditInsurance">
+					<subreportParameterExpression><![CDATA[$P{AppFeeCreditInsurance}]]></subreportParameterExpression>
 				</subreportParameter>
 				<subreportParameter name="TotalFeeAmt">
 					<subreportParameterExpression><![CDATA[$P{TotalFeeAmt}]]></subreportParameterExpression>
@@ -315,6 +340,18 @@
 				<subreportParameter name="NtfAmt-Total">
 					<subreportParameterExpression><![CDATA[$P{NtfAmt-Total}]]></subreportParameterExpression>
 				</subreportParameter>
+				<subreportParameter name="NamaKaryawan">
+					<subreportParameterExpression><![CDATA[$P{NamaKaryawan}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Jabatan">
+					<subreportParameterExpression><![CDATA[$P{Jabatan}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NamaPerusahaan">
+					<subreportParameterExpression><![CDATA[$P{NamaPerusahaan}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Alamat">
+					<subreportParameterExpression><![CDATA[$P{Alamat}]]></subreportParameterExpression>
+				</subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat5.jasper"]]></subreportExpression>
 			</subreport>
@@ -327,6 +364,18 @@
 				<reportElement x="0" y="0" width="595" height="842" uuid="c7fdb18f-46ae-4c98-a066-08413f4aefbf"/>
 				<subreportParameter name="DebtorName">
 					<subreportParameterExpression><![CDATA[$P{DebtorName}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NamaKaryawan">
+					<subreportParameterExpression><![CDATA[$P{NamaKaryawan}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="JabatanSigner">
+					<subreportParameterExpression><![CDATA[$P{JabatanSigner}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="AlamatSigner">
+					<subreportParameterExpression><![CDATA[$P{AlamatSigner}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="IdentitySigner">
+					<subreportParameterExpression><![CDATA[$P{IdentitySigner}]]></subreportParameterExpression>
 				</subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat6.jasper"]]></subreportExpression>
@@ -358,6 +407,12 @@
 				</subreportParameter>
 				<subreportParameter name="Telepon">
 					<subreportParameterExpression><![CDATA[$P{Telepon}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="NamaKaryawan">
+					<subreportParameterExpression><![CDATA[$P{NamaKaryawan}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="Jabatan">
+					<subreportParameterExpression><![CDATA[$P{Jabatan}]]></subreportParameterExpression>
 				</subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat7.jasper"]]></subreportExpression>

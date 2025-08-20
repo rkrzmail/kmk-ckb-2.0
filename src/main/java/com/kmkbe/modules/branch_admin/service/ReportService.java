@@ -35,6 +35,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -426,7 +427,76 @@ public class ReportService {
         }
     }
 
+    private <T> T safeApiCall(Supplier<T> apiCall, T fallback) {
+        try {
+            return apiCall.get();
+        } catch (Exception e) {
+            System.err.println("External API error: " + e.getMessage());
+            return fallback;
+        }
+    }
+
     public byte[] generateReport(String financingHdrCode, String agreementCode) throws JRException, IOException {
+
+//        UUID financingHdrUuid;
+//        try {
+//            financingHdrUuid = UUID.fromString(financingHdrCode);
+//        } catch (IllegalArgumentException e) {
+//            throw new IllegalArgumentException("Invalid financingHdrCode format");
+//        }
+//
+//        Agreement agreement = agreementRepo.findByFinancingHdrCode(financingHdrUuid, agreementCode)
+//                .orElseThrow(() -> new NoSuchElementException(
+//                        "Data Agreement tidak ditemukan untuk: " + financingHdrCode
+//                ));
+//
+//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("id", "ID"));
+//        String tanggalDokumen = LocalDate.now().format(formatter);
+//
+//        AppResponse apiResponse = externalApiService.getAppByAppNo(agreement.getApplicationCode());
+//        Integer appId = apiResponse.getAppId();
+//
+//        RekDebiturResponse BankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
+//        RekDebiturResponse.BankAccount dataRekening = BankResponse.getBankAccounts().get(0);
+//
+//        AppFactoringResponse factoringData = externalApiService.getAppFactoringData(appId);
+//
+//        String agrmntCode = agreementRepo
+//                .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
+//                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
+//        FinancialDataResponse financialData = externalApiService.getFinancialData(agrmntCode);
+//
+//        String cwrCode = agreementRepo
+//                .findCwrCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
+//                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
+//        CwrBwhrResponse cwrBwhrData = externalApiService.getCwrBwhr(cwrCode);
+//        CwrBwhrResponse.ListCwrBwhr cwrBwhr = cwrBwhrData.getCwrBouwheerCustNos().get(0);
+//
+//        Optional<Map<String, Object>> cwrData = agreementRepo.findCwrCodeAndDate(UUID.fromString(financingHdrCode), agreementCode);
+//        Map<String, Object> Cdata = cwrData.orElseGet(Collections::emptyMap);
+//        SimpleDateFormat Csdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("id", "ID"));
+//        String formattedCwrDate = cwrData
+//                .map(data -> {
+//                    Object rawDate = data.get("cwr_start_date");
+//                    if (rawDate instanceof Date) {
+//                        return Csdf.format((Date) rawDate);
+//                    }
+//                    return "-";
+//                })
+//                .orElse("-");
+//
+//        CwrListBwhrResponse bouwheerData = externalApiService.getListCwrBwhr(cwrCode, cwrBwhr.getCwrBouwheerCustNo());
+//
+//        String debtorName = agreementRepo.findCustNameByFinancingHdrCode(financingHdrUuid, agreementCode)
+//                .orElse("Debtor Name");
+//
+//        Optional<Map<String, Object>> karyawanData = debtorRepository.findKaryawanByFinancingHdrCode(financingHdrCode);
+//        Map<String, Object> Kdata = karyawanData.orElseGet(Collections::emptyMap);
+//
+//        String facility = agreementRepo.findFaciltyByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode);
+//
+//        Optional<Map<String, Object>> debtorData = agreementRepo.finddetailDebtor(UUID.fromString(financingHdrCode), agreementCode);
+//        Map<String, Object> data = debtorData.orElseGet(Collections::emptyMap);
 
         UUID financingHdrUuid;
         try {
@@ -443,68 +513,136 @@ public class ReportService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("id", "ID"));
         String tanggalDokumen = LocalDate.now().format(formatter);
 
-        // getAppbyAppNo
-        AppResponse apiResponse = externalApiService.getAppByAppNo(agreement.getApplicationCode());
+        // ==========================
+        // PEMANGGILAN API EKSTERNAL
+        // ==========================
+
+        // 1. AppResponse
+        AppResponse apiResponse = safeApiCall(
+                () -> externalApiService.getAppByAppNo(agreement.getApplicationCode()),
+                new AppResponse() {{
+                    setAppNo("-");
+                    setTenor("-");
+                    setLobCode("-");
+                    setProdOfferingName("-");
+                    setAppId(0);
+                }}
+        );
         Integer appId = apiResponse.getAppId();
 
-        //getNomor Rek Debitur
-        RekDebiturResponse BankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
-        RekDebiturResponse.BankAccount dataRekening = BankResponse.getBankAccounts().get(0);
+        // 2. Rek Debitur
+        RekDebiturResponse.BankAccount dataRekening = safeApiCall(() -> {
+            RekDebiturResponse bankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
+            if (bankResponse != null && bankResponse.getBankAccounts() != null && !bankResponse.getBankAccounts().isEmpty()) {
+                return bankResponse.getBankAccounts().get(0);
+            }
+            return new RekDebiturResponse.BankAccount("-", "-", "-");
+        }, new RekDebiturResponse.BankAccount("-", "-", "-"));
 
-        // getAppFctr
-        AppFactoringResponse factoringData = externalApiService.getAppFactoringData(appId);
+        // 3. Factoring data
+        AppFactoringResponse factoringData = safeApiCall(
+                () -> externalApiService.getAppFactoringData(appId),
+                new AppFactoringResponse() {{
+                    setDiskontoAmount("0");
+                    setTotalRetentionAmount("0");
+                    setTotalInvoiceAmount("0");
+                }}
+        );
 
-        // getFinancialData
+        // 4. Agreement Code
         String agrmntCode = agreementRepo
                 .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
-                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
-        FinancialDataResponse financialData = externalApiService.getFinancialData(agrmntCode);
-
-        //getcwrbouwheerNo
-        String cwrCode = agreementRepo
-                .findCwrCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
-                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
-        CwrBwhrResponse cwrBwhrData = externalApiService.getCwrBwhr(cwrCode);
-        CwrBwhrResponse.ListCwrBwhr cwrBwhr = cwrBwhrData.getCwrBouwheerCustNos().get(0);
-
-        //getCWR and Date
-        Optional<Map<String, Object>> cwrData = agreementRepo.findCwrCodeAndDate(UUID.fromString(financingHdrCode), agreementCode);
-        Map<String, Object> Cdata = cwrData.orElseGet(Collections::emptyMap);
-        SimpleDateFormat Csdf = new SimpleDateFormat("dd-MM-yyyy");
-        String formattedCwrDate = cwrData
-                .map(data -> Csdf.format(data.get("cwr_start_date")))
                 .orElse("-");
 
-        //getlisttable1
-        CwrListBwhrResponse bouwheerData = externalApiService.getListCwrBwhr(cwrCode, cwrBwhr.getCwrBouwheerCustNo());
-        // get bouwheer name
+        // 5. Financial Data
+//        FinancialDataResponse financialData = safeApiCall(
+//                () -> externalApiService.getFinancialData(agrmntCode),
+//                new FinancialDataResponse() {{
+//                    setFinancialData(new FinancialData() {{
+//                        setNtfAmount("0");
+//                        setEffectiveRate("0");
+//                        setInstallmentAmount("0");
+//                        setMaxRefundAmount("0");
+//                        setTotalFeeAmount("0");
+//                        setGracePeriod("0");
+//                    }});
+//                    setFeeList(Collections.emptyList());
+//                }}
+//        );
+//        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
+
+        FinancialDataResponse fallbackFinancialData = new FinancialDataResponse();
+
+        FinancialDataResponse.FinancialData defaultFinData = new FinancialDataResponse.FinancialData();
+        defaultFinData.setNtfAmount("0");
+        defaultFinData.setEffectiveRate("0");
+        defaultFinData.setInstallmentAmount("0");
+        defaultFinData.setMaxRefundAmount("0");
+        defaultFinData.setTotalFeeAmount("0");
+        defaultFinData.setGracePeriod("0");
+        fallbackFinancialData.setFinancialData(defaultFinData);
+
+        fallbackFinancialData.setFeeList(Collections.emptyList());
+
+        FinancialDataResponse financialData = safeApiCall(
+                () -> externalApiService.getFinancialData(agrmntCode),
+                fallbackFinancialData
+        );
+
+        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
+
+
+        // 6. CWR
+        String cwrCode = agreementRepo
+                .findCwrCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
+                .orElse("-");
+
+        CwrBwhrResponse.ListCwrBwhr cwrBwhr = safeApiCall(() -> {
+            CwrBwhrResponse cwrBwhrData = externalApiService.getCwrBwhr(cwrCode);
+            return (cwrBwhrData != null && cwrBwhrData.getCwrBouwheerCustNos() != null
+                    && !cwrBwhrData.getCwrBouwheerCustNos().isEmpty())
+                    ? cwrBwhrData.getCwrBouwheerCustNos().get(0)
+                    : null;
+        }, null);
+
+        Optional<Map<String, Object>> cwrData = agreementRepo.findCwrCodeAndDate(UUID.fromString(financingHdrCode), agreementCode);
+        Map<String, Object> Cdata = cwrData.orElseGet(Collections::emptyMap);
+        SimpleDateFormat Csdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("id", "ID"));
+        String formattedCwrDate = cwrData
+                .map(data -> {
+                    Object rawDate = data.get("cwr_start_date");
+                    if (rawDate instanceof Date) {
+                        return Csdf.format((Date) rawDate);
+                    }
+                    return "-";
+                })
+                .orElse("-");
+
+        // 7. Bouwheer List
+        CwrListBwhrResponse bouwheerData = safeApiCall(
+                () -> externalApiService.getListCwrBwhr(cwrCode, cwrBwhr != null ? cwrBwhr.getCwrBouwheerCustNo() : "-"),
+                new CwrListBwhrResponse(Collections.emptyList())
+        );
+
+        // 8. Debtor Name
         String debtorName = agreementRepo.findCustNameByFinancingHdrCode(financingHdrUuid, agreementCode)
                 .orElse("Debtor Name");
 
-        //get karyawan
+        // 9. Karyawan
         Optional<Map<String, Object>> karyawanData = debtorRepository.findKaryawanByFinancingHdrCode(financingHdrCode);
         Map<String, Object> Kdata = karyawanData.orElseGet(Collections::emptyMap);
 
-        // get facility
+        // 10. Facility
         String facility = agreementRepo.findFaciltyByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode);
 
-        // get invoice due date
-//        Date invoiceDueDate = agreementRepo.findInvoiceDueDateByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
-//                .orElseThrow(() -> new RuntimeException("Invoice due date tidak ditemukan"));
-//
-//        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-//        String formattedDate = sdf.format(invoiceDueDate);
-
-        // get fap
+        // 11. Debtor Data
         Optional<Map<String, Object>> debtorData = agreementRepo.finddetailDebtor(UUID.fromString(financingHdrCode), agreementCode);
         Map<String, Object> data = debtorData.orElseGet(Collections::emptyMap);
 
         Map<String, Object> params = new HashMap<>();
-        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
-//        FinancialDataResponse.DueDate findatad = financialData.getDueDate();
+//        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
         params.put("SUBREPORT_DIR", getClass().getResource("/Reports/").toString());
 
-        //lembar 1
         params.put("AppNo", apiResponse.getAppNo());
         params.put("TglDokumen", tanggalDokumen);
         params.put("DebtorName", debtorName);
@@ -515,73 +653,25 @@ public class ReportService {
         params.put("BankAccName", dataRekening.getAccName());
         params.put("NamaKaryawan", Kdata.getOrDefault("Karyawan_name", "-").toString());
         params.put("Jabatan", Kdata.getOrDefault("Jabatan", "-").toString());
-
-        // tabel
-        int counter = 1;
-        List<Map<String, String>> tableData = new ArrayList<>();
-
-        List<CwrListBwhrResponse.ListData> bwList =
-                Optional.ofNullable(bouwheerData)
-                        .map(CwrListBwhrResponse::getCwrListBouwheerCustNo)
-                        .orElse(Collections.emptyList());
-//
-//        List<Map<String, Object>> invoiceList =
-//                Optional.ofNullable(
-//                        agreementRepo.finddetailInv(UUID.fromString(financingHdrCode), agreementCode)
-//                ).orElse(Collections.emptyList());
-
-        CwrListBwhrResponse.ListData bouwheer = !bwList.isEmpty() ? bwList.get(0) : null;
-
-        BigDecimal totalPiutang = BigDecimal.ZERO;
-        BigDecimal appFeeFactoring = BigDecimal.ZERO;
-        BigDecimal appFeeAdministration = BigDecimal.ZERO;
-
-        // lembar 3
+        params.put("JabatanSigner", Kdata.getOrDefault("Jabatan", "-").toString());
+        params.put("IdentitySigner", Kdata.getOrDefault("identity_no", "-").toString());
+        params.put("AlamatSigner", Kdata.getOrDefault("alamat", "-").toString());
+        params.put("NamaPerusahaan", "");
         params.put("AgrmntNo", agrmntCode);
-
-        //lembar 4
         params.put("Facility", facility);
         params.put("Tenor", apiResponse.getTenor());
         params.put("NtfAmt", findata.getNtfAmount());
         params.put("DiskontoAmt", factoringData.getDiskontoAmount());
         params.put("MaxAllocatedRefundAmt", findata.getMaxRefundAmount());
-//        params.put("InvoiceDueDate", findatad.getDueDate());
-        params.put("InvoiceDueDate", "");
         params.put("TotalRetentionAmt", factoringData.getTotalRetentionAmount());
-        for (var fee : financialData.getFeeList()) {
-            if (fee.getFeeTypeName() != null) {
-                if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA FACTORING")) {
-                    appFeeFactoring = new BigDecimal(fee.getFeeAmount()); // konversi dari String
-                    params.put("AppFeeAmtFactoring", fmtRupiah(appFeeFactoring));
-                } else if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA ADMINISTRASI PENCAIRAN")) {
-                    appFeeAdministration = new BigDecimal(fee.getFeeAmount());
-                    params.put("AppFeeAmtAdministration", fmtRupiah(appFeeAdministration));
-                }
-            }
-        }
-
-        //lembar 6
         params.put("LobCode", apiResponse.getLobCode());
         params.put("ProdOfferingName", apiResponse.getProdOfferingName());
         params.put("EffectiveRatePrcnt", findata.getEffectiveRate());
         params.put("TotalFeeAmt", findata.getTotalFeeAmount());
-
-        // lembar 7
         params.put("TotalInvcAmt", factoringData.getTotalInvoiceAmount());
         params.put("GracePeriodLc", findata.getGracePeriod());
         params.put("InstAmt", findata.getInstallmentAmount());
-
-        // lembar 9
-
         params.put("AgmtNo", agrmntCode);
-        BigDecimal administrationFactoring = appFeeFactoring.add(appFeeAdministration);
-        params.put("Administration+Factoring", administrationFactoring.toString());
-        BigDecimal ntfAmt = new BigDecimal(findata.getNtfAmount());
-        BigDecimal ntfAmtTotal = ntfAmt.subtract(administrationFactoring);
-        params.put("NtfAmt-Total", ntfAmtTotal.toString());
-
-        // lembar 11
-        // fap1
         params.put("JenisDebitur", "Badan Usaha");
         params.put("TipePerusahaan", data.getOrDefault("cust_company_type", "-").toString());
         params.put("NPWP", data.getOrDefault("cust_id_no", "-").toString());
@@ -589,8 +679,44 @@ public class ReportService {
         params.put("Email", data.getOrDefault("cust_email", "-").toString());
         params.put("Telepon", data.getOrDefault("phone", "-").toString());
 
-        //lembar12
-        // sit
+
+        List<CwrListBwhrResponse.ListData> bwList =
+                Optional.ofNullable(bouwheerData)
+                        .map(CwrListBwhrResponse::getCwrListBouwheerCustNo)
+                        .orElse(Collections.emptyList());
+
+        CwrListBwhrResponse.ListData bouwheer = !bwList.isEmpty() ? bwList.get(0) : null;
+
+        BigDecimal totalPiutang = BigDecimal.ZERO;
+        BigDecimal appFeeFactoring = BigDecimal.ZERO;
+        BigDecimal appFeeAdministration = BigDecimal.ZERO;
+        BigDecimal appFeeInsurance = BigDecimal.ZERO;
+        BigDecimal appFeeCreditInsurance = BigDecimal.ZERO;
+        BigDecimal administrationFactoring = appFeeFactoring.add(appFeeAdministration);
+        BigDecimal ntfAmt = new BigDecimal(findata.getNtfAmount());
+        BigDecimal ntfAmtTotal = ntfAmt.subtract(administrationFactoring);
+
+        for (var fee : financialData.getFeeList()) {
+            if (fee.getFeeTypeName() != null) {
+                if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA FACTORING")) {
+                    appFeeFactoring = new BigDecimal(fee.getFeeAmount());
+                    params.put("AppFeeAmtFactoring", fmtAmount(appFeeFactoring));
+                } else if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA ADMINISTRASI PENCAIRAN")) {
+                    appFeeAdministration = new BigDecimal(fee.getFeeAmount());
+                    params.put("AppFeeAmtAdministration", fmtAmount(appFeeAdministration));
+                } else if (fee.getFeeTypeName().equalsIgnoreCase("Total CWR Insurance Fee")) {
+                    appFeeInsurance = new BigDecimal(fee.getFeeAmount());
+                    params.put("AppFeeInsurance", fmtAmount(appFeeInsurance));
+                } else if (fee.getFeeTypeName().equalsIgnoreCase("Total CWR Credit Insurance Fee")) {
+                    appFeeCreditInsurance = new BigDecimal(fee.getFeeAmount());
+                    params.put("AppFeeCreditInsurance", fmtAmount(appFeeCreditInsurance));
+                }
+            }
+        }
+
+        params.put("Administration+Factoring", fmtAmount(administrationFactoring.toString()));
+        params.put("NtfAmt-Total", ntfAmtTotal.toString());
+
         CommonResult<SitDto> sitData = agreementCodeService.getAgreementsByFinancingHdrCode(UUID.fromString(financingHdrCode));
         if (sitData.getCode() == 200 && sitData.getData() != null) {
             SitDto sitDto = sitData.getData();
@@ -641,7 +767,6 @@ public class ReportService {
                 invoiceDueDateParam = fmtDateObj(firstInvoice.getInvoiceDueDate());
             }
         } else {
-            // Add empty row if no data
             Map<String, String> emptyRow = new HashMap<>();
             emptyRow.put("nomor_invoice", "No Data Available");
             emptyRow.put("tanggal_invoice", "No Data Available");
@@ -677,6 +802,8 @@ public class ReportService {
         params.put("tableDataSource2", new JRBeanCollectionDataSource(tableData2));
 
         // tabel 1
+        int counter = 1;
+        List<Map<String, String>> tableData = new ArrayList<>();
         for (PostedInvoiceDto invoice : invoiceResult.getList()) {
             BigDecimal amt = invoice.getInvoiceAmount() != null ? new BigDecimal(invoice.getInvoiceAmount().toString()) : BigDecimal.ZERO;
             totalPiutang = totalPiutang.add(amt);
@@ -688,11 +815,9 @@ public class ReportService {
             row.put("no", String.valueOf(counter++));
             row.put("customer", debtorName);
 
-            // dari bouwheerData
             row.put("nomor_perjanjian", bouwheer != null ? Objects.toString(bouwheer.getCooperationAgreementNo(), "-") : "-");
             row.put("tanggal_perjanjian", bouwheer != null ? fmtDateObj(bouwheer.getStartPeriod()) : "-");
 
-            // dari invoiceList
             row.put("nomor_invoice", invoice.getCustomerInvoiceNo() != null ? invoice.getCustomerInvoiceNo() : "-");
             row.put("tanggal_invoice", fmtDateObj(invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : "-"));
             row.put("jumlah_piutang", fmtRupiah(invoice.getInvoiceAmount() != null ? invoice.getInvoiceAmount().toString() : "-"));
@@ -715,31 +840,6 @@ public class ReportService {
 
         params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
 
-//        params.put("nomor_invoice", formattedDate);
-//        params.put("invoice_amt","1265400000.00");
-//        params.put("description","Invoice By Trakindo");
-//        params.put("bouwheer","PT. Trakindo Utama");
-//        params.put("InvoiceDueDate", formattedDate);
-//        params.put("invoice_amt","1265400000.00");
-
-
-//        hardcode
-//        params.put("BankName", "Bank Central Asia");
-//        params.put("BankAccNo", "7005592119");
-//        params.put("BankAccName", "PT. Megah Utama");
-//        params.put("Cwr","01920193311");
-//        params.put("Cwr-Date","20-01-2025");
-//        params.put("AgrmntNo", "0120100200");
-//        params.put("NtfAmt", "7000000");
-//        params.put("MaxAllocatedRefundAmt", "123000000");
-//        params.put("EffectiveRatePrcnt", "130000");
-//        params.put("TotalFeeAmt", "510000000");
-//        params.put("AppFeeAmtFactoring", "10000");
-//        params.put("AppFeeAmtAdministration", "120000");
-//        params.put("GracePeriodLc", "0");
-//        params.put("InstAmt", "10000");
-//        params.put("AgmtNo", "01201021011");
-
         InputStream reportStream = getClass().getResourceAsStream("/Reports/main_report.jrxml");
         if (reportStream == null) {
             throw new FileNotFoundException("main_report.jrxml tidak ditemukan di /Reports");
@@ -758,28 +858,23 @@ public class ReportService {
         java.time.format.DateTimeFormatter outFmt = java.time.format.DateTimeFormatter.ofPattern(targetFormat);
 
         try {
-            // Kalau sudah java.util.Date
             if (val instanceof java.util.Date) {
                 java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(targetFormat);
                 return sdf.format((java.util.Date) val);
             }
 
-            // Kalau LocalDate
             if (val instanceof java.time.LocalDate) {
                 return ((java.time.LocalDate) val).format(outFmt);
             }
 
-            // Kalau LocalDateTime
             if (val instanceof java.time.LocalDateTime) {
                 return ((java.time.LocalDateTime) val).toLocalDate().format(outFmt);
             }
 
-            // Kalau String
             if (val instanceof String) {
                 String s = ((String) val).trim();
                 if (s.isEmpty()) return "-";
 
-                // Coba parse ISO LocalDateTime "2024-01-01T00:00:00"
                 try {
                     java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(
                             s,
@@ -788,13 +883,11 @@ public class ReportService {
                     return ldt.toLocalDate().format(outFmt);
                 } catch (Exception ignore) {}
 
-                // Coba parse ISO LocalDate "2024-01-01"
                 try {
                     java.time.LocalDate ld = java.time.LocalDate.parse(s);
                     return ld.format(outFmt);
                 } catch (Exception ignore) {}
 
-                // Coba parse langsung sebagai java.util.Date
                 try {
                     java.text.SimpleDateFormat inSdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                     java.util.Date d = inSdf.parse(s);
@@ -803,7 +896,6 @@ public class ReportService {
                 } catch (Exception ignore) {}
             }
 
-            // fallback kalau semua gagal
             return val.toString();
         } catch (Exception e) {
             return "-";
@@ -812,23 +904,24 @@ public class ReportService {
 
 
     private static String fmtAmount(Object val) {
-        if (val == null) return "0.00";
+        if (val == null) return "IDR 0.00";
         try {
             java.math.BigDecimal bd = (val instanceof java.math.BigDecimal)
                     ? (java.math.BigDecimal) val
                     : new java.math.BigDecimal(val.toString().replace(",", ""));
-            return bd.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+            return "IDR " + bd.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
         } catch (Exception e) {
-            return "0.00";
+            return "IDR 0.00";
         }
     }
+
 
     private String fmtRupiah(Object amount) {
         if (amount == null) return "-";
         try {
             BigDecimal value = new BigDecimal(amount.toString());
             NumberFormat numberFormat = NumberFormat.getNumberInstance(new Locale("id", "ID"));
-            numberFormat.setMaximumFractionDigits(0); // buang koma desimal
+            numberFormat.setMaximumFractionDigits(0);
             return "Rp" + numberFormat.format(value);
         } catch (Exception e) {
             return "-";

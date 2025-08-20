@@ -23,7 +23,9 @@ public interface DebtorRepository extends JpaRepository<Debtor, Long> {
     @Query(value = """
     SELECT 
         d.karyawan_name AS karyawan_name,
-        d.jabatan AS jabatan
+        d.jabatan AS jabatan,
+        d.identity_no,
+        d.alamat
     FROM debtors d
     WHERE d.financing_hdr_code = :financingHdrCode
         AND d.signer_status = 'active'
