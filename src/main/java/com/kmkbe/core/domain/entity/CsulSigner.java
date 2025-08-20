@@ -1,0 +1,78 @@
+package com.kmkbe.core.domain.entity;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+import java.time.LocalDateTime;
+
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Getter
+@Setter
+@Entity
+@Table(name = "csul_signer")
+public class CsulSigner {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "signer_id", nullable = false)
+    private Long signerId;
+
+    @Column(name = "karyawan_name", nullable = false)  // Pastikan kolom ini tidak null
+    private String karyawanName;
+
+    @Column(name = "jabatan", nullable = false)
+    private String jabatan;
+
+    @Column(name = "identity_no", nullable = false)
+    private String identityNo;
+
+    @Column(name = "email", nullable = false)
+    private String email;
+
+    @Column(name = "no_telp", nullable = false)
+    private String noTelp;
+
+    @Column(name = "tempat_lahir", nullable = false)
+    private String tempatLahir;
+
+    @Column(name = "tanggal_lahir", nullable = false)
+    private String tanggalLahir;
+
+    @Column(name = "jenis_kelamin", nullable = false)
+    private String jenisKelamin;
+
+    @Column(name = "alamat", nullable = false)
+    private String alamat;
+
+    @Column(name = "rt", nullable = false)
+    private String rt;
+
+    @Column(name = "rw", nullable = false)
+    private String rw;
+
+    @Column(name = "kode_pos", nullable = false)
+    private String kodePos;
+
+    @Column(name = "kelurahan", nullable = false)
+    private String kelurahan;
+
+    @Column(name = "kecamatan", nullable = false)
+    private String kecamatan;
+
+    @Column(name = "kota", nullable = false)
+    private String kota;
+
+    @Column(name = "is_active", nullable = false)
+    private Boolean isActive;
+
+    @Column(name = "signhub_status", nullable = false)
+    private String signhubStatus;
+
+    @Column(name = "usr_crt", nullable = true)
+    private String usrCrt;
+
+    @Column(name = "dtm_crt", nullable = true)
+    private LocalDateTime dtmCrt;
+}
