@@ -118,4 +118,39 @@ public class CsulSignerService {
     }
 
 
+    public void updateSigner(Long id, SignerCsulRequest request, Authentication authentication) {
+        CsulSigner entity = csulSignerRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Signer dengan ID " + id + " tidak ditemukan"));
+
+        // Cek kalau identityNo sudah dipakai user lain
+        if (csulSignerRepository.existsByIdentityNo(request.getIdentityNo())
+                && !request.getIdentityNo().equals(entity.getIdentityNo())) {
+            throw new RuntimeException("NIK sudah terdaftar");
+        }
+
+        // Update field dari request
+        entity.setKaryawanName(request.getKaryawanName());
+        entity.setJabatan(request.getJabatan());
+        entity.setIdentityNo(request.getIdentityNo());
+        entity.setEmail(request.getEmail());
+        entity.setNoTelp(request.getNoTelp());
+        entity.setTempatLahir(request.getTempatLahir());
+        entity.setTanggalLahir(request.getTanggalLahir());
+        entity.setJenisKelamin(request.getJenisKelamin());
+        entity.setAlamat(request.getAlamat());
+        entity.setRt(request.getRt());
+        entity.setRw(request.getRw());
+        entity.setKodePos(request.getKodePos());
+        entity.setKelurahan(request.getKelurahan());
+        entity.setKecamatan(request.getKecamatan());
+        entity.setKota(request.getKota());
+        entity.setIsActive(request.getIsActive());
+
+        // update user yang edit & timestamp
+        entity.setUsrCrt(authentication.getName());
+        entity.setDtmCrt(LocalDateTime.now());
+
+        csulSignerRepository.save(entity);
+    }
+
 }

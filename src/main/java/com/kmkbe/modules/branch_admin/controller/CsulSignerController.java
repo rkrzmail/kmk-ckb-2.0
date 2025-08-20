@@ -65,4 +65,18 @@ public class CsulSignerController {
             return new CommonResult<String>().fail(400, "Gagal menyimpan: " + e.getMessage());
         }
     }
+
+    @PutMapping("/signer/{id}")
+    public CommonResult<String> updateSigner(
+            @PathVariable("id") Long id,
+            @RequestBody SignerCsulRequest request,
+            Authentication authentication) {
+        try {
+            csulSignerService.updateSigner(id, request, authentication);
+            return new CommonResult<String>().success("Data berhasil diperbarui");
+        } catch (RuntimeException e) {
+            return new CommonResult<String>().fail(400,"Gagal update: " + e.getMessage());
+        }
+    }
+
 }

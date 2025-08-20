@@ -489,11 +489,11 @@ public class ReportService {
         String facility = agreementRepo.findFaciltyByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode);
 
         // get invoice due date
-        Date invoiceDueDate = agreementRepo.findInvoiceDueDateByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
-                .orElseThrow(() -> new RuntimeException("Invoice due date tidak ditemukan"));
-
-        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
-        String formattedDate = sdf.format(invoiceDueDate);
+//        Date invoiceDueDate = agreementRepo.findInvoiceDueDateByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
+//                .orElseThrow(() -> new RuntimeException("Invoice due date tidak ditemukan"));
+//
+//        SimpleDateFormat sdf = new SimpleDateFormat("dd-MM-yyyy");
+//        String formattedDate = sdf.format(invoiceDueDate);
 
         // get fap
         Optional<Map<String, Object>> debtorData = agreementRepo.finddetailDebtor(UUID.fromString(financingHdrCode), agreementCode);
@@ -501,6 +501,7 @@ public class ReportService {
 
         Map<String, Object> params = new HashMap<>();
         FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
+//        FinancialDataResponse.DueDate findatad = financialData.getDueDate();
         params.put("SUBREPORT_DIR", getClass().getResource("/Reports/").toString());
 
         //lembar 1
@@ -523,55 +524,17 @@ public class ReportService {
                 Optional.ofNullable(bouwheerData)
                         .map(CwrListBwhrResponse::getCwrListBouwheerCustNo)
                         .orElse(Collections.emptyList());
-
-        List<Map<String, Object>> invoiceList =
-                Optional.ofNullable(
-                        agreementRepo.finddetailInv(UUID.fromString(financingHdrCode), agreementCode)
-                ).orElse(Collections.emptyList());
+//
+//        List<Map<String, Object>> invoiceList =
+//                Optional.ofNullable(
+//                        agreementRepo.finddetailInv(UUID.fromString(financingHdrCode), agreementCode)
+//                ).orElse(Collections.emptyList());
 
         CwrListBwhrResponse.ListData bouwheer = !bwList.isEmpty() ? bwList.get(0) : null;
 
         BigDecimal totalPiutang = BigDecimal.ZERO;
         BigDecimal appFeeFactoring = BigDecimal.ZERO;
         BigDecimal appFeeAdministration = BigDecimal.ZERO;
-
-        for (Map<String, Object> inv : invoiceList) {
-            BigDecimal amt = inv.get("invoice_amt") != null ? new BigDecimal(inv.get("invoice_amt").toString()) : BigDecimal.ZERO;
-            totalPiutang = totalPiutang.add(amt);
-        }
-
-        for (Map<String, Object> inv : invoiceList) {
-
-            Map<String, String> row = new HashMap<>();
-            row.put("no", String.valueOf(counter++));
-            row.put("customer", debtorName);
-
-            // dari bouwheerData
-            row.put("nomor_perjanjian", bouwheer != null ? Objects.toString(bouwheer.getCooperationAgreementNo(), "-") : "-");
-            row.put("tanggal_perjanjian", bouwheer != null ? fmtDateObj(bouwheer.getStartPeriod()) : "-");
-
-            // dari invoiceList
-            row.put("nomor_invoice", inv != null ? Objects.toString(inv.get("cust_inv_no"), "-") : "-");
-            row.put("tanggal_invoice", fmtDateObj(inv != null ? inv.get("invoice_date") : null));
-            row.put("jumlah_piutang", fmtRupiah(inv != null ? inv.get("invoice_amt") : null));
-            row.put("total_piutang", fmtRupiah(totalPiutang));
-
-            tableData.add(row);
-        }
-        if (tableData.isEmpty()) {
-            Map<String, String> emptyRow = new HashMap<>();
-            emptyRow.put("no", "1");
-            emptyRow.put("customer", "No Data Available");
-            emptyRow.put("nomor_perjanjian", "No Data Available");
-            emptyRow.put("tanggal_perjanjian", "No Data Available");
-            emptyRow.put("nomor_invoice", "No Data Available");
-            emptyRow.put("tanggal_invoice", "No Data Available");
-            emptyRow.put("jumlah_piutang", "No Data Available");
-            emptyRow.put("total_piutang", "No Data Available");
-            tableData.add(emptyRow);
-        }
-
-        params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
 
         // lembar 3
         params.put("AgrmntNo", agrmntCode);
@@ -582,6 +545,8 @@ public class ReportService {
         params.put("NtfAmt", findata.getNtfAmount());
         params.put("DiskontoAmt", factoringData.getDiskontoAmount());
         params.put("MaxAllocatedRefundAmt", findata.getMaxRefundAmount());
+//        params.put("InvoiceDueDate", findatad.getDueDate());
+        params.put("InvoiceDueDate", "");
         params.put("TotalRetentionAmt", factoringData.getTotalRetentionAmount());
         for (var fee : financialData.getFeeList()) {
             if (fee.getFeeTypeName() != null) {
@@ -594,27 +559,6 @@ public class ReportService {
                 }
             }
         }
-
-        // lembar 5 (tabel)
-        List<Map<String, String>> tableData2 = new ArrayList<>();
-
-        for (Map<String, Object> inv : invoiceList) {
-            Map<String, String> row = new HashMap<>();
-            row.put("nomor_invoice", inv != null ? Objects.toString(inv.get("cust_inv_no"), "-") : "-");
-            row.put("tanggal_invoice", fmtDateObj(inv != null ? inv.get("invoice_date") : null));
-            row.put("invoice_duedate", fmtDateObj(inv != null ? inv.get("invoice_due_date") : null));
-            tableData2.add(row);
-        }
-
-        if (tableData2.isEmpty()) {
-            Map<String, String> emptyRow = new HashMap<>();
-            emptyRow.put("nomor_invoice", "No Data Available");
-            emptyRow.put("tanggal_invoice", "No Data Available");
-            emptyRow.put("invoice_duedate", "No Data Available");
-            tableData2.add(emptyRow);
-        }
-
-        params.put("tableDataSource2", new JRBeanCollectionDataSource(tableData2));
 
         //lembar 6
         params.put("LobCode", apiResponse.getLobCode());
@@ -671,13 +615,15 @@ public class ReportService {
             throw new RuntimeException("Failed to get agreement data: " + (sitData.getMessage() != null ? sitData.getMessage() : ""));
         }
 
-        // lembar 13 tabel
+        // tabel 3
         List<Map<String, String>> tableData3 = new ArrayList<>();
 
         FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
         PaginationResult<PostedInvoiceDto> invoiceResult = invoiceService.invoiceSubmissionByFinancingHdr( financingHdr,  // you need to have this FinancingHdr object available
                 new PaginationRequest()
         );
+
+        String invoiceDueDateParam = "-";
         if (invoiceResult != null && invoiceResult.getList() != null && !invoiceResult.getList().isEmpty()) {
             for (PostedInvoiceDto invoice : invoiceResult.getList()) {
                 Map<String, String> row = new HashMap<>();
@@ -688,6 +634,11 @@ public class ReportService {
                 row.put("bouwheer", invoice.getBouwheerName() != null ? invoice.getBouwheerName() : "-");
                 row.put("invoice_duedate", fmtDateObj(invoice.getInvoiceDueDate() != null ? invoice.getInvoiceDueDate() : "-"));
                 tableData3.add(row);
+            }
+
+            PostedInvoiceDto firstInvoice = invoiceResult.getList().get(0);
+            if (firstInvoice.getInvoiceDueDate() != null) {
+                invoiceDueDateParam = fmtDateObj(firstInvoice.getInvoiceDueDate());
             }
         } else {
             // Add empty row if no data
@@ -700,8 +651,69 @@ public class ReportService {
             emptyRow.put("invoice_duedate", "No Data Available");
             tableData3.add(emptyRow);
         }
-
         params.put("tableDataSource3", new JRBeanCollectionDataSource(tableData3));
+
+        params.put("InvoiceDueDate", invoiceDueDateParam);
+
+        // tabel 2
+        List<Map<String, String>> tableData2 = new ArrayList<>();
+
+        for (PostedInvoiceDto invoice : invoiceResult.getList()) {
+            Map<String, String> row = new HashMap<>();
+            row.put("nomor_invoice", invoice.getCustomerInvoiceNo() != null ? invoice.getCustomerInvoiceNo() : "-");
+            row.put("tanggal_invoice", fmtDateObj(invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : "-"));
+            row.put("invoice_duedate", fmtDateObj(invoice.getInvoiceDueDate() != null ? invoice.getInvoiceDueDate() : "-"));
+            tableData2.add(row);
+        }
+
+        if (tableData2.isEmpty()) {
+            Map<String, String> emptyRow = new HashMap<>();
+            emptyRow.put("nomor_invoice", "No Data Available");
+            emptyRow.put("tanggal_invoice", "No Data Available");
+            emptyRow.put("invoice_duedate", "No Data Available");
+            tableData2.add(emptyRow);
+        }
+
+        params.put("tableDataSource2", new JRBeanCollectionDataSource(tableData2));
+
+        // tabel 1
+        for (PostedInvoiceDto invoice : invoiceResult.getList()) {
+            BigDecimal amt = invoice.getInvoiceAmount() != null ? new BigDecimal(invoice.getInvoiceAmount().toString()) : BigDecimal.ZERO;
+            totalPiutang = totalPiutang.add(amt);
+        }
+
+        for (PostedInvoiceDto invoice : invoiceResult.getList()) {
+
+            Map<String, String> row = new HashMap<>();
+            row.put("no", String.valueOf(counter++));
+            row.put("customer", debtorName);
+
+            // dari bouwheerData
+            row.put("nomor_perjanjian", bouwheer != null ? Objects.toString(bouwheer.getCooperationAgreementNo(), "-") : "-");
+            row.put("tanggal_perjanjian", bouwheer != null ? fmtDateObj(bouwheer.getStartPeriod()) : "-");
+
+            // dari invoiceList
+            row.put("nomor_invoice", invoice.getCustomerInvoiceNo() != null ? invoice.getCustomerInvoiceNo() : "-");
+            row.put("tanggal_invoice", fmtDateObj(invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : "-"));
+            row.put("jumlah_piutang", fmtRupiah(invoice.getInvoiceAmount() != null ? invoice.getInvoiceAmount().toString() : "-"));
+            row.put("total_piutang", fmtRupiah(totalPiutang));
+
+            tableData.add(row);
+        }
+        if (tableData.isEmpty()) {
+            Map<String, String> emptyRow = new HashMap<>();
+            emptyRow.put("no", "1");
+            emptyRow.put("customer", "No Data Available");
+            emptyRow.put("nomor_perjanjian", "No Data Available");
+            emptyRow.put("tanggal_perjanjian", "No Data Available");
+            emptyRow.put("nomor_invoice", "No Data Available");
+            emptyRow.put("tanggal_invoice", "No Data Available");
+            emptyRow.put("jumlah_piutang", "No Data Available");
+            emptyRow.put("total_piutang", "No Data Available");
+            tableData.add(emptyRow);
+        }
+
+        params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
 
 //        params.put("nomor_invoice", formattedDate);
 //        params.put("invoice_amt","1265400000.00");
