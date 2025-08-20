@@ -11,4 +11,5 @@ import java.util.Map;
 import java.util.Optional;
 
 public interface CsulSignerRepository extends JpaRepository<CsulSigner, Long> {
+    boolean existsByIdentityNo(String identityNo);
 }

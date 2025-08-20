@@ -38,6 +38,31 @@ public class CsulSignerController {
         return new CommonResult<List<SignerCsulDto>>().success(signerCsulList);
     }
 
+    @GetMapping("/list/{id}")
+    public CommonResult<SignerCsulDto> getSignerDetail(
+            @PathVariable("id") Long id
+    ) {
+        SignerCsulDto dto = csulSignerService.detailSigner(id);
+        return new CommonResult<SignerCsulDto>().success(dto);
+    }
 
+    // sementara static get signer csul
+    @GetMapping("/get-signer")
+    public CommonResult<ExternalSignerResponse> getExternalSigners() {
+        ExternalSignerResponse response = csulSignerService.getStaticSigners();
+        return new CommonResult<ExternalSignerResponse>().success(response);
+    }
 
+    @PostMapping("/signer")
+    public CommonResult<String> createSigner(
+            @RequestBody SignerCsulRequest request,
+            Authentication authentication) {
+
+        try {
+            csulSignerService.createSigner(request, authentication);
+            return new CommonResult<String>().success("Data berhasil disimpan");
+        } catch (RuntimeException e) {
+            return new CommonResult<String>().fail(400, "Gagal menyimpan: " + e.getMessage());
+        }
+    }
 }
