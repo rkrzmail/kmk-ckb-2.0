@@ -56,6 +56,8 @@
 	<parameter name="IdentitySigner" class="java.lang.String"/>
 	<parameter name="AlamatSigner" class="java.lang.String"/>
 	<parameter name="NamaPerusahaan" class="java.lang.String"/>
+	<parameter name="NamaBranchManager" class="java.lang.String"/>
+    <parameter name="JabatanBranchManager" class="java.lang.String"/>
 	<parameter name="tableDataSource" class="net.sf.jasperreports.engine.JRDataSource"/>
 	<parameter name="tableDataSource2" class="net.sf.jasperreports.engine.JRDataSource"/>
 	<parameter name="tableDataSource3" class="net.sf.jasperreports.engine.JRDataSource"/>
@@ -197,6 +199,12 @@
 				<subreportParameter name="Jabatan">
 					<subreportParameterExpression><![CDATA[$P{Jabatan}]]></subreportParameterExpression>
 				</subreportParameter>
+				<subreportParameter name="NamaBranchManager">
+                    <subreportParameterExpression><![CDATA[$P{NamaBranchManager}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="JabatanBranchManager">
+                    <subreportParameterExpression><![CDATA[$P{JabatanBranchManager}]]></subreportParameterExpression>
+                </subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat3.jasper"]]></subreportExpression>
 			</subreport>
@@ -306,6 +314,12 @@
 				<subreportParameter name="Jabatan">
 					<subreportParameterExpression><![CDATA[$P{Jabatan}]]></subreportParameterExpression>
 				</subreportParameter>
+				<subreportParameter name="NamaBranchManager">
+                    <subreportParameterExpression><![CDATA[$P{NamaBranchManager}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="JabatanBranchManager">
+                    <subreportParameterExpression><![CDATA[$P{JabatanBranchManager}]]></subreportParameterExpression>
+                </subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat4c.jasper"]]></subreportExpression>
 			</subreport>

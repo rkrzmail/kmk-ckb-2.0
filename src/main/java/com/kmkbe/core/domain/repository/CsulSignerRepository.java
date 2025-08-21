@@ -12,4 +12,6 @@ import java.util.Optional;
 
 public interface CsulSignerRepository extends JpaRepository<CsulSigner, Long> {
     boolean existsByIdentityNo(String identityNo);
+
+    Optional<CsulSigner> findByKaryawanNameAndJabatan(String karyawanName, String jabatan);
 }

@@ -92,14 +92,16 @@ public class ReportController {
         );
     }
 
-    @GetMapping("/preview/{financingHdrCode}/{agreementCode}")
+    @GetMapping("/preview/{financingHdrCode}/{agreementCode}/{branchManager}/{areaSalesManager}")
     public ResponseEntity<byte[]> previewReport(
             @PathVariable String financingHdrCode,
-            @PathVariable String agreementCode
+            @PathVariable String agreementCode,
+            @PathVariable String branchManager,
+            @PathVariable String areaSalesManager
     ) {
 
         try {
-            byte[] pdfBytes = reportService.generateReport(financingHdrCode, agreementCode);
+            byte[] pdfBytes = reportService.generateReport(financingHdrCode, agreementCode, branchManager, areaSalesManager);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=preview.pdf")
@@ -117,10 +119,14 @@ public class ReportController {
         }
     }
 
-    @GetMapping("/download-pdf/{financingHdrCode}/{agreementCode}")
-    public void downloadPdf(HttpServletResponse response, @PathVariable String financingHdrCode, @PathVariable String agreementCode) {
+    @GetMapping("/download-pdf/{financingHdrCode}/{agreementCode}/{branchManager}/{areaSalesManager}")
+    public void downloadPdf(HttpServletResponse response,
+                            @PathVariable String financingHdrCode,
+                            @PathVariable String agreementCode,
+                            @PathVariable String branchManager,
+                            @PathVariable String areaSalesManager) {
         try {
-            byte[] pdfBytes = reportService.generateReport(financingHdrCode, agreementCode);
+            byte[] pdfBytes = reportService.generateReport(financingHdrCode, agreementCode, branchManager, areaSalesManager);
             response.setContentType("application/pdf");
             response.setHeader("Content-Disposition", "attachment; filename=\"report.pdf\"");
             response.setContentLength(pdfBytes.length);
@@ -135,16 +141,20 @@ public class ReportController {
         }
     }
 
-    @PostMapping("/send-doc/{financingHdrCode}/{agreementCode}")
+    @PostMapping("/send-doc/{financingHdrCode}/{agreementCode}/{branchManager}/{areaSalesManager}")
     public ResponseEntity<SigningResponse> sendForSigning(
             @PathVariable String financingHdrCode,
             @PathVariable String agreementCode,
+            @PathVariable String branchManager,
+            @PathVariable String areaSalesManager,
             Authentication authentication
     ) {
 
         SigningResponse response = reportService.sendDocumentForSigning(
                 financingHdrCode,
                 agreementCode,
+                branchManager,
+                areaSalesManager,
                 authentication
         );
 

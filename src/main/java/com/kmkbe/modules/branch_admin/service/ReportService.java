@@ -53,6 +53,9 @@ public class ReportService {
     private FinancingHdrRepository financingHdrRepository;
 
     @Autowired
+    private CsulSignerRepository csulSignerRepository;
+
+    @Autowired
     private AgreementCodeService agreementCodeService;
 
     @Autowired
@@ -436,67 +439,8 @@ public class ReportService {
         }
     }
 
-    public byte[] generateReport(String financingHdrCode, String agreementCode) throws JRException, IOException {
-
-//        UUID financingHdrUuid;
-//        try {
-//            financingHdrUuid = UUID.fromString(financingHdrCode);
-//        } catch (IllegalArgumentException e) {
-//            throw new IllegalArgumentException("Invalid financingHdrCode format");
-//        }
-//
-//        Agreement agreement = agreementRepo.findByFinancingHdrCode(financingHdrUuid, agreementCode)
-//                .orElseThrow(() -> new NoSuchElementException(
-//                        "Data Agreement tidak ditemukan untuk: " + financingHdrCode
-//                ));
-//
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("id", "ID"));
-//        String tanggalDokumen = LocalDate.now().format(formatter);
-//
-//        AppResponse apiResponse = externalApiService.getAppByAppNo(agreement.getApplicationCode());
-//        Integer appId = apiResponse.getAppId();
-//
-//        RekDebiturResponse BankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
-//        RekDebiturResponse.BankAccount dataRekening = BankResponse.getBankAccounts().get(0);
-//
-//        AppFactoringResponse factoringData = externalApiService.getAppFactoringData(appId);
-//
-//        String agrmntCode = agreementRepo
-//                .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
-//                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
-//        FinancialDataResponse financialData = externalApiService.getFinancialData(agrmntCode);
-//
-//        String cwrCode = agreementRepo
-//                .findCwrCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
-//                .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode: " + financingHdrCode));
-//        CwrBwhrResponse cwrBwhrData = externalApiService.getCwrBwhr(cwrCode);
-//        CwrBwhrResponse.ListCwrBwhr cwrBwhr = cwrBwhrData.getCwrBouwheerCustNos().get(0);
-//
-//        Optional<Map<String, Object>> cwrData = agreementRepo.findCwrCodeAndDate(UUID.fromString(financingHdrCode), agreementCode);
-//        Map<String, Object> Cdata = cwrData.orElseGet(Collections::emptyMap);
-//        SimpleDateFormat Csdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("id", "ID"));
-//        String formattedCwrDate = cwrData
-//                .map(data -> {
-//                    Object rawDate = data.get("cwr_start_date");
-//                    if (rawDate instanceof Date) {
-//                        return Csdf.format((Date) rawDate);
-//                    }
-//                    return "-";
-//                })
-//                .orElse("-");
-//
-//        CwrListBwhrResponse bouwheerData = externalApiService.getListCwrBwhr(cwrCode, cwrBwhr.getCwrBouwheerCustNo());
-//
-//        String debtorName = agreementRepo.findCustNameByFinancingHdrCode(financingHdrUuid, agreementCode)
-//                .orElse("Debtor Name");
-//
-//        Optional<Map<String, Object>> karyawanData = debtorRepository.findKaryawanByFinancingHdrCode(financingHdrCode);
-//        Map<String, Object> Kdata = karyawanData.orElseGet(Collections::emptyMap);
-//
-//        String facility = agreementRepo.findFaciltyByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode);
-//
-//        Optional<Map<String, Object>> debtorData = agreementRepo.finddetailDebtor(UUID.fromString(financingHdrCode), agreementCode);
-//        Map<String, Object> data = debtorData.orElseGet(Collections::emptyMap);
+    public byte[] generateReport(String financingHdrCode, String agreementCode, String branchManager, String areaSalesManager) throws JRException, IOException
+    {
 
         UUID financingHdrUuid;
         try {
@@ -513,9 +457,14 @@ public class ReportService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("id", "ID"));
         String tanggalDokumen = LocalDate.now().format(formatter);
 
-        // ==========================
-        // PEMANGGILAN API EKSTERNAL
-        // ==========================
+        // get csul signer
+        CsulSigner branchManagerData = csulSignerRepository
+                .findByKaryawanNameAndJabatan(branchManager, "Branch Manager")
+                .orElseThrow(() -> new IllegalArgumentException("Branch Manager " + branchManager + " tidak ditemukan"));
+
+        CsulSigner areaSalesManagerData = csulSignerRepository
+                .findByKaryawanNameAndJabatan(areaSalesManager, "Area Sales Manager")
+                .orElseThrow(() -> new IllegalArgumentException("Area Sales Manager " + areaSalesManager + " tidak ditemukan"));
 
         // 1. AppResponse
         AppResponse apiResponse = safeApiCall(
@@ -553,23 +502,6 @@ public class ReportService {
         String agrmntCode = agreementRepo
                 .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
                 .orElse("-");
-
-        // 5. Financial Data
-//        FinancialDataResponse financialData = safeApiCall(
-//                () -> externalApiService.getFinancialData(agrmntCode),
-//                new FinancialDataResponse() {{
-//                    setFinancialData(new FinancialData() {{
-//                        setNtfAmount("0");
-//                        setEffectiveRate("0");
-//                        setInstallmentAmount("0");
-//                        setMaxRefundAmount("0");
-//                        setTotalFeeAmount("0");
-//                        setGracePeriod("0");
-//                    }});
-//                    setFeeList(Collections.emptyList());
-//                }}
-//        );
-//        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
 
         FinancialDataResponse fallbackFinancialData = new FinancialDataResponse();
 
@@ -640,8 +572,14 @@ public class ReportService {
         Map<String, Object> data = debtorData.orElseGet(Collections::emptyMap);
 
         Map<String, Object> params = new HashMap<>();
-//        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
         params.put("SUBREPORT_DIR", getClass().getResource("/Reports/").toString());
+
+        params.put("NamaBranchManager", branchManagerData.getKaryawanName());
+        params.put("JabatanBranchManager", branchManagerData.getJabatan());
+        params.put("NamaAreaSalesManager", areaSalesManagerData.getKaryawanName());
+
+        log.info("ini nama asm= {}", areaSalesManagerData.getKaryawanName());
+        log.info("ini nama BM= {}", branchManagerData.getKaryawanName());
 
         params.put("AppNo", apiResponse.getAppNo());
         params.put("TglDokumen", tanggalDokumen);
@@ -656,7 +594,7 @@ public class ReportService {
         params.put("JabatanSigner", Kdata.getOrDefault("Jabatan", "-").toString());
         params.put("IdentitySigner", Kdata.getOrDefault("identity_no", "-").toString());
         params.put("AlamatSigner", Kdata.getOrDefault("alamat", "-").toString());
-        params.put("NamaPerusahaan", "");
+        params.put("NamaPerusahaan", debtorName);
         params.put("AgrmntNo", agrmntCode);
         params.put("Facility", facility);
         params.put("Tenor", apiResponse.getTenor());
@@ -735,7 +673,7 @@ public class ReportService {
         params.put("NamaGMFinance", "General Manager Finance PT. Trakindo Utama");
         params.put("NamaDirektur", sitDto.getDirectorName());
         params.put("NamaGMFinanceCSUL", "");
-        params.put("NamaAreaSalesManager", sitDto.getEmployeeName());
+//        params.put("NamaAreaSalesManager", "");
         params.put("TotalPembayaran", totalPembayaran);
         } else {
             throw new RuntimeException("Failed to get agreement data: " + (sitData.getMessage() != null ? sitData.getMessage() : ""));
@@ -931,10 +869,12 @@ public class ReportService {
     public SigningResponse sendDocumentForSigning(
             String financingHdrCode,
             String agreementCode,
+            String branchManager,
+            String areaSalesManager,
             Authentication authentication) {
 
         try {
-            byte[] pdfBytes = generateReport(financingHdrCode, agreementCode);
+            byte[] pdfBytes = generateReport(financingHdrCode, agreementCode, branchManager, areaSalesManager);
 
             String username = authentication != null ? authentication.getName() : "SYSTEM";
 
