@@ -1,6 +1,5 @@
 package com.kmkbe.modules.branch_admin.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.DebtorMapper;
@@ -10,9 +9,7 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.BaseRemoteService;
-import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.UriUtils;
-import com.kmkbe.modules.branch_admin.request.FileUploadRequest;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.user.entity.MstAppRoleFormUser;
 import com.kmkbe.modules.user.entity.MstUser;
@@ -37,10 +34,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.SignatureException;
 import java.time.LocalDate;

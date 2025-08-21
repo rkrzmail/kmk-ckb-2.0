@@ -2,20 +2,13 @@ package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.CsulSigner;
-import com.kmkbe.core.domain.entity.Debtor;
-import com.kmkbe.core.domain.entity.NotifDebtor;
 import com.kmkbe.core.domain.mapper.CsulSignerMapper;
-import com.kmkbe.core.domain.mapper.DebtorMapper;
-import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.CsulSignerRepository;
-import com.kmkbe.core.domain.repository.DebtorRepository;
 import com.kmkbe.core.domain.repository.ExternalSignerRepository;
-import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.modules.common.service.EmailService;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -77,7 +70,6 @@ public class CsulSignerService {
         CsulSigner entity = csulSignerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Signer dengan ID " + id + " tidak ditemukan"));
 
-        // mapping Entity → DTO (pakai builder)
         return SignerCsulDto.builder()
                 .signerId(entity.getSignerId())
                 .karyawanName(entity.getKaryawanName())
@@ -153,7 +145,6 @@ public class CsulSignerService {
 
             switch (registrationStatus) {
                 case "0":
-//                    log.info("Calling Invitation API for debtor: {}", request.getDebtorName());
                     Map<String, Object> inviteResponse = callInvitationApi(request, headers, username);
                     String invitationLink = (String) inviteResponse.get("link");
                     if (invitationLink == null) {
@@ -291,43 +282,15 @@ public class CsulSignerService {
         return responseBody;
     }
 
-//        CsulSigner entity = CsulSigner.builder()
-//                .karyawanName(request.getKaryawanName())
-//                .jabatan(request.getJabatan())
-//                .identityNo(request.getIdentityNo())
-//                .email(request.getEmail())
-//                .noTelp(request.getNoTelp())
-//                .tempatLahir(request.getTempatLahir())
-//                .tanggalLahir(request.getTanggalLahir())
-//                .jenisKelamin(request.getJenisKelamin())
-//                .alamat(request.getAlamat())
-//                .rt(request.getRt())
-//                .rw(request.getRw())
-//                .kodePos(request.getKodePos())
-//                .kelurahan(request.getKelurahan())
-//                .kecamatan(request.getKecamatan())
-//                .kota(request.getKota())
-//                .isActive(request.getIsActive())
-//                .signhubStatus("Not Registered")
-//                .usrCrt(authentication.getName())
-//                .dtmCrt(LocalDateTime.now())
-//                .build();
-//
-//        csulSignerRepository.save(entity);
-//    }
-
-
     public void updateSigner(Long id, SignerCsulRequest request, Authentication authentication) {
         CsulSigner entity = csulSignerRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Signer dengan ID " + id + " tidak ditemukan"));
 
-        // Cek kalau identityNo sudah dipakai user lain
         if (csulSignerRepository.existsByIdentityNo(request.getIdentityNo())
                 && !request.getIdentityNo().equals(entity.getIdentityNo())) {
             throw new RuntimeException("NIK sudah terdaftar");
         }
 
-        // Update field dari request
         entity.setKaryawanName(request.getKaryawanName());
         entity.setJabatan(request.getJabatan());
         entity.setIdentityNo(request.getIdentityNo());
@@ -344,8 +307,6 @@ public class CsulSignerService {
         entity.setKecamatan(request.getKecamatan());
         entity.setKota(request.getKota());
         entity.setIsActive(request.getIsActive());
-
-        // update user yang edit & timestamp
         entity.setUsrCrt(authentication.getName());
         entity.setDtmCrt(LocalDateTime.now());
 

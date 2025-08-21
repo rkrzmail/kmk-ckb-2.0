@@ -14,12 +14,9 @@ import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
-import jakarta.annotation.PostConstruct;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
-import net.sf.jasperreports.engine.util.JRLoader;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
@@ -34,15 +31,10 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.util.ResourceUtils;
-
-import static com.kmkbe.core.utils.CommonFormattingUtils.formatAmount;
-import static com.kmkbe.nikita.utils.Utils.formatDate;
 
 @Service
 public class ReportService {
@@ -339,7 +331,6 @@ public class ReportService {
                 List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "AO/AM", jwtToken);
                 String employeeName = employeeList.isEmpty() ? "N/A" : employeeList.get(0).get("employeeName");
 
-
                SummaryDetailDto report = new  SummaryDetailDto(
                         debtorName, npwp, debtorStatus, bouwheerName,
                         employeeName,
@@ -352,7 +343,6 @@ public class ReportService {
                 );
                 reportList.add(report);
             }
-
 
             return PaginationResult.<SummaryDetailDto>builder()
                     .currentPage(pageNo + 1)
@@ -385,7 +375,6 @@ public class ReportService {
 
             Page<Object[]> dataPage = financingHdrRepository.findDueDateReport(PageRequest.of(pageNo, pageSize), DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()),DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate()));
 
-
             List<ReportDueDateDto> reportList = new ArrayList<>();
             for (Object[] result : dataPage) {
                 String debtorName = (String) result[0];
@@ -416,7 +405,6 @@ public class ReportService {
                 );
                 reportList.add(report);
             }
-
 
             return PaginationResult.<ReportDueDateDto>builder()
                     .currentPage(pageNo + 1)
@@ -523,7 +511,6 @@ public class ReportService {
 
         FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
 
-
         // 6. CWR
         String cwrCode = agreementRepo
                 .findCwrCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
@@ -577,10 +564,6 @@ public class ReportService {
         params.put("NamaBranchManager", branchManagerData.getKaryawanName());
         params.put("JabatanBranchManager", branchManagerData.getJabatan());
         params.put("NamaAreaSalesManager", areaSalesManagerData.getKaryawanName());
-
-        log.info("ini nama asm= {}", areaSalesManagerData.getKaryawanName());
-        log.info("ini nama BM= {}", branchManagerData.getKaryawanName());
-
         params.put("AppNo", apiResponse.getAppNo());
         params.put("TglDokumen", tanggalDokumen);
         params.put("DebtorName", debtorName);
@@ -616,7 +599,6 @@ public class ReportService {
         params.put("Alamat", data.getOrDefault("company_address", "-").toString());
         params.put("Email", data.getOrDefault("cust_email", "-").toString());
         params.put("Telepon", data.getOrDefault("phone", "-").toString());
-
 
         List<CwrListBwhrResponse.ListData> bwList =
                 Optional.ofNullable(bouwheerData)
@@ -673,7 +655,6 @@ public class ReportService {
         params.put("NamaGMFinance", "General Manager Finance PT. Trakindo Utama");
         params.put("NamaDirektur", sitDto.getDirectorName());
         params.put("NamaGMFinanceCSUL", "");
-//        params.put("NamaAreaSalesManager", "");
         params.put("TotalPembayaran", totalPembayaran);
         } else {
             throw new RuntimeException("Failed to get agreement data: " + (sitData.getMessage() != null ? sitData.getMessage() : ""));
@@ -683,7 +664,8 @@ public class ReportService {
         List<Map<String, String>> tableData3 = new ArrayList<>();
 
         FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
-        PaginationResult<PostedInvoiceDto> invoiceResult = invoiceService.invoiceSubmissionByFinancingHdr( financingHdr,  // you need to have this FinancingHdr object available
+        PaginationResult<PostedInvoiceDto> invoiceResult = invoiceService.invoiceSubmissionByFinancingHdr(
+                financingHdr,
                 new PaginationRequest()
         );
 
@@ -853,7 +835,6 @@ public class ReportService {
         }
     }
 
-
     private String fmtRupiah(Object amount) {
         if (amount == null) return "-";
         try {
@@ -884,8 +865,6 @@ public class ReportService {
                     pdfBytes,
                     username
             );
-
-
 
             ExternalSigningResponse esignResponse = externalApiService.callEsignApi(request);
 
