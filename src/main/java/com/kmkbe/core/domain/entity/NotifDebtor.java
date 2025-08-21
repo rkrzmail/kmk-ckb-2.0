@@ -28,6 +28,9 @@ public class NotifDebtor {
     @Column(name = "financing_hdr_code" )
     private String financingHdrCode;
 
+    @Column(name = "cust_code" )
+    private String custCode;
+
     @Column(name = "usr_crt", nullable = false)
     private String usrCrt;
 

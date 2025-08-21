@@ -13,6 +13,7 @@ import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.nikita.utils.Utils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -255,11 +256,12 @@ public class CustomerDashboardService {
         }
     }
 
-    public List<NotifDebtor> getAllNotifDebtors() {
-        return notifDebtorRepository.findAll();
+    public List<NotifDebtor> getNotifDebtors(String custCode) {
+        return notifDebtorRepository.findByCustCode(custCode);
     }
 
-    public void deleteAllNotifDebtors() {
-        notifDebtorRepository.deleteAll();
+    @Transactional
+    public void deleteAllNotifDebtors(String custCode) {
+        notifDebtorRepository.deleteByCustCode(custCode);
     }
 }

@@ -3,6 +3,7 @@ package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
+import com.kmkbe.core.domain.mapper.AgreementFileSigningMapper;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
@@ -52,6 +53,11 @@ public class ReportService {
 
     @Autowired
     private AgreementFileSigningRepository agreementFileSigningRepository;
+
+    @Autowired
+    private NotifDebtorRepository notifDebtorRepository;
+
+    private AgreementFileSigningMapper agreementFileSigningMapper = AgreementFileSigningMapper.INSTANCE;
 
     @Autowired
     private VisitorRepository visitorRepository;
@@ -947,7 +953,7 @@ public class ReportService {
         return signers;
     }
 
-    private void saveToDatabase(String agreementCode, String documentId, String username, String financingHdrCode) {
+    private AgreementFileSigningDto saveToDatabase(String agreementCode, String documentId, String username, String financingHdrCode) {
 
         Debtor debtor = debtorRepository
                 .findActiveSignerByFinancingHdrCode(financingHdrCode)
@@ -964,9 +970,26 @@ public class ReportService {
                 .emailSigner(debtor.getEmail())
                 .identityNo(debtor.getIdentityNo())
                 .documentId(documentId)
+                .financingHdrCode(financingHdrCode)
                 .build();
 
-        agreementFileSigningRepository.save(entity);
+        AgreementFileSigning saveDoc =  agreementFileSigningRepository.save(entity);
+
+        String custCode = String.valueOf(financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
+                .map(finHdr -> finHdr.getCustomer().getCustCode())
+                .orElseThrow(() -> new RuntimeException("FinancingHdr dengan code "
+                        + financingHdrCode + " tidak ditemukan")));
+
+        notifDebtorRepository.save(NotifDebtor.builder()
+                .notification("Permintaan Tanda Tangan Dokumen")
+                .description("Dokumen yang memerlukan tanda tangan " + debtor.getKaryawanName() + ", telah tersedia. Mohon segera mendandatangani dokumen tersebut atau menghubungi pihak terkait.")
+                .financingHdrCode(financingHdrCode)
+                .custCode(custCode)
+                .usrCrt(username)
+                .dtmCrt(LocalDateTime.now())
+                .build());
+
+        return agreementFileSigningMapper.entityToDto(saveDoc);
 
     }
 

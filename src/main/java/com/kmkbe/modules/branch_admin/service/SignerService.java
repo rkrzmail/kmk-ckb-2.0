@@ -612,7 +612,7 @@ public class SignerService {
     }
 
     private DebtorDto saveDebtor(DebtorDto debtorDto, String username) {
-        log.info("Saving debtor to database: {}", debtorDto);
+//        log.info("Saving debtor to database: {}", debtorDto);
         Debtor debtor = Debtor.builder()
                 .debtorName(debtorDto.getDebtorName())
                 .karyawanName(debtorDto.getKaryawanName())
@@ -641,10 +641,16 @@ public class SignerService {
 
         Debtor savedDebtor = debtorRepository.save(debtor);
 
+        String custCode = String.valueOf(financingHdrRepository.findByFinancingHdrCode(UUID.fromString(debtorDto.getFinancingHdrCode()))
+                .map(finHdr -> finHdr.getCustomer().getCustCode())
+                .orElseThrow(() -> new RuntimeException("FinancingHdr dengan code "
+                        + debtorDto.getFinancingHdrCode() + " tidak ditemukan")));
+
         notifDebtorRepository.save(NotifDebtor.builder()
                 .notification("Terdapat Perubahan Signer Person")
                 .description("Signer Person telah berubah. Pastikan signer yang didaftarkan sesuai dan berwenang menandatangani dokumen perjanjian.")
                 .financingHdrCode(debtorDto.getFinancingHdrCode())
+                .custCode(custCode)
                 .usrCrt(username)
                 .dtmCrt(LocalDateTime.now())
                 .build());

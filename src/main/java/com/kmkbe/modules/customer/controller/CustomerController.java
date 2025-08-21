@@ -304,15 +304,19 @@ public class CustomerController {
         );
     }
 
-    @GetMapping("/notif")
-    public CommonResult<List<NotifDebtor>> getAllNotifDebtors(){
-        List<NotifDebtor> data = customerDashboardService.getAllNotifDebtors();
+    @GetMapping("/notif/{custCode}")
+    public CommonResult<List<NotifDebtor>> getAllNotifDebtors(
+            @PathVariable String custCode
+    ){
+        List<NotifDebtor> data = customerDashboardService.getNotifDebtors(custCode);
         return new CommonResult<List<NotifDebtor>>().success(data);
     }
 
-    @DeleteMapping("/notif")
-    public CommonResult<String> deleteAllNotifDebtors() {
-        customerDashboardService.deleteAllNotifDebtors();
+    @DeleteMapping("/notif/{custCode}")
+    public CommonResult<String> deleteAllNotifDebtors(
+            @PathVariable String custCode
+    ) {
+        customerDashboardService.deleteAllNotifDebtors(custCode);
         return new CommonResult<String>().success("All Notification records have been deleted.");
     }
 
