@@ -10,8 +10,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -151,6 +151,30 @@ public class CsulSignerService {
         entity.setDtmCrt(LocalDateTime.now());
 
         csulSignerRepository.save(entity);
+    }
+
+    public Map<String, Object> getSignersGrouped() {
+        List<CsulSigner> signers = csulSignerRepository.findAll();
+
+        List<SignerGroupedDto> dtoList = signers.stream()
+                .map(s -> new SignerGroupedDto(
+                        s.getSignerId(),
+                        s.getKaryawanName(),
+                        s.getJabatan(),
+                        s.getIdentityNo(),
+                        s.getEmail()
+                ))
+                .toList();
+
+        Map<String, List<SignerGroupedDto>> grouped = dtoList.stream()
+                .collect(Collectors.groupingBy(SignerGroupedDto::getJabatan));
+
+        Map<String, Object> responseData = new LinkedHashMap<>();
+
+        responseData.put("BranchManager", grouped.getOrDefault("Branch Manager", new ArrayList<>()));
+        responseData.put("AreaSalesManager", grouped.getOrDefault("Area Sales Manager", new ArrayList<>()));
+
+        return responseData;
     }
 
 }

@@ -17,7 +17,9 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Validated
@@ -79,4 +81,9 @@ public class CsulSignerController {
         }
     }
 
+    @GetMapping("/get-list")
+    public CommonResult<Map<String, Object>> getSignersGrouped(Authentication authentication) {
+        Map<String, Object> responseData = csulSignerService.getSignersGrouped();
+        return new CommonResult<Map<String, Object>>().success(responseData);
+    }
 }
