@@ -147,6 +147,12 @@
 				<subreportParameter name="Cwr-Date">
 					<subreportParameterExpression><![CDATA[$P{Cwr-Date}]]></subreportParameterExpression>
 				</subreportParameter>
+				<subreportParameter name="NamaBranchManager">
+                    <subreportParameterExpression><![CDATA[$P{NamaBranchManager}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="JabatanBranchManager">
+                    <subreportParameterExpression><![CDATA[$P{JabatanBranchManager}]]></subreportParameterExpression>
+                </subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat2.jasper"]]></subreportExpression>
 			</subreport>

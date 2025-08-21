@@ -62,9 +62,17 @@ public class CsulSignerController {
 
         try {
             csulSignerService.createSigner(request, authentication);
-            return new CommonResult<String>().success("Data berhasil disimpan");
-        } catch (RuntimeException e) {
-            return new CommonResult<String>().fail(400, "Gagal menyimpan: " + e.getMessage());
+            return new CommonResult<String>()
+                    .success("NIK belum terdaftar. Link registrasi telah dikirim ke email " +
+                            request.getEmail());
+        } catch (Exception e) {
+            String errorMessage = e.getMessage();
+            if (errorMessage.contains("NIK sudah terdaftar")) {
+                return new CommonResult<String>()
+                        .fail(409, errorMessage);
+            }
+            return new CommonResult<String>()
+                    .fail(400, errorMessage);
         }
     }
 

@@ -28,4 +28,12 @@ public class SignerCsulRequest implements Serializable {
     private String kecamatan;
     private String kota;
     private Boolean isActive;
+    private String registrationMessage;
+
+    public String getRegistrationMessage() {
+        return registrationMessage;
+    }
+    public void setRegistrationMessage(String registrationMessage) {
+        this.registrationMessage = registrationMessage;
+    }
 }

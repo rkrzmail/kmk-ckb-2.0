@@ -3,11 +3,25 @@ package com.kmkbe.modules.branch_admin.service;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.CsulSigner;
 import com.kmkbe.core.domain.entity.Debtor;
+import com.kmkbe.core.domain.entity.NotifDebtor;
+import com.kmkbe.core.domain.mapper.CsulSignerMapper;
+import com.kmkbe.core.domain.mapper.DebtorMapper;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.CsulSignerRepository;
+import com.kmkbe.core.domain.repository.DebtorRepository;
+import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.modules.common.service.EmailService;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -15,9 +29,24 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CsulSignerService {
+    private final RestTemplate restTemplate;
     private final CsulSignerRepository csulSignerRepository;
+    private final CsulSignerMapper csulSignerMapper = CsulSignerMapper.INSTANCE;
+    private final EmailService emailService;
+    private final String apiKey = "YiByHB@CSUL_DEV";
+    private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
+    private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
+    private final String downloadDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/downloadDocument";
+    private final String checkDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/checkStatusSigning";
+    private final BaseRemoteService baseRemoteService;
+    @Value("${csul.confins.adinskey}")
+    private String adinsKey;
 
+
+    @Value("${csul.confins.adinskey}")
+    private String adInsKey;
 
     public List<SignerCsulDto> signerCsulList(Authentication authentication) {
         List<CsulSigner> entities = csulSignerRepository.findAll();
@@ -76,8 +105,9 @@ public class CsulSignerService {
     // data static get signer csul
     public ExternalSignerResponse getStaticSigners() {
         List<ExternalSignerDto> signers = List.of(
-                new ExternalSignerDto("Head Office", "Finnance", "M.Noprialdo@csul.co.id", "M Noprialdo", "BRANCH MANAGER"),
+                new ExternalSignerDto("Head Office", "Finnance", "M.Noprialdo@csul.co.id", "M Noprialdo", "Branch Manager"),
                 new ExternalSignerDto("Head Office", "Finnance", "It.project@csul.co.id", "M Sopii", "Area Sales Manager"),
+                new ExternalSignerDto("Head Office", "Finnance", "john.doe@csul.co.id", "John Doe", "Branch Manager"),
                 new ExternalSignerDto("Head Office", "Finnance", "M.Nanto@csul.co.id", "M Nanto", "Area Sales Manager")
         );
 
@@ -88,10 +118,107 @@ public class CsulSignerService {
                 .build();
     }
 
-    public void createSigner(SignerCsulRequest request, Authentication authentication) {
-        if (csulSignerRepository.existsByIdentityNo(request.getIdentityNo())) {
+    @Transactional
+    public SignerCsulRequest createSigner(SignerCsulRequest request, Authentication authentication) {
+        try{
+            if (csulSignerRepository.existsByIdentityNo(request.getIdentityNo())) {
             throw new RuntimeException("NIK sudah terdaftar");
+            }
+
+            String username = authentication != null ?
+                    authentication.getName() :
+                    "SYSTEM";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-api-key", apiKey);
+
+            log.info("Calling Registration API for debtor with identityNo: {}", request.getIdentityNo());
+            Map<String, Object> registerResponse = callRegistrationApi(request, headers, username);
+            log.info("Register API Response: {}", registerResponse);
+
+            String registrationStatus = "0";
+
+            if (registerResponse.containsKey("registrationData")) {
+                List<Map<String, Object>> registrationData = (List<Map<String, Object>>) registerResponse.get("registrationData");
+                if (registrationData != null && !registrationData.isEmpty()) {
+                    registrationStatus = (String) registrationData.get(0).get("registrationStatus");
+                }
+            }
+
+            SignerCsulRequest savedSigner = saveSigner(request, username);
+
+            switch (registrationStatus) {
+                case "0":
+//                    log.info("Calling Invitation API for debtor: {}", request.getDebtorName());
+                    Map<String, Object> inviteResponse = callInvitationApi(request, headers, username);
+                    String invitationLink = (String) inviteResponse.get("link");
+                    if (invitationLink == null) {
+                        throw new RuntimeException("Gagal generate link undangan");
+                    }
+
+                    log.info("Sending invitation email to: {}", request.getEmail());
+                    emailService.sendInvitationLinkEmail(
+                            request.getEmail(),
+                            invitationLink,
+                            request.getKaryawanName()
+                    );
+
+                    savedSigner.setRegistrationMessage("Registrasi berhasil dan undangan telah dikirim");
+                    break;
+                case "1":
+                    savedSigner.setRegistrationMessage("Akun sudah registrasi, namun belum di aktivasi");
+                    break;
+                case "2":
+                    savedSigner.setRegistrationMessage("Signer person sudah register dan aktivasi");
+                    break;
+                default:
+                    throw new RuntimeException("Status registrasi tidak dikenali: " + registrationStatus);
+            }
+
+            return savedSigner;
+
+        } catch(
+        Exception e) {
+            log.error("Error: {}", e.getMessage());
+            throw new RuntimeException(e.getMessage());
         }
+    }
+
+    private Map<String, Object> callRegistrationApi(SignerCsulRequest request, HttpHeaders headers, String username) {
+        Map<String, Object> requestBody = Map.of(
+                "audit", Map.of("callerId", username),
+                "dataType", "NIK",
+                "userData", request.getIdentityNo()
+        );
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                registerUrl,
+                new HttpEntity<>(requestBody, headers),
+                Map.class
+        );
+
+        Map<String, Object> responseBody = response.getBody();
+        log.info("Registration API Response Body: {}", responseBody);
+        if (responseBody == null) {
+            throw new RuntimeException("API registrasi tidak memberikan response");
+        }
+
+        if (responseBody.containsKey("registrationData")) {
+            return responseBody;
+        }
+
+        if (responseBody.containsKey("status")) {
+            Map<String, Object> status = (Map<String, Object>) responseBody.get("status");
+            if (!status.get("code").equals(8165)) {
+                throw new RuntimeException((String) status.get("message"));
+            }
+        }
+
+        return responseBody;
+    }
+
+    private SignerCsulRequest saveSigner(SignerCsulRequest request, String username) {
         CsulSigner entity = CsulSigner.builder()
                 .karyawanName(request.getKaryawanName())
                 .jabatan(request.getJabatan())
@@ -110,12 +237,81 @@ public class CsulSignerService {
                 .kota(request.getKota())
                 .isActive(request.getIsActive())
                 .signhubStatus("Not Registered")
-                .usrCrt(authentication.getName())
+                .usrCrt(username)
                 .dtmCrt(LocalDateTime.now())
                 .build();
 
-        csulSignerRepository.save(entity);
+        CsulSigner savedSigner = csulSignerRepository.save(entity);
+
+        return csulSignerMapper.entityToDto(savedSigner);
     }
+
+
+    private Map<String, Object> callInvitationApi(SignerCsulRequest request, HttpHeaders headers, String username) {
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("provinsi", "DKI JAKARTA");
+        requestBody.put("kota", request.getKota());
+        requestBody.put("kelurahan", request.getKelurahan());
+        requestBody.put("tmpLahir", request.getTempatLahir());
+        requestBody.put("alamat", request.getAlamat());
+        requestBody.put("tglLahir", request.getTanggalLahir());
+        requestBody.put("nama", request.getKaryawanName());
+        requestBody.put("kecamatan", request.getKecamatan());
+        requestBody.put("tlp", request.getNoTelp());
+        requestBody.put("jenisKelamin", request.getJenisKelamin());
+        requestBody.put("idKtp", request.getIdentityNo());
+        requestBody.put("kodePos", request.getKodePos());
+        requestBody.put("email", request.getEmail());
+        requestBody.put("type", "EMPLOYEE");
+        requestBody.put("audit", Map.of("callerId", username));
+
+        ResponseEntity<Map> response = restTemplate.postForEntity(
+                generateLinkUrl,
+                new HttpEntity<>(requestBody, headers),
+                Map.class
+        );
+        log.info("Invitation API Request Body: {}", requestBody);
+
+        Map<String, Object> responseBody = response.getBody();
+        log.info("Invitation API Response Body: {}", responseBody);
+        if (responseBody == null) {
+            throw new RuntimeException("API undangan tidak memberikan response");
+        }
+
+        if (responseBody.containsKey("status")) {
+            Map<String, Object> status = (Map<String, Object>) responseBody.get("status");
+            if (!status.get("code").equals(0)) {
+                throw new RuntimeException((String) status.get("message"));
+            }
+        }
+
+        return responseBody;
+    }
+
+//        CsulSigner entity = CsulSigner.builder()
+//                .karyawanName(request.getKaryawanName())
+//                .jabatan(request.getJabatan())
+//                .identityNo(request.getIdentityNo())
+//                .email(request.getEmail())
+//                .noTelp(request.getNoTelp())
+//                .tempatLahir(request.getTempatLahir())
+//                .tanggalLahir(request.getTanggalLahir())
+//                .jenisKelamin(request.getJenisKelamin())
+//                .alamat(request.getAlamat())
+//                .rt(request.getRt())
+//                .rw(request.getRw())
+//                .kodePos(request.getKodePos())
+//                .kelurahan(request.getKelurahan())
+//                .kecamatan(request.getKecamatan())
+//                .kota(request.getKota())
+//                .isActive(request.getIsActive())
+//                .signhubStatus("Not Registered")
+//                .usrCrt(authentication.getName())
+//                .dtmCrt(LocalDateTime.now())
+//                .build();
+//
+//        csulSignerRepository.save(entity);
+//    }
 
 
     public void updateSigner(Long id, SignerCsulRequest request, Authentication authentication) {
