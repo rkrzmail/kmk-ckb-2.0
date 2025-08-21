@@ -51,7 +51,7 @@ public class CsulSignerController {
     // sementara static get signer csul
     @GetMapping("/get-signer")
     public CommonResult<ExternalSignerResponse> getExternalSigners() {
-        ExternalSignerResponse response = csulSignerService.getStaticSigners();
+        ExternalSignerResponse response = csulSignerService.getSignersStatic();
         return new CommonResult<ExternalSignerResponse>().success(response);
     }
 

@@ -9,6 +9,7 @@ import com.kmkbe.core.domain.mapper.DebtorMapper;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.CsulSignerRepository;
 import com.kmkbe.core.domain.repository.DebtorRepository;
+import com.kmkbe.core.domain.repository.ExternalSignerRepository;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.modules.common.service.EmailService;
 import jakarta.transaction.Transactional;
@@ -33,22 +34,19 @@ import java.util.stream.Collectors;
 public class CsulSignerService {
     private final RestTemplate restTemplate;
     private final CsulSignerRepository csulSignerRepository;
+    private final ExternalSignerRepository externalSignerRepository;
     private final CsulSignerMapper csulSignerMapper = CsulSignerMapper.INSTANCE;
     private final EmailService emailService;
     private final String apiKey = "YiByHB@CSUL_DEV";
     private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
     private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
-    private final String downloadDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/downloadDocument";
-    private final String checkDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/checkStatusSigning";
-    private final BaseRemoteService baseRemoteService;
-    @Value("${csul.confins.adinskey}")
-    private String adinsKey;
 
-
-    @Value("${csul.confins.adinskey}")
-    private String adInsKey;
 
     public List<SignerCsulDto> signerCsulList(Authentication authentication) {
+        String username = authentication != null ?
+                authentication.getName() :
+                "SYSTEM";
+
         List<CsulSigner> entities = csulSignerRepository.findAll();
         return entities.stream()
                 .map(e -> SignerCsulDto.builder()
@@ -103,13 +101,17 @@ public class CsulSignerService {
     }
 
     // data static get signer csul
-    public ExternalSignerResponse getStaticSigners() {
-        List<ExternalSignerDto> signers = List.of(
-                new ExternalSignerDto("Head Office", "Finnance", "M.Noprialdo@csul.co.id", "M Noprialdo", "Branch Manager"),
-                new ExternalSignerDto("Head Office", "Finnance", "It.project@csul.co.id", "M Sopii", "Area Sales Manager"),
-                new ExternalSignerDto("Head Office", "Finnance", "john.doe@csul.co.id", "John Doe", "Branch Manager"),
-                new ExternalSignerDto("Head Office", "Finnance", "M.Nanto@csul.co.id", "M Nanto", "Area Sales Manager")
-        );
+    public ExternalSignerResponse getSignersStatic() {
+        List<ExternalSignerDto> signers = externalSignerRepository.findAll()
+                .stream()
+                .map(signer -> new ExternalSignerDto(
+                        signer.getOffice(),
+                        signer.getDepartment(),
+                        signer.getEmail(),
+                        signer.getName(),
+                        signer.getPosition()
+                ))
+                .collect(Collectors.toList());
 
         return ExternalSignerResponse.builder()
                 .signers(signers)
@@ -117,6 +119,7 @@ public class CsulSignerService {
                 .message("Success")
                 .build();
     }
+
 
     @Transactional
     public SignerCsulRequest createSigner(SignerCsulRequest request, Authentication authentication) {
