@@ -165,8 +165,6 @@ public class CsulSignerService {
         return camelCaseText.toString().trim();
     }
 
-
-
     @Transactional
     public SignerCsulRequest createSigner(SignerCsulRequest request, Authentication authentication) {
         try{
@@ -182,47 +180,43 @@ public class CsulSignerService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("x-api-key", apiKey);
 
-            log.info("Calling Registration API for debtor with identityNo: {}", request.getIdentityNo());
             Map<String, Object> registerResponse = callRegistrationApi(request, headers, username);
-            log.info("Register API Response: {}", registerResponse);
 
             String registrationStatus = "0";
 
             if (registerResponse.containsKey("registrationData")) {
-                List<Map<String, Object>> registrationData = (List<Map<String, Object>>) registerResponse.get("registrationData");
+                List<Map<String, Object>> registrationData =
+                        (List<Map<String, Object>>) registerResponse.get("registrationData");
+
                 if (registrationData != null && !registrationData.isEmpty()) {
-                    registrationStatus = (String) registrationData.get(0).get("registrationStatus");
+                    // cari vendor Vida
+                    for (Map<String, Object> vendorData : registrationData) {
+                        if ("Vida".equalsIgnoreCase((String) vendorData.get("vendor"))) {
+                            registrationStatus = String.valueOf(vendorData.get("registrationStatus"));
+                            break;
+                        }
+                    }
                 }
             }
 
-            SignerCsulRequest savedSigner = saveSigner(request, username);
+            String signhubStatus = "Not Registered";
+            String registrationMessage;
 
             switch (registrationStatus) {
                 case "0":
-                    Map<String, Object> inviteResponse = callInvitationApi(request, headers, username);
-                    String invitationLink = (String) inviteResponse.get("link");
-                    if (invitationLink == null) {
-                        throw new RuntimeException("Gagal generate link undangan");
-                    }
-
-                    log.info("Sending invitation email to: {}", request.getEmail());
-                    emailService.sendInvitationLinkEmail(
-                            request.getEmail(),
-                            invitationLink,
-                            request.getKaryawanName()
-                    );
-
-                    savedSigner.setRegistrationMessage("Registrasi berhasil dan undangan telah dikirim");
-                    break;
                 case "1":
-                    savedSigner.setRegistrationMessage("Akun sudah registrasi, namun belum di aktivasi");
+                    registrationMessage="Harap daftarkan signer ke eSignHub terlebih dahulu";
                     break;
                 case "2":
-                    savedSigner.setRegistrationMessage("Signer person sudah register dan aktivasi");
+                    registrationMessage="Signer person sudah register dan aktivasi ";
+                    signhubStatus = "Registered";
                     break;
                 default:
                     throw new RuntimeException("Status registrasi tidak dikenali: " + registrationStatus);
             }
+
+            SignerCsulRequest savedSigner = saveSigner(request, username, signhubStatus);
+            savedSigner.setRegistrationMessage(registrationMessage);
 
             return savedSigner;
 
@@ -266,7 +260,7 @@ public class CsulSignerService {
         return responseBody;
     }
 
-    private SignerCsulRequest saveSigner(SignerCsulRequest request, String username) {
+    private SignerCsulRequest saveSigner(SignerCsulRequest request, String username, String signhubStatus) {
         CsulSigner entity = CsulSigner.builder()
                 .karyawanName(request.getKaryawanName())
                 .jabatan(request.getJabatan())
@@ -274,7 +268,7 @@ public class CsulSignerService {
                 .email(request.getEmail())
                 .noTelp(request.getNoTelp())
                 .isActive(request.getIsActive())
-                .signhubStatus("Not Registered")
+                .signhubStatus(signhubStatus)
                 .usrCrt(username)
                 .dtmCrt(LocalDateTime.now())
                 .build();
@@ -282,47 +276,6 @@ public class CsulSignerService {
         CsulSigner savedSigner = csulSignerRepository.save(entity);
 
         return csulSignerMapper.entityToDto(savedSigner);
-    }
-
-    private Map<String, Object> callInvitationApi(SignerCsulRequest request, HttpHeaders headers, String username) {
-        Map<String, Object> requestBody = new HashMap<>();
-        requestBody.put("provinsi", "DKI JAKARTA");
-        requestBody.put("kota", request.getKota());
-        requestBody.put("kelurahan", request.getKelurahan());
-        requestBody.put("tmpLahir", request.getTempatLahir());
-        requestBody.put("alamat", request.getAlamat());
-        requestBody.put("tglLahir", request.getTanggalLahir());
-        requestBody.put("nama", request.getKaryawanName());
-        requestBody.put("kecamatan", request.getKecamatan());
-        requestBody.put("tlp", request.getNoTelp());
-        requestBody.put("jenisKelamin", request.getJenisKelamin());
-        requestBody.put("idKtp", request.getIdentityNo());
-        requestBody.put("kodePos", request.getKodePos());
-        requestBody.put("email", request.getEmail());
-        requestBody.put("type", "EMPLOYEE");
-        requestBody.put("audit", Map.of("callerId", username));
-
-        ResponseEntity<Map> response = restTemplate.postForEntity(
-                generateLinkUrl,
-                new HttpEntity<>(requestBody, headers),
-                Map.class
-        );
-        log.info("Invitation API Request Body: {}", requestBody);
-
-        Map<String, Object> responseBody = response.getBody();
-        log.info("Invitation API Response Body: {}", responseBody);
-        if (responseBody == null) {
-            throw new RuntimeException("API undangan tidak memberikan response");
-        }
-
-        if (responseBody.containsKey("status")) {
-            Map<String, Object> status = (Map<String, Object>) responseBody.get("status");
-            if (!status.get("code").equals(0)) {
-                throw new RuntimeException((String) status.get("message"));
-            }
-        }
-
-        return responseBody;
     }
 
     public void updateSigner(Long id, SignerCsulRequest request, Authentication authentication) {

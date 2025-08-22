@@ -63,10 +63,9 @@ public class CsulSignerController {
             Authentication authentication) {
 
         try {
-            csulSignerService.createSigner(request, authentication);
+            SignerCsulRequest savedSigner = csulSignerService.createSigner(request, authentication);
             return new CommonResult<String>()
-                    .success("NIK belum terdaftar. Link registrasi telah dikirim ke email " +
-                            request.getEmail());
+                    .success(savedSigner.getRegistrationMessage());
         } catch (Exception e) {
             String errorMessage = e.getMessage();
             if (errorMessage.contains("NIK sudah terdaftar")) {
@@ -77,6 +76,7 @@ public class CsulSignerController {
                     .fail(400, errorMessage);
         }
     }
+
 
     @PutMapping("/signer/{id}")
     public CommonResult<String> updateSigner(
