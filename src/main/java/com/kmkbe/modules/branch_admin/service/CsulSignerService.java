@@ -322,4 +322,45 @@ public class CsulSignerService {
 
         return responseData;
     }
+
+    @Transactional
+    public String updateSignerStatus(String identityNo, Authentication authentication) {
+        CsulSigner signer = csulSignerRepository.findByIdentityNo(identityNo)
+                .orElseThrow(() -> new RuntimeException("Signer dengan identityNo " + identityNo + " tidak ditemukan"));
+
+        String username = authentication != null ? authentication.getName() : "SYSTEM";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        headers.set("x-api-key", apiKey);
+
+        SignerCsulRequest tempRequest = new SignerCsulRequest();
+        tempRequest.setIdentityNo(identityNo);
+
+        Map<String, Object> registerResponse = callRegistrationApi(tempRequest, headers, username);
+
+        String registrationStatus = "0";
+        if (registerResponse.containsKey("registrationData")) {
+            List<Map<String, Object>> registrationData = (List<Map<String, Object>>) registerResponse.get("registrationData");
+            if (registrationData != null && !registrationData.isEmpty()) {
+                for (Map<String, Object> vendorData : registrationData) {
+                    if ("Vida".equalsIgnoreCase((String) vendorData.get("vendor"))) {
+                        registrationStatus = String.valueOf(vendorData.get("registrationStatus"));
+                        break;
+                    }
+                }
+            }
+        }
+
+        if ("2".equals(registrationStatus)) {
+            signer.setSignhubStatus("Registered");
+            signer.setUsrUpd(username);
+            signer.setDtmUpd(LocalDateTime.now());
+            csulSignerRepository.save(signer);
+            return "Signer sudah register dan aktivasi";
+        } else {
+            return "Signer masih belum terdaftar";
+        }
+    }
+
 }

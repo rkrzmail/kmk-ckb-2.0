@@ -104,4 +104,18 @@ public class CsulSignerController {
         Map<String, Object> responseData = csulSignerService.getSignersGrouped2();
         return new CommonResult<Map<String, Object>>().success(responseData);
     }
+
+    @PutMapping("/check/{identityNo}")
+    public CommonResult<String> updateSignerStatus(
+            @PathVariable String identityNo,
+            Authentication authentication) {
+
+        try {
+            String message = csulSignerService.updateSignerStatus(identityNo, authentication);
+            return new CommonResult<String>().success(message);
+        } catch (Exception e) {
+            return new CommonResult<String>().fail(400, e.getMessage());
+        }
+    }
+
 }

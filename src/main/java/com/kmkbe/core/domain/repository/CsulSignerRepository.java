@@ -14,4 +14,6 @@ public interface CsulSignerRepository extends JpaRepository<CsulSigner, Long> {
     boolean existsByIdentityNo(String identityNo);
 
     Optional<CsulSigner> findByKaryawanNameAndJabatan(String karyawanName, String jabatan);
+
+    Optional<CsulSigner> findByIdentityNo(String identityNo);
 }

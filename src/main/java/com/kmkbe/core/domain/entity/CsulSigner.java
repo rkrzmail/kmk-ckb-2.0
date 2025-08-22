@@ -45,4 +45,10 @@ public class CsulSigner {
 
     @Column(name = "dtm_crt", nullable = true)
     private LocalDateTime dtmCrt;
+
+    @Column(name = "usr_upd", nullable = true)
+    private String usrUpd;
+
+    @Column(name = "dtm_upd", nullable = true)
+    private LocalDateTime dtmUpd;
 }
