@@ -47,4 +47,10 @@ public interface MstBranchRepository extends JpaRepository<MstBranch, String>, J
     default List<MstBranch> findAllActive() {
         return findAllByIsActive(true);
     }
+
+//    Optional<MstBranch> findByBranchName(String cleanUsername);
+
+    @Query("SELECT m FROM MstBranch m WHERE UPPER(m.branchName) = UPPER(:username)")
+    Optional<MstBranch> findByBranchName(@Param("username") String username);
+
 }

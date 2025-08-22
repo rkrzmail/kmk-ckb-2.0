@@ -34,36 +34,6 @@ public class CsulSigner {
     @Column(name = "no_telp", nullable = false)
     private String noTelp;
 
-    @Column(name = "tempat_lahir", nullable = false)
-    private String tempatLahir;
-
-    @Column(name = "tanggal_lahir", nullable = false)
-    private String tanggalLahir;
-
-    @Column(name = "jenis_kelamin", nullable = false)
-    private String jenisKelamin;
-
-    @Column(name = "alamat", nullable = false)
-    private String alamat;
-
-    @Column(name = "rt", nullable = false)
-    private String rt;
-
-    @Column(name = "rw", nullable = false)
-    private String rw;
-
-    @Column(name = "kode_pos", nullable = false)
-    private String kodePos;
-
-    @Column(name = "kelurahan", nullable = false)
-    private String kelurahan;
-
-    @Column(name = "kecamatan", nullable = false)
-    private String kecamatan;
-
-    @Column(name = "kota", nullable = false)
-    private String kota;
-
     @Column(name = "is_active", nullable = false)
     private Boolean isActive;
 

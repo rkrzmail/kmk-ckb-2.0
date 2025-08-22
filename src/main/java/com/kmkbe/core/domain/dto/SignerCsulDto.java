@@ -19,16 +19,6 @@ public class SignerCsulDto implements Serializable {
     private String identityNo;
     private String email;
     private String noTelp;
-    private String tempatLahir;
-    private String tanggalLahir;
-    private String jenisKelamin;
-    private String alamat;
-    private String rt;
-    private String rw;
-    private String kodePos;
-    private String kelurahan;
-    private String kecamatan;
-    private String kota;
     private Boolean isActive;
     private String signhubStatus;
 }

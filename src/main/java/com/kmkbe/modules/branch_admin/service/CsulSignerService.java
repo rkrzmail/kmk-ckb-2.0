@@ -6,6 +6,10 @@ import com.kmkbe.core.domain.mapper.CsulSignerMapper;
 import com.kmkbe.core.domain.repository.CsulSignerRepository;
 import com.kmkbe.core.domain.repository.ExternalSignerRepository;
 import com.kmkbe.modules.common.service.EmailService;
+import com.kmkbe.modules.remote.service.AuthRemoteService;
+import com.kmkbe.modules.remote.service.EmailAo;
+import com.kmkbe.modules.user.entity.MstBranch;
+import com.kmkbe.modules.user.repository.MstBranchRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,11 +33,19 @@ public class CsulSignerService {
     private final CsulSignerRepository csulSignerRepository;
     private final ExternalSignerRepository externalSignerRepository;
     private final CsulSignerMapper csulSignerMapper = CsulSignerMapper.INSTANCE;
+    private final MstBranchRepository mstBranchRepository;
+    private final AuthRemoteService authRemoteService;
+    private final EmailAo emailAo;
     private final EmailService emailService;
     private final String apiKey = "YiByHB@CSUL_DEV";
     private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
     private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
 
+    private String jwtToken;
+
+    private void ensureJwtToken() {
+        jwtToken = authRemoteService.fetchAuthJwt().getData();
+    }
 
     public List<SignerCsulDto> signerCsulList(Authentication authentication) {
         String username = authentication != null ?
@@ -49,16 +61,6 @@ public class CsulSignerService {
                         .identityNo(e.getIdentityNo())
                         .email(e.getEmail())
                         .noTelp(e.getNoTelp())
-                        .tempatLahir(e.getTempatLahir())
-                        .tanggalLahir(e.getTanggalLahir())
-                        .jenisKelamin(e.getJenisKelamin())
-                        .alamat(e.getAlamat())
-                        .rt(e.getRt())
-                        .rw(e.getRw())
-                        .kodePos(e.getKodePos())
-                        .kelurahan(e.getKelurahan())
-                        .kecamatan(e.getKecamatan())
-                        .kota(e.getKota())
                         .isActive(e.getIsActive())
                         .signhubStatus(e.getSignhubStatus())
                         .build()
@@ -77,22 +79,12 @@ public class CsulSignerService {
                 .identityNo(entity.getIdentityNo())
                 .email(entity.getEmail())
                 .noTelp(entity.getNoTelp())
-                .tempatLahir(entity.getTempatLahir())
-                .tanggalLahir(entity.getTanggalLahir())
-                .jenisKelamin(entity.getJenisKelamin())
-                .alamat(entity.getAlamat())
-                .rt(entity.getRt())
-                .rw(entity.getRw())
-                .kodePos(entity.getKodePos())
-                .kelurahan(entity.getKelurahan())
-                .kecamatan(entity.getKecamatan())
-                .kota(entity.getKota())
                 .isActive(entity.getIsActive())
                 .signhubStatus(entity.getSignhubStatus())
                 .build();
     }
 
-    // data static get signer csul
+//     data static get signer csul
     public ExternalSignerResponse getSignersStatic() {
         List<ExternalSignerDto> signers = externalSignerRepository.findAll()
                 .stream()
@@ -111,6 +103,68 @@ public class CsulSignerService {
                 .message("Success")
                 .build();
     }
+
+    public Map<String, Object> getSignersGrouped(String username) {
+        ensureJwtToken();
+
+        String cleanUsername = username.replaceFirst("(?i)^Admin\\s*", "");
+
+        String branchCode = mstBranchRepository.findByBranchName(cleanUsername)
+                .map(MstBranch::getBranchCode)
+                .orElseThrow(() -> {
+                    return new RuntimeException("BranchCode tidak ditemukan untuk username: " + cleanUsername);
+                });
+
+        List<Map<String, String>> bmList = emailAo.getEmailByPosition(branchCode, "BM/BOH", jwtToken);
+
+        List<Map<String, Object>> branchManagers = bmList.stream().map(bm -> {
+            Map<String, Object> bmMap = new HashMap<>();
+            bmMap.put("employeeCode", bm.get("employeeCode"));
+            bmMap.put("employeeName", toCamelCase(bm.get("employeeName")));
+            bmMap.put("email", bm.get("email"));
+            bmMap.put("branchCode", branchCode);
+            return bmMap;
+        }).collect(Collectors.toList());
+
+        List<Map<String, String>> asmList = emailAo.getEmailByPosition(branchCode, "RM", jwtToken);
+
+        List<Map<String, Object>> areaSalesManagers = asmList.stream().map(asm -> {
+            Map<String, Object> asmMap = new HashMap<>();
+            asmMap.put("employeeCode", asm.get("employeeCode"));
+            asmMap.put("employeeName", toCamelCase(asm.get("employeeName")));
+            asmMap.put("email", asm.get("email"));
+            asmMap.put("branchCode", branchCode);
+            return asmMap;
+        }).collect(Collectors.toList());
+
+        Map<String, Object> responseData = new HashMap<>();
+        responseData.put("BranchManager", branchManagers);
+        responseData.put("AreaSalesManager", areaSalesManagers);
+
+        return responseData;
+    }
+
+
+    private String toCamelCase(String text) {
+        if (text == null || text.isEmpty()) {
+            return text;
+        }
+
+        text = text.toLowerCase();
+        String[] words = text.split(" ");
+        StringBuilder camelCaseText = new StringBuilder();
+
+        for (String word : words) {
+            if (!word.isEmpty()) {
+                camelCaseText.append(Character.toUpperCase(word.charAt(0)))
+                        .append(word.substring(1))
+                        .append(" ");
+            }
+        }
+
+        return camelCaseText.toString().trim();
+    }
+
 
 
     @Transactional
@@ -219,16 +273,6 @@ public class CsulSignerService {
                 .identityNo(request.getIdentityNo())
                 .email(request.getEmail())
                 .noTelp(request.getNoTelp())
-                .tempatLahir(request.getTempatLahir())
-                .tanggalLahir(request.getTanggalLahir())
-                .jenisKelamin(request.getJenisKelamin())
-                .alamat(request.getAlamat())
-                .rt(request.getRt())
-                .rw(request.getRw())
-                .kodePos(request.getKodePos())
-                .kelurahan(request.getKelurahan())
-                .kecamatan(request.getKecamatan())
-                .kota(request.getKota())
                 .isActive(request.getIsActive())
                 .signhubStatus("Not Registered")
                 .usrCrt(username)
@@ -239,7 +283,6 @@ public class CsulSignerService {
 
         return csulSignerMapper.entityToDto(savedSigner);
     }
-
 
     private Map<String, Object> callInvitationApi(SignerCsulRequest request, HttpHeaders headers, String username) {
         Map<String, Object> requestBody = new HashMap<>();
@@ -296,16 +339,6 @@ public class CsulSignerService {
         entity.setIdentityNo(request.getIdentityNo());
         entity.setEmail(request.getEmail());
         entity.setNoTelp(request.getNoTelp());
-        entity.setTempatLahir(request.getTempatLahir());
-        entity.setTanggalLahir(request.getTanggalLahir());
-        entity.setJenisKelamin(request.getJenisKelamin());
-        entity.setAlamat(request.getAlamat());
-        entity.setRt(request.getRt());
-        entity.setRw(request.getRw());
-        entity.setKodePos(request.getKodePos());
-        entity.setKelurahan(request.getKelurahan());
-        entity.setKecamatan(request.getKecamatan());
-        entity.setKota(request.getKota());
         entity.setIsActive(request.getIsActive());
         entity.setUsrCrt(authentication.getName());
         entity.setDtmCrt(LocalDateTime.now());
@@ -313,7 +346,7 @@ public class CsulSignerService {
         csulSignerRepository.save(entity);
     }
 
-    public Map<String, Object> getSignersGrouped() {
+    public Map<String, Object> getSignersGrouped2() {
         List<CsulSigner> signers = csulSignerRepository.findAll();
 
         List<SignerGroupedDto> dtoList = signers.stream()
@@ -336,5 +369,4 @@ public class CsulSignerService {
 
         return responseData;
     }
-
 }

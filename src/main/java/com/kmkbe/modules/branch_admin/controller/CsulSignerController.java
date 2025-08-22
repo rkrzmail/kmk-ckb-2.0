@@ -50,7 +50,9 @@ public class CsulSignerController {
 
     // sementara static get signer csul
     @GetMapping("/get-signer")
-    public CommonResult<ExternalSignerResponse> getExternalSigners() {
+    public CommonResult<ExternalSignerResponse> getExternalSigners(
+            Authentication authentication
+    ) {
         ExternalSignerResponse response = csulSignerService.getSignersStatic();
         return new CommonResult<ExternalSignerResponse>().success(response);
     }
@@ -91,7 +93,15 @@ public class CsulSignerController {
 
     @GetMapping("/get-list")
     public CommonResult<Map<String, Object>> getSignersGrouped(Authentication authentication) {
-        Map<String, Object> responseData = csulSignerService.getSignersGrouped();
+        String username = authentication.getName(); // Ambil username login
+        Map<String, Object> responseData = csulSignerService.getSignersGrouped(username);
+
+        return new CommonResult<Map<String, Object>>().success(responseData);
+    }
+
+    @GetMapping("/get-list/sign")
+    public CommonResult<Map<String, Object>> getSignersGroupedSign(Authentication authentication) {
+        Map<String, Object> responseData = csulSignerService.getSignersGrouped2();
         return new CommonResult<Map<String, Object>>().success(responseData);
     }
 }
