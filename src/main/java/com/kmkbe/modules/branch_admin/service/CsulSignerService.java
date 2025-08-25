@@ -4,8 +4,6 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.CsulSigner;
 import com.kmkbe.core.domain.mapper.CsulSignerMapper;
 import com.kmkbe.core.domain.repository.CsulSignerRepository;
-import com.kmkbe.core.domain.repository.ExternalSignerRepository;
-import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
 import com.kmkbe.modules.user.entity.MstBranch;
@@ -303,8 +301,8 @@ public class CsulSignerService {
 
         Map<String, Object> responseData = new LinkedHashMap<>();
 
-        responseData.put("BranchManager", grouped.getOrDefault("Branch Manager", new ArrayList<>()));
-        responseData.put("AreaSalesManager", grouped.getOrDefault("Area Sales Manager", new ArrayList<>()));
+        responseData.put("Branch Manager", grouped.getOrDefault("Branch Manager", new ArrayList<>()));
+        responseData.put("Area Sales Manager", grouped.getOrDefault("Area Sales Manager", new ArrayList<>()));
 
         return responseData;
     }
