@@ -31,15 +31,12 @@ import java.util.stream.Collectors;
 public class CsulSignerService {
     private final RestTemplate restTemplate;
     private final CsulSignerRepository csulSignerRepository;
-    private final ExternalSignerRepository externalSignerRepository;
     private final CsulSignerMapper csulSignerMapper = CsulSignerMapper.INSTANCE;
     private final MstBranchRepository mstBranchRepository;
     private final AuthRemoteService authRemoteService;
     private final EmailAo emailAo;
-    private final EmailService emailService;
     private final String apiKey = "YiByHB@CSUL_DEV";
     private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
-    private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
 
     private String jwtToken;
 
@@ -48,9 +45,6 @@ public class CsulSignerService {
     }
 
     public List<SignerCsulDto> signerCsulList(Authentication authentication) {
-        String username = authentication != null ?
-                authentication.getName() :
-                "SYSTEM";
 
         List<CsulSigner> entities = csulSignerRepository.findAll();
         return entities.stream()
@@ -84,25 +78,6 @@ public class CsulSignerService {
                 .build();
     }
 
-//     data static get signer csul
-    public ExternalSignerResponse getSignersStatic() {
-        List<ExternalSignerDto> signers = externalSignerRepository.findAll()
-                .stream()
-                .map(signer -> new ExternalSignerDto(
-                        signer.getOffice(),
-                        signer.getDepartment(),
-                        signer.getEmail(),
-                        signer.getName(),
-                        signer.getPosition()
-                ))
-                .collect(Collectors.toList());
-
-        return ExternalSignerResponse.builder()
-                .signers(signers)
-                .statusCode("200")
-                .message("Success")
-                .build();
-    }
 
     public Map<String, Object> getSignersGrouped(String username) {
         ensureJwtToken();
@@ -170,6 +145,8 @@ public class CsulSignerService {
         try{
             if (csulSignerRepository.existsByIdentityNo(request.getIdentityNo())) {
             throw new RuntimeException("NIK sudah terdaftar");
+            } else if (csulSignerRepository.existsByKaryawanName(request.getKaryawanName())) {
+                throw new RuntimeException("Signer sudah di daftarkan");
             }
 
             String username = authentication != null ?
@@ -189,7 +166,6 @@ public class CsulSignerService {
                         (List<Map<String, Object>>) registerResponse.get("registrationData");
 
                 if (registrationData != null && !registrationData.isEmpty()) {
-                    // cari vendor Vida
                     for (Map<String, Object> vendorData : registrationData) {
                         if ("Vida".equalsIgnoreCase((String) vendorData.get("vendor"))) {
                             registrationStatus = String.valueOf(vendorData.get("registrationStatus"));
@@ -260,10 +236,19 @@ public class CsulSignerService {
         return responseBody;
     }
 
+    private String formatJabatan(String jabatan) {
+        if (jabatan == null) return null;
+        switch (jabatan) {
+            case "BranchManager": return "Branch Manager";
+            case "AreaSalesManager": return "Area Sales Manager";
+            default: return jabatan; // fallback biar tidak error
+        }
+    }
+
     private SignerCsulRequest saveSigner(SignerCsulRequest request, String username, String signhubStatus) {
         CsulSigner entity = CsulSigner.builder()
                 .karyawanName(request.getKaryawanName())
-                .jabatan(request.getJabatan())
+                .jabatan(formatJabatan(request.getJabatan()))
                 .identityNo(request.getIdentityNo())
                 .email(request.getEmail())
                 .noTelp(request.getNoTelp())
@@ -303,6 +288,7 @@ public class CsulSignerService {
         List<CsulSigner> signers = csulSignerRepository.findAll();
 
         List<SignerGroupedDto> dtoList = signers.stream()
+                .filter(s -> "Registered".equalsIgnoreCase(s.getSignhubStatus()))
                 .map(s -> new SignerGroupedDto(
                         s.getSignerId(),
                         s.getKaryawanName(),
@@ -317,8 +303,8 @@ public class CsulSignerService {
 
         Map<String, Object> responseData = new LinkedHashMap<>();
 
-        responseData.put("BranchManager", grouped.getOrDefault("Branch Manager", new ArrayList<>()));
-        responseData.put("AreaSalesManager", grouped.getOrDefault("Area Sales Manager", new ArrayList<>()));
+        responseData.put("Branch Manager", grouped.getOrDefault("Branch Manager", new ArrayList<>()));
+        responseData.put("Area Sales Manager", grouped.getOrDefault("Area Sales Manager", new ArrayList<>()));
 
         return responseData;
     }

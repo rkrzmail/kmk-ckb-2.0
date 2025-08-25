@@ -13,6 +13,8 @@ import java.util.Optional;
 public interface CsulSignerRepository extends JpaRepository<CsulSigner, Long> {
     boolean existsByIdentityNo(String identityNo);
 
+    boolean existsByKaryawanName(String karyawanName);
+
     Optional<CsulSigner> findByKaryawanNameAndJabatan(String karyawanName, String jabatan);
 
     Optional<CsulSigner> findByIdentityNo(String identityNo);
