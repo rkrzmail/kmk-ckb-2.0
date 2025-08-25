@@ -303,8 +303,8 @@ public class CsulSignerService {
 
         Map<String, Object> responseData = new LinkedHashMap<>();
 
-        responseData.put("Branch Manager", grouped.getOrDefault("Branch Manager", new ArrayList<>()));
-        responseData.put("Area Sales Manager", grouped.getOrDefault("Area Sales Manager", new ArrayList<>()));
+        responseData.put("BranchManager", grouped.getOrDefault("Branch Manager", new ArrayList<>()));
+        responseData.put("AreaSalesManager", grouped.getOrDefault("Area Sales Manager", new ArrayList<>()));
 
         return responseData;
     }
