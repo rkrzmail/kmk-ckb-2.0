@@ -25,6 +25,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
@@ -560,12 +561,17 @@ public class ReportService {
         // 10. Facility
         String facility = agreementRepo.findFaciltyByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode);
 
+        BigDecimal effectiveRate = new BigDecimal(findata.getEffectiveRate());
+        effectiveRate = effectiveRate.setScale(2, RoundingMode.HALF_UP);
+        String effectiveRateStr = effectiveRate.stripTrailingZeros().toPlainString() + "%";
+
         // 11. Debtor Data
         Optional<Map<String, Object>> debtorData = agreementRepo.finddetailDebtor(UUID.fromString(financingHdrCode), agreementCode);
         Map<String, Object> data = debtorData.orElseGet(Collections::emptyMap);
 
         Map<String, Object> params = new HashMap<>();
         params.put("SUBREPORT_DIR", getClass().getResource("/Reports/").toString());
+
 
         params.put("NamaBranchManager", branchManagerData.getKaryawanName());
         params.put("JabatanBranchManager", branchManagerData.getJabatan());
@@ -593,7 +599,7 @@ public class ReportService {
         params.put("TotalRetentionAmt", factoringData.getTotalRetentionAmount());
         params.put("LobCode", apiResponse.getLobCode());
         params.put("ProdOfferingName", apiResponse.getProdOfferingName());
-        params.put("EffectiveRatePrcnt", findata.getEffectiveRate());
+        params.put("EffectiveRatePrcnt", effectiveRateStr);
         params.put("TotalFeeAmt", findata.getTotalFeeAmount());
         params.put("TotalInvcAmt", factoringData.getTotalInvoiceAmount());
         params.put("GracePeriodLc", findata.getGracePeriod());
@@ -640,8 +646,29 @@ public class ReportService {
             }
         }
 
+        BigDecimal totalInsuranceVal = appFeeInsurance.add(appFeeCreditInsurance);
+        StringBuilder totalInsuranceText = new StringBuilder(fmtAmount(totalInsuranceVal));
+
+        if (appFeeInsurance.compareTo(BigDecimal.ZERO) > 0) {
+            totalInsuranceText.append(", All Risk + SRCC");
+        }
+        if (appFeeCreditInsurance.compareTo(BigDecimal.ZERO) > 0) {
+            if (appFeeInsurance.compareTo(BigDecimal.ZERO) > 0) {
+                totalInsuranceText.append(", ");
+            } else {
+                totalInsuranceText.append(", ");
+            }
+            totalInsuranceText.append("Asuransi Kredit");
+        }
+
         params.put("Administration+Factoring", fmtAmount(administrationFactoring.toString()));
         params.put("NtfAmt-Total", ntfAmtTotal.toString());
+        params.put("TotalInsurance", totalInsuranceText.toString());
+        params.put("Limit", "IDR 0.00");
+        params.put("Notaris","IDR 0.00");
+        params.put("PengikatanJaminan","IDR 0.00");
+        params.put("Provisi","IDR 0.00");
+        params.put("Survey","IDR 0.00");
 
         CommonResult<SitDto> sitData = agreementCodeService.getAgreementsByFinancingHdrCode(UUID.fromString(financingHdrCode));
         if (sitData.getCode() == 200 && sitData.getData() != null) {

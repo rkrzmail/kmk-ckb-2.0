@@ -52,6 +52,12 @@
 	<parameter name="tanggal_invoice" class="java.lang.String"/>
 	<parameter name="AppFeeInsurance" class="java.lang.String"/>
 	<parameter name="AppFeeCreditInsurance" class="java.lang.String"/>
+    <parameter name="TotalInsurance" class="java.lang.String"/>
+    <parameter name="Limit" class="java.lang.String"/>
+    <parameter name="Notaris" class="java.lang.String"/>
+    <parameter name="PengikatanJaminan" class="java.lang.String"/>
+    <parameter name="Provisi" class="java.lang.String"/>
+    <parameter name="Survey" class="java.lang.String"/>
 	<parameter name="JabatanSigner" class="java.lang.String"/>
 	<parameter name="IdentitySigner" class="java.lang.String"/>
 	<parameter name="AlamatSigner" class="java.lang.String"/>
@@ -261,6 +267,24 @@
 				<subreportParameter name="TotalFeeAmt">
 					<subreportParameterExpression><![CDATA[$P{TotalFeeAmt}]]></subreportParameterExpression>
 				</subreportParameter>
+				<subreportParameter name="TotalInsurance">
+                    <subreportParameterExpression><![CDATA[$P{TotalInsurance}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="Limit">
+                    <subreportParameterExpression><![CDATA[$P{Limit}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="Notaris">
+                   <subreportParameterExpression><![CDATA[$P{Notaris}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="PengikatanJaminan">
+                    <subreportParameterExpression><![CDATA[$P{PengikatanJaminan}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="Provisi">
+                   <subreportParameterExpression><![CDATA[$P{Provisi}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="Survey">
+                   <subreportParameterExpression><![CDATA[$P{Survey}]]></subreportParameterExpression>
+                </subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat4.jasper"]]></subreportExpression>
 			</subreport>
@@ -325,6 +349,9 @@
                 </subreportParameter>
                 <subreportParameter name="JabatanBranchManager">
                     <subreportParameterExpression><![CDATA[$P{JabatanBranchManager}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="TglDokumen">
+                    <subreportParameterExpression><![CDATA[$P{TglDokumen}]]></subreportParameterExpression>
                 </subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat4c.jasper"]]></subreportExpression>
