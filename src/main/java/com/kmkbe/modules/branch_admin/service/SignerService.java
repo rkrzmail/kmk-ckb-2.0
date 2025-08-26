@@ -40,6 +40,7 @@ import java.math.BigDecimal;
 import java.security.SignatureException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -842,18 +843,18 @@ public class SignerService {
         return result;
     }
 
-    public ResponseEntity<ApiResponse<?>> downloadDocument(String agreementCode, Authentication authentication) {
+    public ResponseEntity<ApiResponse<?>> downloadDocument(String documentId, Authentication authentication) {
         try {
             String username = authentication != null ? authentication.getName() : "SYSTEM";
 
-            if (agreementCode == null || agreementCode.trim().isEmpty()) {
+            if (documentId == null || documentId.trim().isEmpty()) {
                 return ResponseEntity.badRequest()
-                        .body(new ApiResponse<>(false, "Agreement code is required", null, null, null));
+                        .body(new ApiResponse<>(false, "DocumentId is required", null, null, null));
             }
 
-            String documentId = agreementFileSigningRepository.findDocumentIdByAgreementCode(agreementCode);
+            String doc = String.valueOf(agreementFileSigningRepository.findByDocumentId(documentId));
 
-            if (documentId == null) {
+            if (doc == null) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ApiResponse<>(false, "Document not found in database", null, null, null));
             }
@@ -902,7 +903,7 @@ public class SignerService {
                     return ResponseEntity.ok()
                             .body(new ApiResponse<>(true, "Document retrieved successfully",
                                     Map.of(
-                                            "filename", "document_" + agreementCode + ".pdf",
+                                            "filename", "document_" + documentId + ".pdf",
                                             "content", base64Pdf,
                                             "length", pdfBytes.length
                                     ),
@@ -948,6 +949,7 @@ public class SignerService {
             checkExternalSigningStatus(fileSignings, username);
 
             fileSignings = agreementFileSigningRepository.findByFinancing(financingHdrCode);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
             return fileSignings.stream()
                     .map(signing -> SignerDocDto.builder()
@@ -955,7 +957,7 @@ public class SignerService {
                             .agreementCode(signing.getAgreementCode())
                             .bowheerName(bowheerName)
                             .verifDate(signing.getDtmCrt() != null ?
-                                    signing.getDtmCrt().toString() : null)
+                                    signing.getDtmCrt().format(formatter) : null)
                             .status(signing.stamp())
                             .documentId(signing.getDocumentId())
                             .build())

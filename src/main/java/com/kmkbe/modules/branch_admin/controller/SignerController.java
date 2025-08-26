@@ -126,11 +126,11 @@ public class SignerController {
     }
 
 
-    @GetMapping("/download-doc/{agreementCode}")
+    @GetMapping("/download-doc/{documentId}")
     public ResponseEntity<ApiResponse<?>> downloadDocument(
-            @PathVariable String agreementCode,
+            @PathVariable String documentId,
             Authentication authentication) {
 
-        return signerService.downloadDocument(agreementCode, authentication);
+        return signerService.downloadDocument(documentId, authentication);
     }
 }
