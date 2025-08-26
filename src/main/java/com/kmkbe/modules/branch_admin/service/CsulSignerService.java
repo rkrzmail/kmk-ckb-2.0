@@ -261,25 +261,83 @@ public class CsulSignerService {
         return csulSignerMapper.entityToDto(savedSigner);
     }
 
-    public void updateSigner(Long id, SignerCsulRequest request, Authentication authentication) {
-        CsulSigner entity = csulSignerRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Signer dengan ID " + id + " tidak ditemukan"));
+    @Transactional
+    public SignerCsulRequest updateSigner(Long id, SignerCsulRequest request, Authentication authentication) {
+        try {
+            CsulSigner entity = csulSignerRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Signer dengan ID " + id + " tidak ditemukan"));
 
-        if (csulSignerRepository.existsByIdentityNo(request.getIdentityNo())
-                && !request.getIdentityNo().equals(entity.getIdentityNo())) {
-            throw new RuntimeException("NIK sudah terdaftar");
+//            if (csulSignerRepository.existsByIdentityNo(request.getIdentityNo())
+//                    && !request.getIdentityNo().equals(entity.getIdentityNo())) {
+//                throw new RuntimeException("NIK sudah terdaftar");
+//            }
+
+//            if (csulSignerRepository.existsByKaryawanName(request.getKaryawanName())
+//                    && !request.getKaryawanName().equals(entity.getKaryawanName())) {
+//                throw new RuntimeException("Signer sudah di daftarkan");
+//            }
+
+            String username = authentication != null ? authentication.getName() : "SYSTEM";
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            headers.set("x-api-key", apiKey);
+
+            Map<String, Object> registerResponse = callRegistrationApi(request, headers, username);
+
+            String registrationStatus = "0";
+            if (registerResponse.containsKey("registrationData")) {
+                List<Map<String, Object>> registrationData =
+                        (List<Map<String, Object>>) registerResponse.get("registrationData");
+
+                if (registrationData != null && !registrationData.isEmpty()) {
+                    for (Map<String, Object> vendorData : registrationData) {
+                        if ("Vida".equalsIgnoreCase((String) vendorData.get("vendor"))) {
+                            registrationStatus = String.valueOf(vendorData.get("registrationStatus"));
+                            break;
+                        }
+                    }
+                }
+            }
+
+            String signhubStatus = "Not Registered";
+            String registrationMessage;
+
+            switch (registrationStatus) {
+                case "0":
+                case "1":
+                    registrationMessage = "Signer berhasil di update. Harap daftarkan signer ke eSignHub terlebih dahulu";
+                    break;
+                case "2":
+                    registrationMessage = "Signer berhasil di update. Signer person sudah register dan aktivasi";
+                    signhubStatus = "Registered";
+                    break;
+                default:
+                    throw new RuntimeException("Status registrasi tidak dikenali: " + registrationStatus);
+            }
+
+            // Update entity dengan data terbaru
+            entity.setKaryawanName(request.getKaryawanName());
+            entity.setJabatan(formatJabatan(request.getJabatan()));
+            entity.setIdentityNo(request.getIdentityNo());
+            entity.setEmail(request.getEmail());
+            entity.setNoTelp(request.getNoTelp());
+            entity.setIsActive(request.getIsActive());
+            entity.setUsrCrt(username);
+            entity.setDtmCrt(LocalDateTime.now());
+            entity.setSignhubStatus(signhubStatus); // kalau ada field ini di entity-mu
+
+            csulSignerRepository.save(entity);
+
+            // Response object
+            SignerCsulRequest response = request;
+            response.setRegistrationMessage(registrationMessage);
+            return response;
+
+        } catch (Exception e) {
+            log.error("Error updateSigner: {}", e.getMessage(), e);
+            throw new RuntimeException(e.getMessage());
         }
-
-        entity.setKaryawanName(request.getKaryawanName());
-        entity.setJabatan(request.getJabatan());
-        entity.setIdentityNo(request.getIdentityNo());
-        entity.setEmail(request.getEmail());
-        entity.setNoTelp(request.getNoTelp());
-        entity.setIsActive(request.getIsActive());
-        entity.setUsrCrt(authentication.getName());
-        entity.setDtmCrt(LocalDateTime.now());
-
-        csulSignerRepository.save(entity);
     }
 
     public Map<String, Object> getSignersGrouped2() {

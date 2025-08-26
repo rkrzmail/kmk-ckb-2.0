@@ -74,8 +74,8 @@ public class CsulSignerController {
             @RequestBody SignerCsulRequest request,
             Authentication authentication) {
         try {
-            csulSignerService.updateSigner(id, request, authentication);
-            return new CommonResult<String>().success("Data berhasil diperbarui");
+            SignerCsulRequest updated = csulSignerService.updateSigner(id, request, authentication);
+            return new CommonResult<String>().success(updated.getRegistrationMessage());
         } catch (RuntimeException e) {
             return new CommonResult<String>().fail(400,"Gagal update: " + e.getMessage());
         }
