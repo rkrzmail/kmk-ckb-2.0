@@ -1001,6 +1001,7 @@ public class SignerService {
                                 List<Map<String, String>> signers = (List<Map<String, String>>) status.get("signer");
                                 String newStatus = determineStatusFromSigners(signers);
                                 signing.setStamp(newStatus);
+                                updateFinancingStep(signing.getFinancingHdrCode(), newStatus);
                                 break;
                             }
                         }
@@ -1029,4 +1030,18 @@ public class SignerService {
 
         return "Menunggu TTD";
     }
+
+    private void updateFinancingStep(String financingHdrCode, String stampStatus) {
+        financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
+                .ifPresent(finHdr -> {
+                    if ("Signing in Process".equalsIgnoreCase(stampStatus)) {
+                        finHdr.setFinancingStep("SIGNING");
+                    } else if ("signed".equalsIgnoreCase(stampStatus)) {
+                        finHdr.setFinancingStep("SIGNED");
+                    }
+                    financingHdrRepository.save(finHdr);
+                    log.info("Updated financingHdrCode={} step={}", financingHdrCode, finHdr.getFinancingStep());
+                });
+    }
+
 }
