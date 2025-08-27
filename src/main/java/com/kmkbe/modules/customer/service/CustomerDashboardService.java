@@ -3,10 +3,7 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.CwrMapper;
-import com.kmkbe.core.domain.repository.AgreementFileSigningRepository;
-import com.kmkbe.core.domain.repository.AgreementRepository;
-import com.kmkbe.core.domain.repository.CwrRepository;
-import com.kmkbe.core.domain.repository.NotifDebtorRepository;
+import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
@@ -24,10 +21,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.security.SignatureException;
 import java.time.LocalDate;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
@@ -39,6 +33,7 @@ public class CustomerDashboardService {
     private final AgreementRepository agreementRepository;
     private final NotifDebtorRepository notifDebtorRepository;
     private final AgreementFileSigningRepository agreementFileSigningRepository;
+    private final FinancingHdrRepository financingHdrRepository;
 
     public CustomerPlafondDto plafond( Authentication authentication  ) throws SignatureException {
         Customer customer = CustomerUtils.authenticateCustomer(authentication);
@@ -227,8 +222,11 @@ public class CustomerDashboardService {
             );
 
             long total = agreementFileSigningRepository.countByFinancingHdrCode(financingHdrCode);
-            long berjalan = agreementFileSigningRepository.countByFinancingHdrCodeAndStamp(financingHdrCode, "signed");
-            long berakhir = agreementFileSigningRepository.countByFinancingHdrCodeAndStamp(financingHdrCode, "COMPLETED");
+//            long berjalan = financingHdrRepository.countByFinancingHdrCodeAndFinancingStep(financingHdrCode, "SIGNED");
+            List<String> steps = Arrays.asList("SIGNING", "SIGNED", "GOLIVE", "PAID");
+            long berjalan = financingHdrRepository.countByFinancingHdrCodeAndFinancingStepIn(UUID.fromString(financingHdrCode), steps);
+
+            long berakhir = financingHdrRepository.countByFinancingHdrCodeAndFinancingStep(UUID.fromString(financingHdrCode), "REFUND");
 
             return CustomerPerjanjianDto.builder()
                     .financingHdrCode(financingHdr.getFinancingHdrCode())
