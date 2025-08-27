@@ -227,8 +227,8 @@ public class CustomerDashboardService {
             );
 
             long total = agreementFileSigningRepository.countByFinancingHdrCode(financingHdrCode);
-            long berjalan = agreementFileSigningRepository.countByFinancingHdrCodeAndStamp(financingHdrCode, "SIGNING IN PROCESS");
-            long berakhir = agreementFileSigningRepository.countByFinancingHdrCodeAndStamp(financingHdrCode, "SIGNED");
+            long berjalan = agreementFileSigningRepository.countByFinancingHdrCodeAndStamp(financingHdrCode, "signed");
+            long berakhir = agreementFileSigningRepository.countByFinancingHdrCodeAndStamp(financingHdrCode, "COMPLETED");
 
             return CustomerPerjanjianDto.builder()
                     .financingHdrCode(financingHdr.getFinancingHdrCode())

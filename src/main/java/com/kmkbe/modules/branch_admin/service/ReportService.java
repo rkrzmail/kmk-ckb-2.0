@@ -1,6 +1,7 @@
 package com.kmkbe.modules.branch_admin.service;
 
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.AgreementFileSigningMapper;
@@ -888,6 +889,20 @@ public class ReportService {
             Authentication authentication) {
 
         try {
+
+            List<AgreementFileSigning> existingFiles = agreementFileSigningRepository.findByAgreementCode(agreementCode);
+
+            boolean alreadySigned = existingFiles.stream()
+                    .anyMatch(file -> "signed".equalsIgnoreCase(file.getStamp()));
+
+            if (alreadySigned) {
+                return SigningResponse.builder()
+                        .success(false)
+                        .documentId(null)
+                        .message("Dokumen dengan agreementCode " + agreementCode + " sudah ditandatangani, tidak bisa dikirim ulang.")
+                        .build();
+            }
+
             byte[] pdfBytes = generateReport(financingHdrCode, agreementCode, branchManager, areaSalesManager);
 
             String username = authentication != null ? authentication.getName() : "SYSTEM";
@@ -896,8 +911,17 @@ public class ReportService {
                     financingHdrCode,
                     agreementCode,
                     pdfBytes,
-                    username
+                    username,
+                    branchManager,
+                    areaSalesManager
             );
+
+            try {
+                String requestJson = new ObjectMapper().writeValueAsString(request);
+                log.info("E-Sign Request Payload: {}", requestJson);
+            } catch (Exception e) {
+                log.error("Error serializing request", e);
+            }
 
             ExternalSigningResponse esignResponse = externalApiService.callEsignApi(request);
 
@@ -931,7 +955,9 @@ public class ReportService {
             String financingHdrCode,
             String agreementCode,
             byte[] pdfBytes,
-            String username
+            String username,
+            String branchManager,
+            String areaSalesManager
     ) {
         String branchCode = getBranchCodeFromAgreement(agreementCode);
 
@@ -955,14 +981,14 @@ public class ReportService {
                                 .regionName("JAKARTA")
                                 .businessLineCode("CBU")
                                 .businessLineName("Corporate Business Unit")
-                                .signers(prepareSigners(agreement, financingHdrCode))
+                                .signers(prepareSigners(agreement, financingHdrCode, branchManager, areaSalesManager))
                                 .documentFile(base64Pdf)
                                 .build()
                 ))
                 .build();
     }
 
-    private List<ExternalSigningRequest.Signer> prepareSigners(Agreement agreement, String financingHdrCode) {
+    private List<ExternalSigningRequest.Signer> prepareSigners(Agreement agreement, String financingHdrCode, String branchManager, String areaSalesManager) {
         List<ExternalSigningRequest.Signer> signers = new ArrayList<>();
 
         Debtor debtor = debtorRepository
@@ -977,6 +1003,30 @@ public class ReportService {
                         .email(debtor.getEmail())
                         .seqNo("0")
                         .build());
+
+        CsulSigner bm = csulSignerRepository.findByKaryawanName(branchManager)
+                .orElseThrow(() -> new RuntimeException("Branch Manager " + branchManager + " tidak ditemukan di csul_signer"));
+
+        signers.add(ExternalSigningRequest.Signer.builder()
+                .signAction("mt")
+                .signerType("FM")
+                .idKtp(bm.getIdentityNo())
+                .tlp(bm.getNoTelp())
+                .email(bm.getEmail())
+                .seqNo("1")
+                .build());
+
+        CsulSigner asm = csulSignerRepository.findByKaryawanName(areaSalesManager)
+                .orElseThrow(() -> new RuntimeException("Area Sales Manager " + areaSalesManager + " tidak ditemukan di csul_signer"));
+
+        signers.add(ExternalSigningRequest.Signer.builder()
+                .signAction("mt")
+                .signerType("SPV")
+                .idKtp(asm.getIdentityNo())
+                .tlp(asm.getNoTelp())
+                .email(asm.getEmail())
+                .seqNo("2")
+                .build());
         return signers;
     }
 
@@ -986,19 +1036,48 @@ public class ReportService {
                 .findActiveSignerByFinancingHdrCode(financingHdrCode)
                 .orElseThrow(() -> new RuntimeException("Tidak ada data signer active dari financingHdr = " + financingHdrCode));
 
-        AgreementFileSigning entity = AgreementFileSigning.builder()
-                .agreementCode(agreementCode)
-                .fileTypeCode("E_SIGN_DOC")
-                .fileName("PERJANJIAN_1A_" + agreementCode + ".pdf")
-                .stamp("Not Signed")
-                .usrCrt(username)
-                .dtmCrt(LocalDateTime.now())
-                .signer(debtor.getKaryawanName())
-                .emailSigner(debtor.getEmail())
-                .identityNo(debtor.getIdentityNo())
-                .documentId(documentId)
-                .financingHdrCode(financingHdrCode)
-                .build();
+//        AgreementFileSigning entity = AgreementFileSigning.builder()
+//                .agreementCode(agreementCode)
+//                .fileTypeCode("E_SIGN_DOC")
+//                .fileName("PERJANJIAN_1A_" + agreementCode + ".pdf")
+//                .stamp("Not Signed")
+//                .usrCrt(username)
+//                .dtmCrt(LocalDateTime.now())
+//                .signer(debtor.getKaryawanName())
+//                .emailSigner(debtor.getEmail())
+//                .identityNo(debtor.getIdentityNo())
+//                .documentId(documentId)
+//                .financingHdrCode(financingHdrCode)
+//                .build();
+
+        List<AgreementFileSigning> existingList = agreementFileSigningRepository.findByAgreementCode(agreementCode);
+
+        AgreementFileSigning entity;
+        if (!existingList.isEmpty()) {
+            entity = existingList.get(0);
+
+            if (existingList.size() > 1) {
+                agreementFileSigningRepository.deleteAll(existingList.subList(1, existingList.size()));
+            }
+
+        } else {
+            entity = AgreementFileSigning.builder()
+                    .agreementCode(agreementCode)
+                    .fileTypeCode("E_SIGN_DOC")
+                    .fileName("PERJANJIAN_1A_" + agreementCode + ".pdf")
+                    .usrCrt(username)
+                    .dtmCrt(LocalDateTime.now())
+                    .build();
+        }
+
+        entity.setStamp("Not Signed");
+        entity.setSigner(debtor.getKaryawanName());
+        entity.setEmailSigner(debtor.getEmail());
+        entity.setIdentityNo(debtor.getIdentityNo());
+        entity.setDocumentId(documentId);
+        entity.setFinancingHdrCode(financingHdrCode);
+        entity.setUsrUpd(username);
+        entity.setDtmUpd(LocalDateTime.now());
 
         AgreementFileSigning saveDoc =  agreementFileSigningRepository.save(entity);
 

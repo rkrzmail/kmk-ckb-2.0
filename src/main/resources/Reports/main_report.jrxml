@@ -495,6 +495,12 @@
 				<subreportParameter name="NamaAreaSalesManager">
 					<subreportParameterExpression><![CDATA[$P{NamaAreaSalesManager}]]></subreportParameterExpression>
 				</subreportParameter>
+				<subreportParameter name="NamaKaryawan">
+                    <subreportParameterExpression><![CDATA[$P{NamaKaryawan}]]></subreportParameterExpression>
+                </subreportParameter>
+                <subreportParameter name="Jabatan">
+                    <subreportParameterExpression><![CDATA[$P{Jabatan}]]></subreportParameterExpression>
+                </subreportParameter>
 				<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.JREmptyDataSource(1)]]></dataSourceExpression>
 				<subreportExpression><![CDATA[$P{SUBREPORT_DIR} +"surat8.jasper"]]></subreportExpression>
 			</subreport>
