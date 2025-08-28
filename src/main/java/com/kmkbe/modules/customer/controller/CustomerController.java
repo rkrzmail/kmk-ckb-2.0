@@ -1,5 +1,6 @@
 package com.kmkbe.modules.customer.controller;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.CommonResult;
@@ -23,6 +24,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,6 +41,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/customer")
 @Tag(
@@ -146,6 +149,7 @@ public class CustomerController {
             );
             result.setAddress(CustomerMapper.addressDtoFromCompany(company));
             result.setCompany(CustomerMapper.INSTANCE.companyDtoFromEntity(company));
+            result.setForceLogout(customer.getForceLogout());
 
         } else if (customer.getCustTypeCode().equals(CustomerType.Personal.name())) {
             if (request.getPersonal() == null) {
@@ -159,7 +163,15 @@ public class CustomerController {
             );
             result.setAddress(CustomerMapper.addressDtoFromPersonal(personal));
             result.setPersonal(CustomerMapper.INSTANCE.personalDtoFromEntity(personal));
+            result.setForceLogout(customer.getForceLogout());
         }
+
+//        ObjectMapper mapper = new ObjectMapper();
+//        System.out.println("Returning DTO: " + mapper.writeValueAsString(result));
+
+
+        log.info("Returning DTO to FE: custCode={}, forceLogout={}",
+                result.getCustCode(), result.getForceLogout());
 
         return new CommonResult<CustomerDto>().success(result);
     }

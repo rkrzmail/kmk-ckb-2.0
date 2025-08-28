@@ -76,7 +76,8 @@ public class ExceptionUtils {
 
         if (exception instanceof IllegalArgumentException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
-            detail.setProperty("description", "Invalid Argument Provide, Try To Complete Field");
+//            detail.setProperty("description", "Invalid Argument Provide, Try To Complete Field");
+            detail.setProperty("description", exception.getMessage());
             detail.setDetail(exception.getMessage());
         }
 

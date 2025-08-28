@@ -25,4 +25,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     Optional<Customer> findByCustEmailAndCustPin(String email, String pin);
 
+    boolean existsByCustEmailAndCustIdNoNot(String custEmail, String custIdNo);
+
+
 }

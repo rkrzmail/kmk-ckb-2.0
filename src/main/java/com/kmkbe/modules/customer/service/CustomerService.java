@@ -2,6 +2,7 @@ package com.kmkbe.modules.customer.service;
 
 import com.kmkbe.core.domain.constant.CustomerIdType;
 import com.kmkbe.core.domain.constant.CustomerType;
+import com.kmkbe.core.domain.dto.CustomerDto;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.dto.ProfileFapDto;
 import com.kmkbe.core.domain.dto.ProfileSITDto;
@@ -132,15 +133,40 @@ public class CustomerService {
     ) throws SignatureException {
         try {
             Customer customer = CustomerUtils.authenticateCustomer(authentication);
-            customer.setCustEmail(request.getCustEmail());
-            if (!customer.getCustTypeCode().equalsIgnoreCase(request.getCustTypeCode())) {
-                throw new IllegalArgumentException("Can't update customerTypeCode, please ensure valid payload");
+            boolean emailChanged = false;
+
+
+//            if (!customer.getCustTypeCode().equalsIgnoreCase(request.getCustTypeCode())) {
+//                throw new IllegalArgumentException("Can't update customerTypeCode, please ensure valid payload");
+//            }
+
+            String oldEmail = customer.getCustEmail();
+            String newEmail = request.getCustEmail();
+
+            if (newEmail != null && !oldEmail.equalsIgnoreCase(newEmail)) {
+                log.info("Email change detected: oldEmail={} -> newEmail={}", oldEmail, newEmail);
+                boolean emailExists = customerRepository.existsByCustEmailAndCustIdNoNot(
+                        newEmail, customer.getCustIdNo()
+                );
+                if (emailExists) {
+                    log.warn("Update aborted: newEmail={} already exists in database", newEmail);
+                    throw new IllegalArgumentException("Email already exists, please use another one");
+                }
+                customer.setCustEmail(newEmail);
+                emailChanged = true; // karena memang ada perubahan email
+                log.info("Email successfully updated for custIdNo={}", customer.getCustIdNo());
+            }else {
+                log.info("No email change detected, email remains {}", oldEmail);
             }
 
+            log.info("Updating other fields for custIdNo={}", customer.getCustIdNo());
             customer.setCustName(request.getCustName());
             //customer.setCustTypeCode(request.getCustTypeCode());
             customer.setCustIdNo(request.getCustIdNo());
             customer = customerRepository.save(customer);
+            customer.setForceLogout(emailChanged);
+            log.info("Customer updated successfully: custCode={}, forceLogout={}",
+                    customer.getCustCode(), emailChanged);
             return customer;
         } catch (Exception e) {
             log.error("update, error {}", e.getMessage());

@@ -5,6 +5,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Getter
 @Setter
 @Data
@@ -15,6 +18,7 @@ public class CommonResult<T> {
     protected Integer count;
     protected String message;
     protected T data;
+    private Map<String, Object> extra = new HashMap<>();
 
     public CommonResult<T> success(T data) {
         this.isSuccess = true;
@@ -22,6 +26,14 @@ public class CommonResult<T> {
         this.message = "Success";
         this.data = data;
         return this;
+    }
+
+    public void addProperty(String key, Object value) {
+        this.extra.put(key, value);
+    }
+
+    public Map<String, Object> getExtra() {
+        return this.extra;
     }
 
     public CommonResult<T> successWithCount(T data, Integer count ) {

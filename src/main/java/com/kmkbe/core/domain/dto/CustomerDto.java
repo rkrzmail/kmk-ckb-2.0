@@ -32,6 +32,14 @@ public class CustomerDto {
     private LocalDateTime dtmCrt;
 
     private AddressDto address;
+    private Boolean forceLogout;
+
+    public Boolean getForceLogout() {
+        return forceLogout;
+    }
+    public void setForceLogout(Boolean forceLogout) {
+        this.forceLogout = forceLogout;
+    }
 
     @JsonInclude(JsonInclude.Include.NON_EMPTY)
     private CustomerPersonalDto personal;

@@ -153,4 +153,15 @@ public class Customer implements UserDetails {
 
     public CustomerCompany getCustomerCompany() {return this.company;}
 
+    @Transient
+    private Boolean forceLogout;
+
+    public Boolean getForceLogout() {
+        return forceLogout;
+    }
+
+    public void setForceLogout(Boolean forceLogout) {
+        this.forceLogout = forceLogout;
+    }
+
 }
