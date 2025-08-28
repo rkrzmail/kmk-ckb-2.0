@@ -338,7 +338,7 @@ public class DistributionSubmissionService {
                     .orElseThrow(() -> new IllegalStateException("Financing Not Found with given argument"));
 
             String sring = Utils.valueOf(financingHdr.getFinancingStep()) ;//ASSIGNMENT
-            if (Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("PID")){
+            if (Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("PAID")){
                 throw new IllegalStateException("PAID given financingHdrCode");
             }
             if (Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("NEW")

@@ -6,10 +6,7 @@ import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -70,6 +67,7 @@ public class ConfigRemoteService {
             final String url = siscaUrlWhiteList + "/user-management/get-ao-email";
             final HttpHeaders headers = new HttpHeaders();
             headers.setBearerAuth(tokenResponse.getData());
+            headers.setContentType(MediaType.APPLICATION_JSON);
             final Map<String, String> body  = new HashMap<>();
             body.put("employeeCode", employeeCode);
             body.put("branchCode", branchCode);
@@ -88,7 +86,6 @@ public class ConfigRemoteService {
                     }
             );
 
-            log.info("ini response {}", response.getBody());
             System.out.println("Successfully getEmailByPosition");
 
             return response.getBody();
