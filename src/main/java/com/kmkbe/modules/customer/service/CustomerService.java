@@ -144,29 +144,22 @@ public class CustomerService {
             String newEmail = request.getCustEmail();
 
             if (newEmail != null && !oldEmail.equalsIgnoreCase(newEmail)) {
-                log.info("Email change detected: oldEmail={} -> newEmail={}", oldEmail, newEmail);
                 boolean emailExists = customerRepository.existsByCustEmailAndCustIdNoNot(
                         newEmail, customer.getCustIdNo()
                 );
                 if (emailExists) {
-                    log.warn("Update aborted: newEmail={} already exists in database", newEmail);
                     throw new IllegalArgumentException("Email already exists, please use another one");
                 }
                 customer.setCustEmail(newEmail);
-                emailChanged = true; // karena memang ada perubahan email
-                log.info("Email successfully updated for custIdNo={}", customer.getCustIdNo());
-            }else {
-                log.info("No email change detected, email remains {}", oldEmail);
+                emailChanged = true;
             }
 
-            log.info("Updating other fields for custIdNo={}", customer.getCustIdNo());
             customer.setCustName(request.getCustName());
             //customer.setCustTypeCode(request.getCustTypeCode());
             customer.setCustIdNo(request.getCustIdNo());
             customer = customerRepository.save(customer);
             customer.setForceLogout(emailChanged);
-            log.info("Customer updated successfully: custCode={}, forceLogout={}",
-                    customer.getCustCode(), emailChanged);
+
             return customer;
         } catch (Exception e) {
             log.error("update, error {}", e.getMessage());

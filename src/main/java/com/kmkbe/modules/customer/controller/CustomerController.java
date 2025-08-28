@@ -169,10 +169,6 @@ public class CustomerController {
 //        ObjectMapper mapper = new ObjectMapper();
 //        System.out.println("Returning DTO: " + mapper.writeValueAsString(result));
 
-
-        log.info("Returning DTO to FE: custCode={}, forceLogout={}",
-                result.getCustCode(), result.getForceLogout());
-
         return new CommonResult<CustomerDto>().success(result);
     }
 
