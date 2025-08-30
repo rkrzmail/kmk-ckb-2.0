@@ -227,18 +227,43 @@ public class InquiryDisburseService {
 
                         String agreementCode = agreement.getAgreementCode();
 
+                        String phone = financingHdr.getCustomer().getCustMobilePhone();
+                        if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
+                            if (financingHdr.getCustomer().getCompany() !=null ){
+                                phone = financingHdr.getCustomer().getCompany().getPhone();
+                            }
+                        }
+
+                        final double totalFeeAmt =
+                                financingHdr.getAdminFeeAmt()
+                                        + financingHdr.getLegalFeeAmtNett()
+                                        + financingHdr.getInsuranceFeeAmt()
+                                        + financingHdr.getOthersFeeAmt()
+                                        + financingHdr.getProvisionFeeAmt()
+                                        + financingHdr.getSurveyFeeAmtNett();
 
                         //kirim email pencarian berhasil ke debitur (terjadi sekali saat mengisi disbursementLog pertama kali)
                         emailService.sendNotificationPencairan(
                                 financingHdr.getCustomer().getCustEmail(),
-                                "",
-                                "",
+                                financingHdr.getBouwheer().getBouwheerName(),
+                                financingHdr.getMstBranch().getBranchName(),
                                 PencarianPayload.builder()
-                                        .loan_number(agreementCode)
-                                        .account_number( financingHdr.getCustomer().getCustName() )
-                                        .total_disbursement(CommonFormattingUtils.formatAmount(financingHdr.getFinancingAmt()))
-                                        .bank_name( "Mandiri" )
-                                        .disbursement_date(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
+//                                        .loan_number(agreementCode)
+//                                        .account_number( financingHdr.getCustomer().getCustName() )
+//                                        .total_disbursement(CommonFormattingUtils.formatAmount(financingHdr.getFinancingAmt()))
+//                                        .bank_name( "Mandiri" )
+//                                        .disbursement_date(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
+                                        .financingCode(financingHdr.getFinancingHdrCode().toString())
+                                        .applicationDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
+                                        .companyName(financingHdr.getCustomer().getCustName())
+                                        .phoneNumber(phone)
+                                        .tenor(financingHdr.getTenor())
+                                        .financingDueDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDueDate()))
+                                        .retention(CommonFormattingUtils.formatAmount(financingHdr.getRetention()))
+                                        .financingAmt(CommonFormattingUtils.formatAmount(financingHdr.getFinancingAmt()))
+                                        .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+                                        .invoiceAmt(CommonFormattingUtils.formatAmount(financingHdr.getTotalInvoiceAmt()))
+                                        .disburseAmt(CommonFormattingUtils.formatAmount(financingHdr.getDisburseAmt()))
                                         .invoices(invoices)
                                         .build()
                         );
@@ -294,6 +319,53 @@ public class InquiryDisburseService {
             throw e;
         }
         return result;
+    }
+
+    public void debugSendEmail() {
+        try {
+            List<InvoiceEmailPayload> invoices = Arrays.asList(
+                    InvoiceEmailPayload.builder()
+                            .invoiceNo("INV-DEBUG-001")
+                            .description("Invoice Test Debug")
+                            .bouwheerName("PT Bouwheer Debug")
+                            .invoiceDate("01/01/2024")
+                            .invoiceDueDate("15/01/2024")
+                            .invoiceAmt("1.000.000")
+                            .build(),
+                    InvoiceEmailPayload.builder()
+                            .invoiceNo("INV-DEBUG-002")
+                            .description("Invoice Test Debug 2")
+                            .bouwheerName("PT Bouwheer Debug")
+                            .invoiceDate("02/01/2024")
+                            .invoiceDueDate("16/01/2024")
+                            .invoiceAmt("2.000.000")
+                            .build()
+            );
+            PencarianPayload payload = PencarianPayload.builder()
+                    .financingCode("FIN-DEBUG-001")
+                    .applicationDate("15/01/2024")
+                    .companyName("Tedy Aditia Company")
+                    .phoneNumber("081234567890")
+                    .tenor(Long.valueOf("40"))
+                    .financingDueDate("15/02/2024")
+                    .retention("500.000")
+                    .financingAmt("10.000.000")
+                    .totalFeeAmt("500.000")
+                    .invoiceAmt("3.000.000")
+                    .disburseAmt("9.500.000")
+                    .invoices(invoices)
+                    .build();
+
+            emailService.sendNotificationPencairan(
+                    "tedyaditia047@gmail.com",
+                    "PT Bouwheer Debug",
+                    "Jakarta Debug Branch",
+                    payload
+            );
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }
