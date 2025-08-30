@@ -288,8 +288,6 @@ public class EmailService {
             LoanDisburseEmailPayload payload
     ) {
         try {
-            EmailTemplate template = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(M_CUST_LOAN_SUBMITED, true);
-
             Map<String, Object> args = new HashMap<>();
             Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
             if (payloadArgs != null) {
@@ -302,25 +300,13 @@ public class EmailService {
             args.put("id_no", customer.getCustIdNo());
             args.put("additionalArgs", payloadArgs);
 
-            // tambah data lain supaya masuk args
-            args.put("financingCode", payload.getFinancingCode());
-            args.put("companyName", payload.getCompanyName());
-            args.put("phoneNumber", payload.getPhoneNumber());
-            args.put("applicationDate", payload.getApplicationDate());
-            args.put("invoiceAmt", payload.getInvoiceAmt());
-            args.put("retention", payload.getRetention());
-            args.put("financingAmt", payload.getFinancingAmt());
-            args.put("totalFeeAmt", payload.getTotalFeeAmt());
-            args.put("disburseAmt", payload.getDisburseAmt());
-            args.put("tenor", payload.getTenor());
-            args.put("financingDueDate", payload.getFinancingDueDate());
-
-            String bodyMail = mappingBody(template.getBodyMail(), args);
-
-            template.setBodyMail(bodyMail);
+            EmailTemplate template = emailTemplateRepository
+                    .findByEmailTemplateCodeAndIsActive(M_CUST_LOAN_SUBMITED, true);
+            template.setMailTo(customer.getCustEmail());
             template.setMailTo(customer.getCustEmail());
 
-            sendMailMessage(template, customer.getCustEmail());
+//            sendMailMessage(template, customer.getCustEmail());
+            send(args, template);
 
         } catch (Exception e) {
             log.error("Error sendNotificationLoanSubmited {}", e.getMessage());

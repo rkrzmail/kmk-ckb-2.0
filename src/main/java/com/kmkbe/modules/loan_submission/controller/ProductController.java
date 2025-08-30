@@ -47,6 +47,6 @@ public class ProductController {
     @GetMapping("/send-email")
     public String debugEmail() {
         inquiryDisburseService.debugSendEmail();
-        return "Debug email sent to tedyaditia047@gmail.com";
+        return "Debug email sent";
     }
 }

@@ -1262,6 +1262,7 @@ public class LoanSubmissionService {
             //kirim email setelah submit debitur
             emailService.sendNotificationLoanSubmited(
                     customer,
+//                    "",
                     LoanDisburseEmailPayload.builder()
                             .financingCode(createdFinancing.getFinancingHdrCode().toString())
                             .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))

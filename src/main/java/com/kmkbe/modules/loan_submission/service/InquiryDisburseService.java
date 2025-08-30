@@ -6,6 +6,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
+import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.model.PencarianPayload;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.*;
@@ -344,7 +345,7 @@ public class InquiryDisburseService {
             PencarianPayload payload = PencarianPayload.builder()
                     .financingCode("FIN-DEBUG-001")
                     .applicationDate("15/01/2024")
-                    .companyName("Tedy Aditia Company")
+                    .companyName("Tedy Aditia")
                     .phoneNumber("081234567890")
                     .tenor(Long.valueOf("40"))
                     .financingDueDate("15/02/2024")
@@ -353,13 +354,16 @@ public class InquiryDisburseService {
                     .totalFeeAmt("500.000")
                     .invoiceAmt("3.000.000")
                     .disburseAmt("9.500.000")
+//                    .email("tedyaditia047@gmail.com")
+//                    .toEmail("tedyaditia047@gmail.com")
+//                    .ccEmail("tedyaditia047@gmail.com")
                     .invoices(invoices)
                     .build();
 
             emailService.sendNotificationPencairan(
                     "tedyaditia047@gmail.com",
-                    "PT Bouwheer Debug",
-                    "Jakarta Debug Branch",
+                    "bouwheer",
+                    "413",
                     payload
             );
 
