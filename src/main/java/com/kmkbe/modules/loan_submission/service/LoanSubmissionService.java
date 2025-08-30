@@ -1148,6 +1148,8 @@ public class LoanSubmissionService {
 
                 } catch (Exception e) {   }
 
+
+
                 if (!isAutoASSIGNMENT){
                     //sed to major account
                     try {
@@ -1173,8 +1175,20 @@ public class LoanSubmissionService {
                                         + financing.getProvisionFeeAmt()
                                         + financing.getSurveyFeeAmtNett();
                         //getAPI AO,BH
+                        MailPositionDto ccBM = configRemoteService.getEmailByPosition("", financing.getMstBranch().getBranchCode(), "BM/BOH");
+
                         String toEmail =  "radema.panjaitan@csul.co.id";
-                        String ccEmail = "";
+                        StringBuilder ccEmailBuilder = new StringBuilder();
+
+                        if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
+                            for (int i = 0; i < ccBM.getData().size(); i++) {
+                                ccEmailBuilder.append(!ccEmailBuilder.isEmpty() ? ";" : "");
+                                ccEmailBuilder.append(ccBM.getData().get(i).getEmail());
+                            }
+                        }
+
+                        String ccEmail = ccEmailBuilder.toString();
+                        log.info("email BM/BOH: {}", ccEmailBuilder.toString());
 
                         String phone = financing.getCustomer().getCustMobilePhone();
                         if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
