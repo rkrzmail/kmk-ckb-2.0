@@ -30,6 +30,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -324,24 +325,31 @@ public class InquiryDisburseService {
 
     public void debugSendEmail() {
         try {
-            List<InvoiceEmailPayload> invoices = Arrays.asList(
+            List<FinancingDtl> financingDtls = financingDtlRepository.findByUsrCrt("abdul")
+                    .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
+
+            List<InvoiceEmailPayload> invoices = financingDtls
+                    .stream()
+                            .map((item) ->
                     InvoiceEmailPayload.builder()
                             .invoiceNo("INV-DEBUG-001")
                             .description("Invoice Test Debug")
                             .bouwheerName("PT Bouwheer Debug")
-                            .invoiceDate("01/01/2024")
+//                            .invoiceDate("01/01/2024")
+                            .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                             .invoiceDueDate("15/01/2024")
                             .invoiceAmt("1.000.000")
-                            .build(),
-                    InvoiceEmailPayload.builder()
-                            .invoiceNo("INV-DEBUG-002")
-                            .description("Invoice Test Debug 2")
-                            .bouwheerName("PT Bouwheer Debug")
-                            .invoiceDate("02/01/2024")
-                            .invoiceDueDate("16/01/2024")
-                            .invoiceAmt("2.000.000")
                             .build()
-            );
+                            ).toList();
+//                    InvoiceEmailPayload.builder()
+//                            .invoiceNo("INV-DEBUG-002")
+//                            .description("Invoice Test Debug 2")
+//                            .bouwheerName("PT Bouwheer Debug")
+//                            .invoiceDate("02/01/2024")
+//                            .invoiceDueDate("16/01/2024")
+//                            .invoiceAmt("2.000.000")
+//                            .build()
+//            );
             PencarianPayload payload = PencarianPayload.builder()
                     .financingCode("FIN-DEBUG-001")
                     .applicationDate("15/01/2024")
