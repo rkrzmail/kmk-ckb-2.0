@@ -1,12 +1,10 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.SitDto;
-import com.kmkbe.core.domain.entity.Agreement;
-import com.kmkbe.core.domain.entity.Bouwheer;
-import com.kmkbe.core.domain.entity.Customer;
-import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.AgreementRepository;
+import com.kmkbe.core.domain.repository.DebtorRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
@@ -29,6 +27,9 @@ public class AgreementCodeService {
 
     @Autowired
     private EmailAo emailAo;
+
+    @Autowired
+    private DebtorRepository debtorRepository;
 
     @Autowired
     private AuthRemoteService authRemoteService;
@@ -54,9 +55,19 @@ public class AgreementCodeService {
             FinancingHdr financingHdr = financingHdrOptional.get();
 
             Customer customer = financingHdr.getCustomer();
-            String directorOrCustomerName = "Company".equals(customer.getCustTypeCode())
-                    ? customer.getCustomerCompany().getDirectorName()
-                    : customer.getCustName();
+//            String directorOrCustomerName = "Company".equals(customer.getCustTypeCode())
+//                    ? customer.getCustomerCompany().getDirectorName()
+//                    : customer.getCustName();
+
+            String signerName = debtorRepository
+                    .findActiveSignerByFinancingHdrCode(String.valueOf(financingHdrCode))
+                    .map(Debtor::getKaryawanName)
+                    .orElse("-");
+
+            String jabatan = debtorRepository
+                    .findActiveSignerByFinancingHdrCode(String.valueOf(financingHdrCode))
+                    .map(Debtor::getJabatan)
+                    .orElse("-");
 
             String branchCode = financingHdrRepository.findBranchCodeByFinancingHdrCode(financingHdrCode);
             List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "RM", jwtToken);
@@ -64,7 +75,8 @@ public class AgreementCodeService {
 
             SitDto sitDto = SitDto.builder()
                     .custName(customer.getCustName())
-                    .DirectorName(directorOrCustomerName)
+                    .DirectorName(signerName)
+                    .Jabatan(jabatan)
                     .BranchCode(branchCode)
                     .EmployeeName(employeeName)
                     .agreementCode("-")
@@ -97,9 +109,18 @@ public class AgreementCodeService {
             List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "RM", jwtToken);
             String employeeName = employeeList.isEmpty() ? "N/A" : toCamelCase(employeeList.get(0).get("employeeName"));
 
-            String directorOrCustomerName = "Company".equals(customer.getCustTypeCode())
-                    ? customer.getCustomerCompany().getDirectorName()
-                    : customer.getCustName();
+//            String directorOrCustomerName = "Company".equals(customer.getCustTypeCode())
+//                    ? customer.getCustomerCompany().getDirectorName()
+//                    : customer.getCustName();
+            String signerName = debtorRepository
+                    .findActiveSignerByFinancingHdrCode(String.valueOf(financingHdrCode))
+                    .map(Debtor::getKaryawanName)
+                    .orElse("-");
+
+            String jabatan = debtorRepository
+                    .findActiveSignerByFinancingHdrCode(String.valueOf(financingHdrCode))
+                    .map(Debtor::getJabatan)
+                    .orElse("-");
 
             String bankName = "Bank Mandiri";
             String accountName = "CHANDRA SAKTI UTAMA";
@@ -126,7 +147,8 @@ public class AgreementCodeService {
                     .accountName(accountName)
                     .accountNo(accountNo)
                     .custName(customer.getCustName())
-                    .DirectorName(directorOrCustomerName)
+                    .DirectorName(signerName)
+                    .Jabatan(jabatan)
                     .BranchCode(branchCode)
                     .EmployeeName(employeeName)
                     .build();

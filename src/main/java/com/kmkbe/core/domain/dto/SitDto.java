@@ -34,9 +34,10 @@ public class SitDto {
     private String Email;
     private String EmployeeName;
     private String fapStatus;
+    private String Jabatan;
 
 
-    public SitDto(String agreementCode, String bouwheerName, String legalAddress, String rt, String rw, String kelurahan, String kecamatan, String city, String province, String zipcode, String area, String picName, LocalDateTime fapDate, double totalInvoiceAmt, LocalDateTime financingDueDate, String DirectorName, String bankName, String accountName, String accountNo, String custName, String BranchCode, String Email, String EmployeeName, String fapStatus) {
+    public SitDto(String agreementCode, String bouwheerName, String legalAddress, String rt, String rw, String kelurahan, String kecamatan, String city, String province, String zipcode, String area, String picName, LocalDateTime fapDate, double totalInvoiceAmt, LocalDateTime financingDueDate, String DirectorName, String bankName, String accountName, String accountNo, String custName, String BranchCode, String Email, String EmployeeName, String fapStatus,  String Jabatan) {
         this.agreementCode = agreementCode;
         this.bouwheerName = bouwheerName;
         this.legalAddress = legalAddress;
@@ -63,6 +64,7 @@ public class SitDto {
         this.Email = Email;
         this.EmployeeName = EmployeeName;
         this.fapStatus = fapStatus;
+        this.Jabatan = Jabatan;
 
     }
 
@@ -274,5 +276,8 @@ public class SitDto {
     public void setEmployeeName(String employeeName) {
         this.EmployeeName = employeeName;
     }
+
+    public String getJabatan() { return Jabatan;}
+    public void setJabatan(String jabatan) {this.Jabatan = jabatan;}
 }
 

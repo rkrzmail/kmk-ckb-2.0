@@ -299,16 +299,32 @@ public class CwrService {
                         cwrRemoteService
                                 .inquiryAgreementByNoCwr(cwrCode);
 
-                if (  agreementResponse.getData() != null ) {
-                    for (int i = 0; i < agreementResponse.getData().size(); i++) {
-                        InquiryAgreementByNoCwrRemoteDto agreement = agreementResponse.getData().get(i);
-                        if (String.valueOf(agreement.agrmntStat).equalsIgnoreCase("prospect")||
-                                String.valueOf(agreement.agrmntStat).equalsIgnoreCase("Go Live")||
-                                String.valueOf(agreement.agrmntStat).equalsIgnoreCase("Live")){
+//                if (  agreementResponse.getData() != null ) {
+//                    for (int i = 0; i < agreementResponse.getData().size(); i++) {
+//                        InquiryAgreementByNoCwrRemoteDto agreement = agreementResponse.getData().get(i);
+//                        if (String.valueOf(agreement.agrmntStat).equalsIgnoreCase("prospect")||
+//                                String.valueOf(agreement.agrmntStat).trim().isEmpty()||
+//                                String.valueOf(agreement.agrmntStat).equalsIgnoreCase("Go Live")||
+//                                String.valueOf(agreement.agrmntStat).equalsIgnoreCase("Live")){
+//                            list.add(agreement.agrmntNo);
+//                        }
+//                    }
+//                }
+                if (agreementResponse.getData() != null) {
+                    for (InquiryAgreementByNoCwrRemoteDto agreement : agreementResponse.getData()) {
+                        String status = agreement.agrmntStat; // bisa null
+
+                        if (status == null
+                                || status.trim().isEmpty()
+                                || status.equalsIgnoreCase("prospect")
+                                || status.equalsIgnoreCase("Go Live")
+                                || status.equalsIgnoreCase("Live")) {
+
                             list.add(agreement.agrmntNo);
                         }
                     }
                 }
+
 
 
 
