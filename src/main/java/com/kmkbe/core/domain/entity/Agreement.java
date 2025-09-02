@@ -5,6 +5,8 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -45,13 +47,14 @@ public class Agreement {
     @Column(name = "application_code", nullable = false, length = 20)
     private String applicationCode;
 
-    @NotNull(message = "Financing hdr cannot be null")
-    @ManyToOne(fetch = FetchType.EAGER, optional = false)
+//    @NotNull(message = "Financing hdr cannot be null")
+    @ManyToOne(fetch = FetchType.EAGER, optional = true)
     @JoinColumn(
             name = "financing_hdr_code",
             referencedColumnName = "financing_hdr_code",
             nullable = false
     )
+    @NotFound(action = NotFoundAction.IGNORE)
     private FinancingHdr financingHdr;
 
     @Size(max = 100)
