@@ -19,6 +19,7 @@ import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -30,6 +31,7 @@ import java.math.BigDecimal;
 import java.security.SignatureException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -466,74 +468,162 @@ public class FinancingHdrService {
         return color;
     }
 
-    public PaginationResult<DisburseInvoiceDto> listdisburseAggrement(PaginationRequest request){
+//    public PaginationResult<DisburseInvoiceDto> listdisburseAggrement(PaginationRequest request){
+//        try {
+//            request.setPageSize(1000);
+//            List<Agreement> agreements = agreementRepository.findAll();
+//            return SpecPagination.paginationData(new SpecPagination<Agreement, DisburseInvoiceDto>(agreements, request){
+//                @Override
+//                public DisburseInvoiceDto eval(Agreement e) {
+//                    FinancingHdr financingHdr = e.getFinancingHdr();
+//
+//
+//
+//
+//
+//                    Date paidDate =Utils.fromInstant(financingHdr.getDisburseDate());
+//
+//                    String color = getColor(financingHdr);
+//                    Customer customer = financingHdr.getCustomer();
+//                    String customerName = customer.getCustName();
+//                    MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
+//                            financingHdr,
+//                            MappedFinancingStatus.Type.Disbursement
+//                    );
+//
+//                    BigDecimal retentionRefund = BigDecimal.ZERO;;
+//                    BigDecimal paidAmount = BigDecimal.ZERO;
+//                    BigDecimal disburseAmount = BigDecimal.valueOf(financingHdr.getDisburseAmt());;
+//
+//                    List<DisbursementLog> disbursementLog = disbursementLogRepository.findAllByAgreement(e);
+//                    if (disbursementLog!= null && !disbursementLog.isEmpty()) {
+//
+//                        paidAmount = BigDecimal.valueOf(disbursementLog.getFirst().getApPaidAmt());
+//
+//                    }
+//
+//
+//                    if (mappedFinancingStatus.getStatus() == null || mappedFinancingStatus.getStatus().equalsIgnoreCase("")) {
+//                        return null;
+//                    }
+//
+//                    return DisburseInvoiceDto.builder()
+//                            .agreementNo(e.getAgreementCode())
+//                            .custName(customerName)
+//                            .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+//                            .disburseDate(Utils.fromInstant(financingHdr.getDisburseDate()))
+//                            .paidDate(paidDate)
+//
+//                            .retentionRefund(retentionRefund)
+//                            .paidAmount( paidAmount)
+//                            .disburseAmount(disburseAmount)
+//
+//                            .retentionRefundDate(DateTimeUtils.nowDate()). // disbursementLog.getApDueDate()
+//                                    status(StatusLabelDto.builder()
+//                                    .status(mappedFinancingStatus.getStatus())
+//                                    .statusLabel(mappedFinancingStatus.getLabel())
+//                                    .color(color)
+//                                    .build())
+//                            .build();
+//                }
+//            });
+//
+//
+//
+//        } catch (Exception e) {
+//            log.error("paidInvoice, error {}", e.getMessage());
+//            throw e;
+//        }
+//
+//    }
+    public PaginationResult<DisburseInvoiceDto> listdisburseAggrement(PaginationRequest request) {
+        List<String> errorLogs = new ArrayList<>();
+
         try {
             request.setPageSize(1000);
             List<Agreement> agreements = agreementRepository.findAll();
-            return SpecPagination.paginationData(new SpecPagination<Agreement, DisburseInvoiceDto>(agreements, request){
+
+            return SpecPagination.paginationData(new SpecPagination<Agreement, DisburseInvoiceDto>(agreements, request) {
                 @Override
                 public DisburseInvoiceDto eval(Agreement e) {
-                    FinancingHdr financingHdr = e.getFinancingHdr();
+                    try {
+                        FinancingHdr financingHdr = e.getFinancingHdr();
+                        if (financingHdr == null) {
+                            errorLogs.add("Agreement " + e.getAgreementCode() + " tidak punya FinancingHdr");
+                            return null; // skip
+                        }
 
+                        Date paidDate = Utils.fromInstant(financingHdr.getDisburseDate());
+                        String color = getColor(financingHdr);
 
+                        Customer customer = financingHdr.getCustomer();
+                        String customerName = (customer != null) ? customer.getCustName() : "-";
 
+                        MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
+                                financingHdr,
+                                MappedFinancingStatus.Type.Disbursement
+                        );
 
+                        BigDecimal retentionRefund = BigDecimal.ZERO;
+                        BigDecimal paidAmount = BigDecimal.ZERO;
+                        BigDecimal disburseAmount = BigDecimal.valueOf(financingHdr.getDisburseAmt());
 
-                    Date paidDate =Utils.fromInstant(financingHdr.getDisburseDate());
+                        List<DisbursementLog> disbursementLog = disbursementLogRepository.findAllByAgreement(e);
+                        if (disbursementLog != null && !disbursementLog.isEmpty()) {
+                            paidAmount = BigDecimal.valueOf(disbursementLog.get(0).getApPaidAmt());
+                        }
 
-                    String color = getColor(financingHdr);
-                    Customer customer = financingHdr.getCustomer();
-                    String customerName = customer.getCustName();
-                    MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
-                            financingHdr,
-                            MappedFinancingStatus.Type.Disbursement
-                    );
+                        if (mappedFinancingStatus.getStatus() == null || mappedFinancingStatus.getStatus().isEmpty()) {
+                            errorLogs.add("Agreement " + e.getAgreementCode() + " FinancingStatus kosong");
+                            return null; // skip
+                        }
 
-                    BigDecimal retentionRefund = BigDecimal.ZERO;;
-                    BigDecimal paidAmount = BigDecimal.ZERO;
-                    BigDecimal disburseAmount = BigDecimal.valueOf(financingHdr.getDisburseAmt());;
+                        return DisburseInvoiceDto.builder()
+                                .agreementNo(e.getAgreementCode())
+                                .custName(customerName)
+                                .bouwheerName(
+                                        financingHdr.getBouwheer() != null
+                                                ? financingHdr.getBouwheer().getBouwheerName()
+                                                : "-"
+                                )
+                                .disburseDate(Utils.fromInstant(financingHdr.getDisburseDate()))
+                                .paidDate(paidDate)
+                                .retentionRefund(retentionRefund)
+                                .paidAmount(paidAmount)
+                                .disburseAmount(disburseAmount)
+                                .retentionRefundDate(DateTimeUtils.nowDate())
+                                .status(StatusLabelDto.builder()
+                                        .status(mappedFinancingStatus.getStatus())
+                                        .statusLabel(mappedFinancingStatus.getLabel())
+                                        .color(color)
+                                        .build())
+                                .build();
 
-                    List<DisbursementLog> disbursementLog = disbursementLogRepository.findAllByAgreement(e);
-                    if (disbursementLog!= null && !disbursementLog.isEmpty()) {
-
-                        paidAmount = BigDecimal.valueOf(disbursementLog.getFirst().getApPaidAmt());
-
-                    }
-
-
-                    if (mappedFinancingStatus.getStatus() == null || mappedFinancingStatus.getStatus().equalsIgnoreCase("")) {
+                    } catch (EntityNotFoundException ex) {
+                        errorLogs.add("Agreement " + e.getAgreementCode() + " gagal: " + ex.getMessage());
+                        return null;
+                    } catch (Exception ex) {
+                        errorLogs.add("Agreement " + e.getAgreementCode() + " error umum: " + ex.getMessage());
                         return null;
                     }
-
-                    return DisburseInvoiceDto.builder()
-                            .agreementNo(e.getAgreementCode())
-                            .custName(customerName)
-                            .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
-                            .disburseDate(Utils.fromInstant(financingHdr.getDisburseDate()))
-                            .paidDate(paidDate)
-
-                            .retentionRefund(retentionRefund)
-                            .paidAmount( paidAmount)
-                            .disburseAmount(disburseAmount)
-
-                            .retentionRefundDate(DateTimeUtils.nowDate()). // disbursementLog.getApDueDate()
-                                    status(StatusLabelDto.builder()
-                                    .status(mappedFinancingStatus.getStatus())
-                                    .statusLabel(mappedFinancingStatus.getLabel())
-                                    .color(color)
-                                    .build())
-                            .build();
                 }
             });
 
-
-
         } catch (Exception e) {
-            log.error("paidInvoice, error {}", e.getMessage());
+            log.error("paidInvoice, fatal error {}", e.getMessage());
             throw e;
-        }
+        } finally {
+            if (!errorLogs.isEmpty()) {
+                String formattedErrors = errorLogs.stream()
+                        .map(err -> "- " + err) // kasih prefix bullet
+                        .collect(Collectors.joining("\n")); // gabung dengan newline
 
+                log.warn("Missing date:\n{}", formattedErrors);
+            }
+        }
     }
+
+
 
 
     public PaginationResult<DisburseInvoiceDto> disburseInvoice(
