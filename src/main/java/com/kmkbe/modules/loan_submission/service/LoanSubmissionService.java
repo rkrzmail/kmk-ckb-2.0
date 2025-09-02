@@ -1153,7 +1153,8 @@ public class LoanSubmissionService {
                 if (!isAutoASSIGNMENT){
                     //sed to major account
                     try {
-                        String mjrEmail = "radema.panjaitan@csul.co.id";
+//                        String mjrEmail = "radema.panjaitan@csul.co.id";
+
 
                         final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
                                 .stream()
@@ -1174,10 +1175,15 @@ public class LoanSubmissionService {
                                         + financing.getOthersFeeAmt()
                                         + financing.getProvisionFeeAmt()
                                         + financing.getSurveyFeeAmtNett();
-                        //getAPI AO,BH
-                        MailPositionDto ccBM = configRemoteService.getEmailByPosition("", financing.getMstBranch().getBranchCode(), "BM/BOH");
+                        //getAPI CMS
+                        String branchCode = mstBranchRepository.findByBranchName("HEAD OFFICE")
+                                .map(MstBranch::getBranchCode)
+                                .orElseThrow(() -> {
+                                    return new RuntimeException("BranchCode tidak ditemukan");
+                                });
+                        MailPositionDto ccBM = configRemoteService.getEmailByPosition("", branchCode, "CMS");
 
-                        String toEmail =  "radema.panjaitan@csul.co.id";
+//                        String toEmail =  "radema.panjaitan@csul.co.id";
                         StringBuilder ccEmailBuilder = new StringBuilder();
 
                         if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
@@ -1187,8 +1193,10 @@ public class LoanSubmissionService {
                             }
                         }
 
-                        String ccEmail = ccEmailBuilder.toString();
-                        log.info("email BM/BOH: {}", ccEmailBuilder.toString());
+                        String mjrEmail = ccEmailBuilder.toString();
+                        String toEmail =  ccEmailBuilder.toString();
+//                        String ccEmail = ccEmailBuilder.toString();
+                        log.info("email CMS: {}", ccEmailBuilder.toString());
 
                         String phone = financing.getCustomer().getCustMobilePhone();
                         if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
@@ -1209,7 +1217,7 @@ public class LoanSubmissionService {
                                         .phoneNumber(phone)
                                         .tenor(financing.getTenor())
                                         .toEmail(toEmail)
-                                        .ccEmail(ccEmail)
+                                        .ccEmail(toEmail)
                                         .financingCode(financing.getFinancingHdrCode().toString())
                                         .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
                                         .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))

@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import com.kmkbe.core.domain.entity.*;
+import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.model.PencarianPayload;
@@ -17,6 +19,7 @@ import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
+import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.nikita.utils.Utils;
 import jakarta.annotation.Nullable;
@@ -38,18 +41,13 @@ import java.util.*;
 @Slf4j
 public class InquiryDisburseService {
     private final FinancingDtlRepository financingDtlRepository;
-    private final InvoiceRepository invoiceRepository;
-    private final PaymentReceiveHistoryRepository PaymentReceiveHistoryRepository;
-    private final PaymentReceiveHistoryRepository paymentReceiveHistoryRepository;
     private final FinancingHdrRepository  financingHdrRepository;
     private final EmailService emailService;
     private final FinancingHdrService financingHdrService;
-    private final AgreementRepository agreementRepository;
     private final BaseRemoteService baseRemoteService;
-    private final ObjectMapper objectMapper;
     private final RestTemplate restTemplate;
-    private final DisbursementLogRepository DisbursementLogRepository;
     private final DisbursementLogRepository disbursementLogRepository;
+    private final ConfigRemoteService configRemoteService;
 
     private final FinancingRemoteService financingRemoteService;
 
@@ -328,6 +326,19 @@ public class InquiryDisburseService {
             List<FinancingDtl> financingDtls = financingDtlRepository.findByUsrCrt("abdul")
                     .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
 
+            MailPositionDto ccBM = configRemoteService.getEmailByPosition("", "999", "CMS");
+            StringBuilder ccEmailBuilder = new StringBuilder();
+
+            if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
+                for (int i = 0; i < ccBM.getData().size(); i++) {
+                    ccEmailBuilder.append(!ccEmailBuilder.isEmpty() ? ";" : "");
+                    ccEmailBuilder.append(ccBM.getData().get(i).getEmail());
+                }
+            }
+
+            String mjrEmail = ccEmailBuilder.toString();
+            log.info("email CMS: {}", mjrEmail);
+
 //            List<InvoiceEmailPayload> invoices = financingDtls
 //                    .stream()
 //                            .map((item) ->
@@ -359,28 +370,41 @@ public class InquiryDisburseService {
                             .invoiceAmt("2.000.000")
                             .build()
             );
-            LoanDisburseEmailPayload payload = LoanDisburseEmailPayload.builder()
-                    .financingCode("FIN-DEBUG-001")
-                    .applicationDate("15/01/2024")
-                    .companyName("Tedy Aditia")
-                    .phoneNumber("081234567890")
-                    .tenor(Long.valueOf("40"))
-                    .financingDueDate("15/02/2024")
-                    .retention("500.000")
-                    .financingAmt("10.000.000")
-                    .totalFeeAmt("500.000")
-                    .invoiceAmt("3.000.000")
-                    .disburseAmt("9.500.000")
-                    .email("tedyaditia047@gmail.com")
-                    .toEmail("tedyaditia047@gmail.com")
-                    .ccEmail("tedyaditia047@gmail.com")
+//            LoanDisburseEmailPayload payload = LoanDisburseEmailPayload.builder()
+//                    .financingCode("FIN-DEBUG-001")
+//                    .applicationDate("15/01/2024")
+//                    .companyName("Tedy Aditia")
+//                    .phoneNumber("081234567890")
+//                    .tenor(Long.valueOf("40"))
+//                    .financingDueDate("15/02/2024")
+//                    .retention("500.000")
+//                    .financingAmt("10.000.000")
+//                    .totalFeeAmt("500.000")
+//                    .invoiceAmt("3.000.000")
+//                    .disburseAmt("9.500.000")
+//                    .email("tedyaditia047@gmail.com")
+//                    .toEmail("tedyaditia047@gmail.com")
+//                    .ccEmail("tedyaditia047@gmail.com")
+//                    .invoices(invoices)
+//                    .build();
+
+            // to trakindo
+            BouwheerPaymentEmailPayload payload = BouwheerPaymentEmailPayload.builder()
+                    .bouwheerName("TRAKINDO")
+                    .vendorCode("04euw-1038s-21kks1-1233o")
+                    .vendorName("Tedy Aditia")
+                    .accountNo("7005592119")
+                    .bankAccount("014")
+                    .bankName("BCA")
+                    .bankKey("100211")
+                    .tglPengajuan("02/09/2025")
                     .invoices(invoices)
                     .build();
 
-            emailService.sendNotificationBranchAssign(
+            emailService.sendNotificationBouwheerPayment(
                     "tedyaditia047@gmail.com",
-                    "bouwheer",
-                    "413",
+//                    "bouwheer",
+//                    "413",
                     payload
             );
 
