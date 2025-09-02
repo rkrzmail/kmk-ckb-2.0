@@ -328,29 +328,38 @@ public class InquiryDisburseService {
             List<FinancingDtl> financingDtls = financingDtlRepository.findByUsrCrt("abdul")
                     .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
 
-            List<InvoiceEmailPayload> invoices = financingDtls
-                    .stream()
-                            .map((item) ->
+//            List<InvoiceEmailPayload> invoices = financingDtls
+//                    .stream()
+//                            .map((item) ->
+//                    InvoiceEmailPayload.builder()
+//                            .invoiceNo("INV-DEBUG-001")
+//                            .description("Invoice Test Debug")
+//                            .bouwheerName("PT Bouwheer Debug")
+////                            .invoiceDate("01/01/2024")
+//                            .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+//                            .invoiceDueDate("15/01/2024")
+//                            .invoiceAmt("1.000.000")
+//                            .build()
+//                            ).toList();
+            List<InvoiceEmailPayload> invoices = Arrays.asList(
                     InvoiceEmailPayload.builder()
                             .invoiceNo("INV-DEBUG-001")
                             .description("Invoice Test Debug")
                             .bouwheerName("PT Bouwheer Debug")
-//                            .invoiceDate("01/01/2024")
-                            .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+                            .invoiceDate("01/01/2024")
                             .invoiceDueDate("15/01/2024")
                             .invoiceAmt("1.000.000")
+                            .build(),
+                    InvoiceEmailPayload.builder()
+                            .invoiceNo("INV-DEBUG-002")
+                            .description("Invoice Test Debug 2")
+                            .bouwheerName("PT Bouwheer Debug")
+                            .invoiceDate("02/01/2024")
+                            .invoiceDueDate("16/01/2024")
+                            .invoiceAmt("2.000.000")
                             .build()
-                            ).toList();
-//                    InvoiceEmailPayload.builder()
-//                            .invoiceNo("INV-DEBUG-002")
-//                            .description("Invoice Test Debug 2")
-//                            .bouwheerName("PT Bouwheer Debug")
-//                            .invoiceDate("02/01/2024")
-//                            .invoiceDueDate("16/01/2024")
-//                            .invoiceAmt("2.000.000")
-//                            .build()
-//            );
-            PencarianPayload payload = PencarianPayload.builder()
+            );
+            LoanDisburseEmailPayload payload = LoanDisburseEmailPayload.builder()
                     .financingCode("FIN-DEBUG-001")
                     .applicationDate("15/01/2024")
                     .companyName("Tedy Aditia")
@@ -362,13 +371,13 @@ public class InquiryDisburseService {
                     .totalFeeAmt("500.000")
                     .invoiceAmt("3.000.000")
                     .disburseAmt("9.500.000")
-//                    .email("tedyaditia047@gmail.com")
-//                    .toEmail("tedyaditia047@gmail.com")
-//                    .ccEmail("tedyaditia047@gmail.com")
+                    .email("tedyaditia047@gmail.com")
+                    .toEmail("tedyaditia047@gmail.com")
+                    .ccEmail("tedyaditia047@gmail.com")
                     .invoices(invoices)
                     .build();
 
-            emailService.sendNotificationPencairan(
+            emailService.sendNotificationBranchAssign(
                     "tedyaditia047@gmail.com",
                     "bouwheer",
                     "413",

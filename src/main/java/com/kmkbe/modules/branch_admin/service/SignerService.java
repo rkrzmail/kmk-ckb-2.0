@@ -238,7 +238,9 @@ public class SignerService {
                 authentication.getName() :
                 "SYSTEM";
 
-        List<Debtor> debtors = debtorRepository.findByFinancingHdrCode(financingHdrCode);
+        String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
+
+        List<Debtor> debtors = debtorRepository.findByDebtorName(debtorName);
 
         List<CompletableFuture<DebtorDto>> futures = debtors.stream()
                 .map(debtor -> processDebtorAsync(debtor, debtor.getFinancingHdrCode(), username))
@@ -784,7 +786,10 @@ public class SignerService {
 
     private List<String> getSignersFromDatabase(String financingHdrCode) {
         try {
-            List<Debtor> debtors = debtorRepository.findByFinancingHdrCode(financingHdrCode);
+
+            String DebtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
+
+            List<Debtor> debtors = debtorRepository.findByDebtorName(DebtorName);
 
             return debtors.stream()
                     .map(Debtor::getKaryawanName)
@@ -944,11 +949,14 @@ public class SignerService {
                     .orElseThrow(() -> new EntityNotFoundException("Financing header not found"));
 
             String bowheerName = financingHdr.getBouwheer().getBouwheerName();
-            List<AgreementFileSigning> fileSignings = agreementFileSigningRepository.findByFinancing(financingHdrCode);
+
+            String signerName = financingHdrRepository.findSignerNameByFinancingHdrCode(financingHdrUuid);
+
+            List<AgreementFileSigning> fileSignings = agreementFileSigningRepository.findByKaryawan(signerName);
 
             checkExternalSigningStatus(fileSignings, username);
 
-            fileSignings = agreementFileSigningRepository.findByFinancing(financingHdrCode);
+            fileSignings = agreementFileSigningRepository.findByKaryawan(signerName);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
             return fileSignings.stream()
