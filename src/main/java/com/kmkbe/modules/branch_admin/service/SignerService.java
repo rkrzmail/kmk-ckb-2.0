@@ -821,10 +821,23 @@ public class SignerService {
             fileSignings = agreementFileSigningRepository.findByKaryawan(signerName);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
+            List<String> agreementCodes = fileSignings.stream()
+                    .map(AgreementFileSigning::getAgreementCode)
+                    .toList();
+
+            Map<String, String> cwrMap = agreementRepository.findCwrCodesByAgreementCodes(agreementCodes)
+                    .stream()
+                    .collect(Collectors.toMap(
+                            row -> (String) row[0],  // agreementCode
+                            row -> (String) row[1]   // cwrCode
+                    ));
+
+
             return fileSignings.stream()
                     .map(signing -> SignerDocDto.builder()
                             .agreementFileId(signing.getAgreementFileId())
                             .agreementCode(signing.getAgreementCode())
+                            .cwrCode(cwrMap.getOrDefault(signing.getAgreementCode(), ""))
                             .bowheerName(bowheerName)
                             .verifDate(signing.getDtmCrt() != null ?
                                     signing.getDtmCrt().format(formatter) : null)
