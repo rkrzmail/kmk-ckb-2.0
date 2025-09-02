@@ -59,13 +59,15 @@ public class AgreementCodeService {
 //                    ? customer.getCustomerCompany().getDirectorName()
 //                    : customer.getCustName();
 
+            String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(financingHdrCode);
+
             String signerName = debtorRepository
-                    .findActiveSignerByFinancingHdrCode(String.valueOf(financingHdrCode))
+                    .findActiveSignerByDebtorName(debtorName)
                     .map(Debtor::getKaryawanName)
                     .orElse("-");
 
             String jabatan = debtorRepository
-                    .findActiveSignerByFinancingHdrCode(String.valueOf(financingHdrCode))
+                    .findActiveSignerByDebtorName(debtorName)
                     .map(Debtor::getJabatan)
                     .orElse("-");
 
@@ -112,13 +114,16 @@ public class AgreementCodeService {
 //            String directorOrCustomerName = "Company".equals(customer.getCustTypeCode())
 //                    ? customer.getCustomerCompany().getDirectorName()
 //                    : customer.getCustName();
+
+            String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(financingHdrCode);
+
             String signerName = debtorRepository
-                    .findActiveSignerByFinancingHdrCode(String.valueOf(financingHdrCode))
+                    .findActiveSignerByDebtorName(debtorName)
                     .map(Debtor::getKaryawanName)
                     .orElse("-");
 
             String jabatan = debtorRepository
-                    .findActiveSignerByFinancingHdrCode(String.valueOf(financingHdrCode))
+                    .findActiveSignerByDebtorName(debtorName)
                     .map(Debtor::getJabatan)
                     .orElse("-");
 

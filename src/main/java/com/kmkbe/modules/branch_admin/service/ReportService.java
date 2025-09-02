@@ -556,7 +556,7 @@ public class ReportService {
                 .orElse("Debtor Name");
 
         // 9. Karyawan
-        Optional<Map<String, Object>> karyawanData = debtorRepository.findKaryawanByFinancingHdrCode(financingHdrCode);
+        Optional<Map<String, Object>> karyawanData = debtorRepository.findKaryawanByDebtorName(debtorName);
         Map<String, Object> Kdata = karyawanData.orElseGet(Collections::emptyMap);
 
         // 10. Facility
@@ -991,8 +991,10 @@ public class ReportService {
     private List<ExternalSigningRequest.Signer> prepareSigners(Agreement agreement, String financingHdrCode, String branchManager, String areaSalesManager) {
         List<ExternalSigningRequest.Signer> signers = new ArrayList<>();
 
+        String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
+
         Debtor debtor = debtorRepository
-                .findActiveSignerByFinancingHdrCode(financingHdrCode)
+                .findActiveSignerByDebtorName(debtorName)
                 .orElseThrow(() -> new RuntimeException("Tidak ada data signer active dari financingHdr = " + financingHdrCode));
 
         signers.add(ExternalSigningRequest.Signer.builder()
@@ -1032,8 +1034,9 @@ public class ReportService {
 
     private AgreementFileSigningDto saveToDatabase(String agreementCode, String documentId, String username, String financingHdrCode) {
 
+        String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
         Debtor debtor = debtorRepository
-                .findActiveSignerByFinancingHdrCode(financingHdrCode)
+                .findActiveSignerByDebtorName(debtorName)
                 .orElseThrow(() -> new RuntimeException("Tidak ada data signer active dari financingHdr = " + financingHdrCode));
 
 //        AgreementFileSigning entity = AgreementFileSigning.builder()
