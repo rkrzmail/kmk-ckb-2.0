@@ -837,7 +837,7 @@ public class SignerService {
                     .map(signing -> SignerDocDto.builder()
                             .agreementFileId(signing.getAgreementFileId())
                             .agreementCode(signing.getAgreementCode())
-                            .cwrCode(cwrMap.getOrDefault(signing.getAgreementCode(), ""))
+                            .cwrCode(cwrMap.getOrDefault(signing.getAgreementCode(), "")) // di db belum ada
                             .bowheerName(bowheerName)
                             .verifDate(signing.getDtmCrt() != null ?
                                     signing.getDtmCrt().format(formatter) : null)
