@@ -3,6 +3,7 @@ package com.kmkbe.core.domain.repository;
 import com.kmkbe.core.domain.dto.ProyeksiReportDto;
 import com.kmkbe.core.domain.dto.SummaryByAODto;
 import com.kmkbe.core.domain.dto.SummaryByBranchDto;
+import com.kmkbe.core.domain.entity.AgreementFileSigning;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.modules.user.entity.MstBranch;
@@ -16,10 +17,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID>, JpaSpecificationExecutor<FinancingHdr> {
     Optional<FinancingHdr> findByFinancingHdrCode(UUID code);
@@ -31,10 +29,6 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
     List<FinancingHdr> findAllByCustomerOrderByDtmCrtDesc(@NotNull Customer customer);
 
     Long countByCustomerAndFinancingStatus(Customer customer, String status);
-
-    Long countByFinancingHdrCodeAndFinancingStep(UUID financingHdrCode, @NotNull String financingStep);
-
-    long countByFinancingHdrCodeAndFinancingStepIn(UUID financingHdrCode, Collection<@NotNull String> financingStep);
 
 
     Page<FinancingHdr> findByOrderByFinancingHdrIdDesc(
@@ -482,4 +476,27 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
             nativeQuery = true)
     String findSignerNameByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
 
+    @Query(value = """
+    SELECT COUNT(*) 
+    FROM financing_hdr fh
+    WHERE fh.cust_code = (
+        SELECT f.cust_code 
+        FROM financing_hdr f 
+        WHERE f.financing_hdr_code = :financingHdrCode
+    )
+    AND fh.financing_step IN ('SIGNING', 'SIGNED', 'PAID')
+    """, nativeQuery = true)
+    Long countSigningAndSigned(@Param("financingHdrCode") String financingHdrCode);
+
+    @Query(value = """
+    SELECT COUNT(*) 
+    FROM financing_hdr fh
+    WHERE fh.cust_code = (
+        SELECT f.cust_code 
+        FROM financing_hdr f 
+        WHERE f.financing_hdr_code = :financingHdrCode
+    )
+    AND fh.financing_step = 'COMPLETED'
+    """, nativeQuery = true)
+    Long countCompleted(@Param("financingHdrCode") String financingHdrCode);
 }

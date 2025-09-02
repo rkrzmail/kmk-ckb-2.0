@@ -38,7 +38,7 @@ public class SignerController {
     ) throws SignatureException {
         return new CommonResult<PaginationResult<AssignmentDto>>()
                 .success(
-                        signerService.assignmentList(
+                        signerService.assignmentListGroupByCustomer(
                                 httpServletRequest,
                                 authentication,
                                 request

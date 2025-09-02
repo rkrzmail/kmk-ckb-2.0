@@ -221,12 +221,11 @@ public class CustomerDashboardService {
                     PageRequest.of(0, 10)
             );
 
-            long total = agreementFileSigningRepository.countByFinancingHdrCode(financingHdrCode);
-//            long berjalan = financingHdrRepository.countByFinancingHdrCodeAndFinancingStep(financingHdrCode, "SIGNED");
-            List<String> steps = Arrays.asList("SIGNING", "SIGNED", "GOLIVE", "PAID");
-            long berjalan = financingHdrRepository.countByFinancingHdrCodeAndFinancingStepIn(UUID.fromString(financingHdrCode), steps);
+            String signerName = financingHdrRepository.findSignerNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
+            Long totalBerjalan = financingHdrRepository.countSigningAndSigned(financingHdrCode);
+            Long totalBerakhir = financingHdrRepository.countCompleted(financingHdrCode);
 
-            long berakhir = financingHdrRepository.countByFinancingHdrCodeAndFinancingStep(UUID.fromString(financingHdrCode), "REFUND");
+            long total = agreementFileSigningRepository.countBySigner(signerName);
 
             return CustomerPerjanjianDto.builder()
                     .financingHdrCode(financingHdr.getFinancingHdrCode())
@@ -242,8 +241,8 @@ public class CustomerDashboardService {
                     .phoneNo(phoneNo)
                     .agreementCode(agreement.getAgreementCode())
                     .perjanjian(CustomerPerjanjianDto.PerjanjianDto.builder()
-                            .perjanjianBerjalan((int)berjalan)
-                            .perjanjianBerakhir((int)berakhir)
+                            .perjanjianBerjalan(totalBerjalan != null ? totalBerjalan.intValue() : 0)
+                            .perjanjianBerakhir(totalBerakhir != null ? totalBerakhir.intValue() : 0)
                             .totalPerjanjian((int)total)
                             .build())
 
