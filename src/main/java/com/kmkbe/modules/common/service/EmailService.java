@@ -37,6 +37,7 @@ public class EmailService {
     private static final String M_CUST_LOAN = "M_CUST_LOAN";//(3)
     private static final String M_CUST_LOAN_SUBMITED = "M_CUST_LOAN_SUBMITED";//(4)
     private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";//(2)
+    private static final String M_BRANCH_ASSIGN_MJR = "M_BRANCH_ASSIGN_MJR";
     private static final String M_BOUWHEER_PAYMENT = "M_BOUWHEER_PAYMENT";
     private static final String M_CUST_LOAD_CHANGE = "M_CUST_LOAD_CHANGE";
     private static final String M_CUST_PENCAIRAN = "M_CUST_PENCAIRAN";//(5)
@@ -451,7 +452,7 @@ public class EmailService {
             args.put("email", payload.getEmail());
 
             final EmailTemplate template = emailTemplateRepository
-                    .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN, true);
+                    .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN_MJR, true);
             template.setSubjectMail(template.getSubjectMail().replace("{bouwheerName}", bouwheerName));
             template.setMailTo(payload.getToEmail());
             template.setMailCc(payload.getCcEmail());

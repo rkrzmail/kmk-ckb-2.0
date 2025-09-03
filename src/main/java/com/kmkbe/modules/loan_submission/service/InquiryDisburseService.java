@@ -370,41 +370,41 @@ public class InquiryDisburseService {
                             .invoiceAmt("2.000.000")
                             .build()
             );
-//            LoanDisburseEmailPayload payload = LoanDisburseEmailPayload.builder()
-//                    .financingCode("FIN-DEBUG-001")
-//                    .applicationDate("15/01/2024")
-//                    .companyName("Tedy Aditia")
-//                    .phoneNumber("081234567890")
-//                    .tenor(Long.valueOf("40"))
-//                    .financingDueDate("15/02/2024")
-//                    .retention("500.000")
-//                    .financingAmt("10.000.000")
-//                    .totalFeeAmt("500.000")
-//                    .invoiceAmt("3.000.000")
-//                    .disburseAmt("9.500.000")
-//                    .email("tedyaditia047@gmail.com")
-//                    .toEmail("tedyaditia047@gmail.com")
-//                    .ccEmail("tedyaditia047@gmail.com")
-//                    .invoices(invoices)
-//                    .build();
-
-            // to trakindo
-            BouwheerPaymentEmailPayload payload = BouwheerPaymentEmailPayload.builder()
-                    .bouwheerName("TRAKINDO")
-                    .vendorCode("04euw-1038s-21kks1-1233o")
-                    .vendorName("Tedy Aditia")
-                    .accountNo("7005592119")
-                    .bankAccount("014")
-                    .bankName("BCA")
-                    .bankKey("100211")
-                    .tglPengajuan("02/09/2025")
+            LoanDisburseEmailPayload payload = LoanDisburseEmailPayload.builder()
+                    .financingCode("FIN-DEBUG-001")
+                    .applicationDate("15/01/2024")
+                    .companyName("Tedy Aditia")
+                    .phoneNumber("081234567890")
+                    .tenor(Long.valueOf("40"))
+                    .financingDueDate("15/02/2024")
+                    .retention("500.000")
+                    .financingAmt("10.000.000")
+                    .totalFeeAmt("500.000")
+                    .invoiceAmt("3.000.000")
+                    .disburseAmt("9.500.000")
+                    .email("tedyaditia047@gmail.com")
+                    .toEmail("tedyaditia047@gmail.com")
+                    .ccEmail("tedyaditia047@gmail.com")
                     .invoices(invoices)
                     .build();
 
-            emailService.sendNotificationBouwheerPayment(
+            // to trakindo
+//            BouwheerPaymentEmailPayload payload = BouwheerPaymentEmailPayload.builder()
+//                    .bouwheerName("TRAKINDO")
+//                    .vendorCode("04euw-1038s-21kks1-1233o")
+//                    .vendorName("Tedy Aditia")
+//                    .accountNo("7005592119")
+//                    .bankAccount("014")
+//                    .bankName("BCA")
+//                    .bankKey("100211")
+//                    .tglPengajuan("02/09/2025")
+//                    .invoices(invoices)
+//                    .build();
+
+            emailService.sendNotificationMajorAccount(
                     "tedyaditia047@gmail.com",
-//                    "bouwheer",
-//                    "413",
+                    "bouwheer",
+                    "413",
                     payload
             );
 
