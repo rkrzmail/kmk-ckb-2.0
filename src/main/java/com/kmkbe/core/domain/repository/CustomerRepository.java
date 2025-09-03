@@ -27,5 +27,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long> {
 
     boolean existsByCustEmailAndCustIdNoNot(String custEmail, String custIdNo);
 
+    boolean existsByCustEmailIgnoreCaseAndCustIdNoNot(String email, String custIdNo);
+
 
 }

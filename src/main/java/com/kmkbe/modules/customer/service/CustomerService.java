@@ -22,6 +22,7 @@ import com.kmkbe.modules.customer.utils.CustomerUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -144,7 +145,7 @@ public class CustomerService {
             String newEmail = request.getCustEmail();
 
             if (newEmail != null && !oldEmail.equalsIgnoreCase(newEmail)) {
-                boolean emailExists = customerRepository.existsByCustEmailAndCustIdNoNot(
+                boolean emailExists = customerRepository.existsByCustEmailIgnoreCaseAndCustIdNoNot(
                         newEmail, customer.getCustIdNo()
                 );
                 if (emailExists) {
@@ -157,7 +158,11 @@ public class CustomerService {
             customer.setCustName(request.getCustName());
             //customer.setCustTypeCode(request.getCustTypeCode());
             customer.setCustIdNo(request.getCustIdNo());
-            customer = customerRepository.save(customer);
+            try {
+                customer = customerRepository.save(customer);
+            } catch (DataIntegrityViolationException e) {
+                throw new IllegalArgumentException("Email already exists, please use another one");
+            }
             customer.setForceLogout(emailChanged);
 
             return customer;
