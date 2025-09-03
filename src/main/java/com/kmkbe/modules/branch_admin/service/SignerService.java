@@ -927,4 +927,39 @@ public class SignerService {
                 });
     }
 
+    public List<DebtorDto> checkSignerDanasakti(String financingHdrCode, Authentication authentication) {
+        String username = authentication != null ? authentication.getName() : "SYSTEM";
+
+        String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
+
+        if (debtorName == null) {
+            return Collections.emptyList();
+        }
+
+        List<Debtor> debtors = debtorRepository.findByDebtorName(debtorName);
+
+        if (debtors == null || debtors.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<CompletableFuture<DebtorDto>> futures = debtors.stream()
+                .map(debtor -> processDebtorAsync(debtor, debtor.getFinancingHdrCode(), username))
+                .collect(Collectors.toList());
+
+        CompletableFuture<Void> allOf = CompletableFuture.allOf(
+                futures.toArray(new CompletableFuture[0])
+        );
+
+        try {
+            allOf.join();
+            return futures.stream()
+                    .map(CompletableFuture::join)
+                    .collect(Collectors.toList());
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error processing debtors", e);
+        }
+    }
+
+
 }

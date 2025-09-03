@@ -16,7 +16,10 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Validated
@@ -133,4 +136,30 @@ public class SignerController {
 
         return signerService.downloadDocument(documentId, authentication);
     }
+
+    @GetMapping("/check-signer/danasakti/{financingHdrCode}/{agreementCode}")
+    public CommonResult<Map<String, Object>> checkSignerDanasakti(
+            @PathVariable String financingHdrCode,
+            @PathVariable String agreementCode,
+            Authentication authentication) {
+
+        List<DebtorDto> signerPersonList = signerService.checkSignerDanasakti(financingHdrCode, authentication);
+
+        Map<String, Object> responseData = new HashMap<>();
+
+        if (signerPersonList == null || signerPersonList.isEmpty()) {
+            responseData.put("signerName", null);
+            return new CommonResult<Map<String, Object>>()
+                    .fail(404, "Signer tidak tersedia", responseData);
+        }
+        List<String> signerNames = signerPersonList.stream()
+                .map(DebtorDto::getKaryawanName)
+                .collect(Collectors.toList());
+
+        responseData.put("signerName", signerNames);
+
+        return new CommonResult<Map<String, Object>>()
+                .success(responseData, "Signer tersedia");
+    }
+
 }
