@@ -175,5 +175,6 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     @Query("SELECT a.agreementCode, a.cwr.cwrCode FROM Agreement a WHERE a.agreementCode IN :agreementCodes")
     List<Object[]> findCwrCodesByAgreementCodes(@Param("agreementCodes") List<String> agreementCodes);
 
+    List<Agreement> findByCwr_CwrCode(String cwrCode);
 }
 

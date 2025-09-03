@@ -9,6 +9,8 @@ import java.io.Serializable;
 @AllArgsConstructor
 @NoArgsConstructor
 @Getter
+@Setter
 public class CwrListDto extends CwrDto implements Serializable {
     private Integer no;
+    private Double financingAmt;
 }

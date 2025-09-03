@@ -4,12 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.core.domain.entity.Bouwheer;
-import com.kmkbe.core.domain.entity.Customer;
-import com.kmkbe.core.domain.entity.Cwr;
-import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.CwrMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.CwrRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
@@ -51,6 +49,7 @@ public class CwrService {
     private final CwrRepository cwrRepository;
     private final FinancingHdrRepository financingHdrRepository;
     private final ObjectMapper objectMapper;
+    private final AgreementRepository agreementRepository;
 
     public PaginationResult<CwrListDto> list(
             String custCode,
@@ -93,6 +92,15 @@ public class CwrService {
 
             List<CwrListDto> result = cwrs.stream()
                     .map(CwrMapper.INSTANCE::toDto)
+                    .peek(dto -> {
+                        List<Agreement> agreements = agreementRepository.findByCwr_CwrCode(dto.getCwrCode());
+                        if (!agreements.isEmpty()) {
+                            Agreement agreement = agreements.get(0);
+                            if (agreement.getFinancingHdr() != null) {
+                                dto.setFinancingAmt(agreement.getFinancingAmt());
+                            }
+                        }
+                    })
                     .toList();
             return SpecPagination.paginationData(new SpecPagination<CwrListDto, CwrListDto>(result, request){
                 @Override
