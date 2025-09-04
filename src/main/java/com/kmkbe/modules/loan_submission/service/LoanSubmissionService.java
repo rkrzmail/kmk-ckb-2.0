@@ -1296,6 +1296,8 @@ public class LoanSubmissionService {
                             .retention(CommonFormattingUtils.formatAmount(createdFinancing.getRetention()))
                             .financingAmt(CommonFormattingUtils.formatAmount(createdFinancing.getFinancingAmt()))
                             .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+                            .toEmail(customer.getCustEmail())
+                            .ccEmail(customer.getCustEmail())
                             .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getTotalInvoiceAmt()))
                             .disburseAmt(CommonFormattingUtils.formatAmount(createdFinancing.getDisburseAmt()))
                             .invoices(invoices)

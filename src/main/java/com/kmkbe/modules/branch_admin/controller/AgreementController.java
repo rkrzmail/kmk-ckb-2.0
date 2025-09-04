@@ -121,104 +121,104 @@ public class AgreementController {
                 agreement.getAgreementCode()
         );
 
-//        final UpdateFinancingStatusRequest updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
-//                .financingCode(financingHdrCode)
-//                .status(UpdateFinancingStatusRequest.Status.Approved)
-//                .vendorCode(financingHdr.getCustomer().getCustExternalCode())
-//                .build();
-//
-//       /* try {
-//            //akan dicobal teruis di  shcedule samap 200
-//            financingRemoteService.updateFinancingStatus(
-//                    updateFinancingStatusRequest
-//            );
-//        } catch (Exception ignored) {  }*/
-//        boolean bypass = true;
-//        if (!bypass) {
-//            //gagal kalo api bermsalah
-//            financingRemoteService.updateFinancingStatus(
-//                    updateFinancingStatusRequest
-//            );
-//        }
-//
-//
-//        //Branch admin melakukan upload dokumen perjanjian kerjasama
-//        financingHdr.setFinancingStatus("INPROCESS");
-//        financingHdr.setFinancingStep("SIGNED");//SIGNING
-//        financingHdrRepository.save(financingHdr);
-//
-//
-//
-//        try {
-//            Customer customer = financingHdr.getCustomer();
-//
-//
-//            final FinancingHdrDto createdFinancing = financingHdrService.dtoFromEntity(financingHdr);
-//
-//            final List<InvoiceEmailPayload> invoices = createdFinancing.getDetails()
-//                    .stream()
-//                    .map((item) ->
-//                            InvoiceEmailPayload.builder()
-//                                    //.seq(item.getInvoiceSeqno())
-//                                    .invoiceNo(item.getInvoice().getCustInvNo())
-//                                    .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
-//                                    .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
-//                                    .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-//                                    .description("Invoice By Trakindo")
-//                                    .bouwheerName(createdFinancing.getBouwheer().getBouwheerName())
-//                                    .build()
-//                    ).toList();
-//
-//
-//
-//
-//            final double totalFeeAmt =
-//                    createdFinancing.getAdminFeeAmt()
-//                            + createdFinancing.getLegalFeeAmtNett()
-//                            + createdFinancing.getInsuranceFeeAmt()
-//                            + createdFinancing.getOthersFeeAmt()
-//                            + createdFinancing.getProvisionFeeAmt()
-//                            + createdFinancing.getSurveyFeeAmtNett();
-//
-//            String phoneNumber = createdFinancing.getCustomer().getCustMobilePhone();
-//            if(createdFinancing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
-//                Optional<CustomerCompany> customerCompany = customerCompanyRepository.findByCustomer(createdFinancing.getCustomer());
-//                if (customerCompany.isPresent()){
-//                    if (customerCompany.get().getPhone()!=null && !customerCompany.get().getPhone().equalsIgnoreCase("")){
-//                        phoneNumber = customerCompany.get().getPhone();
-//                    }
-//                }
-//            }else{
-//                Optional<CustomerPersonal> customerPersonal = customerPersonalRepository.findByCustomer(createdFinancing.getCustomer());
-//                if (customerPersonal.isPresent()){
-//                    if (customerPersonal.get().getPhone()!=null && !customerPersonal.get().getPhone().equalsIgnoreCase("")){
-//                        phoneNumber = customerPersonal.get().getPhone();
-//                    }
-//                }
-//            }
-//
-//            //kirim email setelah  pengajuan debitur telah disetujui (setelah uoload kontark)
-//            emailService.sendNotificationLoanDisbursement(
-//                    customer,
-//                    LoanDisburseEmailPayload.builder()
-//                            .financingCode(createdFinancing.getFinancingHdrCode().toString())
-//                            .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
-//                            .companyName(customer.getCustName())//createdFinancing.getBouwheer().getBouwheerName()
-//                            .phoneNumber(phoneNumber)
-//                            .tenor(createdFinancing.getTenor())
-//                            .financingCode(createdFinancing.getFinancingHdrCode().toString())
-//                            .financingDueDate(DateTimeUtils.formatToDate(createdFinancing.getFinancingDueDate()))
-//                            .retention(CommonFormattingUtils.formatAmount(createdFinancing.getRetention()))
-//                            .financingAmt(CommonFormattingUtils.formatAmount(createdFinancing.getFinancingAmt()))
-//                            .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-//                            .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getTotalInvoiceAmt()))
-//                            .disburseAmt(CommonFormattingUtils.formatAmount(createdFinancing.getDisburseAmt()))
-//                            .invoices(invoices)
-//                            .build()
-//            );
-//        } catch (Exception ig) {
-//            ig.printStackTrace();
-//        }
+        final UpdateFinancingStatusRequest updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
+                .financingCode(financingHdrCode)
+                .status(UpdateFinancingStatusRequest.Status.Approved)
+                .vendorCode(financingHdr.getCustomer().getCustExternalCode())
+                .build();
+
+       /* try {
+            //akan dicobal teruis di  shcedule samap 200
+            financingRemoteService.updateFinancingStatus(
+                    updateFinancingStatusRequest
+            );
+        } catch (Exception ignored) {  }*/
+        boolean bypass = true;
+        if (!bypass) {
+            //gagal kalo api bermsalah
+            financingRemoteService.updateFinancingStatus(
+                    updateFinancingStatusRequest
+            );
+        }
+
+
+        //Branch admin melakukan upload dokumen perjanjian kerjasama
+        financingHdr.setFinancingStatus("INPROCESS");
+        financingHdr.setFinancingStep("SIGNED");//SIGNING
+        financingHdrRepository.save(financingHdr);
+
+
+
+        try {
+            Customer customer = financingHdr.getCustomer();
+
+
+            final FinancingHdrDto createdFinancing = financingHdrService.dtoFromEntity(financingHdr);
+
+            final List<InvoiceEmailPayload> invoices = createdFinancing.getDetails()
+                    .stream()
+                    .map((item) ->
+                            InvoiceEmailPayload.builder()
+                                    //.seq(item.getInvoiceSeqno())
+                                    .invoiceNo(item.getInvoice().getCustInvNo())
+                                    .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
+                                    .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+                                    .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
+                                    .description("Invoice By Trakindo")
+                                    .bouwheerName(createdFinancing.getBouwheer().getBouwheerName())
+                                    .build()
+                    ).toList();
+
+
+
+
+            final double totalFeeAmt =
+                    createdFinancing.getAdminFeeAmt()
+                            + createdFinancing.getLegalFeeAmtNett()
+                            + createdFinancing.getInsuranceFeeAmt()
+                            + createdFinancing.getOthersFeeAmt()
+                            + createdFinancing.getProvisionFeeAmt()
+                            + createdFinancing.getSurveyFeeAmtNett();
+
+            String phoneNumber = createdFinancing.getCustomer().getCustMobilePhone();
+            if(createdFinancing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
+                Optional<CustomerCompany> customerCompany = customerCompanyRepository.findByCustomer(createdFinancing.getCustomer());
+                if (customerCompany.isPresent()){
+                    if (customerCompany.get().getPhone()!=null && !customerCompany.get().getPhone().equalsIgnoreCase("")){
+                        phoneNumber = customerCompany.get().getPhone();
+                    }
+                }
+            }else{
+                Optional<CustomerPersonal> customerPersonal = customerPersonalRepository.findByCustomer(createdFinancing.getCustomer());
+                if (customerPersonal.isPresent()){
+                    if (customerPersonal.get().getPhone()!=null && !customerPersonal.get().getPhone().equalsIgnoreCase("")){
+                        phoneNumber = customerPersonal.get().getPhone();
+                    }
+                }
+            }
+
+            //kirim email setelah  pengajuan debitur telah disetujui (setelah uoload kontark)
+            emailService.sendNotificationLoanDisbursement(
+                    customer,
+                    LoanDisburseEmailPayload.builder()
+                            .financingCode(createdFinancing.getFinancingHdrCode().toString())
+                            .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
+                            .companyName(customer.getCustName())//createdFinancing.getBouwheer().getBouwheerName()
+                            .phoneNumber(phoneNumber)
+                            .tenor(createdFinancing.getTenor())
+                            .financingCode(createdFinancing.getFinancingHdrCode().toString())
+                            .financingDueDate(DateTimeUtils.formatToDate(createdFinancing.getFinancingDueDate()))
+                            .retention(CommonFormattingUtils.formatAmount(createdFinancing.getRetention()))
+                            .financingAmt(CommonFormattingUtils.formatAmount(createdFinancing.getFinancingAmt()))
+                            .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+                            .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getTotalInvoiceAmt()))
+                            .disburseAmt(CommonFormattingUtils.formatAmount(createdFinancing.getDisburseAmt()))
+                            .invoices(invoices)
+                            .build()
+            );
+        } catch (Exception ig) {
+            ig.printStackTrace();
+        }
        //sebelunya auto assing
 
         return new CommonResult<>().success(

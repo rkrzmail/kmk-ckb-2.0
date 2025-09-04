@@ -296,18 +296,24 @@ public class EmailService {
                 payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
             }
 
-            args.put("email", customer.getCustEmail());
-            args.put("name", customer.getCustName());
+//            args.put("email", customer.getCustEmail());
+//            args.put("name", customer.getCustName());
+            args.put("email","tedyaditia047@gmail.com");
+            args.put("name", customer.getCustEmail());
             args.put("id_no", customer.getCustIdNo());
             args.put("additionalArgs", payloadArgs);
 
             EmailTemplate template = emailTemplateRepository
                     .findByEmailTemplateCodeAndIsActive(M_CUST_LOAN_SUBMITED, true);
-            template.setMailTo(customer.getCustEmail());
-            template.setMailTo(customer.getCustEmail());
+//            template.setMailTo(customer.getCustEmail());
+//            template.setMailTo(customer.getCustEmail());
+            template.setMailTo("tedyaditia047@gmail.com");
+//            template.setMailTo(customer.getCustEmail());
 
 //            sendMailMessage(template, customer.getCustEmail());
             send(args, template);
+
+            log.info("ini cust email : {}", customer.getCustEmail());
 
         } catch (Exception e) {
             log.error("Error sendNotificationLoanSubmited {}", e.getMessage());

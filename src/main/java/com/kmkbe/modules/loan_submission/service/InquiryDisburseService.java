@@ -355,25 +355,25 @@ public class InquiryDisburseService {
             List<InvoiceEmailPayload> invoices = Arrays.asList(
                     InvoiceEmailPayload.builder()
                             .invoiceNo("INV-DEBUG-001")
-                            .description("Invoice Test Debug")
-                            .bouwheerName("PT Bouwheer Debug")
+                            .description("Invoice by Trakindo")
+                            .bouwheerName("PT. Trakindo Utama")
                             .invoiceDate("01/01/2024")
                             .invoiceDueDate("15/01/2024")
                             .invoiceAmt("1.000.000")
                             .build(),
                     InvoiceEmailPayload.builder()
                             .invoiceNo("INV-DEBUG-002")
-                            .description("Invoice Test Debug 2")
-                            .bouwheerName("PT Bouwheer Debug")
+                            .description("Invoice by Trakindo")
+                            .bouwheerName("PT. Trakindo Utama")
                             .invoiceDate("02/01/2024")
                             .invoiceDueDate("16/01/2024")
                             .invoiceAmt("2.000.000")
                             .build()
             );
-            LoanDisburseEmailPayload payload = LoanDisburseEmailPayload.builder()
+            PencarianPayload payload = PencarianPayload.builder()
                     .financingCode("FIN-DEBUG-001")
                     .applicationDate("15/01/2024")
-                    .companyName("debug")
+                    .companyName("Customer Company")
                     .phoneNumber("081234567890")
                     .tenor(Long.valueOf("40"))
                     .financingDueDate("15/02/2024")
@@ -382,9 +382,9 @@ public class InquiryDisburseService {
                     .totalFeeAmt("500.000")
                     .invoiceAmt("3.000.000")
                     .disburseAmt("9.500.000")
-                    .email("radema.panjaitan@csul.co.id")
-                    .toEmail("radema.panjaitan@csul.co.id")
-                    .ccEmail("radema.panjaitan@csul.co.id")
+//                    .email("radema.panjaitan@csul.co.id")
+//                    .toEmail("radema.panjaitan@csul.co.id")
+//                    .ccEmail("radema.panjaitan@csul.co.id")
                     .invoices(invoices)
                     .build();
 
@@ -401,11 +401,11 @@ public class InquiryDisburseService {
 //                    .invoices(invoices)
 //                    .build();
 
-            emailService.sendNotificationLoanSubmited(
-//                    "radema.panjaitan@csul.co.id",
-//                    "bouwheer",
-//                    "Jakarta 1",
-                    Customer.builder().build(),
+            emailService.sendNotificationPencairan(
+                    "radema.panjaitan@csul.co.id",
+                    "PT. Trakindo Utama",
+                    "Jakarta 1",
+//                    Customer.builder().build(),
                     payload
             );
 
