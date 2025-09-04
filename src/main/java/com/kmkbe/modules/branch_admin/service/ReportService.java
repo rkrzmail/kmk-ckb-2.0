@@ -625,9 +625,14 @@ public class ReportService {
         BigDecimal appFeeAdministration = BigDecimal.ZERO;
         BigDecimal appFeeInsurance = BigDecimal.ZERO;
         BigDecimal appFeeCreditInsurance = BigDecimal.ZERO;
-        BigDecimal administrationFactoring = appFeeFactoring.add(appFeeAdministration);
+
         BigDecimal ntfAmt = new BigDecimal(findata.getNtfAmount());
-        BigDecimal ntfAmtTotal = ntfAmt.subtract(administrationFactoring);
+
+        params.put("AppFeeAmtAdministration", fmtAmount(BigDecimal.ZERO));
+        params.put("AppFeeAmtFactoring", fmtAmount(BigDecimal.ZERO));
+        params.put("AppFeeInsurance", fmtAmount(BigDecimal.ZERO));
+        params.put("AppFeeCreditInsurance", fmtAmount(BigDecimal.ZERO));
+
 
         for (var fee : financialData.getFeeList()) {
             if (fee.getFeeTypeName() != null) {
@@ -661,6 +666,8 @@ public class ReportService {
             }
             totalInsuranceText.append("Asuransi Kredit");
         }
+        BigDecimal administrationFactoring = appFeeFactoring.add(appFeeAdministration);
+        BigDecimal ntfAmtTotal = ntfAmt.subtract(administrationFactoring);
 
         params.put("Administration+Factoring", fmtAmount(administrationFactoring.toString()));
         params.put("NtfAmt-Total", ntfAmtTotal.toString());

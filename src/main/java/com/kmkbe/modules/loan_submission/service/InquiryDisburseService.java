@@ -373,7 +373,7 @@ public class InquiryDisburseService {
             LoanDisburseEmailPayload payload = LoanDisburseEmailPayload.builder()
                     .financingCode("FIN-DEBUG-001")
                     .applicationDate("15/01/2024")
-                    .companyName("Tedy Aditia")
+                    .companyName("debug")
                     .phoneNumber("081234567890")
                     .tenor(Long.valueOf("40"))
                     .financingDueDate("15/02/2024")
@@ -382,9 +382,9 @@ public class InquiryDisburseService {
                     .totalFeeAmt("500.000")
                     .invoiceAmt("3.000.000")
                     .disburseAmt("9.500.000")
-                    .email("tedyaditia047@gmail.com")
-                    .toEmail("tedyaditia047@gmail.com")
-                    .ccEmail("tedyaditia047@gmail.com")
+                    .email("radema.panjaitan@csul.co.id")
+                    .toEmail("radema.panjaitan@csul.co.id")
+                    .ccEmail("radema.panjaitan@csul.co.id")
                     .invoices(invoices)
                     .build();
 
@@ -401,10 +401,11 @@ public class InquiryDisburseService {
 //                    .invoices(invoices)
 //                    .build();
 
-            emailService.sendNotificationMajorAccount(
-                    "tedyaditia047@gmail.com",
-                    "bouwheer",
-                    "413",
+            emailService.sendNotificationLoanSubmited(
+//                    "radema.panjaitan@csul.co.id",
+//                    "bouwheer",
+//                    "Jakarta 1",
+                    Customer.builder().build(),
                     payload
             );
 
