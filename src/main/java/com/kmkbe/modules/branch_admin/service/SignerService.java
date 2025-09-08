@@ -916,6 +916,8 @@ public class SignerService {
                 .ifPresent(finHdr -> {
                     if ("Signing in Process".equalsIgnoreCase(stampStatus)) {
                         finHdr.setFinancingStep("SIGNING");
+                    } else if ("Menunggu TTD".equalsIgnoreCase(stampStatus)) {
+                        finHdr.setFinancingStep("SIGNING");
                     } else if ("signed".equalsIgnoreCase(stampStatus)) {
                         finHdr.setFinancingStep("SIGNED");
                     }
