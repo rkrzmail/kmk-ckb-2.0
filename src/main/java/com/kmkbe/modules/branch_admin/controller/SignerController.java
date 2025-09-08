@@ -170,4 +170,16 @@ public class SignerController {
                 .success(responseData, "Signer tersedia");
     }
 
+    @GetMapping("/check-send-document/{financingHdrCode}/{agreementCode}")
+    public CommonResult<Map<String, Object>> checkSendDocument(
+            @PathVariable String financingHdrCode,
+            @PathVariable String agreementCode) {
+
+        Map<String, Object> responseData = signerService.checkSendDocument(financingHdrCode, agreementCode);
+
+        return new CommonResult<Map<String, Object>>()
+                .success(responseData, (String) responseData.get("message"));
+    }
+
+
 }

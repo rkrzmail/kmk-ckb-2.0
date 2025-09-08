@@ -1014,5 +1014,35 @@ public class SignerService {
         }
     }
 
+    public Map<String, Object> checkSendDocument(String financingHdrCode, String agreementCode) {
+        Map<String, Object> response = new HashMap<>();
+
+        List<AgreementFileSigning> existingFiles = agreementFileSigningRepository.findByAgreementCode(agreementCode);
+
+        if (existingFiles.isEmpty()) {
+            // Belum pernah dikirim -> belum ada tanda tangan
+            response.put("needConfirmation", false);
+            response.put("message", "Dokumen belum pernah dikirim, bisa langsung kirim");
+            return response;
+        }
+
+        AgreementFileSigning file = existingFiles.get(0);
+
+        // Kalau progress ada tapi belum lengkap (misalnya 1/2, 2/3)
+        boolean partialSigned = file.getSignProgress() != null
+                && !file.getSignProgress().split("/")[0].equals(file.getSignProgress().split("/")[1]);
+
+        if (partialSigned) {
+            response.put("needConfirmation", true);
+            response.put("message", "Dokumen sudah ditandatangani sebagian (" + file.getSignProgress() + "). Apakah Anda yakin ingin mengirim ulang?");
+            return response;
+        }
+
+        // Default -> belum ada tanda tangan sama sekali
+        response.put("needConfirmation", false);
+        response.put("message", "Dokumen belum ditandatangani, bisa langsung kirim");
+        return response;
+    }
+
 
 }
