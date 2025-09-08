@@ -672,9 +672,9 @@ public class SignerService {
             String custNo = agreement.getCwr().getCustomer().getCustNo();
             String cwrNo = agreement.getCwr().getCwrCode();
 
-            //hardcode
-//            String custNo = "41000001137";
-//            String cwrNo = "41350CWR2024454";
+            if (custNo == null || custNo.isBlank()) {
+                throw new IllegalArgumentException("custNo untuk financingHdrCode " + financingHdrCode + " tidak tersedia");
+            }
 
             SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
             ExternalApiResponse response = callExternalApi(request);
@@ -684,6 +684,8 @@ public class SignerService {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException("Failed to get signers from external API: " + e.getMessage());
         }
@@ -693,20 +695,15 @@ public class SignerService {
         SignerCheckResultDto result = new SignerCheckResultDto();
         result.setConfinsSigners(externalApiSigners);
 
-        List<String> matched = new ArrayList<>();
         List<String> unmatched = new ArrayList<>();
 
-        for (String signer : externalApiSigners) {
-            if (dbSigners.contains(signer)) {
-                matched.add(signer);
-            } else {
-                unmatched.add(signer);
+        for (String dbSigner : dbSigners) {
+            if (!externalApiSigners.contains(dbSigner)) {
+                unmatched.add(dbSigner);
             }
         }
 
-        result.setDBSigners(matched);
         result.setUnmatchedSigners(unmatched);
-
         return result;
     }
 

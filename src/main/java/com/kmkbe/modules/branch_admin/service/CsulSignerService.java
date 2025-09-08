@@ -44,7 +44,9 @@ public class CsulSignerService {
 
     public List<SignerCsulDto> signerCsulList(Authentication authentication) {
 
-        List<CsulSigner> entities = csulSignerRepository.findAll();
+        String username = authentication.getName();
+
+        List<CsulSigner> entities = csulSignerRepository.findByUsrCrt(username);
         return entities.stream()
                 .map(e -> SignerCsulDto.builder()
                         .signerId(e.getSignerId())

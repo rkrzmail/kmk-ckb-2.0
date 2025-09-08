@@ -117,14 +117,22 @@ public class SignerController {
     public CommonResult<SignerCheckResultDto> checkSigners(
             @PathVariable String financingHdrCode,
             @PathVariable String agreementNo) {
-        SignerCheckResultDto result = signerService.compareSigners(financingHdrCode, agreementNo);
+        try {
+            SignerCheckResultDto result = signerService.compareSigners(financingHdrCode, agreementNo);
 
-        if (result.getUnmatchedSigners().isEmpty()) {
+            if (result.getUnmatchedSigners().isEmpty()) {
+                return new CommonResult<SignerCheckResultDto>()
+                        .success(result, "Tidak ada perubahan signer pada confins");
+            } else {
+                return new CommonResult<SignerCheckResultDto>()
+                        .fail(400, "Ada perubahan data signer pada confins", result);
+            }
+        } catch (IllegalArgumentException e) {
             return new CommonResult<SignerCheckResultDto>()
-                    .success(result, "Tidak ada perubahan signer pada confins");
-        } else {
+                    .fail(400, e.getMessage(), null);
+        } catch (Exception e) {
             return new CommonResult<SignerCheckResultDto>()
-                    .fail(400, "Ada perubahan data signer pada confins", result);
+                    .fail(500, e.getMessage(), null);
         }
     }
 

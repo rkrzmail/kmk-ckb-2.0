@@ -21,4 +21,6 @@ public interface CsulSignerRepository extends JpaRepository<CsulSigner, Long> {
 
     Optional<CsulSigner> findByKaryawanName(String karyawanName);
 
+    List<CsulSigner> findByUsrCrt(String usrCrt);
+
 }
