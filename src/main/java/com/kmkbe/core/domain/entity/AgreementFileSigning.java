@@ -63,6 +63,12 @@ public class AgreementFileSigning {
     @Column(name = "email_signer")
     private String emailSigner;
 
+    @Column(name = "verif_date")
+    private LocalDateTime verifDate;
+
+    @Column(name = "sign_progress")
+    private String signProgress;
+
     // Getters and Setters
     public Long getAgreementFileId() { return agreementFileId; }
     public void setAgreementFileId(Long agreementFileId) { this.agreementFileId = agreementFileId; }

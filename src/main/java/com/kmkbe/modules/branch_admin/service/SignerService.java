@@ -836,8 +836,12 @@ public class SignerService {
                             .agreementCode(signing.getAgreementCode())
                             .cwrCode(cwrMap.getOrDefault(signing.getAgreementCode(), "")) // di db belum ada
                             .bowheerName(bowheerName)
-                            .verifDate(signing.getDtmCrt() != null ?
-                                    signing.getDtmCrt().format(formatter) : null)
+                            .verifDate(
+                                    signing.getVerifDate() != null
+                                            ? signing.getVerifDate().format(formatter)
+                                            : (signing.getDtmCrt() != null ? signing.getDtmCrt().format(formatter) : null)
+                            )
+                            .signProgress(signing.getSignProgress())
                             .status(signing.stamp())
                             .documentId(signing.getDocumentId())
                             .build())
@@ -875,17 +879,67 @@ public class SignerService {
                     Map<String, Object> responseBody = response.getBody();
                     List<Map<String, Object>> statusSigning = (List<Map<String, Object>>) responseBody.get("statusSigning");
 
+//                    if (statusSigning != null) {
+//                        for (Map<String, Object> status : statusSigning) {
+//                            if (signing.getDocumentId().equals(status.get("documentId"))) {
+//                                List<Map<String, String>> signers = (List<Map<String, String>>) status.get("signer");
+//                                String newStatus = determineStatusFromSigners(signers);
+//                                if ("signed".equalsIgnoreCase(newStatus) && signing.getVerifDate() == null) {
+//                                    signing.setVerifDate(LocalDateTime.now());
+//                                }
+//                                signing.setStamp(newStatus);
+////                                signing.setDtmUpd(LocalDateTime.now());
+//                                updateFinancingStep(signing.getFinancingHdrCode(), newStatus);
+//                                break;
+//                            }
+//                        }
+//                    }
                     if (statusSigning != null) {
                         for (Map<String, Object> status : statusSigning) {
                             if (signing.getDocumentId().equals(status.get("documentId"))) {
                                 List<Map<String, String>> signers = (List<Map<String, String>>) status.get("signer");
-                                String newStatus = determineStatusFromSigners(signers);
+
+                                int totalSigners = signers.size();
+                                int signedSigners = 0;
+                                boolean hasFailed = false;
+                                boolean inProcess = false;
+
+                                for (Map<String, String> signer : signers) {
+                                    String signStatus = signer.get("signStatus");
+                                    if ("1".equals(signStatus)) {
+                                        signedSigners++;
+                                    } else if ("2".equals(signStatus)) {
+                                        hasFailed = true;
+                                    } else if ("3".equals(signStatus)) {
+                                        inProcess = true;
+                                    }
+                                }
+
+                                // Simpan progress "x/y"
+                                signing.setSignProgress(signedSigners + "/" + totalSigners);
+
+                                String newStatus;
+                                if (hasFailed) {
+                                    newStatus = "Sign Failed";
+                                } else if (signedSigners == totalSigners) {
+                                    newStatus = "signed";
+                                    // set verifDate kalau baru pertama kali signed
+                                    if (signing.getVerifDate() == null) {
+                                        signing.setVerifDate(LocalDateTime.now());
+                                    }
+                                } else if (inProcess || signedSigners > 0) {
+                                    newStatus = "Signing in Process";
+                                } else {
+                                    newStatus = "Menunggu TTD";
+                                }
+
                                 signing.setStamp(newStatus);
                                 updateFinancingStep(signing.getFinancingHdrCode(), newStatus);
                                 break;
                             }
                         }
                     }
+
                 }
             } catch (Exception e) {
                 signing.setStamp("Menunggu TTD");

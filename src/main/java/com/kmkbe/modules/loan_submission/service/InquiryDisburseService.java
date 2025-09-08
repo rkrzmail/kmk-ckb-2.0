@@ -172,7 +172,8 @@ public class InquiryDisburseService {
                                 //if (agreement.isPresent()){
                                     FinancingHdr financingHdr = agreement.getFinancingHdr();
 
-                                    if (financingHdr.getFinancingStatus().equalsIgnoreCase("INPROCESS")){
+                                    if (financingHdr.getFinancingStatus().equalsIgnoreCase("INPROCESS")
+                                        || financingHdr.getFinancingStep().equalsIgnoreCase("SIGNED")) {
                                         financingHdr.setFinancingStatus("LIVE");//"Disburse"
                                         financingHdr.setFinancingStep("GOLIVE");
                                         financingHdr.setDtmUpd(DateTimeUtils.nowLocal());
