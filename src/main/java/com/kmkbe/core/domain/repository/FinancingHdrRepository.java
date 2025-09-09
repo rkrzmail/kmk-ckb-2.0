@@ -471,10 +471,9 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
                     "JOIN customer c ON f.cust_code = c.cust_code " +
                     "JOIN debtors d ON c.cust_name = d.debtor_name " +
                     "WHERE f.financing_hdr_code = :financingHdrCode " +
-                    "AND d.signhub_status = 'active' " +
-                "LIMIT 1",
+                    "AND d.signhub_status = 'active' ",
             nativeQuery = true)
-    String findSignerNameByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
+    List <String> findSignerNameByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode);
 
     @Query(value = """
     SELECT COUNT(*) 

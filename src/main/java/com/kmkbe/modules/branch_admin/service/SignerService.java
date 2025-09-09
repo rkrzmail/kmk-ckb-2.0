@@ -810,13 +810,16 @@ public class SignerService {
 
             String bowheerName = financingHdr.getBouwheer().getBouwheerName();
 
-            String signerName = financingHdrRepository.findSignerNameByFinancingHdrCode(financingHdrUuid);
+            List<String> signerNames = financingHdrRepository.findSignerNameByFinancingHdrCode(financingHdrUuid);
 
-            List<AgreementFileSigning> fileSignings = agreementFileSigningRepository.findByKaryawan(signerName);
+            List<AgreementFileSigning> fileSignings = new ArrayList<>();
+            for (String signer : signerNames) {
+                fileSignings.addAll(agreementFileSigningRepository.findByKaryawan(signer));
+            }
 
             checkExternalSigningStatus(fileSignings, username);
 
-            fileSignings = agreementFileSigningRepository.findByKaryawan(signerName);
+//            fileSignings = agreementFileSigningRepository.findByKaryawan(signerName);
             DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
             List<String> agreementCodes = fileSignings.stream()

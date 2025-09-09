@@ -221,11 +221,17 @@ public class CustomerDashboardService {
                     PageRequest.of(0, 10)
             );
 
-            String signerName = financingHdrRepository.findSignerNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
+            List<String> signerNames = financingHdrRepository.findSignerNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
+
+            long total = signerNames.stream()
+                    .mapToLong(signer -> agreementFileSigningRepository.countBySigner(signer))
+                    .sum();
+
+//            String signerName = financingHdrRepository.findSignerNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
             Long totalBerjalan = financingHdrRepository.countSigningAndSigned(financingHdrCode);
             Long totalBerakhir = financingHdrRepository.countCompleted(financingHdrCode);
 
-            long total = agreementFileSigningRepository.countBySigner(signerName);
+//            long total = agreementFileSigningRepository.countBySigner(signerName);
 
             return CustomerPerjanjianDto.builder()
                     .financingHdrCode(financingHdr.getFinancingHdrCode())
