@@ -80,12 +80,10 @@ public class EmailService {
             }
 
             args.put("email", customer.getCustEmail());
-//            args.put("email", "tedyaditia047@gmail.com");
             args.put("name", customer.getCustName());
             args.put("id_no", customer.getCustIdNo());
             args.put("additionalArgs", payloadArgs);
 
-            // tambah data lain supaya masuk args
             args.put("financingCode", payload.getFinancingCode());
             args.put("companyName", payload.getCompanyName());
             args.put("phoneNumber", payload.getPhoneNumber());
@@ -101,11 +99,9 @@ public class EmailService {
             String bodyMail = mappingBody(template.getBodyMail(), args);
 
             template.setBodyMail(bodyMail);
-//            template.setMailTo("tedyaditia047@gmail.com");
             template.setMailTo(customer.getCustEmail());
 
             sendMailMessage(template, customer.getCustEmail());
-//            sendMailMessage(template, "tedyaditia047@gmail.com");
 
         } catch (Exception e) {
             log.error("Error sendNotificationLoanSubmited {}", e.getMessage());
@@ -296,25 +292,17 @@ public class EmailService {
                 payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
             }
 
-//            args.put("email", customer.getCustEmail());
-//            args.put("name", customer.getCustName());
-            args.put("email","tedyaditia047@gmail.com");
-            args.put("name", customer.getCustEmail());
+            args.put("email", customer.getCustEmail());
+            args.put("name", customer.getCustName());
             args.put("id_no", customer.getCustIdNo());
             args.put("additionalArgs", payloadArgs);
 
             EmailTemplate template = emailTemplateRepository
                     .findByEmailTemplateCodeAndIsActive(M_CUST_LOAN_SUBMITED, true);
-//            template.setMailTo(customer.getCustEmail());
-//            template.setMailTo(customer.getCustEmail());
-            template.setMailTo("tedyaditia047@gmail.com");
-//            template.setMailTo(customer.getCustEmail());
+            template.setMailTo(customer.getCustEmail());
 
 //            sendMailMessage(template, customer.getCustEmail());
             send(args, template);
-
-            log.info("ini cust email : {}", customer.getCustEmail());
-
         } catch (Exception e) {
             log.error("Error sendNotificationLoanSubmited {}", e.getMessage());
         }
@@ -702,21 +690,13 @@ public class EmailService {
 
             EmailTemplate template = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(M_INV_LINK, true);
 
-            // Debug log
-            log.info("Original template body: {}", template.getBodyMail());
-            log.info("Invitation link to be inserted: {}", invitationLink);
-
             Map<String, Object> args = new HashMap<>();
             args.put("invitationLink", invitationLink);
-            // Jika template membutuhkan name juga
-            args.put("name", "Customer"); // atau nilai default jika tidak ada
+            args.put("name", "Customer");
 
             String bodyMail = template.getBodyMail()
                     .replace("${invitationLink}", invitationLink)
                     .replace("${name}", karyawanName);
-
-            // Debug log
-            log.info("Processed template body: {}", bodyMail);
 
             template.setBodyMail(bodyMail);
             template.setMailTo(toEmail);

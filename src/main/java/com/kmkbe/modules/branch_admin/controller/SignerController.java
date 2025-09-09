@@ -4,6 +4,7 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.modules.branch_admin.service.AssignmentSubmissionService;
 import com.kmkbe.modules.branch_admin.service.SignerService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class SignerController {
     private final SignerService signerService;
+    private final AssignmentSubmissionService assignmentSubmissionService;
 
     @GetMapping("/list")
     public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
@@ -90,12 +92,20 @@ public class SignerController {
         }
     }
 
-    @GetMapping("/getSigners/{financingHdrCode}/{agreementNo}")
-    public CommonResult<PersonDto> getSigners(
+    @GetMapping("/getSigners/{financingHdrCode}/{agreementCode}")
+    public CommonResult<List<PersonDto>> getSigners(
             @PathVariable String financingHdrCode,
-            @PathVariable String agreementNo) {
-        PersonDto result = signerService.getSignersFromExternalApi(financingHdrCode, agreementNo);
-        return new CommonResult<PersonDto>().success(result);
+            @PathVariable String agreementCode,
+            HttpServletRequest httpServletRequest,
+            Authentication authentication
+    ) throws SignatureException{
+        PaginationResult<AssignmentDto> originalResult =
+                assignmentSubmissionService.assignmentList(httpServletRequest, authentication, new PaginationRequest());
+
+        List<AssignmentDto> originalList = originalResult.getList();
+        List<PersonDto> allSigners = signerService.getSignersForGroup(financingHdrCode, originalList);
+
+        return new CommonResult<List<PersonDto>>().success(allSigners);
     }
 
     @GetMapping("/signer-agreement/{financingHdrCode}")
@@ -180,6 +190,5 @@ public class SignerController {
         return new CommonResult<Map<String, Object>>()
                 .success(responseData, (String) responseData.get("message"));
     }
-
 
 }

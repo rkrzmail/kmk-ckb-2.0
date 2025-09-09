@@ -30,8 +30,6 @@ public class ReportController {
     @Autowired
     private ReportService reportService;
 
-    private final Map<String, byte[]> reportCache = new ConcurrentHashMap<>();
-
     @GetMapping("/visitor")
     public CommonResult<PaginationResult<VisitorDto>> getlistVisitor(
             Authentication authentication, PaginationRequest request

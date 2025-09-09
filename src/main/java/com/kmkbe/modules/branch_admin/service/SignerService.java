@@ -80,6 +80,8 @@ public class SignerService {
         PaginationResult<AssignmentDto> originalResult =
                 assignmentSubmissionService.assignmentList(httpServletRequest, authentication, request);
 
+//        List<AssignmentDto> originalList = new ArrayList<>(originalResult.getList());
+
         Map<UUID, AssignmentDto> grouped = originalResult.getList().stream()
                 .collect(Collectors.toMap(
                         AssignmentDto::getCustCode,
@@ -260,9 +262,6 @@ public class SignerService {
             signerRequestBody.put("cwrNo", agreement.getCwr().getCwrCode());
             signerRequestBody.put("RequestDateTime", LocalDate.now().toString());
 
-            log.info("ini custNo: " + agreement.getCwr().getCustomer().getCustNo());
-            log.info("ini cwrNo: " + agreement.getCwr().getCwrCode());
-
             HttpHeaders headers = new HttpHeaders();
             headers.set("AdInsKey", adinsKey);
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -284,7 +283,6 @@ public class SignerService {
                     boolean isSignerFound = returnObject.stream()
                             .anyMatch(signer -> debtorDto.getKaryawanName().equalsIgnoreCase(signer.get("SignerName").toString()));
 
-                    log.info("ini isi debtorDto.getKaryawanName() : " + debtorDto.getKaryawanName());
                     debtorDto.setSignerStatus(isSignerFound ? "active" : "not active");
                 } else {
                     debtorDto.setSignerStatus("not active");
@@ -337,7 +335,6 @@ public class SignerService {
     @Transactional
     public DebtorDto createDebtor(DebtorDto debtorDto, Authentication authentication) {
         try {
-            log.info("createDebtor: {}", debtorDto);
 
             if (debtorRepository.existsByIdentityNo(debtorDto.getIdentityNo())) {
                 throw new RuntimeException("NIK yang digunakan sudah terdaftar");
@@ -351,9 +348,7 @@ public class SignerService {
             headers.setContentType(MediaType.APPLICATION_JSON);
             headers.set("x-api-key", apiKey);
 
-            log.info("Calling Registration API for debtor with identityNo: {}", debtorDto.getIdentityNo());
             Map<String, Object> registerResponse = callRegistrationApi(debtorDto, headers, username);
-            log.info("Register API Response: {}", registerResponse);
 
             String registrationStatus = "0";
 
@@ -368,14 +363,12 @@ public class SignerService {
 
             switch (registrationStatus) {
                 case "0":
-                    log.info("Calling Invitation API for debtor: {}", debtorDto.getDebtorName());
                     Map<String, Object> inviteResponse = callInvitationApi(debtorDto, headers, username);
                     String invitationLink = (String) inviteResponse.get("link");
                     if (invitationLink == null) {
                         throw new RuntimeException("Gagal generate link undangan");
                     }
 
-                    log.info("Sending invitation email to: {}", debtorDto.getEmail());
                     emailService.sendInvitationLinkEmail(
                             debtorDto.getEmail(),
                             invitationLink,
@@ -416,7 +409,6 @@ public class SignerService {
         );
 
         Map<String, Object> responseBody = response.getBody();
-        log.info("Registration API Response Body: {}", responseBody);
         if (responseBody == null) {
             throw new RuntimeException("API registrasi tidak memberikan response");
         }
@@ -458,10 +450,8 @@ public class SignerService {
                 new HttpEntity<>(requestBody, headers),
                 Map.class
         );
-        log.info("Invitation API Request Body: {}", requestBody);
 
         Map<String, Object> responseBody = response.getBody();
-        log.info("Invitation API Response Body: {}", responseBody);
         if (responseBody == null) {
             throw new RuntimeException("API undangan tidak memberikan response");
         }
@@ -523,6 +513,69 @@ public class SignerService {
         return debtorMapper.entityToDto(savedDebtor);
     }
 
+    public List<PersonDto> getSignersForGroup(String financingHdrCode,  List<AssignmentDto> originalList) {
+
+        AssignmentDto target = originalList.stream()
+                .filter(a -> a.getFinancingHdrCode().toString().equals(financingHdrCode))
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("FinancingHdrCode tidak ditemukan"));
+
+        UUID custCode = target.getCustCode();
+
+        List<UUID> friendFinancingHdrCodes = originalList.stream()
+                .filter(a -> a.getCustCode().equals(custCode))
+                .map(AssignmentDto::getFinancingHdrCode)
+                .toList();
+
+        List<PersonDto> allSigners = new ArrayList<>();
+
+        for (UUID fHdrCode : friendFinancingHdrCodes) {
+
+            String agreementNo = agreementRepository
+                    .findAgreement(fHdrCode)
+                    .map(Agreement::getAgreementCode)
+                    .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan"));
+
+            PersonDto signer = getSignersFromExternalApi(fHdrCode.toString(), agreementNo);
+
+            allSigners.add(signer);
+        }
+        return allSigners;
+    }
+
+    // debug
+//    public PersonDto getSignersFromExternalApi(String financingHdrCode, String agreementNo) {
+//        PersonDto result = new PersonDto();
+//        try {
+//            String custNo;
+//            String cwrNo;
+//
+//            // Ambil data dari database (atau hardcode)
+//            UUID uuid = UUID.fromString(financingHdrCode);
+//            Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid, agreementNo)
+//                    .orElseThrow(() -> new RuntimeException("Agreement not found"));
+//
+//            custNo = agreement.getCwr().getCustomer().getCustNo();
+//            cwrNo = agreement.getCwr().getCwrCode();
+//
+//            // Log semua data yang akan dikirim
+//            log.info("financingHdrCode: {}", financingHdrCode);
+//            log.info("agreementNo: {}", agreementNo);
+//            log.info("custNo: {}", custNo);
+//            log.info("cwrNo: {}", cwrNo);
+//
+//            result.setStatusCode("200");
+//            result.setMessage("Simulasi sukses, API eksternal OFF");
+//            result.setSigners(List.of());
+//
+//            return result;
+//
+//        } catch (Exception e) {
+//            result.setStatusCode("500");
+//            result.setMessage("Error: " + e.getMessage());
+//            return result;
+//        }
+//    }
 
     public PersonDto getSignersFromExternalApi(String financingHdrCode, String agreementNo) {
         boolean useHardcode = false; // Ganti nilai ini untuk switch mode
@@ -534,7 +587,6 @@ public class SignerService {
             if (useHardcode) {
                 custNo = "41000001137";
                 cwrNo = "41350CWR2024454";
-                log.info("Menggunakan data hardcode - custNo: {}, cwrNo: {}", custNo, cwrNo);
             } else {
                 UUID uuid = UUID.fromString(financingHdrCode);
                 Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid, agreementNo)
@@ -542,7 +594,6 @@ public class SignerService {
 
                 custNo = agreement.getCwr().getCustomer().getCustNo();
                 cwrNo = agreement.getCwr().getCwrCode();
-                log.info("Menggunakan data database - custNo: {}, cwrNo: {}", custNo, cwrNo);
             }
 
             SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
@@ -658,7 +709,6 @@ public class SignerService {
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
-            log.info("Signers dari DB (financingHdrCode={}): {}", financingHdrCode, dbSigners);
             return dbSigners;
 
         } catch (Exception e) {
@@ -949,7 +999,6 @@ public class SignerService {
                 signing.setStamp("Menunggu TTD");
             } finally {
                 AgreementFileSigning updated =agreementFileSigningRepository.save(signing);
-                log.info("Updated signing id={} stamp={}", updated.getAgreementFileId(), updated.getStamp());
             }
         }
     }
@@ -980,7 +1029,6 @@ public class SignerService {
                         finHdr.setFinancingStep("SIGNED");
                     }
                     financingHdrRepository.save(finHdr);
-                    log.info("Updated financingHdrCode={} step={}", financingHdrCode, finHdr.getFinancingStep());
                 });
     }
 

@@ -322,97 +322,97 @@ public class InquiryDisburseService {
         return result;
     }
 
-    public void debugSendEmail() {
-        try {
-            List<FinancingDtl> financingDtls = financingDtlRepository.findByUsrCrt("abdul")
-                    .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
-
-            MailPositionDto ccBM = configRemoteService.getEmailByPosition("", "999", "CMS");
-            StringBuilder ccEmailBuilder = new StringBuilder();
-
-            if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
-                for (int i = 0; i < ccBM.getData().size(); i++) {
-                    ccEmailBuilder.append(!ccEmailBuilder.isEmpty() ? ";" : "");
-                    ccEmailBuilder.append(ccBM.getData().get(i).getEmail());
-                }
-            }
-
-            String mjrEmail = ccEmailBuilder.toString();
-            log.info("email CMS: {}", mjrEmail);
-
-//            List<InvoiceEmailPayload> invoices = financingDtls
-//                    .stream()
-//                            .map((item) ->
+//    public void debugSendEmail() {
+//        try {
+//            List<FinancingDtl> financingDtls = financingDtlRepository.findByUsrCrt("abdul")
+//                    .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
+//
+//            MailPositionDto ccBM = configRemoteService.getEmailByPosition("", "999", "CMS");
+//            StringBuilder ccEmailBuilder = new StringBuilder();
+//
+//            if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
+//                for (int i = 0; i < ccBM.getData().size(); i++) {
+//                    ccEmailBuilder.append(!ccEmailBuilder.isEmpty() ? ";" : "");
+//                    ccEmailBuilder.append(ccBM.getData().get(i).getEmail());
+//                }
+//            }
+//
+//            String mjrEmail = ccEmailBuilder.toString();
+//            log.info("email CMS: {}", mjrEmail);
+//
+////            List<InvoiceEmailPayload> invoices = financingDtls
+////                    .stream()
+////                            .map((item) ->
+////                    InvoiceEmailPayload.builder()
+////                            .invoiceNo("INV-DEBUG-001")
+////                            .description("Invoice Test Debug")
+////                            .bouwheerName("PT Bouwheer Debug")
+//////                            .invoiceDate("01/01/2024")
+////                            .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+////                            .invoiceDueDate("15/01/2024")
+////                            .invoiceAmt("1.000.000")
+////                            .build()
+////                            ).toList();
+//            List<InvoiceEmailPayload> invoices = Arrays.asList(
 //                    InvoiceEmailPayload.builder()
 //                            .invoiceNo("INV-DEBUG-001")
-//                            .description("Invoice Test Debug")
-//                            .bouwheerName("PT Bouwheer Debug")
-////                            .invoiceDate("01/01/2024")
-//                            .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+//                            .description("Invoice by Trakindo")
+//                            .bouwheerName("PT. Trakindo Utama")
+//                            .invoiceDate("01/01/2024")
 //                            .invoiceDueDate("15/01/2024")
 //                            .invoiceAmt("1.000.000")
+//                            .build(),
+//                    InvoiceEmailPayload.builder()
+//                            .invoiceNo("INV-DEBUG-002")
+//                            .description("Invoice by Trakindo")
+//                            .bouwheerName("PT. Trakindo Utama")
+//                            .invoiceDate("02/01/2024")
+//                            .invoiceDueDate("16/01/2024")
+//                            .invoiceAmt("2.000.000")
 //                            .build()
-//                            ).toList();
-            List<InvoiceEmailPayload> invoices = Arrays.asList(
-                    InvoiceEmailPayload.builder()
-                            .invoiceNo("INV-DEBUG-001")
-                            .description("Invoice by Trakindo")
-                            .bouwheerName("PT. Trakindo Utama")
-                            .invoiceDate("01/01/2024")
-                            .invoiceDueDate("15/01/2024")
-                            .invoiceAmt("1.000.000")
-                            .build(),
-                    InvoiceEmailPayload.builder()
-                            .invoiceNo("INV-DEBUG-002")
-                            .description("Invoice by Trakindo")
-                            .bouwheerName("PT. Trakindo Utama")
-                            .invoiceDate("02/01/2024")
-                            .invoiceDueDate("16/01/2024")
-                            .invoiceAmt("2.000.000")
-                            .build()
-            );
-            PencarianPayload payload = PencarianPayload.builder()
-                    .financingCode("FIN-DEBUG-001")
-                    .applicationDate("15/01/2024")
-                    .companyName("Customer Company")
-                    .phoneNumber("081234567890")
-                    .tenor(Long.valueOf("40"))
-                    .financingDueDate("15/02/2024")
-                    .retention("500.000")
-                    .financingAmt("10.000.000")
-                    .totalFeeAmt("500.000")
-                    .invoiceAmt("3.000.000")
-                    .disburseAmt("9.500.000")
-//                    .email("radema.panjaitan@csul.co.id")
-//                    .toEmail("radema.panjaitan@csul.co.id")
-//                    .ccEmail("radema.panjaitan@csul.co.id")
-                    .invoices(invoices)
-                    .build();
-
-            // to trakindo
-//            BouwheerPaymentEmailPayload payload = BouwheerPaymentEmailPayload.builder()
-//                    .bouwheerName("TRAKINDO")
-//                    .vendorCode("04euw-1038s-21kks1-1233o")
-//                    .vendorName("Tedy Aditia")
-//                    .accountNo("7005592119")
-//                    .bankAccount("014")
-//                    .bankName("BCA")
-//                    .bankKey("100211")
-//                    .tglPengajuan("02/09/2025")
+//            );
+//            PencarianPayload payload = PencarianPayload.builder()
+//                    .financingCode("FIN-DEBUG-001")
+//                    .applicationDate("15/01/2024")
+//                    .companyName("Customer Company")
+//                    .phoneNumber("081234567890")
+//                    .tenor(Long.valueOf("40"))
+//                    .financingDueDate("15/02/2024")
+//                    .retention("500.000")
+//                    .financingAmt("10.000.000")
+//                    .totalFeeAmt("500.000")
+//                    .invoiceAmt("3.000.000")
+//                    .disburseAmt("9.500.000")
+////                    .email("radema.panjaitan@csul.co.id")
+////                    .toEmail("radema.panjaitan@csul.co.id")
+////                    .ccEmail("radema.panjaitan@csul.co.id")
 //                    .invoices(invoices)
 //                    .build();
-
-            emailService.sendNotificationPencairan(
-                    "radema.panjaitan@csul.co.id",
-                    "PT. Trakindo Utama",
-                    "Jakarta 1",
-//                    Customer.builder().build(),
-                    payload
-            );
-
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//
+//            // to trakindo
+////            BouwheerPaymentEmailPayload payload = BouwheerPaymentEmailPayload.builder()
+////                    .bouwheerName("TRAKINDO")
+////                    .vendorCode("04euw-1038s-21kks1-1233o")
+////                    .vendorName("Tedy Aditia")
+////                    .accountNo("7005592119")
+////                    .bankAccount("014")
+////                    .bankName("BCA")
+////                    .bankKey("100211")
+////                    .tglPengajuan("02/09/2025")
+////                    .invoices(invoices)
+////                    .build();
+//
+//            emailService.sendNotificationPencairan(
+//                    "radema.panjaitan@csul.co.id",
+//                    "PT. Trakindo Utama",
+//                    "Jakarta 1",
+////                    Customer.builder().build(),
+//                    payload
+//            );
+//
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 
 }

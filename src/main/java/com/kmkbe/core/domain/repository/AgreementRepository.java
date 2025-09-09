@@ -125,18 +125,6 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     @Query("SELECT a.facility FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
     String findFaciltyByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
-//    @Query(value = """
-//        SELECT i.invoice_due_date AS invoiceDueDate
-//        FROM agreement a
-//        JOIN cwr w ON a.cwr_code = w.cwr_code
-//        JOIN customer c ON w.cust_code = c.cust_code
-//        JOIN invoice i ON c.cust_code = i.cust_code
-//        WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
-//        ORDER BY i.invoice_due_date DESC
-//        LIMIT 1
-//        """, nativeQuery = true)
-//    Optional<Date> findInvoiceDueDateByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
-
     @Query(value = """
         SELECT 
             c.cust_id_no,
@@ -151,20 +139,6 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
         """, nativeQuery = true)
     Optional<Map<String, Object>> finddetailDebtor(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
-
-//    @Query(value = """
-//        SELECT DISTINCT
-//            i.cust_inv_no,
-//            i.invoice_date,
-//            i.invoice_due_date,
-//            i.invoice_amt
-//        FROM agreement a
-//        JOIN cwr w ON a.cwr_code = w.cwr_code
-//        JOIN invoice i ON w.cust_code = i.cust_code
-//        WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
-//        LIMIT 10
-//        """, nativeQuery = true)
-//    List<Map<String, Object>> finddetailInv(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
     @Query("SELECT a FROM Agreement a " +
             "JOIN FETCH a.cwr " +

@@ -562,7 +562,7 @@ public class ReportService {
         if (!karyawanList.isEmpty()) {
             Kdata = karyawanList.get(0);
         } else {
-            List<Debtor> karyawanByName = debtorRepository.findAllKaryawanByDebtorName(debtorName);
+            List<Debtor> karyawanByName = debtorRepository.findActiveSignerByDebtorName(debtorName);
             Kdata = karyawanByName.isEmpty() ? null : karyawanByName.get(0);
 
             System.out.println("Karyawan list size (FinancingHdrCode): " + karyawanList.size());
@@ -935,9 +935,7 @@ public class ReportService {
 
             try {
                 String requestJson = new ObjectMapper().writeValueAsString(request);
-                log.info("E-Sign Request Payload: {}", requestJson);
             } catch (Exception e) {
-                log.error("Error serializing request", e);
             }
 
             ExternalSigningResponse esignResponse = externalApiService.callEsignApi(request);
