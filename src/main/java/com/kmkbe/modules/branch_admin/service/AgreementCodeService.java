@@ -61,15 +61,20 @@ public class AgreementCodeService {
 
             String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(financingHdrCode);
 
-            String signerName = debtorRepository
-                    .findActiveSignerByDebtorName(debtorName)
-                    .map(Debtor::getKaryawanName)
-                    .orElse("-");
+            List<Debtor> signerList = debtorRepository.findActiveSignerByDebtorName(debtorName);
 
-            String jabatan = debtorRepository
-                    .findActiveSignerByDebtorName(debtorName)
-                    .map(Debtor::getJabatan)
-                    .orElse("-");
+            String signerName = signerList.isEmpty() ? "-" : signerList.get(0).getKaryawanName();
+            String jabatan = signerList.isEmpty() ? "-" : signerList.get(0).getJabatan();
+
+//            String signerName = debtorRepository
+//                    .findActiveSignerByDebtorName(debtorName)
+//                    .map(Debtor::getKaryawanName)
+//                    .orElse("-");
+//
+//            String jabatan = debtorRepository
+//                    .findActiveSignerByDebtorName(debtorName)
+//                    .map(Debtor::getJabatan)
+//                    .orElse("-");
 
             String branchCode = financingHdrRepository.findBranchCodeByFinancingHdrCode(financingHdrCode);
             List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "RM", jwtToken);
@@ -117,15 +122,20 @@ public class AgreementCodeService {
 
             String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(financingHdrCode);
 
-            String signerName = debtorRepository
-                    .findActiveSignerByDebtorName(debtorName)
-                    .map(Debtor::getKaryawanName)
-                    .orElse("-");
+            List<Debtor> signerList = debtorRepository.findActiveSignerByDebtorName(debtorName);
 
-            String jabatan = debtorRepository
-                    .findActiveSignerByDebtorName(debtorName)
-                    .map(Debtor::getJabatan)
-                    .orElse("-");
+            String signerName = signerList.isEmpty() ? "-" : signerList.get(0).getKaryawanName();
+            String jabatan = signerList.isEmpty() ? "-" : signerList.get(0).getJabatan();
+
+//            String signerName = debtorRepository
+//                    .findActiveSignerByDebtorName(debtorName)
+//                    .map(Debtor::getKaryawanName)
+//                    .orElse("-");
+//
+//            String jabatan = debtorRepository
+//                    .findActiveSignerByDebtorName(debtorName)
+//                    .map(Debtor::getJabatan)
+//                    .orElse("-");
 
             String bankName = "Bank Mandiri";
             String accountName = "CHANDRA SAKTI UTAMA";

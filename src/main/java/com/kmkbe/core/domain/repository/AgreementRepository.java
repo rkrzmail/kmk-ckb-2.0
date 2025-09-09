@@ -2,6 +2,7 @@ package com.kmkbe.core.domain.repository;
 
 import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.Cwr;
+import com.kmkbe.core.domain.entity.Debtor;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.validation.constraints.NotNull;

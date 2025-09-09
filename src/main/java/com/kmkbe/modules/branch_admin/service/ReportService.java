@@ -556,8 +556,18 @@ public class ReportService {
                 .orElse("Debtor Name");
 
         // 9. Karyawan
-        Optional<Map<String, Object>> karyawanData = debtorRepository.findKaryawanByDebtorName(debtorName);
-        Map<String, Object> Kdata = karyawanData.orElseGet(Collections::emptyMap);
+        List<Debtor> karyawanList = debtorRepository.findKaryawanByFinancingHdrCode(financingHdrCode);
+        Debtor Kdata;
+
+        if (!karyawanList.isEmpty()) {
+            Kdata = karyawanList.get(0);
+        } else {
+            List<Debtor> karyawanByName = debtorRepository.findAllKaryawanByDebtorName(debtorName);
+            Kdata = karyawanByName.isEmpty() ? null : karyawanByName.get(0);
+
+            System.out.println("Karyawan list size (FinancingHdrCode): " + karyawanList.size());
+            System.out.println("Karyawan list size (debtorName): " + karyawanByName.size());
+        }
 
         // 10. Facility
         String facility = agreementRepo.findFaciltyByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode);
@@ -585,11 +595,11 @@ public class ReportService {
         params.put("BankName", dataRekening.getBankName());
         params.put("BankAccNo", dataRekening.getAccNo());
         params.put("BankAccName", dataRekening.getAccName());
-        params.put("NamaKaryawan", Kdata.getOrDefault("Karyawan_name", "-").toString());
-        params.put("Jabatan", Kdata.getOrDefault("Jabatan", "-").toString());
-        params.put("JabatanSigner", Kdata.getOrDefault("Jabatan", "-").toString());
-        params.put("IdentitySigner", Kdata.getOrDefault("identity_no", "-").toString());
-        params.put("AlamatSigner", Kdata.getOrDefault("alamat", "-").toString());
+        params.put("NamaKaryawan", Kdata != null ? Kdata.getKaryawanName() : "-");
+        params.put("Jabatan", Kdata != null ? Kdata.getJabatan() : "-");
+        params.put("JabatanSigner", Kdata != null ? Kdata.getJabatan() : "-");
+        params.put("IdentitySigner", Kdata != null ? Kdata.getIdentityNo() : "-");
+        params.put("AlamatSigner", Kdata != null ? Kdata.getAlamat() : "-");
         params.put("NamaPerusahaan", debtorName);
         params.put("AgrmntNo", agrmntCode);
         params.put("Facility", facility);
@@ -1000,9 +1010,14 @@ public class ReportService {
 
         String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
 
-        Debtor debtor = debtorRepository
-                .findActiveSignerByDebtorName(debtorName)
-                .orElseThrow(() -> new RuntimeException("Tidak ada data signer active dari financingHdr = " + financingHdrCode));
+        List<Debtor> signerList = debtorRepository.findActiveSignerByDebtorName(debtorName);
+
+        Debtor debtor;
+        if (signerList.isEmpty()) {
+            throw new RuntimeException("Tidak ada data signer active dari financingHdr = " + financingHdrCode);
+        } else {
+            debtor = signerList.get(0);
+        }
 
         signers.add(ExternalSigningRequest.Signer.builder()
                         .signAction("mt")
@@ -1042,23 +1057,14 @@ public class ReportService {
     private AgreementFileSigningDto saveToDatabase(String agreementCode, String documentId, String username, String financingHdrCode) {
 
         String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
-        Debtor debtor = debtorRepository
-                .findActiveSignerByDebtorName(debtorName)
-                .orElseThrow(() -> new RuntimeException("Tidak ada data signer active dari financingHdr = " + financingHdrCode));
+        List<Debtor> signerList = debtorRepository.findActiveSignerByDebtorName(debtorName);
 
-//        AgreementFileSigning entity = AgreementFileSigning.builder()
-//                .agreementCode(agreementCode)
-//                .fileTypeCode("E_SIGN_DOC")
-//                .fileName("PERJANJIAN_1A_" + agreementCode + ".pdf")
-//                .stamp("Not Signed")
-//                .usrCrt(username)
-//                .dtmCrt(LocalDateTime.now())
-//                .signer(debtor.getKaryawanName())
-//                .emailSigner(debtor.getEmail())
-//                .identityNo(debtor.getIdentityNo())
-//                .documentId(documentId)
-//                .financingHdrCode(financingHdrCode)
-//                .build();
+        Debtor debtor;
+        if (signerList.isEmpty()) {
+            throw new RuntimeException("Tidak ada data signer active dari financingHdr = " + financingHdrCode);
+        } else {
+            debtor = signerList.get(0);
+        }
 
         List<AgreementFileSigning> existingList = agreementFileSigningRepository.findByAgreementCode(agreementCode);
 

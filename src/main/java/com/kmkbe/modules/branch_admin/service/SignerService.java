@@ -653,10 +653,13 @@ public class SignerService {
 
             List<Debtor> debtors = debtorRepository.findByDebtorName(DebtorName);
 
-            return debtors.stream()
+            List<String> dbSigners = debtors.stream()
                     .map(Debtor::getKaryawanName)
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
+
+            log.info("Signers dari DB (financingHdrCode={}): {}", financingHdrCode, dbSigners);
+            return dbSigners;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to get signers from database: " + e.getMessage());
@@ -695,15 +698,13 @@ public class SignerService {
         SignerCheckResultDto result = new SignerCheckResultDto();
         result.setConfinsSigners(externalApiSigners);
 
-        List<String> unmatched = new ArrayList<>();
+        boolean hasMatch = dbSigners.stream().anyMatch(externalApiSigners::contains);
 
-        for (String dbSigner : dbSigners) {
-            if (!externalApiSigners.contains(dbSigner)) {
-                unmatched.add(dbSigner);
-            }
+        if (hasMatch) {
+            result.setUnmatchedSigners(Collections.emptyList());
+        } else {
+            result.setUnmatchedSigners(new ArrayList<>(dbSigners));
         }
-
-        result.setUnmatchedSigners(unmatched);
         return result;
     }
 
