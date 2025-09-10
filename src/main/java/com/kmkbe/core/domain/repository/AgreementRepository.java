@@ -151,5 +151,9 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     List<Object[]> findCwrCodesByAgreementCodes(@Param("agreementCodes") List<String> agreementCodes);
 
     List<Agreement> findByCwr_CwrCode(String cwrCode);
+
+    @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode IN :codes")
+    List<Agreement> findAllByFinancingHdrCodes(@Param("codes") List<UUID> codes);
+
 }
 

@@ -44,9 +44,9 @@ public class ProductController {
                 .success(productService.fetchAllActive());
     }
 
-    @GetMapping("/send-email")
-    public String debugEmail() {
-        inquiryDisburseService.debugSendEmail();
-        return "Debug email sent";
-    }
+//    @GetMapping("/send-email")
+//    public String debugEmail() {
+//        inquiryDisburseService.debugSendEmail();
+//        return "Debug email sent";
+//    }
 }

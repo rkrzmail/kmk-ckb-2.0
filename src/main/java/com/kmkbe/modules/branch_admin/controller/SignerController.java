@@ -93,7 +93,7 @@ public class SignerController {
     }
 
     @GetMapping("/getSigners/{financingHdrCode}/{agreementCode}")
-    public CommonResult<List<PersonDto>> getSigners(
+    public CommonResult<PersonDto> getSigners(
             @PathVariable String financingHdrCode,
             @PathVariable String agreementCode,
             HttpServletRequest httpServletRequest,
@@ -103,9 +103,10 @@ public class SignerController {
                 assignmentSubmissionService.assignmentList(httpServletRequest, authentication, new PaginationRequest());
 
         List<AssignmentDto> originalList = originalResult.getList();
-        List<PersonDto> allSigners = signerService.getSignersForGroup(financingHdrCode, originalList);
+        PersonDto allSigners = signerService.getSignersForGroup(financingHdrCode, originalList);
 
-        return new CommonResult<List<PersonDto>>().success(allSigners);
+        return new CommonResult<PersonDto>().success(allSigners);
+
     }
 
     @GetMapping("/signer-agreement/{financingHdrCode}")
@@ -123,6 +124,7 @@ public class SignerController {
         return new CommonResult<List<SignerDocDto>>().success(signerDocList);
     }
 
+    // cek confins
     @GetMapping("/check-signer/{financingHdrCode}/{agreementNo}")
     public CommonResult<SignerCheckResultDto> checkSigners(
             @PathVariable String financingHdrCode,
@@ -155,6 +157,7 @@ public class SignerController {
         return signerService.downloadDocument(documentId, authentication);
     }
 
+    // cek db
     @GetMapping("/check-signer/danasakti/{financingHdrCode}/{agreementCode}")
     public CommonResult<Map<String, Object>> checkSignerDanasakti(
             @PathVariable String financingHdrCode,

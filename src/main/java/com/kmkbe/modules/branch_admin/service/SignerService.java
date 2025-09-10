@@ -43,6 +43,9 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Service
@@ -58,6 +61,8 @@ public class SignerService {
     private final AgreementFileSigningRepository agreementFileSigningRepository;
     private final AssignmentSubmissionService assignmentSubmissionService;
     private final NotifDebtorRepository notifDebtorRepository;
+
+    private final Map<String, List<String>> signerCache = new ConcurrentHashMap<>();
 
     private final String apiKey = "YiByHB@CSUL_DEV";
     private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
@@ -513,7 +518,7 @@ public class SignerService {
         return debtorMapper.entityToDto(savedDebtor);
     }
 
-    public List<PersonDto> getSignersForGroup(String financingHdrCode,  List<AssignmentDto> originalList) {
+    public PersonDto getSignersForGroup(String financingHdrCode,  List<AssignmentDto> originalList) {
 
         AssignmentDto target = originalList.stream()
                 .filter(a -> a.getFinancingHdrCode().toString().equals(financingHdrCode))
@@ -527,55 +532,21 @@ public class SignerService {
                 .map(AssignmentDto::getFinancingHdrCode)
                 .toList();
 
-        List<PersonDto> allSigners = new ArrayList<>();
+        Map<UUID, String> agreementMap = agreementRepository.findAllByFinancingHdrCodes(friendFinancingHdrCodes)
+                .stream()
+                .collect(Collectors.toMap(a -> a.getFinancingHdr().getFinancingHdrCode(), Agreement::getAgreementCode));
 
-        for (UUID fHdrCode : friendFinancingHdrCodes) {
+        List<PersonDto> allSigners = friendFinancingHdrCodes.parallelStream()
+                .map(fHdrCode -> {
+                    String agreementNo = agreementMap.get(fHdrCode);
+                    if (agreementNo == null) throw new RuntimeException("Agreement tidak ditemukan");
 
-            String agreementNo = agreementRepository
-                    .findAgreement(fHdrCode)
-                    .map(Agreement::getAgreementCode)
-                    .orElseThrow(() -> new RuntimeException("Agreement tidak ditemukan"));
+                    return getSignersFromExternalApi(fHdrCode.toString(), agreementNo);
+                })
+                .toList();
 
-            PersonDto signer = getSignersFromExternalApi(fHdrCode.toString(), agreementNo);
-
-            allSigners.add(signer);
-        }
-        return allSigners;
+        return mergeSigners(allSigners);
     }
-
-    // debug
-//    public PersonDto getSignersFromExternalApi(String financingHdrCode, String agreementNo) {
-//        PersonDto result = new PersonDto();
-//        try {
-//            String custNo;
-//            String cwrNo;
-//
-//            // Ambil data dari database (atau hardcode)
-//            UUID uuid = UUID.fromString(financingHdrCode);
-//            Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid, agreementNo)
-//                    .orElseThrow(() -> new RuntimeException("Agreement not found"));
-//
-//            custNo = agreement.getCwr().getCustomer().getCustNo();
-//            cwrNo = agreement.getCwr().getCwrCode();
-//
-//            // Log semua data yang akan dikirim
-//            log.info("financingHdrCode: {}", financingHdrCode);
-//            log.info("agreementNo: {}", agreementNo);
-//            log.info("custNo: {}", custNo);
-//            log.info("cwrNo: {}", cwrNo);
-//
-//            result.setStatusCode("200");
-//            result.setMessage("Simulasi sukses, API eksternal OFF");
-//            result.setSigners(List.of());
-//
-//            return result;
-//
-//        } catch (Exception e) {
-//            result.setStatusCode("500");
-//            result.setMessage("Error: " + e.getMessage());
-//            return result;
-//        }
-//    }
 
     public PersonDto getSignersFromExternalApi(String financingHdrCode, String agreementNo) {
         boolean useHardcode = false; // Ganti nilai ini untuk switch mode
@@ -659,6 +630,22 @@ public class SignerService {
         return result;
     }
 
+    public PersonDto mergeSigners(List<PersonDto> allSigners) {
+
+        Set<String> seen = ConcurrentHashMap.newKeySet();
+        List<PersonDto.Signer> mergedList = allSigners.stream()
+                .flatMap(p -> p.getSigners().stream())
+                .filter(s -> seen.add(s.getSignerName() + "_" + s.getSignerPosition()))
+                .toList();
+
+        PersonDto result = new PersonDto();
+        result.setStatusCode("200");
+        result.setMessage("Success");
+        result.setSigners(mergedList);
+
+        return result;
+    }
+
     public List<SignerAgreementDto> signerAgreement(String financingHdrCode) {
         try {
             UUID uuid = UUID.fromString(financingHdrCode);
@@ -699,25 +686,20 @@ public class SignerService {
 
     private List<String> getSignersFromDatabase(String financingHdrCode) {
         try {
-
-            String DebtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
-
-            List<Debtor> debtors = debtorRepository.findByDebtorName(DebtorName);
-
-            List<String> dbSigners = debtors.stream()
-                    .map(Debtor::getKaryawanName)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toList());
-
-            return dbSigners;
-
+            String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
+            return debtorRepository.findKaryawanNamesByDebtorName(debtorName);
         } catch (Exception e) {
-            throw new RuntimeException("Failed to get signers from database: " + e.getMessage());
+            throw new RuntimeException("Failed to get signers from database", e);
         }
     }
 
-    private List<String> getSignersFromExternalApi2(String financingHdrCode, String agreementNo) {
+    public List<String> getSignersFromExternalApi2(String financingHdrCode, String agreementNo) {
         try {
+            String cacheKey = financingHdrCode + "-" + agreementNo;
+            if (signerCache.containsKey(cacheKey)) {
+                return signerCache.get(cacheKey);
+            }
+
             UUID uuid = UUID.fromString(financingHdrCode);
             Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid, agreementNo)
                     .orElseThrow(() -> new RuntimeException("Agreement not found"));
@@ -732,29 +714,35 @@ public class SignerService {
             SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
             ExternalApiResponse response = callExternalApi(request);
 
-            return response.getReturnObject().stream()
+            List<String> externalSigners = response.getReturnObject().stream()
                     .map(signer -> signer.getSignerName())
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
 
+            signerCache.put(cacheKey, externalSigners);
+
+            return externalSigners;
+
         } catch (IllegalArgumentException e) {
             throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Failed to get signers from external API: " + e.getMessage());
+            throw new RuntimeException("Failed to get signers from external API", e);
         }
     }
 
-    private SignerCheckResultDto createComparisonResult(List<String> dbSigners, List<String> externalApiSigners) {
+    public SignerCheckResultDto createComparisonResult(List<String> dbSigners, List<String> externalApiSigners) {
         SignerCheckResultDto result = new SignerCheckResultDto();
         result.setConfinsSigners(externalApiSigners);
 
-        boolean hasMatch = dbSigners.stream().anyMatch(externalApiSigners::contains);
+        Set<String> externalSet = new HashSet<>(externalApiSigners);
+        boolean hasMatch = dbSigners.stream().anyMatch(externalSet::contains);
 
         if (hasMatch) {
             result.setUnmatchedSigners(Collections.emptyList());
         } else {
             result.setUnmatchedSigners(new ArrayList<>(dbSigners));
         }
+
         return result;
     }
 
