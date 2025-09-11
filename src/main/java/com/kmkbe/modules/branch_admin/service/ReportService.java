@@ -11,6 +11,7 @@ import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.ExternalApiService;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.core.utils.ExecutionTimer;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
@@ -18,6 +19,7 @@ import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
 import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+import net.sf.jasperreports.engine.util.JRLoader;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -34,6 +36,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -91,6 +96,8 @@ public class ReportService {
     private String jwtToken;
     @Autowired
     private DebtorRepository debtorRepository;
+
+    private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     private void ensureJwtToken() {
         jwtToken = authRemoteService.fetchAuthJwt().getData();
@@ -463,44 +470,89 @@ public class ReportService {
                 .orElseThrow(() -> new IllegalArgumentException("Area Sales Manager " + areaSalesManager + " tidak ditemukan"));
 
         // 1. AppResponse
-        AppResponse apiResponse = safeApiCall(
-                () -> externalApiService.getAppByAppNo(agreement.getApplicationCode()),
-                new AppResponse() {{
-                    setAppNo("-");
-                    setTenor("-");
-                    setLobCode("-");
-                    setProdOfferingName("-");
-                    setAppId(0);
-                }}
-        );
-        Integer appId = apiResponse.getAppId();
+//        AppResponse apiResponse = ExecutionTimer.logExecutionTime(
+//                "getAppByAppNo",
+//                () -> safeApiCall(
+//                    () -> externalApiService.getAppByAppNo(agreement.getApplicationCode()),
+//                new AppResponse() {{
+//                    setAppNo("-");
+//                    setTenor("-");
+//                    setLobCode("-");
+//                    setProdOfferingName("-");
+//                    setAppId(0);
+//                }}
+//                )
+//        );
+//        Integer appId = apiResponse.getAppId();
+        CompletableFuture<AppResponse> apiResponseFuture = CompletableFuture.supplyAsync(() ->
+                        ExecutionTimer.logExecutionTime("getAppByAppNo", () ->
+                                safeApiCall(() -> externalApiService.getAppByAppNo(agreement.getApplicationCode()),
+                                        new AppResponse() {{
+                                            setAppNo("-");
+                                            setTenor("-");
+                                            setLobCode("-");
+                                            setProdOfferingName("-");
+                                            setAppId(0);
+                                        }}
+                                )
+                        )
+                , executor);
 
         // 2. Rek Debitur
-        RekDebiturResponse.BankAccount dataRekening = safeApiCall(() -> {
-            RekDebiturResponse bankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
-            if (bankResponse != null && bankResponse.getBankAccounts() != null && !bankResponse.getBankAccounts().isEmpty()) {
-                return bankResponse.getBankAccounts().get(0);
-            }
-            return new RekDebiturResponse.BankAccount("-", "-", "-");
-        }, new RekDebiturResponse.BankAccount("-", "-", "-"));
+//        RekDebiturResponse.BankAccount dataRekening = safeApiCall(() -> {
+//            RekDebiturResponse bankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
+//            if (bankResponse != null && bankResponse.getBankAccounts() != null && !bankResponse.getBankAccounts().isEmpty()) {
+//                return bankResponse.getBankAccounts().get(0);
+//            }
+//            return new RekDebiturResponse.BankAccount("-", "-", "-");
+//        }, new RekDebiturResponse.BankAccount("-", "-", "-"));
+        CompletableFuture<RekDebiturResponse.BankAccount> rekDebiturFuture = CompletableFuture.supplyAsync(() ->
+                        ExecutionTimer.logExecutionTime("getRekDebitur", () ->
+                                safeApiCall(() -> {
+                                    RekDebiturResponse bankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
+                                    if (bankResponse != null && bankResponse.getBankAccounts() != null && !bankResponse.getBankAccounts().isEmpty()) {
+                                        return bankResponse.getBankAccounts().get(0);
+                                    }
+                                    return new RekDebiturResponse.BankAccount("-", "-", "-");
+                                }, new RekDebiturResponse.BankAccount("-", "-", "-"))
+                        )
+                , executor);
 
         // 3. Factoring data
-        AppFactoringResponse factoringData = safeApiCall(
-                () -> externalApiService.getAppFactoringData(appId),
-                new AppFactoringResponse() {{
-                    setDiskontoAmount("0");
-                    setTotalRetentionAmount("0");
-                    setTotalInvoiceAmount("0");
-                }}
-        );
+//        AppFactoringResponse factoringData = ExecutionTimer.logExecutionTime(
+//                "getFactoringData",
+//                () -> safeApiCall(
+//                () -> externalApiService.getAppFactoringData(appId),
+//                new AppFactoringResponse() {{
+//                    setDiskontoAmount("0");
+//                    setTotalRetentionAmount("0");
+//                    setTotalInvoiceAmount("0");
+//                }}
+//                )
+//        );
+        CompletableFuture<AppFactoringResponse> factoringFuture = apiResponseFuture.thenApplyAsync(apiResponse ->
+                        ExecutionTimer.logExecutionTime("getFactoringData", () ->
+                                safeApiCall(() -> externalApiService.getAppFactoringData(apiResponse.getAppId()),
+                                        new AppFactoringResponse() {{
+                                            setDiskontoAmount("0");
+                                            setTotalRetentionAmount("0");
+                                            setTotalInvoiceAmount("0");
+                                        }}
+                                )
+                        )
+                , executor);
 
         // 4. Agreement Code
-        String agrmntCode = agreementRepo
-                .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
-                .orElse("-");
+//        String agrmntCode = agreementRepo
+//                .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
+//                .orElse("-");
+        String agrmntCode = ExecutionTimer.logExecutionTime(
+                "findAgreementCodeByFinancingHdrCode",
+                () -> agreementRepo.findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
+                        .orElse("-")
+        );
 
         FinancialDataResponse fallbackFinancialData = new FinancialDataResponse();
-
         FinancialDataResponse.FinancialData defaultFinData = new FinancialDataResponse.FinancialData();
         defaultFinData.setNtfAmount("0");
         defaultFinData.setEffectiveRate("0");
@@ -512,12 +564,20 @@ public class ReportService {
 
         fallbackFinancialData.setFeeList(Collections.emptyList());
 
-        FinancialDataResponse financialData = safeApiCall(
-                () -> externalApiService.getFinancialData(agrmntCode),
-                fallbackFinancialData
-        );
-
-        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
+        // 5. Financial Data
+//        FinancialDataResponse financialData = ExecutionTimer.logExecutionTime(
+//                "getFinancialData",
+//                () -> safeApiCall(
+//                        () -> externalApiService.getFinancialData(agrmntCode),
+//                        fallbackFinancialData
+//                )
+//        );
+//        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
+        CompletableFuture<FinancialDataResponse> financialDataFuture = CompletableFuture.supplyAsync(() ->
+                        ExecutionTimer.logExecutionTime("getFinancialData", () ->
+                                safeApiCall(() -> externalApiService.getFinancialData(agrmntCode), fallbackFinancialData)
+                        )
+                , executor);
 
         // 6. CWR
         String cwrCode = agreementRepo
@@ -546,10 +606,32 @@ public class ReportService {
                 .orElse("-");
 
         // 7. Bouwheer List
-        CwrListBwhrResponse bouwheerData = safeApiCall(
-                () -> externalApiService.getListCwrBwhr(cwrCode, cwrBwhr != null ? cwrBwhr.getCwrBouwheerCustNo() : "-"),
-                new CwrListBwhrResponse(Collections.emptyList())
-        );
+//        CwrListBwhrResponse bouwheerData = ExecutionTimer.logExecutionTime(
+//                "getCwrListBwhrData",
+//                () -> safeApiCall(
+//                () -> externalApiService.getListCwrBwhr(cwrCode, cwrBwhr != null ? cwrBwhr.getCwrBouwheerCustNo() : "-"),
+//                new CwrListBwhrResponse(Collections.emptyList())
+//                )
+//        );
+        CompletableFuture<CwrListBwhrResponse> bouwheerFuture = CompletableFuture.supplyAsync(() ->
+                        ExecutionTimer.logExecutionTime("getCwrListBwhrData", () ->
+                                safeApiCall(() -> externalApiService.getListCwrBwhr(cwrCode, "-"),
+                                        new CwrListBwhrResponse(Collections.emptyList()))
+                        )
+                , executor);
+
+
+        // get api eksternal parallel
+        AppResponse apiResponse = apiResponseFuture.join();
+        RekDebiturResponse.BankAccount dataRekening = rekDebiturFuture.join();
+        AppFactoringResponse factoringData = factoringFuture.join();
+        FinancialDataResponse financialData = financialDataFuture.join();
+        CwrListBwhrResponse bouwheerData = bouwheerFuture.join();
+
+        FinancialDataResponse.FinancialData findata =
+                (financialData != null && financialData.getFinancialData() != null)
+                        ? financialData.getFinancialData()
+                        : fallbackFinancialData.getFinancialData();
 
         // 8. Debtor Name
         String debtorName = agreementRepo.findCustNameByFinancingHdrCode(financingHdrUuid, agreementCode)
@@ -565,8 +647,6 @@ public class ReportService {
             List<Debtor> karyawanByName = debtorRepository.findActiveSignerByDebtorName(debtorName);
             Kdata = karyawanByName.isEmpty() ? null : karyawanByName.get(0);
 
-            System.out.println("Karyawan list size (FinancingHdrCode): " + karyawanList.size());
-            System.out.println("Karyawan list size (debtorName): " + karyawanByName.size());
         }
 
         // 10. Facility
@@ -811,15 +891,16 @@ public class ReportService {
 
         params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
 
-        InputStream reportStream = getClass().getResourceAsStream("/Reports/main_report.jrxml");
+        InputStream reportStream = getClass().getResourceAsStream("/Reports/main_report.jasper");
         if (reportStream == null) {
-            throw new FileNotFoundException("main_report.jrxml tidak ditemukan di /Reports");
+            throw new FileNotFoundException("main_report.jasper tidak ditemukan di /Reports");
         }
-        JasperReport jasperReport = JasperCompileManager.compileReport(reportStream);
+        JasperReport jasperReport = (JasperReport) JRLoader.loadObject(reportStream);
 
         JRDataSource dataSource = new JREmptyDataSource();
         JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, params, dataSource);
         return JasperExportManager.exportReportToPdf(jasperPrint);
+
     }
 
     private static String fmtDateObj(Object val) {
