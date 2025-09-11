@@ -1176,6 +1176,8 @@ public class ReportService {
 
         AgreementFileSigning saveDoc =  agreementFileSigningRepository.save(entity);
 
+        updateFinancingStep(financingHdrCode);
+
         String custCode = String.valueOf(financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
                 .map(finHdr -> finHdr.getCustomer().getCustCode())
                 .orElseThrow(() -> new RuntimeException("FinancingHdr dengan code "
@@ -1192,6 +1194,14 @@ public class ReportService {
 
         return agreementFileSigningMapper.entityToDto(saveDoc);
 
+    }
+
+    private void updateFinancingStep(String financingHdrCode) {
+        financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
+                .ifPresent(finHdr -> {
+                    finHdr.setFinancingStep("SIGNING");
+                    financingHdrRepository.save(finHdr);
+                });
     }
 
     private String getBranchCodeFromAgreement(String agreementCode) {
@@ -1213,4 +1223,5 @@ public class ReportService {
                 })
                 .orElseThrow(() -> new RuntimeException("Agreement dengan code " + agreementCode + " tidak ditemukan"));
     }
+
 }
