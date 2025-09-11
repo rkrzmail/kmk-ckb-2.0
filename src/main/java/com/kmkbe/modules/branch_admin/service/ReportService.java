@@ -615,7 +615,7 @@ public class ReportService {
 //        );
         CompletableFuture<CwrListBwhrResponse> bouwheerFuture = CompletableFuture.supplyAsync(() ->
                         ExecutionTimer.logExecutionTime("getCwrListBwhrData", () ->
-                                safeApiCall(() -> externalApiService.getListCwrBwhr(cwrCode, "-"),
+                                safeApiCall(() -> externalApiService.getListCwrBwhr(cwrCode, cwrBwhr != null ? cwrBwhr.getCwrBouwheerCustNo() : "-"),
                                         new CwrListBwhrResponse(Collections.emptyList()))
                         )
                 , executor);
