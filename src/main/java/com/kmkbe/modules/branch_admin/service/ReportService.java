@@ -1068,17 +1068,17 @@ public class ReportService {
                 .seqNo("1")
                 .build());
 
-//        CsulSigner asm = csulSignerRepository.findByKaryawanName(areaSalesManager)
-//                .orElseThrow(() -> new RuntimeException("Area Sales Manager " + areaSalesManager + " tidak ditemukan di csul_signer"));
-//
-//        signers.add(ExternalSigningRequest.Signer.builder()
-//                .signAction("mt")
-//                .signerType("SPV")
-//                .idKtp(asm.getIdentityNo())
-//                .tlp(asm.getNoTelp())
-//                .email(asm.getEmail())
-//                .seqNo("2")
-//                .build());
+        CsulSigner asm = csulSignerRepository.findByKaryawanName(areaSalesManager)
+                .orElseThrow(() -> new RuntimeException("Area Sales Manager " + areaSalesManager + " tidak ditemukan di csul_signer"));
+
+        signers.add(ExternalSigningRequest.Signer.builder()
+                .signAction("mt")
+                .signerType("SPV")
+                .idKtp(asm.getIdentityNo())
+                .tlp(asm.getNoTelp())
+                .email(asm.getEmail())
+                .seqNo("2")
+                .build());
         return signers;
     }
 
