@@ -470,20 +470,6 @@ public class ReportService {
                 .orElseThrow(() -> new IllegalArgumentException("Area Sales Manager " + areaSalesManager + " tidak ditemukan"));
 
         // 1. AppResponse
-//        AppResponse apiResponse = ExecutionTimer.logExecutionTime(
-//                "getAppByAppNo",
-//                () -> safeApiCall(
-//                    () -> externalApiService.getAppByAppNo(agreement.getApplicationCode()),
-//                new AppResponse() {{
-//                    setAppNo("-");
-//                    setTenor("-");
-//                    setLobCode("-");
-//                    setProdOfferingName("-");
-//                    setAppId(0);
-//                }}
-//                )
-//        );
-//        Integer appId = apiResponse.getAppId();
         CompletableFuture<AppResponse> apiResponseFuture = CompletableFuture.supplyAsync(() ->
                         ExecutionTimer.logExecutionTime("getAppByAppNo", () ->
                                 safeApiCall(() -> externalApiService.getAppByAppNo(agreement.getApplicationCode()),
@@ -499,13 +485,6 @@ public class ReportService {
                 , executor);
 
         // 2. Rek Debitur
-//        RekDebiturResponse.BankAccount dataRekening = safeApiCall(() -> {
-//            RekDebiturResponse bankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
-//            if (bankResponse != null && bankResponse.getBankAccounts() != null && !bankResponse.getBankAccounts().isEmpty()) {
-//                return bankResponse.getBankAccounts().get(0);
-//            }
-//            return new RekDebiturResponse.BankAccount("-", "-", "-");
-//        }, new RekDebiturResponse.BankAccount("-", "-", "-"));
         CompletableFuture<RekDebiturResponse.BankAccount> rekDebiturFuture = CompletableFuture.supplyAsync(() ->
                         ExecutionTimer.logExecutionTime("getRekDebitur", () ->
                                 safeApiCall(() -> {
@@ -519,17 +498,6 @@ public class ReportService {
                 , executor);
 
         // 3. Factoring data
-//        AppFactoringResponse factoringData = ExecutionTimer.logExecutionTime(
-//                "getFactoringData",
-//                () -> safeApiCall(
-//                () -> externalApiService.getAppFactoringData(appId),
-//                new AppFactoringResponse() {{
-//                    setDiskontoAmount("0");
-//                    setTotalRetentionAmount("0");
-//                    setTotalInvoiceAmount("0");
-//                }}
-//                )
-//        );
         CompletableFuture<AppFactoringResponse> factoringFuture = apiResponseFuture.thenApplyAsync(apiResponse ->
                         ExecutionTimer.logExecutionTime("getFactoringData", () ->
                                 safeApiCall(() -> externalApiService.getAppFactoringData(apiResponse.getAppId()),
@@ -543,9 +511,6 @@ public class ReportService {
                 , executor);
 
         // 4. Agreement Code
-//        String agrmntCode = agreementRepo
-//                .findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
-//                .orElse("-");
         String agrmntCode = ExecutionTimer.logExecutionTime(
                 "findAgreementCodeByFinancingHdrCode",
                 () -> agreementRepo.findAgreementCodeByFinancingHdrCode(UUID.fromString(financingHdrCode), agreementCode)
@@ -565,14 +530,6 @@ public class ReportService {
         fallbackFinancialData.setFeeList(Collections.emptyList());
 
         // 5. Financial Data
-//        FinancialDataResponse financialData = ExecutionTimer.logExecutionTime(
-//                "getFinancialData",
-//                () -> safeApiCall(
-//                        () -> externalApiService.getFinancialData(agrmntCode),
-//                        fallbackFinancialData
-//                )
-//        );
-//        FinancialDataResponse.FinancialData findata = financialData.getFinancialData();
         CompletableFuture<FinancialDataResponse> financialDataFuture = CompletableFuture.supplyAsync(() ->
                         ExecutionTimer.logExecutionTime("getFinancialData", () ->
                                 safeApiCall(() -> externalApiService.getFinancialData(agrmntCode), fallbackFinancialData)
@@ -606,13 +563,6 @@ public class ReportService {
                 .orElse("-");
 
         // 7. Bouwheer List
-//        CwrListBwhrResponse bouwheerData = ExecutionTimer.logExecutionTime(
-//                "getCwrListBwhrData",
-//                () -> safeApiCall(
-//                () -> externalApiService.getListCwrBwhr(cwrCode, cwrBwhr != null ? cwrBwhr.getCwrBouwheerCustNo() : "-"),
-//                new CwrListBwhrResponse(Collections.emptyList())
-//                )
-//        );
         CompletableFuture<CwrListBwhrResponse> bouwheerFuture = CompletableFuture.supplyAsync(() ->
                         ExecutionTimer.logExecutionTime("getCwrListBwhrData", () ->
                                 safeApiCall(() -> externalApiService.getListCwrBwhr(cwrCode, cwrBwhr != null ? cwrBwhr.getCwrBouwheerCustNo() : "-"),
@@ -620,8 +570,7 @@ public class ReportService {
                         )
                 , executor);
 
-
-        // get api eksternal parallel
+        // get api parallel
         AppResponse apiResponse = apiResponseFuture.join();
         RekDebiturResponse.BankAccount dataRekening = rekDebiturFuture.join();
         AppFactoringResponse factoringData = factoringFuture.join();

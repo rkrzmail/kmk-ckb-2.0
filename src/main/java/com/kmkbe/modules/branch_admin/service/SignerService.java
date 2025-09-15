@@ -818,11 +818,12 @@ public class SignerService {
                             .body(new ApiResponse<>(false, "Invalid document format", null, null, null));
                 }
             } else {
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                        .body(new ApiResponse<>(false, "Document processing failed",
+                return ResponseEntity.ok()
+                        .body(new ApiResponse<>(false,
+                                "Dokumen anda diarsipkan dan sedang dipulihkan,silakan coba lagi dalam 1 menit.",
                                 null,
                                 externalStatusCode,
-                                externalMessage));
+                                null));
             }
 
         } catch (Exception e) {
