@@ -722,7 +722,7 @@ public class ReportService {
             SitDto sitDto = sitData.getData();
 
             DecimalFormat currency = new DecimalFormat("#,##0.00");
-            String totalPembayaran = currency.format(sitDto.getTotalInvoiceAmt());
+            String totalPembayaran = fmtAmount(sitDto.getTotalInvoiceAmt());
 
             DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("id", "ID"));
             String periodeBerlaku = sitDto.getFinancingDueDate() != null
