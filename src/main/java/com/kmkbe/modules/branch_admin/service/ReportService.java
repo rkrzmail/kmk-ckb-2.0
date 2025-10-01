@@ -855,7 +855,7 @@ public class ReportService {
     private static String fmtDateObj(Object val) {
         if (val == null) return "-";
 
-        final String targetFormat = "dd-MM-yyyy";
+        final String targetFormat = "dd/MM/yyyy";
         java.time.format.DateTimeFormatter outFmt = java.time.format.DateTimeFormatter.ofPattern(targetFormat);
 
         try {
@@ -903,7 +903,6 @@ public class ReportService {
         }
     }
 
-
     private static String fmtAmount(Object val) {
         if (val == null) return "IDR 0.00";
         try {
@@ -920,9 +919,10 @@ public class ReportService {
         if (amount == null) return "-";
         try {
             BigDecimal value = new BigDecimal(amount.toString());
-            NumberFormat numberFormat = NumberFormat.getNumberInstance(new Locale("id", "ID"));
-            numberFormat.setMaximumFractionDigits(0);
-            return "Rp" + numberFormat.format(value);
+            NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
+            numberFormat.setMinimumFractionDigits(1);
+            numberFormat.setMaximumFractionDigits(1);
+            return numberFormat.format(value);
         } catch (Exception e) {
             return "-";
         }
