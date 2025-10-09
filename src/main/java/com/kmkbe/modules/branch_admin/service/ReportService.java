@@ -633,17 +633,17 @@ public class ReportService {
         params.put("AgrmntNo", agrmntCode);
         params.put("Facility", facility);
         params.put("Tenor", apiResponse.getTenor());
-        params.put("NtfAmt", findata.getNtfAmount());
-        params.put("DiskontoAmt", factoringData.getDiskontoAmount());
-        params.put("MaxAllocatedRefundAmt", findata.getMaxRefundAmount());
-        params.put("TotalRetentionAmt", factoringData.getTotalRetentionAmount());
+        params.put("NtfAmt", fmtRupiah2(findata.getNtfAmount()));
+        params.put("DiskontoAmt", fmtRupiah2(factoringData.getDiskontoAmount()));
+        params.put("MaxAllocatedRefundAmt", fmtRupiah2(findata.getMaxRefundAmount()));
+        params.put("TotalRetentionAmt", fmtRupiah2(factoringData.getTotalRetentionAmount()));
         params.put("LobCode", apiResponse.getLobCode());
         params.put("ProdOfferingName", apiResponse.getProdOfferingName());
         params.put("EffectiveRatePrcnt", effectiveRateStr);
-        params.put("TotalFeeAmt", findata.getTotalFeeAmount());
-        params.put("TotalInvcAmt", factoringData.getTotalInvoiceAmount());
+        params.put("TotalFeeAmt", fmtRupiah2(findata.getTotalFeeAmount()));
+        params.put("TotalInvcAmt", fmtRupiah2(factoringData.getTotalInvoiceAmount()));
         params.put("GracePeriodLc", findata.getGracePeriod());
-        params.put("InstAmt", findata.getInstallmentAmount());
+        params.put("InstAmt", fmtRupiah2(findata.getInstallmentAmount()));
         params.put("AgmtNo", agrmntCode);
         params.put("JenisDebitur", "Badan Usaha");
         params.put("TipePerusahaan", data.getOrDefault("cust_company_type", "-").toString());
@@ -667,32 +667,32 @@ public class ReportService {
 
         BigDecimal ntfAmt = new BigDecimal(findata.getNtfAmount());
 
-        params.put("AppFeeAmtAdministration", fmtAmount(BigDecimal.ZERO));
-        params.put("AppFeeAmtFactoring", fmtAmount(BigDecimal.ZERO));
-        params.put("AppFeeInsurance", fmtAmount(BigDecimal.ZERO));
-        params.put("AppFeeCreditInsurance", fmtAmount(BigDecimal.ZERO));
+        params.put("AppFeeAmtAdministration", fmtRupiah(BigDecimal.ZERO));
+        params.put("AppFeeAmtFactoring", fmtRupiah(BigDecimal.ZERO));
+        params.put("AppFeeInsurance", fmtRupiah(BigDecimal.ZERO));
+        params.put("AppFeeCreditInsurance", fmtRupiah(BigDecimal.ZERO));
 
 
         for (var fee : financialData.getFeeList()) {
             if (fee.getFeeTypeName() != null) {
                 if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA FACTORING")) {
                     appFeeFactoring = new BigDecimal(fee.getFeeAmount());
-                    params.put("AppFeeAmtFactoring", fmtAmount(appFeeFactoring));
+                    params.put("AppFeeAmtFactoring", fmtRupiah(appFeeFactoring));
                 } else if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA ADMINISTRASI PENCAIRAN")) {
                     appFeeAdministration = new BigDecimal(fee.getFeeAmount());
-                    params.put("AppFeeAmtAdministration", fmtAmount(appFeeAdministration));
+                    params.put("AppFeeAmtAdministration", fmtRupiah(appFeeAdministration));
                 } else if (fee.getFeeTypeName().equalsIgnoreCase("Total CWR Insurance Fee")) {
                     appFeeInsurance = new BigDecimal(fee.getFeeAmount());
-                    params.put("AppFeeInsurance", fmtAmount(appFeeInsurance));
+                    params.put("AppFeeInsurance", fmtRupiah(appFeeInsurance));
                 } else if (fee.getFeeTypeName().equalsIgnoreCase("Total CWR Credit Insurance Fee")) {
                     appFeeCreditInsurance = new BigDecimal(fee.getFeeAmount());
-                    params.put("AppFeeCreditInsurance", fmtAmount(appFeeCreditInsurance));
+                    params.put("AppFeeCreditInsurance", fmtRupiah(appFeeCreditInsurance));
                 }
             }
         }
 
         BigDecimal totalInsuranceVal = appFeeInsurance.add(appFeeCreditInsurance);
-        StringBuilder totalInsuranceText = new StringBuilder(fmtAmount(totalInsuranceVal));
+        StringBuilder totalInsuranceText = new StringBuilder(fmtRupiah(totalInsuranceVal));
 
         if (appFeeInsurance.compareTo(BigDecimal.ZERO) > 0) {
             totalInsuranceText.append(", All Risk + SRCC");
@@ -709,7 +709,7 @@ public class ReportService {
         BigDecimal ntfAmtTotal = ntfAmt.subtract(administrationFactoring);
 
         params.put("Administration+Factoring", fmtAmount(administrationFactoring.toString()));
-        params.put("NtfAmt-Total", ntfAmtTotal.toString());
+        params.put("NtfAmt-Total", fmtRupiah2(ntfAmtTotal.toString()));
         params.put("TotalInsurance", totalInsuranceText.toString());
         params.put("Limit", "IDR 0.00");
         params.put("Notaris","IDR 0.00");
@@ -754,17 +754,17 @@ public class ReportService {
             for (PostedInvoiceDto invoice : invoiceResult.getList()) {
                 Map<String, String> row = new HashMap<>();
                 row.put("nomor_invoice", invoice.getCustomerInvoiceNo() != null ? invoice.getCustomerInvoiceNo() : "-");
-                row.put("tanggal_invoice", fmtDateObj(invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : "-"));
+                row.put("tanggal_invoice", fmtDateObj2(invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : "-"));
                 row.put("invoice_amt", fmtRupiah(invoice.getInvoiceAmount() != null ? invoice.getInvoiceAmount().toString() : "-"));
                 row.put("description", invoice.getInvoiceDescription() != null ? invoice.getInvoiceDescription() : "-");
                 row.put("bouwheer", invoice.getBouwheerName() != null ? invoice.getBouwheerName() : "-");
-                row.put("invoice_duedate", fmtDateObj(invoice.getInvoiceDueDate() != null ? invoice.getInvoiceDueDate() : "-"));
+                row.put("invoice_duedate", fmtDateObj2(invoice.getInvoiceDueDate() != null ? invoice.getInvoiceDueDate() : "-"));
                 tableData3.add(row);
             }
 
             PostedInvoiceDto firstInvoice = invoiceResult.getList().get(0);
             if (firstInvoice.getInvoiceDueDate() != null) {
-                invoiceDueDateParam = fmtDateObj(firstInvoice.getInvoiceDueDate());
+                invoiceDueDateParam = fmtDateObj2(firstInvoice.getInvoiceDueDate());
             }
         } else {
             Map<String, String> emptyRow = new HashMap<>();
@@ -816,10 +816,10 @@ public class ReportService {
             row.put("customer", debtorName);
 
             row.put("nomor_perjanjian", bouwheer != null ? Objects.toString(bouwheer.getCooperationAgreementNo(), "-") : "-");
-            row.put("tanggal_perjanjian", bouwheer != null ? fmtDateObj(bouwheer.getStartPeriod()) : "-");
+            row.put("tanggal_perjanjian", bouwheer != null ? fmtDateObj2(bouwheer.getStartPeriod()) : "-");
 
             row.put("nomor_invoice", invoice.getCustomerInvoiceNo() != null ? invoice.getCustomerInvoiceNo() : "-");
-            row.put("tanggal_invoice", fmtDateObj(invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : "-"));
+            row.put("tanggal_invoice", fmtDateObj2(invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : "-"));
             row.put("jumlah_piutang", fmtRupiah(invoice.getInvoiceAmount() != null ? invoice.getInvoiceAmount().toString() : "-"));
             row.put("total_piutang", fmtRupiah(totalPiutang));
 
@@ -903,6 +903,58 @@ public class ReportService {
         }
     }
 
+    private static String fmtDateObj2(Object val) {
+        if (val == null) return "-";
+
+        final String targetFormat = "dd MMMM yyyy";
+        java.time.format.DateTimeFormatter outFmt = java.time.format.DateTimeFormatter.ofPattern(targetFormat, new java.util.Locale("id", "ID"));
+
+        try {
+            if (val instanceof java.util.Date) {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(targetFormat, new java.util.Locale("id", "ID"));
+                return sdf.format((java.util.Date) val);
+            }
+
+            if (val instanceof java.time.LocalDate) {
+                return ((java.time.LocalDate) val).format(outFmt);
+            }
+
+            if (val instanceof java.time.LocalDateTime) {
+                return ((java.time.LocalDateTime) val).toLocalDate().format(outFmt);
+            }
+
+            if (val instanceof String) {
+                String s = ((String) val).trim();
+                if (s.isEmpty()) return "-";
+
+                try {
+                    java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(
+                            s,
+                            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+                    );
+                    return ldt.toLocalDate().format(outFmt);
+                } catch (Exception ignore) {}
+
+                try {
+                    java.time.LocalDate ld = java.time.LocalDate.parse(s);
+                    return ld.format(outFmt);
+                } catch (Exception ignore) {}
+
+                try {
+                    java.text.SimpleDateFormat inSdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    java.util.Date d = inSdf.parse(s);
+                    java.text.SimpleDateFormat outSdf = new java.text.SimpleDateFormat(targetFormat, new java.util.Locale("id", "ID"));
+                    return outSdf.format(d);
+                } catch (Exception ignore) {}
+            }
+
+            return val.toString();
+        } catch (Exception e) {
+            return "-";
+        }
+    }
+
+
     private static String fmtAmount(Object val) {
         if (val == null) return "IDR 0.00";
         try {
@@ -920,8 +972,21 @@ public class ReportService {
         try {
             BigDecimal value = new BigDecimal(amount.toString());
             NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
-            numberFormat.setMinimumFractionDigits(1);
-            numberFormat.setMaximumFractionDigits(1);
+            numberFormat.setMinimumFractionDigits(2);
+            numberFormat.setMaximumFractionDigits(2);
+            return "IDR " + numberFormat.format(value);
+        } catch (Exception e) {
+            return "-";
+        }
+    }
+
+    private String fmtRupiah2(Object amount) {
+        if (amount == null) return "-";
+        try {
+            BigDecimal value = new BigDecimal(amount.toString());
+            NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
+            numberFormat.setMinimumFractionDigits(2);
+            numberFormat.setMaximumFractionDigits(2);
             return numberFormat.format(value);
         } catch (Exception e) {
             return "-";
