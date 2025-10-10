@@ -708,7 +708,7 @@ public class ReportService {
         BigDecimal administrationFactoring = appFeeFactoring.add(appFeeAdministration);
         BigDecimal ntfAmtTotal = ntfAmt.subtract(administrationFactoring);
 
-        params.put("Administration+Factoring", fmtAmount(administrationFactoring.toString()));
+        params.put("Administration+Factoring", fmtRupiah(administrationFactoring.toString()));
         params.put("NtfAmt-Total", fmtRupiah2(ntfAmtTotal.toString()));
         params.put("TotalInsurance", totalInsuranceText.toString());
         params.put("Limit", "IDR 0.00");
@@ -786,8 +786,8 @@ public class ReportService {
         for (PostedInvoiceDto invoice : invoiceResult.getList()) {
             Map<String, String> row = new HashMap<>();
             row.put("nomor_invoice", invoice.getCustomerInvoiceNo() != null ? invoice.getCustomerInvoiceNo() : "-");
-            row.put("tanggal_invoice", fmtDateObj(invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : "-"));
-            row.put("invoice_duedate", fmtDateObj(invoice.getInvoiceDueDate() != null ? invoice.getInvoiceDueDate() : "-"));
+            row.put("tanggal_invoice", fmtDateObj2(invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : "-"));
+            row.put("invoice_duedate", fmtDateObj2(invoice.getInvoiceDueDate() != null ? invoice.getInvoiceDueDate() : "-"));
             tableData2.add(row);
         }
 
