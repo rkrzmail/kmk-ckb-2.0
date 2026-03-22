@@ -852,9 +852,104 @@ public class LoanSubmissionService {
         }*/
     }
 
-
     @Transactional
     public CreatedSimulationDto createSimulation(
+            Authentication authentication,
+            CreateSimulationRequest request
+    ) throws Exception {
+        try {
+            final String bouwheerCode = request.getInvoices().getFirst().getBouwheerCode();
+            final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+            if (customer == null) {
+                throw CommonInvalidException.cannotAccessResource();
+            }
+
+            final Product product = productRepository.findById(request.getProductId()).orElseThrow();
+            final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode))
+                    .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
+
+            final double totalInvoiceAmount = request.getInvoices()
+                    .stream()
+                    .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
+                    .sum();
+
+            final Date maxInvoiceDueDate = request.getInvoices()
+                    .stream()
+                    .map(PostedInvoicePayload::getInvoiceDueDate)
+                    .max(Date::compareTo)
+                    .get();
+
+            final CalculateSimulationRequest simulation = new CalculateSimulationRequest();
+            {
+                simulation.setDisbursePercentage(request.getDisbursePercentage());
+                simulation.setTotalInvoiceAmount(BigDecimal.valueOf(totalInvoiceAmount).setScale(2, RoundingMode.CEILING));
+                simulation.setBouwheerCode(request.getInvoices().getFirst().getBouwheerCode());
+                simulation.setInvoiceDueDate(
+                        DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
+                );
+            }
+
+            final EstimatedDisburseDto calculateDisburse = calculateDisburse(authentication, simulation);
+            if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
+                throw new IllegalStateException("Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
+                        "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
+            }
+
+
+            if (calculateDisburse.getTotalInvoiceAmount().doubleValue() < 50000000){
+                throw new IllegalStateException("Untuk melanjukan pengajuan silahkan tambahkan jumlah invoice yang ingin" + " " +
+                        "diajukan hingga mencapai minimal   Rp 50.000.000");
+            }
+
+            final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
+                    .financingAmount(calculateDisburse.getFinancingAmount())
+                    .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
+                    .maxInvoiceDate(maxInvoiceDueDate)
+                    .totalInvoiceAmount(totalInvoiceAmount)
+                    .interestFeeAmount(calculateDisburse.getInterestFeeAmount())
+                    .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
+                    .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
+                    .othersFeeAmount(calculateDisburse.getOthersFeeAmount())
+                    .legalFeeAmount(calculateDisburse.getLegalFeeAmount())
+                    .surveyFeeAmount(calculateDisburse.getSurveyFeeAmount())
+                    .adminRate(calculateDisburse.getAdminRate())
+                    .effectiveRate(calculateDisburse.getEffectiveRate())
+                    .provisionRate(calculateDisburse.getProvisionRate())
+                    .build();
+
+            final FinancingHdr createdFinancingHdr = financingHdrService.create(
+                    authentication,
+                    customer,
+                    bouwheer,
+                    product,
+                    request,
+                    simulationDisburseResult
+            );
+
+            final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, request);
+
+            financingDtlService.createBulk(
+                    customer,
+                    bouwheer,
+                    createdFinancingHdr,
+                    request.getInvoices(),
+                    createdInvoices
+            );
+
+            return CreatedSimulationDto.builder()
+                    .productId(request.getProductId())
+                    .financingHdrCode(createdFinancingHdr.getFinancingHdrCode())
+                    .invoices(createdInvoices)
+                    .build();
+        } catch (Exception e) {
+            log.error("createSimulation, error {}", e.getMessage());
+            throw e;
+        }
+    }
+
+
+    @Transactional
+    public CreatedSimulationDto createSimulation_TU(
             Authentication authentication,
             CreateSimulationRequest request
     ) throws Exception {
@@ -1326,7 +1421,7 @@ public class LoanSubmissionService {
                     vendorTokenExtractor.getVendorCode()
             );
 
-            InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService.inquiryVendor(vendorTokenExtractor.getVendorCode()).getData();
+            InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService.inquiryVendorByBouwheer(vendorTokenExtractor).getData();
 
             ExternalIntegrationLoanSimulationDto result = find.orElseGet(() -> ExternalIntegrationLoanSimulationDto.builder()
                     .bouwheerCode(vendorTokenExtractor.getBouwheerCode().toString())
@@ -1457,7 +1552,7 @@ public class LoanSubmissionService {
     }
 
     @Getter
-    private static class VendorTokenExtractor {
+    public static class VendorTokenExtractor {
         private final UUID bouwheerCode;
         private final String vendorCode;
         private final String bouwheerName;

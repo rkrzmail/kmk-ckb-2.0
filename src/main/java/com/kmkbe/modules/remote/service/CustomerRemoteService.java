@@ -4,11 +4,15 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
 import com.kmkbe.core.domain.dto.CustomerRemoteDto;
+import com.kmkbe.core.domain.dto.ExternalIntegrationLoanSimulationDto;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.entity.ApiIntegrationLog;
+import com.kmkbe.core.domain.model.ApiSbu;
+import com.kmkbe.core.domain.repository.ApiSbuRepository;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
+import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import com.kmkbe.modules.remote.request.InquiryRequest;
 import io.netty.util.internal.StringUtil;
@@ -26,6 +30,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -34,6 +39,7 @@ public class CustomerRemoteService {
     private final RestTemplate restTemplate;
     private final BaseRemoteService baseRemoteService;
     private final ObjectMapper objectMapper;
+   // private final ApiSbuRepository apiSbuRepository;
 
     /**
      * <p>current usecase CustomerSignUp</p>
@@ -104,9 +110,82 @@ public class CustomerRemoteService {
     }
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto> inquiryVendorByBouwheer(
+            LoanSubmissionService.VendorTokenExtractor vendorTokenExtractor
+    ) throws JsonProcessingException {
+
+
+        //perubahan di core BE utama
+        String vendorCode = vendorTokenExtractor.getVendorCode();
+        String bouwheerCode = vendorTokenExtractor.getBouwheerCode().toString();
+
+        /*Optional<ApiSbu>  apiSbu = apiSbuRepository.findByBouwheerCode(vendorTokenExtractor.getBouwheerCode());
+        if (apiSbu.isPresent()){
+            ApiSbu sbu = apiSbu.get();
+
+
+
+        }*/
+
+        String jsonStr = "";
+        String responseStr = null;
+        int statusCode = 200;
+        final String url = baseRemoteService.getBaseMst() + "/vendor/byVendorId";
+        try {
+            jsonStr = ObjectUtils.jsonToStr(InquiryRequest.builder()
+                    .vendorCode(vendorCode)
+                    .build());
+            final HttpEntity<String> requestArgs = new HttpEntity<>(
+                    jsonStr,
+                    baseRemoteService.apiKeyHeaders()
+            );
+
+            final ResponseEntity<BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto>> response = restTemplate.exchange(
+                    url,
+                    HttpMethod.POST,
+                    requestArgs,
+                    new ParameterizedTypeReference<>() {
+                    }
+            );
+
+            statusCode = response.getStatusCode().value();
+            responseStr = ObjectUtils.jsonToStr(response.getBody());
+            if (StringUtil.isNullOrEmpty(responseStr)) {
+                responseStr = objectMapper.writeValueAsString(response.getBody());
+            }
+
+            return response.getBody();
+        } catch (HttpStatusCodeException httpStatusCodeException) {
+            String message = "Failed inquiry vendor";
+            statusCode = httpStatusCodeException.getStatusCode().value();
+            responseStr = httpStatusCodeException.getResponseBodyAsString();
+
+            Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
+            if (errorObj != null) {
+                message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
+            }
+
+            throw new RuntimeException("Error while perform action to MST\nDetail:" + message);
+        } catch (Exception e) {
+            log.error("inquiryVendor, error {}", e.getMessage());
+            throw e;
+        } finally {
+            ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
+                    .endpointUrl(url)
+                    .contentType("application/json")
+                    .requestPayload(jsonStr)
+                    .responseJson(responseStr)
+                    .responseStatus(String.valueOf(statusCode))
+                    .build();
+        }
+    }
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto> inquiryVendor(
             String vendorCode
     ) throws JsonProcessingException {
+
+
+
         String jsonStr = "";
         String responseStr = null;
         int statusCode = 200;

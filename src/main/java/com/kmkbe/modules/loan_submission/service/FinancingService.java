@@ -74,6 +74,9 @@ public class FinancingService {
                     List<DisbursementLog> disbursementLogs = disbursementLogRepository.findAllByAgreement(agreement);
                     if (disbursementLogs.isEmpty()){
                         inquiryDisburseService. inquiryDisburseAuto(agreement);
+                        //call api sbu inquiryDisburse
+
+
                     }
                 } catch (Exception ignored) { }
 

@@ -71,7 +71,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     public static final String[] ENDPOINTS_WHITELIST = {
             "/api/v1/auth/sign-in",
-
+            "/api/v1/sbu/**",
             "/api/v1/auth/sign-up",
             "/api/v1/auth/forgot-pin",
             "/api/v1/auth/refresh-token",
