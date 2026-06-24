@@ -1,0 +1,104 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://aurora-kmk.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com
+    username: postgres
+    password: Csultmt10
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: kmklog
+      collection: event
+    redis:
+      host: localhost
+      port: 6379
+      database: 6
+      password:
+      timeout: 6000
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 30
+          max-idle: 10
+          min-idle: 2
+          shutdown-timeout: 1000
+          max-wait: 10000
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+  flyway:
+    locations: classpath:db/migration/dev/{vendor}
+    schemas: public
+    enabled: true
+    baseline-on-migrate: true
+
+  cache:
+    type: redis
+    redis:
+      time-to-live: 60000
+
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    protocol: smtp
+    username: khesa.oto@gmail.com
+    password: tfru zmuk gtfb mrsz
+    properties:
+      mail.smtp.ssl.trust: *
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+
+jwt_env:
+  security:
+    jwt:
+      secret-key: 98d8710219d8224094b7fcb956c054f15d633ad1dfd18d42fdd7f59d77d69f69
+      expiration-time: 1800000
+
+api_docs:
+  springdoc:
+    paths-to-match: /api/v1/**
+    swagger-ui.path: /api/v1/swagger-ui.html
+    api-docs.path: /api/v1/api-docs
+
+dev_tools:
+  logging:
+    file: ./logs/log-file.log
+    level:
+      org.hibernate: ERROR
+      org.springframework.web: ERROR
+      root: INFO
+  server:
+    error.whitelabel.enabled: false
+  spring_boot_admin:
+    client:
+      url: http://localhost:9000
+      instance:
+        name: Kmk-Digital-2.0
+      credentials:
+        username: vandikalvandi@gmail.com
+        password: 12345
+
+oauth2_certs:
+  rsa:
+    private-key: classpath:certs/pkcs8.pem
+    public-key: classpath:certs/public-key.pem
+
+csul_sisca:
+  v1_internal: http://10.30.15.146:8185/SISCAConnect/api/v1
+  v1_white_list: http://10.30.15.146:8185/SISCAConnect/api/v1
+  auth:
+    username: KMKDigital
+    password: CSUljkt#2024
+
+csul_confins:
+  fou_v1: https://confins.csulfinance.com/api/fou/v1
+  mou_v1: http://confins.csulfinance.com/api/mou/v1
+  ar_v1: https://confins.csulfinance.com/api/ar/v1
+  adinskey: QXMwZjF0VWVOc1BOTER4T2xKcGZhbnkvSk5kS3dYR2M3NVI3WGJLTDlCOFNZUz0=
+  env: local
+
+aspect:
+  enabled: true
