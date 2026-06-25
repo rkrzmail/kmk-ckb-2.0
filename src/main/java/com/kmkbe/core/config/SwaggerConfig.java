@@ -19,7 +19,7 @@ public class SwaggerConfig {
       .components(new Components())
       .info(
         new Info()
-          .title("com.kmk.api")
+          .title("com.kmk.ckb")
           .version(appVersion)
           .license(new License().name("Apache 2.0").url("http://springdoc.org"))
       );

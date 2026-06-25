@@ -36,88 +36,88 @@ import java.util.Optional;
 @Slf4j
 @RequiredArgsConstructor
 public class CustomerRemoteService {
-    private final RestTemplate restTemplate;
-    private final BaseRemoteService baseRemoteService;
-    private final ObjectMapper objectMapper;
-   // private final ApiSbuRepository apiSbuRepository;
+  private final RestTemplate restTemplate;
+  private final BaseRemoteService baseRemoteService;
+  private final ObjectMapper objectMapper;
+  // private final ApiSbuRepository apiSbuRepository;
 
-    /**
-     * <p>current usecase CustomerSignUp</p>
-     * <p>Map CustNo to CustNo of @Customer</p>
-     */
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public CustomerRemoteDto validateExisting(ExistingCustomerRequest params) throws JsonProcessingException {
-        String jsonStr = "";
-        String responseStr = null;
-        int statusCode = 200;
+  /**
+   * <p>current usecase CustomerSignUp</p>
+   * <p>Map CustNo to CustNo of @Customer</p>
+   */
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public CustomerRemoteDto validateExisting(ExistingCustomerRequest params) throws JsonProcessingException {
+    String jsonStr = "";
+    String responseStr = null;
+    int statusCode = 200;
 //        final String url = baseRemoteService.CustObj_GetListKeyValueActiveByCode();
-        final String url = baseRemoteService.confinsFouCalculcate;
-        try {
-            jsonStr = ObjectUtils.jsonToStr(params);
-            //params.setRandom(DateTimeUtils.now()+"");
-            final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
-            final HttpEntity<String> requestArgs = new HttpEntity<>(
-                    jsonStr,
-                    headers
-            );
-            log.info("ini Request Body: {}", jsonStr);
-            log.info("ini Header: {}", headers);
+    final String url = baseRemoteService.confinsFouCalculcate;
+    try {
+      jsonStr = ObjectUtils.jsonToStr(params);
+      //params.setRandom(DateTimeUtils.now()+"");
+      final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
+      final HttpEntity<String> requestArgs = new HttpEntity<>(
+        jsonStr,
+        headers
+      );
+      log.info("ini Request Body: {}", jsonStr);
+      log.info("ini Header: {}", headers);
 
 
-            final ResponseEntity<CustomerRemoteDto> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
-            );
-
-            log.info("ini URL: {}", url);
-
-
-            statusCode = response.getStatusCode().value();
-            responseStr = ObjectUtils.jsonToStr(response.getBody());
-            if (StringUtil.isNullOrEmpty(responseStr)) {
-                responseStr = objectMapper.writeValueAsString(response.getBody());
-            }
-            log.info("Response: {}", responseStr);
-
-            return response.getBody();
-        } catch (HttpStatusCodeException httpStatusCodeException) {
-            String message = "Failed to validate Existing Customer";
-            statusCode = httpStatusCodeException.getStatusCode().value();
-            responseStr = httpStatusCodeException.getResponseBodyAsString();
-
-            Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
-            if (errorObj != null) {
-                message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
-            }
-
-
-            throw new RuntimeException("Error while perform action to Confins\nDetail:" + message);
-        } catch (Exception e) {
-            log.error("validateExistingCustomer, error {}", e.getMessage());
-            throw e;
-        } finally {
-            ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
-                    .endpointUrl(url)
-                    .contentType("application/json")
-                    .requestPayload(jsonStr)
-                    .responseJson(responseStr)
-                    .responseStatus(String.valueOf(statusCode))
-                    .build();
+      final ResponseEntity<CustomerRemoteDto> response = restTemplate.exchange(
+        url,
+        HttpMethod.POST,
+        requestArgs,
+        new ParameterizedTypeReference<>() {
         }
+      );
+
+      log.info("ini URL: {}", url);
+
+
+      statusCode = response.getStatusCode().value();
+      responseStr = ObjectUtils.jsonToStr(response.getBody());
+      if (StringUtil.isNullOrEmpty(responseStr)) {
+        responseStr = objectMapper.writeValueAsString(response.getBody());
+      }
+      log.info("Response: {}", responseStr);
+
+      return response.getBody();
+    } catch (HttpStatusCodeException httpStatusCodeException) {
+      String message = "Failed to validate Existing Customer";
+      statusCode = httpStatusCodeException.getStatusCode().value();
+      responseStr = httpStatusCodeException.getResponseBodyAsString();
+
+      Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
+      if (errorObj != null) {
+        message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
+      }
+
+
+      throw new RuntimeException("Error while perform action to Confins\nDetail:" + message);
+    } catch (Exception e) {
+      log.error("validateExistingCustomer, error {}", e.getMessage());
+      throw e;
+    } finally {
+      ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
+        .endpointUrl(url)
+        .contentType("application/json")
+        .requestPayload(jsonStr)
+        .responseJson(responseStr)
+        .responseStatus(String.valueOf(statusCode))
+        .build();
     }
+  }
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto> inquiryVendorByBouwheer(
-            LoanSubmissionService.VendorTokenExtractor vendorTokenExtractor
-    ) throws JsonProcessingException {
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto> inquiryVendorByBouwheer(
+    LoanSubmissionService.VendorTokenExtractor vendorTokenExtractor
+  ) throws JsonProcessingException {
 
 
-        //perubahan di core BE utama
-        String vendorCode = vendorTokenExtractor.getVendorCode();
-        String bouwheerCode = vendorTokenExtractor.getBouwheerCode().toString();
+    //perubahan di core BE utama
+    String vendorCode = vendorTokenExtractor.getVendorCode();
+    String bouwheerCode = vendorTokenExtractor.getBouwheerCode().toString();
 
         /*Optional<ApiSbu>  apiSbu = apiSbuRepository.findByBouwheerCode(vendorTokenExtractor.getBouwheerCode());
         if (apiSbu.isPresent()){
@@ -127,115 +127,115 @@ public class CustomerRemoteService {
 
         }*/
 
-        String jsonStr = "";
-        String responseStr = null;
-        int statusCode = 200;
-        final String url = baseRemoteService.getBaseMst() + "/vendor/byVendorId";
-        try {
-            jsonStr = ObjectUtils.jsonToStr(InquiryRequest.builder()
-                    .vendorCode(vendorCode)
-                    .build());
-            final HttpEntity<String> requestArgs = new HttpEntity<>(
-                    jsonStr,
-                    baseRemoteService.apiKeyHeaders()
-            );
+    String jsonStr = "";
+    String responseStr = null;
+    int statusCode = 200;
+    final String url = baseRemoteService.getBaseMst() + "/vendor/byVendorId";
+    try {
+      jsonStr = ObjectUtils.jsonToStr(InquiryRequest.builder()
+        .vendorCode(vendorCode)
+        .build());
+      final HttpEntity<String> requestArgs = new HttpEntity<>(
+        jsonStr,
+        baseRemoteService.apiKeyHeaders()
+      );
 
-            final ResponseEntity<BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
-            );
-
-            statusCode = response.getStatusCode().value();
-            responseStr = ObjectUtils.jsonToStr(response.getBody());
-            if (StringUtil.isNullOrEmpty(responseStr)) {
-                responseStr = objectMapper.writeValueAsString(response.getBody());
-            }
-
-            return response.getBody();
-        } catch (HttpStatusCodeException httpStatusCodeException) {
-            String message = "Failed inquiry vendor";
-            statusCode = httpStatusCodeException.getStatusCode().value();
-            responseStr = httpStatusCodeException.getResponseBodyAsString();
-
-            Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
-            if (errorObj != null) {
-                message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
-            }
-
-            throw new RuntimeException("Error while perform action to MST\nDetail:" + message);
-        } catch (Exception e) {
-            log.error("inquiryVendor, error {}", e.getMessage());
-            throw e;
-        } finally {
-            ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
-                    .endpointUrl(url)
-                    .contentType("application/json")
-                    .requestPayload(jsonStr)
-                    .responseJson(responseStr)
-                    .responseStatus(String.valueOf(statusCode))
-                    .build();
+      final ResponseEntity<BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto>> response = restTemplate.exchange(
+        url,
+        HttpMethod.POST,
+        requestArgs,
+        new ParameterizedTypeReference<>() {
         }
+      );
+
+      statusCode = response.getStatusCode().value();
+      responseStr = ObjectUtils.jsonToStr(response.getBody());
+      if (StringUtil.isNullOrEmpty(responseStr)) {
+        responseStr = objectMapper.writeValueAsString(response.getBody());
+      }
+
+      return response.getBody();
+    } catch (HttpStatusCodeException httpStatusCodeException) {
+      String message = "Failed inquiry vendor";
+      statusCode = httpStatusCodeException.getStatusCode().value();
+      responseStr = httpStatusCodeException.getResponseBodyAsString();
+
+      Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
+      if (errorObj != null) {
+        message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
+      }
+
+      throw new RuntimeException("Error while perform action to MST\nDetail:" + message);
+    } catch (Exception e) {
+      log.error("inquiryVendor, error {}", e.getMessage());
+      throw e;
+    } finally {
+      ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
+        .endpointUrl(url)
+        .contentType("application/json")
+        .requestPayload(jsonStr)
+        .responseJson(responseStr)
+        .responseStatus(String.valueOf(statusCode))
+        .build();
     }
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto> inquiryVendor(
-            String vendorCode
-    ) throws JsonProcessingException {
+  }
+
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto> inquiryVendor(
+    String vendorCode
+  ) throws JsonProcessingException {
 
 
+    String jsonStr = "";
+    String responseStr = null;
+    int statusCode = 200;
+    final String url = baseRemoteService.getBaseMst() + "/vendor/byVendorId";
+    try {
+      jsonStr = ObjectUtils.jsonToStr(InquiryRequest.builder()
+        .vendorCode(vendorCode)
+        .build());
+      final HttpEntity<String> requestArgs = new HttpEntity<>(
+        jsonStr,
+        baseRemoteService.apiKeyHeaders()
+      );
 
-        String jsonStr = "";
-        String responseStr = null;
-        int statusCode = 200;
-        final String url = baseRemoteService.getBaseMst() + "/vendor/byVendorId";
-        try {
-            jsonStr = ObjectUtils.jsonToStr(InquiryRequest.builder()
-                    .vendorCode(vendorCode)
-                    .build());
-            final HttpEntity<String> requestArgs = new HttpEntity<>(
-                    jsonStr,
-                    baseRemoteService.apiKeyHeaders()
-            );
-
-            final ResponseEntity<BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
-            );
-
-            statusCode = response.getStatusCode().value();
-            responseStr = ObjectUtils.jsonToStr(response.getBody());
-            if (StringUtil.isNullOrEmpty(responseStr)) {
-                responseStr = objectMapper.writeValueAsString(response.getBody());
-            }
-
-            return response.getBody();
-        } catch (HttpStatusCodeException httpStatusCodeException) {
-            String message = "Failed inquiry vendor";
-            statusCode = httpStatusCodeException.getStatusCode().value();
-            responseStr = httpStatusCodeException.getResponseBodyAsString();
-
-            Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
-            if (errorObj != null) {
-                message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
-            }
-
-            throw new RuntimeException("Error while perform action to MST\nDetail:" + message);
-        } catch (Exception e) {
-            log.error("inquiryVendor, error {}", e.getMessage());
-            throw e;
-        } finally {
-            ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
-                    .endpointUrl(url)
-                    .contentType("application/json")
-                    .requestPayload(jsonStr)
-                    .responseJson(responseStr)
-                    .responseStatus(String.valueOf(statusCode))
-                    .build();
+      final ResponseEntity<BaseSimpleRemoteResponseDto<InquiryVendorRemoteDto>> response = restTemplate.exchange(
+        url,
+        HttpMethod.POST,
+        requestArgs,
+        new ParameterizedTypeReference<>() {
         }
+      );
+
+      statusCode = response.getStatusCode().value();
+      responseStr = ObjectUtils.jsonToStr(response.getBody());
+      if (StringUtil.isNullOrEmpty(responseStr)) {
+        responseStr = objectMapper.writeValueAsString(response.getBody());
+      }
+
+      return response.getBody();
+    } catch (HttpStatusCodeException httpStatusCodeException) {
+      String message = "Failed inquiry vendor";
+      statusCode = httpStatusCodeException.getStatusCode().value();
+      responseStr = httpStatusCodeException.getResponseBodyAsString();
+
+      Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
+      if (errorObj != null) {
+        message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
+      }
+
+      throw new RuntimeException("Error while perform action to MST\nDetail:" + message);
+    } catch (Exception e) {
+      log.error("inquiryVendor, error {}", e.getMessage());
+      throw e;
+    } finally {
+      ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
+        .endpointUrl(url)
+        .contentType("application/json")
+        .requestPayload(jsonStr)
+        .responseJson(responseStr)
+        .responseStatus(String.valueOf(statusCode))
+        .build();
     }
+  }
 }
