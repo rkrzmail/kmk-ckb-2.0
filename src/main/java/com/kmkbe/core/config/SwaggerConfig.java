@@ -1,45 +1,54 @@
 package com.kmkbe.core.config;
 
+import io.swagger.v3.oas.models.Components;
+import io.swagger.v3.oas.models.OpenAPI;
+import io.swagger.v3.oas.models.info.Info;
+import io.swagger.v3.oas.models.info.License;
+import io.swagger.v3.oas.models.media.StringSchema;
+import io.swagger.v3.oas.models.parameters.Parameter;
+import io.swagger.v3.oas.models.security.SecurityRequirement;
+import io.swagger.v3.oas.models.security.SecurityScheme;
+import org.springdoc.core.customizers.OperationCustomizer;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-/*import springfox.documentation.builders.ApiInfoBuilder;
-import springfox.documentation.builders.PathSelectors;
-import springfox.documentation.builders.RequestHandlerSelectors;
-import springfox.documentation.service.ApiInfo;
-import springfox.documentation.service.Contact;
-import springfox.documentation.spi.DocumentationType;
-import springfox.documentation.spring.web.plugins.Docket;
-import springfox.documentation.swagger2.annotations.EnableSwagger2;*/
 
 @Configuration
-//@EnableSwagger2
 public class SwaggerConfig {
 
-/*    @Bean
-    public Docket api() {
-        return new Docket(DocumentationType.SWAGGER_2)
-                .apiInfo(getApiInfo())
-                .select()
-                .apis(RequestHandlerSelectors.any())
-                .paths(PathSelectors.any())
-                .build();
-    }
+  @Bean
+  public OpenAPI openAPI(@Value("${springdoc.version}") String appVersion) {
+    final String securitySchemeName = "bearerAuth";
 
-    private ApiInfo getApiInfo() {
-        return new ApiInfoBuilder().title("Kmk Digital 2.0")
-                .description("Kmk Digital 2.0 API Documentation")
-                //.termsOfServiceUrl("http://adenurhidayat.com")
-                .contact(getContact()).license("kmk License")
-                //.licenseUrl("ade.enhaa@gmail.com")
-                .version("1.0")
-                .build();
-    }
+    return new OpenAPI()
+      .addSecurityItem(new SecurityRequirement().addList(securitySchemeName))
+      .components(new Components()
+        .addSecuritySchemes(securitySchemeName, new SecurityScheme()
+          .name(securitySchemeName)
+          .type(SecurityScheme.Type.HTTP)
+          .scheme("bearer")
+          .bearerFormat("JWT")))
+      .info(
+        new Info()
+          .title("com.kmk.ckb")
+          .version(appVersion)
+          .license(new License().name("Apache 2.0").url("http://springdoc.org"))
+      );
+  }
 
-    private Contact getContact() {
-        return new Contact(
-                "Khesa NikitaGenerator",
-                "https://nikitagenerator.com",
-                "khesa@nikitagenerator.com"
-        );
-    }*/
+  @Bean
+  public OperationCustomizer addCustomGlobalHeader() {
+    return (operation, handlerMethod) -> {
+      Parameter rtokenHeader = new Parameter()
+        .in("header")
+        .name("rtoken")
+        .description("Refresh Token")
+        .schema(new StringSchema())
+        .required(false);
+
+      operation.addParametersItem(rtokenHeader);
+
+      return operation;
+    };
+  }
 }

@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.kmkbe.core.converter.ToLowerCaseDeserializer;
 import com.kmkbe.core.utils.CommonFormattingUtils;
-import com.kmkbe.core.domain.constant.CompanyModel;
 import com.kmkbe.core.domain.constant.CustomerModel;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -21,99 +20,108 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @ToString
 public class SignUpRequest {
-    @NotNull(message = "vendorCode cannot be null")
-    @NotEmpty(message = "vendorCode cannot be empty")
-    private String vendorCode;
+  @NotNull(message = "vendorCode cannot be null")
+  @NotEmpty(message = "vendorCode cannot be empty")
+  private String vendorCode;
 
-    @NotNull(message = "Nama cannot be null")
-    @NotEmpty(message = "Nama cannot be empty")
-    private String name;
+  @NotNull(message = "Nama cannot be null")
+  @NotEmpty(message = "Nama cannot be empty")
+  private String name;
 
-    @NotNull(message = "Tipe Debitur cannot be null")
-    @NotEmpty(message = "Tipe Debitur cannot be empty")
-    private String customerType;
+  @NotNull(message = "Tipe Debitur cannot be null")
+  @NotEmpty(message = "Tipe Debitur cannot be empty")
+  private String customerType;
 
-    @NotNull(message = "KTP/NPWP cannot be null")
-    @NotEmpty(message = "KTP/NPWP cannot be empty")
-    //@Length(message = "Pin must be 6 digit", min = 6, max = 6)
-    private String customerIdNo;
+  @NotNull(message = "KTP/NPWP cannot be null")
+  @NotEmpty(message = "KTP/NPWP cannot be empty")
+  //@Length(message = "Pin must be 6 digit", min = 6, max = 6)
+  private String customerIdNo;
 
-    private String customerNo; // Kode Confins R3 (external req)
+  private String customerNo; // Kode Confins R3 (external req)
 
-    @NotNull(message = "Email cannot be null")
-    @NotEmpty(message = "Email cannot be empty")
-    @Pattern(regexp = CommonFormattingUtils.REGEX_EMAIL, message = "Email is not valid")
-    @JsonDeserialize(using = ToLowerCaseDeserializer.class)
-    private String email;
+  @NotNull(message = "Email cannot be null")
+  @NotEmpty(message = "Email cannot be empty")
+  @Pattern(regexp = CommonFormattingUtils.REGEX_EMAIL, message = "Email is not valid")
+  @JsonDeserialize(using = ToLowerCaseDeserializer.class)
+  private String email;
 
-    @NotNull(message = "No. Hp cannot be null")
-    @NotEmpty(message = "No. Hp cannot be empty")
-    private String mobilePhone;
+  @NotNull(message = "No. Hp cannot be null")
+  @NotEmpty(message = "No. Hp cannot be empty")
+  private String mobilePhone;
 
-    @NotNull(message = "Pin cannot be null")
-    @NotEmpty(message = "Pin cannot be empty")
-    @Length(message = "Pin must be 6 digit", min = 6, max = 6)
-    private String pin;
+  @NotNull(message = "ID Vendor cannot be null")
+  @NotEmpty(message = "ID Vendor cannot be empty")
+  private String vendorId;
 
-    @NotNull(message = "Setujui Syarat & Ketentuan cannot be null")
-    private Boolean isAgreeTc;
+  @NotNull(message = "Bouwheer cannot be null")
+  @NotEmpty(message = "Bouwheer cannot be empty")
+  private String bouwheer;
 
-    @JsonIgnore
-    private Company company;
+  @NotNull(message = "Pin cannot be null")
+  @NotEmpty(message = "Pin cannot be empty")
+  @Length(message = "Pin must be 6 digit", min = 6, max = 6)
+  private String pin;
 
-    @JsonIgnore
-    private Personal personal;
+  @NotNull(message = "Setujui Syarat & Ketentuan cannot be null")
+  private Boolean isAgreeTc;
 
-    @SuperBuilder
-    @Getter
-    @AllArgsConstructor
-    @NoArgsConstructor
-    public static class AddressDetail {
-        private String rt;
-        private String rw;
-        private String kelurahan;
-        private String kecamatan;
-        private String city;
-        private String province;
-        private String zipCode;
-        private String area;
-        private String phone;
-        private String ownershipStatus;
-        private LocalDateTime staySince;
-    }
 
-    @SuperBuilder
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @ToString
-    public static class Company extends AddressDetail {
-        private String companyType;
-        private String companyModel;
-        private String identityType;
-        private String identityNo;
-        private LocalDateTime identityIssuedDate;
-        private LocalDateTime identityExpiredDate;
-        private String companyAddress;
-        private String custIdNo;
+  @JsonIgnore
+  private Company company;
 
-    }
+  @JsonIgnore
+  private Personal personal;
 
-    @SuperBuilder
-    @Getter
-    @NoArgsConstructor
-    @AllArgsConstructor
-    @ToString
-    public static class Personal extends AddressDetail {
-        private String birthPlace;
-        private LocalDateTime birthDate;
-        private String gender;
-        private String identityType;
-        private String identityNo;
-        private LocalDateTime expiredDate;
-        private String motherMaidenName;
-        private String maritalStatus;
-        private CustomerModel customerModel;
-        private String legalAddress;
-    }
+  @SuperBuilder
+  @Getter
+  @AllArgsConstructor
+  @NoArgsConstructor
+  public static class AddressDetail {
+    private String rt;
+    private String rw;
+    private String kelurahan;
+    private String kecamatan;
+    private String city;
+    private String province;
+    private String zipCode;
+    private String area;
+    private String phone;
+    private String ownershipStatus;
+    private LocalDateTime staySince;
+  }
+
+  @SuperBuilder
+  @Getter
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @ToString
+  public static class Company extends AddressDetail {
+    private String companyType;
+    private String companyModel;
+    private String identityType;
+    private String identityNo;
+    private LocalDateTime identityIssuedDate;
+    private LocalDateTime identityExpiredDate;
+    private String companyAddress;
+    private String custIdNo;
+
+  }
+
+  @SuperBuilder
+  @Getter
+  @NoArgsConstructor
+  @AllArgsConstructor
+  @ToString
+  public static class Personal extends AddressDetail {
+    private String birthPlace;
+    private LocalDateTime birthDate;
+    private String gender;
+    private String identityType;
+    private String identityNo;
+    private LocalDateTime expiredDate;
+    private String motherMaidenName;
+    private String maritalStatus;
+    private CustomerModel customerModel;
+    private String legalAddress;
+  }
 }

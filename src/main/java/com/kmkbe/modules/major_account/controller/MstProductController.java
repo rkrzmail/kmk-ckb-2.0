@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -30,113 +31,88 @@ import java.util.Optional;
 @RestController
 @RequestMapping("/api/v1/product")
 @Tag(
-        name = "Penempatan cabang API",
-        description = "Berisi endpoints data penembatan cabang / branch area mapping"
+  name = "Penempatan cabang API",
+  description = "Berisi endpoints data penembatan cabang / branch area mapping"
 )
 @RequiredArgsConstructor
 public class MstProductController {
-    private final MstProductService productService;
-    private final BranchAreaMappingService branchAreaMappingService;
+  private final MstProductService productService;
+  private final BranchAreaMappingService branchAreaMappingService;
 
 
-    @GetMapping("/list")
-    public CommonResult<PaginationResult<ProductDto>> getList(
-            Authentication authentication, PaginationRequest request
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-        return new CommonResult<PaginationResult<ProductDto>>().success(
-                productService.listProduct(request)
-        );
+  @GetMapping("/list")
+  public CommonResult<PaginationResult<ProductDto>> getList(
+    Authentication authentication, @ParameterObject PaginationRequest request
+  ) throws SignatureException {
+    UserInternalUtils.authenticated(authentication);
+    return new CommonResult<PaginationResult<ProductDto>>().success(
+      productService.listProduct(request)
+    );
+  }
+
+  @GetMapping("/listitem/{id}")
+  public CommonResult<PaginationResult<ProductDto>> getListItem(
+    Authentication authentication, @ParameterObject PaginationRequest request,
+    @PathVariable("id") Long id
+  ) throws SignatureException {
+    UserInternalUtils.authenticated(authentication);
+    return new CommonResult<PaginationResult<ProductDto>>().success(
+      productService.listProductItem(request, id)
+    );
+  }
+
+  @PostMapping(
+    value = "/update/upload",
+    consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+  )
+  public CommonResult<Object> postUploadPlacementBranch(
+    HttpServletRequest httpServletRequest,
+    Authentication authentication,
+    @Valid @RequestPart MultipartFile file
+  ) throws SignatureException {
+    UserInternalUtils.authenticated(authentication);
+
+    productService.uploadProduct(httpServletRequest, authentication, file);
+    return new CommonResult<>().success(null);
+  }
+
+  // TAMBAH PRODUK
+  @PostMapping("/create")
+  public CommonResult<ProductDto> createProduct(
+    Authentication authentication,
+    @Valid @RequestBody ProductDto productDto
+  ) throws SignatureException {
+    UserInternalUtils.authenticated(authentication);
+
+    ProductDto createdProduct = productService.createProduct(productDto);
+
+    return new CommonResult<ProductDto>().success(createdProduct);
+  }
+
+  // AMBIL LAST PRODUK CODE
+  @GetMapping("/last")
+  public ResponseEntity<Map<String, Long>> getLastProductId() {
+    Long lastProductId = productService.getLastProductId();
+    Map<String, Long> response = new HashMap<>();
+    response.put("productId", lastProductId);
+    return ResponseEntity.ok(response);
+  }
+
+  // EDIT PRODUK
+  @GetMapping("/item/{productCode}")
+  public ResponseEntity<Product> getProductByCode(@PathVariable String productCode) {
+     return productService.getProductByCode(productCode);
+  }
+
+  @PutMapping("/item/{productCode}")
+  public ResponseEntity<?> updateProduct(@PathVariable String productCode, @RequestBody Product productDetails) {
+    try {
+      Product updatedProduct = productService.updateProduct(productCode, productDetails);
+      CommonResult<Product> result = new CommonResult<Product>().success(updatedProduct);
+      return ResponseEntity.ok(result);
+    } catch (Exception e) {
+      CommonResult<String> result = new CommonResult<String>().fail(500, "An error occurred: " + e.getMessage());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
     }
-
-    @GetMapping("/listitem/{id}")
-    public CommonResult<PaginationResult<ProductDto>> getListItem(
-            Authentication authentication, PaginationRequest request,
-              @PathVariable("id") Long id
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-        return new CommonResult<PaginationResult<ProductDto>>().success(
-                productService.listProductItem(request, id)
-        );
-    }
-
-    @PostMapping(
-            value = "/update/upload",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public CommonResult<Object> postUploadPlacementBranch(
-            HttpServletRequest httpServletRequest,
-            Authentication authentication,
-            @Valid @RequestPart MultipartFile file
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-
-        productService.uploadProduct(httpServletRequest, authentication, file);
-        return new CommonResult<>().success(   null );
-    }
-
-    // TAMBAH PRODUK
-    @PostMapping("/create")
-    public CommonResult<ProductDto> createProduct(
-            Authentication authentication,
-            @Valid @RequestBody ProductDto productDto
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-
-        ProductDto createdProduct = productService.createProduct(productDto);
-
-        return new CommonResult<ProductDto>().success(createdProduct);
-    }
-
-    // AMBIL LAST PRODUK CODE
-    @GetMapping("/last")
-    public ResponseEntity<Map<String, Long>> getLastProductId() {
-        Long lastProductId = productService.getLastProductId();
-        Map<String, Long> response = new HashMap<>();
-        response.put("productId", lastProductId);
-        return ResponseEntity.ok(response);
-    }
-
-    // get id product
-//    @GetMapping("/item/{productId}")
-//    public ResponseEntity<Product> getProductById(@PathVariable Long productId) {
-//        Optional<Product> product = productService.getProductById(productId);
-//        if (product.isPresent()) {
-//            return ResponseEntity.ok(product.get());
-//        }
-//        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null); // Produk tidak ditemukan
-//    }
-
-    // update product
-//    @PutMapping("/item/{productId}")
-//    public ResponseEntity<Product> updateProduct(@PathVariable Long productId, @RequestBody Product productDetails) {
-//        Product updatedProduct = productService.updateProduct(productId, productDetails);
-//        if (updatedProduct != null) {
-//            return ResponseEntity.ok(updatedProduct);
-//        }
-//        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);  // Jika produk tidak ditemukan
-//    }
-
-    // EDIT PRODUK
-    @GetMapping("/item/{productCode}")
-    public ResponseEntity<Product> getProductByCode(@PathVariable String productCode) {
-        System.out.println("Fetching product data for productCode: " + productCode);
-        Optional<Product> product = productService.getProductByCode(productCode);
-        if (product.isPresent()) {
-            return ResponseEntity.ok(product.get());
-        }
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(null);
-    }
-
-    @PutMapping("/item/{productCode}")
-    public ResponseEntity<?> updateProduct(@PathVariable String productCode, @RequestBody Product productDetails) {
-        try {
-            Product updatedProduct = productService.updateProduct(productCode, productDetails);
-            CommonResult<Product> result = new CommonResult<Product>().success(updatedProduct);
-            return ResponseEntity.ok(result);
-        } catch (Exception e) {
-            CommonResult<String> result = new CommonResult<String>().fail(500, "An error occurred: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
-        }
-    }
+  }
 }

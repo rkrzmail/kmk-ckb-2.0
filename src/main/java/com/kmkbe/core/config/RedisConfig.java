@@ -23,7 +23,7 @@ import org.springframework.data.redis.serializer.*;
 import java.time.Duration;
 
 @Configuration
-@EnableRedisRepositories
+//@EnableRedisRepositories
 public class RedisConfig {
     public static final String CSUL_CACHE_NAME = "kmk";
 

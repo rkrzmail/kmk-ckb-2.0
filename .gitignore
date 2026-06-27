@@ -35,4 +35,4 @@ build/
 **.log
 /uploads
 
-src/main/resources/application-prod.properties
+src/main/resources/application-prod-old.properties

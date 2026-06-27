@@ -1,0 +1,127 @@
+#ENV
+env: dev
+csul:
+  confins:
+    mou:
+      fwd: http://172.21.10.149:8083/mou_getsigner.php
+      getcwrbwhr: http://172.21.10.149:8083/mou_getcwrbouwheer.php
+      getlistcwrbwhr: http://172.21.10.149:8083/mou_getlistcwrbwhr.php
+      v1: http://confins.csulfinance.com/api/mou/v1
+      getpagingSQL: http://172.21.10.149:8083/mou_getpagingsql.php
+    los:
+      getAppNo: http://172.21.10.149:8083/los_getappno.php
+      getpagingSQL: http://172.21.10.149:8083/los_getpagingsql.php
+      fwd: http://172.21.10.149:8083/los_getagr.php
+      getRekening: http://172.21.10.149:8083/los_getrekening.php
+      v1: http://confins.csulfinance.com/api/los/v1
+    corelos:
+      v1: https://confins.csulfinance.com/api/corelos/v1
+      getFinData: http://172.21.10.149:8083/corelos_getfindata.php
+      getFactoring: http://172.21.10.149:8083/corelos_getfactoring.php
+    ap:
+      v1: https://confins.csulfinance.com/api/ap/v1
+    fou:
+      v1: https://confins.csulfinance.com/api/fou/v1
+      getcalculate: http://172.21.10.149:8083/fou_getcalculate.php
+      getzipcode: http://172.21.10.149:8083/fou_getzipcode.php
+    payment:
+      v1: https://confins.csulfinance.com/api/payment/v1
+    adinskey: MWxHZ1ZmZEpubHkrNy9YdmFNZ3ZSVXlHRzV1emozM0hrN1AxYTRjRFg1a1NZUz0=
+    ar:
+      v1: https://confins.csulfinance.com/api/ar/v1
+  sisca:
+    v1:
+      auth:
+        username: KMKDigital
+        password: CSUljkt#2024
+      white-list: http://10.30.15.146:8185/SISCAConnect/api/v1
+      internal: http://10.30.15.146:8185/SISCAConnect/api/v1
+  mst:
+    v1: https://goakcwwrshxfwkgm6bwnegpeti0ajaus.lambda-url.ap-southeast-1.on.aws/v1
+spring:
+  flyway:
+    enabled: 'true'
+    schemas: public
+    locations: classpath:db/migration/dev/{vendor}
+    baseline-on-migrate: 'true'
+  data:
+    redis:
+      database: '6'
+      lettuce:
+        pool:
+          max-active: '30'
+          enabled: 'true'
+          min-idle: '2'
+          max-wait: '10000'
+          max-idle: '10'
+      port: '6379'
+      password: ''
+      host: localhost
+    mongodb:
+      port: '27017'
+      host: localhost
+      database: kmklog
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: 'true'
+  cache:
+    type: redis
+  boot:
+    admin:
+      client:
+        url: http://localhost:9000
+        username: vandikalvandi@gmail.com
+        instance:
+          name: Kmk-Digital-2.0
+        password: '12345'
+  datasource:
+    password: Csultmt10
+    url: jdbc:postgresql://aurora-kmk.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified
+    username: postgres
+logging:
+  level:
+    org:
+      hibernate:
+        orm:
+          jdbc:
+            bind: trace
+        stat: debug
+        type: trace
+  logback:
+    rollingpolicy:
+      clean-history-on-start: 'true'
+      max-file-size: 10MB
+  file:
+    name: ./logs/log-file.log
+
+spring-doc:
+  version: '3.0'
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+rsa:
+  public-key: classpath:certs/public-key.pem
+  private-key: classpath:certs/pkcs8.pem
+testing:
+  mail:
+    password: tfru zmuk gtfb mrsz
+    port: '587'
+    host: smtp.gmail.com
+    username: khesa.oto@gmail.com
+server:
+  error:
+    whitelabel:
+      enabled: 'false'
+app:
+  api:
+    key: YiByHB@CSUL_DEV
+aspect:
+  enabled: 'true'
+
+# Keep your custom collection property anywhere you like
+custom:
+  mongodb:
+    collection: event

@@ -80,7 +80,7 @@ public class InvoiceService {
                             .custInvNo(posted.getCustomerInvoiceNo())
                             .invoiceDescription(
                                     StringUtil.isNullOrEmpty(posted.getInvoiceDescription())
-                                            ? "Invoice By Trakindo"
+                                            ? "Invoice By CKB"
                                             : posted.getInvoiceDescription()
                             )
                             .invoiceDate(Utils.toInstant( posted.getInvoiceDate()))
