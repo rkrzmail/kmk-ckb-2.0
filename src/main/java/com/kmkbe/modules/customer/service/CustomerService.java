@@ -15,6 +15,11 @@ import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FormatingUtils;
+import com.kmkbe.helpers.base.BaseRequest;
+import com.kmkbe.helpers.base.BaseResponse;
+import com.kmkbe.helpers.base.BaseResponseBuilder;
+import com.kmkbe.helpers.base.EmptyResponse;
+import com.kmkbe.modules.customer.request.ApprovalRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.request.UpdateFapRequest;
@@ -25,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -127,7 +133,6 @@ public class CustomerService {
     customerRepository.save(customer);
   }
 
-
   public Customer update(
     Authentication authentication,
     UpdateCustomerRequest request
@@ -136,11 +141,6 @@ public class CustomerService {
     try {
       Customer customer = CustomerUtils.authenticateCustomer(authentication);
       boolean emailChanged = false;
-
-
-//            if (!customer.getCustTypeCode().equalsIgnoreCase(request.getCustTypeCode())) {
-//                throw new IllegalArgumentException("Can't update customerTypeCode, please ensure valid payload");
-//            }
 
       String oldEmail = customer.getCustEmail();
       String newEmail = request.getCustEmail();
@@ -225,4 +225,26 @@ public class CustomerService {
       throw new IllegalArgumentException("Customer with email " + email + " not found");
     }
   }
+
+  // ApprovalStatus
+  public BaseResponse approval(ApprovalRequest request) {
+    Optional<Customer> customerOptional = customerRepository.findByCustCode(request.getCustCode());
+    if (customerOptional.isEmpty()) {
+      throw new IllegalArgumentException("Customer not ID found  " + request.getCustCode());
+    }
+
+    Customer customer = customerOptional.get();
+    if(customer.getStatus() !=null && !customer.getStatus().equals(ApprovalStatus.OPEN)){
+      throw new IllegalArgumentException("Customer has been process approval status is " + request.getStatus());
+    }
+
+    customer.setStatus(ApprovalStatus.valueOf(request.getStatus()));
+    customer.setIsActive(true);
+    customer.setUsrUpd(customer.getCustName());
+    customer.setDtmUpd(DateTimeUtils.now());
+    customerRepository.save(customer);
+
+    return new EmptyResponse();
+  }
+
 }

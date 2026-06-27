@@ -1,0 +1,140 @@
+#ENV
+env: prod
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info, health, logfile, loggers, env
+      base-path: /api/monitoring
+  endpoint:
+    health:
+      show-components: always
+      show-details: never
+    logfile:
+      external-file: admin.log
+spring:
+  flyway:
+    enabled: 'true'
+    schemas: public
+    locations: classpath:db/migration/prod/{vendor}
+    baseline-on-migrate: 'true'
+  data:
+    redis:
+      database: '6'
+      lettuce:
+        pool:
+          max-active: '30'
+          enabled: 'true'
+          min-idle: '2'
+          max-wait: '10000'
+          max-idle: '10'
+      port: '6379'
+      password: ''
+      host: localhost
+    mongodb:
+      port: '27017'
+      host: localhost
+      database: kmklog
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: 'true'
+  servlet:
+    multipart:
+      enabled: 'true'
+      max-request-size: 100MB
+      max-file-size: 100MB
+  cache:
+    type: redis
+  application:
+    name: kmkbe
+  boot:
+    admin:
+      client:
+        url: http://localhost:9000
+        username: vandikalvandi@gmail.com
+        instance:
+          name: Kmk-Digital-2.0
+        password: '12345'
+  datasource:
+    password: Csultmt10
+    url: jdbc:postgresql://aurora-kmkprod.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified
+    username: postgres
+  jackson:
+    deserialization:
+      adjust-dates-to-context-time-zone: 'true'
+  mvc:
+    static-path-pattern: /static/**
+logging:
+  level:
+    org:
+      hibernate:
+        orm:
+          jdbc:
+            bind: trace
+        stat: debug
+        type: trace
+  file:
+    name: ./logs/log-file.log
+springdoc:
+  api-docs:
+    path: /api/v1/api-docs
+  paths-to-match: /api/v1/**
+  swagger-ui:
+    path: /api/v1/swagger-ui.html
+rsa:
+  public-key: classpath:certs/public-key.pem
+  private-key: classpath:certs/pkcs8.pem
+testing:
+  mail:
+    password: tfru zmuk gtfb mrsz
+    port: '587'
+    host: smtp.gmail.com
+    username: khesa.oto@gmail.com
+csul:
+  confins:
+    ap:
+      v1: https://confinsr3.csulfinance.com/api/ap/v1
+    fou:
+      v1: https://confinsr3.csulfinance.com/api/fou/v1
+    payment:
+      v1: https://confinsr3.csulfinance.com/api/payment/v1
+    adinskey: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
+    mou:
+      v1: https://confinsr3.csulfinance.com/api/mou/v1
+    ar:
+      v1: https://confinsr3.csulfinance.com/api/ar/v1
+    los:
+      v1: https://confinsr3.csulfinance.com/api/los/v1
+  sisca:
+    v1:
+      auth:
+        username: KMKDigital
+        password: CSUljkt#2024
+      white-list: http://10.30.15.160:8185/SISCAConnect/api/v1
+      internal: http://10.30.15.160:8185/SISCAConnect/api/v1
+  mst:
+    v1: https://16.78.161.115/v1
+security:
+  api:
+    key: $2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC
+  jwt:
+    secret-key: 84b6e04f3268b78e7fee1883733e47aff50b88d1184b3512f2b5bffadb99d7eb
+    expiration-time: '3000000'
+  secret-key: DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH
+jwt:
+  refreshExpirationDateInMs: '9000000'
+server:
+  error:
+    whitelabel:
+      enabled: 'false'
+  port: '8443'
+
+aspect:
+  enabled: 'true'
+
+# Keep your custom collection property anywhere you like
+custom:
+  mongodb:
+    collection: event

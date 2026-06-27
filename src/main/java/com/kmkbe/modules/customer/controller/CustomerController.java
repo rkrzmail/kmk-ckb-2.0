@@ -1,6 +1,5 @@
 package com.kmkbe.modules.customer.controller;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.CommonResult;
@@ -10,7 +9,9 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.branch_admin.service.AgreementService;
+import com.kmkbe.modules.customer.request.ApprovalRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.request.UpdateFapRequest;
 import com.kmkbe.modules.customer.service.*;
@@ -25,18 +26,15 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -202,27 +200,6 @@ public class CustomerController {
     );
   }
 
-  //PostedInvoiceDto
-   /* @GetMapping("/invoices/due-date")
-    public CommonResult<PaginationResult<CustomerCreditFacilityDto>> getPostedInvoicesDue(
-            Authentication authentication,
-            PaginationRequest request
-    ) throws SignatureException {
-        return new CommonResult<PaginationResult<CustomerCreditFacilityDto>>().success(
-                invoiceService.customerDueDateInvoices(authentication, request)
-        );
-    }*/
-
-   /* @GetMapping("/credit-facilities")
-    public CommonResult<PaginationResult<CustomerCreditFacilityDto>> getActiveCreditFacilities(
-            Authentication authentication,
-            PaginationRequest request
-    ) throws SignatureException {
-        return new CommonResult<PaginationResult<CustomerCreditFacilityDto>>().success(
-                invoiceService.customerCreditFacilities(authentication, request)
-        );
-    }*/
-
   @GetMapping("/invoices/due-date")
   public CommonResult<PaginationResult<CustomerCreditFacilityDueDateDto>> getPostedInvoicesDue(
     Authentication authentication,
@@ -328,5 +305,9 @@ public class CustomerController {
     return new CommonResult<String>().success("All Notification records have been deleted.");
   }
 
+  @PutMapping(value = "/approval",consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+  public BaseResponse approvalCustomer(@RequestBody @Validated ApprovalRequest request) {
+    return customerService.approval(request);
+  }
 }
 
