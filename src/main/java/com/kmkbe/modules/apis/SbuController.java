@@ -40,6 +40,8 @@ import org.springframework.http.*;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -61,48 +63,52 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/sbu/ckb")//sbu
 @Tag(
-        name = "/api/v1/sbu/ckb",
-        description = ""
+  name = "/api/v1/sbu/ckb",
+  description = ""
 )
 @RequiredArgsConstructor
 public class SbuController {
-    private final SbuRemoteService sbuRemoteService;
-    private final RestTemplate restTemplate;
-    private final FinancingHdrService financingHdrService;
+  private final SbuRemoteService sbuRemoteService;
+  private final RestTemplate restTemplate;
+  private final FinancingHdrService financingHdrService;
 
-    private final FinancingService financingService;
-    private final FinancingDtlService financingDtlService;
-    private final ApiSbuRepository apiSbuRepository;
-    private final JwtService jwtService;
-    private final JwtGeneratorService jwtGeneratorService;
-    private final JwtValidatorService jwtValidatorService;
-    private final ObjectMapper objectMapper;
+  private final FinancingService financingService;
+  private final FinancingDtlService financingDtlService;
+  private final ApiSbuRepository apiSbuRepository;
+  private final JwtService jwtService;
+  private final JwtGeneratorService jwtGeneratorService;
+  private final JwtValidatorService jwtValidatorService;
+  private final ObjectMapper objectMapper;
+  private final AuthenticationManager authenticationManager;
+  private final LoanSubmissionService loanSubmissionService;
+  private final CustomerRepository customerRepository;
 
-    public ValidationResponse apiValidation( String apiKey, String jwtToken ) throws   IOException {
-        Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
-        if (apiSbu.isEmpty())    {
-            throw new IllegalApiKeyException();
-        }
-        ValidationResponse validationResponse = jwtValidatorService.validate(apiKey, jwtToken , apiSbu.get()   );
-        String bouwheerCode = apiSbu.get().getBouwheerCode().toString();
-        if (!validationResponse.getBouwheer().equalsIgnoreCase(bouwheerCode)){
-            throw new RuntimeException("bouwheer tidak cocok");
-        }
-        if (validationResponse.getExp()<(System.currentTimeMillis()/1000)){
-            throw new RemoteException(   " expired");
-        }
-        return validationResponse;
+
+  public ValidationResponse apiValidation(String apiKey, String jwtToken) throws IOException {
+    Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
+    if (apiSbu.isEmpty()) {
+      throw new IllegalApiKeyException();
     }
+    ValidationResponse validationResponse = jwtValidatorService.validate(apiKey, jwtToken, apiSbu.get());
+    String bouwheerCode = apiSbu.get().getBouwheerCode().toString();
+    if (!validationResponse.getBouwheer().equalsIgnoreCase(bouwheerCode)) {
+      throw new RuntimeException("bouwheer tidak cocok");
+    }
+    if (validationResponse.getExp() < (System.currentTimeMillis() / 1000)) {
+      throw new RemoteException(" expired");
+    }
+    return validationResponse;
+  }
 
-    @PostMapping(value = "/test/{jwtToken}", consumes = MediaType.ALL_VALUE)
-    public CommonResult<Object> test(
-            @PathVariable("jwtToken") String jwtToken,
-            @RequestHeader("ApiKey") String apiKey,
-            @RequestBody(required = false) Object rawBody ) throws   IOException {
+  @PostMapping(value = "/test/{jwtToken}", consumes = MediaType.ALL_VALUE)
+  public CommonResult<Object> test(
+    @PathVariable("jwtToken") String jwtToken,
+    @RequestHeader("ApiKey") String apiKey,
+    @RequestBody(required = false) Object rawBody) throws IOException {
 
-            System.out.println("JWT Token : " + jwtToken);
-            System.out.println("ApiKey    : " + apiKey);
-            System.out.println("Raw Body  : " + rawBody);
+    System.out.println("JWT Token : " + jwtToken);
+    System.out.println("ApiKey    : " + apiKey);
+    System.out.println("Raw Body  : " + rawBody);
 
         /*
          1. ambil app_key dan api_screet
@@ -130,240 +136,234 @@ public class SbuController {
                 }
          */
 
-        ValidationResponse validationResponse = apiValidation(apiKey, jwtToken);
+    ValidationResponse validationResponse = apiValidation(apiKey, jwtToken);
 
-        return   new CommonResult<Object>().success(rawBody);
+    return new CommonResult<Object>().success(rawBody);
 
+  }
+
+  @GetMapping(value = "/request/token", consumes = MediaType.ALL_VALUE)
+  public CommonResult<Map<String, Object>> test(
+    @RequestHeader("ApiKey") String apiKey) throws IOException {
+    Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
+    if (apiSbu.isEmpty()) {
+      throw new IllegalApiKeyException();
     }
-    @GetMapping(value = "/request/token", consumes = MediaType.ALL_VALUE)
-    public CommonResult<Map<String, Object>> test(
-            @RequestHeader("ApiKey") String apiKey,
-            @RequestBody(required = false) Object rawBody ) throws   IOException {
+    CommonResult<Map<String, Object>> result;
+    String strSecret = apiSbu.get().getAppSecret();
+    String strApp = apiSbu.get().getAppPath();
+    String bouwheerCode = apiSbu.get().getBouwheerCode().toString();
+
+    Date now = new Date();
+    Date expireDate = new Date(now.getTime() + (10 * 60 * 1000)); // now + 10 menit
+
+    Map<String, Object> response;
+    try {
+      String token = jwtGeneratorService.generateToken(
+        apiKey,
+        strSecret,
+        bouwheerCode,
+        expireDate
+      );
+
+      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+      String expireDateFormatted = sdf.format(expireDate);
+
+      response = new HashMap<>();
+      response.put("token", token);
+      response.put("bouwheer", bouwheerCode);
+      response.put("expired_at", expireDateFormatted);
 
 
-        Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
-        if (apiSbu.isEmpty())    {
-            throw new IllegalApiKeyException();
-        }
-        CommonResult<Map<String, Object>>  result ;
-        String strSecret = apiSbu.get().getAppSecret();
-        String strApp = apiSbu.get().getAppPath();
-        String bouwheerCode = apiSbu.get().getBouwheerCode().toString();
+      result = new CommonResult<Map<String, Object>>().success(response);
+    } catch (IllegalArgumentException e) {
 
-        Date now        = new Date();
-        Date expireDate = new Date(now.getTime() + (10 * 60 * 1000)); // now + 10 menit
-
-        Map<String, Object> response;
-        try {
-            String token = jwtGeneratorService.generateToken(
-                    apiKey,
-                    strSecret,
-                    bouwheerCode,
-                    expireDate
-            );
-
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-            String expireDateFormatted = sdf.format(expireDate);
-
-            response = new HashMap<>();
-            response.put("token", token);
-            response.put("bouwheer", bouwheerCode);
-            response.put("expired_at", expireDateFormatted);
-
-
-            result = new CommonResult<Map<String, Object>>().success(response);
-        } catch (IllegalArgumentException e) {
-
-            result = new CommonResult<Map<String, Object>>().fail(HttpStatus.UNAUTHORIZED.value(),  e.getMessage());
-        }
-
-        return result;
-    }
-    private final AuthenticationManager authenticationManager;
-    private final LoanSubmissionService loanSubmissionService;
-    private final CustomerRepository customerRepository;
-
-
-
-    @PostMapping("/simulations/calculate/{jwtToken}")
-    public CommonResult<EstimatedDisburseDto> getCalculateDisburse(
-
-            CalculateSimulationRequest request
-    ) throws SignatureException, JsonProcessingException, ParseException {
-        Optional<Customer>  customer = customerRepository.findByCustCode(UUID.fromString("33cade0f-4ce6-46e5-be19-258eddb7e6a6"));
-        if (customer.isEmpty()){
-            throw CommonInvalidException.cannotAccessResource();
-        }
-        //customer.get()
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        "guest@customer.co.id",
-                        "1"
-                )
-        );
-
-        return new CommonResult<EstimatedDisburseDto>().success(
-                loanSubmissionService.calculateDisburse(authentication, request)
-        );
+      result = new CommonResult<Map<String, Object>>().fail(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
     }
 
-    @PostMapping("/simulations/{jwtToken}")
-    public CommonResult<CreatedSimulationDto> createSimulation(
+    return result;
+  }
 
-             @RequestBody CreateSimulationRequest request,
-            @PathVariable("jwtToken") String jwtToken,
-            @RequestHeader("ApiKey") String apiKey,
-            @RequestBody(required = false) Object rawBody
-    ) throws Exception {
-
-
-        Optional<Customer>  customer = customerRepository.findByCustCode(UUID.fromString("33cade0f-4ce6-46e5-be19-258eddb7e6a6"));
-        if (customer.isEmpty()){
-            throw CommonInvalidException.cannotAccessResource();
-        }
-        Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        customer.get(),
-                        ""
-                )
-        );
-        var result = loanSubmissionService.createSimulation(authentication, request);
-        return new CommonResult<CreatedSimulationDto>().success(
-                result,
-                "Simulation Created Successfully"
-        );
+  @PostMapping(value = "/simulations/calculate/{jwtToken}")
+  public CommonResult<EstimatedDisburseDto> getCalculateDisburse(
+    @PathVariable("jwtToken") String jwtToken,
+    @RequestBody CalculateSimulationRequest request
+  ) throws SignatureException, ParseException, JsonProcessingException {
+    Optional<Customer> customerOptional = customerRepository.findByBouwheer(request.getBouwheerCode());
+    if (customerOptional.isEmpty()) {
+      throw new IllegalArgumentException("Customer Bouwheer not found " + request.getBouwheerCode());
     }
 
-    private final InvoiceRemoteDto invoiceRemoteDto;
-    @PostMapping("/listpostedinvoice/{jwtToken}")
-    public CommonResult<InquiryInvoiceRemoteDto> listpostedinvoice(
-            @RequestBody(required = false) Object rawBody
-    ) throws Exception {
-        JsonNode node = objectMapper.valueToTree(rawBody);
-        String vendorCode = node.path("vendorCode").asText();
+    Customer customer = customerOptional.get();
+    List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+    Authentication authentication = new UsernamePasswordAuthenticationToken(
+      customer,
+      null,
+      authorities
+    );
+    SecurityContextHolder.getContext().setAuthentication(authentication);
+    return new CommonResult<EstimatedDisburseDto>().success(
+      loanSubmissionService.calculateDisburse(authentication, request)
+    );
+  }
 
-        BaseSimpleRemoteResponseDto<InquiryInvoiceRemoteDto> inquiryInvoice = invoiceRemoteDto.inquiryInvoice(vendorCode);
-
-        return new CommonResult<InquiryInvoiceRemoteDto>().success(
-                inquiryInvoice.getData(),
-                ""
-        );
+  @PostMapping(value = "/simulations/{jwtToken}")
+  public CommonResult<CreatedSimulationDto> createSimulation(
+    @RequestBody CreateSimulationRequest request,
+    @PathVariable("jwtToken") String jwtToken,
+    @RequestHeader("ApiKey") String apiKey,
+    @RequestBody(required = false) Object rawBody
+  ) throws Exception {
+    Optional<Customer> customerOptional = customerRepository.findByBouwheer(request.getBouwheerCode());
+    if (customerOptional.isEmpty()) {
+      throw new IllegalArgumentException("Customer Bouwheer not found " + request.getBouwheerCode());
     }
 
+    Customer customer = customerOptional.get();
+    List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
+    Authentication authentication = new UsernamePasswordAuthenticationToken(
+      customer,
+      null,
+      authorities
+    );
+    SecurityContextHolder.getContext().setAuthentication(authentication);
+    var result = loanSubmissionService.createSimulation(authentication, request);
+    return new CommonResult<CreatedSimulationDto>().success(
+      result,
+      "Simulation Created Successfully"
+    );
+  }
 
-    @GetMapping("/financing/status") //approvals/status
-    public CommonResult<Object> updateApproval(
-            HttpServletRequest httpServletRequest
-    ) {
+  private final InvoiceRemoteDto invoiceRemoteDto;
 
-        String apiKey = httpServletRequest.getHeader("ApiKey");
-        Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
-        if (apiSbu.isEmpty())    {
-            throw new IllegalApiKeyException();
-        }
+  @PostMapping(value = "/listpostedinvoice/{jwtToken}")
+  public CommonResult<InquiryInvoiceRemoteDto> listpostedinvoice(
+    @PathVariable("jwtToken") String jwtToken,
+    @RequestBody(required = false) Object rawBody
+  ) throws Exception {
+    JsonNode node = objectMapper.valueToTree(rawBody);
+    String vendorCode = node.path("vendorCode").asText();
 
-        String strSecret = apiSbu.get().getAppSecret();
-        String strApp = apiSbu.get().getAppPath();
-        try {
-            financingService.recallApprovalStatus();
-        } catch (Exception ignored) {
-            ignored.printStackTrace();
-        }
+    BaseSimpleRemoteResponseDto<InquiryInvoiceRemoteDto> inquiryInvoice = invoiceRemoteDto.inquiryInvoice(vendorCode);
 
-        return new CommonResult<>().success(null, "Success Check Approval Status");
-    }
-    @PostMapping("/invoice-paid/{jwtToken}")
-    public CommonResult<Object>
-    invoicePaid(
-            @PathVariable("jwtToken") String jwtToken,
-            Authentication authentication,
-            HttpServletRequest httpServletRequest,
-            @Valid @RequestBody FinancingInvoicePaidRequest request
-    ) throws Exception {
-        try {
-            String providedApiKey = httpServletRequest.getHeader("ApiKey");
-            Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(providedApiKey);
-            if (apiSbu.isEmpty())    {
-                throw new IllegalApiKeyException();
-            }
-
-            FinancingHdr financingHdr = financingHdrService.paidFinancing(
-                    authentication,
-                    request,
-                    providedApiKey
-            );
-
-            financingDtlService.updatePaid(request, financingHdr);
+    return new CommonResult<InquiryInvoiceRemoteDto>().success(
+      inquiryInvoice.getData(),
+      ""
+    );
+  }
 
 
-            try {
-                financingDtlService.paymentReceive(request, financingHdr);
-            }catch (Exception ignored){
-                //akan ada proses skeduler
-            }
-            return new CommonResult<>().success(null, "Success Submitted");
-        } catch (Exception e) {
-            return new CommonResult<>().fail(500,   e.getMessage());
-        }
+  @GetMapping(value = "/financing/status") //approvals/status
+  public CommonResult<Object> updateApproval(
+    HttpServletRequest httpServletRequest
+  ) {
+
+    String apiKey = httpServletRequest.getHeader("ApiKey");
+    Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
+    if (apiSbu.isEmpty()) {
+      throw new IllegalApiKeyException();
     }
 
-
-
-
-
-    @PostMapping("/inquiry/disburse/{jwtToken}")
-    public CommonResult<Object>
-    inquiryDisburse(
-            @PathVariable("jwtToken") String jwtToken,
-            Authentication authentication,
-            HttpServletRequest httpServletRequest,
-            @Valid @RequestBody FinancingInvoicePaidRequest request
-    ) throws Exception {
-        try {
-            String providedApiKey = httpServletRequest.getHeader("ApiKey");
-            Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(providedApiKey);
-            if (apiSbu.isEmpty())    {
-                throw new IllegalApiKeyException();
-            }
-
-            FinancingHdr financingHdr = financingHdrService.paidFinancing(
-                    authentication,
-                    request,
-                    providedApiKey
-            );
-
-            return new CommonResult<>().success(null, "Success Submitted");
-        } catch (Exception e) {
-            return new CommonResult<>().fail(500,   e.getMessage());
-        }
+    String strSecret = apiSbu.get().getAppSecret();
+    String strApp = apiSbu.get().getAppPath();
+    try {
+      financingService.recallApprovalStatus();
+    } catch (Exception ignored) {
+      ignored.printStackTrace();
     }
 
+    return new CommonResult<>().success(null, "Success Check Approval Status");
+  }
 
-    public InquiryDisburseResult inquiryDisburse (@Nullable InquiryDisburseRequest inquiryDisburseRequest ) throws JsonProcessingException {
-        try {
-            final HttpHeaders headers = sbuRemoteService.adInsKeyHeaders();
-            final HttpEntity<InquiryDisburseRequest> requestArgs = new HttpEntity<>(
-                    inquiryDisburseRequest,
-                    headers
-            );
+  @PostMapping(value = "/invoice-paid/{jwtToken}")
+  public CommonResult<Object>
+  invoicePaid(
+    @PathVariable("jwtToken") String jwtToken,
+    Authentication authentication,
+    HttpServletRequest httpServletRequest,
+    @Valid @RequestBody FinancingInvoicePaidRequest request
+  ) throws Exception {
+    try {
+      String providedApiKey = httpServletRequest.getHeader("ApiKey");
+      Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(providedApiKey);
+      if (apiSbu.isEmpty()) {
+        throw new IllegalApiKeyException();
+      }
 
-            final ResponseEntity<String> response = restTemplate.exchange(
-                    sbuRemoteService.inquiry_Disburse(),
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
-            );
-            //int  o = response.getStatusCode().value();
-            String stsr = String.valueOf(response.getBody());
-            ObjectMapper om = new ObjectMapper();
-            om.registerModule(new JavaTimeModule());
-            InquiryDisburseResult root = om.readValue(stsr, InquiryDisburseResult.class);
-            return  root;//response.getBody();
+      FinancingHdr financingHdr = financingHdrService.paidFinancing(
+        authentication,
+        request,
+        providedApiKey
+      );
 
-        } catch (Exception e) {
-            log.error("mstRefMasterInput: {}", e.getMessage());
-            throw e;
-        }
+      financingDtlService.updatePaid(request, financingHdr);
+
+
+      try {
+        financingDtlService.paymentReceive(request, financingHdr);
+      } catch (Exception ignored) {
+        //akan ada proses skeduler
+      }
+      return new CommonResult<>().success(null, "Success Submitted");
+    } catch (Exception e) {
+      return new CommonResult<>().fail(500, e.getMessage());
     }
+  }
+
+
+  @PostMapping(value = "/inquiry/disburse/{jwtToken}")
+  public CommonResult<Object>
+  inquiryDisburse(
+    @PathVariable("jwtToken") String jwtToken,
+    Authentication authentication,
+    HttpServletRequest httpServletRequest,
+    @Valid @RequestBody FinancingInvoicePaidRequest request
+  ) throws Exception {
+    try {
+      String providedApiKey = httpServletRequest.getHeader("ApiKey");
+      Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(providedApiKey);
+      if (apiSbu.isEmpty()) {
+        throw new IllegalApiKeyException();
+      }
+
+      FinancingHdr financingHdr = financingHdrService.paidFinancing(
+        authentication,
+        request,
+        providedApiKey
+      );
+
+      return new CommonResult<>().success(null, "Success Submitted");
+    } catch (Exception e) {
+      return new CommonResult<>().fail(500, e.getMessage());
+    }
+  }
+
+
+  public InquiryDisburseResult inquiryDisburse(@Nullable InquiryDisburseRequest inquiryDisburseRequest) throws JsonProcessingException {
+    try {
+      final HttpHeaders headers = sbuRemoteService.adInsKeyHeaders();
+      final HttpEntity<InquiryDisburseRequest> requestArgs = new HttpEntity<>(
+        inquiryDisburseRequest,
+        headers
+      );
+
+      final ResponseEntity<String> response = restTemplate.exchange(
+        sbuRemoteService.inquiry_Disburse(),
+        HttpMethod.POST,
+        requestArgs,
+        new ParameterizedTypeReference<>() {
+        }
+      );
+      //int  o = response.getStatusCode().value();
+      String stsr = String.valueOf(response.getBody());
+      ObjectMapper om = new ObjectMapper();
+      om.registerModule(new JavaTimeModule());
+      InquiryDisburseResult root = om.readValue(stsr, InquiryDisburseResult.class);
+      return root;//response.getBody();
+
+    } catch (Exception e) {
+      log.error("mstRefMasterInput: {}", e.getMessage());
+      throw e;
+    }
+  }
 }
