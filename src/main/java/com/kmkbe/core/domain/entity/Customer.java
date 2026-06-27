@@ -1,5 +1,6 @@
 package com.kmkbe.core.domain.entity;
 
+import com.kmkbe.core.domain.dto.ExternalSigningResponse;
 import com.kmkbe.core.enums.ApprovalStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -69,9 +70,8 @@ public class Customer implements UserDetails {
   @Column(name = "bouwheer",length = 30)
   private String bouwheer;
 
-  @Enumerated(EnumType.STRING)
   @Column(name = "status",length = 10)
-  private ApprovalStatus status;
+  private String status;
 
   @Column
   private Boolean agreeTc = false;

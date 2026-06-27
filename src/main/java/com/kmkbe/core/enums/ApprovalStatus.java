@@ -12,16 +12,17 @@ public enum ApprovalStatus {
   APPROVED,
   REJECTED;
 
-
-  @JsonCreator
-  public static ApprovalStatus fromString(String value) {
+  public ApprovalStatus safeValueOf(String value) {
     if (value == null || value.trim().isEmpty()) {
-      return null;
+      return null; // Or return a default value like ApprovalStatus.DRAFT
     }
     try {
       return ApprovalStatus.valueOf(value.toUpperCase().trim());
     } catch (IllegalArgumentException e) {
+      // Log the warning instead of crashing
+      System.err.println("Unknown ApprovalStatus: " + value);
       return null;
     }
   }
+
 }

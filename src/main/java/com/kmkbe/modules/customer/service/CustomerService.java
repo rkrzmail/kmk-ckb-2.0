@@ -107,7 +107,7 @@ public class CustomerService {
       customer.setIsEmailValid(false);
       customer.setBouwheer(request.getBouwheer());
       customer.setVeendorId(request.getVendorId());
-      customer.setStatus(ApprovalStatus.OPEN);
+      customer.setStatus(String.valueOf(ApprovalStatus.OPEN));
       customer.setIsActive(false);
 
       if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
@@ -238,7 +238,7 @@ public class CustomerService {
       throw new IllegalArgumentException("Customer has been process approval status is " + request.getStatus());
     }
 
-    customer.setStatus(ApprovalStatus.valueOf(request.getStatus()));
+    customer.setStatus(request.getStatus());
     customer.setIsActive(true);
     customer.setUsrUpd(customer.getCustName());
     customer.setDtmUpd(DateTimeUtils.now());

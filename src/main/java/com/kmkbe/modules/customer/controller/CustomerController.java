@@ -305,7 +305,7 @@ public class CustomerController {
     return new CommonResult<String>().success("All Notification records have been deleted.");
   }
 
-  @PutMapping(value = "/approval",consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+  @PutMapping(value = "/approval")
   public BaseResponse approvalCustomer(@RequestBody @Validated ApprovalRequest request) {
     return customerService.approval(request);
   }

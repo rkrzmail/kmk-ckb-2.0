@@ -209,6 +209,7 @@ public class CustomerRemoteService {
 
       statusCode = response.getStatusCode().value();
       responseStr = ObjectUtils.jsonToStr(response.getBody());
+      log.error("Error API {} request {} response {} ",url,requestArgs, responseStr);
       if (StringUtil.isNullOrEmpty(responseStr)) {
         responseStr = objectMapper.writeValueAsString(response.getBody());
       }
