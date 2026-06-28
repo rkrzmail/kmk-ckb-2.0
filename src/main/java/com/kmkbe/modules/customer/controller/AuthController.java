@@ -4,10 +4,12 @@ import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.dto.LoginDto;
 import com.kmkbe.core.domain.dto.RequestOtpDto;
+import com.kmkbe.core.domain.entity.Bouwheer;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.OtpLog;
 import com.kmkbe.core.domain.entity.RedisAttack;
 import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.repository.BouwheerRepository;
 import com.kmkbe.core.domain.repository.RedisAttackRepository;
 import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
@@ -34,6 +36,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/auth")
@@ -53,6 +56,7 @@ public class AuthController {
   private final DocumentService documentService;
   private final RedisRepository redisRepository;
   private final RedisAttackRepository redisAttackRepository;
+  private final BouwheerRepository bouwheerRepository;
 
   //@Transactional
   @PostMapping("/sign-up")
@@ -60,6 +64,7 @@ public class AuthController {
     @Valid @RequestBody SignUpRequest request
   ) throws Exception {
     final InquiryVendorRemoteDto vendor;
+
     try {
       vendor = customerRemoteService.inquiryVendor(request.getVendorCode()).getData();
     } catch (Exception e) {
@@ -69,6 +74,12 @@ public class AuthController {
           "Dana Sakti. Harap melakukan pengecekan ulang " +
           "dengan pihak PT. Trakindo Utama.")
         .build();
+    }
+
+    // Validate Bouwheer Code
+    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheer()));
+    if (bouwheerOptional.isEmpty()) {
+      throw new IllegalArgumentException("Invalid Bouwheer Code " + request.getBouwheer());
     }
 
     final CustomerType type;
