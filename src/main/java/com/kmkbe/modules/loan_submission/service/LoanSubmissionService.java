@@ -8,7 +8,6 @@ import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.*;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.exception.CommonInvalidException;
-import com.kmkbe.core.exception.LoanDocMandatoryException;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
@@ -46,7 +45,6 @@ import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -101,7 +99,7 @@ public class LoanSubmissionService {
         if(customer ==null){
           throw new IllegalArgumentException("Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
         }
-        List<Invoice> dbInvoices = financingHdrRepository.findFinancingHeaderByVendorId(customer.getVeendorId());
+        List<Invoice> dbInvoices = financingHdrRepository.findFinancingHeaderByVendorId(customer.getVendorId());
 
         log.info("Count invoice Simulation result {}", dbInvoices.size());
 

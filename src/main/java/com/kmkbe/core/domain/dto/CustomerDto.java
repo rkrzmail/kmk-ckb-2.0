@@ -30,6 +30,9 @@ public class CustomerDto {
     private String custExternalCode;
     private Boolean isActive;
     private LocalDateTime dtmCrt;
+    private String status;
+    private String vendorId;
+    private String bouwheer;
 
     private AddressDto address;
     private Boolean forceLogout;

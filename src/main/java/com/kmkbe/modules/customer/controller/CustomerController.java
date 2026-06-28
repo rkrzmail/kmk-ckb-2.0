@@ -305,6 +305,17 @@ public class CustomerController {
     return new CommonResult<String>().success("All Notification records have been deleted.");
   }
 
+
+  @GetMapping(value = "/pages", produces = MediaType.APPLICATION_JSON_VALUE)
+  public PaginationResult<CustomerDto> getAllCustomers(PaginationRequest request) {
+    return customerService.pages(request);
+  }
+
+  @GetMapping(value = "/{custCode}", produces = MediaType.APPLICATION_JSON_VALUE)
+  public CustomerDto getCustCode(@PathVariable String custCode) {
+    return customerService.findByCustCode(custCode);
+  }
+
   @PutMapping(value = "/approval")
   public BaseResponse approvalCustomer(@RequestBody @Validated ApprovalRequest request) {
     return customerService.approval(request);

@@ -1,7 +1,5 @@
 package com.kmkbe.core.domain.entity;
 
-import com.kmkbe.core.domain.dto.ExternalSigningResponse;
-import com.kmkbe.core.enums.ApprovalStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -65,7 +63,7 @@ public class Customer implements UserDetails {
   private String custPin;
 
   @Column(name = "vendor_id",length = 60)
-  private String veendorId;
+  private String vendorId;
 
   @Column(name = "bouwheer",length = 30)
   private String bouwheer;

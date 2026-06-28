@@ -2,22 +2,20 @@ package com.kmkbe.modules.customer.service;
 
 import com.kmkbe.core.domain.constant.CustomerIdType;
 import com.kmkbe.core.domain.constant.CustomerType;
-import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
-import com.kmkbe.core.domain.dto.ProfileFapDto;
-import com.kmkbe.core.domain.dto.ProfileSITDto;
+import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
 import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
+import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FormatingUtils;
-import com.kmkbe.helpers.base.BaseRequest;
 import com.kmkbe.helpers.base.BaseResponse;
-import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.base.EmptyResponse;
 import com.kmkbe.modules.customer.request.ApprovalRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
@@ -27,15 +25,17 @@ import com.kmkbe.modules.customer.utils.CustomerUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.beanutils.BeanUtils;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import java.lang.reflect.InvocationTargetException;
 import java.security.SignatureException;
 import java.util.List;
 import java.util.Optional;
@@ -106,7 +106,7 @@ public class CustomerService {
       customer.setCustPin(encodePin);
       customer.setIsEmailValid(false);
       customer.setBouwheer(request.getBouwheer());
-      customer.setVeendorId(request.getVendorId());
+      customer.setVendorId(request.getVendorId());
       customer.setStatus(String.valueOf(ApprovalStatus.OPEN));
       customer.setIsActive(false);
 
@@ -226,6 +226,73 @@ public class CustomerService {
     }
   }
 
+
+  public PaginationResult<CustomerDto> pages(
+    PaginationRequest request) {
+    Page<Customer> page = customerRepository.findAll(PageRequest.of(request.getPageNo(), request.getPageSize()));
+    List<CustomerDto> responses = page.getContent().stream().map(item -> {
+      CustomerDto response = new CustomerDto();
+      response.setCustCode(item.getCustCode());
+      response.setCustNo(item.getCustNo());
+      response.setCustName(item.getCustName());
+      response.setCustTypeCode(item.getCustTypeCode());
+      response.setCustIdNo(item.getCustIdNo());
+      response.setCustEmail(item.getCustEmail());
+      response.setIsEmailValid(item.getIsEmailValid());
+      response.setCustMobilePhone(item.getCustMobilePhone());
+      response.setIsPhoneValid(item.getIsPhoneValid());
+      response.setIsWaActive(item.getIsWaActive());
+      response.setAgreeTc(item.getAgreeTc());
+      response.setAgreeLegalShare(item.getAgreeLegalShare());
+      response.setCustExternalCode(item.getCustExternalCode());
+      response.setIsActive(item.getIsActive());
+      response.setDtmCrt(item.getDtmCrt());
+      response.setStatus(item.getStatus());
+      response.setVendorId(item.getVendorId());
+      response.setBouwheer(item.getBouwheer());
+      response.setForceLogout(item.getForceLogout());
+      return response;
+    }).toList();
+
+    return PaginationResult.<CustomerDto>builder()
+      .currentPage(+1)
+      .totalData(page.getTotalElements())
+      .totalPage(page.getTotalPages())
+      .list(responses).build();
+
+  }
+
+  // ApprovalStatus
+  public CustomerDto findByCustCode(String custCode) {
+    Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString(custCode));
+    if (customerOptional.isEmpty()) {
+      throw new IllegalArgumentException("Customer not ID found  " + custCode);
+    }
+
+    Customer customer = customerOptional.get();
+    CustomerDto response = new CustomerDto();
+    response.setCustCode(customer.getCustCode());
+    response.setCustNo(customer.getCustNo());
+    response.setCustName(customer.getCustName());
+    response.setCustTypeCode(customer.getCustTypeCode());
+    response.setCustIdNo(customer.getCustIdNo());
+    response.setCustEmail(customer.getCustEmail());
+    response.setIsEmailValid(customer.getIsEmailValid());
+    response.setCustMobilePhone(customer.getCustMobilePhone());
+    response.setIsPhoneValid(customer.getIsPhoneValid());
+    response.setIsWaActive(customer.getIsWaActive());
+    response.setAgreeTc(customer.getAgreeTc());
+    response.setAgreeLegalShare(customer.getAgreeLegalShare());
+    response.setCustExternalCode(customer.getCustExternalCode());
+    response.setIsActive(customer.getIsActive());
+    response.setDtmCrt(customer.getDtmCrt());
+    response.setStatus(customer.getStatus());
+    response.setVendorId(customer.getVendorId());
+    response.setBouwheer(customer.getBouwheer());
+    response.setForceLogout(customer.getForceLogout());
+    return response;
+  }
+
   // ApprovalStatus
   public BaseResponse approval(ApprovalRequest request) {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(request.getCustCode());
@@ -234,7 +301,7 @@ public class CustomerService {
     }
 
     Customer customer = customerOptional.get();
-    if(customer.getStatus() !=null && !customer.getStatus().equals(ApprovalStatus.OPEN)){
+    if (customer.getStatus() != null && !customer.getStatus().equals(ApprovalStatus.OPEN)) {
       throw new IllegalArgumentException("Customer has been process approval status is " + request.getStatus());
     }
 
@@ -246,5 +313,4 @@ public class CustomerService {
 
     return new EmptyResponse();
   }
-
 }
