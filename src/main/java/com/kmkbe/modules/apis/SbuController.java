@@ -189,7 +189,7 @@ public class SbuController {
     @PathVariable("jwtToken") String jwtToken,
     @RequestBody CalculateSimulationRequest request
   ) throws SignatureException, ParseException, JsonProcessingException {
-    Optional<Customer> customerOptional = customerRepository.findByBouwheer(request.getBouwheerCode());
+    Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString("33cade0f-4ce6-46e5-be19-258eddb7e6a6"));
     if (customerOptional.isEmpty()) {
       throw new IllegalArgumentException("Customer Bouwheer not found " + request.getBouwheerCode());
     }
