@@ -205,4 +205,7 @@ public class FinancingHdr implements Serializable {
 
     @Column(name = "fap_status")
     private String fapStatus;
+
+    @Column(name = "vendor_id")
+    private String vendorId;
 }

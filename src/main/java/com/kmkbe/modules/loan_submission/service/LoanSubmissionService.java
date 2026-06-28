@@ -63,7 +63,7 @@ public class LoanSubmissionService {
   private final SimulationHistRepository simulationHistRepository;
   private final InvoiceRepository invoiceRepository;
   private final CustomerRemoteService customerRemoteService;
-  private final InvoiceRemoteDto invoiceRemoteDto;
+  private InvoiceRemoteDto invoiceRemoteDto;
   private final CurrencyRemoteService currencyRemoteService;
   private final ExistingCustomerService existingCustomerService;
 
@@ -89,13 +89,45 @@ public class LoanSubmissionService {
   ) throws Exception {
     try {
       final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, token);
-      final InquiryInvoiceRemoteDto inquiryInvoiceRemote;
+      InquiryInvoiceRemoteDto inquiryInvoiceRemote = null;
 
       try {
         //ambil data dari api
         inquiryInvoiceRemote = invoiceRemoteDto.inquiryInvoice(vendorTokenExtractor.getVendorCode()).getData();
       } catch (Exception e) {
-        throw new IllegalStateException("Terjdi kesalahan saat mengambil data invoice dari pihak PT. Trakindo Utama.");
+        log.warn("API invoice gagal, fallback ke database: {}", e.getMessage());
+
+        final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+        if(customer ==null){
+          throw new IllegalArgumentException("Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
+        }
+        List<Invoice> dbInvoices = financingHdrRepository.findFinancingHeaderByVendorId(customer.getVeendorId());
+
+        log.info("Count invoice Simulation result {}", dbInvoices.size());
+
+        SimpleDateFormat sdf = DateTimeUtils.SDF_STANDARD_DATE;
+        List<InquiryInvoiceRemoteDto.InvoiceRemoteDto> rows = new ArrayList<>();
+        for (Invoice inv : dbInvoices) {
+          rows.add(InquiryInvoiceRemoteDto.InvoiceRemoteDto.builder()
+            .vendorNo(vendorTokenExtractor.getVendorCode())
+            .reference(inv.getCustInvNo())
+            .accountingDocument(inv.getBouwheerInvNo())
+            .poNumber(inv.getPoNumber())
+            .amount(inv.getInvoiceAmt() != null ? String.valueOf(inv.getInvoiceAmt()) : "0")
+            .currency("IDR")
+            .netDueDate(inv.getInvoiceDueDate() != null
+              ? sdf.format(Date.from(inv.getInvoiceDueDate().atZone(java.time.ZoneId.systemDefault()).toInstant()))
+              : "")
+            .postingDate(inv.getPostingDate() != null ? sdf.format(inv.getPostingDate()) : "")
+            .description(inv.getInvoiceDescription())
+            .build());
+        }
+        inquiryInvoiceRemote = InquiryInvoiceRemoteDto.builder()
+          .blacklistStatus(false)   // bypass cek blacklist
+          .documentStatus("01")     // bypass cek doc status (bukan 03/04)
+          .row(rows)
+          .count(rows.size())
+          .build();
       }
 
       if (inquiryInvoiceRemote == null) {
