@@ -500,11 +500,14 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
     """, nativeQuery = true)
     Long countCompleted(@Param("financingHdrCode") String financingHdrCode);
 
-  @Query(value = """
-    select i.* from financing_hdr fh
-    join financing_dtl fd on fh.financing_hdr_code  =fd.financing_hdr_code
-    join invoice i on fd.invoice_code  = i.invoice_code
-    where fh.vendor_id =:vendorId and fh.financing_status='' and fh.financing_step='';
-    """, nativeQuery = true)
-  List<Invoice> findFinancingHeaderByVendorId(String vendorId);
+    @Query("""
+      select i from FinancingHdr fh
+      join fh.financingDtlList fd
+      join fd.invoice i
+      where fh.vendorId = :vendorId 
+      and (fh.financingStatus = '' or fh.financingStatus is null) 
+      and (fh.financingStep = '' or fh.financingStep is null)
+      """)
+    List<Invoice> findFinancingHeaderByVendorId(@Param("vendorId") String vendorId);
+
 }
