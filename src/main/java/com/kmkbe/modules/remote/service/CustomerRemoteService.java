@@ -213,7 +213,6 @@ public class CustomerRemoteService {
       if (StringUtil.isNullOrEmpty(responseStr)) {
         responseStr = objectMapper.writeValueAsString(response.getBody());
       }
-
       return response.getBody();
     } catch (HttpStatusCodeException httpStatusCodeException) {
       String message = "Failed inquiry vendor";
