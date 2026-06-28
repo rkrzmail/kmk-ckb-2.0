@@ -211,8 +211,7 @@ public class SbuController {
   public CommonResult<CreatedSimulationDto> createSimulation(
     @RequestBody CreateSimulationRequest request,
     @PathVariable("jwtToken") String jwtToken,
-    @RequestHeader("ApiKey") String apiKey,
-    @RequestBody(required = false) Object rawBody
+    @RequestHeader("ApiKey") String apiKey
   ) throws Exception {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString("33cade0f-4ce6-46e5-be19-258eddb7e6a6"));
     if (customerOptional.isEmpty()) {

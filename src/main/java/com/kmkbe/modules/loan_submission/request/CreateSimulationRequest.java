@@ -21,7 +21,5 @@ public class CreateSimulationRequest  extends BaseRequest {
   @NotNull(message = "Disburse percentage is required")
   private Double disbursePercentage;
 
-  @NotNull(message = "Invoices is required, Please select at least 1 invoice")
-  @NotEmpty(message = "Invoices is required, Please select at least 1 invoice")
-  private List<PostedInvoicePayload> invoices;
+  private transient List<PostedInvoicePayload> invoices;
 }

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.kmkbe.core.converter.ToLowerCaseDeserializer;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.domain.constant.CustomerModel;
+import com.kmkbe.helpers.base.BaseRequest;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -19,7 +20,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @NoArgsConstructor
 @ToString
-public class SignUpRequest {
+public class SignUpRequest extends BaseRequest {
   @NotNull(message = "vendorCode cannot be null")
   @NotEmpty(message = "vendorCode cannot be empty")
   private String vendorCode;
