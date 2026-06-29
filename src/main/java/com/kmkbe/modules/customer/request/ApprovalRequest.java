@@ -1,9 +1,7 @@
 package com.kmkbe.modules.customer.request;
 
 
-import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.helpers.base.BaseRequest;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -26,5 +24,7 @@ public class ApprovalRequest extends BaseRequest {
   UUID custCode;
 
   @NotNull(message = "Status cannot be empty (APPROVED/REJECTED)")
-  String status;
+  String approvalStatus;
+
+  String approvalNote;
 }

@@ -21,6 +21,7 @@ import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.modules.user.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -317,8 +318,8 @@ public class CustomerController {
   }
 
   @PutMapping(value = "/approval")
-  public BaseResponse approvalCustomer(@RequestBody @Validated ApprovalRequest request) {
-    return customerService.approval(request);
+  public BaseResponse approvalCustomer(@RequestBody @Validated ApprovalRequest request,Authentication authentication) throws MessagingException {
+    return customerService.approval(request,authentication);
   }
 }
 
