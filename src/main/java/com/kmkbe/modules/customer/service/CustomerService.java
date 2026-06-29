@@ -15,17 +15,19 @@ import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FormatingUtils;
+import com.kmkbe.helpers.CommonUtils;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.helpers.base.EmptyResponse;
+import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.request.ApprovalRequest;
 import com.kmkbe.modules.customer.request.SignUpRequest;
 import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.request.UpdateFapRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
+import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.beanutils.BeanUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -35,7 +37,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.InvocationTargetException;
 import java.security.SignatureException;
 import java.util.List;
 import java.util.Optional;
@@ -51,6 +52,7 @@ public class CustomerService {
   private final BCryptPasswordEncoder bcryptEncoder;
   private final JdbcTemplate jdbcTemplate;
   private final FinancingHdrRepository financingHdrRepository;
+  private final EmailService emailService;
 
   public Customer create(
     SignUpRequest request,
@@ -107,7 +109,7 @@ public class CustomerService {
       customer.setIsEmailValid(false);
       customer.setBouwheer(request.getBouwheer());
       customer.setVendorId(request.getVendorId());
-      customer.setStatus(String.valueOf(ApprovalStatus.OPEN));
+      customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
       customer.setIsActive(false);
 
       if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
@@ -247,10 +249,13 @@ public class CustomerService {
       response.setCustExternalCode(item.getCustExternalCode());
       response.setIsActive(item.getIsActive());
       response.setDtmCrt(item.getDtmCrt());
-      response.setStatus(item.getStatus());
+      response.setForceLogout(item.getForceLogout());
       response.setVendorId(item.getVendorId());
       response.setBouwheer(item.getBouwheer());
-      response.setForceLogout(item.getForceLogout());
+      response.setApprovalStatus(item.getApprovalStatus());
+      response.setApprovalNote(item.getApprovalNote());
+      response.setApprovalBy(item.getApprovalBy());
+      response.setApprovalAt(item.getApprovalAt());
       return response;
     }).toList();
 
@@ -286,31 +291,37 @@ public class CustomerService {
     response.setCustExternalCode(customer.getCustExternalCode());
     response.setIsActive(customer.getIsActive());
     response.setDtmCrt(customer.getDtmCrt());
-    response.setStatus(customer.getStatus());
+    response.setForceLogout(customer.getForceLogout());
     response.setVendorId(customer.getVendorId());
     response.setBouwheer(customer.getBouwheer());
-    response.setForceLogout(customer.getForceLogout());
+    response.setApprovalStatus(customer.getApprovalStatus());
+    response.setApprovalNote(customer.getApprovalNote());
+    response.setApprovalBy(customer.getApprovalBy());
+    response.setApprovalAt(customer.getApprovalAt());
     return response;
   }
 
   // ApprovalStatus
-  public BaseResponse approval(ApprovalRequest request) {
+  public BaseResponse approval(ApprovalRequest request,Authentication authentication) throws MessagingException {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(request.getCustCode());
     if (customerOptional.isEmpty()) {
       throw new IllegalArgumentException("Customer not ID found  " + request.getCustCode());
     }
 
     Customer customer = customerOptional.get();
-    if (customer.getStatus() != null && !customer.getStatus().equals(ApprovalStatus.OPEN)) {
-      throw new IllegalArgumentException("Customer has been process approval status is " + request.getStatus());
+    if (customer.getApprovalStatus() != null) {
+      throw new IllegalArgumentException("Customer has been process approval status is " + request.getApprovalStatus());
     }
 
-    customer.setStatus(request.getStatus());
-    customer.setIsActive(true);
-    customer.setUsrUpd(customer.getCustName());
-    customer.setDtmUpd(DateTimeUtils.now());
+    customer.setApprovalStatus(request.getApprovalStatus());
+    customer.setIsActive(request.getApprovalStatus().equals("APPROVED"));
+    customer.setApprovalNote(request.getApprovalNote());
+    customer.setApprovalBy(authentication.getName());
+    customer.setApprovalAt(DateTimeUtils.now());
     customerRepository.save(customer);
 
+    // Send mail
+    emailService.customerVerification(customer.getCustEmail().toLowerCase(),customer.getCustName(),customer.getCustIdNo(), CommonUtils.generateOtp());
     return new EmptyResponse();
   }
 }

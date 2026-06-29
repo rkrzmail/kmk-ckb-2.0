@@ -62,15 +62,6 @@ public class Customer implements UserDetails {
   @Column(length = 250)
   private String custPin;
 
-  @Column(name = "vendor_id",length = 60)
-  private String vendorId;
-
-  @Column(name = "bouwheer",length = 30)
-  private String bouwheer;
-
-  @Column(name = "status",length = 10)
-  private String status;
-
   @Column
   private Boolean agreeTc = false;
 
@@ -97,6 +88,24 @@ public class Customer implements UserDetails {
 
   @Column
   private LocalDateTime dtmUpd;
+
+  @Column(name = "vendor_id",length = 60)
+  private String vendorId;
+
+  @Column(name = "bouwheer",length = 30)
+  private String bouwheer;
+
+  @Column(name = "approval_status",length = 10)
+  private String approvalStatus;
+
+  @Column(name = "approval_note",length = 100)
+  private String approvalNote;
+
+  @Column(name = "approval_by",length = 60)
+  private String approvalBy;
+
+  @Column
+  private LocalDateTime approvalAt;
 
   @OneToOne(
     mappedBy = "customer",
