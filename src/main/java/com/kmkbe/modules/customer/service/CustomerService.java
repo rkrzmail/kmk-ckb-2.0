@@ -309,7 +309,7 @@ public class CustomerService {
     }
 
     Customer customer = customerOptional.get();
-    if (customer.getApprovalStatus() != null) {
+    if (customer.getApprovalStatus().equals(ApprovalStatus.APPROVED) || customer.getApprovalStatus().equals("REJECTED")) {
       throw new IllegalArgumentException("Customer has been process approval status is " + request.getApprovalStatus());
     }
 
