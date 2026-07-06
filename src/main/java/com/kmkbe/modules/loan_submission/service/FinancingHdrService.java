@@ -57,7 +57,7 @@ public class FinancingHdrService {
             Authentication authentication,
             Customer customer,
             Bouwheer bouwheer,
-            Product product,
+            String  vendorNikCode,
             CreateSimulationRequest request,
             SimulationDisburseResult simulationResult
     ) {
@@ -71,7 +71,7 @@ public class FinancingHdrService {
 
                 // ((tanggal due date invoice) 10 - hari berjalan) + 7 (bouwheer grace period)
                 Long top = (long) DateTimeUtils.dateDiffInDay(new Date(), request.getInvoices().getFirst().getInvoiceDueDate());
-
+                header.setVendorId(vendorNikCode);
                 header.setFinancingHdrCode(UUID.randomUUID());
                 header.setCustomer(customer);
                 header.setBouwheer(bouwheer);
