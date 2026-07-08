@@ -107,10 +107,10 @@ rsa:
   private-key: classpath:certs/pkcs8.pem
 testing:
   mail:
-    password: tfru zmuk gtfb mrsz
+    password: 06a7234e57cee8
     port: '587'
-    host: smtp.gmail.com
-    username: khesa.oto@gmail.com
+    host: sandbox.smtp.mailtrap.io
+    username: 88f3d615426584
 server:
   error:
     whitelabel:
