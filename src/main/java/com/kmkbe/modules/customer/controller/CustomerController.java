@@ -81,6 +81,8 @@ public class CustomerController {
 
 
     CustomerDto result = CustomerMapper.INSTANCE.custDtoFromEntity(customer);
+    result.setNpwp(customer.getNpwp());
+
     if (customer.getCompany() != null) {
       result.setAddress(CustomerMapper.addressDtoFromCompany(customer.getCompany()));
       result.setCompany(CustomerMapper.INSTANCE.companyDtoFromEntity(customer.getCompany()));
@@ -149,6 +151,7 @@ public class CustomerController {
       result.setAddress(CustomerMapper.addressDtoFromCompany(company));
       result.setCompany(CustomerMapper.INSTANCE.companyDtoFromEntity(company));
       result.setForceLogout(customer.getForceLogout());
+      result.setNpwp(customer.getNpwp());
 
     } else if (customer.getCustTypeCode().equals(CustomerType.Personal.name())) {
       if (request.getPersonal() == null) {
