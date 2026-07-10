@@ -38,6 +38,7 @@ public class CustomerDto {
   private String approvalNote;
   private String approvalBy;
   private LocalDateTime approvalAt;
+  private String npwp;
 
   public Boolean getForceLogout() {
     return forceLogout;

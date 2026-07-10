@@ -161,6 +161,7 @@ public class CustomerService {
       customer.setCustName(request.getCustName());
       //customer.setCustTypeCode(request.getCustTypeCode());
       customer.setCustIdNo(request.getCustIdNo());
+      customer.setNpwp(request.getNpwp());
       try {
         customer = customerRepository.save(customer);
       } catch (DataIntegrityViolationException e) {

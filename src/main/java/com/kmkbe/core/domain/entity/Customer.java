@@ -107,6 +107,9 @@ public class Customer implements UserDetails {
   @Column
   private LocalDateTime approvalAt;
 
+  @Column(name = "npwp",length = 20)
+  private String npwp;
+  
   @OneToOne(
     mappedBy = "customer",
     fetch = FetchType.EAGER

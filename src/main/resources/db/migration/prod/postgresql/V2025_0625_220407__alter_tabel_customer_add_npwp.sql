@@ -1,0 +1,1 @@
+ALTER TABLE public.customer ADD COLUMN IF NOT EXISTS  npwp varchar(20) NULL;
