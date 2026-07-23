@@ -33,4 +33,6 @@ public interface CustomerRepository extends JpaRepository<Customer, Long>, Pagin
    Optional<Customer> findByBouwheer(String bouwheer);
 
    Page<Customer> findAll(Pageable pageable);
+
+   Optional<Customer> findByVendorId(String vendorId);
 }

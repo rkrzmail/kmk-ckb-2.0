@@ -111,10 +111,6 @@ public class AuthService {
 
             }
 
-
-
-
-
             if (!CommonFormattingUtils.isEmailValid(request.email().toLowerCase())) {
                 throw CommonInvalidException.invalidEmailOrPin();
             }

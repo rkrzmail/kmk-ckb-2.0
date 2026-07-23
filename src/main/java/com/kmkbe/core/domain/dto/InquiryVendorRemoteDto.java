@@ -1,8 +1,10 @@
 package com.kmkbe.core.domain.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
+import java.io.Serializable;
 import java.util.List;
 
 @Getter
@@ -11,9 +13,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
-public class InquiryVendorRemoteDto {
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class InquiryVendorRemoteDto implements Serializable {
     @JsonProperty("vendor_id")
-    private Integer vendorId;
+    private String vendorId;
 
     @JsonProperty("sap_code")
     private String sapCode;
@@ -107,6 +110,7 @@ public class InquiryVendorRemoteDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class VendorRegistrationDoc {
         @JsonProperty("document_url")
         private String documentUrl;
@@ -120,6 +124,7 @@ public class InquiryVendorRemoteDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class VendorBuilding {
         @JsonProperty("ownership_status")
         private String ownershipStatus;
@@ -194,6 +199,7 @@ public class InquiryVendorRemoteDto {
     @Builder
     @NoArgsConstructor
     @AllArgsConstructor
+    @JsonIgnoreProperties(ignoreUnknown = true)
     public static class BankDetail {
         @JsonProperty("account_no")
         private String accountNo;

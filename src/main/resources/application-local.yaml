@@ -1,5 +1,4 @@
-env: dev
-
+env: local
 spring:
   boot:
     admin:
@@ -145,10 +144,18 @@ csul:
       v1: https://confins.csulfinance.com/api/payment/v1
     ap:
       v1: https://confins.csulfinance.com/api/ap/v1
-
+  ckb :
+    url:
+    api-key:
 aspect:
   enabled: true
 
 app:
   api:
     key: YiByHB@CSUL_DEV
+
+feign:
+  csul:
+    ckb:
+      url: https://api-ckbvendorportal.dipstrategy.co.id
+      api-key:

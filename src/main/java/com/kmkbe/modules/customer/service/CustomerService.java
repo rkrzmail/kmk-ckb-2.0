@@ -15,6 +15,7 @@ import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FormatingUtils;
+import com.kmkbe.feign.model.dto.VendorDataPayload;
 import com.kmkbe.helpers.CommonUtils;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.helpers.base.EmptyResponse;
@@ -56,7 +57,6 @@ public class CustomerService {
 
   public Customer create(
     SignUpRequest request,
-    InquiryVendorRemoteDto vendor,
     CustomerType type
   ) throws CommonInvalidException {
     try {
