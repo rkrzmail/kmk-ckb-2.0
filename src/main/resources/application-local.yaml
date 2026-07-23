@@ -159,3 +159,10 @@ feign:
     ckb:
       url: https://api-ckbvendorportal.dipstrategy.co.id
       api-key:
+
+  confins:
+    url: https://uat-confinsr3.csulfinance.com
+    secret:
+    api-key:
+    fou: "${feign.confins.url}/api/fou"
+    ap: "${feign.confins.url}/api/ap"
