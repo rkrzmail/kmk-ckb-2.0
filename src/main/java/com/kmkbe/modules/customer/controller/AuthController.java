@@ -1,6 +1,6 @@
 package com.kmkbe.modules.customer.controller;
 
-import com.kmkbe.adapter.ApiConfinsAdapter;
+import com.kmkbe.adapter.ApiCsulAdapter;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.dto.LoginDto;
@@ -16,7 +16,7 @@ import com.kmkbe.core.domain.repository.RedisAttackRepository;
 import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.feign.model.dto.VendorDataPayload;
+import com.kmkbe.feign.model.response.VendorResponse;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
@@ -63,7 +63,7 @@ public class AuthController {
   private final RedisRepository redisRepository;
   private final RedisAttackRepository redisAttackRepository;
   private final BouwheerRepository bouwheerRepository;
-  private final ApiConfinsAdapter apiConfinsAdapter;
+  private final ApiCsulAdapter apiCsulAdapter;
   private final CustomerRepository customerRepository;
 
   //@Transactional
@@ -71,7 +71,7 @@ public class AuthController {
   public CommonResult<RequestOtpDto> signUp(
     @Valid @RequestBody SignUpRequest request
   ) throws Exception {
-    final VendorDataPayload vendor;
+    final VendorResponse vendor;
 
     // Validate duplicate vendor ID
     Optional<Customer>customerOptional = customerRepository.findByVendorId(request.getVendorId());
@@ -80,7 +80,7 @@ public class AuthController {
     }
 
     try {
-      vendor = apiConfinsAdapter.findByCode(request.getVendorCode());
+      vendor = apiCsulAdapter.findByCode(request.getVendorCode());
       log.info("Inquiry Vendor {} ",vendor.toString());
 
     } catch (Exception e) {

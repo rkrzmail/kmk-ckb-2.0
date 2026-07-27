@@ -8,10 +8,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(
-  name = "authFeignClient",
+  name = "csulAuthFeignClient",
   url = "${feign.csul.ckb.url}"
 )
-public interface AuthFeignClient {
+public interface CsulAuthFeignClient {
 
   @GetMapping(value = "/api/v1/webhook/token",
       headers = {

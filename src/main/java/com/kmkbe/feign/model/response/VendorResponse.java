@@ -1,18 +1,17 @@
-package com.kmkbe.feign.model.dto;
+package com.kmkbe.feign.model.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
+import com.kmkbe.helpers.base.BaseResponse;
 import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
-
-import java.io.Serializable;
 import java.util.List;
 
 @Data
 @Getter
 @Setter
-public class VendorDataPayload implements Serializable {
+public class VendorResponse extends BaseResponse {
     @JsonProperty("vendor_id")
     private String vendorId;
 
