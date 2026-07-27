@@ -114,7 +114,7 @@ csul:
   mst:
     v1: https://goakcwwrshxfwkgm6bwnegpeti0ajaus.lambda-url.ap-southeast-1.on.aws/v1
   confins:
-    adinskey: MWxHZ1ZmZEpubHkrNy9YdmFNZ3ZSVXlHRzV1emozM0hrN1AxYTRjRFg1a1NZUz0=
+    adinskey: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
     fou:
       v1: https://confins.csulfinance.com/api/fou/v1
       getzipcode: http://172.21.10.149:8083/fou_getzipcode.php
@@ -163,6 +163,6 @@ feign:
   confins:
     url: https://uat-confinsr3.csulfinance.com
     secret:
-    api-key:
+    adins-key: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
     fou: "${feign.confins.url}/api/fou"
     ap: "${feign.confins.url}/api/ap"

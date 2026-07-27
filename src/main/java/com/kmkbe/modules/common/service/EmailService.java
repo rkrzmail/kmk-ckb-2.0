@@ -1,7 +1,7 @@
 package com.kmkbe.modules.common.service;
 
 import com.kmkbe.core.annotation.LogMethod;
-import com.kmkbe.core.config.MailConfig;
+import com.kmkbe.config.MailConfig;
 import com.kmkbe.core.domain.dto.MailRemoteDto;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.EmailTemplate;
