@@ -20,7 +20,6 @@ public class BouwheerService {
 
   /**
    * Get all Bouwheers
-   *
    * @return
    */
   public List<BouwheerResponse> all() {
