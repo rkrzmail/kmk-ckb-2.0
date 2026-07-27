@@ -1,4 +1,4 @@
-package com.kmkbe.core.config;
+package com.kmkbe.config;
 
 import com.kmkbe.core.callback.UnauthorizedEntryPoint;
 import com.kmkbe.core.middleware.ApiKeyAuthenticationFilter;
@@ -82,7 +82,8 @@ public class SecurityConfig {
       "/configuration/**",
       "/swagger-ui.html",
       "/static/**",
-      "/public/storage/**"
+      "/public/storage/**",
+      "/api/public/**"
     );
   }
 

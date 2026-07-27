@@ -1,4 +1,4 @@
-package com.kmkbe.core.config;
+package com.kmkbe.config;
 
 import jakarta.servlet.Filter;
 import jakarta.servlet.FilterChain;
