@@ -1,4 +1,4 @@
-package com.kmkbe.helpers;
+package com.kmkbe.helpers.utils;
 
 
 import java.security.SecureRandom;

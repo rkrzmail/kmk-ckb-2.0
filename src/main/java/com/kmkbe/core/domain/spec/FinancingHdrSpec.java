@@ -1,6 +1,7 @@
 package com.kmkbe.core.domain.spec;
 
 import com.kmkbe.core.domain.entity.*;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.criteria.*;
 import org.springframework.data.jpa.domain.Specification;

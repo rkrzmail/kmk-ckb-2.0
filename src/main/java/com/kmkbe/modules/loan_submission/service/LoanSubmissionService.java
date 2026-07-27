@@ -12,6 +12,8 @@ import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.service.ExistingCustomerService;
 import com.kmkbe.modules.customer.utils.CustomerUtils;

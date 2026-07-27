@@ -2,7 +2,7 @@ package com.kmkbe.modules.customer.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.core.domain.entity.Bouwheer;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.Cwr;
 import com.kmkbe.core.domain.repository.CustomerRepository;
@@ -22,7 +22,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
