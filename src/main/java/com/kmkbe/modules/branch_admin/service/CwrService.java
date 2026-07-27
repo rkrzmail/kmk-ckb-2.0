@@ -14,12 +14,9 @@ import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryCwrRequest;
-import com.kmkbe.modules.customer.service.ExistingCustomerService;
-import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
-import com.kmkbe.modules.remote.request.PropCriteriaGenericTypeRequest;
-import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
@@ -27,9 +24,6 @@ import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.time.DateUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -37,7 +31,6 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.security.SignatureException;
 import java.text.ParseException;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service

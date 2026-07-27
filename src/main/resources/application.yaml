@@ -1,0 +1,48 @@
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info, health, logfile, loggers, env
+      base-path: /api/monitoring
+  endpoint:
+    health:
+      show-details: never
+      show-components: always
+    logfile:
+      external-file: admin.log
+spring:
+  jackson:
+    deserialization:
+      adjust-dates-to-context-time-zone: 'true'
+  application:
+    name: kmkbe
+  mvc:
+    static-path-pattern: /static/**
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      enabled: 'true'
+      max-request-size: 100MB
+  profiles:
+    active: local
+security:
+  jwt:
+    secret-key: 84b6e04f3268b78e7fee1883733e47aff50b88d1184b3512f2b5bffadb99d7eb
+    expiration-time: '3000000'
+  secret-key: DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH
+  api:
+    key: $2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC
+jasper:
+  report:
+    dir: classpath:/reports/
+net:
+  sf:
+    jasperreports:
+      awt:
+        ignore:
+          missing:
+            font: 'true'
+server:
+  port: '8443'
+jwt:
+  refreshExpirationDateInMs: '9000000'

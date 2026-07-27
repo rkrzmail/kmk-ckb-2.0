@@ -13,15 +13,11 @@ import com.kmkbe.core.domain.repository.InvoiceRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.spec.FinancingDtlSpec;
 import com.kmkbe.core.domain.spec.InvoiceSpec;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -34,7 +30,6 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.security.SignatureException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.IntStream;
@@ -80,7 +75,7 @@ public class InvoiceService {
                             .custInvNo(posted.getCustomerInvoiceNo())
                             .invoiceDescription(
                                     StringUtil.isNullOrEmpty(posted.getInvoiceDescription())
-                                            ? "Invoice By Trakindo"
+                                            ? "Invoice By CKB"
                                             : posted.getInvoiceDescription()
                             )
                             .invoiceDate(Utils.toInstant( posted.getInvoiceDate()))

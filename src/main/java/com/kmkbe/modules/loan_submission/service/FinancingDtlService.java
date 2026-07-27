@@ -14,8 +14,8 @@ import com.kmkbe.core.domain.repository.PaymentReceiveHistoryRepository;
 import com.kmkbe.core.domain.request.*;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
-import com.kmkbe.modules.remote.request.RefMasterRequest;
 import com.kmkbe.nikita.data.Nson;
 import com.kmkbe.nikita.utils.Utils;
 import jakarta.annotation.Nullable;
@@ -31,7 +31,6 @@ import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.temporal.TemporalField;
 import java.util.*;
 import java.util.stream.IntStream;
 

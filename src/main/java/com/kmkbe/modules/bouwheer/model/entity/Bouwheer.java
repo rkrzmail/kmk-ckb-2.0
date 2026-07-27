@@ -1,5 +1,7 @@
-package com.kmkbe.core.domain.entity;
+package com.kmkbe.modules.bouwheer.model.entity;
 
+import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.Invoice;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;

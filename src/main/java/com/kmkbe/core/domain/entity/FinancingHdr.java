@@ -1,5 +1,6 @@
 package com.kmkbe.core.domain.entity;
 
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.user.entity.MstBranch;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -205,4 +206,7 @@ public class FinancingHdr implements Serializable {
 
     @Column(name = "fap_status")
     private String fapStatus;
+
+    @Column(name = "vendor_id")
+    private String vendorId;
 }

@@ -6,6 +6,7 @@ import com.kmkbe.core.domain.dto.SummaryByBranchDto;
 import com.kmkbe.core.domain.entity.AgreementFileSigning;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.Invoice;
 import com.kmkbe.modules.user.entity.MstBranch;
 import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.validation.constraints.NotNull;
@@ -498,4 +499,17 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
     AND fh.financing_step = 'COMPLETED'
     """, nativeQuery = true)
     Long countCompleted(@Param("financingHdrCode") String financingHdrCode);
+
+
+  @Query(value = """
+    select i.* from financing_hdr fh
+    join financing_dtl fd on fh.financing_hdr_code = fd.financing_hdr_code
+    join invoice i on fd.invoice_code = i.invoice_code
+    where fh.vendor_id = :vendorId 
+    and (fh.financing_status = '' or fh.financing_status IS NULL) 
+    and (fh.financing_step = '' or fh.financing_step IS NULL)
+    """, nativeQuery = true)
+  List<Invoice> findFinancingHeaderByVendorId(@Param("vendorId") String vendorId);
+
+
 }
