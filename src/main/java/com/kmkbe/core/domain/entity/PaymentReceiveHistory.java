@@ -1,13 +1,12 @@
 package com.kmkbe.core.domain.entity;
 
-import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.UUID;
 
 @Builder

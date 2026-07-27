@@ -2,7 +2,7 @@ package com.kmkbe.core.domain.dto;
 
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
-import com.kmkbe.core.domain.entity.Bouwheer;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

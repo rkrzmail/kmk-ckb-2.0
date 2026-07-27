@@ -1,19 +1,22 @@
 package com.kmkbe.modules.customer.controller;
 
+import com.kmkbe.adapter.ApiConfinsAdapter;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.dto.LoginDto;
 import com.kmkbe.core.domain.dto.RequestOtpDto;
-import com.kmkbe.core.domain.entity.Bouwheer;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.OtpLog;
 import com.kmkbe.core.domain.entity.RedisAttack;
 import com.kmkbe.core.domain.model.CommonResult;
-import com.kmkbe.core.domain.repository.BouwheerRepository;
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
+import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.RedisAttackRepository;
 import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.feign.model.dto.VendorDataPayload;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
@@ -27,6 +30,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
@@ -35,9 +39,11 @@ import java.security.SignatureException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/auth")
 @Tag(
@@ -57,17 +63,28 @@ public class AuthController {
   private final RedisRepository redisRepository;
   private final RedisAttackRepository redisAttackRepository;
   private final BouwheerRepository bouwheerRepository;
+  private final ApiConfinsAdapter apiConfinsAdapter;
+  private final CustomerRepository customerRepository;
 
   //@Transactional
   @PostMapping("/sign-up")
   public CommonResult<RequestOtpDto> signUp(
     @Valid @RequestBody SignUpRequest request
   ) throws Exception {
-    final InquiryVendorRemoteDto vendor;
+    final VendorDataPayload vendor;
+
+    // Validate duplicate vendor ID
+    Optional<Customer>customerOptional = customerRepository.findByVendorId(request.getVendorId());
+    if(customerOptional.isPresent()){
+      throw new IllegalArgumentException("Vendor code has been register! " + request.getVendorId());
+    }
 
     try {
-      vendor = customerRemoteService.inquiryVendor(request.getVendorCode()).getData();
+      vendor = apiConfinsAdapter.findByCode(request.getVendorCode());
+      log.info("Inquiry Vendor {} ",vendor.toString());
+
     } catch (Exception e) {
+      log.info("Error get inquiry vendor {} ",e.getMessage());
       throw CommonInvalidException.builder()
         .title("Perusahaan Tidak Ditemukan")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
@@ -88,13 +105,12 @@ public class AuthController {
       String address = "", province = "", city = "", kecamatan = "", kelurahan = "";
       if (
         vendor.getVendorBuilding() != null
-          && !vendor.getVendorBuilding().isEmpty()
       ) {
-        address = vendor.getVendorBuilding().getFirst().getAddressInfo();
-        province = vendor.getVendorBuilding().getFirst().getStateName();
-        city = vendor.getVendorBuilding().getFirst().getCityName();
-        kecamatan = vendor.getVendorBuilding().getFirst().getDistrictName();
-        kelurahan = vendor.getVendorBuilding().getFirst().getDistrictName();
+        address = vendor.getVendorBuilding().getAddressInfo();
+        province = vendor.getVendorBuilding().getStateName();
+        city = vendor.getVendorBuilding().getCityName();
+        kecamatan = vendor.getVendorBuilding().getDistrictName();
+        kelurahan = vendor.getVendorBuilding().getDistrictName();
       }
 
       LocalDateTime staySince;
@@ -107,7 +123,7 @@ public class AuthController {
       request.setCompany(
         SignUpRequest.Company.builder()
           .companyModel("")
-          .companyType(vendor.getJenisPerusahaanDescription())
+          .companyType(vendor.getJenisPerusahaan())
           .identityType("AKTA")
           .identityNo(request.getCustomerIdNo())
           .identityIssuedDate(DateTimeUtils.now())
@@ -133,13 +149,55 @@ public class AuthController {
       throw new Exception("Tipe Debitur is not valid or is not in list");
     }
 
-    final Customer cust = customerService.create(request, vendor, type);
+    final Customer cust = customerService.create(request, type);
     if (type == CustomerType.Company) {
       customerCompanyService.create(cust, request.getCompany());
     } else {
       customerPersonalService.create(cust, request.getPersonal());
     }
-    documentService.mappingFromInquiryVendor(cust, vendor);
+
+
+    documentService.mappingFromInquiryVendor(cust, InquiryVendorRemoteDto.builder()
+        .vendorId(vendor.getVendorId())
+        .sapCode(vendor.getSapCode())
+        .vendorName(vendor.getVendorName())
+        .foundedDate(vendor.getFoundedDate())
+        .npwp(vendor.getNpwp())
+        .npwpLink(vendor.getNpwpUrl())
+        .nipSiup(vendor.getNipSiup())
+        .nipSiupLink(vendor.getNipSiupLink())
+        .pkpNumber(vendor.getPkpNumber())
+        .pkpLink(vendor.getPkpLink())
+        .jenisPerusahaan(vendor.getJenisPerusahaan())
+        .jenisPerusahaanName(vendor.getJenisPerusahaan())
+        .jenisPerusahaanDescription(vendor.getJenisPerusahaan())
+        .ktpNpwpVendorStockId(vendor.getKtpNpwpVendorStockId())
+        .ktpNpwpVendorStockLink(vendor.getKtpNpwpVendorStockLink())
+        .aktaPendirianLink(vendor.getAktaPendirianLink())
+        .aktaPerubahanLink(vendor.getAktaPerubahanLink())
+        .pengesahanKemenkumhamLink(vendor.getPengesahanKemenkumhamLink())
+        .vendorBuilding(Arrays.asList(InquiryVendorRemoteDto.VendorBuilding.builder()
+            .ownershipStatus(vendor.getVendorBuilding().getOwnershipStatus())
+            .jenis(vendor.getVendorBuilding().getJenis())
+            .category(vendor.getVendorBuilding().getCategory())
+            .addressDetail(vendor.getVendorBuilding().getAddressDetail())
+            .addressInfo(vendor.getVendorBuilding().getAddressInfo())
+            .stateName(vendor.getVendorBuilding().getStateName())
+            .cityName(vendor.getVendorBuilding().getCityName())
+            .districtName(vendor.getVendorBuilding().getDistrictName())
+          .build()))
+        .laporanKeuanganLink(vendor.getLaporanKeuanganLink())
+        .email(vendor.getEmail())
+        .phone(vendor.getPhone())
+        .website(vendor.getWebsite())
+        .fax(vendor.getFax())
+        .ktpDirectur(vendor.getKtpDirectur())
+        .ktpDirekturLink(vendor.getKtpDirekturLink())
+        .positionRef(vendor.getPositionRef())
+        .bankDetail(vendor.getBankDetail())
+        .vendorRegistrationDoc(vendor.getVendorRegistrationDoc())
+        .otherDocument(vendor.getOtherDocument())
+      .build());
 
     final OtpLog otpLog = otpService.create(cust, OtpService.OtpType.SIGNUP);
 

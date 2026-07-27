@@ -1,8 +1,7 @@
 package com.kmkbe.core.domain.spec;
 
 import com.kmkbe.core.domain.entity.*;
-import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.nikita.utils.Utils;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;

@@ -6,6 +6,7 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.DebtorRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
 import org.springframework.beans.factory.annotation.Autowired;
