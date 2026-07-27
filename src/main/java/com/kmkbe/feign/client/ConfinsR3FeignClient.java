@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 @FeignClient(
-  name = "vendorFeignClient",
+  name = "confinsR3FeignClient",
   url = "${feign.csul.ckb.url}",
   configuration = { AuthInterceptor.class, FeignErrorDecoder.class }
 )
