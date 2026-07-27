@@ -1,4 +1,4 @@
-package com.kmkbe.core.config;
+package com.kmkbe.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

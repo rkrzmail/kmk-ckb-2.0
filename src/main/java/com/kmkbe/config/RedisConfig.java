@@ -1,4 +1,4 @@
-package com.kmkbe.core.config;
+package com.kmkbe.config;
 
 import org.apache.commons.pool2.impl.GenericObjectPoolConfig;
 import org.springframework.beans.factory.annotation.Value;

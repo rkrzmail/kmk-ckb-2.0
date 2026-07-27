@@ -1,7 +1,7 @@
 package com.kmkbe;
 
 
-import com.kmkbe.core.config.RsaKeyConfigProperties;
+import com.kmkbe.config.RsaKeyConfigProperties;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

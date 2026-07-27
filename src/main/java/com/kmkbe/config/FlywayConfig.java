@@ -1,4 +1,4 @@
-package com.kmkbe.core.config;
+package com.kmkbe.config;
 
 import com.kmkbe.core.callback.FlywayCallback;
 import jakarta.activation.DataSource;

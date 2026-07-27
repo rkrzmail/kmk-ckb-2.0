@@ -1,4 +1,4 @@
-package com.kmkbe.core.config;
+package com.kmkbe.config;
 
 
 import io.swagger.v3.oas.models.Components;

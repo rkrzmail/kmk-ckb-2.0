@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/v1/bouwheers")
 public class BouwheerController {
   private final BouwheerService bouwheerService;
 
@@ -18,7 +17,7 @@ public class BouwheerController {
     this.bouwheerService = bouwheerService;
   }
 
-  @GetMapping(value = "",produces = MediaType.APPLICATION_JSON_VALUE)
+  @GetMapping(value ="/api/public/v1/bouwheers",produces = MediaType.APPLICATION_JSON_VALUE)
   public List<BouwheerResponse> getAll(){
     return bouwheerService.all();
   }

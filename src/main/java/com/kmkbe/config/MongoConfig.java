@@ -1,4 +1,4 @@
-package com.kmkbe.core.config;
+package com.kmkbe.config;
 
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
