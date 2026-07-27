@@ -1,5 +1,7 @@
 package com.kmkbe.modules.bouwheer.service;
 
+import com.kmkbe.helpers.base.BaseResponseBuilder;
+import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.model.response.BouwheerResponse;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
@@ -22,7 +24,7 @@ public class BouwheerService {
    * Get all Bouwheers
    * @return
    */
-  public List<BouwheerResponse> all() {
+  public BaseResponseBuilder<List<BouwheerResponse>> all() {
     Iterable<Bouwheer> products = bouwheerRepository.findAll();
     List<BouwheerResponse> bouwheerResponses = new ArrayList<>();
     products.forEach(bouwheer -> bouwheerResponses.add(BouwheerResponse.builder()
@@ -31,6 +33,7 @@ public class BouwheerService {
       .legalAddress(bouwheer.getLegalAddress())
       .isActive(bouwheer.getIsActive())
       .build()));
-    return bouwheerResponses;
+
+    return new BaseResponseBuilder<>( true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,bouwheerResponses);
   }
 }

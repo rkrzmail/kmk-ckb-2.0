@@ -7,13 +7,21 @@ public class ErrorConstant {
   public static final String CREATOR = "SYSTEM";
 
   //Error Code
-  public static final String ERROR_CODE_00 = "00";
-  public static final String ERROR_CODE_01 = "01";
-  public static final String ERROR_CODE_02 = "02";
+  public static final Integer ERROR_CODE_404 = 404;
+  public static final Integer ERROR_CODE_409 = 409;
+  public static final Integer ERROR_CODE_500 = 409;
+
+  public static final Integer ERROR_CODE_00 = 80;
+  public static final Integer ERROR_CODE_01 = 81;
+  public static final Integer ERROR_CODE_02 = 82;
 
   //Error Message
-  public static final String ERROR_MESSAGE_00 = "Success";
-  public static final String ERROR_MESSAGE_01 = "Record not found";
+  public static final String ERROR_MESSAGE_404= "Not Found";
+  public static final String ERROR_MESSAGE_409= "Conflict";
+  public static final String ERROR_MESSAGE_500= "Internal Server Error";
 
-  public static final String ERROR_MESSAGE_02 = "Captcha is not valid";
+  public static final String ERROR_MESSAGE_80 = "Error Business Exception";
+  public static final String ERROR_MESSAGE_81 = "Record not found";
+
+  public static final String ERROR_MESSAGE_82 = "Captcha is not valid";
 }

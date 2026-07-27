@@ -1,5 +1,6 @@
 package com.kmkbe.modules.bouwheer.controller;
 
+import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.modules.bouwheer.model.response.BouwheerResponse;
 import com.kmkbe.modules.bouwheer.service.BouwheerService;
 import org.springframework.http.MediaType;
@@ -18,7 +19,7 @@ public class BouwheerController {
   }
 
   @GetMapping(value ="/api/public/v1/bouwheers",produces = MediaType.APPLICATION_JSON_VALUE)
-  public List<BouwheerResponse> getAll(){
+  public BaseResponseBuilder<List<BouwheerResponse>> getAll(){
     return bouwheerService.all();
   }
 
