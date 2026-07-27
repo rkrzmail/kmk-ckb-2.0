@@ -18,7 +18,7 @@ public class BouwheerController {
     this.bouwheerService = bouwheerService;
   }
 
-  @GetMapping(value = "",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
+  @GetMapping(value = "",produces = MediaType.APPLICATION_JSON_VALUE)
   public List<BouwheerResponse> getAll(){
     return bouwheerService.all();
   }
