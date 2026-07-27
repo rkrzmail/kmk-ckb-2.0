@@ -1,0 +1,153 @@
+# -------------------------------
+# DATABASE ENVIRONMENT CONFIGURATION
+# -------------------------------
+spring:
+  datasource:
+    url: jdbc:postgresql://aurora-kmk.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified
+    username: postgres
+    password: Csultmt10
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+      # naming:
+      #   physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
+  flyway:
+    locations: classpath:db/migration/prod/{vendor}
+    schemas: public
+    enabled: true
+    baseline-on-migrate: true
+    # table: fly_way
+
+# -------------------------------
+# CACHING (REDIS) ENVIRONMENT CONFIGURATION
+# -------------------------------
+  cache:
+    type: redis
+  data:
+    mongodb:
+      host: localhost
+      port: 27017
+      database: kmklog
+      collection: event
+    redis:
+      host: localhost
+      port: 6379
+      database: 6
+      password: "" # Empty password field
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 30
+          max-idle: 10
+          min-idle: 2
+          max-wait: 10000
+
+# -------------------------------
+# API DOCUMENTATION (SPRINGDOC)
+# -------------------------------
+springdoc:
+  paths-to-match: /api/v1/**
+  swagger-ui:
+    path: /api/v1/swagger-ui.html
+  api-docs:
+    path: /api/v1/api-docs
+
+# -------------------------------
+# APPLICATION LOGGING AND DEVELOPMENT TOOLS
+# -------------------------------
+logging:
+  file:
+    name: ./logs/log-file.log
+  logback:
+    rollingpolicy:
+      clean-history-on-start: true
+      max-file-size: 10MB
+  level:
+    org.hibernate.orm.jdbc.bind: trace
+    org.hibernate.type: trace
+    org.hibernate.stat: debug
+
+server:
+  error:
+    whitelabel:
+      enabled: false
+
+# Spring Boot Admin (Actuator) Connection Details
+spring-boot:
+  admin:
+    client:
+      url: http://localhost:9000
+      instance:
+        name: Kmk-Digital-2.0
+      username: vandikalvandi@gmail.com
+      password: '12345'
+
+# -------------------------------
+# TESTING & EXTERNAL CREDENTIALS
+# -------------------------------
+testing:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: khesa.oto@gmail.com
+    password: tfru zmuk gtfb mrsz
+
+rsa:
+  private-key: classpath:certs/pkcs8.pem
+  public-key: classpath:certs/public-key.pem
+
+# -------------------------------
+# CUSTOM INTERNAL SERVICE URLs (CSUL)
+# -------------------------------
+# Base environment selector
+env: dev-b
+
+# ==============================================
+# INTERNAL SYSTEM CONNECTOR CONFIGURATIONS (CSUL)
+# ==============================================
+csul:
+  # --- SISCA System (Core Authentication/System A) ---
+  sisca:
+    v1:
+      internal-url: https://kmk-vpn.nikitagenerator.com/SISCAConnect/api/v1 # Primary base URL for internal calls
+      white-list-url: https://kmk-vpn.nikitagenerator.com/SISCAConnect/api/v1 # Publicly exposed URL
+      auth:
+        username: KMKDigital
+        password: CSUljkt#2024
+
+  # --- Confins System (Operational Services) ---
+  confins:
+    base-url: https://confinsr3.csulfinance.com/api # Common base for all operational services
+    services:
+      fou:
+        v1: /api/fou/v1 # Service name : version suffix
+      mou:
+        v1: /api/mou/v1
+      los:
+        v1: /api/los/v1
+      ar:
+        v1: /api/ar/v1
+      payment:
+        v1: /api/payment/v1
+
+  # --- Legacy and General Services ---
+  general:
+    adin-key: Wm5VZ2duUnEvZ1hhUWlSRXVzSUxmdU4zRnZSQVdnT0pTQ0RVcDd6eFJKVUhNTj0= # Key for general services
+
+  # --- Disabled/Alternative Endpoints (Grouping inactive URLs) ---
+  disabled:
+    mst-v1: https://6mn45m67ybarmii47vg4cc22240ltnmj.lambda-url.ap-southeast-1.on.aws/v1
+    # Note: For a production environment, these should be removed if unused.
+
+# (Optional cleanup of the old, repetitive structure)
+# csul:
+#   confins:
+#     fou:
+#       v1: https://kmk-vpn.nikitagenerator.com/api/fou/v1 # Original style for reference
+
+
+# -------------------------------
+# GLOBAL APPLICATION SETTINGS
+# -------------------------------
+aspect.enabled: true
