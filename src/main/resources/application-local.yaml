@@ -154,6 +154,7 @@ app:
   api:
     key: YiByHB@CSUL_DEV
 
+# Feign Configuration
 feign:
   csul:
     ckb:
@@ -165,4 +166,5 @@ feign:
     secret:
     adins-key: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
     fou: "${feign.confins.url}/api/fou"
+    mou: "${feign.confins.url}/api/mou"
     ap: "${feign.confins.url}/api/ap"
