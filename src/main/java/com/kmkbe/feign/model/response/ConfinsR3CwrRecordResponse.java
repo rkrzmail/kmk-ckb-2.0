@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 
 @Builder
 @Data
-public class CwrRecordResponse implements Serializable {
+public class ConfinsR3CwrRecordResponse implements Serializable {
   // System/Metadata fields per record
   private Integer rn;
   private String rowVersion; // If this is specific to the record, keep it here.

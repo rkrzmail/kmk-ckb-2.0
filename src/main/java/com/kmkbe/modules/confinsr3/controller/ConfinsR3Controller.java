@@ -24,4 +24,9 @@ public class ConfinsR3Controller {
   public BaseResponse getCwrByCustomer(@RequestParam String value,Integer pageNo,Integer pageSize){
     return confinsR3Service.findCwrByCustomer(pageNo,pageSize,value);
   }
+
+  @GetMapping(value ="/customers",produces = MediaType.APPLICATION_JSON_VALUE)
+  public BaseResponse getByCustomer(@RequestParam String value,Integer pageNo,Integer pageSize){
+    return confinsR3Service.findByCustomer(pageNo,pageSize,value);
+  }
 }

@@ -4,14 +4,12 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kmkbe.helpers.base.BaseResponse;
 import lombok.*;
 
-import java.io.Serializable;
-
 @Data
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ZipCodeResponse extends BaseResponse {
+public class ConfinsR3ZipCodeResponse extends BaseResponse {
   @JsonProperty("RefZipcodeId")
   private Long refZipcodeId;
   @JsonProperty("AreaCode1")

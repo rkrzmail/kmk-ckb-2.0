@@ -1,22 +1,19 @@
 package com.kmkbe.adapter;
 
-import com.kmkbe.feign.client.ConfinsR3FouFeignClient;
-import com.kmkbe.feign.client.ConfinsR3MouFeignClient;
-import com.kmkbe.feign.model.response.CwrRecordResponse;
+import com.kmkbe.feign.client.ConfinsR3FeignClient;
+import com.kmkbe.feign.model.response.ConfinsR3CwrRecordResponse;
 import com.kmkbe.feign.model.request.PagingObjectBySQLRequest;
 import com.kmkbe.feign.model.request.ZipCodeRequest;
-import com.kmkbe.feign.model.response.ZipCodeResponse;
+import com.kmkbe.feign.model.response.ConfinsR3ZipCodeResponse;
 import com.kmkbe.feign.utils.ConfinsR3ApiResponseWrapper;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ApiConfinsR3Adapter {
-  private final ConfinsR3FouFeignClient confinsR3FouFeignClient;
-  private final ConfinsR3MouFeignClient confinsR3MouFeignClient;
+  private final ConfinsR3FeignClient confinsR3FeignClient;
 
-  public ApiConfinsR3Adapter(ConfinsR3FouFeignClient confinsR3FouFeignClient, ConfinsR3MouFeignClient confinsR3MouFeignClient) {
-    this.confinsR3FouFeignClient = confinsR3FouFeignClient;
-    this.confinsR3MouFeignClient = confinsR3MouFeignClient;
+  public ApiConfinsR3Adapter(ConfinsR3FeignClient confinsR3FeignClient) {
+    this.confinsR3FeignClient = confinsR3FeignClient;
   }
 
   /**
@@ -24,8 +21,8 @@ public class ApiConfinsR3Adapter {
    * @param zipCode
    * @return
    */
-  public ZipCodeResponse getZipcode(String zipCode) {
-    return confinsR3FouFeignClient.getZipcode(ZipCodeRequest.builder()
+  public ConfinsR3ZipCodeResponse getZipcode(String zipCode) {
+    return confinsR3FeignClient.getZipcode(ZipCodeRequest.builder()
       .zipcode(zipCode.trim())
       .build());
   }
@@ -35,7 +32,16 @@ public class ApiConfinsR3Adapter {
    * @param request
    * @return
    */
-  public ConfinsR3ApiResponseWrapper<CwrRecordResponse> getCwrByCustomer(PagingObjectBySQLRequest request) {
-    return confinsR3MouFeignClient.getCwrByCustomer(request);
+  public ConfinsR3ApiResponseWrapper<ConfinsR3CwrRecordResponse> getCwrByCustomer(PagingObjectBySQLRequest request) {
+    return confinsR3FeignClient.getCwrByCustomer(request);
+  }
+
+  /**
+   *
+   * @param request
+   * @return
+   */
+  public ConfinsR3ApiResponseWrapper<ConfinsR3CwrRecordResponse> getByCustomer(PagingObjectBySQLRequest request) {
+    return confinsR3FeignClient.getCwrByCustomer(request);
   }
 }
