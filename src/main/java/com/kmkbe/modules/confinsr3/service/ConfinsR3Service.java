@@ -4,20 +4,20 @@ package com.kmkbe.modules.confinsr3.service;
 import com.kmkbe.adapter.ApiConfinsR3Adapter;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.feign.model.request.GetCustomerNoRequest;
-import com.kmkbe.feign.model.response.ConfinsR3GetCustomerNoResponse;
-import com.kmkbe.feign.model.response.ConfinsR3GetCustomerResponse;
-import com.kmkbe.feign.model.response.ConfinsR3GetCwrRecordResponse;
+import com.kmkbe.feign.model.request.GetKeyValueActiveByCodeRequest;
+import com.kmkbe.feign.model.response.*;
 import com.kmkbe.feign.model.request.GetPagingObjectBySQLRequest;
-import com.kmkbe.feign.model.response.ConfinsR3GetZipCodeResponse;
 import com.kmkbe.feign.utils.ConfinsR3ApiResponseWrapper;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.helpers.utils.CommonUtils;
+import com.kmkbe.modules.confinsr3.model.response.KeyValueActiveByCodeResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -35,14 +35,14 @@ public class ConfinsR3Service {
    * @param zipcode
    * @return
    */
-  public BaseResponseBuilder<ConfinsR3GetZipCodeResponse> findZipcode(String zipcode){
+  public BaseResponseBuilder<ConfinsR3GetZipCodeResponse> findZipcode(String zipcode) {
     ConfinsR3GetZipCodeResponse response = apiConfinsR3Adapter.getZipcode(zipcode.trim());
-    if(response ==null){
+    if (response == null) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", zipcode);
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_01, ErrorConstant.ERROR_MESSAGE_81);
     }
 
-    return new BaseResponseBuilder<>(true,AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, response);
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, response);
   }
 
   /**
@@ -52,39 +52,39 @@ public class ConfinsR3Service {
    * @param value
    * @return
    */
-  public BaseResponseBuilder<List<ConfinsR3GetCwrRecordResponse>> findCwrByCustomer(Integer pageNo, Integer pageSize, String value){
-    ConfinsR3ApiResponseWrapper<ConfinsR3GetCwrRecordResponse> response= apiConfinsR3Adapter.getCwrByCustomer(GetPagingObjectBySQLRequest.builder()
-        .includeCount(true)
-        .includeData(true)
-        .isLoading(true)
-        .queryString(GetPagingObjectBySQLRequest.QueryStringQueryDto.builder()
-          .name("searhCwrInquiry")
-          .whereQuery(Arrays.asList("FACTORING"))
-          .build())
-        .rowVersion("")
-        .integrationObj(null)
-        .joinType("INNER")
-        .pageNo(pageNo)
-        .rowPerPage(pageSize)
-        .orderBy(null)
-        .criteria(Arrays.asList(GetPagingObjectBySQLRequest.CriterionDto.builder()
-            .low(0)
-            .high(0)
-            .dataType("text")
-            .isCriteriaDataTable("false")
-            .propName("COALESCE(G.CUST_NO,CC.CUST_NO)")
-            .value(value)
-            .restriction("Eq")
-          .build()))
-        .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
+  public BaseResponseBuilder<List<ConfinsR3GetCwrRecordResponse>> findCwrByCustomer(Integer pageNo, Integer pageSize, String value) {
+    ConfinsR3ApiResponseWrapper<ConfinsR3GetCwrRecordResponse> response = apiConfinsR3Adapter.getCwrByCustomer(GetPagingObjectBySQLRequest.builder()
+      .includeCount(true)
+      .includeData(true)
+      .isLoading(true)
+      .queryString(GetPagingObjectBySQLRequest.QueryStringQueryDto.builder()
+        .name("searhCwrInquiry")
+        .whereQuery(Arrays.asList("FACTORING"))
+        .build())
+      .rowVersion("")
+      .integrationObj(null)
+      .joinType("INNER")
+      .pageNo(pageNo)
+      .rowPerPage(pageSize)
+      .orderBy(null)
+      .criteria(Arrays.asList(GetPagingObjectBySQLRequest.CriterionDto.builder()
+        .low(0)
+        .high(0)
+        .dataType("text")
+        .isCriteriaDataTable("false")
+        .propName("COALESCE(G.CUST_NO,CC.CUST_NO)")
+        .value(value)
+        .restriction("Eq")
+        .build()))
+      .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
       .build());
-    if(!response.getCode().equals("200")){
+    if (!response.getCode().equals("200")) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", response.getMessage());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_01, ErrorConstant.ERROR_MESSAGE_81);
     }
     List<ConfinsR3GetCwrRecordResponse> recordResponseList = response.getData().stream().toList();
 
-    return new BaseResponseBuilder<>(true,AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, recordResponseList);
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, recordResponseList);
   }
 
   /**
@@ -94,8 +94,8 @@ public class ConfinsR3Service {
    * @param value
    * @return
    */
-  public BaseResponseBuilder<List<ConfinsR3GetCustomerResponse>> findByCustomer(Integer pageNo, Integer pageSize, String value){
-    ConfinsR3ApiResponseWrapper<ConfinsR3GetCustomerResponse> response= apiConfinsR3Adapter.getByCustomer(GetPagingObjectBySQLRequest.builder()
+  public BaseResponseBuilder<List<ConfinsR3GetCustomerResponse>> findByCustomer(Integer pageNo, Integer pageSize, String value) {
+    ConfinsR3ApiResponseWrapper<ConfinsR3GetCustomerResponse> response = apiConfinsR3Adapter.getByCustomer(GetPagingObjectBySQLRequest.builder()
       .includeCount(true)
       .includeData(true)
       .isLoading(true)
@@ -130,13 +130,13 @@ public class ConfinsR3Service {
       )
       .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
       .build());
-    if(!response.getCode().equals("200")){
+    if (!response.getCode().equals("200")) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", response.getMessage());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_01, ErrorConstant.ERROR_MESSAGE_81);
     }
     List<ConfinsR3GetCustomerResponse> recordResponseList = response.getData().stream().toList();
 
-    return new BaseResponseBuilder<>(true,AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, recordResponseList);
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, recordResponseList);
   }
 
   /**
@@ -144,17 +144,43 @@ public class ConfinsR3Service {
    * @param custNo
    * @return
    */
-  public BaseResponseBuilder<ConfinsR3GetCustomerNoResponse> findByCustomerNo(String custNo){
+  public BaseResponseBuilder<ConfinsR3GetCustomerNoResponse> findByCustomerNo(String custNo) {
     ConfinsR3GetCustomerNoResponse response = apiConfinsR3Adapter.getByCustomerNo(GetCustomerNoRequest.builder()
-        .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
-        .rowVersion("")
-        .custNo(custNo)
+      .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
+      .rowVersion("")
+      .custNo(custNo)
       .build());
-    if(response ==null){
+    if (response == null) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", custNo);
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_01, ErrorConstant.ERROR_MESSAGE_81);
     }
 
-    return new BaseResponseBuilder<>(true,AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, response);
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, response);
+  }
+
+  /**
+   *
+   * @param typeCode
+   * @return
+   */
+  public BaseResponseBuilder<List<KeyValueActiveByCodeResponse>> findKeyValueByCode(String typeCode) {
+    ConfinsR3GetKeyValueActiveByCodeResponse response = apiConfinsR3Adapter.getKyValueByCode(GetKeyValueActiveByCodeRequest.builder()
+      .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
+      .refMasterTypeCode(typeCode)
+      .build());
+    if (response == null) {
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", typeCode);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_01, ErrorConstant.ERROR_MESSAGE_81);
+    }
+
+    List<KeyValueActiveByCodeResponse> responseLit = new ArrayList<>();
+    response.getReturnObject().forEach(keyType -> {
+      KeyValueActiveByCodeResponse type = new KeyValueActiveByCodeResponse();
+      type.setKey(keyType.getKey());
+      type.setValue(keyType.getValue());
+      responseLit.add(type);
+    });
+
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, responseLit);
   }
 }

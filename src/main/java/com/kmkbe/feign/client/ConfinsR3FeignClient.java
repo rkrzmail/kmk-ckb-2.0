@@ -3,12 +3,10 @@ package com.kmkbe.feign.client;
 import com.kmkbe.feign.config.ConfinsR3AuthInterceptor;
 import com.kmkbe.feign.config.FeignErrorDecoder;
 import com.kmkbe.feign.model.request.GetCustomerNoRequest;
+import com.kmkbe.feign.model.request.GetKeyValueActiveByCodeRequest;
 import com.kmkbe.feign.model.request.GetPagingObjectBySQLRequest;
 import com.kmkbe.feign.model.request.GetZipCodeRequest;
-import com.kmkbe.feign.model.response.ConfinsR3GetCustomerNoResponse;
-import com.kmkbe.feign.model.response.ConfinsR3GetCustomerResponse;
-import com.kmkbe.feign.model.response.ConfinsR3GetCwrRecordResponse;
-import com.kmkbe.feign.model.response.ConfinsR3GetZipCodeResponse;
+import com.kmkbe.feign.model.response.*;
 import com.kmkbe.feign.utils.ConfinsR3ApiResponseWrapper;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,5 +31,8 @@ public interface ConfinsR3FeignClient {
 
   @GetMapping(value = "/api/fou/v1/Cust/GetCustByCustNo")
   ConfinsR3GetCustomerNoResponse getByCustomerNo(@RequestBody GetCustomerNoRequest request);
+
+  @GetMapping(value = "/api/fou/v1/RefMaster/GetListKeyValueActiveByCode")
+  ConfinsR3GetKeyValueActiveByCodeResponse getKyValueByCode(@RequestBody GetKeyValueActiveByCodeRequest request);
 
 }

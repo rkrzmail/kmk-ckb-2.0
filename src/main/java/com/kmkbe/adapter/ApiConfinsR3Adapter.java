@@ -2,12 +2,10 @@ package com.kmkbe.adapter;
 
 import com.kmkbe.feign.client.ConfinsR3FeignClient;
 import com.kmkbe.feign.model.request.GetCustomerNoRequest;
-import com.kmkbe.feign.model.response.ConfinsR3GetCustomerNoResponse;
-import com.kmkbe.feign.model.response.ConfinsR3GetCustomerResponse;
-import com.kmkbe.feign.model.response.ConfinsR3GetCwrRecordResponse;
+import com.kmkbe.feign.model.request.GetKeyValueActiveByCodeRequest;
+import com.kmkbe.feign.model.response.*;
 import com.kmkbe.feign.model.request.GetPagingObjectBySQLRequest;
 import com.kmkbe.feign.model.request.GetZipCodeRequest;
-import com.kmkbe.feign.model.response.ConfinsR3GetZipCodeResponse;
 import com.kmkbe.feign.utils.ConfinsR3ApiResponseWrapper;
 import org.springframework.stereotype.Component;
 
@@ -55,5 +53,14 @@ public class ApiConfinsR3Adapter {
    */
   public ConfinsR3GetCustomerNoResponse getByCustomerNo(GetCustomerNoRequest request) {
     return confinsR3FeignClient.getByCustomerNo(request);
+  }
+
+  /**
+   *
+   * @param request
+   * @return
+   */
+  public ConfinsR3GetKeyValueActiveByCodeResponse getKyValueByCode(GetKeyValueActiveByCodeRequest request) {
+    return confinsR3FeignClient.getKyValueByCode(request);
   }
 }
