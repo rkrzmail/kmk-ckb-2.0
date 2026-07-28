@@ -11,13 +11,13 @@ import org.springframework.http.HttpStatus;
 public class BaseException extends RuntimeException {
 
   protected final HttpStatus httpStatus;
-  protected final String errorCode;
-  private final String errorMessage;
+  protected final Integer code;
+  private final String message;
 
-  public BaseException(HttpStatus httpStatus, String errorCode, String title, String errorMessage) {
+  public BaseException(HttpStatus httpStatus, Integer errorCode, String title, String errorMessage) {
     super(title);
     this.httpStatus = httpStatus;
-    this.errorCode = errorCode;
-    this.errorMessage = errorMessage;
+    this.code = errorCode;
+    this.message = errorMessage;
   }
 }

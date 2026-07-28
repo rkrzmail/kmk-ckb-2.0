@@ -5,12 +5,12 @@ import feign.RequestTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-public class AuthInterceptor implements RequestInterceptor {
+public class CsulVdcAuthInterceptor implements RequestInterceptor {
 
-  private final TokenManager tokenManager;
+  private final CsulTokenManager csulTokenManager;
 
-  public AuthInterceptor(TokenManager tokenManager) {
-    this.tokenManager = tokenManager;
+  public CsulVdcAuthInterceptor(CsulTokenManager csulTokenManager) {
+    this.csulTokenManager = csulTokenManager;
   }
 
   @Override
@@ -22,6 +22,6 @@ public class AuthInterceptor implements RequestInterceptor {
       return; // Skip token injection completely for login calls
     }
 
-    template.header("Authorization", tokenManager.getToken());
+    template.header("Authorization", csulTokenManager.getToken());
   }
 }

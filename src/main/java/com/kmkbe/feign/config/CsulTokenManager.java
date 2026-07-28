@@ -1,8 +1,7 @@
 package com.kmkbe.feign.config;
 
-import com.kmkbe.feign.model.request.LoginRequest;
-import com.kmkbe.feign.model.response.LoginResponse;
-import com.kmkbe.feign.utils.ApiResponseWrapper;
+import com.kmkbe.feign.model.request.PostLoginRequest;
+import com.kmkbe.feign.model.response.PostLoginResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -15,7 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Component
-public class TokenManager {
+public class CsulTokenManager {
 
   @Value("${feign.csul.ckb.url}")
   private String apiBaseCKB;
@@ -44,12 +43,12 @@ public class TokenManager {
   private void executeLogin() {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
-    LoginRequest credentials = new LoginRequest("ramco", "RamcoVDC2026!", "SecretRamco2026!");
-    HttpEntity<LoginRequest> requestEntity = new HttpEntity<>(credentials, headers);
+    PostLoginRequest credentials = new PostLoginRequest("ramco", "RamcoVDC2026!", "SecretRamco2026!");
+    HttpEntity<PostLoginRequest> requestEntity = new HttpEntity<>(credentials, headers);
 
     try {
-      ResponseEntity<LoginResponse> responseEntity = restTemplate.postForEntity(apiBaseCKB.concat("/api/v1/webhook/token"), requestEntity, LoginResponse.class);
-      LoginResponse response = responseEntity.getBody();
+      ResponseEntity<PostLoginResponse> responseEntity = restTemplate.postForEntity(apiBaseCKB.concat("/api/v1/webhook/token"), requestEntity, PostLoginResponse.class);
+      PostLoginResponse response = responseEntity.getBody();
       log.info("RAMCO {} ",response);
       if (response != null && response.getData().getToken()!= null) {
         cachedToken.set("Bearer " + response.getData().getToken());

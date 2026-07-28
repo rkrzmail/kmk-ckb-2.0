@@ -126,6 +126,7 @@ custom:
   mongodb:
     collection: event
 
+# Feign configuration
 feign:
   csul:
     ckb:
@@ -134,7 +135,4 @@ feign:
 
   confins:
     url: https://uat-confinsr3.csulfinance.com
-    secret:
-    api-key:
-    fou: "${feign.confins.url}/api/fou"
-    ap: "${feign.confins.url}/api/ap"
+    adins-key: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=

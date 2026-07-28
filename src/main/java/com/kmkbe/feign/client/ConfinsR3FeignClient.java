@@ -1,24 +1,38 @@
 package com.kmkbe.feign.client;
 
-import com.kmkbe.feign.config.AuthInterceptor;
+import com.kmkbe.feign.config.ConfinsR3AuthInterceptor;
 import com.kmkbe.feign.config.FeignErrorDecoder;
-import com.kmkbe.feign.model.dto.VendorDataPayload;
-import com.kmkbe.feign.utils.ApiResponseWrapper;
+import com.kmkbe.feign.model.request.GetCustomerNoRequest;
+import com.kmkbe.feign.model.request.GetKeyValueActiveByCodeRequest;
+import com.kmkbe.feign.model.request.GetPagingObjectBySQLRequest;
+import com.kmkbe.feign.model.request.GetZipCodeRequest;
+import com.kmkbe.feign.model.response.*;
+import com.kmkbe.feign.utils.ConfinsR3ApiResponseWrapper;
 import org.springframework.cloud.openfeign.FeignClient;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(
-  name = "confinsR3FeignClient",
-  url = "${feign.csul.ckb.url}",
-  configuration = { AuthInterceptor.class, FeignErrorDecoder.class }
+  name = "confinsR3FouFeignClient",
+  url = "${feign.confins.url}",
+  configuration = { ConfinsR3AuthInterceptor.class, FeignErrorDecoder.class }
 )
 public interface ConfinsR3FeignClient {
 
-  @GetMapping(value = "/api/v1/sbu/ckb/vendor", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-  ApiResponseWrapper<VendorDataPayload> getVendorData(@RequestParam("vendor_code") String vendorCode);
 
-  @GetMapping(value = "/api/v1/sbu/ckb/listpostedinvoice", headers = "Content-Type=application/json")
-  String getListPostedInvoice(@RequestParam("vendor_code") String vendorCode);
+  @GetMapping(value = "/api/mou/v1/Generic/GetPagingObjectBySQL")
+  ConfinsR3ApiResponseWrapper<ConfinsR3GetCwrRecordResponse> getCwrByCustomer(@RequestBody GetPagingObjectBySQLRequest request);
+
+  @GetMapping(value = "/api/fou/v1/RefZipcode/GetRefZipcodeByZipCode")
+  ConfinsR3GetZipCodeResponse getZipcode(@RequestBody GetZipCodeRequest request);
+
+  @GetMapping(value = "/api/fou/v2/Generic/GetPagingObjectBySQL")
+  ConfinsR3ApiResponseWrapper<ConfinsR3GetCustomerResponse> getByCustomer(@RequestBody GetPagingObjectBySQLRequest request);
+
+  @GetMapping(value = "/api/fou/v1/Cust/GetCustByCustNo")
+  ConfinsR3GetCustomerNoResponse getByCustomerNo(@RequestBody GetCustomerNoRequest request);
+
+  @GetMapping(value = "/api/fou/v1/RefMaster/GetListKeyValueActiveByCode")
+  ConfinsR3GetKeyValueActiveByCodeResponse getKyValueByCode(@RequestBody GetKeyValueActiveByCodeRequest request);
+
 }

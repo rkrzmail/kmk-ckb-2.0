@@ -7,11 +7,11 @@ import org.springframework.stereotype.Component;
 @Component
 public class FeignErrorDecoder implements ErrorDecoder {
 
-  private final TokenManager tokenManager;
+  private final CsulTokenManager csulTokenManager;
   private final ErrorDecoder defaultDecoder = new ErrorDecoder.Default();
 
-  public FeignErrorDecoder(TokenManager tokenManager) {
-    this.tokenManager = tokenManager;
+  public FeignErrorDecoder(CsulTokenManager csulTokenManager) {
+    this.csulTokenManager = csulTokenManager;
   }
 
   @Override
@@ -20,7 +20,7 @@ public class FeignErrorDecoder implements ErrorDecoder {
     if (response.status() == 401) {
       try {
         // Clear state, trigger re-login right away
-        tokenManager.clearTokenAndRelogin();
+        csulTokenManager.clearTokenAndRelogin();
       } catch (Exception e) {
         return new RuntimeException("Failed to re-authenticate after token expiration", e);
       }
