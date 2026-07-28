@@ -154,6 +154,7 @@ app:
   api:
     key: YiByHB@CSUL_DEV
 
+# Feign Configuration
 feign:
   csul:
     ckb:
@@ -162,7 +163,4 @@ feign:
 
   confins:
     url: https://uat-confinsr3.csulfinance.com
-    secret:
     adins-key: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
-    fou: "${feign.confins.url}/api/fou"
-    ap: "${feign.confins.url}/api/ap"

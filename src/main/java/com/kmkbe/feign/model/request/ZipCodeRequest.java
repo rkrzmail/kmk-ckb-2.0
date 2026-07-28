@@ -9,6 +9,7 @@ import java.io.Serializable;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class ZipCodeRequest implements Serializable {
   private String zipcode;
 }
