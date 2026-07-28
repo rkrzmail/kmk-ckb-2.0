@@ -9,6 +9,7 @@ import com.kmkbe.feign.model.response.ConfinsR3CwrRecordResponse;
 import com.kmkbe.feign.model.response.ConfinsR3ZipCodeResponse;
 import com.kmkbe.feign.utils.ConfinsR3ApiResponseWrapper;
 import org.springframework.cloud.openfeign.FeignClient;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
@@ -19,12 +20,14 @@ import org.springframework.web.bind.annotation.RequestBody;
 )
 public interface ConfinsR3FeignClient {
 
-  @PostMapping(value = "/fou/v1/RefZipcode/GetRefZipcodeByZipCode")
+
+  @GetMapping(value = "/api/mou/v1/Generic/GetPagingObjectBySQL")
+  ConfinsR3ApiResponseWrapper<ConfinsR3CwrRecordResponse> getCwrByCustomer(@RequestBody PagingObjectBySQLRequest request);
+
+  @GetMapping(value = "/api/fou/v1/RefZipcode/GetRefZipcodeByZipCode")
   ConfinsR3ZipCodeResponse getZipcode(@RequestBody ZipCodeRequest request);
 
-  @PostMapping(value = "/v1/Generic/GetPagingObjectBySQL")
+  @GetMapping(value = "/api/fou/v2/Generic/GetPagingObjectBySQL")
   ConfinsR3ApiResponseWrapper<ConfinsR3CustomerResponse> getByCustomer(@RequestBody PagingObjectBySQLRequest request);
 
-  @PostMapping(value = "/v1/Generic/GetPagingObjectBySQL")
-  ConfinsR3ApiResponseWrapper<ConfinsR3CwrRecordResponse> getCwrByCustomer(@RequestBody PagingObjectBySQLRequest request);
 }

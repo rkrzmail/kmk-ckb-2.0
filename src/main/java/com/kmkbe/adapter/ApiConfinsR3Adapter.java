@@ -1,6 +1,7 @@
 package com.kmkbe.adapter;
 
 import com.kmkbe.feign.client.ConfinsR3FeignClient;
+import com.kmkbe.feign.model.response.ConfinsR3CustomerResponse;
 import com.kmkbe.feign.model.response.ConfinsR3CwrRecordResponse;
 import com.kmkbe.feign.model.request.PagingObjectBySQLRequest;
 import com.kmkbe.feign.model.request.ZipCodeRequest;
@@ -41,7 +42,7 @@ public class ApiConfinsR3Adapter {
    * @param request
    * @return
    */
-  public ConfinsR3ApiResponseWrapper<ConfinsR3CwrRecordResponse> getByCustomer(PagingObjectBySQLRequest request) {
-    return confinsR3FeignClient.getCwrByCustomer(request);
+  public ConfinsR3ApiResponseWrapper<ConfinsR3CustomerResponse> getByCustomer(PagingObjectBySQLRequest request) {
+    return confinsR3FeignClient.getByCustomer(request);
   }
 }

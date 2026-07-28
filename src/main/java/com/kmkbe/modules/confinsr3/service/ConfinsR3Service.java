@@ -3,6 +3,7 @@ package com.kmkbe.modules.confinsr3.service;
 
 import com.kmkbe.adapter.ApiConfinsR3Adapter;
 import com.kmkbe.exception.BusinessException;
+import com.kmkbe.feign.model.response.ConfinsR3CustomerResponse;
 import com.kmkbe.feign.model.response.ConfinsR3CwrRecordResponse;
 import com.kmkbe.feign.model.request.PagingObjectBySQLRequest;
 import com.kmkbe.feign.model.response.ConfinsR3ZipCodeResponse;
@@ -16,7 +17,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -74,7 +74,7 @@ public class ConfinsR3Service {
             .value(value)
             .restriction("Eq")
           .build()))
-        .requestDateTime(CommonUtils.generateDate("DATE_FORMAT_YYYY_MM_DD"))
+        .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
       .build());
     if(!response.getCode().equals("200")){
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", response.getMessage());
@@ -92,8 +92,8 @@ public class ConfinsR3Service {
    * @param value
    * @return
    */
-  public BaseResponseBuilder<List<ConfinsR3CwrRecordResponse>> findByCustomer(Integer pageNo, Integer pageSize, String value){
-    ConfinsR3ApiResponseWrapper<ConfinsR3CwrRecordResponse> response= apiConfinsR3Adapter.getCwrByCustomer(PagingObjectBySQLRequest.builder()
+  public BaseResponseBuilder<List<ConfinsR3CustomerResponse>> findByCustomer(Integer pageNo, Integer pageSize, String value){
+    ConfinsR3ApiResponseWrapper<ConfinsR3CustomerResponse> response= apiConfinsR3Adapter.getByCustomer(PagingObjectBySQLRequest.builder()
       .includeCount(true)
       .includeData(true)
       .isLoading(true)
@@ -126,13 +126,13 @@ public class ConfinsR3Service {
             .build()
         )
       )
-      .requestDateTime(CommonUtils.generateDate("DATE_FORMAT_YYYY_MM_DD"))
+      .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
       .build());
     if(!response.getCode().equals("200")){
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", response.getMessage());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_01, ErrorConstant.ERROR_MESSAGE_81);
     }
-    List<ConfinsR3CwrRecordResponse> recordResponseList = response.getData().stream().toList();
+    List<ConfinsR3CustomerResponse> recordResponseList = response.getData().stream().toList();
 
     return new BaseResponseBuilder<>(true,AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, recordResponseList);
   }
