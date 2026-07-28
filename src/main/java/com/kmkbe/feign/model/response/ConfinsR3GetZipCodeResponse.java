@@ -9,7 +9,7 @@ import lombok.*;
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
-public class ConfinsR3ZipCodeResponse extends BaseResponse {
+public class ConfinsR3GetZipCodeResponse extends BaseResponse {
   @JsonProperty("RefZipcodeId")
   private Long refZipcodeId;
   @JsonProperty("AreaCode1")

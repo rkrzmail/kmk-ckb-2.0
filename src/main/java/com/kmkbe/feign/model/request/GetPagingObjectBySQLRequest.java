@@ -10,7 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class PagingObjectBySQLRequest extends BaseRequest {
+public class GetPagingObjectBySQLRequest extends BaseRequest {
   private Boolean includeCount;
   private Boolean includeData;
   private Boolean isLoading;

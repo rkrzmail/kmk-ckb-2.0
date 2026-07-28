@@ -5,11 +5,7 @@ import lombok.*;
 import java.io.Serializable;
 
 @Data
-@Getter
-@Setter
-@AllArgsConstructor
-@NoArgsConstructor
 @Builder
-public class ZipCodeRequest implements Serializable {
+public class GetZipCodeRequest implements Serializable {
   private String zipcode;
 }

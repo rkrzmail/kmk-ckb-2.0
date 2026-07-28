@@ -2,9 +2,9 @@ package com.kmkbe.adapter;
 
 import com.kmkbe.feign.client.CsulAuthFeignClient;
 import com.kmkbe.feign.client.CsulVendorFeignClient;
-import com.kmkbe.feign.model.response.VendorResponse;
-import com.kmkbe.feign.model.request.LoginRequest;
-import com.kmkbe.feign.model.response.LoginResponse;
+import com.kmkbe.feign.model.response.GetVendorResponse;
+import com.kmkbe.feign.model.request.PostLoginRequest;
+import com.kmkbe.feign.model.response.PostLoginResponse;
 import com.kmkbe.feign.utils.CsulApiResponseWrapper;
 import org.springframework.stereotype.Component;
 
@@ -23,8 +23,8 @@ public class ApiCsulAdapter {
    * @param request
    * @return
    */
-  public LoginResponse login(LoginRequest request) {
-    CsulApiResponseWrapper<LoginResponse> responseWrapper = csulAuthFeignClient.login(request);
+  public PostLoginResponse login(PostLoginRequest request) {
+    CsulApiResponseWrapper<PostLoginResponse> responseWrapper = csulAuthFeignClient.login(request);
 
     if (responseWrapper == null || responseWrapper.getData() == null) {
       return null;
@@ -33,8 +33,8 @@ public class ApiCsulAdapter {
     return responseWrapper.getData();
   }
 
-  public VendorResponse findByCode(String vendorCode) {
-    CsulApiResponseWrapper<VendorResponse> responseWrapper = csulVendorFeignClient.getVendorData(vendorCode);
+  public GetVendorResponse findByCode(String vendorCode) {
+    CsulApiResponseWrapper<GetVendorResponse> responseWrapper = csulVendorFeignClient.getVendorData(vendorCode);
 
     if (responseWrapper == null || responseWrapper.getData() == null) {
       return null;
