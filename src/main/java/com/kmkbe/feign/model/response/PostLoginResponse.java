@@ -8,7 +8,7 @@ import lombok.Setter;
 @Data
 @Getter
 @Setter
-public class LoginResponse extends BaseResponse {
+public class PostLoginResponse extends BaseResponse {
   private boolean success;
   private int statusCode;
   private AuthData data; // Maps the "data" object wrapper

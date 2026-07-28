@@ -1,7 +1,7 @@
 package com.kmkbe.feign.client;
 
-import com.kmkbe.feign.model.request.LoginRequest;
-import com.kmkbe.feign.model.response.LoginResponse;
+import com.kmkbe.feign.model.request.PostLoginRequest;
+import com.kmkbe.feign.model.response.PostLoginResponse;
 import com.kmkbe.feign.utils.CsulApiResponseWrapper;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -17,6 +17,6 @@ public interface CsulAuthFeignClient {
       headers = {
     "Content-Type=application/json"
   })
-  CsulApiResponseWrapper<LoginResponse> login(@RequestBody LoginRequest request);
+  CsulApiResponseWrapper<PostLoginResponse> login(@RequestBody PostLoginRequest request);
 }
 

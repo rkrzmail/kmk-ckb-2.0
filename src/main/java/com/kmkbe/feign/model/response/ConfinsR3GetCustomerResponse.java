@@ -8,7 +8,7 @@ import java.io.Serializable;
 
 @Builder
 @Data
-public class ConfinsR3CustomerResponse implements Serializable {
+public class ConfinsR3GetCustomerResponse implements Serializable {
   @JsonProperty("CustNo")
   private String custNo;
   @JsonProperty("CustName")

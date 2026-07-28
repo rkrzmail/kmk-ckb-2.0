@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 
 @Builder
 @Data
-public class ConfinsR3CwrRecordResponse implements Serializable {
+public class ConfinsR3GetCwrRecordResponse implements Serializable {
   // System/Metadata fields per record
   @JsonProperty("rn")
   private Integer rn;

@@ -11,7 +11,7 @@ import java.util.List;
 @Data
 @Getter
 @Setter
-public class VendorResponse extends BaseResponse {
+public class GetVendorResponse extends BaseResponse {
     @JsonProperty("vendor_id")
     private String vendorId;
 

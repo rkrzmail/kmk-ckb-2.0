@@ -15,8 +15,8 @@ public class ConfinsR3Controller {
     this.confinsR3Service = confinsR3Service;
   }
 
-  @GetMapping(value ="/zipcode",produces = MediaType.APPLICATION_JSON_VALUE)
-  public BaseResponse getZipcode(@RequestParam String zipcode){
+  @GetMapping(value ="/zipcode/{zipcode}",produces = MediaType.APPLICATION_JSON_VALUE)
+  public BaseResponse getZipcode(@PathVariable("zipcode") String zipcode){
     return confinsR3Service.findZipcode(zipcode);
   }
 
@@ -28,5 +28,10 @@ public class ConfinsR3Controller {
   @GetMapping(value ="/customers",produces = MediaType.APPLICATION_JSON_VALUE)
   public BaseResponse getByCustomer(@RequestParam String value,Integer pageNo,Integer pageSize){
     return confinsR3Service.findByCustomer(pageNo,pageSize,value);
+  }
+
+  @GetMapping(value ="/customers/{customerNo}",produces = MediaType.APPLICATION_JSON_VALUE)
+  public BaseResponse getByCustomerNo(@PathVariable("customerNo") String customerNo){
+    return confinsR3Service.findByCustomerNo(customerNo);
   }
 }
