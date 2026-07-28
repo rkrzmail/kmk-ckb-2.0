@@ -14,16 +14,16 @@ public class PagingObjectBySQLRequest extends BaseRequest {
   private Boolean includeCount;
   private Boolean includeData;
   private Boolean isLoading;
-  private QueryStringQueryDto queryString;
+  private transient QueryStringQueryDto queryString;
   private String rowVersion;
-  private Object integrationObj;
+  private transient Object integrationObj;
   private String joinType;
   private Integer pageNo;
   private Integer rowPerPage;
-  private Object orderBy;
+  private transient Object orderBy;
 
   /** List of specific filtering criteria (The WHERE clauses). */
-  private List<CriterionDto> criteria;
+  private transient List<CriterionDto> criteria;
 
   private String requestDateTime;
 

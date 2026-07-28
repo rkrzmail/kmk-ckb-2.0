@@ -5,7 +5,7 @@ import com.kmkbe.feign.client.CsulVendorFeignClient;
 import com.kmkbe.feign.model.response.VendorResponse;
 import com.kmkbe.feign.model.request.LoginRequest;
 import com.kmkbe.feign.model.response.LoginResponse;
-import com.kmkbe.feign.utils.ApiResponseWrapper;
+import com.kmkbe.feign.utils.CsulApiResponseWrapper;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -24,7 +24,7 @@ public class ApiCsulAdapter {
    * @return
    */
   public LoginResponse login(LoginRequest request) {
-    ApiResponseWrapper<LoginResponse> responseWrapper = csulAuthFeignClient.login(request);
+    CsulApiResponseWrapper<LoginResponse> responseWrapper = csulAuthFeignClient.login(request);
 
     if (responseWrapper == null || responseWrapper.getData() == null) {
       return null;
@@ -34,7 +34,7 @@ public class ApiCsulAdapter {
   }
 
   public VendorResponse findByCode(String vendorCode) {
-    ApiResponseWrapper<VendorResponse> responseWrapper = csulVendorFeignClient.getVendorData(vendorCode);
+    CsulApiResponseWrapper<VendorResponse> responseWrapper = csulVendorFeignClient.getVendorData(vendorCode);
 
     if (responseWrapper == null || responseWrapper.getData() == null) {
       return null;

@@ -2,7 +2,6 @@ package com.kmkbe.feign.config;
 
 import com.kmkbe.feign.model.request.LoginRequest;
 import com.kmkbe.feign.model.response.LoginResponse;
-import com.kmkbe.feign.utils.ApiResponseWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -15,7 +14,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
 @Component
-public class TokenManager {
+public class CsulTokenManager {
 
   @Value("${feign.csul.ckb.url}")
   private String apiBaseCKB;

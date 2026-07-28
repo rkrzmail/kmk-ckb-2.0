@@ -7,10 +7,10 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class FeignAuthConfig {
 
-  private final TokenManager tokenManager;
+  private final CsulTokenManager csulTokenManager;
 
-  public FeignAuthConfig(TokenManager tokenManager) {
-    this.tokenManager = tokenManager;
+  public FeignAuthConfig(CsulTokenManager csulTokenManager) {
+    this.csulTokenManager = csulTokenManager;
   }
 
   // Automatically injects the stored token into header
@@ -19,7 +19,7 @@ public class FeignAuthConfig {
     return requestTemplate -> {
       // Skip injecting token if the request is destined for the auth endpoint itself
       if (!requestTemplate.url().contains("/webhook/token")) {
-        requestTemplate.header("Authorization", tokenManager.getToken());
+        requestTemplate.header("Authorization", csulTokenManager.getToken());
       }
     };
   }

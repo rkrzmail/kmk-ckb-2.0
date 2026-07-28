@@ -19,4 +19,9 @@ public class ConfinsR3Controller {
   public BaseResponse getZipcode(@RequestParam String zipcode){
     return confinsR3Service.findZipcode(zipcode);
   }
+
+  @GetMapping(value ="/cwr-customers",produces = MediaType.APPLICATION_JSON_VALUE)
+  public BaseResponse getCwrByCustomer(@RequestParam String value,Integer pageNo,Integer pageSize){
+    return confinsR3Service.findCwrByCustomer(pageNo,pageSize,value);
+  }
 }
