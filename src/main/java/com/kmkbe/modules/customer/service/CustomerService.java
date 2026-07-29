@@ -324,7 +324,7 @@ public class CustomerService {
       throw new IllegalArgumentException("Customer has been process approval status is " + request.getApprovalStatus());
     }
 
-    customer.setApprovalStatus(request.getApprovalStatus());
+    customer.setApprovalStatus(request.getApprovalStatus().toUpperCase().trim());
     customer.setIsActive(request.getApprovalStatus().equals("APPROVED"));
     customer.setApprovalNote(request.getApprovalNote());
     customer.setApprovalBy(authentication.getName());
