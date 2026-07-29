@@ -9,10 +9,8 @@ import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.helpers.utils.PageableUtil;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
-import com.kmkbe.modules.customer.model.dto.CustomerDto;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
-import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
 import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.modules.customer.model.response.CustomerResponse;
@@ -26,7 +24,6 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.helpers.utils.CommonUtils;
 import com.kmkbe.helpers.base.BaseResponse;
-import com.kmkbe.helpers.base.EmptyResponse;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.SignUpRequest;
@@ -279,7 +276,7 @@ public class CustomerService {
     }).toList();
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,PageCustomerResponse.builder()
-      .data(responses)
+      .content(responses)
       .pagination(PageableUtil.pageToPagination(page))
       .build());
   }
