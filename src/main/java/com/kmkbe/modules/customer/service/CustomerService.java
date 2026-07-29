@@ -4,6 +4,7 @@ import com.kmkbe.core.domain.constant.CustomerIdType;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.exception.BusinessException;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
@@ -243,8 +244,12 @@ public class CustomerService {
    * @return
    */
   public BaseResponseBuilder<PageCustomerResponse> pages(
-    PaginationRequest request) {
-    Page<Customer> page = customerRepository.findAll(PageRequest.of(request.getPageNo(), request.getPageSize()));
+    BasePaginationRequest request) {
+    String sortBy = request.getSortBy() != null && !request.getSortBy().isEmpty() ? request.getSortBy() : "dtm_crt";
+    Pageable pageable = PageableUtil.createPageRequest(request, request.getPageSize(), request.getPageNo(),
+      sortBy, request.getSortType());
+
+    Page<Customer> page = customerRepository.findAll(pageable);
     List<CustomerResponse> responses = page.getContent().stream().map(item -> {
       CustomerResponse response = new CustomerResponse();
       response.setCustCode(item.getCustCode());

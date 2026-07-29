@@ -32,8 +32,8 @@ public final class PageableUtil {
       defaultPageSize = req.getPageSize();
     }
 
-    if (req.getPageNumber() != null) {
-      defaultPageNumber = req.getPageNumber();
+    if (req.getPageNo() != null) {
+      defaultPageNumber = req.getPageNo();
     }
 
     if (req.getSortBy() != null) {
@@ -63,8 +63,8 @@ public final class PageableUtil {
       defaultPageSize = req.getPageSize();
     }
 
-    if (req.getPageNumber() != null) {
-      defaultPageNumber = req.getPageNumber();
+    if (req.getPageNo() != null) {
+      defaultPageNumber = req.getPageNo();
     }
 
     if (req.getSortBy() != null) {
