@@ -7,6 +7,7 @@ import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
+import com.kmkbe.helpers.utils.PageableUtil;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.dto.CustomerDto;
 import com.kmkbe.modules.customer.model.entity.Customer;
@@ -15,6 +16,7 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
 import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.modules.customer.model.response.CustomerResponse;
+import com.kmkbe.modules.customer.model.response.PageCustomerResponse;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -238,11 +240,16 @@ public class CustomerService {
   }
 
 
-  public PaginationResult<CustomerDto> pages(
+  /**
+   *
+   * @param request
+   * @return
+   */
+  public BaseResponseBuilder<PageCustomerResponse> pages(
     PaginationRequest request) {
     Page<Customer> page = customerRepository.findAll(PageRequest.of(request.getPageNo(), request.getPageSize()));
-    List<CustomerDto> responses = page.getContent().stream().map(item -> {
-      CustomerDto response = new CustomerDto();
+    List<CustomerResponse> responses = page.getContent().stream().map(item -> {
+      CustomerResponse response = new CustomerResponse();
       response.setCustCode(item.getCustCode());
       response.setCustNo(item.getCustNo());
       response.setCustName(item.getCustName());
@@ -261,6 +268,9 @@ public class CustomerService {
       response.setForceLogout(item.getForceLogout());
       response.setVendorId(item.getVendorId());
       response.setBouwheerCode(item.getBouwheerCode());
+      response.setBouwheerName(Optional.ofNullable(item.getBouwheerDetail())
+        .map(Bouwheer::getBouwheerName)
+        .orElse(null));
       response.setApprovalStatus(item.getApprovalStatus());
       response.setApprovalNote(item.getApprovalNote());
       response.setApprovalBy(item.getApprovalBy());
@@ -268,12 +278,10 @@ public class CustomerService {
       return response;
     }).toList();
 
-    return PaginationResult.<CustomerDto>builder()
-      .currentPage(+1)
-      .totalData(page.getTotalElements())
-      .totalPage(page.getTotalPages())
-      .list(responses).build();
-
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,PageCustomerResponse.builder()
+      .data(responses)
+      .pagination(PageableUtil.pageToPagination(page))
+      .build());
   }
 
   /**
@@ -298,7 +306,13 @@ public class CustomerService {
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,response);
   }
 
-  // ApprovalStatus
+  /**
+   *
+   * @param request
+   * @param authentication
+   * @return
+   * @throws MessagingException
+   */
   public BaseResponse approval(ApprovalRequest request,Authentication authentication) throws MessagingException {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(request.getCustCode());
     if (customerOptional.isEmpty()) {
@@ -319,6 +333,7 @@ public class CustomerService {
 
     // Send mail
     emailService.customerVerification(customer.getCustEmail().toLowerCase(),customer.getCustName(),customer.getCustIdNo(), CommonUtils.generateOtp());
-    return new EmptyResponse();
+
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
   }
 }
