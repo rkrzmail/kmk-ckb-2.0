@@ -1,15 +1,19 @@
-package com.kmkbe.feign.model.response;
+package com.kmkbe.feign.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.util.List;
 
 @Data
 @Builder
-public class ConfinsR3GetKeyValueActiveByCodeResponse implements Serializable {
+@AllArgsConstructor
+@NoArgsConstructor
+public class ConfinsR3GetKeyValueActiveByCodeDto implements Serializable {
   @JsonProperty("ReturnObject")
   private transient List<KeyType> returnObject;
 

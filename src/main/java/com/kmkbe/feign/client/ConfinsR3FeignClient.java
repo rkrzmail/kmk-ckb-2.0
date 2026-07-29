@@ -2,12 +2,12 @@ package com.kmkbe.feign.client;
 
 import com.kmkbe.feign.config.ConfinsR3AuthInterceptor;
 import com.kmkbe.feign.config.FeignErrorDecoder;
+import com.kmkbe.feign.model.dto.*;
 import com.kmkbe.feign.model.request.GetCustomerNoRequest;
 import com.kmkbe.feign.model.request.GetKeyValueActiveByCodeRequest;
 import com.kmkbe.feign.model.request.GetPagingObjectBySQLRequest;
 import com.kmkbe.feign.model.request.GetZipCodeRequest;
-import com.kmkbe.feign.model.response.*;
-import com.kmkbe.feign.utils.ConfinsR3ApiResponseWrapper;
+import com.kmkbe.feign.model.response.ConfinsR3ApiResponseWrapper;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -21,18 +21,24 @@ public interface ConfinsR3FeignClient {
 
 
   @GetMapping(value = "/api/mou/v1/Generic/GetPagingObjectBySQL")
-  ConfinsR3ApiResponseWrapper<ConfinsR3GetCwrRecordResponse> getCwrByCustomer(@RequestBody GetPagingObjectBySQLRequest request);
+  ConfinsR3ApiResponseWrapper<ConfinsR3GetCwrRecordDto> getCwrByCustomer(@RequestBody GetPagingObjectBySQLRequest request);
 
   @GetMapping(value = "/api/fou/v1/RefZipcode/GetRefZipcodeByZipCode")
-  ConfinsR3GetZipCodeResponse getZipcode(@RequestBody GetZipCodeRequest request);
+  ConfinsR3GetZipCodeDto getZipcode(@RequestBody GetZipCodeRequest request);
 
   @GetMapping(value = "/api/fou/v2/Generic/GetPagingObjectBySQL")
-  ConfinsR3ApiResponseWrapper<ConfinsR3GetCustomerResponse> getByCustomer(@RequestBody GetPagingObjectBySQLRequest request);
+  ConfinsR3ApiResponseWrapper<ConfinsR3GetCustomerDto> getByCustomer(@RequestBody GetPagingObjectBySQLRequest request);
 
   @GetMapping(value = "/api/fou/v1/Cust/GetCustByCustNo")
-  ConfinsR3GetCustomerNoResponse getByCustomerNo(@RequestBody GetCustomerNoRequest request);
+  ConfinsR3GetCustomerNoDto getByCustomerNo(@RequestBody GetCustomerNoRequest request);
 
   @GetMapping(value = "/api/fou/v1/RefMaster/GetListKeyValueActiveByCode")
-  ConfinsR3GetKeyValueActiveByCodeResponse getKyValueByCode(@RequestBody GetKeyValueActiveByCodeRequest request);
+  ConfinsR3GetKeyValueActiveByCodeDto getKyValueByCode(@RequestBody GetKeyValueActiveByCodeRequest request);
+
+  @GetMapping(value = "/api/fou/v1/Cust/GetCustCompanyForUpdateByCustNo")
+  ConfinsR3GetCustomerNoCompanyDto getByCustomerNoCompany(@RequestBody GetCustomerNoRequest request);
+
+  @GetMapping(value = "/api/fou/v1/Cust/GetCustPersonalForUpdateByCustNo")
+  ConfinsR3GetCustomerNoPersonalDto getByCustomerNoPersonal(@RequestBody GetCustomerNoRequest request);
 
 }

@@ -39,4 +39,15 @@ public class ConfinsR3Controller {
   public BaseResponse getKeyValueByCode(@PathVariable("typeCode") String typeCode){
     return confinsR3Service.findKeyValueByCode(typeCode);
   }
+
+  @GetMapping(value ="/customers/company/{customerNo}",produces = MediaType.APPLICATION_JSON_VALUE)
+  public BaseResponse getByCustomerNoCompany(@PathVariable("customerNo") String customerNo){
+    return confinsR3Service.findByCustomerNoCompany(customerNo);
+  }
+
+  @GetMapping(value ="/customers/personal/{customerNo}",produces = MediaType.APPLICATION_JSON_VALUE)
+  public BaseResponse getByCustomerNoPersonal(@PathVariable("customerNo") String customerNo){
+    return confinsR3Service.findByCustomerNoPersonal(customerNo);
+  }
+
 }

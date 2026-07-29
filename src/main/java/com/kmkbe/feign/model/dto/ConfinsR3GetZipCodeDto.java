@@ -1,15 +1,14 @@
-package com.kmkbe.feign.model.response;
+package com.kmkbe.feign.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kmkbe.helpers.base.BaseResponse;
 import lombok.*;
 
 @Data
-@Getter
-@Setter
+@Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ConfinsR3GetZipCodeResponse extends BaseResponse {
+public class ConfinsR3GetZipCodeDto extends BaseResponse {
   @JsonProperty("RefZipcodeId")
   private Long refZipcodeId;
   @JsonProperty("AreaCode1")

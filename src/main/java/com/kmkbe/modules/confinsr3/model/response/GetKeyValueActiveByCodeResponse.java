@@ -9,7 +9,7 @@ import lombok.*;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class KeyValueActiveByCodeResponse extends BaseResponse {
+public class GetKeyValueActiveByCodeResponse extends BaseResponse {
   private String key;
   private String value;
 }

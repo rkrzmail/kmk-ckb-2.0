@@ -1,7 +1,7 @@
 package com.kmkbe.feign.config;
 
 import com.kmkbe.feign.model.request.PostLoginRequest;
-import com.kmkbe.feign.model.response.PostLoginResponse;
+import com.kmkbe.feign.model.dto.PostLoginDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -47,8 +47,8 @@ public class CsulTokenManager {
     HttpEntity<PostLoginRequest> requestEntity = new HttpEntity<>(credentials, headers);
 
     try {
-      ResponseEntity<PostLoginResponse> responseEntity = restTemplate.postForEntity(apiBaseCKB.concat("/api/v1/webhook/token"), requestEntity, PostLoginResponse.class);
-      PostLoginResponse response = responseEntity.getBody();
+      ResponseEntity<PostLoginDto> responseEntity = restTemplate.postForEntity(apiBaseCKB.concat("/api/v1/webhook/token"), requestEntity, PostLoginDto.class);
+      PostLoginDto response = responseEntity.getBody();
       log.info("RAMCO {} ",response);
       if (response != null && response.getData().getToken()!= null) {
         cachedToken.set("Bearer " + response.getData().getToken());

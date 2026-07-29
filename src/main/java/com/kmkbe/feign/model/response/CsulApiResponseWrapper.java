@@ -1,4 +1,4 @@
-package com.kmkbe.feign.utils;
+package com.kmkbe.feign.model.response;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;

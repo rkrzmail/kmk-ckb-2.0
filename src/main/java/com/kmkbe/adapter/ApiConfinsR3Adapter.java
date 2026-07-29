@@ -1,12 +1,12 @@
 package com.kmkbe.adapter;
 
 import com.kmkbe.feign.client.ConfinsR3FeignClient;
+import com.kmkbe.feign.model.dto.*;
 import com.kmkbe.feign.model.request.GetCustomerNoRequest;
 import com.kmkbe.feign.model.request.GetKeyValueActiveByCodeRequest;
-import com.kmkbe.feign.model.response.*;
 import com.kmkbe.feign.model.request.GetPagingObjectBySQLRequest;
 import com.kmkbe.feign.model.request.GetZipCodeRequest;
-import com.kmkbe.feign.utils.ConfinsR3ApiResponseWrapper;
+import com.kmkbe.feign.model.response.ConfinsR3ApiResponseWrapper;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -22,7 +22,7 @@ public class ApiConfinsR3Adapter {
    * @param zipCode
    * @return
    */
-  public ConfinsR3GetZipCodeResponse getZipcode(String zipCode) {
+  public ConfinsR3GetZipCodeDto getZipcode(String zipCode) {
     return confinsR3FeignClient.getZipcode(GetZipCodeRequest.builder()
       .zipcode(zipCode.trim())
       .build());
@@ -33,7 +33,7 @@ public class ApiConfinsR3Adapter {
    * @param request
    * @return
    */
-  public ConfinsR3ApiResponseWrapper<ConfinsR3GetCwrRecordResponse> getCwrByCustomer(GetPagingObjectBySQLRequest request) {
+  public ConfinsR3ApiResponseWrapper<ConfinsR3GetCwrRecordDto> getCwrByCustomer(GetPagingObjectBySQLRequest request) {
     return confinsR3FeignClient.getCwrByCustomer(request);
   }
 
@@ -42,7 +42,7 @@ public class ApiConfinsR3Adapter {
    * @param request
    * @return
    */
-  public ConfinsR3ApiResponseWrapper<ConfinsR3GetCustomerResponse> getByCustomer(GetPagingObjectBySQLRequest request) {
+  public ConfinsR3ApiResponseWrapper<ConfinsR3GetCustomerDto> getByCustomer(GetPagingObjectBySQLRequest request) {
     return confinsR3FeignClient.getByCustomer(request);
   }
 
@@ -51,7 +51,7 @@ public class ApiConfinsR3Adapter {
    * @param request
    * @return
    */
-  public ConfinsR3GetCustomerNoResponse getByCustomerNo(GetCustomerNoRequest request) {
+  public ConfinsR3GetCustomerNoDto getByCustomerNo(GetCustomerNoRequest request) {
     return confinsR3FeignClient.getByCustomerNo(request);
   }
 
@@ -60,7 +60,27 @@ public class ApiConfinsR3Adapter {
    * @param request
    * @return
    */
-  public ConfinsR3GetKeyValueActiveByCodeResponse getKyValueByCode(GetKeyValueActiveByCodeRequest request) {
+  public ConfinsR3GetCustomerNoCompanyDto getByCustomerNoCompany(GetCustomerNoRequest request) {
+    return confinsR3FeignClient.getByCustomerNoCompany(request);
+  }
+
+
+  /**
+   *
+   * @param request
+   * @return
+   */
+  public ConfinsR3GetCustomerNoPersonalDto getByCustomerNoPersonal(GetCustomerNoRequest request) {
+    return confinsR3FeignClient.getByCustomerNoPersonal(request);
+  }
+
+
+  /**
+   *
+   * @param request
+   * @return
+   */
+  public ConfinsR3GetKeyValueActiveByCodeDto getKyValueByCode(GetKeyValueActiveByCodeRequest request) {
     return confinsR3FeignClient.getKyValueByCode(request);
   }
 }
