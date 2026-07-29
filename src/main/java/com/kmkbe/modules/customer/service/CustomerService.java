@@ -313,7 +313,7 @@ public class CustomerService {
    * @return
    * @throws MessagingException
    */
-  public BaseResponse approval(ApprovalRequest request,Authentication authentication) throws MessagingException {
+  public BaseResponse approval(ApprovalRequest request,Authentication authentication){
     Optional<Customer> customerOptional = customerRepository.findByCustCode(request.getCustCode());
     if (customerOptional.isEmpty()) {
       throw new IllegalArgumentException("Customer not ID found  " + request.getCustCode());
@@ -324,7 +324,7 @@ public class CustomerService {
       throw new IllegalArgumentException("Customer has been process approval status is " + request.getApprovalStatus());
     }
 
-    customer.setApprovalStatus(request.getApprovalStatus());
+    customer.setApprovalStatus(request.getApprovalStatus().toUpperCase().trim());
     customer.setIsActive(request.getApprovalStatus().equals("APPROVED"));
     customer.setApprovalNote(request.getApprovalNote());
     customer.setApprovalBy(authentication.getName());
