@@ -14,6 +14,6 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class PageCustomerResponse extends BasePaginationResponse {
-  private List<CustomerResponse> data;
+  private List<CustomerResponse> content;
   private Pagination pagination;
 }
