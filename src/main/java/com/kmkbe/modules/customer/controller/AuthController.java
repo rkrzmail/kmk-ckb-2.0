@@ -16,7 +16,7 @@ import com.kmkbe.core.domain.repository.RedisAttackRepository;
 import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.feign.model.response.GetVendorResponse;
+import com.kmkbe.feign.model.dto.GetVendorDto;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.customer.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.request.LoginRequest;
@@ -71,7 +71,7 @@ public class AuthController {
   public CommonResult<RequestOtpDto> signUp(
     @Valid @RequestBody SignUpRequest request
   ) throws Exception {
-    final GetVendorResponse vendor;
+    final GetVendorDto vendor;
 
     // Validate duplicate vendor ID
     Optional<Customer>customerOptional = customerRepository.findByVendorId(request.getVendorId());

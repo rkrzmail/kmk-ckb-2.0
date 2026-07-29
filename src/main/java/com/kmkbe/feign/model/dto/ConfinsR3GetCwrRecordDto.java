@@ -1,4 +1,4 @@
-package com.kmkbe.feign.model.response;
+package com.kmkbe.feign.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
@@ -7,9 +7,11 @@ import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-@Builder
 @Data
-public class ConfinsR3GetCwrRecordResponse implements Serializable {
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class ConfinsR3GetCwrRecordDto implements Serializable {
   // System/Metadata fields per record
   @JsonProperty("rn")
   private Integer rn;

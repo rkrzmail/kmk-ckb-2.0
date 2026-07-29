@@ -1,15 +1,14 @@
-package com.kmkbe.feign.model.response;
+package com.kmkbe.feign.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.Builder;
-import lombok.Data;
-
-import java.io.Serializable;
-import java.time.LocalDate;
+import lombok.*;
+import java.time.LocalDateTime;
 
 @Data
 @Builder
-public class ConfinsR3GetCustomerNoResponse implements Serializable {
+@AllArgsConstructor
+@NoArgsConstructor
+public class ConfinsR3GetCustomerDto {
   @JsonProperty("CustId")
   private Long custId;
   @JsonProperty("CustNo")
@@ -25,19 +24,27 @@ public class ConfinsR3GetCustomerNoResponse implements Serializable {
   @JsonProperty("IdNo")
   private String idNo;
   @JsonProperty("IdExpiredDt")
-  private LocalDate idExpiredDt;
+  private LocalDateTime idExpiredDt;
   @JsonProperty("TaxIdNo")
   private String taxIdNo;
   @JsonProperty("IsVip")
   private Boolean isVip;
-  @JsonProperty("IsCustomer")
-  private Boolean isCustomer;
-  @JsonProperty("OriginalOfficeCode")
-  private String originalOfficeCode;
-  @JsonProperty("IsAffiliateWithMf")
-  private Boolean isAffiliateWithMf;
   @JsonProperty("VipNotes")
   private String vipNotes;
+  @JsonProperty("IsCustomer")
+  private Boolean isCustomer;
+  @JsonProperty("Flag")
+  private String flag;
+  @JsonProperty("AO")
+  private String ao;
+  @JsonProperty("Addr")
+  private String addr;
+  @JsonProperty("Branch")
+  private String branch;
+  @JsonProperty("OriOfficeCode")
+  private String oriOfficeCode;
+  @JsonProperty("IsAffiliateWithMf")
+  private Boolean isAffiliateWithMf;
   @JsonProperty("IsGuarantor")
   private Boolean isGuarantor;
   @JsonProperty("IsFamily")
@@ -45,8 +52,8 @@ public class ConfinsR3GetCustomerNoResponse implements Serializable {
   @JsonProperty("IsShareholder")
   private Boolean isShareholder;
   @JsonProperty("ThirdPartyTrxNo")
-  private String thirdPartyTrxNo;
-  @JsonProperty("IsCustGrp")// Can be null
+  private String ThirdPartyTrxNo;
+  @JsonProperty("IsCustGrp")
   private Boolean isCustGrp;
   @JsonProperty("ThirdPartyGroupTrxNo")
   private String thirdPartyGroupTrxNo;
