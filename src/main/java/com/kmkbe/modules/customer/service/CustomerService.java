@@ -313,7 +313,7 @@ public class CustomerService {
    * @return
    * @throws MessagingException
    */
-  public BaseResponse approval(ApprovalRequest request,Authentication authentication) throws MessagingException {
+  public BaseResponse approval(ApprovalRequest request,Authentication authentication){
     Optional<Customer> customerOptional = customerRepository.findByCustCode(request.getCustCode());
     if (customerOptional.isEmpty()) {
       throw new IllegalArgumentException("Customer not ID found  " + request.getCustCode());
