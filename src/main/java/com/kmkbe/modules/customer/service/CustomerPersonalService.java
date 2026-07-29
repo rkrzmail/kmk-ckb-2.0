@@ -1,18 +1,17 @@
 package com.kmkbe.modules.customer.service;
 
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.CustomerPersonal;
 import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.modules.customer.request.SignUpRequest;
-import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
+import com.kmkbe.modules.customer.model.request.SignUpRequest;
+import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.nikita.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 

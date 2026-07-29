@@ -1,14 +1,12 @@
 package com.kmkbe.modules.customer.service;
 
 import com.kmkbe.core.domain.entity.ChangePasswordLog;
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.repository.ChangePasswordLogRepository;
 import com.kmkbe.core.utils.DateTimeUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.time.LocalDateTime;
 
 @Service
 @Slf4j

@@ -3,7 +3,7 @@ package com.kmkbe.modules.loan_submission.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.core.domain.dto.LoanSubmissionSessionDto;
 import com.kmkbe.nikita.utils.Utils;
@@ -15,7 +15,6 @@ import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.Optional;
 

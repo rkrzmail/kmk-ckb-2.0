@@ -14,6 +14,7 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.spec.FinancingDtlSpec;
 import com.kmkbe.core.domain.spec.InvoiceSpec;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.nikita.utils.Utils;

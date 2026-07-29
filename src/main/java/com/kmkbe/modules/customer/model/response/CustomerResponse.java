@@ -1,19 +1,21 @@
-package com.kmkbe.core.domain.dto;
+package com.kmkbe.modules.customer.model.response;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonInclude;
-import lombok.Getter;
+import com.kmkbe.core.domain.dto.AddressDto;
+import com.kmkbe.helpers.base.BaseResponse;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
 
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-@Getter
-@Setter
+@Data
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
-public class CustomerDto {
+public class CustomerResponse extends BaseResponse {
   private UUID custCode;
   private String custNo;
   private String custName;
@@ -33,24 +35,12 @@ public class CustomerDto {
   private AddressDto address;
   private Boolean forceLogout;
   private String vendorId;
-  private String bouwheer;
+  private UUID bouwheerCode;
+  private String bouwheerName;
   private String approvalStatus;
   private String approvalNote;
   private String approvalBy;
   private LocalDateTime approvalAt;
   private String npwp;
 
-  public Boolean getForceLogout() {
-    return forceLogout;
-  }
-
-  public void setForceLogout(Boolean forceLogout) {
-    this.forceLogout = forceLogout;
-  }
-
-  @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  private CustomerPersonalDto personal;
-
-  @JsonInclude(JsonInclude.Include.NON_EMPTY)
-  private CustomerCompanyDto company;
 }

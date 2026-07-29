@@ -1,11 +1,10 @@
 package com.kmkbe.modules.loan_submission.service;
 
 
-import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.UriUtils;
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.dto.LegalFileDto;
 import com.kmkbe.core.domain.entity.LegalFile;
 import com.kmkbe.core.domain.entity.MstFileType;
@@ -18,8 +17,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 @Service

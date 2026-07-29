@@ -1,9 +1,7 @@
 package com.kmkbe.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kmkbe.core.converter.ObjectToUrlEncodedConverter;
 import com.kmkbe.core.factory.CustomClientHttpRequestFactory;
-import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;

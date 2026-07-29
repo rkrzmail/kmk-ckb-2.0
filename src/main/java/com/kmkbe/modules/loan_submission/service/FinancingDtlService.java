@@ -15,6 +15,7 @@ import com.kmkbe.core.domain.request.*;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.nikita.data.Nson;
 import com.kmkbe.nikita.utils.Utils;

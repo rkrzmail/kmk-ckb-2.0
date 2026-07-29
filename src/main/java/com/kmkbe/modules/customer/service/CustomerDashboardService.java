@@ -2,9 +2,9 @@ package com.kmkbe.modules.customer.service;
 
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
-import com.kmkbe.core.domain.mapper.CwrMapper;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.utils.FormatingUtils;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.nikita.utils.Utils;
@@ -20,7 +20,6 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.security.SignatureException;
-import java.time.LocalDate;
 import java.util.*;
 
 @Service

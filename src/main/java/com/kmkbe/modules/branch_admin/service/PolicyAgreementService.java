@@ -1,11 +1,9 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.PolicyAgreementDto;
-import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.PolicyAgreement;
 import com.kmkbe.core.domain.entity.PolicyAgreementHistory;
 import com.kmkbe.core.domain.model.CommonResult;
-import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.PolicyAgreementHistoryRepository;
 import com.kmkbe.core.domain.repository.PolicyAgreementRepository;
 import jakarta.transaction.Transactional;

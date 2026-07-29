@@ -1,14 +1,14 @@
 package com.kmkbe.modules.customer.service;
 
 import com.kmkbe.core.domain.dto.RequestOtpDto;
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.OtpLog;
-import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.OtpRepository;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.service.EmailService;
-import com.kmkbe.modules.customer.request.RequestOtpRequest;
-import com.kmkbe.modules.customer.request.VerifyOtpRequest;
+import com.kmkbe.modules.customer.model.request.RequestOtpRequest;
+import com.kmkbe.modules.customer.model.request.VerifyOtpRequest;
 import com.kmkbe.modules.user.utils.Utils;
 import jakarta.annotation.Nullable;
 import jakarta.persistence.EntityNotFoundException;
@@ -17,7 +17,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.mongodb.core.aggregation.ArithmeticOperators;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 

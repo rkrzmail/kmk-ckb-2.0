@@ -1,10 +1,9 @@
 package com.kmkbe.core.domain.repository;
 
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.Cwr;
 import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.validation.constraints.NotNull;
-import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

@@ -5,19 +5,15 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.core.domain.entity.Customer;
-import com.kmkbe.core.domain.entity.FinancingDtl;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.ApiSbu;
 import com.kmkbe.core.domain.model.CommonResult;
-import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.model.ValidationResponse;
 import com.kmkbe.core.domain.repository.ApiSbuRepository;
-import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.request.InquiryDisburseRequest;
-import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.response.InquiryDisburseResult;
-import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.service.*;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
@@ -28,7 +24,6 @@ import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.FinancingService;
 import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
 import com.kmkbe.modules.remote.service.InvoiceRemoteDto;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,17 +40,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.web.util.ContentCachingRequestWrapper;
-import org.springframework.web.util.WebUtils;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.stream.Collectors;
 
 
 @Slf4j

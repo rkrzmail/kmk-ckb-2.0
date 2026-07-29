@@ -18,6 +18,7 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
 import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.common.service.EmailService;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;

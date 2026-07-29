@@ -1,18 +1,12 @@
-package com.kmkbe.core.domain.repository;
+package com.kmkbe.modules.customer.repository;
 
-import com.kmkbe.core.domain.dto.ProyeksiReportDto;
-import com.kmkbe.core.domain.dto.ReportDueDateDto;
-import com.kmkbe.core.domain.dto.SummaryByBranchDto;
-import com.kmkbe.core.domain.entity.Customer;
-import io.lettuce.core.dynamic.annotation.Param;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,7 +24,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long>, Pagin
 
     boolean existsByCustEmailIgnoreCaseAndCustIdNoNot(String email, String custIdNo);
 
-   Optional<Customer> findByBouwheer(String bouwheer);
+   Optional<Customer> findByBouwheerCode(UUID bouwheerCode);
 
    Page<Customer> findAll(Pageable pageable);
 

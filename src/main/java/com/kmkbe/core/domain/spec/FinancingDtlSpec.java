@@ -2,6 +2,7 @@ package com.kmkbe.core.domain.spec;
 
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;

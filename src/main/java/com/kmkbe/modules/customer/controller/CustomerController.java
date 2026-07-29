@@ -6,14 +6,18 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.mapper.CustomerMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.helpers.base.BaseResponseBuilder;
+import com.kmkbe.modules.customer.model.dto.CustomerDto;
+import com.kmkbe.modules.customer.model.response.CustomerResponse;
+import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.branch_admin.service.AgreementService;
-import com.kmkbe.modules.customer.request.ApprovalRequest;
-import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
-import com.kmkbe.modules.customer.request.UpdateFapRequest;
+import com.kmkbe.modules.customer.model.entity.Customer;
+import com.kmkbe.modules.customer.model.request.ApprovalRequest;
+import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
+import com.kmkbe.modules.customer.model.request.UpdateFapRequest;
 import com.kmkbe.modules.customer.service.*;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
@@ -316,8 +320,8 @@ public class CustomerController {
   }
 
   @GetMapping(value = "/{custCode}", produces = MediaType.APPLICATION_JSON_VALUE)
-  public CustomerDto getCustCode(@PathVariable String custCode) {
-    return customerService.findByCustCode(custCode);
+  public BaseResponse getCustomerCode(@PathVariable String custCode) {
+    return customerService.findByCustomerCode(custCode);
   }
 
   @PutMapping(value = "/approval")

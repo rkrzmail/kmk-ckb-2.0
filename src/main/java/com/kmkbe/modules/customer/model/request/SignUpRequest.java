@@ -1,4 +1,4 @@
-package com.kmkbe.modules.customer.request;
+package com.kmkbe.modules.customer.model.request;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;

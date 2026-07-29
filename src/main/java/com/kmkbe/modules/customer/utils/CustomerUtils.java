@@ -1,8 +1,8 @@
 package com.kmkbe.modules.customer.utils;
 
 import com.kmkbe.core.constants.CommonConstants;
-import com.kmkbe.core.domain.dto.CustomerDto;
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.customer.model.dto.CustomerDto;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.mapper.CustomerMapper;
 import com.kmkbe.core.utils.DateTimeUtils;
 import org.springframework.jdbc.core.JdbcTemplate;
