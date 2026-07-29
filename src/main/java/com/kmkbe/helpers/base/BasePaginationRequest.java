@@ -9,9 +9,9 @@ import lombok.NoArgsConstructor;
 @Data
 public class BasePaginationRequest extends BaseRequest{
   private Integer pageSize;
-  private Integer pageNumber;
+  private Integer pageNo;
   private String sortBy;
   private String sortType;
   private String searchBy;
-  private String searchParam;
+  private String searchValue;
 }

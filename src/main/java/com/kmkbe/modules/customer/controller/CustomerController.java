@@ -6,6 +6,7 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.mapper.CustomerMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.modules.customer.model.dto.CustomerDto;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
@@ -313,7 +314,7 @@ public class CustomerController {
 
 
   @GetMapping(value = "/pages", produces = MediaType.APPLICATION_JSON_VALUE)
-  public BaseResponse getAllCustomers(PaginationRequest request) {
+  public BaseResponse getAllCustomers(BasePaginationRequest request) {
     return customerService.pages(request);
   }
 
