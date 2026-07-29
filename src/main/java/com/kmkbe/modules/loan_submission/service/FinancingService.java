@@ -2,28 +2,22 @@ package com.kmkbe.modules.loan_submission.service;
 
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
-import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.*;
-import com.kmkbe.core.domain.request.InquiryNewInfoAgreementRequest;
-import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.branch_admin.service.CwrService;
+import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.remote.request.InquiryAgreementRemoteRequest;
 import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.nikita.utils.Utils;
-import jakarta.transaction.Transactional;
-import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 

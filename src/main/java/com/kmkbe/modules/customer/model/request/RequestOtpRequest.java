@@ -1,4 +1,4 @@
-package com.kmkbe.modules.customer.request;
+package com.kmkbe.modules.customer.model.request;
 
 import jakarta.validation.constraints.NotNull;
 

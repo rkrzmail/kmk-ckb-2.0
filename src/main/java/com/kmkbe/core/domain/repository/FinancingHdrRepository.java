@@ -1,10 +1,8 @@
 package com.kmkbe.core.domain.repository;
 
 import com.kmkbe.core.domain.dto.ProyeksiReportDto;
-import com.kmkbe.core.domain.dto.SummaryByAODto;
 import com.kmkbe.core.domain.dto.SummaryByBranchDto;
-import com.kmkbe.core.domain.entity.AgreementFileSigning;
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.entity.Invoice;
 import com.kmkbe.modules.user.entity.MstBranch;

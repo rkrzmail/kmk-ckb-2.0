@@ -11,9 +11,9 @@ import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.core.utils.FileUtils;
-import com.kmkbe.core.utils.HttpUtils;
 import com.kmkbe.core.utils.UriUtils;
+import com.kmkbe.modules.customer.model.entity.Customer;
+import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.nikita.utils.SpecPagination;
@@ -37,7 +37,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.security.SignatureException;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service

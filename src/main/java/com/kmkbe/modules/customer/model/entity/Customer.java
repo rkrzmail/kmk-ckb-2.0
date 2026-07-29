@@ -1,5 +1,10 @@
-package com.kmkbe.core.domain.entity;
+package com.kmkbe.modules.customer.model.entity;
 
+import com.kmkbe.core.domain.entity.ChangePasswordLog;
+import com.kmkbe.core.domain.entity.CustomerCompany;
+import com.kmkbe.core.domain.entity.CustomerPersonal;
+import com.kmkbe.core.domain.entity.LoginLog;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.GrantedAuthority;
@@ -89,27 +94,24 @@ public class Customer implements UserDetails {
   @Column
   private LocalDateTime dtmUpd;
 
-  @Column(name = "vendor_id",length = 60)
+  @Column(name = "vendor_id", length = 60)
   private String vendorId;
 
-  @Column(name = "bouwheer",length = 30)
-  private String bouwheer;
-
-  @Column(name = "approval_status",length = 10)
+  @Column(name = "approval_status", length = 10)
   private String approvalStatus;
 
-  @Column(name = "approval_note",length = 100)
+  @Column(name = "approval_note", length = 100)
   private String approvalNote;
 
-  @Column(name = "approval_by",length = 60)
+  @Column(name = "approval_by", length = 60)
   private String approvalBy;
 
   @Column
   private LocalDateTime approvalAt;
 
-  @Column(name = "npwp",length = 20)
+  @Column(name = "npwp", length = 20)
   private String npwp;
-  
+
   @OneToOne(
     mappedBy = "customer",
     fetch = FetchType.EAGER
@@ -127,15 +129,6 @@ public class Customer implements UserDetails {
 
   @OneToMany(mappedBy = "custCode")
   private Set<ChangePasswordLog> changePasswordLogs;
-
-    /*@OneToMany(mappedBy = "custCode")
-    private Set<Invoice> invoices = new LinkedHashSet<>();*/
-
-    /*@OneToMany(mappedBy = "custCode")
-    private Set<LegalFile> legalFiles = new LinkedHashSet<>();*/
-
-    /*@OneToMany(mappedBy = "customer")
-    private Set<FinancingHdr> financingHdrs = new LinkedHashSet<>();*/
 
   @Override
   public Collection<? extends GrantedAuthority> getAuthorities() {
@@ -186,5 +179,12 @@ public class Customer implements UserDetails {
   public void setForceLogout(Boolean forceLogout) {
     this.forceLogout = forceLogout;
   }
+
+  @Column(name = "bouwheer_code", length = 30)
+  private UUID bouwheerCode;
+
+  @OneToOne(cascade = CascadeType.ALL)
+  @JoinColumn(name = "bouwheer_code", referencedColumnName = "bouwheer_code",insertable=false, updatable=false)
+  private Bouwheer bouwheerDetail;
 
 }

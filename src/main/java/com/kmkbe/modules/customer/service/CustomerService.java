@@ -3,12 +3,19 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.domain.constant.CustomerIdType;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.exception.BusinessException;
+import com.kmkbe.helpers.base.BaseResponseBuilder;
+import com.kmkbe.helpers.constant.AppConstants;
+import com.kmkbe.helpers.constant.ErrorConstant;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.customer.model.dto.CustomerDto;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
 import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
-import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.modules.customer.model.response.CustomerResponse;
+import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.enums.ApprovalStatus;
@@ -19,19 +26,21 @@ import com.kmkbe.helpers.utils.CommonUtils;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.helpers.base.EmptyResponse;
 import com.kmkbe.modules.common.service.EmailService;
-import com.kmkbe.modules.customer.request.ApprovalRequest;
-import com.kmkbe.modules.customer.request.SignUpRequest;
-import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
-import com.kmkbe.modules.customer.request.UpdateFapRequest;
+import com.kmkbe.modules.customer.model.request.ApprovalRequest;
+import com.kmkbe.modules.customer.model.request.SignUpRequest;
+import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
+import com.kmkbe.modules.customer.model.request.UpdateFapRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.BeanUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -105,8 +114,8 @@ public class CustomerService {
       customer.setCustMobilePhone(FormatingUtils.formatOnlyNumber(request.getMobilePhone()));
       customer.setAgreeTc(request.getIsAgreeTc());
       customer.setCustPin(encodePin);
-      customer.setIsEmailValid(false);
-      customer.setBouwheer(request.getBouwheer());
+//      customer.setIsEmailValid(false);
+//      customer.setBouwheerCode(request.getBouwheer);
       customer.setVendorId(request.getVendorId());
       customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
       customer.setIsActive(false);
@@ -251,7 +260,7 @@ public class CustomerService {
       response.setDtmCrt(item.getDtmCrt());
       response.setForceLogout(item.getForceLogout());
       response.setVendorId(item.getVendorId());
-      response.setBouwheer(item.getBouwheer());
+      response.setBouwheerCode(item.getBouwheerCode());
       response.setApprovalStatus(item.getApprovalStatus());
       response.setApprovalNote(item.getApprovalNote());
       response.setApprovalBy(item.getApprovalBy());
@@ -267,38 +276,26 @@ public class CustomerService {
 
   }
 
-  // ApprovalStatus
-  public CustomerDto findByCustCode(String custCode) {
+  /**
+   *
+   * @param custCode
+   * @return
+   */
+  public BaseResponseBuilder<CustomerResponse> findByCustomerCode(String custCode) {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString(custCode));
     if (customerOptional.isEmpty()) {
-      throw new IllegalArgumentException("Customer not ID found  " + custCode);
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", custCode);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_01, ErrorConstant.ERROR_MESSAGE_81);
     }
 
     Customer customer = customerOptional.get();
-    CustomerDto response = new CustomerDto();
-    response.setCustCode(customer.getCustCode());
-    response.setCustNo(customer.getCustNo());
-    response.setCustName(customer.getCustName());
-    response.setCustTypeCode(customer.getCustTypeCode());
-    response.setCustIdNo(customer.getCustIdNo());
-    response.setCustEmail(customer.getCustEmail());
-    response.setIsEmailValid(customer.getIsEmailValid());
-    response.setCustMobilePhone(customer.getCustMobilePhone());
-    response.setIsPhoneValid(customer.getIsPhoneValid());
-    response.setIsWaActive(customer.getIsWaActive());
-    response.setAgreeTc(customer.getAgreeTc());
-    response.setAgreeLegalShare(customer.getAgreeLegalShare());
-    response.setCustExternalCode(customer.getCustExternalCode());
-    response.setIsActive(customer.getIsActive());
-    response.setDtmCrt(customer.getDtmCrt());
-    response.setForceLogout(customer.getForceLogout());
-    response.setVendorId(customer.getVendorId());
-    response.setBouwheer(customer.getBouwheer());
-    response.setApprovalStatus(customer.getApprovalStatus());
-    response.setApprovalNote(customer.getApprovalNote());
-    response.setApprovalBy(customer.getApprovalBy());
-    response.setApprovalAt(customer.getApprovalAt());
-    return response;
+    CustomerResponse response = new CustomerResponse();
+    BeanUtils.copyProperties(customer,response);
+    response.setBouwheerName(Optional.ofNullable(customer.getBouwheerDetail())
+      .map(Bouwheer::getBouwheerName)
+      .orElse(null));
+
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,response);
   }
 
   // ApprovalStatus
