@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class ConfinsR3GetCwrRecordDto implements Serializable {
+public class ConfinsR3GetCwrCustomerDto implements Serializable {
   // System/Metadata fields per record
   @JsonProperty("rn")
   private Integer rn;

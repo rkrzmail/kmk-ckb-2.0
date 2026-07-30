@@ -1,7 +1,7 @@
 package com.kmkbe.feign.config;
 
-import com.kmkbe.feign.model.request.PostLoginRequest;
-import com.kmkbe.feign.model.dto.PostLoginDto;
+import com.kmkbe.feign.model.request.CsulPostLoginRequest;
+import com.kmkbe.feign.model.dto.CsulPostLoginDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
@@ -18,6 +18,15 @@ public class CsulTokenManager {
 
   @Value("${feign.csul.ckb.url}")
   private String apiBaseCKB;
+
+  @Value("${feign.csul.ckb.username}")
+  private String username;
+
+  @Value("${feign.csul.ckb.password}")
+  private String password;
+
+  @Value("${feign.csul.ckb.client-secret}")
+  private String clientSecret;
 
   private final RestTemplate restTemplate = new RestTemplate();
   private final AtomicReference<String> cachedToken = new AtomicReference<>();
@@ -43,12 +52,12 @@ public class CsulTokenManager {
   private void executeLogin() {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
-    PostLoginRequest credentials = new PostLoginRequest("ramco", "RamcoVDC2026!", "SecretRamco2026!");
-    HttpEntity<PostLoginRequest> requestEntity = new HttpEntity<>(credentials, headers);
+    CsulPostLoginRequest credentials = new CsulPostLoginRequest(username ,password, clientSecret);
+    HttpEntity<CsulPostLoginRequest> requestEntity = new HttpEntity<>(credentials, headers);
 
     try {
-      ResponseEntity<PostLoginDto> responseEntity = restTemplate.postForEntity(apiBaseCKB.concat("/api/v1/webhook/token"), requestEntity, PostLoginDto.class);
-      PostLoginDto response = responseEntity.getBody();
+      ResponseEntity<CsulPostLoginDto> responseEntity = restTemplate.postForEntity(apiBaseCKB.concat("/api/v1/webhook/token"), requestEntity, CsulPostLoginDto.class);
+      CsulPostLoginDto response = responseEntity.getBody();
       log.info("RAMCO {} ",response);
       if (response != null && response.getData().getToken()!= null) {
         cachedToken.set("Bearer " + response.getData().getToken());

@@ -6,6 +6,6 @@ import java.io.Serializable;
 
 @Data
 @Builder
-public class GetZipCodeRequest implements Serializable {
+public class CsulGetZipCodeRequest implements Serializable {
   private String zipcode;
 }

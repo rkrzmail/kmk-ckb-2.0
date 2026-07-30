@@ -10,7 +10,7 @@ import java.util.List;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class GetVendorDto{
+public class CsulGetVendorDto {
     @JsonProperty("vendor_id")
     private String vendorId;
 

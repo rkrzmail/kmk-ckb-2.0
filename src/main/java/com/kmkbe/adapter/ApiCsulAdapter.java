@@ -2,9 +2,10 @@ package com.kmkbe.adapter;
 
 import com.kmkbe.feign.client.CsulAuthFeignClient;
 import com.kmkbe.feign.client.CsulVendorFeignClient;
-import com.kmkbe.feign.model.dto.GetVendorDto;
-import com.kmkbe.feign.model.request.PostLoginRequest;
-import com.kmkbe.feign.model.dto.PostLoginDto;
+import com.kmkbe.feign.model.dto.CsulGetVendorDto;
+import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
+import com.kmkbe.feign.model.request.CsulPostLoginRequest;
+import com.kmkbe.feign.model.dto.CsulPostLoginDto;
 import com.kmkbe.feign.model.response.CsulApiResponseWrapper;
 import org.springframework.stereotype.Component;
 
@@ -23,8 +24,8 @@ public class ApiCsulAdapter {
    * @param request
    * @return
    */
-  public PostLoginDto login(PostLoginRequest request) {
-    CsulApiResponseWrapper<PostLoginDto> responseWrapper = csulAuthFeignClient.login(request);
+  public CsulPostLoginDto login(CsulPostLoginRequest request) {
+    CsulApiResponseWrapper<CsulPostLoginDto> responseWrapper = csulAuthFeignClient.login(request);
 
     if (responseWrapper == null || responseWrapper.getData() == null) {
       return null;
@@ -33,9 +34,28 @@ public class ApiCsulAdapter {
     return responseWrapper.getData();
   }
 
-  public GetVendorDto findByCode(String vendorCode) {
-    CsulApiResponseWrapper<GetVendorDto> responseWrapper = csulVendorFeignClient.getVendorData(vendorCode);
+  /**
+   *
+   * @param vendorCode
+   * @return
+   */
+  public CsulGetVendorDto findByCode(String vendorCode) {
+    CsulApiResponseWrapper<CsulGetVendorDto> responseWrapper = csulVendorFeignClient.getVendorData(vendorCode);
 
+    if (responseWrapper == null || responseWrapper.getData() == null) {
+      return null;
+    }
+
+    return responseWrapper.getData();
+  }
+
+  /**
+   *
+   * @param vendorCode
+   * @return
+   */
+  public CsulInquiryInvoiceRemoteDto findListPostedInvoice(String vendorCode) {
+    CsulApiResponseWrapper<CsulInquiryInvoiceRemoteDto> responseWrapper = csulVendorFeignClient.getListPostedInvoice(vendorCode);
     if (responseWrapper == null || responseWrapper.getData() == null) {
       return null;
     }

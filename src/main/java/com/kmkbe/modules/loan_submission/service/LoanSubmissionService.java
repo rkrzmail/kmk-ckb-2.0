@@ -12,6 +12,7 @@ import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
+import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.EmailService;
@@ -92,7 +93,7 @@ public class LoanSubmissionService {
   ) throws Exception {
     try {
       final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, token);
-      InquiryInvoiceRemoteDto inquiryInvoiceRemote = null;
+      CsulInquiryInvoiceRemoteDto inquiryInvoiceRemote = null;
 
       try {
         //ambil data dari api
@@ -109,9 +110,9 @@ public class LoanSubmissionService {
         log.info("Count invoice Simulation result {}", dbInvoices.size());
 
         SimpleDateFormat sdf = DateTimeUtils.SDF_STANDARD_DATE;
-        List<InquiryInvoiceRemoteDto.InvoiceRemoteDto> rows = new ArrayList<>();
+        List<CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto> rows = new ArrayList<>();
         for (Invoice inv : dbInvoices) {
-          rows.add(InquiryInvoiceRemoteDto.InvoiceRemoteDto.builder()
+          rows.add(CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto.builder()
             .vendorNo(vendorTokenExtractor.getVendorCode())
             .reference(inv.getCustInvNo())
             .accountingDocument(inv.getBouwheerInvNo())
@@ -125,7 +126,7 @@ public class LoanSubmissionService {
             .description(inv.getInvoiceDescription())
             .build());
         }
-        inquiryInvoiceRemote = InquiryInvoiceRemoteDto.builder()
+        inquiryInvoiceRemote = CsulInquiryInvoiceRemoteDto.builder()
           .blacklistStatus(false)   // bypass cek blacklist
           .documentStatus("01")     // bypass cek doc status (bukan 03/04)
           .row(rows)
@@ -178,7 +179,7 @@ public class LoanSubmissionService {
       //jika data banyak berpotensi timeout
       List<PostedInvoiceDto> result = new ArrayList<>();
       for (int i = 0; i < inquiryInvoiceRemote.getRow().size(); i++) {
-        InquiryInvoiceRemoteDto.InvoiceRemoteDto remoteDto = inquiryInvoiceRemote.getRow().get(i);
+        CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto remoteDto = inquiryInvoiceRemote.getRow().get(i);
         if (StringUtil.isNullOrEmpty(inquiryInvoiceRemote.getRow().get(i).getPoNumber())) {
           continue;//hide yng po nya kosong
         }

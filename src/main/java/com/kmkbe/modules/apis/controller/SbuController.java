@@ -1,10 +1,15 @@
-package com.kmkbe.modules.apis;
+package com.kmkbe.modules.apis.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.exception.BusinessException;
+import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
+import com.kmkbe.helpers.base.BaseResponse;
+import com.kmkbe.helpers.constant.ErrorConstant;
+import com.kmkbe.modules.apis.service.ApiSbuService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.ApiSbu;
@@ -57,7 +62,7 @@ import java.util.*;
   name = "/api/v1/sbu/ckb",
   description = ""
 )
-@RequiredArgsConstructor
+
 public class SbuController {
   private final SbuRemoteService sbuRemoteService;
   private final RestTemplate restTemplate;
@@ -73,22 +78,38 @@ public class SbuController {
   private final AuthenticationManager authenticationManager;
   private final LoanSubmissionService loanSubmissionService;
   private final CustomerRepository customerRepository;
+  private final ApiSbuService apiSbuService;
 
-
-  public ValidationResponse apiValidation(String apiKey, String jwtToken) throws IOException {
-    Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
-    if (apiSbu.isEmpty()) {
-      throw new IllegalApiKeyException();
-    }
-    ValidationResponse validationResponse = jwtValidatorService.validate(apiKey, jwtToken, apiSbu.get());
-    String bouwheerCode = apiSbu.get().getBouwheerCode().toString();
-    if (!validationResponse.getBouwheer().equalsIgnoreCase(bouwheerCode)) {
-      throw new RuntimeException("bouwheer tidak cocok");
-    }
-    if (validationResponse.getExp() < (System.currentTimeMillis() / 1000)) {
-      throw new RemoteException(" expired");
-    }
-    return validationResponse;
+  public SbuController(SbuRemoteService sbuRemoteService,
+                       RestTemplate restTemplate,
+                       FinancingHdrService financingHdrService,
+                       FinancingService financingService,
+                       FinancingDtlService financingDtlService,
+                       ApiSbuRepository apiSbuRepository,
+                       JwtService jwtService,
+                       JwtGeneratorService jwtGeneratorService,
+                       JwtValidatorService jwtValidatorService,
+                       ObjectMapper objectMapper,
+                       AuthenticationManager authenticationManager,
+                       LoanSubmissionService loanSubmissionService,
+                       CustomerRepository customerRepository,
+                       ApiSbuService apiSbuService,
+                       InvoiceRemoteDto invoiceRemoteDto) {
+    this.sbuRemoteService = sbuRemoteService;
+    this.restTemplate = restTemplate;
+    this.financingHdrService = financingHdrService;
+    this.financingService = financingService;
+    this.financingDtlService = financingDtlService;
+    this.apiSbuRepository = apiSbuRepository;
+    this.jwtService = jwtService;
+    this.jwtGeneratorService = jwtGeneratorService;
+    this.jwtValidatorService = jwtValidatorService;
+    this.objectMapper = objectMapper;
+    this.authenticationManager = authenticationManager;
+    this.loanSubmissionService = loanSubmissionService;
+    this.customerRepository = customerRepository;
+    this.apiSbuService = apiSbuService;
+    this.invoiceRemoteDto = invoiceRemoteDto;
   }
 
   @PostMapping(value = "/test/{jwtToken}", consumes = MediaType.ALL_VALUE)
@@ -96,38 +117,7 @@ public class SbuController {
     @PathVariable("jwtToken") String jwtToken,
     @RequestHeader("ApiKey") String apiKey,
     @RequestBody(required = false) Object rawBody) throws IOException {
-
-    System.out.println("JWT Token : " + jwtToken);
-    System.out.println("ApiKey    : " + apiKey);
-    System.out.println("Raw Body  : " + rawBody);
-
-        /*
-         1. ambil app_key dan api_screet
-         2. data header dan row payload
-         3. base64+payload+api_screet
-         4. cocokan datanya dengan token kirim di path, kalo cococok ok
-
-
-            Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
-            if (apiSbu.isEmpty())    {
-               throw new IllegalApiKeyException();
-            }
-
-            String strSecret = apiSbu.get().getAppSecret();
-            String strApp = apiSbu.get().getAppPath();
-            String bouwheerCode = apiSbu.get().getBouwheerCode().toString();
-
-              ValidationResponse validationResponse = jwtValidatorService.validate(apiKey, jwtToken    );
-
-                if (!validationResponse.getBouwheer().equalsIgnoreCase(bouwheerCode)){
-                    throw new RuntimeException("bouwheer tidak cocok");
-                }
-                if (validationResponse.getExp()<(System.currentTimeMillis()/1000)){
-                    throw new RemoteException(   " expired");
-                }
-         */
-
-    ValidationResponse validationResponse = apiValidation(apiKey, jwtToken);
+    ValidationResponse validationResponse = apiSbuService.apiValidation(apiKey, jwtToken);
 
     return new CommonResult<Object>().success(rawBody);
 
@@ -142,7 +132,6 @@ public class SbuController {
     }
     CommonResult<Map<String, Object>> result;
     String strSecret = apiSbu.get().getAppSecret();
-    String strApp = apiSbu.get().getAppPath();
     String bouwheerCode = apiSbu.get().getBouwheerCode().toString();
 
     Date now = new Date();
@@ -168,7 +157,6 @@ public class SbuController {
 
       result = new CommonResult<Map<String, Object>>().success(response);
     } catch (IllegalArgumentException e) {
-
       result = new CommonResult<Map<String, Object>>().fail(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
     }
 
@@ -182,7 +170,8 @@ public class SbuController {
   ) throws SignatureException, ParseException, JsonProcessingException {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString("33cade0f-4ce6-46e5-be19-258eddb7e6a6"));
     if (customerOptional.isEmpty()) {
-      throw new IllegalArgumentException("Customer Bouwheer not found " + request.getBouwheerCode());
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Customer Bouwheer not found");
     }
 
     Customer customer = customerOptional.get();
@@ -206,7 +195,8 @@ public class SbuController {
   ) throws Exception {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString("33cade0f-4ce6-46e5-be19-258eddb7e6a6"));
     if (customerOptional.isEmpty()) {
-      throw new IllegalArgumentException("Customer Bouwheer not found " + request.getBouwheerCode());
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Customer Bouwheer not found");
     }
 
     Customer customer = customerOptional.get();
@@ -226,22 +216,31 @@ public class SbuController {
 
   private final InvoiceRemoteDto invoiceRemoteDto;
 
+//  @PostMapping(value = "/listpostedinvoice/{jwtToken}")
+//  public CommonResult<CsulInquiryInvoiceRemoteDto> listpostedinvoice(
+//    @PathVariable("jwtToken") String jwtToken,
+//    @RequestBody(required = false) Object rawBody
+//  ) throws Exception {
+//    JsonNode node = objectMapper.valueToTree(rawBody);
+//    String vendorCode = node.path("vendorCode").asText();
+//
+//    BaseSimpleRemoteResponseDto<CsulInquiryInvoiceRemoteDto> inquiryInvoice = invoiceRemoteDto.inquiryInvoice(vendorCode);
+//
+//    return new CommonResult<CsulInquiryInvoiceRemoteDto>().success(
+//      inquiryInvoice.getData(),
+//      ""
+//    );
+//  }
+
   @PostMapping(value = "/listpostedinvoice/{jwtToken}")
-  public CommonResult<InquiryInvoiceRemoteDto> listpostedinvoice(
+  public CommonResult<CsulInquiryInvoiceRemoteDto> getListPostedInvoice(
     @PathVariable("jwtToken") String jwtToken,
     @RequestBody(required = false) Object rawBody
-  ) throws Exception {
+  ){
     JsonNode node = objectMapper.valueToTree(rawBody);
     String vendorCode = node.path("vendorCode").asText();
-
-    BaseSimpleRemoteResponseDto<InquiryInvoiceRemoteDto> inquiryInvoice = invoiceRemoteDto.inquiryInvoice(vendorCode);
-
-    return new CommonResult<InquiryInvoiceRemoteDto>().success(
-      inquiryInvoice.getData(),
-      ""
-    );
+    return apiSbuService.inquiryListPostedInvoice(vendorCode);
   }
-
 
   @GetMapping(value = "/financing/status") //approvals/status
   public CommonResult<Object> updateApproval(
