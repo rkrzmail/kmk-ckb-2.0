@@ -126,12 +126,14 @@ custom:
   mongodb:
     collection: event
 
-# Feign configuration
+# Feign Configuration
 feign:
   csul:
     ckb:
       url: https://api-ckbvendorportal.dipstrategy.co.id
-      api-key:
+      username: ramco
+      password: RamcoVDC2026!
+      client-secret: SecretRamco2026!
 
   confins:
     url: https://uat-confinsr3.csulfinance.com
