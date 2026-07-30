@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.repository;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
@@ -27,6 +28,8 @@ public interface CustomerRepository extends JpaRepository<Customer, Long>, Pagin
    Optional<Customer> findByBouwheerCode(UUID bouwheerCode);
 
    Page<Customer> findAll(Pageable pageable);
+
+   Page<Customer> findAll(Specification<Customer> specification, Pageable pageable);
 
    Optional<Customer> findByVendorId(String vendorId);
 }

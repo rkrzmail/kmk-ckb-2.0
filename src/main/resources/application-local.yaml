@@ -116,34 +116,34 @@ csul:
   confins:
     adinskey: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
     fou:
-      v1: https://confins.csulfinance.com/api/fou/v1
+      v1: https://uat-confinsr3.csulfinance.com/api/fou/v1
       getzipcode: http://172.21.10.149:8083/fou_getzipcode.php
       getcalculate: http://172.21.10.149:8083/fou_getcalculate.php
     mou:
-      v1: http://confins.csulfinance.com/api/mou/v1
+      v1: https://uat-confinsr3.csulfinance.com/api/mou/v1
       getcwrbwhr: http://172.21.10.149:8083/mou_getcwrbouwheer.php
       getlistcwrbwhr: http://172.21.10.149:8083/mou_getlistcwrbwhr.php
       getpagingSQL: http://172.21.10.149:8083/mou_getpagingsql.php
       fwd: http://172.21.10.149:8083/mou_getsigner.php
     #LOS
     los:
-      v1: http://confins.csulfinance.com/api/los/v1
+      v1: https://uat-confinsr3.csulfinance.com/api/los/v1
       fwd: http://172.21.10.149:8083/los_getagr.php
       getRekening: http://172.21.10.149:8083/los_getrekening.php
       getAppNo: http://172.21.10.149:8083/los_getappno.php
       getpagingSQL: http://172.21.10.149:8083/los_getpagingsql.php
     #CORELOS
     corelos:
-      v1: https://confins.csulfinance.com/api/corelos/v1
+      v1: https://uat-confinsr3.csulfinance.com/api/corelos/v1
       getFinData: http://172.21.10.149:8083/corelos_getfindata.php
       getFactoring: http://172.21.10.149:8083/corelos_getfactoring.php
 
     ar:
-      v1: https://confins.csulfinance.com/api/ar/v1
+      v1: https://uat-confinsr3.csulfinance.com/api/ar/v1
     payment:
-      v1: https://confins.csulfinance.com/api/payment/v1
+      v1: https://uat-confinsr3.csulfinance.com/api/payment/v1
     ap:
-      v1: https://confins.csulfinance.com/api/ap/v1
+      v1: https://uat-confinsr3.csulfinance.com/api/ap/v1
   ckb :
     url:
     api-key:
