@@ -20,7 +20,7 @@ public class BasePaginationRequest extends BaseRequest{
   @Min(value = 1, message = "Page number must be greater than or equal to 1")
   private Integer pageNo;
 
-  @NotBlank(message = "Search by field is required")
+  @NotBlank(message = "Sort by field is required")
   private String sortBy;
 
   @NotBlank(message = "Sort type is required")

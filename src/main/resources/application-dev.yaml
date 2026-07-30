@@ -15,20 +15,20 @@ csul:
       getRekening: http://172.21.10.149:8083/los_getrekening.php
       v1: http://confins.csulfinance.com/api/los/v1
     corelos:
-      v1: https://confins.csulfinance.com/api/corelos/v1
+      v1: http://confins.csulfinance.com/api/corelos/v1
       getFinData: http://172.21.10.149:8083/corelos_getfindata.php
       getFactoring: http://172.21.10.149:8083/corelos_getfactoring.php
     ap:
-      v1: https://confins.csulfinance.com/api/ap/v1
+      v1: http://confins.csulfinance.com/api/ap/v1
     fou:
-      v1: https://confins.csulfinance.com/api/fou/v1
+      v1: http://confins.csulfinance.com/api/fou/v1
       getcalculate: http://172.21.10.149:8083/fou_getcalculate.php
       getzipcode: http://172.21.10.149:8083/fou_getzipcode.php
     payment:
-      v1: https://confins.csulfinance.com/api/payment/v1
+      v1: http://confins.csulfinance.com/api/payment/v1
     adinskey: MWxHZ1ZmZEpubHkrNy9YdmFNZ3ZSVXlHRzV1emozM0hrN1AxYTRjRFg1a1NZUz0=
     ar:
-      v1: https://confins.csulfinance.com/api/ar/v1
+      v1: http://confins.csulfinance.com/api/ar/v1
   sisca:
     v1:
       auth:
@@ -141,11 +141,11 @@ custom:
 feign:
   csul:
     ckb:
-      url: https://api-ckbvendorportal.dipstrategy.co.id
+      url: http://api-ckbvendorportal.dipstrategy.co.id
       username: ramco
       password: RamcoVDC2026!
       client-secret: SecretRamco2026!
 
   confins:
-    url: https://uat-confinsr3.csulfinance.com
+    url: http://uat-confinsr3.csulfinance.com
     adins-key: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
