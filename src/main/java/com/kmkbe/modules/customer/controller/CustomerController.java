@@ -24,7 +24,6 @@ import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.modules.user.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -35,7 +34,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
@@ -314,7 +312,7 @@ public class CustomerController {
 
 
   @GetMapping(value = "/pages", produces = MediaType.APPLICATION_JSON_VALUE)
-  public BaseResponse getAllCustomers(BasePaginationRequest request) {
+  public BaseResponse getAllCustomers(@Valid BasePaginationRequest request) {
     return customerService.pages(request);
   }
 
@@ -324,7 +322,7 @@ public class CustomerController {
   }
 
   @PutMapping(value = "/approval")
-  public BaseResponse approvalCustomer(@RequestBody @Validated ApprovalRequest request,Authentication authentication) throws MessagingException {
+  public BaseResponse approvalCustomer(@RequestBody @Valid ApprovalRequest request,Authentication authentication){
     return customerService.approval(request,authentication);
   }
 }
