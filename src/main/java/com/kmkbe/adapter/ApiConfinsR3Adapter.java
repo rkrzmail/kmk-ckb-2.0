@@ -7,8 +7,10 @@ import com.kmkbe.feign.model.request.ConfinsR3GetKeyValueActiveByCodeRequest;
 import com.kmkbe.feign.model.request.ConfinsR3GetPagingObjectBySQLRequest;
 import com.kmkbe.feign.model.request.CsulGetZipCodeRequest;
 import com.kmkbe.feign.model.response.ConfinsR3ApiResponseWrapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class ApiConfinsR3Adapter {
   private final ConfinsR3FeignClient confinsR3FeignClient;
@@ -34,6 +36,7 @@ public class ApiConfinsR3Adapter {
    * @return
    */
   public ConfinsR3ApiResponseWrapper<ConfinsR3GetZipCodeDto> getAllZipcode(ConfinsR3GetPagingObjectBySQLRequest request) {
+    log.info("Request Body get All Zipcode {} ",request.toString());
     return confinsR3FeignClient.getAllZipcode(request);
   }
 
@@ -43,6 +46,7 @@ public class ApiConfinsR3Adapter {
    * @return
    */
   public ConfinsR3ApiResponseWrapper<ConfinsR3GetCwrCustomerDto> getCwrByCustomer(ConfinsR3GetPagingObjectBySQLRequest request) {
+    log.info("Request Body get CWR By Customer {} ",request.toString());
     return confinsR3FeignClient.getCwrByCustomer(request);
   }
 

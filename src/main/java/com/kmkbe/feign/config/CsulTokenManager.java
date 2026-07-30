@@ -1,13 +1,12 @@
 package com.kmkbe.feign.config;
 
+import com.kmkbe.exception.BusinessException;
 import com.kmkbe.feign.model.request.CsulPostLoginRequest;
 import com.kmkbe.feign.model.dto.CsulPostLoginDto;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import java.util.concurrent.atomic.AtomicReference;
@@ -62,10 +61,11 @@ public class CsulTokenManager {
       if (response != null && response.getData().getToken()!= null) {
         cachedToken.set("Bearer " + response.getData().getToken());
       } else {
-        throw new RuntimeException("Authentication failed: Token string payload was null");
+        log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", response);
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Authentication failed: Token string payload was null");
       }
     } catch (Exception e) {
-      throw new RuntimeException("Failed to fetch auth token via standard RestTemplate", e);
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}",e.getMessage());
     }
   }
 }

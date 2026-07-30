@@ -12,8 +12,8 @@ import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.helpers.utils.CommonUtils;
-import com.kmkbe.modules.confinsr3.model.request.ConfinsR3ZipcodeCriteriaRequest;
 import com.kmkbe.modules.confinsr3.model.response.*;
+import com.kmkbe.modules.master.request.AreaPageRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.http.HttpStatus;
@@ -71,7 +71,9 @@ public class ConfinsR3Service {
       .pageNo(pageNo)
       .rowPerPage(pageSize)
       .orderBy(null)
-      .criteria(List.of()).build());
+      .criteria(List.of())
+      .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
+      .build());
 
     if (!response.getCode().equals("200")) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", response.getMessage());
@@ -87,21 +89,23 @@ public class ConfinsR3Service {
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, recordResponseList);
   }
 
-  public BaseResponseBuilder<List<GetZipCodeResponse>> pageAllZipcode(Integer pageNo, Integer pageSize, List<ConfinsR3ZipcodeCriteriaRequest> request) {
+  public BaseResponseBuilder<List<GetZipCodeResponse>> pageZipcode(AreaPageRequest request) {
 
+    log.info("Gate zipcode by criteria {} ",request.getCriteria().stream().toList());
     List<ConfinsR3GetPagingObjectBySQLRequest.CriterionDto> criterionDtos = new ArrayList<>();
-    request.forEach(keyType -> {
+    request.getCriteria().stream().toList().forEach(item -> {
       ConfinsR3GetPagingObjectBySQLRequest.CriterionDto type = new ConfinsR3GetPagingObjectBySQLRequest.CriterionDto();
       type.setLow(0);
       type.setHigh(0);
       type.setDataType("");
       type.setIsCriteriaDataTable(false);
       type.setRestriction("Eq");
-      type.setPropName(keyType.getPropName());
-      type.setValue(keyType.getValue());
+      type.setPropName(item.getPropName());
+      type.setValue(item.getValue());
 
       criterionDtos.add(type);
     });
+
     ConfinsR3ApiResponseWrapper<ConfinsR3GetZipCodeDto> response = apiConfinsR3Adapter.getAllZipcode(ConfinsR3GetPagingObjectBySQLRequest.builder()
       .includeCount(true)
       .includeData(true)
@@ -112,10 +116,11 @@ public class ConfinsR3Service {
       .rowVersion("")
       .integrationObj(null)
       .joinType("INNER")
-      .pageNo(pageNo)
-      .rowPerPage(pageSize)
+      .pageNo(request.getPageNo())
+      .rowPerPage(request.getPageSize())
       .orderBy(null)
-      .criteria(List.of())
+      .criteria(criterionDtos)
+      .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
       .build());
 
     if (!response.getCode().equals("200")) {

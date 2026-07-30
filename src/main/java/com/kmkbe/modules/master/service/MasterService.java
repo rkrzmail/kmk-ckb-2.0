@@ -6,6 +6,8 @@ import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
 import com.kmkbe.core.domain.dto.InputOptionsRemoteDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.exception.BusinessException;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.remote.request.AreaRemoteRequest;
 import com.kmkbe.modules.remote.request.PropCriteriaGenericTypeRequest;
 import com.kmkbe.modules.remote.request.RefMasterRequest;
@@ -14,6 +16,7 @@ import com.kmkbe.modules.remote.service.MstRemoteService;
 import com.kmkbe.modules.user.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -39,7 +42,8 @@ public class MasterService {
 
     if (type != null) {
       if (!type.equalsIgnoreCase("PERSONAL") && !type.equalsIgnoreCase("COMPANY")) {
-        throw new RuntimeException("Arguments not in list, currently in list is: personal, company");
+        log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", type);
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Arguments not in list, currently in list is: personal, company");
       }
       modelDebiturMappingCode = RefMasterRequest.ModelDebiturMappingCode.valueOf(type.toUpperCase());
     }

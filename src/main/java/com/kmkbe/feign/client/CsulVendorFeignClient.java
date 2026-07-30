@@ -1,6 +1,6 @@
 package com.kmkbe.feign.client;
 
-import com.kmkbe.feign.config.CsulVdcAuthInterceptor;
+import com.kmkbe.feign.config.CsulAuthInterceptor;
 import com.kmkbe.feign.config.FeignErrorDecoder;
 import com.kmkbe.feign.model.dto.CsulGetVendorDto;
 import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 @FeignClient(
   name = "csulVendorFeignClient",
   url = "${feign.csul.ckb.url}",
-  configuration = { CsulVdcAuthInterceptor.class, FeignErrorDecoder.class }
+  configuration = { CsulAuthInterceptor.class, FeignErrorDecoder.class }
 )
 public interface CsulVendorFeignClient {
 

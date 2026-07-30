@@ -1,6 +1,6 @@
 package com.kmkbe.feign.client;
 
-import com.kmkbe.feign.config.CsulVdcAuthInterceptor;
+import com.kmkbe.feign.config.CsulAuthInterceptor;
 import com.kmkbe.feign.config.FeignErrorDecoder;
 import com.kmkbe.feign.model.request.CsulPostLoginRequest;
 import com.kmkbe.feign.model.dto.CsulPostLoginDto;
@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 @FeignClient(
   name = "csulAuthFeignClient",
   url = "${feign.csul.ckb.url}",
-  configuration = { CsulVdcAuthInterceptor.class, FeignErrorDecoder.class}
+  configuration = { CsulAuthInterceptor.class, FeignErrorDecoder.class}
 )
 public interface CsulAuthFeignClient {
   @GetMapping(value = "/api/v1/webhook/token",

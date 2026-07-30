@@ -8,8 +8,10 @@ import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.confinsr3.model.request.ConfinsR3ZipcodeCriteriaRequest;
 import com.kmkbe.modules.confinsr3.service.ConfinsR3Service;
+import com.kmkbe.modules.master.request.AreaPageRequest;
 import com.kmkbe.modules.master.service.MasterService;
 import com.kmkbe.modules.remote.request.ZipCodeRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -29,18 +31,14 @@ public class MstController {
   }
 
   @GetMapping("/input-options/{name}")
-  public CommonResult<List<InputOptionsRemoteDto>> getOptions(
-    @PathVariable("name")
-    BaseRemoteService.RefMasterTypeCode name,
-    String type
-  ) {
+  public CommonResult<List<InputOptionsRemoteDto>> getOptions(@PathVariable("name") BaseRemoteService.RefMasterTypeCode name, String type) {
     return masterService.getOptions(name, type);
   }
 
 
-  @GetMapping(value = "/area/pages", produces = MediaType.APPLICATION_JSON_VALUE)
-  public BaseResponse getPageArea(Integer pageNo, Integer pageSize, List<ConfinsR3ZipcodeCriteriaRequest> requests) {
-    return confinsR3Service.pageAllZipcode(pageNo, pageSize,requests);
+  @GetMapping(value = "/areas/page", produces = MediaType.APPLICATION_JSON_VALUE)
+  public BaseResponse getPageArea(@Valid AreaPageRequest requests) {
+    return confinsR3Service.pageZipcode(requests);
   }
 
   @GetMapping(value = "/areas", produces = MediaType.APPLICATION_JSON_VALUE)
