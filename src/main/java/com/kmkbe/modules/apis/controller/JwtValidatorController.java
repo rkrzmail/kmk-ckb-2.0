@@ -1,4 +1,4 @@
-package com.kmkbe.modules.apis;
+package com.kmkbe.modules.apis.controller;
 
 
 import com.kmkbe.core.domain.model.CommonResult;

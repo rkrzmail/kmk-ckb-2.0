@@ -6,11 +6,11 @@ import lombok.*;
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
-public class PostLoginDto{
+public class CsulPostLoginDto {
   private boolean success;
   private int statusCode;
-  private transient AuthData data; // Maps the "data" object wrapper
-  private transient Object error;
+  private AuthData data; // Maps the "data" object wrapper
+  private Object error;
   private String timestamp;
 
   @Data

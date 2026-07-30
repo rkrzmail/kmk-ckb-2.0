@@ -7,8 +7,8 @@ import java.io.Serializable;
 
 @Data
 @Builder
-public class GetCustomerNoRequest implements Serializable {
+public class ConfinsR3GetKeyValueActiveByCodeRequest implements Serializable {
+  private String refMasterTypeCode;
+  private String mappingCode;
   private String requestDateTime;
-  private String rowVersion;
-  private String custNo;
 }

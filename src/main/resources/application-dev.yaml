@@ -79,6 +79,17 @@ spring:
     password: Csultmt10
     url: jdbc:postgresql://aurora-kmk.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified
     username: postgres
+  mail:
+    host: nikita.co.id
+    port: 465
+    protocol: smtp
+    username: csul@nikita.co.id
+    password: DArS!OP#csul6?6Uu
+    properties:
+      mail.smtp.ssl.trust: '*'
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
 logging:
   level:
     org:
@@ -126,12 +137,14 @@ custom:
   mongodb:
     collection: event
 
-# Feign configuration
+# Feign Configuration
 feign:
   csul:
     ckb:
       url: https://api-ckbvendorportal.dipstrategy.co.id
-      api-key:
+      username: ramco
+      password: RamcoVDC2026!
+      client-secret: SecretRamco2026!
 
   confins:
     url: https://uat-confinsr3.csulfinance.com

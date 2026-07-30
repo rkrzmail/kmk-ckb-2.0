@@ -10,7 +10,7 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-public class GetPagingObjectBySQLRequest extends BaseRequest {
+public class ConfinsR3GetPagingObjectBySQLRequest extends BaseRequest {
   private Boolean includeCount;
   private Boolean includeData;
   private Boolean isLoading;
@@ -48,7 +48,7 @@ public class GetPagingObjectBySQLRequest extends BaseRequest {
     private Integer low;
     private Integer high;
     private String dataType;
-    private String isCriteriaDataTable;
+    private Boolean isCriteriaDataTable;
     private String propName;
     private String value;
     private String restriction;

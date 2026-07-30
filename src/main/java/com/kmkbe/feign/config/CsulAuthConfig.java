@@ -5,11 +5,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class FeignAuthConfig {
+public class CsulAuthConfig {
 
   private final CsulTokenManager csulTokenManager;
 
-  public FeignAuthConfig(CsulTokenManager csulTokenManager) {
+  public CsulAuthConfig(CsulTokenManager csulTokenManager) {
     this.csulTokenManager = csulTokenManager;
   }
 
@@ -19,8 +19,9 @@ public class FeignAuthConfig {
     return requestTemplate -> {
       // Skip injecting token if the request is destined for the auth endpoint itself
       if (!requestTemplate.url().contains("/webhook/token")) {
-        requestTemplate.header("Authorization", csulTokenManager.getToken());
+        return;
       }
+      requestTemplate.header("Authorization", csulTokenManager.getToken());
     };
   }
 }

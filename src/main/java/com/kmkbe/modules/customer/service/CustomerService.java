@@ -18,7 +18,6 @@ import com.kmkbe.modules.customer.model.response.CustomerResponse;
 import com.kmkbe.modules.customer.model.response.PageCustomerResponse;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
-import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
@@ -248,7 +247,7 @@ public class CustomerService {
    */
   public BaseResponseBuilder<PageCustomerResponse> pages(
     BasePaginationRequest request) {
-    String sortBy = request.getSortBy() != null && !request.getSortBy().isEmpty() ? request.getSortBy() : "dtm_crt";
+    String sortBy = request.getSortBy() != null && !request.getSortBy().isEmpty() ? request.getSortBy() : "custName";
     Pageable pageable = PageableUtil.createPageRequest(request, request.getPageSize(), request.getPageNo(),
       sortBy, request.getSortType());
 
@@ -300,7 +299,7 @@ public class CustomerService {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString(custCode));
     if (customerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", custCode);
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_01, ErrorConstant.ERROR_MESSAGE_81);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81);
     }
 
     Customer customer = customerOptional.get();
@@ -323,12 +322,14 @@ public class CustomerService {
   public BaseResponse approval(ApprovalRequest request,Authentication authentication){
     Optional<Customer> customerOptional = customerRepository.findByCustCode(request.getCustCode());
     if (customerOptional.isEmpty()) {
-      throw new IllegalArgumentException("Customer not ID found  " + request.getCustCode());
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getCustCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81,"Customer not found");
     }
 
     Customer customer = customerOptional.get();
-    if (customer.getApprovalStatus().equals(ApprovalStatus.APPROVED) || customer.getApprovalStatus().equals("REJECTED")) {
-      throw new IllegalArgumentException("Customer has been process approval status is " + request.getApprovalStatus());
+    if (!customer.getApprovalStatus().equals("OPEN")) {
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", request.getApprovalStatus());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Customer has been process with status is ");
     }
 
     customer.setApprovalStatus(request.getApprovalStatus().toUpperCase().trim());

@@ -11,9 +11,9 @@ public class ErrorConstant {
   public static final Integer ERROR_CODE_409 = 409;
   public static final Integer ERROR_CODE_500 = 409;
 
-  public static final Integer ERROR_CODE_00 = 80;
-  public static final Integer ERROR_CODE_01 = 81;
-  public static final Integer ERROR_CODE_02 = 82;
+  public static final Integer ERROR_CODE_80 = 80;
+  public static final Integer ERROR_CODE_81 = 81;
+  public static final Integer ERROR_CODE_82 = 82;
 
   //Error Message
   public static final String ERROR_MESSAGE_404= "Not Found";

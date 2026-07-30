@@ -5,11 +5,11 @@ import feign.RequestTemplate;
 import org.springframework.stereotype.Component;
 
 @Component
-public class CsulVdcAuthInterceptor implements RequestInterceptor {
+public class CsulAuthInterceptor implements RequestInterceptor {
 
   private final CsulTokenManager csulTokenManager;
 
-  public CsulVdcAuthInterceptor(CsulTokenManager csulTokenManager) {
+  public CsulAuthInterceptor(CsulTokenManager csulTokenManager) {
     this.csulTokenManager = csulTokenManager;
   }
 
@@ -18,7 +18,7 @@ public class CsulVdcAuthInterceptor implements RequestInterceptor {
     String url = template.url();
 
     // Robust condition check covering relative paths and complete targets
-    if (url.contains("/webhook/token") || url.endsWith("/token") || template.feignTarget().name().equals("authClient")) {
+    if (url.contains("/webhook/token") || url.endsWith("/token") || template.feignTarget().name().equals("csulAuthFeignClient")) {
       return; // Skip token injection completely for login calls
     }
 

@@ -1,16 +1,11 @@
 package com.kmkbe.modules.remote.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import com.kmkbe.core.domain.dto.InquiryOutstandingBillDetailtDto;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
-import com.kmkbe.core.domain.dto.InquiryInvoiceRemoteDto;
+import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
 import com.kmkbe.modules.remote.request.InquiryRequest;
-import com.kmkbe.nikita.utils.PlainDoubleSerializer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
@@ -27,7 +22,7 @@ public class InvoiceRemoteDto {
     private final RestTemplate restTemplate;
     private final BaseRemoteService baseRemoteService;
 
-    public BaseSimpleRemoteResponseDto<InquiryInvoiceRemoteDto> inquiryInvoice(
+    public BaseSimpleRemoteResponseDto<CsulInquiryInvoiceRemoteDto> inquiryInvoice(
             String vendorCode
     ) throws JsonProcessingException {
         try {
@@ -38,7 +33,7 @@ public class InvoiceRemoteDto {
                     baseRemoteService.apiKeyHeaders()
             );
 
-            final ResponseEntity<BaseSimpleRemoteResponseDto<InquiryInvoiceRemoteDto>> response = restTemplate.exchange(
+            final ResponseEntity<BaseSimpleRemoteResponseDto<CsulInquiryInvoiceRemoteDto>> response = restTemplate.exchange(
                     baseRemoteService.getBaseMst() + "/sap/listPostedInvoiceByVendorInSAP",
                     HttpMethod.POST,
                     requestArgs,

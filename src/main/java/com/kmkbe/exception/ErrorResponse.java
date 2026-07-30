@@ -10,7 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ErrorResponse extends BaseResponse {
-  private String code;
+  private Integer code;
   private String title;
   private String message;
 

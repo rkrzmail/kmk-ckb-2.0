@@ -1,4 +1,4 @@
-package com.kmkbe.core.domain.dto;
+package com.kmkbe.feign.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
@@ -10,7 +10,7 @@ import java.util.List;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class InquiryInvoiceRemoteDto {
+public class CsulInquiryInvoiceRemoteDto {
     @JsonProperty("blacklist_status")
     private Boolean blacklistStatus;
 
