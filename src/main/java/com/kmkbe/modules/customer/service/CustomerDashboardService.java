@@ -4,17 +4,20 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.utils.FormatingUtils;
+import com.kmkbe.exception.BusinessException;
+import com.kmkbe.helpers.base.BaseResponseBuilder;
+import com.kmkbe.helpers.constant.AppConstants;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.nikita.utils.Utils;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.Query;
 import jakarta.transaction.Transactional;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -24,246 +27,216 @@ import java.util.*;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class CustomerDashboardService {
-    private final FinancingHdrService financingHdrService;
-    private final CwrRepository cwrRepository;
-    private final EntityManager entityManager;
-    private final AgreementRepository agreementRepository;
-    private final NotifDebtorRepository notifDebtorRepository;
-    private final AgreementFileSigningRepository agreementFileSigningRepository;
-    private final FinancingHdrRepository financingHdrRepository;
+  private final Authentication authentication;
+  private final FinancingHdrService financingHdrService;
+  private final CwrRepository cwrRepository;
+  private final EntityManager entityManager;
+  private final AgreementRepository agreementRepository;
+  private final NotifDebtorRepository notifDebtorRepository;
+  private final AgreementFileSigningRepository agreementFileSigningRepository;
+  private final FinancingHdrRepository financingHdrRepository;
 
-    public CustomerPlafondDto plafond( Authentication authentication  ) throws SignatureException {
-        Customer customer = CustomerUtils.authenticateCustomer(authentication);
+  public CustomerDashboardService(Authentication authentication,
+                                  FinancingHdrService financingHdrService,
+                                  CwrRepository cwrRepository,
+                                  EntityManager entityManager,
+                                  AgreementRepository agreementRepository,
+                                  NotifDebtorRepository notifDebtorRepository,
+                                  AgreementFileSigningRepository agreementFileSigningRepository,
+                                  FinancingHdrRepository financingHdrRepository) {
+    this.authentication = authentication;
+    this.financingHdrService = financingHdrService;
+    this.cwrRepository = cwrRepository;
+    this.entityManager = entityManager;
+    this.agreementRepository = agreementRepository;
+    this.notifDebtorRepository = notifDebtorRepository;
+    this.agreementFileSigningRepository = agreementFileSigningRepository;
+    this.financingHdrRepository = financingHdrRepository;
+  }
 
-        FinancingHdr financingHdr = financingHdrService.findLastBy(customer);
-
-        return plafond(financingHdr.getFinancingHdrCode().toString());
+  /**
+   *
+   * @return
+   * @throws SignatureException
+   */
+  public BaseResponseBuilder<CustomerPlafondDto> plafond() throws SignatureException {
+    Customer customer = CustomerUtils.authenticateCustomer(authentication);
+    Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer);
+    if (financingHdrOptional.isEmpty()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", customer.getCustName());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Customer Financing HDR  not found");
     }
-    public CustomerPlafondDto plafond( String financingHdrCode  ) {
-        try {
-            FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+    return plafondByFinancingHdrCode(financingHdrOptional.get().getFinancingHdrCode().toString());
+  }
 
-            final String address, phoneNo;
-            if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
-                address = financingHdr.getCustomer().getCompany() == null ? "" : String.valueOf(financingHdr.getCustomer().getCompany().getCompanyAddress());
-                phoneNo = financingHdr.getCustomer().getCompany() == null ? "" :financingHdr.getCustomer().getCompany().getPhone();
-            } else {
-                address = financingHdr.getCustomer().getPersonal() == null ? "" : String.valueOf(financingHdr.getCustomer().getPersonal().getLegalAddress());
-                phoneNo = financingHdr.getCustomer().getPersonal() == null ? "" :financingHdr.getCustomer().getPersonal().getPhone();
-            }
+  /**
+   *
+   * @param financingHdrCode
+   * @return
+   */
+  public BaseResponseBuilder<CustomerPlafondDto> plafondByFinancingHdrCode(String financingHdrCode) {
+    Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
 
-
-
-            double plafond = 0;
-            double availableplafond = 0;
-            double plafondTotal = 0;
-            String aggrCwrCode  = "";
-            String vaidateLimit = null ;
-            double jumlahivoice  = 0;
-
-
-
-
-            /*List<Cwr> cwrs = cwrRepository.findAllByCustomerOrderByUsrCrt(financingHdr.getCustomer());
-            if (cwrs.size() > 0) {
-                plafondTotal = cwrs.get(0).getPlafondAmt();
-                plafond = cwrs.get(0).getRealisationAmt();
-                availableplafond = plafondTotal - plafond;
-                if (cwrs.get(0).getCwrEndDate() != null) {
-                    vaidateLimit = cwrs.get(0).getCwrEndDate().toLocalDate();
-                    aggrCwrCode = cwrs.get(0).getCwrCode();
-
-                }
-                List<Agreement>  agreements = agreementRepository.findAllByCwr( cwrs.get(0) );
-                for (int i = 0; i < agreements.size(); i++) {
-
-                    jumlahivoice = jumlahivoice + agreements.get(i).getFinancingAmt().doubleValue();
-                }
-            }*/
-            Page<Cwr> page = cwrRepository.findAllByCustomerOrderByDtmUpdDescUsrCrtDesc(
-                    financingHdr.getCustomer(),
-                    PageRequest.of(0, 10)
-            );
-
-            List<Cwr> cwrs =page.stream().toList();
-            if (cwrs.size() > 0) {
-                plafondTotal = cwrs.get(0).getPlafondAmt();
-                plafond = cwrs.get(0).getRealisationAmt();
-                availableplafond = plafondTotal - plafond;
-                if (cwrs.get(0).getCwrEndDate() != null) {
-                    vaidateLimit = String.valueOf(cwrs.get(0).getCwrEndDate().toLocalDate());
-                    aggrCwrCode = cwrs.get(0).getCwrCode();
-
-                }
-                List<Agreement>  agreements = agreementRepository.findAllByCwr( cwrs.get(0) );
-                for (int i = 0; i < agreements.size(); i++) {
-
-                    jumlahivoice = jumlahivoice + agreements.get(i).getFinancingAmt().doubleValue();
-                }
-            }
-
-
-
-
-            return CustomerPlafondDto.builder()
-                    .financingHdrCode(financingHdr.getFinancingHdrCode())
-                    .bouwheerCode(financingHdr.getBouwheer().getBouwheerCode())
-                    .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
-                    .custCode(financingHdr.getCustomer().getCustCode())
-                    .custName(financingHdr.getCustomer().getCustName())
-                    .custIdTypeCode(financingHdr.getCustomer().getCustIdTypeCode())
-                    .custIdNo(financingHdr.getCustomer().getCustIdNo())
-                    .email(financingHdr.getCustomer().getCustEmail())
-                    .custTypeCode(financingHdr.getCustomer().getCustTypeCode())
-                    .address(address)
-                    .phoneNo(phoneNo)
-                    .plafond(CustomerPlafondDto.PlafondDto.builder()
-                            .plafond(BigDecimal.valueOf(plafond))
-                            .totalPlafond(BigDecimal.valueOf(plafondTotal))
-                            .availablePlafond(BigDecimal.valueOf(availableplafond))
-                            .validityLimitData(String.valueOf(vaidateLimit))
-                            .jumlahInvoice(BigDecimal.valueOf(jumlahivoice))
-                            .build())
-
-                    .build();
-        } catch (Exception e) {
-            log.error("detailSubmissionDistribution: error {}", e.getMessage());
-            throw e;
-        }
+    if (financingHdrOptional.isEmpty()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", financingHdrCode);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Customer Financing HDR  not found");
     }
 
-    public CustomerDashboardDto mainDashboard(Authentication authentication) throws SignatureException {
-        try {
-            final Customer customer = CustomerUtils.authenticateCustomer(authentication);
-            final Cwr lastCwr = cwrRepository.findTopByCustomerOrderByDtmUpdDescUsrCrtDesc(customer)
-                    .orElse(null);
-
-            if (lastCwr == null) {
-                return new CustomerDashboardDto();
-            }
-
-            final FormatingUtils.CurrencyFormatter plafond = new FormatingUtils.CurrencyFormatter(lastCwr.getPlafondAmt());
-            final FormatingUtils.CurrencyFormatter used = new FormatingUtils.CurrencyFormatter(lastCwr.getRealisationAmt());
-            final FormatingUtils.CurrencyFormatter available = new FormatingUtils.CurrencyFormatter((lastCwr.getPlafondAmt() - lastCwr.getRealisationAmt()));
-
-
-
-            final Long invoiceFunded = totalInvoiceFunded(customer);
-            return CustomerDashboardDto.builder()
-                    .totalPlafond(plafond.getValue())
-                    .totalPlafondUnit(plafond.getUnit())
-                    .totalPlafondUsed(used.getValue())
-                    .totalPlafondUsedUnit(used.getUnit())
-                    .totalAvailablePlafond(available.getValue())
-                    .totalAvailablePlafondUnit(available.getUnit())
-                    .validityLimitDate(Utils.fromInstant(lastCwr.getCwrEndDate()))
-                    .totalInvoiceFounded(invoiceFunded)
-                    .build();
-        } catch (Exception e) {
-            log.error("dashboard: error {}", e.getMessage());
-            throw e;
-        }
+    FinancingHdr financingHdr = financingHdrOptional.get();
+    final String address;
+    final String phoneNo;
+    if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
+      address = financingHdr.getCustomer().getCompany() == null ? "" : String.valueOf(financingHdr.getCustomer().getCompany().getCompanyAddress());
+      phoneNo = financingHdr.getCustomer().getCompany() == null ? "" : financingHdr.getCustomer().getCompany().getPhone();
+    } else {
+      address = financingHdr.getCustomer().getPersonal() == null ? "" : String.valueOf(financingHdr.getCustomer().getPersonal().getLegalAddress());
+      phoneNo = financingHdr.getCustomer().getPersonal() == null ? "" : financingHdr.getCustomer().getPersonal().getPhone();
     }
 
-    private Long totalInvoiceFunded(Customer customer) {
-        String rawSql = """
-                select
-                    count(*) as total_invoice
-                from
-                    agreement amt
-                        join cwr on amt.cwr_code = cwr.cwr_code
-                        join financing_hdr fhdr on amt.financing_hdr_code = fhdr.financing_hdr_code
-                        join financing_dtl fdtl on fhdr.financing_hdr_code = fdtl.financing_hdr_code
-                        join invoice ice on fdtl.invoice_code = ice.invoice_code
-                where
-                    cwr.cust_code = :custCode
-                """;
+    double plafond = 0;
+    double availableplafond = 0;
+    double plafondTotal = 0;
+    String vaidateLimit = null;
+    double jumlahivoice = 0;
 
-        Query query = entityManager.createNativeQuery(rawSql);
-        query.setParameter("custCode", customer.getCustCode());
+    Page<Cwr> page = cwrRepository.findAllByCustomerOrderByDtmUpdDescUsrCrtDesc(
+      financingHdr.getCustomer(),
+      PageRequest.of(0, 10)
+    );
 
-        var a = query.getResultList();
-        return (Long) query.getSingleResult();
+    List<Cwr> cwrs = page.stream().toList();
+    if (!cwrs.isEmpty()) {
+      plafondTotal = cwrs.getFirst().getPlafondAmt();
+      plafond = cwrs.getFirst().getRealisationAmt();
+      availableplafond = plafondTotal - plafond;
+      if (cwrs.getFirst().getCwrEndDate() != null) {
+        vaidateLimit = String.valueOf(cwrs.getFirst().getCwrEndDate().toLocalDate());
+      }
+      List<Agreement> agreements = agreementRepository.findAllByCwr(cwrs.getFirst());
+      for (Agreement agreement : agreements) {
+        jumlahivoice = jumlahivoice + agreement.getFinancingAmt();
+      }
     }
 
-    public CustomerDashboardDto.Agreement agreementDashboard(Authentication authentication) throws SignatureException {
-        try {
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,CustomerPlafondDto.builder()
+      .financingHdrCode(financingHdr.getFinancingHdrCode())
+      .bouwheerCode(financingHdr.getBouwheer().getBouwheerCode())
+      .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+      .custCode(financingHdr.getCustomer().getCustCode())
+      .custName(financingHdr.getCustomer().getCustName())
+      .custIdTypeCode(financingHdr.getCustomer().getCustIdTypeCode())
+      .custIdNo(financingHdr.getCustomer().getCustIdNo())
+      .email(financingHdr.getCustomer().getCustEmail())
+      .custTypeCode(financingHdr.getCustomer().getCustTypeCode())
+      .address(address)
+      .phoneNo(phoneNo)
+      .plafond(CustomerPlafondDto.PlafondDto.builder()
+        .plafond(BigDecimal.valueOf(plafond))
+        .totalPlafond(BigDecimal.valueOf(plafondTotal))
+        .availablePlafond(BigDecimal.valueOf(availableplafond))
+        .validityLimitData(String.valueOf(vaidateLimit))
+        .jumlahInvoice(BigDecimal.valueOf(jumlahivoice))
+        .build())
+      .build());
+  }
 
-            return new CustomerDashboardDto.Agreement();
-        } catch (Exception e) {
-            log.error("agreementDashboard: error {}", e.getMessage());
-            throw e;
-        }
+  /**
+   *
+   * @return
+   * @throws SignatureException
+   */
+  public BaseResponseBuilder<CustomerDashboardDto> mainDashboard() throws SignatureException {
+     Customer authenticatedCustomer = CustomerUtils.authenticateCustomer(authentication);
+      Optional<Cwr> lastOptional = cwrRepository.findTopByCustomerOrderByDtmUpdDescUsrCrtDesc(authenticatedCustomer);
+      if (lastOptional.isEmpty()) {
+        return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,new CustomerDashboardDto());
+      }
+
+      Cwr lastCwr = lastOptional.get();
+      final FormatingUtils.CurrencyFormatter plafond = new FormatingUtils.CurrencyFormatter(lastCwr.getPlafondAmt());
+      final FormatingUtils.CurrencyFormatter used = new FormatingUtils.CurrencyFormatter(lastCwr.getRealisationAmt());
+      final FormatingUtils.CurrencyFormatter available = new FormatingUtils.CurrencyFormatter((lastCwr.getPlafondAmt() - lastCwr.getRealisationAmt()));
+
+      return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,CustomerDashboardDto.builder()
+        .totalPlafond(plafond.getValue())
+        .totalPlafondUnit(plafond.getUnit())
+        .totalPlafondUsed(used.getValue())
+        .totalPlafondUsedUnit(used.getUnit())
+        .totalAvailablePlafond(available.getValue())
+        .totalAvailablePlafondUnit(available.getUnit())
+        .validityLimitDate(Utils.fromInstant(lastCwr.getCwrEndDate()))
+        .totalInvoiceFounded(agreementRepository.countInvoiceFundedByCustCode(authenticatedCustomer.getCustCode()))
+        .build());
+  }
+
+
+  public CustomerDashboardDto.Agreement agreementDashboard(Authentication authentication) throws SignatureException {
+    try {
+
+      return new CustomerDashboardDto.Agreement();
+    } catch (Exception e) {
+      log.error("agreementDashboard: error {}", e.getMessage());
+      throw e;
     }
+  }
 
-    public CustomerPerjanjianDto perjanjian( String financingHdrCode  ) {
-        try {
-            FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+  public CustomerPerjanjianDto perjanjian(String financingHdrCode) {
+    try {
+      FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
 
-            UUID uuid = UUID.fromString(financingHdrCode);
-            Agreement agreement = agreementRepository.findAgreement(uuid)
-                    .orElseThrow(() -> new RuntimeException("Agreement not found"));
+      UUID uuid = UUID.fromString(financingHdrCode);
+      Agreement agreement = agreementRepository.findAgreement(uuid)
+        .orElseThrow(() -> new RuntimeException("Agreement not found"));
 
-            final String address, phoneNo;
-            if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
-                address = financingHdr.getCustomer().getCompany() == null ? "" : String.valueOf(financingHdr.getCustomer().getCompany().getCompanyAddress());
-                phoneNo = financingHdr.getCustomer().getCompany() == null ? "" :financingHdr.getCustomer().getCompany().getPhone();
-            } else {
-                address = financingHdr.getCustomer().getPersonal() == null ? "" : String.valueOf(financingHdr.getCustomer().getPersonal().getLegalAddress());
-                phoneNo = financingHdr.getCustomer().getPersonal() == null ? "" :financingHdr.getCustomer().getPersonal().getPhone();
-            }
+      final String address, phoneNo;
+      if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
+        address = financingHdr.getCustomer().getCompany() == null ? "" : String.valueOf(financingHdr.getCustomer().getCompany().getCompanyAddress());
+        phoneNo = financingHdr.getCustomer().getCompany() == null ? "" : financingHdr.getCustomer().getCompany().getPhone();
+      } else {
+        address = financingHdr.getCustomer().getPersonal() == null ? "" : String.valueOf(financingHdr.getCustomer().getPersonal().getLegalAddress());
+        phoneNo = financingHdr.getCustomer().getPersonal() == null ? "" : financingHdr.getCustomer().getPersonal().getPhone();
+      }
+      List<String> signerNames = financingHdrRepository.findSignerNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
 
-            Page<Cwr> page = cwrRepository.findAllByCustomerOrderByDtmUpdDescUsrCrtDesc(
-                    financingHdr.getCustomer(),
-                    PageRequest.of(0, 10)
-            );
+      long total = signerNames.stream()
+        .mapToLong(signer -> agreementFileSigningRepository.countBySigner(signer))
+        .sum();
+      Long totalBerjalan = financingHdrRepository.countSigningAndSigned(financingHdrCode);
+      Long totalBerakhir = financingHdrRepository.countCompleted(financingHdrCode);
 
-            List<String> signerNames = financingHdrRepository.findSignerNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
+      return CustomerPerjanjianDto.builder()
+        .financingHdrCode(financingHdr.getFinancingHdrCode())
+        .bouwheerCode(financingHdr.getBouwheer().getBouwheerCode())
+        .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+        .custCode(financingHdr.getCustomer().getCustCode())
+        .custName(financingHdr.getCustomer().getCustName())
+        .custIdTypeCode(financingHdr.getCustomer().getCustIdTypeCode())
+        .custIdNo(financingHdr.getCustomer().getCustIdNo())
+        .email(financingHdr.getCustomer().getCustEmail())
+        .custTypeCode(financingHdr.getCustomer().getCustTypeCode())
+        .address(address)
+        .phoneNo(phoneNo)
+        .agreementCode(agreement.getAgreementCode())
+        .perjanjian(CustomerPerjanjianDto.PerjanjianDto.builder()
+          .perjanjianBerjalan(totalBerjalan != null ? totalBerjalan.intValue() : 0)
+          .perjanjianBerakhir(totalBerakhir != null ? totalBerakhir.intValue() : 0)
+          .totalPerjanjian((int) total)
+          .build())
 
-            long total = signerNames.stream()
-                    .mapToLong(signer -> agreementFileSigningRepository.countBySigner(signer))
-                    .sum();
-
-//            String signerName = financingHdrRepository.findSignerNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
-            Long totalBerjalan = financingHdrRepository.countSigningAndSigned(financingHdrCode);
-            Long totalBerakhir = financingHdrRepository.countCompleted(financingHdrCode);
-
-//            long total = agreementFileSigningRepository.countBySigner(signerName);
-
-            return CustomerPerjanjianDto.builder()
-                    .financingHdrCode(financingHdr.getFinancingHdrCode())
-                    .bouwheerCode(financingHdr.getBouwheer().getBouwheerCode())
-                    .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
-                    .custCode(financingHdr.getCustomer().getCustCode())
-                    .custName(financingHdr.getCustomer().getCustName())
-                    .custIdTypeCode(financingHdr.getCustomer().getCustIdTypeCode())
-                    .custIdNo(financingHdr.getCustomer().getCustIdNo())
-                    .email(financingHdr.getCustomer().getCustEmail())
-                    .custTypeCode(financingHdr.getCustomer().getCustTypeCode())
-                    .address(address)
-                    .phoneNo(phoneNo)
-                    .agreementCode(agreement.getAgreementCode())
-                    .perjanjian(CustomerPerjanjianDto.PerjanjianDto.builder()
-                            .perjanjianBerjalan(totalBerjalan != null ? totalBerjalan.intValue() : 0)
-                            .perjanjianBerakhir(totalBerakhir != null ? totalBerakhir.intValue() : 0)
-                            .totalPerjanjian((int)total)
-                            .build())
-
-                    .build();
-        } catch (Exception e) {
-            log.error("detailSubmissionDistribution: error {}", e.getMessage());
-            throw e;
-        }
+        .build();
+    } catch (Exception e) {
+      log.error("detailSubmissionDistribution: error {}", e.getMessage());
+      throw e;
     }
+  }
 
-    public List<NotifDebtor> getNotifDebtors(String custCode) {
-        return notifDebtorRepository.findByCustCode(custCode);
-    }
+  public List<NotifDebtor> getNotifDebtors(String custCode) {
+    return notifDebtorRepository.findByCustCode(custCode);
+  }
 
-    @Transactional
-    public void deleteAllNotifDebtors(String custCode) {
-        notifDebtorRepository.deleteByCustCode(custCode);
-    }
+  @Transactional
+  public void deleteAllNotifDebtors(String custCode) {
+    notifDebtorRepository.deleteByCustCode(custCode);
+  }
 }

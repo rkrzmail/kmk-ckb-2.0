@@ -92,8 +92,7 @@ public class CwrController {
 
         cwrService.createInquiryCwr(authentication, request);
         return new CommonResult<>().success(
-                null,
-                "Inquiry CWR created successfully"
+                null
         );
     }
 

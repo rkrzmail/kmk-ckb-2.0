@@ -155,5 +155,16 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode IN :codes")
     List<Agreement> findAllByFinancingHdrCodes(@Param("codes") List<UUID> codes);
 
+  @Query(value = """
+      SELECT COUNT(*) 
+      FROM agreement amt
+      JOIN cwr ON amt.cwr_code = cwr.cwr_code
+      JOIN financing_hdr fhdr ON amt.financing_hdr_code = fhdr.financing_hdr_code
+      JOIN financing_dtl fdtl ON fhdr.financing_hdr_code = fdtl.financing_hdr_code
+      JOIN invoice ice ON fdtl.invoice_code = ice.invoice_code
+      WHERE cwr.cust_code = :custCode
+      """, nativeQuery = true)
+  Long countInvoiceFundedByCustCode(@Param("custCode") UUID custCode);
+
 }
 

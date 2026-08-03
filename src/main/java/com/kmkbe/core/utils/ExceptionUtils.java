@@ -139,7 +139,7 @@ public class ExceptionUtils {
         }
 
         CommonResult<Object> result = new CommonResult<>();
-        result.setIsSuccess(false);
+        result.setSuccess(false);
         result.setCode(detail.getStatus());
         result.setMessage(desc);
         if (!StringUtil.isNullOrEmpty(detail.getDetail())) {

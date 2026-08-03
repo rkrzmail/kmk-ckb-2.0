@@ -12,8 +12,6 @@ import com.kmkbe.helpers.utils.PageableUtil;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
-import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
-import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.modules.customer.model.response.CustomerResponse;
 import com.kmkbe.modules.customer.model.response.PageCustomerResponse;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
@@ -54,37 +52,43 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class CustomerService {
   private final CustomerRepository customerRepository;
-  private final CustomerPersonalRepository customerPersonalRepository;
-  private final CustomerCompanyRepository customerCompanyRepository;
   private final BCryptPasswordEncoder bcryptEncoder;
   private final JdbcTemplate jdbcTemplate;
   private final FinancingHdrRepository financingHdrRepository;
   private final EmailService emailService;
+
+  public CustomerService(CustomerRepository customerRepository,
+                         BCryptPasswordEncoder bcryptEncoder,
+                         JdbcTemplate jdbcTemplate,
+                         FinancingHdrRepository financingHdrRepository,
+                         EmailService emailService) {
+    this.customerRepository = customerRepository;
+    this.bcryptEncoder = bcryptEncoder;
+    this.jdbcTemplate = jdbcTemplate;
+    this.financingHdrRepository = financingHdrRepository;
+    this.emailService = emailService;
+  }
 
   public Customer create(
     SignUpRequest request,
     CustomerType type
   ) throws CommonInvalidException {
     try {
-      if (!request.getIsAgreeTc()) {
-        throw new Exception("Setujui Syarat dan Ketentuan for sign up");
+      if (!request.isAgreeTc()) {
+        log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", false);
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Setujui Syarat dan Ketentuan for sign up");
       }
 
-      final Optional<Customer> find = customerRepository
-        .findByCustEmail(request.getEmail());
-
+      final Optional<Customer> find = customerRepository.findByCustEmail(request.getEmail());
       if (find.isPresent()) {
-        if (find.get().getIsActive()) {
-          throw CommonInvalidException.alreadyRegistered();
-        } else {
-          CustomerUtils.clearCustomerInactiveData(jdbcTemplate, find.get());
-        }
+        log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", false);
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Customer has been active");
       }
 
+      CustomerUtils.clearCustomerInactiveData(jdbcTemplate, find.get());
       final String encodePin = bcryptEncoder.encode(request.getPin());
 
       final Customer customer = new Customer();
@@ -107,20 +111,21 @@ public class CustomerService {
           request.getCustomerIdNo() != null
             && request.getCustomerIdNo().length() != 16
         ) {
-          throw new Exception("KTP minimal dan maksimal 16 Karakter");
+          log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", request.getCustomerIdNo());
+          throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"KTP minimal dan maksimal 16 Karakter");
         }
       }
 
       customer.setCustTypeCode(type.name());
       customer.setCustIdNo(request.getCustomerIdNo());
       customer.setCustMobilePhone(FormatingUtils.formatOnlyNumber(request.getMobilePhone()));
-      customer.setAgreeTc(request.getIsAgreeTc());
+      customer.setAgreeTc(request.isAgreeTc());
       customer.setCustPin(encodePin);
-//      customer.setIsEmailValid(false);
-//      customer.setBouwheerCode(request.getBouwheer);
+      customer.setIsEmailValid(false);
+      customer.setBouwheerCode(UUID.fromString(request.getBouwheerCode()));
       customer.setVendorId(request.getVendorId());
       customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
-      customer.setIsActive(false);
+      customer.setActive(false);
 
       if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
         customer.setCustExternalCode(request.getVendorCode());
@@ -139,7 +144,7 @@ public class CustomerService {
 
   public void activated(Customer customer) {
     customer.setIsEmailValid(true);
-    customer.setIsActive(true);
+    customer.setActive(true);
     customer.setUsrUpd(customer.getCustName());
     customer.setDtmUpd(DateTimeUtils.now());
     customerRepository.save(customer);
@@ -269,7 +274,7 @@ public class CustomerService {
       response.setAgreeTc(item.getAgreeTc());
       response.setAgreeLegalShare(item.getAgreeLegalShare());
       response.setCustExternalCode(item.getCustExternalCode());
-      response.setIsActive(item.getIsActive());
+      response.setIsActive(item.isActive());
       response.setDtmCrt(item.getDtmCrt());
       response.setForceLogout(item.getForceLogout());
       response.setVendorId(item.getVendorId());
@@ -333,7 +338,7 @@ public class CustomerService {
     }
 
     customer.setApprovalStatus(request.getApprovalStatus().toUpperCase().trim());
-    customer.setIsActive(request.getApprovalStatus().equals("APPROVED"));
+    customer.setActive(request.getApprovalStatus().equals("APPROVED"));
     customer.setApprovalNote(request.getApprovalNote());
     customer.setApprovalBy(authentication.getName());
     customer.setApprovalAt(DateTimeUtils.now());

@@ -209,8 +209,7 @@ public class SbuController {
     SecurityContextHolder.getContext().setAuthentication(authentication);
     var result = loanSubmissionService.createSimulation(authentication, request);
     return new CommonResult<CreatedSimulationDto>().success(
-      result,
-      "Simulation Created Successfully"
+      result
     );
   }
 
@@ -261,7 +260,7 @@ public class SbuController {
       ignored.printStackTrace();
     }
 
-    return new CommonResult<>().success(null, "Success Check Approval Status");
+    return new CommonResult<>().success(null);
   }
 
   @PostMapping(value = "/invoice-paid/{jwtToken}")
@@ -293,7 +292,7 @@ public class SbuController {
       } catch (Exception ignored) {
         //akan ada proses skeduler
       }
-      return new CommonResult<>().success(null, "Success Submitted");
+      return new CommonResult<>().success(null);
     } catch (Exception e) {
       return new CommonResult<>().fail(500, e.getMessage());
     }
@@ -321,7 +320,7 @@ public class SbuController {
         providedApiKey
       );
 
-      return new CommonResult<>().success(null, "Success Submitted");
+      return new CommonResult<>().success(null);
     } catch (Exception e) {
       return new CommonResult<>().fail(500, e.getMessage());
     }

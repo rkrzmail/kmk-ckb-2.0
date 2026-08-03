@@ -1,111 +1,142 @@
 package com.kmkbe.exception;
 
-import lombok.extern.log4j.Log4j2;
+import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.exception.CommonInvalidException;
+import com.kmkbe.core.exception.LoanDocMandatoryException;
 import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
-import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.client.HttpServerErrorException;
-import org.springframework.validation.FieldError;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeoutException;
+import lombok.extern.slf4j.Slf4j;
 
-@Log4j2
+@Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-  @ExceptionHandler(RuntimeException.class)
-  public ResponseEntity<Map<String, Object>> handleAllExceptions(RuntimeException e) {
-    return ResponseEntity.badRequest().body(Map.of(
-      "isSuccess", false,
-      "code", 400,
-      "message", e.getMessage()
-    ));
+  @ExceptionHandler(LoanDocMandatoryException.class)
+  public ResponseEntity<CommonResult<LoanDocMandatoryException>> handleLoanDocMandatoryException(
+    LoanDocMandatoryException exception
+  ) {
+    log.error("[Exception] LoanDocMandatoryException: {}", exception.getMessage());
+    return ResponseEntity
+      .status(HttpStatus.BAD_REQUEST)
+      .body(new CommonResult<LoanDocMandatoryException>().fail(
+        HttpStatus.BAD_REQUEST.value(),
+        exception.getMessage()
+      ));
+  }
+
+  @ExceptionHandler(CommonInvalidException.class)
+  public ResponseEntity<CommonResult<Object>> handleLoginException(
+    CommonInvalidException exception
+  ) {
+    log.error("[Exception] CommonInvalidException: {}", exception.getHeaderMessage());
+    return ResponseEntity
+      .status(HttpStatus.BAD_REQUEST)
+      .body(new CommonResult<>().fail(
+        HttpStatus.BAD_REQUEST.value(),
+        exception.getHeaderMessage(),
+        exception.getPayload()
+      ));
   }
 
   @ExceptionHandler(BusinessException.class)
-  @ResponseStatus(HttpStatus.CONFLICT)
-  public ResponseEntity<ErrorResponse> renderBusinessErrorResponse(BusinessException exception) {
-    log.error("BusinessException occurred: ", exception);
-    ErrorResponse errorResponse = new ErrorResponse();
-    errorResponse.setTitle("Error Business Exception");
-    errorResponse.setCode(exception.code);
-    errorResponse.setMessage(exception.getMessage());
-
-    return getErrorResponseResponseEntity(exception.getHttpStatus(), errorResponse);
+  public ResponseEntity<ErrorResponse> handleBusinessException(BusinessException e) {
+    log.error("[Exception] BusinessException: code={}, message={}", e.getCode(), e.getMessage());
+    ErrorResponse errorResponse = ErrorResponse.builder()
+      .title("Error Business Exception")
+      .code(e.getCode())
+      .message(e.getMessage())
+      .build();
+    return createResponseEntity(e.getHttpStatus(), errorResponse);
   }
 
-  @ExceptionHandler(HttpServerErrorException.class)
-  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-  @ResponseBody
-  public ResponseEntity<ErrorResponse> renderHttpServerErrorResponse(HttpServerErrorException exception) {
-    log.error("HttpServerErrorException occurred: ", exception);
-    ErrorResponse errorResponse = new ErrorResponse();
-    errorResponse.setCode(500);
-    errorResponse.setMessage("Internal server error");
+  // ==========================================
+  // 2. FRAMEWORK VALIDATION & INFRASTRUCTURE EXCEPTIONS
+  // ==========================================
 
-    return getErrorResponseResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse);
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  public ResponseEntity<ErrorResponse> handleValidationException(MethodArgumentNotValidException e) {
+    log.error("[Exception] Validation Error: {}", e.getMessage());
+
+    List<ErrorValidationResponse> validations = e.getBindingResult().getFieldErrors().stream()
+      .map(fieldError -> ErrorValidationResponse.builder()
+        .propertyName(fieldError.getField())
+        .errorMessage(fieldError.getDefaultMessage())
+        .build())
+      .toList();
+
+    ErrorResponse errorResponse = ErrorResponse.builder()
+      .code(HttpStatus.BAD_REQUEST.value())
+      .message(HttpStatus.BAD_REQUEST.getReasonPhrase())
+      .validations(validations)
+      .build();
+
+    return createResponseEntity(HttpStatus.BAD_REQUEST, errorResponse);
+  }
+
+  @ExceptionHandler(DataIntegrityViolationException.class)
+  public ResponseEntity<ErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException e) {
+    log.error("[Exception] DataIntegrityViolationException: ", e);
+    ErrorResponse errorResponse = ErrorResponse.builder()
+      .code(HttpStatus.CONFLICT.value())
+      .message("Violates foreign key constraint")
+      .build();
+    return createResponseEntity(HttpStatus.CONFLICT, errorResponse);
   }
 
   @ExceptionHandler(TimeoutException.class)
-  public ResponseEntity<ErrorResponse> renderTimeoutResponse(TimeoutException exception) {
-    log.error("TimeoutException occurred: ", exception);
-
-    ErrorResponse errorResponse = new ErrorResponse();
-    errorResponse.setCode(503);
-    errorResponse.setMessage("Timeout Exception");
-
-    return getErrorResponseResponseEntity(HttpStatus.REQUEST_TIMEOUT, errorResponse);
+  public ResponseEntity<ErrorResponse> handleTimeoutException(TimeoutException e) {
+    log.error("[Exception] TimeoutException: ", e);
+    ErrorResponse errorResponse = ErrorResponse.builder()
+      .code(HttpStatus.SERVICE_UNAVAILABLE.value())
+      .message("Timeout Exception")
+      .build();
+    return createResponseEntity(HttpStatus.REQUEST_TIMEOUT, errorResponse);
   }
 
-  @ExceptionHandler(value = DataIntegrityViolationException.class)
-  @ResponseStatus(HttpStatus.CONFLICT)
-  public ResponseEntity<ErrorResponse> renderDataIntegrityViolationExceptionResponse(DataIntegrityViolationException exception) {
-    log.error("Violates foreign key constraint occurred: ", exception);
-    ErrorResponse errorResponse = new ErrorResponse();
-    errorResponse.setCode(409);
-    errorResponse.setMessage("Violates foreign key constraint");
-
-    return getErrorResponseResponseEntity(HttpStatus.CONFLICT, errorResponse);
+  @ExceptionHandler(HttpServerErrorException.class)
+  public ResponseEntity<ErrorResponse> handleHttpServerErrorException(HttpServerErrorException e) {
+    log.error("[Exception] HttpServerErrorException: ", e);
+    ErrorResponse errorResponse = ErrorResponse.builder()
+      .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
+      .message("Internal server error")
+      .build();
+    return createResponseEntity(HttpStatus.INTERNAL_SERVER_ERROR, errorResponse);
   }
 
-  @ExceptionHandler(MethodArgumentNotValidException.class)
-  @ResponseStatus(HttpStatus.BAD_REQUEST)
-  public ResponseEntity<ErrorResponse> renderMethodArgumentErrorResponse(MethodArgumentNotValidException exception) {
-    log.error("MethodArgumentNotValidException occurred: {} ", exception.getMessage());
-    List<ErrorValidationResponse> baseValidationResponses = new ArrayList<>();
-    for (FieldError fieldError : exception.getBindingResult().getFieldErrors()) {
-      baseValidationResponses.add(
-        ErrorValidationResponse
-          .builder()
-          .propertyName(fieldError.getField())
-          .errorMessage(fieldError.getDefaultMessage())
-          .build()
-      );
-    }
-    ErrorResponse errorResponse = new ErrorResponse();
-    errorResponse.setCode(400);
-    errorResponse.setMessage(HttpStatus.BAD_REQUEST.getReasonPhrase());
-    errorResponse.setValidations(baseValidationResponses);
-    return getErrorResponseResponseEntity(HttpStatus.BAD_REQUEST, errorResponse);
+  // ==========================================
+  // 3. FALLBACK GENERAL EXCEPTION (Paling Bawah)
+  // ==========================================
+
+  /**
+   * Menggunakan hirarki paling dasar dari Unchecked Exception.
+   * Ditaruh di paling bawah agar tidak menangkap/meng-override custom exception di atas.
+   */
+  @ExceptionHandler(RuntimeException.class)
+  public ResponseEntity<ErrorResponse> handleRuntimeException(RuntimeException e) {
+    log.error("[Fallback Exception] RuntimeException Caught: ", e);
+    ErrorResponse errorResponse = ErrorResponse.builder()
+      .code(HttpStatus.BAD_REQUEST.value())
+      .message(e.getMessage())
+      .build();
+    return createResponseEntity(HttpStatus.BAD_REQUEST, errorResponse);
   }
 
-  private ResponseEntity<ErrorResponse> getErrorResponseResponseEntity(HttpStatus httpStatus,
-                                                                       ErrorResponse errorResponse) {
+  // ==========================================
+  // HELPER METHOD
+  // ==========================================
 
-
-    if (errorResponse != null && errorResponse.getTitle() == null) {
+  private ResponseEntity<ErrorResponse> createResponseEntity(HttpStatus status, ErrorResponse errorResponse) {
+    if (errorResponse.getTitle() == null) {
       errorResponse.setTitle("System Error");
-      return new ResponseEntity<>(errorResponse, new HttpHeaders(), httpStatus);
     }
-
-    return new ResponseEntity<>(errorResponse, new HttpHeaders(), httpStatus);
+    return ResponseEntity.status(status).body(errorResponse);
   }
 }
+
