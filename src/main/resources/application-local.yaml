@@ -62,7 +62,7 @@ spring:
 # region testing mail env
 testing:
     mail:
-      host: nikita.co.id
+      host: srv150.niagahoster.com
       port: 465
       protocol: smtp
       username: csul@nikita.co.id
