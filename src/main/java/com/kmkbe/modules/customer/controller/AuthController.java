@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.dto.LoginDto;
 import com.kmkbe.core.domain.dto.RequestOtpDto;
+import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.OtpLog;
@@ -94,9 +95,9 @@ public class AuthController {
     }
 
     // Validate Bouwheer Code
-    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheer()));
+    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
     if (bouwheerOptional.isEmpty()) {
-      throw new IllegalArgumentException("Invalid Bouwheer Code " + request.getBouwheer());
+      throw new IllegalArgumentException("Invalid Bouwheer Code " + request.getBouwheerCode());
     }
 
     final CustomerType type;
@@ -211,10 +212,10 @@ public class AuthController {
   }
 
   @PostMapping("/sign-in")
-  public CommonResult<LoginDto> signIn(
+  public BaseResponse signIn(
     @Valid @RequestBody LoginRequest request
   ) {
-    return new CommonResult<LoginDto>().success(authService.signIn(request));
+    return authService.signIn(request);
   }
 
   @PutMapping("/forgot-pin")
@@ -263,7 +264,7 @@ public class AuthController {
     redisAttack.setCountAttack(0);
     redisAttack.setModifiedDate(DateTimeUtils.nowDate());
     redisAttackRepository.save(redisAttack);
-    return new CommonResult<>().success(null, message);
+    return new CommonResult<>().success(message);
   }
 
   @DeleteMapping("/sign-out")
@@ -275,25 +276,9 @@ public class AuthController {
     final String result = authService.logout(authentication);
     logoutHandler.logout(request, response, authentication);
     return new CommonResult<>().success(
-      null,
       result
     );
   }
-
-  /* Unsecure refresh token */
-   /* @PostMapping("/refresh-token")
-    public CommonResult<RefreshTokenDto> refreshToken(HttpServletRequest request) {
-        // claims object was passing in header from middleware (JwtAuthenticationFilter)
-        DefaultClaims claims = (DefaultClaims) request.getAttribute("claims");
-        Map<String, Object> expectedMap = new HashMap<>(claims);
-        String token = jwtService.generateRefreshToken(expectedMap, expectedMap.get("sub").toString());
-        return new CommonResult<RefreshTokenDto>().success(
-                new RefreshTokenDto(
-                        token,
-                        jwtService.getRefreshTokenExpirationTime()
-                )
-        );
-    }*/
 
   @PostMapping("/refresh-token")
   public CommonResult<LoginDto> refreshToken(

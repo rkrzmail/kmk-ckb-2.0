@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.repository.RedisAttackRepository;
 import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.modules.customer.model.request.LoginRequest;
 import com.kmkbe.modules.customer.model.request.RequestOtpRequest;
 import com.kmkbe.modules.customer.model.request.VerifyOtpRequest;
@@ -39,7 +40,7 @@ public class OtpController {
 
 
   @PutMapping("/verify/sign-up")
-  public CommonResult<LoginDto> verifySignUp(
+  public BaseResponseBuilder<LoginDto> verifySignUp(
     @Valid @RequestBody VerifyOtpRequest request
   ) throws Exception {
     //validate dan bruce attack
@@ -96,10 +97,7 @@ public class OtpController {
     redisAttack.setCountAttack(0);
     redisAttack.setModifiedDate(DateTimeUtils.nowDate());
     redisAttackRepository.save(redisAttack);
-    return new CommonResult<LoginDto>().success(
-      authService.signIn(loginRequest),
-      message
-    );
+    return authService.signIn(loginRequest);
   }
 
   @PutMapping("/verify/forgot-pin")

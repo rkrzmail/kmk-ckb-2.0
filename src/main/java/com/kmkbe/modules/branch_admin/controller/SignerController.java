@@ -64,7 +64,7 @@ public class SignerController {
             @PathVariable Long id) {
         CommonResult<DebtorDto> result = signerService.detailSigner(id);
 
-        if (result.getIsSuccess()) {
+        if (result.isSuccess()) {
             return ResponseEntity.ok(result);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
@@ -134,7 +134,7 @@ public class SignerController {
 
             if (result.getUnmatchedSigners().isEmpty()) {
                 return new CommonResult<SignerCheckResultDto>()
-                        .success(result, "Tidak ada perubahan signer pada confins");
+                        .success(result);
             } else {
                 return new CommonResult<SignerCheckResultDto>()
                         .fail(400, "Ada perubahan data signer pada confins", result);
@@ -180,7 +180,7 @@ public class SignerController {
         responseData.put("signerName", signerNames);
 
         return new CommonResult<Map<String, Object>>()
-                .success(responseData, "Signer tersedia");
+                .success(responseData);
     }
 
     @GetMapping("/check-send-document/{financingHdrCode}/{agreementCode}")
@@ -191,7 +191,7 @@ public class SignerController {
         Map<String, Object> responseData = signerService.checkSendDocument(financingHdrCode, agreementCode);
 
         return new CommonResult<Map<String, Object>>()
-                .success(responseData, (String) responseData.get("message"));
+                .success(responseData);
     }
 
 }

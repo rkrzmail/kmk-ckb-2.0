@@ -2,7 +2,6 @@ package com.kmkbe.modules.customer.model.response;
 
 import com.kmkbe.core.domain.dto.AddressDto;
 import com.kmkbe.helpers.base.BaseResponse;
-import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

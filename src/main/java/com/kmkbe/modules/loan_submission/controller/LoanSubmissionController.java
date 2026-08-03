@@ -45,13 +45,12 @@ public class LoanSubmissionController {
             String token
     ) throws JsonProcessingException, SignatureException {
         if (token != null && token.isEmpty()) {
-            return new CommonResult<>().success(null, "Successfully");
+            return new CommonResult<>().success(null);
         }
 
         return new CommonResult<>()
                 .success(
-                        loanSubmissionService.externalIntegrationSimulation(authentication, token),
-                        "Bouwheer has validated"
+                        loanSubmissionService.externalIntegrationSimulation(authentication, token)
                 );
     }
 
@@ -79,7 +78,7 @@ public class LoanSubmissionController {
         );
 
         return new CommonResult<>()
-                .success(null, "Loan Application create successfully");
+                .success(null);
     }
 
     @GetMapping("/invoices")
@@ -143,8 +142,7 @@ public class LoanSubmissionController {
             int i = 0;
         }
         return new CommonResult<CreatedSimulationDto>().success(
-                result,
-                "Simulation Update Successfully"
+                result
         );
     }
 
@@ -157,8 +155,7 @@ public class LoanSubmissionController {
     ) throws Exception {
         var result = loanSubmissionService.createSimulation(authentication, request);
         return new CommonResult<CreatedSimulationDto>().success(
-                result,
-                "Simulation Created Successfully"
+                result
         );
     }
 
@@ -222,8 +219,7 @@ public class LoanSubmissionController {
                         authentication,
                         file,
                         fileTypeCode
-                ),
-                "File Upload Successfully"
+                )
         );
     }
 
@@ -274,6 +270,6 @@ public class LoanSubmissionController {
             @PathVariable("id") Long id
     ) throws Exception {
         documentService.delete(id);
-        return new CommonResult<>().success(null, "Delete Successfully");
+        return new CommonResult<>().success(null);
     }
 }

@@ -65,7 +65,7 @@ public class FinancingController {
       } catch (Exception ignored) {
         //akan ada proses skeduler
       }
-      return new CommonResult<>().success(null, "Success Submitted");
+      return new CommonResult<>().success(null);
     } catch (Exception e) {
       return new CommonResult<>().fail(500, e.getMessage());
       //throw e;
@@ -115,7 +115,7 @@ public class FinancingController {
       ignored.printStackTrace();
     }
 
-    return new CommonResult<>().success(null, "Success Check Approval Status");
+    return new CommonResult<>().success(null);
   }
 
   @GetMapping("/sch/cwr/status")
@@ -131,6 +131,6 @@ public class FinancingController {
       ignored.printStackTrace();
     }
 
-    return new CommonResult<>().success(null, "Success Check CWR Status");
+    return new CommonResult<>().success(null);
   }
 }

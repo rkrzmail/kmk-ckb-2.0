@@ -35,7 +35,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class FinancingHdrService {
     private final FinancingHdrRepository financingHdrRepository;
@@ -45,14 +44,14 @@ public class FinancingHdrService {
     private final DisbursementLogRepository disbursementLogRepository;
     private final FinancingDtlRepository financingDtlRepository;
 
-    public FinancingHdr findLastBy(Customer customer) {
-        try {
-            return financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer).orElse(null);
-        } catch (Exception e) {
-            log.error("findBy, error {}", e.getMessage());
-            throw e;
-        }
-    }
+  public FinancingHdrService(FinancingHdrRepository financingHdrRepository, InvoiceRepository invoiceRepository, RedisRepository redisRepository, AgreementRepository agreementRepository, DisbursementLogRepository disbursementLogRepository, FinancingDtlRepository financingDtlRepository) {
+    this.financingHdrRepository = financingHdrRepository;
+    this.invoiceRepository = invoiceRepository;
+    this.redisRepository = redisRepository;
+    this.agreementRepository = agreementRepository;
+    this.disbursementLogRepository = disbursementLogRepository;
+    this.financingDtlRepository = financingDtlRepository;
+  }
 
     public FinancingHdr create(
             Authentication authentication,

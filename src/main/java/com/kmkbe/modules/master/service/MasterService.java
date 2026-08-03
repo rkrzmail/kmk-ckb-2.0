@@ -94,10 +94,10 @@ public class MasterService {
 
 
     if (result2 != null) {
-      return new CommonResult<List<AreaRemoteDto>>().successWithCount(result2.getData(), Utils.getInt(String.valueOf(result2.getCount())));
+      return new CommonResult<List<AreaRemoteDto>>().success(result2.getData());
     } else {
       result2 = mstRemoteService.dummyZipCode();
-      return new CommonResult<List<AreaRemoteDto>>().successWithCount(result2.getData(), Utils.getInt(String.valueOf(result2.getCount())));
+      return new CommonResult<List<AreaRemoteDto>>().success(result2.getData());
     }
 
   }

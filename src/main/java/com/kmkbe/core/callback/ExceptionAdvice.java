@@ -34,168 +34,168 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 @RequiredArgsConstructor
 public class ExceptionAdvice {
-    private final ErrorLogRepository errorLogRepository;
+  private final ErrorLogRepository errorLogRepository;
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<CommonResult<Object>> handle(
-            Exception exception,
-            WebRequest request
-    ) {
-        String jsonRequest = "", pageUrl = "";
-        if (request != null) {
-            try {
-                jsonRequest = ObjectUtils.jsonToStr(request.getParameterMap());
-                pageUrl = request.getDescription(false);
-            } catch (Exception ignored) {
-            }
-        }
-
-        ErrorLog errorLog = ErrorLog.builder()
-                .errorType(exception.getClass().getCanonicalName())
-                .errorLine(String.valueOf(exception.getStackTrace()[0].getLineNumber()))
-                .errorMsg(exception.getMessage())
-                .pageUrl(pageUrl)
-                .methodName(exception.getStackTrace()[0].getMethodName())
-                .requestParam(jsonRequest)
-                .build();
-
-        errorLogRepository.save(errorLog);
-        return ExceptionUtils.handleException(exception, request);
+  @ExceptionHandler(Exception.class)
+  public ResponseEntity<CommonResult<Object>> handle(
+    Exception exception,
+    WebRequest request
+  ) {
+    String jsonRequest = "", pageUrl = "";
+    if (request != null) {
+      try {
+        jsonRequest = ObjectUtils.jsonToStr(request.getParameterMap());
+        pageUrl = request.getDescription(false);
+      } catch (Exception ignored) {
+      }
     }
 
-    @ExceptionHandler(BadCredentialsException.class)
-    public ResponseEntity<CommonResult<Object>> handleBadCredentials(
-            BadCredentialsException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+    ErrorLog errorLog = ErrorLog.builder()
+      .errorType(exception.getClass().getCanonicalName())
+      .errorLine(String.valueOf(exception.getStackTrace()[0].getLineNumber()))
+      .errorMsg(exception.getMessage())
+      .pageUrl(pageUrl)
+      .methodName(exception.getStackTrace()[0].getMethodName())
+      .requestParam(jsonRequest)
+      .build();
 
-    @ExceptionHandler(AccountStatusException.class)
-    public ResponseEntity<CommonResult<Object>> handleAccountStatus(
-            AccountStatusException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+    errorLogRepository.save(errorLog);
+    return ExceptionUtils.handleException(exception, request);
+  }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<CommonResult<Object>> handleAccessDenied(
-            AccessDeniedException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+  @ExceptionHandler(BadCredentialsException.class)
+  public ResponseEntity<CommonResult<Object>> handleBadCredentials(
+    BadCredentialsException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
 
-    @ExceptionHandler(SignatureException.class)
-    public ResponseEntity<CommonResult<Object>> handleSignature(
-            SignatureException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+  @ExceptionHandler(AccountStatusException.class)
+  public ResponseEntity<CommonResult<Object>> handleAccountStatus(
+    AccountStatusException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
 
-    @ExceptionHandler(ExpiredJwtException.class)
-    public ResponseEntity<CommonResult<Object>> handleExpiredJwt(
-            ExpiredJwtException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+  @ExceptionHandler(AccessDeniedException.class)
+  public ResponseEntity<CommonResult<Object>> handleAccessDenied(
+    AccessDeniedException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
 
-    @ExceptionHandler(EntityNotFoundException.class)
-    public ResponseEntity<CommonResult<Object>> handleEntityNotFound(
-            EntityNotFoundException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+  @ExceptionHandler(SignatureException.class)
+  public ResponseEntity<CommonResult<Object>> handleSignature(
+    SignatureException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
 
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<CommonResult<Object>> handleIllegalState(
-            IllegalStateException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+  @ExceptionHandler(ExpiredJwtException.class)
+  public ResponseEntity<CommonResult<Object>> handleExpiredJwt(
+    ExpiredJwtException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
 
-    @ExceptionHandler(PropertyValueException.class)
-    public ResponseEntity<CommonResult<Object>> handlePropertyValue(
-            PropertyValueException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+  @ExceptionHandler(EntityNotFoundException.class)
+  public ResponseEntity<CommonResult<Object>> handleEntityNotFound(
+    EntityNotFoundException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
 
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<CommonResult<Object>> handleIllegalArgument(
-            IllegalArgumentException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+  @ExceptionHandler(IllegalStateException.class)
+  public ResponseEntity<CommonResult<Object>> handleIllegalState(
+    IllegalStateException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    protected ResponseEntity<CommonResult<Object>> handleMethodArgumentNotValid(
-            MethodArgumentNotValidException ex, WebRequest request) {
+  @ExceptionHandler(PropertyValueException.class)
+  public ResponseEntity<CommonResult<Object>> handlePropertyValue(
+    PropertyValueException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
 
-        Map<String, List<String>> body = new HashMap<>();
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<CommonResult<Object>> handleIllegalArgument(
+    IllegalArgumentException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
 
-        List<String> errors = ex.getBindingResult()
-                .getFieldErrors()
-                .stream()
-                .map(DefaultMessageSourceResolvable::getDefaultMessage)
-                .collect(Collectors.toList());
+  @ExceptionHandler(MethodArgumentNotValidException.class)
+  protected ResponseEntity<CommonResult<Object>> handleMethodArgumentNotValid(
+    MethodArgumentNotValidException ex, WebRequest request) {
 
-        body.put("errors", errors);
+    Map<String, List<String>> body = new HashMap<>();
 
-        CommonResult<Object> result = new CommonResult<>();
-        result.setIsSuccess(false);
-        result.setCode(HttpStatus.BAD_REQUEST.value());
-        result.setMessage("Validation Failed");
-        result.setData(body);
+    List<String> errors = ex.getBindingResult()
+      .getFieldErrors()
+      .stream()
+      .map(DefaultMessageSourceResolvable::getDefaultMessage)
+      .collect(Collectors.toList());
 
-        return new ResponseEntity<>(result, null, HttpStatus.BAD_REQUEST);
-    }
+    body.put("errors", errors);
 
-    @ExceptionHandler(HttpServerErrorException.class)
-    public ResponseEntity<CommonResult<Object>> handleHttpServerError(
-            HttpServerErrorException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+    CommonResult<Object> result = new CommonResult<>();
+    result.setSuccess(false);
+    result.setCode(HttpStatus.BAD_REQUEST.value());
+    result.setMessage("Validation Failed");
+    result.setData(body);
 
-    @ExceptionHandler(NoHandlerFoundException.class)
-    public ResponseEntity<CommonResult<Object>> handleNoHandlerFound(
-            NoHandlerFoundException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+    return new ResponseEntity<>(result, null, HttpStatus.BAD_REQUEST);
+  }
 
-    @ExceptionHandler(HttpClientErrorException.class)
-    public ResponseEntity<CommonResult<Object>> handleHttpClientError(
-            HttpClientErrorException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+  @ExceptionHandler(HttpServerErrorException.class)
+  public ResponseEntity<CommonResult<Object>> handleHttpServerError(
+    HttpServerErrorException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
 
-    @ExceptionHandler(MessagingException.class)
-    public ResponseEntity<CommonResult<Object>> handleMessaging(
-            MessagingException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+  @ExceptionHandler(NoHandlerFoundException.class)
+  public ResponseEntity<CommonResult<Object>> handleNoHandlerFound(
+    NoHandlerFoundException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
 
-    @ExceptionHandler(IllegalApiKeyException.class)
-    public ResponseEntity<CommonResult<Object>> handleIllegalApi(
-            IllegalApiKeyException exception,
-            WebRequest request
-    ) {
-        return ExceptionUtils.handleException(exception, request);
-    }
+  @ExceptionHandler(HttpClientErrorException.class)
+  public ResponseEntity<CommonResult<Object>> handleHttpClientError(
+    HttpClientErrorException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
+
+  @ExceptionHandler(MessagingException.class)
+  public ResponseEntity<CommonResult<Object>> handleMessaging(
+    MessagingException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
+
+  @ExceptionHandler(IllegalApiKeyException.class)
+  public ResponseEntity<CommonResult<Object>> handleIllegalApi(
+    IllegalApiKeyException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
 
 }

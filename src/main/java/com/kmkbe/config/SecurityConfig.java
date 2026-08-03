@@ -15,13 +15,16 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
@@ -30,6 +33,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
+import org.springframework.web.context.annotation.RequestScope;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -66,7 +70,6 @@ public class SecurityConfig {
     this.userDetailsService = userDetailsService;
     this.unauthorizedEntryPoint = unauthorizedEntryPoint;
     this.apiKeyAuthenticationFilter = new ApiKeyAuthenticationFilter("/api/v1");
-    //this.apiKeyAuthenticationFilter = new ApiKeyAuthenticationFilter();
   }
 
 
@@ -98,11 +101,6 @@ public class SecurityConfig {
 
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        /*apiKeyAuthenticationFilter.setRequiresAuthenticationRequestMatcher(new OrRequestMatcher(
-                new AntPathRequestMatcher("/api/v1/financing/invoice-paid")
-                //new AntPathRequestMatcher("/api/secured/**")
-        ));*/
-
     apiKeyAuthenticationFilter.setAuthenticationManager(authentication -> {
       String providedApiKey = (String) authentication.getPrincipal();
       if (providedApiKey.equals(apiKey)) {
@@ -184,6 +182,12 @@ public class SecurityConfig {
     JWK jwk = new RSAKey.Builder(rsaKeyConfigProperties.publicKey()).privateKey(rsaKeyConfigProperties.privateKey()).build();
     JWKSource<SecurityContext> jwks = new ImmutableJWKSet<>(new JWKSet(jwk));
     return new NimbusJwtEncoder(jwks);
+  }
+
+  @Bean
+  @RequestScope(proxyMode = ScopedProxyMode.INTERFACES)
+  public Authentication currentAuthentication() {
+    return SecurityContextHolder.getContext().getAuthentication();
   }
 
   @Bean

@@ -35,10 +35,9 @@ public class SignUpRequest extends BaseRequest {
 
   @NotNull(message = "KTP/NPWP cannot be null")
   @NotEmpty(message = "KTP/NPWP cannot be empty")
-  //@Length(message = "Pin must be 6 digit", min = 6, max = 6)
   private String customerIdNo;
 
-  private String customerNo; // Kode Confins R3 (external req)
+  private String customerNo;
 
   @NotNull(message = "Email cannot be null")
   @NotEmpty(message = "Email cannot be empty")
@@ -56,7 +55,7 @@ public class SignUpRequest extends BaseRequest {
 
   @NotNull(message = "Bouwheer cannot be null")
   @NotEmpty(message = "Bouwheer cannot be empty")
-  private String bouwheer;
+  private String bouwheerCode;
 
   @NotNull(message = "Pin cannot be null")
   @NotEmpty(message = "Pin cannot be empty")
@@ -64,14 +63,14 @@ public class SignUpRequest extends BaseRequest {
   private String pin;
 
   @NotNull(message = "Setujui Syarat & Ketentuan cannot be null")
-  private Boolean isAgreeTc;
+  private boolean isAgreeTc;
 
 
   @JsonIgnore
-  private Company company;
+  private transient Company company;
 
   @JsonIgnore
-  private Personal personal;
+  private transient Personal personal;
 
   @SuperBuilder
   @Getter

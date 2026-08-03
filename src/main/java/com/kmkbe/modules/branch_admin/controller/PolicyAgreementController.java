@@ -33,7 +33,7 @@ public class PolicyAgreementController {
     public ResponseEntity<CommonResult<PolicyAgreementDto>> getPolicyAgreementById(@PathVariable Long id) {
         CommonResult<PolicyAgreementDto> result = policyAgreementService.getPolicyAgreementById(id);
 
-        if (result.getIsSuccess()) {
+        if (result.isSuccess()) {
             return ResponseEntity.ok(result);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
@@ -44,7 +44,7 @@ public class PolicyAgreementController {
     public ResponseEntity<CommonResult<PolicyAgreementDto>> getPolicyAgreementHistoryByCode(@PathVariable String policyCode) {
         CommonResult<PolicyAgreementDto> result = policyAgreementService.getPolicyAgreementHistoryByCode(policyCode);
 
-        if (result.getIsSuccess()) {
+        if (result.isSuccess()) {
             return ResponseEntity.ok(result);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
@@ -60,7 +60,7 @@ public class PolicyAgreementController {
     ) {
         CommonResult<PolicyAgreementDto> result = policyAgreementService.updatePolicyAgreement(id, policyAgreementDto);
 
-        if (result.getIsSuccess()) {
+        if (result.isSuccess()) {
             return ResponseEntity.ok(result);
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(result);

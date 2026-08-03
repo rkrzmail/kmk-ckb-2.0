@@ -63,6 +63,6 @@ public class DistributionSubmissionController {
             @Valid @RequestBody AssignInvoiceToBranchRequest request
     ) throws SignatureException {
         distributionSubmissionService.assignSubmission(authentication, request);
-        return new CommonResult<>().success(null, "Assigned Successfully");
+        return new CommonResult<>().success(null);
     }
 }

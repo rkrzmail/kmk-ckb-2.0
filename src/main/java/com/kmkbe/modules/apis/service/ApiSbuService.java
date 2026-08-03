@@ -68,8 +68,7 @@ public class ApiSbuService {
   public CommonResult<CsulInquiryInvoiceRemoteDto> inquiryListPostedInvoice(String vendorCode) {
     CsulInquiryInvoiceRemoteDto inquiryInvoice = apiCsulAdapter.findListPostedInvoice(vendorCode);
     return new CommonResult<CsulInquiryInvoiceRemoteDto>().success(
-      inquiryInvoice,
-      ""
+      inquiryInvoice
     );
   }
 }

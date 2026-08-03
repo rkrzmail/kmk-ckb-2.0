@@ -159,11 +159,11 @@ app:
 feign:
   csul:
     ckb:
-      url: http://api-ckbvendorportal.dipstrategy.co.id
+      url: https://api-ckbvendorportal.dipstrategy.co.id
       username: ramco
       password: RamcoVDC2026!
       client-secret: SecretRamco2026!
 
   confins:
-    url: http://uat-confinsr3.csulfinance.com
+    url: https://uat-confinsr3.csulfinance.com
     adins-key: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=

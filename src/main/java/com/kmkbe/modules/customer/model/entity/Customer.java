@@ -77,7 +77,7 @@ public class Customer implements UserDetails {
   private String custExternalCode;
 
   @Column
-  private Boolean isActive = false;
+  private boolean isActive = false;
 
   @Column(name = "existing_cust")
   private String existingCust;

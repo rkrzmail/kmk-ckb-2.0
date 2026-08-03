@@ -229,24 +229,14 @@ public class CustomerController {
   }
 
   @GetMapping("/plafond/{financingHdrCode}")
-  public CommonResult<CustomerPlafondDto> getPlafond(
-    @PathVariable String financingHdrCode, Authentication authentication
-
-  ) throws SignatureException {
-    UserInternalUtils.authenticated(authentication);
-    return new CommonResult<CustomerPlafondDto>().success(
-      customerDashboardService.plafond(financingHdrCode)
-    );
+  public BaseResponse getPlafond(
+    @PathVariable String financingHdrCode, Authentication authentication) {
+    return customerDashboardService.plafondByFinancingHdrCode(financingHdrCode);
   }
 
   @GetMapping("/plafondcustomer")
-  public CommonResult<CustomerPlafondDto> getPlafondCustomer(
-    Authentication authentication
-  ) throws SignatureException {
-    //UserInternalUtils.authenticated(authentication);
-    return new CommonResult<CustomerPlafondDto>().success(
-      customerDashboardService.plafond(authentication)
-    );
+  public BaseResponse getPlafondCustomer() throws SignatureException {
+    return customerDashboardService.plafond();
   }
 
   @GetMapping("/documents/{custCode}")
@@ -265,12 +255,8 @@ public class CustomerController {
   }
 
   @GetMapping("/dashboard")
-  public CommonResult<CustomerDashboardDto> getDashboard(
-    Authentication authentication
-  ) throws SignatureException {
-    return new CommonResult<CustomerDashboardDto>().success(
-      customerDashboardService.mainDashboard(authentication)
-    );
+  public BaseResponse getDashboard() throws SignatureException {
+    return customerDashboardService.mainDashboard();
   }
 
   @PutMapping("/updateFapData")
@@ -322,8 +308,8 @@ public class CustomerController {
   }
 
   @PutMapping(value = "/approval")
-  public BaseResponse approvalCustomer(@RequestBody @Valid ApprovalRequest request,Authentication authentication){
-    return customerService.approval(request,authentication);
+  public BaseResponse approvalCustomer(@RequestBody @Valid ApprovalRequest request, Authentication authentication) {
+    return customerService.approval(request, authentication);
   }
 }
 

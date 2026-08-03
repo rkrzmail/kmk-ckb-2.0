@@ -94,8 +94,7 @@ public class AgreementController {
     ) throws Exception {
         agreementService.createInquiryAgreement(authentication, request);
         return new CommonResult<>().success(
-                null,
-                "Inquiry Agreement created successfully"
+                null
         );
     }
 
@@ -223,8 +222,7 @@ public class AgreementController {
        //sebelunya auto assing
 
         return new CommonResult<>().success(
-                null,
-                "Agreement upload successfully"
+                null
         );
     }
 }

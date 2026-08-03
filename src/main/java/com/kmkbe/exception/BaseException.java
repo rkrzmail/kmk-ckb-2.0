@@ -10,12 +10,22 @@ import org.springframework.http.HttpStatus;
 @ToString
 public class BaseException extends RuntimeException {
 
+  protected final boolean isSuccess;
   protected final HttpStatus httpStatus;
   protected final Integer code;
   private final String message;
 
-  public BaseException(HttpStatus httpStatus, Integer errorCode, String title, String errorMessage) {
+  public BaseException(HttpStatus httpStatus, Integer errorCode, String errorMessage,String title) {
     super(title);
+    this.isSuccess = false;
+    this.httpStatus = httpStatus;
+    this.code = errorCode;
+    this.message = errorMessage;
+  }
+
+  public BaseException(boolean isSuccess,HttpStatus httpStatus, Integer errorCode, String errorMessage,String title) {
+    super(title);
+    this.isSuccess = isSuccess;
     this.httpStatus = httpStatus;
     this.code = errorCode;
     this.message = errorMessage;
