@@ -1,6 +1,7 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.kmkbe.adapter.ApiCsulAdapter;
 import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.dto.email.MailPositionDto;
@@ -63,19 +64,15 @@ public class LoanSubmissionService {
   private final JdbcTemplate jdbcTemplate;
   private final ConfigRemoteService configRemoteService;
   private final JwtLoanSubmissionService jwtLoanSubmissionService;
-
   private final SimulationHistRepository simulationHistRepository;
   private final InvoiceRepository invoiceRepository;
   private final CustomerRemoteService customerRemoteService;
   private InvoiceRemoteDto invoiceRemoteDto;
   private final CurrencyRemoteService currencyRemoteService;
   private final ExistingCustomerService existingCustomerService;
-
   private final CustomerCompanyRepository customerCompanyRepository;
   private final CustomerPersonalRepository customerPersonalRepository;
   private final AgreementRepository agreementRepository;
-
-
   private final InvoiceService invoiceService;
   private final FinancingHdrService financingHdrService;
   private final FinancingDtlService financingDtlService;
@@ -86,6 +83,7 @@ public class LoanSubmissionService {
   private final FinancingHdrRepository financingHdrRepository;
   private final MstBranchRepository mstBranchRepository;
   private final CustomerRepository customerRepository;
+  private final ApiCsulAdapter apiCsulAdapter;
 
   public List<PostedInvoiceDto> fetchActiveInvoice(
     Authentication authentication,
@@ -97,12 +95,14 @@ public class LoanSubmissionService {
 
       try {
         //ambil data dari api
-        inquiryInvoiceRemote = invoiceRemoteDto.inquiryInvoice(vendorTokenExtractor.getVendorCode()).getData();
+        inquiryInvoiceRemote = apiCsulAdapter.findListPostedInvoice(vendorTokenExtractor.getVendorCode());  // invoiceRemoteDto.inquiryInvoice(vendorTokenExtractor.getVendorCode()).getData();
+        log.info("Reponse Inquery API by vendor {} , payload {} ", vendorTokenExtractor.getVendorCode(), inquiryInvoiceRemote.getDocumentStatus());
+
       } catch (Exception e) {
         log.warn("API invoice gagal, fallback ke database: {}", e.getMessage());
 
         final Customer customer = CustomerUtils.authenticateCustomer(authentication);
-        if(customer ==null){
+        if (customer == null) {
           throw new IllegalArgumentException("Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
         }
         List<Invoice> dbInvoices = financingHdrRepository.findFinancingHeaderByVendorId(customer.getVendorId());
@@ -134,6 +134,9 @@ public class LoanSubmissionService {
           .build();
       }
 
+      /**
+       * Process
+       */
       if (inquiryInvoiceRemote == null) {
         throw CommonInvalidException.builder()
           .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
@@ -143,7 +146,7 @@ public class LoanSubmissionService {
           .build();
       }
 
-      if (inquiryInvoiceRemote.getBlacklistStatus()) {
+      if (Boolean.TRUE.equals(inquiryInvoiceRemote.getBlacklistStatus())) {
         throw CommonInvalidException.builder()
           .title("Perusahaan Anda Terdaftar dalam Daftar Blacklist")
           .message("Perusahaan Anda saat ini terdaftar dalam daftar " +
@@ -151,10 +154,8 @@ public class LoanSubmissionService {
             "belum dapat menggunakan Dana Sakti.")
           .build();
       }
-      if (
-        inquiryInvoiceRemote.getDocumentStatus().equalsIgnoreCase("03")
-          || inquiryInvoiceRemote.getDocumentStatus().equalsIgnoreCase("04")
-      ) {
+
+      if (inquiryInvoiceRemote.getDocumentStatus().equals("03") || inquiryInvoiceRemote.getDocumentStatus().equals("04")) {
         throw CommonInvalidException.builder()
           .title("Mohon Maaf, Anda Tidak Memenuhi Syarat")
           .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
