@@ -80,7 +80,7 @@ spring:
     url: jdbc:postgresql://aurora-kmk.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified
     username: postgres
   mail:
-    host: nikita.co.id
+    host: srv150.niagahoster.com
     port: 465
     protocol: smtp
     username: csul@nikita.co.id
