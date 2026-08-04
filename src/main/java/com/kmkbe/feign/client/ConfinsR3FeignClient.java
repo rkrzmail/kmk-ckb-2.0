@@ -10,6 +10,7 @@ import com.kmkbe.feign.model.request.CsulGetZipCodeRequest;
 import com.kmkbe.feign.model.response.ConfinsR3ApiResponseWrapper;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(
@@ -20,28 +21,28 @@ import org.springframework.web.bind.annotation.RequestBody;
 public interface ConfinsR3FeignClient {
 
 
-  @GetMapping(value = "/api/mou/v1/Generic/GetPagingObjectBySQL")
+  @PostMapping(value = "/api/mou/v1/Generic/GetPagingObjectBySQL")
   ConfinsR3ApiResponseWrapper<ConfinsR3GetCwrCustomerDto> getCwrByCustomer(@RequestBody ConfinsR3GetPagingObjectBySQLRequest request);
 
-  @GetMapping(value = "/api/fou/v1/RefZipcode/GetRefZipcodeByZipCode")
+  @PostMapping(value = "/api/fou/v1/RefZipcode/GetRefZipcodeByZipCode")
   ConfinsR3GetZipCodeDto getZipcode(@RequestBody CsulGetZipCodeRequest request);
 
-  @GetMapping(value = "/api/fou/v2/Generic/GetPagingObjectBySQL")
+  @PostMapping(value = "/api/fou/v2/Generic/GetPagingObjectBySQL")
   ConfinsR3ApiResponseWrapper<ConfinsR3GetCustomerDto> getByCustomer(@RequestBody ConfinsR3GetPagingObjectBySQLRequest request);
 
-  @GetMapping(value = "/api/fou/v1/Cust/GetCustByCustNo")
+  @PostMapping(value = "/api/fou/v1/Cust/GetCustByCustNo")
   ConfinsR3GetCustomerNoDto getByCustomerNo(@RequestBody ConfinsR3GetCustomerNoRequest request);
 
-  @GetMapping(value = "/api/fou/v1/RefMaster/GetListKeyValueActiveByCode")
+  @PostMapping(value = "/api/fou/v1/RefMaster/GetListKeyValueActiveByCode")
   ConfinsR3GetKeyValueActiveByCodeDto getKyValueByCode(@RequestBody ConfinsR3GetKeyValueActiveByCodeRequest request);
 
-  @GetMapping(value = "/api/fou/v1/Cust/GetCustCompanyForUpdateByCustNo")
+  @PostMapping(value = "/api/fou/v1/Cust/GetCustCompanyForUpdateByCustNo")
   ConfinsR3GetCustomerNoCompanyDto getByCustomerNoCompany(@RequestBody ConfinsR3GetCustomerNoRequest request);
 
-  @GetMapping(value = "/api/fou/v1/Cust/GetCustPersonalForUpdateByCustNo")
+  @PostMapping(value = "/api/fou/v1/Cust/GetCustPersonalForUpdateByCustNo")
   ConfinsR3GetCustomerNoPersonalDto getByCustomerNoPersonal(@RequestBody ConfinsR3GetCustomerNoRequest request);
 
-  @GetMapping(value = "/api/fou/v1/Generic/GetPagingObjectBySQL")
+  @PostMapping(value = "/api/fou/v1/Generic/GetPagingObjectBySQL")
   ConfinsR3ApiResponseWrapper<ConfinsR3GetZipCodeDto> getAllZipcode(@RequestBody ConfinsR3GetPagingObjectBySQLRequest request);
 
 }
