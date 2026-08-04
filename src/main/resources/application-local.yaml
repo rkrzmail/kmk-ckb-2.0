@@ -87,13 +87,13 @@ spring-doc:
   swagger-ui:
     path: /swagger-ui.html
 
+logging:
+  file: ./logs/log-file.log
+  level:
+    org.hibernate: ERROR
+    org.springframework.web: ERROR
+    root: INFO
 
-    logging:
-      file: ./logs/log-file.log
-      level:
-        org.hibernate: ERROR
-        org.springframework.web: ERROR
-        root: INFO
 server:
   error:
     whitelabel:
