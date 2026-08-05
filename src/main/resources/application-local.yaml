@@ -37,6 +37,7 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: none
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
   flyway:
     locations: classpath:db/migration/dev/{vendor}
     schemas: public

@@ -2,7 +2,7 @@ package com.kmkbe.modules.apis.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.adapter.ApiCsulAdapter;
-import com.kmkbe.core.domain.model.ApiSbu;
+import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.ValidationResponse;
 import com.kmkbe.core.domain.repository.ApiSbuRepository;
@@ -16,7 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.rmi.RemoteException;
 import java.util.Optional;
 
 @Slf4j

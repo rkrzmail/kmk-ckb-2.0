@@ -18,4 +18,7 @@ public class BouwheerResponse extends BaseResponse {
   private String bouwheerName;
   private String legalAddress;
   private Boolean isActive;
+  private String picName;
+  private String picEmail;
+  private String picMobilePhone;
 }

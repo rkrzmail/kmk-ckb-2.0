@@ -1,7 +1,7 @@
 package com.kmkbe.core.domain.repository;
 
 
-import com.kmkbe.core.domain.model.ApiSbu;
+import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
