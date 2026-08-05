@@ -1,4 +1,4 @@
-package com.kmkbe.core.domain.model;
+package com.kmkbe.modules.api_sbu.model.entity;
 
 
 import jakarta.persistence.*;

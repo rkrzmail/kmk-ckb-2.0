@@ -1,6 +1,6 @@
 package com.kmkbe.core.service;
 
-import com.kmkbe.core.domain.model.ApiSbu;
+import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.core.domain.model.ValidationResponse;
 import com.kmkbe.core.domain.repository.ApiSbuRepository;
 import io.jsonwebtoken.*;
