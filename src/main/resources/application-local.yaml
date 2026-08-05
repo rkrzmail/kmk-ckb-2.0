@@ -93,6 +93,8 @@ logging:
     org.hibernate: ERROR
     org.springframework.web: ERROR
     root: INFO
+    feign: DEBUG                             # Enables basic Feign engine debug logs
+    org.springframework.cloud.openfeign: DEBUG # Enables Spring integration logs
 
 server:
   error:
@@ -157,6 +159,13 @@ app:
 
 # Feign Configuration
 feign:
+  client:
+    config:
+      default: # This "default" keyword applies to ALL Feign clients
+        connectTimeout: 10000       # 10 seconds to connect
+        readTimeout: 60000          # 60 seconds to wait for data
+        loggerLevel: FULL           # Log request headers, body, and metadata
+        errorDecoder: com.kmkbe.feign.config # Catch global
   csul:
     ckb:
       url: https://api-ckbvendorportal.dipstrategy.co.id

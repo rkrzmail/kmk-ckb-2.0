@@ -91,20 +91,25 @@ public class ConfinsR3Service {
 
   public BaseResponseBuilder<List<GetZipCodeResponse>> pageZipcode(AreaPageRequest request) {
 
-    log.info("Gate zipcode by criteria {} ",request.getCriteria().stream().toList());
     List<ConfinsR3GetPagingObjectBySQLRequest.CriterionDto> criterionDtos = new ArrayList<>();
-    request.getCriteria().stream().toList().forEach(item -> {
-      ConfinsR3GetPagingObjectBySQLRequest.CriterionDto type = new ConfinsR3GetPagingObjectBySQLRequest.CriterionDto();
-      type.setLow(0);
-      type.setHigh(0);
-      type.setDataType("");
-      type.setIsCriteriaDataTable(false);
-      type.setRestriction("Eq");
-      type.setPropName(item.getPropName());
-      type.setValue(item.getValue());
 
-      criterionDtos.add(type);
-    });
+    /**
+     * Criteria
+     */
+    if (request.getCriteria() !=null){
+      request.getCriteria().stream().toList().forEach(item -> {
+        ConfinsR3GetPagingObjectBySQLRequest.CriterionDto type = new ConfinsR3GetPagingObjectBySQLRequest.CriterionDto();
+        type.setLow(0);
+        type.setHigh(0);
+        type.setDataType("");
+        type.setIsCriteriaDataTable(false);
+        type.setRestriction("Eq");
+        type.setPropName(item.getPropName());
+        type.setValue(item.getValue());
+
+        criterionDtos.add(type);
+      });
+    }
 
     ConfinsR3ApiResponseWrapper<ConfinsR3GetZipCodeDto> response = apiConfinsR3Adapter.getAllZipcode(ConfinsR3GetPagingObjectBySQLRequest.builder()
       .includeCount(true)
@@ -119,7 +124,7 @@ public class ConfinsR3Service {
       .pageNo(request.getPageNo())
       .rowPerPage(request.getPageSize())
       .orderBy(null)
-      .criteria(criterionDtos)
+      .criteria(criterionDtos.isEmpty()? List.of() :criterionDtos)
       .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
       .build());
 
