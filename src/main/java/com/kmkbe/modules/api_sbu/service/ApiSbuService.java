@@ -1,6 +1,7 @@
 package com.kmkbe.modules.api_sbu.service;
 
 
+import com.kmkbe.core.service.JwtGeneratorService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
@@ -28,6 +29,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -43,13 +45,15 @@ public class ApiSbuService {
   private final Authentication authentication;
   private final ApiSbuRepository apiSbuRepository;
   private final BouwheerRepository bouwheerRepository;
+  private final JwtGeneratorService jwtGeneratorService;
 
   public ApiSbuService(Authentication authentication,
                        ApiSbuRepository apiSbuRepository,
-                       BouwheerRepository bouwheerRepository) {
+                       BouwheerRepository bouwheerRepository, JwtGeneratorService jwtGeneratorService) {
     this.authentication = authentication;
     this.apiSbuRepository = apiSbuRepository;
     this.bouwheerRepository = bouwheerRepository;
+    this.jwtGeneratorService = jwtGeneratorService;
   }
 
   /**
@@ -170,7 +174,7 @@ public class ApiSbuService {
     /**
      * Find Bouwheer Code
      */
-    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(request.getBouwheerCode());
+    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
     if (bouwheerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81 + "Bowheer code " + request.getBouwheerCode());
@@ -179,30 +183,49 @@ public class ApiSbuService {
     /**
      * Duplicate Appname
      */
-    Optional<ApiSbu>  apiSbuOptional = apiSbuRepository.findByBouwheerCodeAndAppName(request.getBouwheerCode(), request.getAppName());
+    Optional<ApiSbu> apiSbuOptional = apiSbuRepository.findByBouwheerCodeAndAppName(UUID.fromString(request.getBouwheerCode()), request.getAppName());
     if (apiSbuOptional.isPresent() && apiSbuOptional.get().getAppName().equals(request.getAppName())) {
       log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getBouwheerCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "App Name" + request.getAppName());
     }
 
+    String apiKey = CommonUtils.generateUUIDString();
+    String appSecret = CommonUtils.generateAESKeyString();
+
     var apiSbu = apiSbuRepository.save(ApiSbu.builder()
-      .bouwheerCode(request.getBouwheerCode())
-      .appKey(CommonUtils.generateAESKeyString())
-      .appSecret(CommonUtils.generateUUIDString())
+      .bouwheerCode(UUID.fromString(request.getBouwheerCode()))
+      .appKey(apiKey)
+      .appSecret(appSecret)
+      .tokenJwt(jwtGeneratorService.generateToken(
+        apiKey,
+        appSecret,
+        request.getBouwheerCode(),
+        request.getExpiredDate()
+      ))
       .sesStatus("ACTIVE")
       .appPath(request.getAppPath())
       .appName(request.getAppName())
-      .expiredDate(request.getExpiredDate())
+      .expiredDate(request.getExpiredDate().toInstant()
+        .atZone(ZoneId.systemDefault())
+        .toLocalDate().atStartOfDay())
       .usrCrt(authentication.getName())
       .dtmCrt(LocalDateTime.now())
       .build()
     );
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, ApiSbuResponse.builder()
+      .sesId(apiSbu.getSesId())
+      .expiredDate(apiSbu.getExpiredDate())
       .bouwheerCode(apiSbu.getBouwheerCode())
       .appName(apiSbu.getAppName())
       .appKey(apiSbu.getAppKey())
       .appSecret(apiSbu.getAppSecret())
+      .appPath(apiSbu.getAppPath())
+      .sesStatus(apiSbu.getSesStatus())
+      .usrCrt(apiSbu.getUsrCrt())
+      .dtmCrt(apiSbu.getDtmCrt())
+      .usrUpd(apiSbu.getUsrUpd())
+      .dtmUpd(apiSbu.getDtmUpd())
       .build());
   }
 
@@ -220,7 +243,7 @@ public class ApiSbuService {
     }
 
 
-    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(request.getBouwheerCode());
+    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
     if (bouwheerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81 + "Bowheer code " + request.getBouwheerCode());
@@ -237,6 +260,7 @@ public class ApiSbuService {
 
   /**
    * Find By ID
+   *
    * @param id
    * @return
    */
@@ -251,7 +275,7 @@ public class ApiSbuService {
     ApiSbu response = apiSbuOptional.get();
 
 
-    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,ApiSbuResponse.builder()
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, ApiSbuResponse.builder()
       .sesId(response.getSesId())
       .bouwheerCode(response.getBouwheerCode())
       .sesStatus(response.getSesStatus())
@@ -270,6 +294,7 @@ public class ApiSbuService {
 
   /**
    * Delete By ID
+   *
    * @param id
    * @return
    */
