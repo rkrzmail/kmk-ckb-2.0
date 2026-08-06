@@ -13,13 +13,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.*;
 
-
+@Data
+@Builder
 @NoArgsConstructor
-@Getter
-@Setter
 @AllArgsConstructor
 @Entity
-@Builder
 @Table(name = "customer", schema = "public")
 public class Customer implements UserDetails {
   @Column(
