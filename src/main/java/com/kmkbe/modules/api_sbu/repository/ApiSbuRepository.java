@@ -29,5 +29,7 @@ public interface ApiSbuRepository extends JpaRepository<ApiSbu, Long> {
             "AND (a.expiredDate IS NULL OR a.expiredDate > CURRENT_TIMESTAMP)")
     Optional<ApiSbu> findActiveByAppKey(@Param("appKey") String appKey);
 
-  Page<ApiSbu> findAll(Specification<ApiSbu> specification, Pageable pageable);
+   Page<ApiSbu> findAll(Specification<ApiSbu> specification, Pageable pageable);
+
+   Optional<ApiSbu> findByBouwheerCodeAndBouwheerName(UUID code,String bouwheerName);
 }

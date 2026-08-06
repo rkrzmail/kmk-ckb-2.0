@@ -167,10 +167,22 @@ public class ApiSbuService {
    * @return
    */
   public BaseResponseBuilder<ApiSbuResponse> create(ApiSbuRequest request) {
+    /**
+     * Find Bouwheer Code
+     */
     Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(request.getBouwheerCode());
     if (bouwheerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81 + "Bowheer code " + request.getBouwheerCode());
+    }
+
+    /**
+     * Duplicate Appname
+     */
+    Optional<ApiSbu>  apiSbuOptional = apiSbuRepository.findByBouwheerCodeAndBouwheerName(request.getBouwheerCode(), request.getAppName());
+    if (apiSbuOptional.isPresent() && apiSbuOptional.get().getAppName().equals(request.getAppName())) {
+      log.info(ErrorConstant.ERROR_MESSAGE_83 + "{}", request.getBouwheerCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_83, ErrorConstant.ERROR_MESSAGE_83 + "App Name" + request.getAppName());
     }
 
     var apiSbu = apiSbuRepository.save(ApiSbu.builder()
