@@ -2,12 +2,21 @@ package com.kmkbe.modules.api_sbu.model.entity;
 
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.time.LocalDateTime;
 import java.util.UUID;
 
 /**
  * Entity mapping tabel public.api_sbu
  */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Entity
 @Table(name = "api_sbu", schema = "public")
 public class ApiSbu {
@@ -51,49 +60,6 @@ public class ApiSbu {
 
     @Column(name = "app_name", length = 64)
     private String appName;
-
-    // =========================================================
-    // Getters & Setters
-    // =========================================================
-
-    public Long getSesId() { return sesId; }
-    public void setSesId(Long sesId) { this.sesId = sesId; }
-
-    public UUID getBouwheerCode() { return bouwheerCode; }
-    public void setBouwheerCode(UUID bouwheerCode) { this.bouwheerCode = bouwheerCode; }
-
-    public String getTokenJwt() { return tokenJwt; }
-    public void setTokenJwt(String tokenJwt) { this.tokenJwt = tokenJwt; }
-
-    public String getUsrCrt() { return usrCrt; }
-    public void setUsrCrt(String usrCrt) { this.usrCrt = usrCrt; }
-
-    public LocalDateTime getDtmCrt() { return dtmCrt; }
-    public void setDtmCrt(LocalDateTime dtmCrt) { this.dtmCrt = dtmCrt; }
-
-    public String getUsrUpd() { return usrUpd; }
-    public void setUsrUpd(String usrUpd) { this.usrUpd = usrUpd; }
-
-    public LocalDateTime getDtmUpd() { return dtmUpd; }
-    public void setDtmUpd(LocalDateTime dtmUpd) { this.dtmUpd = dtmUpd; }
-
-    public LocalDateTime getExpiredDate() { return expiredDate; }
-    public void setExpiredDate(LocalDateTime expiredDate) { this.expiredDate = expiredDate; }
-
-    public String getSesStatus() { return sesStatus; }
-    public void setSesStatus(String sesStatus) { this.sesStatus = sesStatus; }
-
-    public String getAppPath() { return appPath; }
-    public void setAppPath(String appPath) { this.appPath = appPath; }
-
-    public String getAppKey() { return appKey; }
-    public void setAppKey(String appKey) { this.appKey = appKey; }
-
-    public String getAppSecret() { return appSecret; }
-    public void setAppSecret(String appSecret) { this.appSecret = appSecret; }
-
-    public String getAppName() { return appName; }
-    public void setAppName(String appName) { this.appName = appName; }
 
     @Override
     public String toString() {

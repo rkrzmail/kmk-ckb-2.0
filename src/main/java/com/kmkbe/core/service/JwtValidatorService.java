@@ -2,7 +2,7 @@ package com.kmkbe.core.service;
 
 import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.core.domain.model.ValidationResponse;
-import com.kmkbe.core.domain.repository.ApiSbuRepository;
+import com.kmkbe.modules.api_sbu.repository.ApiSbuRepository;
 import io.jsonwebtoken.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

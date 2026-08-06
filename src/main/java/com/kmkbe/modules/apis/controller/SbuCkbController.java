@@ -8,13 +8,13 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
 import com.kmkbe.helpers.constant.ErrorConstant;
-import com.kmkbe.modules.apis.service.ApiSbuService;
+import com.kmkbe.modules.apis.service.ApiSbuCkbService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.ValidationResponse;
-import com.kmkbe.core.domain.repository.ApiSbuRepository;
+import com.kmkbe.modules.api_sbu.repository.ApiSbuRepository;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.request.InquiryDisburseRequest;
 import com.kmkbe.core.domain.response.InquiryDisburseResult;
@@ -60,7 +60,7 @@ import java.util.*;
   description = ""
 )
 
-public class SbuController {
+public class SbuCkbController {
   private final SbuRemoteService sbuRemoteService;
   private final RestTemplate restTemplate;
   private final FinancingHdrService financingHdrService;
@@ -75,23 +75,23 @@ public class SbuController {
   private final AuthenticationManager authenticationManager;
   private final LoanSubmissionService loanSubmissionService;
   private final CustomerRepository customerRepository;
-  private final ApiSbuService apiSbuService;
+  private final ApiSbuCkbService apiSbuCkbService;
 
-  public SbuController(SbuRemoteService sbuRemoteService,
-                       RestTemplate restTemplate,
-                       FinancingHdrService financingHdrService,
-                       FinancingService financingService,
-                       FinancingDtlService financingDtlService,
-                       ApiSbuRepository apiSbuRepository,
-                       JwtService jwtService,
-                       JwtGeneratorService jwtGeneratorService,
-                       JwtValidatorService jwtValidatorService,
-                       ObjectMapper objectMapper,
-                       AuthenticationManager authenticationManager,
-                       LoanSubmissionService loanSubmissionService,
-                       CustomerRepository customerRepository,
-                       ApiSbuService apiSbuService,
-                       InvoiceRemoteDto invoiceRemoteDto) {
+  public SbuCkbController(SbuRemoteService sbuRemoteService,
+                          RestTemplate restTemplate,
+                          FinancingHdrService financingHdrService,
+                          FinancingService financingService,
+                          FinancingDtlService financingDtlService,
+                          ApiSbuRepository apiSbuRepository,
+                          JwtService jwtService,
+                          JwtGeneratorService jwtGeneratorService,
+                          JwtValidatorService jwtValidatorService,
+                          ObjectMapper objectMapper,
+                          AuthenticationManager authenticationManager,
+                          LoanSubmissionService loanSubmissionService,
+                          CustomerRepository customerRepository,
+                          ApiSbuCkbService apiSbuCkbService,
+                          InvoiceRemoteDto invoiceRemoteDto) {
     this.sbuRemoteService = sbuRemoteService;
     this.restTemplate = restTemplate;
     this.financingHdrService = financingHdrService;
@@ -105,7 +105,7 @@ public class SbuController {
     this.authenticationManager = authenticationManager;
     this.loanSubmissionService = loanSubmissionService;
     this.customerRepository = customerRepository;
-    this.apiSbuService = apiSbuService;
+    this.apiSbuCkbService = apiSbuCkbService;
     this.invoiceRemoteDto = invoiceRemoteDto;
   }
 
@@ -114,7 +114,7 @@ public class SbuController {
     @PathVariable("jwtToken") String jwtToken,
     @RequestHeader("ApiKey") String apiKey,
     @RequestBody(required = false) Object rawBody) throws IOException {
-    ValidationResponse validationResponse = apiSbuService.apiValidation(apiKey, jwtToken);
+    ValidationResponse validationResponse = apiSbuCkbService.apiValidation(apiKey, jwtToken);
 
     return new CommonResult<Object>().success(rawBody);
 
@@ -235,7 +235,7 @@ public class SbuController {
   ){
     JsonNode node = objectMapper.valueToTree(rawBody);
     String vendorCode = node.path("vendorCode").asText();
-    return apiSbuService.inquiryListPostedInvoice(vendorCode);
+    return apiSbuCkbService.inquiryListPostedInvoice(vendorCode);
   }
 
   @GetMapping(value = "/financing/status") //approvals/status

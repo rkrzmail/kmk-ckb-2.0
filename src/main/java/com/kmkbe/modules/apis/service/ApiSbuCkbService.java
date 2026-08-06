@@ -5,7 +5,7 @@ import com.kmkbe.adapter.ApiCsulAdapter;
 import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.ValidationResponse;
-import com.kmkbe.core.domain.repository.ApiSbuRepository;
+import com.kmkbe.modules.api_sbu.repository.ApiSbuRepository;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.service.JwtValidatorService;
 import com.kmkbe.exception.BusinessException;
@@ -20,14 +20,14 @@ import java.util.Optional;
 
 @Slf4j
 @Service
-public class ApiSbuService {
+public class ApiSbuCkbService {
 
   private final ApiCsulAdapter apiCsulAdapter;
   private final ObjectMapper objectMapper;
   private final ApiSbuRepository apiSbuRepository;
   private final JwtValidatorService jwtValidatorService;
 
-  public ApiSbuService(ApiCsulAdapter apiCsulAdapter, ObjectMapper objectMapper, ApiSbuRepository apiSbuRepository, JwtValidatorService jwtValidatorService) {
+  public ApiSbuCkbService(ApiCsulAdapter apiCsulAdapter, ObjectMapper objectMapper, ApiSbuRepository apiSbuRepository, JwtValidatorService jwtValidatorService) {
     this.apiCsulAdapter = apiCsulAdapter;
     this.objectMapper = objectMapper;
     this.apiSbuRepository = apiSbuRepository;
