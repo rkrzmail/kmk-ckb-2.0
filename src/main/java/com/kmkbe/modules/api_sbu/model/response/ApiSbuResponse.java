@@ -30,4 +30,9 @@ public class ApiSbuResponse extends BaseResponse {
   private String appName;
   private String appKey;
   private String appSecret;
+  private String usrCrt;
+  private LocalDateTime dtmCrt;
+  private String usrUpd;
+  private LocalDateTime dtmUpd;
+
 }
