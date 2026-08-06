@@ -220,6 +220,7 @@ public class ApiSbuService {
       .appName(apiSbu.getAppName())
       .appKey(apiSbu.getAppKey())
       .appSecret(apiSbu.getAppSecret())
+      .tokenJwt(apiSbu.getTokenJwt())
       .appPath(apiSbu.getAppPath())
       .sesStatus(apiSbu.getSesStatus())
       .usrCrt(apiSbu.getUsrCrt())
@@ -272,22 +273,23 @@ public class ApiSbuService {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81 + "ID " + id);
     }
 
-    ApiSbu response = apiSbuOptional.get();
+    ApiSbu apiSbu = apiSbuOptional.get();
 
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, ApiSbuResponse.builder()
-      .sesId(response.getSesId())
-      .bouwheerCode(response.getBouwheerCode())
-      .sesStatus(response.getSesStatus())
-      .appPath(response.getAppPath())
-      .appName(response.getAppName())
-      .expiredDate(response.getExpiredDate())
-      .appKey(response.getAppKey())
-      .appSecret(response.getAppSecret())
-      .usrCrt(response.getUsrCrt())
-      .dtmCrt(response.getDtmCrt())
-      .usrUpd(response.getUsrUpd())
-      .dtmUpd(response.getDtmUpd())
+      .sesId(apiSbu.getSesId())
+      .expiredDate(apiSbu.getExpiredDate())
+      .bouwheerCode(apiSbu.getBouwheerCode())
+      .appName(apiSbu.getAppName())
+      .appKey(apiSbu.getAppKey())
+      .appSecret(apiSbu.getAppSecret())
+      .tokenJwt(apiSbu.getTokenJwt())
+      .appPath(apiSbu.getAppPath())
+      .sesStatus(apiSbu.getSesStatus())
+      .usrCrt(apiSbu.getUsrCrt())
+      .dtmCrt(apiSbu.getDtmCrt())
+      .usrUpd(apiSbu.getUsrUpd())
+      .dtmUpd(apiSbu.getDtmUpd())
       .build()
     );
   }
