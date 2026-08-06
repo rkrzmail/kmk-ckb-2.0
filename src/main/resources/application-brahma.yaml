@@ -17,6 +17,7 @@ spring:
     schemas: public
     enabled: true
     baseline-on-migrate: true
+    out-of-order: true
     # table: fly_way
 
 # -------------------------------

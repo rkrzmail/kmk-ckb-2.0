@@ -35,6 +35,9 @@ public class BouwheerResponse extends BaseResponse {
   private Boolean isWaActive;
   private Long termOfPayment;
   private Long gracePeriod;
+  private String aesKey;
+  private String secretKey;
+  private String apiKey;
   private String usrCrt;
   private LocalDateTime dtmCrt;
   private String usrUpd;

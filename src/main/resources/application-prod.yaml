@@ -19,6 +19,7 @@ spring:
     schemas: public
     locations: classpath:db/migration/prod/{vendor}
     baseline-on-migrate: 'true'
+    out-of-order: true
   data:
     redis:
       database: '6'

@@ -46,15 +46,16 @@ public class ApiSbuCkbService {
     if (apiSbu.isEmpty()) {
       throw new IllegalApiKeyException();
     }
+
     ValidationResponse validationResponse = jwtValidatorService.validate(apiKey, jwtToken, apiSbu.get());
     String bouwheerCode = apiSbu.get().getBouwheerCode().toString();
     if (!validationResponse.getBouwheer().equalsIgnoreCase(bouwheerCode)) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", bouwheerCode);
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Invalid Bouwheer Code");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Invalid Bouwheer Code");
     }
     if (validationResponse.getExp() < (System.currentTimeMillis() / 1000)) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", bouwheerCode);
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Expired Token");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Expired Token");
     }
     return validationResponse;
   }

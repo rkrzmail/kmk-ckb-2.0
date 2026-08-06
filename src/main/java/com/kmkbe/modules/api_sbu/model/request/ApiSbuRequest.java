@@ -2,6 +2,8 @@ package com.kmkbe.modules.api_sbu.model.request;
 
 
 import com.kmkbe.helpers.base.BaseRequest;
+import jakarta.persistence.Temporal;
+import jakarta.persistence.TemporalType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import jakarta.persistence.Column;
@@ -11,6 +13,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -25,10 +28,11 @@ public class ApiSbuRequest extends BaseRequest {
 
   @NotNull(message = "Bouwheer code cannot be null")
   @Column(name = "bouwheer_code", nullable = false)
-  private UUID bouwheerCode;
+  private String bouwheerCode;
 
+  @Temporal(TemporalType.DATE)
   @Column(name = "expired_date")
-  private LocalDateTime expiredDate;
+  private Date expiredDate;
 
   @Size(max = 64, message = "Session status cannot exceed 64 characters")
   @Column(name = "ses_status", length = 64)

@@ -23,6 +23,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +43,7 @@ public class BouwheerService {
 
   /**
    * Get all Bouwheers
+   *
    * @return
    */
   public BaseResponseBuilder<List<BouwheerResponse>> all() {
@@ -58,7 +60,7 @@ public class BouwheerService {
       .dtmUpd(bouwheer.getDtmUpd())
       .build()));
 
-    return new BaseResponseBuilder<>( true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,bouwheerResponses);
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, bouwheerResponses);
   }
 
   /**
@@ -89,7 +91,7 @@ public class BouwheerService {
       .dtmUpd(bouwheer.getDtmUpd())
       .build()).toList();
 
-    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,PageBouwheerResponse.builder()
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, PageBouwheerResponse.builder()
       .content(responses)
       .pagination(PageableUtil.pageToPagination(page))
       .build());
@@ -100,61 +102,61 @@ public class BouwheerService {
    * @return
    */
   public BaseResponse create(BouwheerRequest request) {
-    Optional<Bouwheer>bouwheerOptional = bouwheerRepository.findFirstByBouwheerName(request.getBouwheerName().toUpperCase());
-    if(bouwheerOptional.isPresent()){
-      log.info(ErrorConstant.ERROR_MESSAGE_83 + "{}", request.getBouwheerName());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_83, ErrorConstant.ERROR_MESSAGE_83);
+    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findFirstByBouwheerName(request.getBouwheerName().toUpperCase());
+    if (bouwheerOptional.isPresent()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getBouwheerName());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84);
     }
 
     bouwheerRepository.save(Bouwheer.builder()
-        .bouwheerCode(UUID.randomUUID())
-        .bouwheerName(request.getBouwheerName().toUpperCase())
-        .legalAddress(request.getLegalAddress())
-        .rt(request.getRt())
-        .rw(request.getRw())
-        .kelurahan(request.getKelurahan())
-        .kecamatan(request.getKecamatan())
-        .city(request.getCity())
-        .province(request.getProvince())
-        .zipcode(request.getZipcode())
-        .area(request.getArea())
-        .phone(request.getPhone())
-        .isSbu(request.getIsSbu())
-        .picName(request.getPicName())
-        .picEmail(request.getPicEmail())
-        .picMobilePhone(request.getPicMobilePhone())
-        .isWaActive(request.getIsWaActive())
-        .termOfPayment(request.getTermOfPayment())
-        .gracePeriod(request.getGracePeriod())
-        .secretKey(CommonUtils.generateUUIDString())
-        .apiKey(CommonUtils.generateUUIDString())
-        .isActive(request.getIsActive())
-        .usrCrt(authentication.getName())
-        .aesKey(CommonUtils.generateAESKeyString())
-        .dtmCrt(LocalDateTime.now())
+      .bouwheerCode(UUID.randomUUID())
+      .bouwheerName(request.getBouwheerName().toUpperCase())
+      .legalAddress(request.getLegalAddress())
+      .rt(request.getRt())
+      .rw(request.getRw())
+      .kelurahan(request.getKelurahan())
+      .kecamatan(request.getKecamatan())
+      .city(request.getCity())
+      .province(request.getProvince())
+      .zipcode(request.getZipcode())
+      .area(request.getArea())
+      .phone(request.getPhone())
+      .isSbu(request.getIsSbu())
+      .picName(request.getPicName())
+      .picEmail(request.getPicEmail())
+      .picMobilePhone(request.getPicMobilePhone())
+      .isWaActive(request.getIsWaActive())
+      .termOfPayment(request.getTermOfPayment())
+      .gracePeriod(request.getGracePeriod())
+      .isActive(request.getIsActive())
+      .usrCrt(authentication.getName())
+      .aesKey(request.getAesKey())
+      .secretKey(request.getSecretKey())
+      .apiKey(request.getApiKey())
+      .dtmCrt(LocalDateTime.now())
       .build());
 
-    return new BaseResponseBuilder<>( true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
   }
 
   /**
    * @param request
    * @return
    */
-  public BaseResponse update(String id,BouwheerRequest request) {
-    Optional<Bouwheer>bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(id));
-    if(bouwheerOptional.isEmpty()){
-      log.info(ErrorConstant.ERROR_MESSAGE_83 + "{}", request.getBouwheerName());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_83, ErrorConstant.ERROR_MESSAGE_83);
+  public BaseResponse update(String id, BouwheerRequest request) {
+    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(id));
+    if (bouwheerOptional.isEmpty()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getBouwheerName());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84);
     }
 
     Bouwheer bouwheer = bouwheerOptional.get();
-    BeanUtils.copyProperties(request,bouwheer);
+    BeanUtils.copyProperties(request, bouwheer);
     bouwheer.setUsrUpd(authentication.getName());
     bouwheer.setDtmUpd(LocalDateTime.now());
     bouwheerRepository.save(bouwheer);
 
-    return new BaseResponseBuilder<>( true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
   }
 
   /**
@@ -163,15 +165,15 @@ public class BouwheerService {
    * @return
    */
   public BaseResponse findById(String id) {
-    Optional<Bouwheer>bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(id));
-    if(bouwheerOptional.isEmpty()){
-      log.info(ErrorConstant.ERROR_MESSAGE_83 + "{}", id);
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_83, ErrorConstant.ERROR_MESSAGE_83);
+    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(id));
+    if (bouwheerOptional.isEmpty()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", id);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84);
     }
 
     Bouwheer bouwheer = bouwheerOptional.get();
 
-    return new BaseResponseBuilder<>( true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,BouwheerResponse.builder()
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, BouwheerResponse.builder()
       .bouwheerCode(bouwheer.getBouwheerCode())
       .bouwheerName(bouwheer.getBouwheerName())
       .legalAddress(bouwheer.getLegalAddress())
@@ -196,6 +198,9 @@ public class BouwheerService {
       .dtmCrt(bouwheer.getDtmCrt())
       .usrUpd(bouwheer.getUsrUpd())
       .dtmUpd(bouwheer.getDtmUpd())
+      .aesKey(bouwheer.getAesKey())
+      .secretKey(bouwheer.getSecretKey())
+      .apiKey(bouwheer.getApiKey())
       .build());
   }
 
