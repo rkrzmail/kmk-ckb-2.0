@@ -181,8 +181,8 @@ public class ApiSbuService {
      */
     Optional<ApiSbu>  apiSbuOptional = apiSbuRepository.findByBouwheerCodeAndAppName(request.getBouwheerCode(), request.getAppName());
     if (apiSbuOptional.isPresent() && apiSbuOptional.get().getAppName().equals(request.getAppName())) {
-      log.info(ErrorConstant.ERROR_MESSAGE_83 + "{}", request.getBouwheerCode());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_83, ErrorConstant.ERROR_MESSAGE_83 + "App Name" + request.getAppName());
+      log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getBouwheerCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "App Name" + request.getAppName());
     }
 
     var apiSbu = apiSbuRepository.save(ApiSbu.builder()

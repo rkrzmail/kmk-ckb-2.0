@@ -73,6 +73,8 @@ public class BouwheerRequest extends BaseRequest {
   // Long types usually don't need validation unless range constraints are known
   private Long termOfPayment;
   private Long gracePeriod;
-
+  private String aesKey;
+  private String secretKey;
+  private String apiKey;
   private Boolean isActive;
 }
