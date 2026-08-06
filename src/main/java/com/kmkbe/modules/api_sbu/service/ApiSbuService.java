@@ -179,7 +179,7 @@ public class ApiSbuService {
     /**
      * Duplicate Appname
      */
-    Optional<ApiSbu>  apiSbuOptional = apiSbuRepository.findByBouwheerCodeAndBouwheerName(request.getBouwheerCode(), request.getAppName());
+    Optional<ApiSbu>  apiSbuOptional = apiSbuRepository.findByBouwheerCodeAndAppName(request.getBouwheerCode(), request.getAppName());
     if (apiSbuOptional.isPresent() && apiSbuOptional.get().getAppName().equals(request.getAppName())) {
       log.info(ErrorConstant.ERROR_MESSAGE_83 + "{}", request.getBouwheerCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_83, ErrorConstant.ERROR_MESSAGE_83 + "App Name" + request.getAppName());

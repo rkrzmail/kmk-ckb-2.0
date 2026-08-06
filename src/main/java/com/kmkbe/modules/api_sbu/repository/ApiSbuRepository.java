@@ -2,7 +2,6 @@ package com.kmkbe.modules.api_sbu.repository;
 
 
 import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
-import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
@@ -31,5 +30,5 @@ public interface ApiSbuRepository extends JpaRepository<ApiSbu, Long> {
 
    Page<ApiSbu> findAll(Specification<ApiSbu> specification, Pageable pageable);
 
-   Optional<ApiSbu> findByBouwheerCodeAndBouwheerName(UUID code,String bouwheerName);
+   Optional<ApiSbu> findByBouwheerCodeAndAppName(UUID code, String appName);
 }
