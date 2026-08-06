@@ -52,6 +52,10 @@ public class BouwheerService {
       .bouwheerName(bouwheer.getBouwheerName())
       .legalAddress(bouwheer.getLegalAddress())
       .isActive(bouwheer.getIsActive())
+      .usrCrt(bouwheer.getUsrCrt())
+      .dtmCrt(bouwheer.getDtmCrt())
+      .usrUpd(bouwheer.getUsrUpd())
+      .dtmUpd(bouwheer.getDtmUpd())
       .build()));
 
     return new BaseResponseBuilder<>( true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,bouwheerResponses);
@@ -79,6 +83,10 @@ public class BouwheerService {
       .picName(bouwheer.getPicName())
       .picEmail(bouwheer.getPicEmail())
       .picMobilePhone(bouwheer.getPicMobilePhone())
+      .usrCrt(bouwheer.getUsrCrt())
+      .dtmCrt(bouwheer.getDtmCrt())
+      .usrUpd(bouwheer.getUsrUpd())
+      .dtmUpd(bouwheer.getDtmUpd())
       .build()).toList();
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,PageBouwheerResponse.builder()
@@ -171,6 +179,23 @@ public class BouwheerService {
       .picName(bouwheer.getPicName())
       .picEmail(bouwheer.getPicEmail())
       .picMobilePhone(bouwheer.getPicMobilePhone())
+      .rt(bouwheer.getRt())
+      .rw(bouwheer.getRw())
+      .kelurahan(bouwheer.getKelurahan())
+      .kecamatan(bouwheer.getKecamatan())
+      .city(bouwheer.getCity())
+      .province(bouwheer.getProvince())
+      .zipcode(bouwheer.getZipcode())
+      .area(bouwheer.getArea())
+      .phone(bouwheer.getPhone())
+      .isSbu(bouwheer.getIsSbu())
+      .isWaActive(bouwheer.getIsWaActive())
+      .termOfPayment(bouwheer.getTermOfPayment())
+      .gracePeriod(bouwheer.getGracePeriod())
+      .usrCrt(bouwheer.getUsrCrt())
+      .dtmCrt(bouwheer.getDtmCrt())
+      .usrUpd(bouwheer.getUsrUpd())
+      .dtmUpd(bouwheer.getDtmUpd())
       .build());
   }
 

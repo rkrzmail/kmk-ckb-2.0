@@ -67,6 +67,10 @@ public class ApiSbuService {
       .appPath(response.getAppPath())
       .appName(response.getAppName())
       .expiredDate(response.getExpiredDate())
+      .usrCrt(response.getUsrCrt())
+      .dtmCrt(response.getDtmCrt())
+      .usrUpd(response.getUsrUpd())
+      .dtmUpd(response.getDtmUpd())
       .build()));
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, responses);
@@ -94,6 +98,10 @@ public class ApiSbuService {
       .appPath(response.getAppPath())
       .appName(response.getAppName())
       .expiredDate(response.getExpiredDate())
+      .usrCrt(response.getUsrCrt())
+      .dtmCrt(response.getDtmCrt())
+      .usrUpd(response.getUsrUpd())
+      .dtmUpd(response.getDtmUpd())
       .build()).toList();
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, PageApiSbuResponse.builder()
@@ -141,6 +149,10 @@ public class ApiSbuService {
       .appPath(response.getAppPath())
       .appName(response.getAppName())
       .expiredDate(response.getExpiredDate())
+      .usrCrt(response.getUsrCrt())
+      .dtmCrt(response.getDtmCrt())
+      .usrUpd(response.getUsrUpd())
+      .dtmUpd(response.getDtmUpd())
       .build()).toList();
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, PageApiSbuResponse.builder()
@@ -236,6 +248,10 @@ public class ApiSbuService {
       .expiredDate(response.getExpiredDate())
       .appKey(response.getAppKey())
       .appSecret(response.getAppSecret())
+      .usrCrt(response.getUsrCrt())
+      .dtmCrt(response.getDtmCrt())
+      .usrUpd(response.getUsrUpd())
+      .dtmUpd(response.getDtmUpd())
       .build()
     );
   }

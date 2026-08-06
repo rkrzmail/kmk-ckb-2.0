@@ -23,10 +23,10 @@ public class BouwheerRequest extends BaseRequest {
   @Size(min = 3, max = 1000, message = "Must be between 3 and 1000 characters")
   private String legalAddress;
 
-  @Size(min = 0, max = 3, message = "RT Must be between 0 and 100 characters")
+  @Size(min = 0, max = 3, message = "RT Must be between 0 and 3 characters")
   private String rt;
 
-  @Size(min = 0, max = 3, message = "RW Must be between 0 and 100 characters")
+  @Size(min = 0, max = 3, message = "RW Must be between 0 and 3 characters")
   private String rw; // Assuming RW is short if provided
 
   @Size(min = 0, max = 100, message = "Kelurahan Must be between 0 and 100 characters")
@@ -35,7 +35,7 @@ public class BouwheerRequest extends BaseRequest {
   @Size(min = 0, max = 100, message = "Kecamatan Must be between 0 and 100 characters")
   private String kecamatan;
 
-  @Size(min = 0, max = 150, message = "Kota Must be between 0 and 100 characters")
+  @Size(min = 0, max = 150, message = "Kota Must be between 0 and 150 characters")
   @Size(max = 150)
   private String city;
 
@@ -46,7 +46,7 @@ public class BouwheerRequest extends BaseRequest {
   @Size(max = 20)
   private String zipcode;
 
-  @Size(min = 0, max = 5, message = "Area Must be between 0 and 100 characters")
+  @Size(min = 0, max = 5, message = "Area Must be between 0 and 5 characters")
   private String area;
 
   @Pattern(regexp = "^[\\d\\-\\s]+$", message = "Phone number must contain only digits, hyphens, or spaces")
@@ -56,10 +56,13 @@ public class BouwheerRequest extends BaseRequest {
 
   @NotNull(message = "PIC Name is required")
   @NotBlank(message = "PIC Name cannot be empty")
-  @Size(min = 3, max = 100, message = "Must be between 0 and 100 characters")
+  @Size(min = 3, max = 100, message = "Must be between 3 and 100 characters")
   private String picName;
 
-  @Pattern(regexp = "^[A-Za-z0-9+_.-]+@[A-Za-z.]{2,6}$", message = "Invalid email format")
+  @Pattern(
+    regexp = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$",
+    message = "Invalid email format"
+  )
   private String picEmail;
 
   @Pattern(regexp = "^[\\d\\-\\s]+$", message = "Mobile phone must contain only digits, hyphens, or spaces")
