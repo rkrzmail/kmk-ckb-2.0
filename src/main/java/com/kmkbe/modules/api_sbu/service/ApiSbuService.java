@@ -189,8 +189,8 @@ public class ApiSbuService {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "App Name" + request.getAppName());
     }
 
-    String apiKey = CommonUtils.generateUUIDString();
-    String appSecret = CommonUtils.generateAESKeyString();
+    String apiKey =CommonUtils.generateAESKeyString();
+    String appSecret = CommonUtils.generateUUIDString();
 
     var apiSbu = apiSbuRepository.save(ApiSbu.builder()
       .bouwheerCode(UUID.fromString(request.getBouwheerCode()))
