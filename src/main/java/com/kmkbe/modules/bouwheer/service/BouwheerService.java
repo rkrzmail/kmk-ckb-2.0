@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -33,11 +34,9 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class BouwheerService {
-  private final Authentication authentication;
   private final BouwheerRepository bouwheerRepository;
 
-  public BouwheerService(Authentication authentication, BouwheerRepository bouwheerRepository) {
-    this.authentication = authentication;
+  public BouwheerService(BouwheerRepository bouwheerRepository) {
     this.bouwheerRepository = bouwheerRepository;
   }
 
@@ -102,6 +101,7 @@ public class BouwheerService {
    * @return
    */
   public BaseResponse create(BouwheerRequest request) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findFirstByBouwheerName(request.getBouwheerName().toUpperCase());
     if (bouwheerOptional.isPresent()) {
       log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getBouwheerName());
@@ -144,6 +144,7 @@ public class BouwheerService {
    * @return
    */
   public BaseResponse update(String id, BouwheerRequest request) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(id));
     if (bouwheerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getBouwheerName());

@@ -1,9 +1,7 @@
 package com.kmkbe.modules.branch_admin.controller;
 
 import com.kmkbe.core.domain.dto.AssignmentDto;
-import com.kmkbe.core.domain.dto.PostedInvoiceDto;
 import com.kmkbe.core.domain.dto.SimulationHistDto;
-import com.kmkbe.core.domain.entity.SimulationHist;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -24,38 +22,39 @@ import java.security.SignatureException;
 @RestController
 @RequestMapping("/api/v1/assignment-submission")
 @Tag(
-        name = "Penyerahan Tugas Pengajuan Kredit API",
-        description = "Berisi endpoints data Penyerahan Tugas Pengajuan Kredit API"
+  name = "Penyerahan Tugas Pengajuan Kredit API",
+  description = "Berisi endpoints data Penyerahan Tugas Pengajuan Kredit API"
 )
-@RequiredArgsConstructor
 public class AssignmentSubmissionController {
-    private final AssignmentSubmissionService assignmentSubmissionService;
+  private final AssignmentSubmissionService assignmentSubmissionService;
 
-    @GetMapping("/list")
-    public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
-            HttpServletRequest httpServletRequest,
-            Authentication authentication,
-            PaginationRequest request
-    ) throws SignatureException {
-        return new CommonResult<PaginationResult<AssignmentDto>>()
-                .success(
-                        assignmentSubmissionService.assignmentList(
-                                httpServletRequest,
-                                authentication,
-                                request
-                        )
-                );
-    }
+  public AssignmentSubmissionController(AssignmentSubmissionService assignmentSubmissionService) {
+    this.assignmentSubmissionService = assignmentSubmissionService;
+  }
 
-    @GetMapping("/toc/list/{financingHdrCode}")
-    public CommonResult<PaginationResult<SimulationHistDto>> getTocList(
-            @PathVariable String financingHdrCode,
-            PaginationRequest request
-    ) {
-        return new CommonResult<PaginationResult<SimulationHistDto>>()
-                .success(
-                        assignmentSubmissionService.tocList(financingHdrCode, request)
-                );
-    }
+  @GetMapping("/list")
+  public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
+    HttpServletRequest httpServletRequest,
+    PaginationRequest request
+  ) throws SignatureException {
+    return new CommonResult<PaginationResult<AssignmentDto>>()
+      .success(
+        assignmentSubmissionService.assignmentList(
+          httpServletRequest,
+          request
+        )
+      );
+  }
+
+  @GetMapping("/toc/list/{financingHdrCode}")
+  public CommonResult<PaginationResult<SimulationHistDto>> getTocList(
+    @PathVariable String financingHdrCode,
+    PaginationRequest request
+  ) {
+    return new CommonResult<PaginationResult<SimulationHistDto>>()
+      .success(
+        assignmentSubmissionService.tocList(financingHdrCode, request)
+      );
+  }
 
 }

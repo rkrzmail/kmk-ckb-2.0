@@ -38,14 +38,12 @@ public class SignerController {
     @GetMapping("/list")
     public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
             HttpServletRequest httpServletRequest,
-            Authentication authentication,
             PaginationRequest request
     ) throws SignatureException {
         return new CommonResult<PaginationResult<AssignmentDto>>()
                 .success(
                         signerService.assignmentListGroupByCustomer(
                                 httpServletRequest,
-                                authentication,
                                 request
                         )
                 );
@@ -96,11 +94,10 @@ public class SignerController {
     public CommonResult<PersonDto> getSigners(
             @PathVariable String financingHdrCode,
             @PathVariable String agreementCode,
-            HttpServletRequest httpServletRequest,
-            Authentication authentication
+            HttpServletRequest httpServletRequest
     ) throws SignatureException{
         PaginationResult<AssignmentDto> originalResult =
-                assignmentSubmissionService.assignmentList(httpServletRequest, authentication, new PaginationRequest());
+                assignmentSubmissionService.assignmentList(httpServletRequest,new PaginationRequest());
 
         List<AssignmentDto> originalList = originalResult.getList();
         PersonDto allSigners = signerService.getSignersForGroup(financingHdrCode, originalList);
