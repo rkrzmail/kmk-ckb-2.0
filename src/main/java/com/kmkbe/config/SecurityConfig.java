@@ -184,11 +184,11 @@ public class SecurityConfig {
     return new NimbusJwtEncoder(jwks);
   }
 
-  @Bean
-  @RequestScope(proxyMode = ScopedProxyMode.INTERFACES)
-  public Authentication currentAuthentication() {
-    return SecurityContextHolder.getContext().getAuthentication();
-  }
+//  @Bean
+//  @RequestScope(proxyMode = ScopedProxyMode.INTERFACES)
+//  public Authentication currentAuthentication() {
+//    return SecurityContextHolder.getContext().getAuthentication();
+//  }
 
   @Bean
   SecurityContextLogoutHandler logoutHandler() {

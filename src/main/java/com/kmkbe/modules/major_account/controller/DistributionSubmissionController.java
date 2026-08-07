@@ -24,45 +24,45 @@ import java.security.SignatureException;
 @RestController
 @RequestMapping("/api/v1/distribution-submission")
 @Tag(
-        name = "Distribusi Pengajuan Kredit API",
-        description = "Berisi endpoints data Distribusi Pengajuan Kredit"
+  name = "Distribusi Pengajuan Kredit API",
+  description = "Berisi endpoints data Distribusi Pengajuan Kredit"
 )
 @RequiredArgsConstructor
 public class DistributionSubmissionController {
-    private final InvoiceService invoiceService;
-    private final FinancingHdrService financingHdrService;
-    private final DistributionSubmissionService distributionSubmissionService;
+  private final InvoiceService invoiceService;
+  private final FinancingHdrService financingHdrService;
+  private final DistributionSubmissionService distributionSubmissionService;
 
-    @GetMapping("/list")
-    public CommonResult<PaginationResult<DistributionSubmissionDto>> getDistributionList(
-            Authentication authentication, PaginationRequest request
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-        return new CommonResult<PaginationResult<DistributionSubmissionDto>>().success(
-                distributionSubmissionService.submissionDistribution(request)
-        );
-    }
+  @GetMapping("/list")
+  public CommonResult<PaginationResult<DistributionSubmissionDto>> getDistributionList(
+    Authentication authentication, PaginationRequest request
+  ) throws SignatureException {
+    UserInternalUtils.authenticated(authentication);
+    return new CommonResult<PaginationResult<DistributionSubmissionDto>>().success(
+      distributionSubmissionService.submissionDistribution(request)
+    );
+  }
 
-    @GetMapping("/detail/{financingHdrCode}/invoices")
-    public CommonResult<PaginationResult<PostedInvoiceDto>> getDetailInvoiceDistributionList(
-            @PathVariable String financingHdrCode,
-            Authentication authentication, PaginationRequest request
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-        return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
-                invoiceService.invoiceSubmissionByFinancingHdr(
-                        financingHdrService.findByCode(financingHdrCode),
-                        request
-                )
-        );
-    }
+  @GetMapping("/detail/{financingHdrCode}/invoices")
+  public CommonResult<PaginationResult<PostedInvoiceDto>> getDetailInvoiceDistributionList(
+    @PathVariable String financingHdrCode,
+    Authentication authentication, PaginationRequest request
+  ) throws SignatureException {
+    UserInternalUtils.authenticated(authentication);
+    return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
+      invoiceService.invoiceSubmissionByFinancingHdr(
+        financingHdrService.findByCode(financingHdrCode),
+        request
+      )
+    );
+  }
 
-    @PutMapping("/assign")
-    public CommonResult<Object> createAssign(
-            Authentication authentication,
-            @Valid @RequestBody AssignInvoiceToBranchRequest request
-    ) throws SignatureException {
-        distributionSubmissionService.assignSubmission(authentication, request);
-        return new CommonResult<>().success(null);
-    }
+  @PutMapping("/assign")
+  public CommonResult<Object> createAssign(
+    Authentication authentication,
+    @Valid @RequestBody AssignInvoiceToBranchRequest request
+  ) throws SignatureException {
+    distributionSubmissionService.assignSubmission(authentication, request);
+    return new CommonResult<>().success(null);
+  }
 }

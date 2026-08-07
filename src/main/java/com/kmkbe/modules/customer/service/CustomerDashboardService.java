@@ -19,6 +19,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -28,7 +29,6 @@ import java.util.*;
 @Service
 @Slf4j
 public class CustomerDashboardService {
-  private final Authentication authentication;
   private final FinancingHdrService financingHdrService;
   private final CwrRepository cwrRepository;
   private final EntityManager entityManager;
@@ -37,15 +37,13 @@ public class CustomerDashboardService {
   private final AgreementFileSigningRepository agreementFileSigningRepository;
   private final FinancingHdrRepository financingHdrRepository;
 
-  public CustomerDashboardService(Authentication authentication,
-                                  FinancingHdrService financingHdrService,
+  public CustomerDashboardService(FinancingHdrService financingHdrService,
                                   CwrRepository cwrRepository,
                                   EntityManager entityManager,
                                   AgreementRepository agreementRepository,
                                   NotifDebtorRepository notifDebtorRepository,
                                   AgreementFileSigningRepository agreementFileSigningRepository,
                                   FinancingHdrRepository financingHdrRepository) {
-    this.authentication = authentication;
     this.financingHdrService = financingHdrService;
     this.cwrRepository = cwrRepository;
     this.entityManager = entityManager;
@@ -61,6 +59,7 @@ public class CustomerDashboardService {
    * @throws SignatureException
    */
   public BaseResponseBuilder<CustomerPlafondDto> plafond() throws SignatureException {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     Customer customer = CustomerUtils.authenticateCustomer(authentication);
     Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer);
     if (financingHdrOptional.isEmpty()) {
@@ -147,6 +146,7 @@ public class CustomerDashboardService {
    * @throws SignatureException
    */
   public BaseResponseBuilder<CustomerDashboardDto> mainDashboard() throws SignatureException {
+     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
      Customer authenticatedCustomer = CustomerUtils.authenticateCustomer(authentication);
       Optional<Cwr> lastOptional = cwrRepository.findTopByCustomerOrderByDtmUpdDescUsrCrtDesc(authenticatedCustomer);
       if (lastOptional.isEmpty()) {

@@ -26,6 +26,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -42,15 +43,12 @@ import java.util.UUID;
 @Slf4j
 @Service
 public class ApiSbuService {
-  private final Authentication authentication;
   private final ApiSbuRepository apiSbuRepository;
   private final BouwheerRepository bouwheerRepository;
   private final JwtGeneratorService jwtGeneratorService;
 
-  public ApiSbuService(Authentication authentication,
-                       ApiSbuRepository apiSbuRepository,
+  public ApiSbuService(ApiSbuRepository apiSbuRepository,
                        BouwheerRepository bouwheerRepository, JwtGeneratorService jwtGeneratorService) {
-    this.authentication = authentication;
     this.apiSbuRepository = apiSbuRepository;
     this.bouwheerRepository = bouwheerRepository;
     this.jwtGeneratorService = jwtGeneratorService;
@@ -171,6 +169,7 @@ public class ApiSbuService {
    * @return
    */
   public BaseResponseBuilder<ApiSbuResponse> create(ApiSbuRequest request) {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     /**
      * Find Bouwheer Code
      */
