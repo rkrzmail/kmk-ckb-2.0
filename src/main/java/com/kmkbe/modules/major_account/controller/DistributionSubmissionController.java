@@ -29,37 +29,37 @@ import java.security.SignatureException;
 )
 @RequiredArgsConstructor
 public class DistributionSubmissionController {
-    private final InvoiceService invoiceService;
-    private final FinancingHdrService financingHdrService;
-    private final DistributionSubmissionService distributionSubmissionService;
-    private final CurrentUserService currentUserService;
+  private final InvoiceService invoiceService;
+  private final FinancingHdrService financingHdrService;
+  private final DistributionSubmissionService distributionSubmissionService;
+  private final CurrentUserService currentUserService;
 
-    @GetMapping("/list")
-    public CommonResult<PaginationResult<DistributionSubmissionDto>> getDistributionList(
-            PaginationRequest request
-    ) throws SignatureException {
-        currentUserService.authenticatedInternalUser();
-        return new CommonResult<PaginationResult<DistributionSubmissionDto>>().success(
-                distributionSubmissionService.submissionDistribution(request)
-        );
-    }
+  @GetMapping("/list")
+  public CommonResult<PaginationResult<DistributionSubmissionDto>> getDistributionList(
+    PaginationRequest request
+  ) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<PaginationResult<DistributionSubmissionDto>>().success(
+      distributionSubmissionService.submissionDistribution(request)
+    );
+  }
 
-    @GetMapping("/detail/{financingHdrCode}/invoices")
-    public CommonResult<PaginationResult<PostedInvoiceDto>> getDetailInvoiceDistributionList(
-            @PathVariable String financingHdrCode,
-            PaginationRequest request
-    ) throws SignatureException {
-        currentUserService.authenticatedInternalUser();
-        return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
-                invoiceService.invoiceSubmissionByFinancingHdr(
-                        financingHdrService.findByCode(financingHdrCode),
-                        request
-                )
-        );
-    }
+  @GetMapping("/detail/{financingHdrCode}/invoices")
+  public CommonResult<PaginationResult<PostedInvoiceDto>> getDetailInvoiceDistributionList(
+    @PathVariable String financingHdrCode,
+    PaginationRequest request
+  ) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
+      invoiceService.invoiceSubmissionByFinancingHdr(
+        financingHdrService.findByCode(financingHdrCode),
+        request
+      )
+    );
+  }
 
   @PutMapping("/assign")
   public BaseResponse createAssign(@Valid @RequestBody AssignInvoiceToBranchRequest request) throws SignatureException {
-    return distributionSubmissionService.assignSubmission(currentUserService.internalUser(), request);
+    return distributionSubmissionService.assignSubmission(request);
   }
 }
