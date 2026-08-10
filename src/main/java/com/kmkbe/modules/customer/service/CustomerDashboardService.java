@@ -171,7 +171,7 @@ public class CustomerDashboardService {
   }
 
 
-  public CustomerDashboardDto.Agreement agreementDashboard(Authentication authentication) throws SignatureException {
+  public CustomerDashboardDto.Agreement agreementDashboard() throws SignatureException {
     try {
 
       return new CustomerDashboardDto.Agreement();

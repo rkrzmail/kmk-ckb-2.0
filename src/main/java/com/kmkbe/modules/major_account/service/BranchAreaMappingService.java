@@ -2,8 +2,6 @@ package com.kmkbe.modules.major_account.service;
 
 import com.kmkbe.core.domain.dto.BranchAreaMappingDto;
 import com.kmkbe.core.domain.entity.BranchAreaMapping;
-import com.kmkbe.core.domain.entity.Product;
-import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.BranchAreaMappingRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -20,11 +18,9 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
@@ -80,7 +76,6 @@ public class BranchAreaMappingService {
 
     @Transactional
     public PaginationResult<BranchAreaMappingDto> updateBranch(   HttpServletRequest httpServletRequest,
-                                                                  Authentication authentication,
                                                                   MultipartFile file){
 
         branchAreaMappingRepository.deleteAll();
@@ -176,7 +171,8 @@ public class BranchAreaMappingService {
             throw e;
         }
     }
-    public CommonResult<Object> updateBranch(
+
+    /*public CommonResult<Object> updateBranch(
             HttpServletRequest request,
             MultipartFile file
     ) throws IOException {
@@ -207,7 +203,7 @@ public class BranchAreaMappingService {
             log.error("placementBranch: error {}", e.getMessage());
             throw e;
         }
-    }
+    }*/
 
     public boolean getAsBoolean(Row row, int column) {
         return Boolean.valueOf(String.valueOf(get(row, column))) ;

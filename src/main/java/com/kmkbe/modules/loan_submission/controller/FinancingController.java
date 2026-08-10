@@ -1,24 +1,22 @@
 package com.kmkbe.modules.loan_submission.controller;
 
 import com.kmkbe.core.domain.dto.DisburseInvoiceDto;
-import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.PaidInvoiceDto;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.exception.IllegalApiKeyException;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.loan_submission.service.FinancingDtlService;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.FinancingService;
 import com.kmkbe.modules.loan_submission.service.InquiryDisburseService;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -37,11 +35,11 @@ public class FinancingController {
   private final FinancingService financingService;
   private final FinancingDtlService financingDtlService;
   private final InquiryDisburseService inquiryDisburseService;
+  private final CurrentUserService currentUserService;
 
   @PostMapping("/invoice-paid")
   public CommonResult<Object>
   invoicePaid(
-    Authentication authentication,
     HttpServletRequest httpServletRequest,
     @Valid @RequestBody FinancingInvoicePaidRequest request
   ) throws Exception {
@@ -52,7 +50,6 @@ public class FinancingController {
       }
 
       FinancingHdr financingHdr = financingHdrService.paidFinancing(
-        authentication,
         request,
         providedApiKey
       );
@@ -74,9 +71,9 @@ public class FinancingController {
 
   @GetMapping("/invoices/paid")
   public CommonResult<PaginationResult<PaidInvoiceDto>> getInvoicePaid2(
-    Authentication authentication, PaginationRequest request
+    PaginationRequest request
   ) throws SignatureException {
-    UserInternalUtils.authenticated(authentication);
+    currentUserService.authenticatedInternalUser();
     return new CommonResult<PaginationResult<PaidInvoiceDto>>().success(
       financingHdrService.listPaidUnpaidInvoice(request)
     );
@@ -84,9 +81,9 @@ public class FinancingController {
 
   @GetMapping("/invoices/paid/x")
   public CommonResult<PaginationResult<PaidInvoiceDto>> getInvoicePaid(
-    Authentication authentication, PaginationRequest request
+    PaginationRequest request
   ) throws SignatureException {
-    UserInternalUtils.authenticated(authentication);
+    currentUserService.authenticatedInternalUser();
     return new CommonResult<PaginationResult<PaidInvoiceDto>>().success(
       financingHdrService.paidInvoiceNew(request)
     );
@@ -94,9 +91,9 @@ public class FinancingController {
 
   @GetMapping("/invoices/disbursement")
   public CommonResult<PaginationResult<DisburseInvoiceDto>> getDisbursement(
-    Authentication authentication, PaginationRequest request
+    PaginationRequest request
   ) throws SignatureException {
-    UserInternalUtils.authenticated(authentication);
+    currentUserService.authenticatedInternalUser();
     return new CommonResult<PaginationResult<DisburseInvoiceDto>>().success(
       financingHdrService.listdisburseAggrement(request)
     );

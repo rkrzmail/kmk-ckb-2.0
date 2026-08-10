@@ -3,6 +3,7 @@ package com.kmkbe.core.callback;
 import com.kmkbe.core.domain.entity.ErrorLog;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.ErrorLogRepository;
+import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.utils.ExceptionUtils;
 import com.kmkbe.core.utils.ObjectUtils;
@@ -35,6 +36,19 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ExceptionAdvice {
   private final ErrorLogRepository errorLogRepository;
+
+  @ExceptionHandler(CommonInvalidException.class)
+  public ResponseEntity<CommonResult<Object>> handleCommonInvalid(
+    CommonInvalidException exception
+  ) {
+    CommonResult<Object> result = new CommonResult<>();
+    result.setSuccess(false);
+    result.setCode(HttpStatus.BAD_REQUEST.value());
+    result.setMessage(exception.getHeaderMessage());
+    result.setData(exception.getPayload());
+
+    return new ResponseEntity<>(result, null, HttpStatus.BAD_REQUEST);
+  }
 
   @ExceptionHandler(Exception.class)
   public ResponseEntity<CommonResult<Object>> handle(

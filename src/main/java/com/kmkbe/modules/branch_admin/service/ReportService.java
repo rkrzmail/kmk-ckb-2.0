@@ -998,7 +998,7 @@ public class ReportService {
             String agreementCode,
             String branchManager,
             String areaSalesManager,
-            Authentication authentication) {
+            String username) {
 
         try {
 
@@ -1016,8 +1016,6 @@ public class ReportService {
             }
 
             byte[] pdfBytes = generateReport(financingHdrCode, agreementCode, branchManager, areaSalesManager);
-
-            String username = authentication != null ? authentication.getName() : "SYSTEM";
 
             ExternalSigningRequest request = prepareSigningRequest(
                     financingHdrCode,
