@@ -291,7 +291,6 @@ public class InvoiceService {
     }
 
     public PaginationResult<PostedInvoiceDto> customerActiveInvoices(
-            Authentication authentication,
             PaginationRequest request
     ) {
         try {

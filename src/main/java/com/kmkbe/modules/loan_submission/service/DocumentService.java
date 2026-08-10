@@ -14,7 +14,6 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
-import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.nikita.utils.SpecPagination;
 import io.netty.util.internal.StringUtil;
@@ -30,7 +29,6 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -53,10 +51,9 @@ public class DocumentService {
     private final FinancingHdrRepository financingHdrRepository;
 
     public List<DocumentTemplateFinancingDto> fetchDocumentTemplateFinancing(
-            Authentication authentication
+            Customer customer
     ) throws Exception {
         try {
-            Customer customer = CustomerUtils.authenticateCustomer(authentication);
             return Arrays.asList(
                     DocumentTemplateFinancingDto.builder()
                             .fileName("Surat Instruksi Transfer (SI)")
@@ -214,7 +211,7 @@ public class DocumentService {
 
 public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
         HttpServletRequest httpServletRequest,
-        Authentication authentication,
+        Customer customer,
         PaginationRequest request,
         Boolean isFirst
 ) throws SignatureException {
@@ -239,7 +236,7 @@ public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
                     LegalFile legalFile = null;
 
                     try {
-                        legalFile = legalFileService.fetchByMstFileTypeAndCust(CustomerUtils.authenticateCustomer(authentication), file);
+                        legalFile = legalFileService.fetchByMstFileTypeAndCust(customer, file);
                     } catch (Exception e) {
                         log.error("fetchByCust, error {}", e.getMessage());
                     }
@@ -299,17 +296,16 @@ public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
     @Transactional
     public LegalFileDto uploadLoanDocument(
             HttpServletRequest httpServletRequest,
-            Authentication authentication,
+            Customer customer,
             MultipartFile file,
             String fileTypeCode
     ) throws Exception {
         String code = null;
         try {
-            final Customer customer = CustomerUtils.authenticateCustomer(authentication);
             final MstFileType mstFileType = mstFileTypeRepository.findByFileTypeCode(fileTypeCode).orElseThrow(
                     () -> new IllegalStateException("File type not found")
             );
-            final LegalFile existingFile = legalFileService.fetchByMstFileTypeAndCust(CustomerUtils.authenticateCustomer(authentication), mstFileType);
+            final LegalFile existingFile = legalFileService.fetchByMstFileTypeAndCust(customer, mstFileType);
             code = customer.getCustName();
 
            /* String requireExt = FileUtils.getFileNameExtension(mstFileType.getFileTypeName());
@@ -420,8 +416,7 @@ public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
         }
     }
 
-    private void fetchAndMappingDocVendor(Authentication authentication) throws SignatureException {
-        final Customer customer = CustomerUtils.authenticateCustomer(authentication);
+    private void fetchAndMappingDocVendor(Customer customer) throws SignatureException {
         InquiryVendorRemoteDto inquiryVendorRemote = null;
         try {
             inquiryVendorRemote = customerRemoteService
@@ -965,7 +960,6 @@ public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
 
     public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentDebitur(
             HttpServletRequest httpServletRequest,
-            Authentication authentication,
             PaginationRequest request,
             Boolean isFirst,
             String custCode,

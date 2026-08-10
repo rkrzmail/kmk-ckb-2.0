@@ -10,7 +10,6 @@ import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
-import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.nikita.utils.Utils;
@@ -19,7 +18,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -40,7 +38,7 @@ public class CustomerDashboardListService {
     private final AgreementRepository agreementRepository;
 
     public PaginationResult<CustomerCreditFacilityNewDto> listcreditfacilities(
-            Authentication authentication,
+            Customer customer,
             PaginationRequest request
     ) throws SignatureException {
         try {
@@ -57,8 +55,6 @@ public class CustomerDashboardListService {
             if (pageNo > 0) {
                 pageNo = pageNo - 1;
             }
-
-            Customer customer = CustomerUtils.authenticateCustomer(authentication);
 
             final Page<FinancingHdr> paginationFinancing = financingHdrRepository.findAllByRawOrder(
                     customer.getCustCode().toString(), PageRequest.of(pageNo, pageSize)
@@ -190,7 +186,7 @@ public class CustomerDashboardListService {
 
 
     public PaginationResult<CustomerCreditFacilityDueDateDto> listinvoicesduedate(
-            Authentication authentication,
+            Customer customer,
             PaginationRequest request
     ) throws SignatureException {
         /*
@@ -213,8 +209,6 @@ public class CustomerDashboardListService {
             if (pageNo > 0) {
                 pageNo = pageNo - 1;
             }
-
-            Customer customer = CustomerUtils.authenticateCustomer(authentication);
 
             final Page<FinancingDtl> financingDtls =   financingDtlRepository.findByCustomer(customer.getCustCode().toString(),PageRequest.of(pageNo, pageSize) );
 

@@ -23,7 +23,6 @@ import com.kmkbe.modules.customer.model.request.ForgotPinRequest;
 import com.kmkbe.modules.customer.model.request.LoginRequest;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.modules.common.service.refresh_token.IRefreshTokenServices;
-import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.nikita.utils.Utils;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
@@ -172,13 +171,12 @@ public class AuthService {
   }
 
   @Transactional
-  public String logout(Authentication authentication) throws SignatureException {
+  public String logout(Customer cust) throws SignatureException {
     try {
-      if (authentication == null) {
+      if (cust == null) {
         throw new IllegalStateException("User has logged out");
       }
 
-      final Customer cust = CustomerUtils.authenticateCustomer(authentication);
       loginLogService.logout(cust);
 
       return "Logout Successfully";

@@ -15,7 +15,6 @@ import com.kmkbe.modules.user.entity.MstAppRoleFormUser;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
@@ -29,7 +28,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.HttpServerErrorException;
@@ -101,11 +99,7 @@ public class SignerService {
       .build();
   }
 
-  public List<DebtorDto> signerPersonList(String financingHdrCode, Authentication authentication) {
-    String username = authentication != null ?
-      authentication.getName() :
-      "SYSTEM";
-
+  public List<DebtorDto> signerPersonList(String financingHdrCode, String username) {
     String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
 
     List<Debtor> debtors = debtorRepository.findByDebtorName(debtorName);
@@ -337,16 +331,12 @@ public class SignerService {
   }
 
   @Transactional
-  public DebtorDto createDebtor(DebtorDto debtorDto, Authentication authentication) {
+  public DebtorDto createDebtor(DebtorDto debtorDto, String username) {
     try {
 
       if (debtorRepository.existsByIdentityNo(debtorDto.getIdentityNo())) {
         throw new RuntimeException("NIK yang digunakan sudah terdaftar");
       }
-
-      String username = authentication != null ?
-        authentication.getName() :
-        "SYSTEM";
 
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
@@ -745,10 +735,8 @@ public class SignerService {
     return result;
   }
 
-  public ResponseEntity<ApiResponse<?>> downloadDocument(String documentId, Authentication authentication) {
+  public ResponseEntity<ApiResponse<?>> downloadDocument(String documentId, String username) {
     try {
-      String username = authentication != null ? authentication.getName() : "SYSTEM";
-
       if (documentId == null || documentId.trim().isEmpty()) {
         return ResponseEntity.badRequest()
           .body(new ApiResponse<>(false, "DocumentId is required", null, null, null));
@@ -833,7 +821,7 @@ public class SignerService {
   }
 
   @Transactional
-  public List<SignerDocDto> signerDocList(String financingHdrCode, Authentication authentication) {
+  public List<SignerDocDto> signerDocList(String financingHdrCode, String username) {
     try {
       UUID financingHdrUuid = UUID.fromString(financingHdrCode);
       List<Agreement> agreements = agreementRepository.findByFinancingHdr_FinancingHdrCode(financingHdrUuid);
@@ -842,7 +830,6 @@ public class SignerService {
         return Collections.emptyList();
       }
 
-      String username = authentication != null ? authentication.getName() : "SYSTEM";
       FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrUuid)
         .orElseThrow(() -> new EntityNotFoundException("Financing header not found"));
 
@@ -1020,9 +1007,7 @@ public class SignerService {
       });
   }
 
-  public List<DebtorDto> checkSignerDanasakti(String financingHdrCode, Authentication authentication) {
-    String username = authentication != null ? authentication.getName() : "SYSTEM";
-
+  public List<DebtorDto> checkSignerDanasakti(String financingHdrCode, String username) {
     String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
 
     if (debtorName == null) {

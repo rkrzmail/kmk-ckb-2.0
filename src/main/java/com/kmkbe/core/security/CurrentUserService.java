@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
+import java.util.Optional;
 
 @Service
 public class CurrentUserService {
@@ -31,8 +32,26 @@ public class CurrentUserService {
         throw new SignatureException("You are not authorized to access this resource");
     }
 
+    public Customer customerOrNull() throws SignatureException {
+        Optional<Authentication> authentication = optionalAuthentication();
+        if (authentication.isPresent() && authentication.get().getPrincipal() instanceof Customer customer) {
+            return customer;
+        }
+
+        return null;
+    }
+
     public void authenticatedInternalUser() throws SignatureException {
         internalUser();
+    }
+
+    public String internalUsername() throws SignatureException {
+        String username = internalUser().getUsername();
+        if (username == null || username.isBlank()) {
+            return "SYSTEM";
+        }
+
+        return username;
     }
 
     private Authentication authentication() throws SignatureException {
@@ -42,5 +61,14 @@ public class CurrentUserService {
         }
 
         return authentication;
+    }
+
+    private Optional<Authentication> optionalAuthentication() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+            return Optional.empty();
+        }
+
+        return Optional.of(authentication);
     }
 }

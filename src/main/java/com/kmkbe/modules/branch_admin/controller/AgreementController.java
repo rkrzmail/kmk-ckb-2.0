@@ -13,6 +13,7 @@ import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
 import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
@@ -22,13 +23,11 @@ import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -53,16 +52,16 @@ public class AgreementController {
     private final EmailService emailService;
     private final CustomerCompanyRepository customerCompanyRepository;
     private final CustomerPersonalRepository customerPersonalRepository;
+    private final CurrentUserService currentUserService;
 
     @GetMapping("/list/{cwrCode}/{financingHdrCode}")
     public CommonResult<PaginationResult<AgreementDto>> getCwrDisbursement(
             @PathVariable("cwrCode") String cwrCode,
             @PathVariable("financingHdrCode") String financingHdrCode,
-            Authentication authentication,
             PaginationRequest request
     ) throws JsonProcessingException, SignatureException {
 
-        UserInternalUtils.authenticated(authentication);
+        currentUserService.authenticatedInternalUser();
         return new CommonResult<PaginationResult<AgreementDto>>().success(
                 agreementService.list(
                         cwrCode,
@@ -75,10 +74,9 @@ public class AgreementController {
     @GetMapping("/inquiry")
     public CommonResult<InquiryAgreementDto> getInquiryAgreement(
             @RequestParam("agreementNo") String agreementNo,
-            Authentication authentication,
             String cwrCode
     ) throws JsonProcessingException, SignatureException {
-        UserInternalUtils.authenticated(authentication);
+        currentUserService.authenticatedInternalUser();
         return new CommonResult<InquiryAgreementDto>().success(
                 agreementService.inquiryAgreementCwr(
                         cwrCode,
@@ -89,10 +87,9 @@ public class AgreementController {
 
     @PostMapping("/inquiry/create")
     public CommonResult<Object> createInquiryAgreement(
-            Authentication authentication,
             @Valid @RequestBody CreateInquiryAgreementRequest request
     ) throws Exception {
-        agreementService.createInquiryAgreement(authentication, request);
+        agreementService.createInquiryAgreement(currentUserService.internalUser(), request);
         return new CommonResult<>().success(
                 null
         );
@@ -104,7 +101,6 @@ public class AgreementController {
             consumes = MediaType.MULTIPART_FORM_DATA_VALUE
     )
     public CommonResult<Object> uploadContact(
-            Authentication authentication,
             @Valid @RequestParam("financingHdrCode") String financingHdrCode,
             @Valid @RequestPart MultipartFile file
 
@@ -116,7 +112,7 @@ public class AgreementController {
         }
 
         agreementService.upload(
-                authentication,
+                currentUserService.internalUser(),
                 file,
                 agreement.getAgreementCode()
         );
