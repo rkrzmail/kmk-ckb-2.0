@@ -36,10 +36,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
@@ -172,15 +168,8 @@ public class SbuCkbController {
     }
 
     Customer customer = customerOptional.get();
-    List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
-    Authentication authentication = new UsernamePasswordAuthenticationToken(
-      customer,
-      null,
-      authorities
-    );
-    SecurityContextHolder.getContext().setAuthentication(authentication);
     return new CommonResult<EstimatedDisburseDto>().success(
-      loanSubmissionService.calculateDisburse(authentication, request)
+      loanSubmissionService.calculateDisburse(customer, request)
     );
   }
 
@@ -197,14 +186,7 @@ public class SbuCkbController {
     }
 
     Customer customer = customerOptional.get();
-    List<SimpleGrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"));
-    Authentication authentication = new UsernamePasswordAuthenticationToken(
-      customer,
-      null,
-      authorities
-    );
-    SecurityContextHolder.getContext().setAuthentication(authentication);
-    var result = loanSubmissionService.createSimulation(authentication, request);
+    var result = loanSubmissionService.createSimulation(customer, request);
     return new CommonResult<CreatedSimulationDto>().success(
       result
     );

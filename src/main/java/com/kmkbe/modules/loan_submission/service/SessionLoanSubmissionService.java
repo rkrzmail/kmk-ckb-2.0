@@ -4,13 +4,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.customer.model.entity.Customer;
-import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.core.domain.dto.LoanSubmissionSessionDto;
 import com.kmkbe.nikita.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
@@ -55,12 +53,11 @@ public class SessionLoanSubmissionService {
     }
 
     public LoanSubmissionSessionDto create(
-            Authentication authentication,
+            Customer customer,
             int lastStep,
             Object jsonSession
     ) throws SignatureException, JsonProcessingException {
         try {
-            Customer customer = CustomerUtils.authenticateCustomer(authentication);
             Optional<LoanSubmissionSessionDto> find = findLastByCust(customer);
 
             final LoanSubmissionSessionDto result;

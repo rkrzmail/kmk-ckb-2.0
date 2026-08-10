@@ -15,7 +15,6 @@ import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -42,10 +41,7 @@ public class CsulSignerService {
         jwtToken = authRemoteService.fetchAuthJwt().getData();
     }
 
-    public List<SignerCsulDto> signerCsulList(Authentication authentication) {
-
-        String username = authentication.getName();
-
+    public List<SignerCsulDto> signerCsulList(String username) {
         List<CsulSigner> entities = csulSignerRepository.findByUsrCrt(username);
         return entities.stream()
                 .map(e -> SignerCsulDto.builder()
@@ -141,17 +137,13 @@ public class CsulSignerService {
     }
 
     @Transactional
-    public SignerCsulRequest createSigner(SignerCsulRequest request, Authentication authentication) {
+    public SignerCsulRequest createSigner(SignerCsulRequest request, String username) {
         try{
             if (csulSignerRepository.existsByIdentityNo(request.getIdentityNo())) {
             throw new RuntimeException("NIK sudah terdaftar");
             } else if (csulSignerRepository.existsByKaryawanName(request.getKaryawanName())) {
                 throw new RuntimeException("Signer sudah di daftarkan");
             }
-
-            String username = authentication != null ?
-                    authentication.getName() :
-                    "SYSTEM";
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -264,7 +256,7 @@ public class CsulSignerService {
     }
 
     @Transactional
-    public SignerCsulRequest updateSigner(Long id, SignerCsulRequest request, Authentication authentication) {
+    public SignerCsulRequest updateSigner(Long id, SignerCsulRequest request, String username) {
         try {
             CsulSigner entity = csulSignerRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Signer dengan ID " + id + " tidak ditemukan"));
@@ -278,8 +270,6 @@ public class CsulSignerService {
 //                    && !request.getKaryawanName().equals(entity.getKaryawanName())) {
 //                throw new RuntimeException("Signer sudah di daftarkan");
 //            }
-
-            String username = authentication != null ? authentication.getName() : "SYSTEM";
 
             HttpHeaders headers = new HttpHeaders();
             headers.setContentType(MediaType.APPLICATION_JSON);
@@ -368,11 +358,9 @@ public class CsulSignerService {
     }
 
     @Transactional
-    public String updateSignerStatus(String identityNo, Authentication authentication) {
+    public String updateSignerStatus(String identityNo, String username) {
         CsulSigner signer = csulSignerRepository.findByIdentityNo(identityNo)
                 .orElseThrow(() -> new RuntimeException("Signer dengan identityNo " + identityNo + " tidak ditemukan"));
-
-        String username = authentication != null ? authentication.getName() : "SYSTEM";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

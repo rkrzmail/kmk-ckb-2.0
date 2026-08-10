@@ -20,12 +20,10 @@ import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -214,7 +212,7 @@ public class CwrService {
     }
 
     public void createInquiryCwr(
-            Authentication authentication,
+            MstUser user,
             CreateInquiryCwrRequest request
     ) throws JsonProcessingException, SignatureException, ParseException {
         try {
@@ -235,8 +233,6 @@ public class CwrService {
                         .build();
             }
 
-
-            final MstUser user = UserInternalUtils.authenticateUser(authentication);
             final FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(request.getFinancingHdrCode()))
                     .orElseThrow(() -> new IllegalStateException("Financing not found or not valid"));
 

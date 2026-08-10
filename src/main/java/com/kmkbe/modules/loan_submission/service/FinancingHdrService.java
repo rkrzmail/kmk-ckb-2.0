@@ -26,7 +26,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -54,7 +53,6 @@ public class FinancingHdrService {
   }
 
     public FinancingHdr create(
-            Authentication authentication,
             Customer customer,
             Bouwheer bouwheer,
             Product product,

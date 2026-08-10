@@ -41,7 +41,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -150,12 +149,11 @@ public class CustomerService {
   }
 
   public Customer update(
-    Authentication authentication,
+    Customer customer,
     UpdateCustomerRequest request
 
   ) throws SignatureException {
     try {
-      Customer customer = CustomerUtils.authenticateCustomer(authentication);
       boolean emailChanged = false;
 
       String oldEmail = customer.getCustEmail();
@@ -190,14 +188,14 @@ public class CustomerService {
     }
   }
 
-  public ProfileFapDto prolifeFAP(Authentication authentication, HttpServletRequest request) {
+  public ProfileFapDto prolifeFAP(HttpServletRequest request) {
     String financingHdrCode = request.getParameter("financingHdrCode");
 
 
     return null;
   }
 
-  public ProfileSITDto prolifeSIT(Authentication authentication, HttpServletRequest request) {
+  public ProfileSITDto prolifeSIT(HttpServletRequest request) {
     String financingHdrCode = request.getParameter("financingHdrCode");
 
     Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
@@ -319,11 +317,10 @@ public class CustomerService {
   /**
    *
    * @param request
-   * @param authentication
    * @return
    * @throws MessagingException
    */
-  public BaseResponse approval(ApprovalRequest request,Authentication authentication){
+  public BaseResponse approval(ApprovalRequest request, String username){
     Optional<Customer> customerOptional = customerRepository.findByCustCode(request.getCustCode());
     if (customerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getCustCode());
@@ -339,7 +336,7 @@ public class CustomerService {
     customer.setApprovalStatus(request.getApprovalStatus().toUpperCase().trim());
     customer.setActive(request.getApprovalStatus().equals("APPROVED"));
     customer.setApprovalNote(request.getApprovalNote());
-    customer.setApprovalBy(authentication.getName());
+    customer.setApprovalBy(username);
     customer.setApprovalAt(DateTimeUtils.now());
     customerRepository.save(customer);
 
