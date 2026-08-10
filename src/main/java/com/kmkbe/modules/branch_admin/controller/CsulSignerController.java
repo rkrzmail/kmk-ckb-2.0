@@ -4,6 +4,7 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.modules.branch_admin.service.CsulSignerService;
 import com.kmkbe.modules.branch_admin.service.SignerService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,11 +32,13 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class CsulSignerController {
     private final CsulSignerService csulSignerService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping("/list")
-    public CommonResult<List<SignerCsulDto>> getSignerCsulList(
-            Authentication authentication) {
-        List<SignerCsulDto> signerCsulList = csulSignerService.signerCsulList(authentication);
+    public CommonResult<List<SignerCsulDto>> getSignerCsulList() throws SignatureException {
+        List<SignerCsulDto> signerCsulList = csulSignerService.signerCsulList(
+                currentUserService.internalUsername()
+        );
         return new CommonResult<List<SignerCsulDto>>().success(signerCsulList);
     }
 
@@ -50,11 +52,14 @@ public class CsulSignerController {
 
     @PostMapping("/signer")
     public CommonResult<String> createSigner(
-            @RequestBody SignerCsulRequest request,
-            Authentication authentication) {
+            @RequestBody SignerCsulRequest request
+    ) {
 
         try {
-            SignerCsulRequest savedSigner = csulSignerService.createSigner(request, authentication);
+            SignerCsulRequest savedSigner = csulSignerService.createSigner(
+                    request,
+                    currentUserService.internalUsername()
+            );
             return new CommonResult<String>()
                     .success(savedSigner.getRegistrationMessage());
         } catch (Exception e) {
@@ -71,37 +76,46 @@ public class CsulSignerController {
     @PutMapping("/signer/{id}")
     public CommonResult<String> updateSigner(
             @PathVariable("id") Long id,
-            @RequestBody SignerCsulRequest request,
-            Authentication authentication) {
+            @RequestBody SignerCsulRequest request
+    ) {
         try {
-            SignerCsulRequest updated = csulSignerService.updateSigner(id, request, authentication);
+            SignerCsulRequest updated = csulSignerService.updateSigner(
+                    id,
+                    request,
+                    currentUserService.internalUsername()
+            );
             return new CommonResult<String>().success(updated.getRegistrationMessage());
-        } catch (RuntimeException e) {
+        } catch (Exception e) {
             return new CommonResult<String>().fail(400,"Gagal update: " + e.getMessage());
         }
     }
 
     @GetMapping("/get-list")
-    public CommonResult<Map<String, Object>> getSignersGrouped(Authentication authentication) {
-        String username = authentication.getName();
-        Map<String, Object> responseData = csulSignerService.getSignersGrouped(username);
+    public CommonResult<Map<String, Object>> getSignersGrouped() throws SignatureException {
+        Map<String, Object> responseData = csulSignerService.getSignersGrouped(
+                currentUserService.internalUsername()
+        );
 
         return new CommonResult<Map<String, Object>>().success(responseData);
     }
 
     @GetMapping("/get-list/sign")
-    public CommonResult<Map<String, Object>> getSignersGroupedSign(Authentication authentication) {
+    public CommonResult<Map<String, Object>> getSignersGroupedSign() throws SignatureException {
+        currentUserService.authenticatedInternalUser();
         Map<String, Object> responseData = csulSignerService.getSignersGrouped2();
         return new CommonResult<Map<String, Object>>().success(responseData);
     }
 
     @PutMapping("/check/{identityNo}")
     public CommonResult<String> updateSignerStatus(
-            @PathVariable String identityNo,
-            Authentication authentication) {
+            @PathVariable String identityNo
+    ) {
 
         try {
-            String message = csulSignerService.updateSignerStatus(identityNo, authentication);
+            String message = csulSignerService.updateSignerStatus(
+                    identityNo,
+                    currentUserService.internalUsername()
+            );
             return new CommonResult<String>().success(message);
         } catch (Exception e) {
             return new CommonResult<String>().fail(400, e.getMessage());

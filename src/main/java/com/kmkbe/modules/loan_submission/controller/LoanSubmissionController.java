@@ -6,7 +6,7 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
-import com.kmkbe.modules.customer.utils.CustomerUtils;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.modules.loan_submission.request.*;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
@@ -16,7 +16,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -37,10 +36,10 @@ public class LoanSubmissionController {
   private final LoanSubmissionService loanSubmissionService;
   private final DocumentService documentService;
   private final SessionLoanSubmissionService sessionLoanSubmissionService;
+  private final CurrentUserService currentUserService;
 
   @GetMapping
   public CommonResult<Object> getExternalIntegration(
-    Authentication authentication,
     String token
   ) throws JsonProcessingException, SignatureException {
     if (token != null && token.isEmpty()) {
@@ -49,7 +48,7 @@ public class LoanSubmissionController {
 
     return new CommonResult<>()
       .success(
-        loanSubmissionService.externalIntegrationSimulation(authentication, token)
+        loanSubmissionService.externalIntegrationSimulation(currentUserService.customerOrNull(), token)
       );
   }
 
@@ -68,11 +67,10 @@ public class LoanSubmissionController {
 
   @PostMapping("/create")
   public CommonResult<Object> submitLoanSubmission(
-    Authentication authentication,
     @Valid @RequestBody CreateLoanApplicationRequest request
   ) throws Exception {
     loanSubmissionService.createLoanSubmission(
-      authentication,
+      currentUserService.customer(),
       request
     );
 
@@ -85,14 +83,12 @@ public class LoanSubmissionController {
     String token
   ) throws Exception {
     return new CommonResult<List<PostedInvoiceDto>>().success(
-      loanSubmissionService.fetchActiveInvoice(token)
+      loanSubmissionService.fetchActiveInvoice(currentUserService.customerOrNull(), token)
     );
   }
 
   @GetMapping("/simulations/percentage")
-  public CommonResult<List<DisbursePercentageDto>> getPercentage(
-    Authentication authentication
-  ) {
+  public CommonResult<List<DisbursePercentageDto>> getPercentage() {
     return new CommonResult<List<DisbursePercentageDto>>().success(
       loanSubmissionService.fetchDisbursePercentage()
     );
@@ -100,42 +96,38 @@ public class LoanSubmissionController {
 
   @GetMapping("/simulations/calculate")
   public CommonResult<EstimatedDisburseDto> getCalculateDisburse(
-    Authentication authentication,
     CalculateSimulationRequest request
   ) throws SignatureException, JsonProcessingException, ParseException {
     return new CommonResult<EstimatedDisburseDto>().success(
-      loanSubmissionService.calculateDisburse(authentication, request)
+      loanSubmissionService.calculateDisburse(currentUserService.customerOrNull(), request)
     );
   }
 
   @GetMapping("/simulations/recalculate")
   public CommonResult<EstimatedDisburseDto> getReCalculateDisburse(
-    Authentication authentication,
     HttpServletRequest request
   ) throws Exception {
     return new CommonResult<EstimatedDisburseDto>().success(
-      loanSubmissionService.recalculateDisburse(authentication, request)
+      loanSubmissionService.recalculateDisburse(request)
     );
   }
 
 
   @GetMapping("/simulations/viewcalculate/{financeCode}/{histCode}")
   public CommonResult<FinancingHdrDto> getViewCalculateDisburse(
-    Authentication authentication,
     @PathVariable("financeCode") String financeCode,
     @PathVariable("histCode") String histCode
   ) throws SignatureException, JsonProcessingException, ParseException {
     return new CommonResult<FinancingHdrDto>().success(
-      loanSubmissionService.viewCulateDisburse(authentication, financeCode, histCode)
+      loanSubmissionService.viewCulateDisburse(financeCode, histCode)
     );
   }
 
   @GetMapping("/simulations/update")
   public CommonResult<CreatedSimulationDto> updateSimulation(
-    Authentication authentication,
     HttpServletRequest request
   ) throws Exception {
-    CreatedSimulationDto result = loanSubmissionService.updateSimulation(authentication, request);
+    CreatedSimulationDto result = loanSubmissionService.updateSimulation(request);
     if (result != null) {
       int i = 0;
     }
@@ -147,19 +139,16 @@ public class LoanSubmissionController {
 
   @PostMapping("/simulations/create")
   public CommonResult<CreatedSimulationDto> createSimulation(
-    Authentication authentication,
     @Valid @RequestBody CreateSimulationRequest request
   ) throws Exception {
-    var result = loanSubmissionService.createSimulation(authentication, request);
+    var result = loanSubmissionService.createSimulation(currentUserService.customer(), request);
     return new CommonResult<CreatedSimulationDto>().success(
       result
     );
   }
 
   @GetMapping("/simulations/history")
-  public CommonResult<SimulationHistDto> getSimulationHistory(
-    Authentication authentication
-  ) throws Exception {
+  public CommonResult<SimulationHistDto> getSimulationHistory() throws Exception {
     //loanSubmissionService.lastSimulationHistory(authentication)
     return new CommonResult<SimulationHistDto>().success(
       null
@@ -167,24 +156,21 @@ public class LoanSubmissionController {
   }
 
   @GetMapping("/session/history")
-  public CommonResult<LoanSubmissionSessionDto> getSimulationSession(
-    Authentication authentication
-  ) throws SignatureException {
+  public CommonResult<LoanSubmissionSessionDto> getSimulationSession() throws SignatureException {
     return new CommonResult<LoanSubmissionSessionDto>().success(
       sessionLoanSubmissionService.findLastByCust(
-        CustomerUtils.authenticateCustomer(authentication)
+        currentUserService.customer()
       ).orElse(null)
     );
   }
 
   @PostMapping("/session/history")
   public CommonResult<LoanSubmissionSessionDto> createSimulationSession(
-    Authentication authentication,
     @Valid @RequestBody CreateSessionLoanSubmissionRequest createSessionLoanSubmissionRequest
   ) throws SignatureException, JsonProcessingException {
     return new CommonResult<LoanSubmissionSessionDto>().success(
       sessionLoanSubmissionService.create(
-        authentication,
+        currentUserService.customer(),
         createSessionLoanSubmissionRequest.getLastStep(),
         createSessionLoanSubmissionRequest.getSession()
       )
@@ -192,11 +178,9 @@ public class LoanSubmissionController {
   }
 
   @GetMapping("/documents/template-financing")
-  public CommonResult<List<DocumentTemplateFinancingDto>> getDocumentTemplateFinancing(
-    Authentication authentication
-  ) throws Exception {
+  public CommonResult<List<DocumentTemplateFinancingDto>> getDocumentTemplateFinancing() throws Exception {
     return new CommonResult<List<DocumentTemplateFinancingDto>>().success(
-      documentService.fetchDocumentTemplateFinancing(authentication)
+      documentService.fetchDocumentTemplateFinancing(currentUserService.customer())
     );
   }
 
@@ -206,14 +190,13 @@ public class LoanSubmissionController {
   )
   public CommonResult<LegalFileDto> uploadDocument(
     HttpServletRequest httpServletRequest,
-    Authentication authentication,
     @Valid @RequestPart MultipartFile file,
     @Valid @RequestParam("fileTypeCode") String fileTypeCode
   ) throws Exception {
     return new CommonResult<LegalFileDto>().success(
       documentService.uploadLoanDocument(
         httpServletRequest,
-        authentication,
+        currentUserService.customer(),
         file,
         fileTypeCode
       )
@@ -222,7 +205,6 @@ public class LoanSubmissionController {
 
   @GetMapping("/documents/requirement")
   public CommonResult<PaginationResult<MstFileTypeDto>> getDocumentRequirement(
-    Authentication authentication,
     HttpServletRequest httpServletRequest,
     PaginationRequest request,
     Boolean isFirst
@@ -230,7 +212,7 @@ public class LoanSubmissionController {
     return new CommonResult<PaginationResult<MstFileTypeDto>>().success(
       documentService.fetchAllLoanDocumentRequirement(
         httpServletRequest,
-        authentication,
+        currentUserService.customer(),
         request,
         isFirst
       )
@@ -240,7 +222,6 @@ public class LoanSubmissionController {
 
   @GetMapping("/documents/debitur")
   public CommonResult<PaginationResult<MstFileTypeDto>> getDocumentDebitur(
-    Authentication authentication,
     HttpServletRequest httpServletRequest,
     PaginationRequest request,
     Boolean isFirst,
@@ -250,7 +231,6 @@ public class LoanSubmissionController {
     return new CommonResult<PaginationResult<MstFileTypeDto>>().success(
       documentService.fetchAllLoanDocumentDebitur(
         httpServletRequest,
-        authentication,
         request,
         isFirst,
         custCode,
@@ -261,9 +241,9 @@ public class LoanSubmissionController {
 
   @DeleteMapping(path = "/documents/requirement/{id}")
   public CommonResult<Object> deleteDocument(
-    Authentication authentication,
     @PathVariable("id") Long id
   ) throws Exception {
+    currentUserService.customer();
     documentService.delete(id);
     return new CommonResult<>().success(null);
   }

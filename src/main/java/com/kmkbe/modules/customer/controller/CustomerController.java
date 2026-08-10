@@ -6,6 +6,7 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.mapper.CustomerMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.modules.customer.model.dto.CustomerDto;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
@@ -18,10 +19,8 @@ import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.model.request.UpdateFapRequest;
 import com.kmkbe.modules.customer.service.*;
-import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.modules.user.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,7 +32,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
@@ -60,17 +58,17 @@ public class CustomerController {
   private final AgreementService agreementService;
   private final FinancingHdrRepository financingHdrRepository;
   private final CustomerRepository customerRepository;
+  private final CurrentUserService currentUserService;
 
 
   @GetMapping
   public CommonResult<CustomerDto> profile(
-    Authentication authentication,
     HttpServletRequest request
   ) throws SignatureException, BadCredentialsException, IllegalStateException, IllegalAccessException {
     Customer customer;
     String custCode = String.valueOf(request.getParameter("custCode"));
     if (custCode.equalsIgnoreCase("null") || custCode.equalsIgnoreCase("")) {
-      customer = CustomerUtils.authenticateCustomer(authentication);
+      customer = currentUserService.customer();
     } else {
       Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString(custCode));
       if (customerOptional.isPresent()) {
@@ -118,10 +116,9 @@ public class CustomerController {
   @PutMapping
   @Transactional
   public CommonResult<CustomerDto> updateCustomer(
-    Authentication authentication,
     @Valid @RequestBody UpdateCustomerRequest request
   ) throws Exception {
-    Customer customer = customerService.update(authentication, request);
+    Customer customer = customerService.update(currentUserService.customer(), request);
     CustomerDto result = CustomerMapper.INSTANCE.custDtoFromEntity(customer);
     if (customer.getCustTypeCode().equals(CustomerType.Company.name())) {
       if (request.getCompany() == null) {
@@ -177,60 +174,55 @@ public class CustomerController {
 
   @GetMapping("/profilefap")
   public CommonResult<ProfileFapDto> getProfileFap(
-    Authentication authentication,
     HttpServletRequest request
   ) throws SignatureException {
     return new CommonResult<ProfileFapDto>().success(
-      customerService.prolifeFAP(authentication, request)
+      customerService.prolifeFAP(request)
     );
   }
 
   @GetMapping("/profile/sip")
   public CommonResult<ProfileSITDto> getProfileSit(
-    Authentication authentication,
     HttpServletRequest request
   ) throws SignatureException {
     return new CommonResult<ProfileSITDto>().success(
-      customerService.prolifeSIT(authentication, request)
+      customerService.prolifeSIT(request)
     );
   }
 
   @GetMapping("/invoices")
   public CommonResult<PaginationResult<PostedInvoiceDto>> getPostedInvoices(
-    Authentication authentication,
     PaginationRequest request
   ) throws SignatureException {
     return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
-      invoiceService.customerActiveInvoices(authentication, request)
+      invoiceService.customerActiveInvoices(request)
     );
   }
 
   @GetMapping("/invoices/due-date")
   public CommonResult<PaginationResult<CustomerCreditFacilityDueDateDto>> getPostedInvoicesDue(
-    Authentication authentication,
     PaginationRequest request
   ) throws SignatureException {
     return new CommonResult<PaginationResult<CustomerCreditFacilityDueDateDto>>().success(
-      customerDashboardListService.listinvoicesduedate(authentication, request)
+      customerDashboardListService.listinvoicesduedate(currentUserService.customer(), request)
     );
 
   }
 
   @GetMapping("/credit-facilities")
   public CommonResult<PaginationResult<CustomerCreditFacilityNewDto>> getActiveCreditFacilities(
-    Authentication authentication,
     PaginationRequest request
   ) throws SignatureException {
     //invoiceService.customerCreditFacilities(authentication, request)
 
     return new CommonResult<PaginationResult<CustomerCreditFacilityNewDto>>().success(
-      customerDashboardListService.listcreditfacilities(authentication, request)
+      customerDashboardListService.listcreditfacilities(currentUserService.customer(), request)
     );
   }
 
   @GetMapping("/plafond/{financingHdrCode}")
   public BaseResponse getPlafond(
-    @PathVariable String financingHdrCode, Authentication authentication) {
+    @PathVariable String financingHdrCode) {
     return customerDashboardService.plafondByFinancingHdrCode(financingHdrCode);
   }
 
@@ -271,10 +263,10 @@ public class CustomerController {
 
   @GetMapping("/perjanjian/{financingHdrCode}")
   public CommonResult<CustomerPerjanjianDto> getPerjanjian(
-    @PathVariable String financingHdrCode, Authentication authentication
+    @PathVariable String financingHdrCode
 
   ) throws SignatureException {
-    UserInternalUtils.authenticated(authentication);
+    currentUserService.authenticatedInternalUser();
     return new CommonResult<CustomerPerjanjianDto>().success(
       customerDashboardService.perjanjian(financingHdrCode)
     );
@@ -308,8 +300,8 @@ public class CustomerController {
   }
 
   @PutMapping(value = "/approval")
-  public BaseResponse approvalCustomer(@RequestBody @Valid ApprovalRequest request, Authentication authentication) {
-    return customerService.approval(request, authentication);
+  public BaseResponse approvalCustomer(@RequestBody @Valid ApprovalRequest request) throws SignatureException {
+    return customerService.approval(request, currentUserService.internalUsername());
   }
 }
 

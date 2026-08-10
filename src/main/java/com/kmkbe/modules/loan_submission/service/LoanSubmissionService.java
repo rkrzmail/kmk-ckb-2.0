@@ -17,11 +17,9 @@ import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.EmailService;
-import com.kmkbe.modules.customer.model.dto.CustomerDto;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.service.ExistingCustomerService;
-import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateLoanApplicationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
@@ -42,8 +40,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -87,11 +83,11 @@ public class LoanSubmissionService {
   private final ApiCsulAdapter apiCsulAdapter;
 
   public List<PostedInvoiceDto> fetchActiveInvoice(
+    Customer customer,
     String token
   ) throws Exception {
     try {
-      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-      final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, token);
+      final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
       CsulInquiryInvoiceRemoteDto inquiryInvoiceRemote = null;
 
       try {
@@ -102,7 +98,6 @@ public class LoanSubmissionService {
       } catch (Exception e) {
         log.warn("API invoice gagal, fallback ke database: {}", e.getMessage());
 
-        final Customer customer = CustomerUtils.authenticateCustomer(authentication);
         if (customer == null) {
           throw new IllegalArgumentException("Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
         }
@@ -268,7 +263,7 @@ public class LoanSubmissionService {
   }
 
   public EstimatedDisburseDto calculateDisburse(
-    Authentication authentication,
+    Customer customer,
     CalculateSimulationRequest request
   ) throws SignatureException, JsonProcessingException, ParseException {
     try {
@@ -296,7 +291,6 @@ public class LoanSubmissionService {
         validateCwr = null;
 
         try {
-          final Customer customer = CustomerUtils.authenticateCustomer(authentication);
           if (customer != null) {
             if (customer.getExistingCust() == null) {
               isCustomerExisting = false;
@@ -312,8 +306,8 @@ public class LoanSubmissionService {
         } catch (Exception ignored) {
 
         }
-      } else if (authentication != null || !StringUtil.isNullOrEmpty(request.getToken())) {
-        validateCwr = isCustomerExistingByCwr(authentication, request.getToken());
+      } else if (customer != null || !StringUtil.isNullOrEmpty(request.getToken())) {
+        validateCwr = isCustomerExistingByCwr(customer, request.getToken());
         isCustomerExisting = validateCwr != null;
       }
       BigDecimal
@@ -389,7 +383,6 @@ public class LoanSubmissionService {
   }
 
   public FinancingHdrDto viewCulateDisburse(
-    Authentication authentication,
     String financeCode,
     String histCode
   ) throws SignatureException, JsonProcessingException, ParseException {
@@ -467,7 +460,6 @@ public class LoanSubmissionService {
   }
 
   public EstimatedDisburseDto recalculateDisburse(
-    Authentication authentication,
     HttpServletRequest request
   ) throws Exception {
     try {
@@ -583,7 +575,6 @@ public class LoanSubmissionService {
 
   @Transactional
   public CreatedSimulationDto updateSimulation(
-    Authentication authentication,
     HttpServletRequest request
   ) throws Exception {
     try {
@@ -687,7 +678,7 @@ public class LoanSubmissionService {
       }
 
 
-      EstimatedDisburseDto estimatedDisburseDto = recalculateDisburse(authentication, request);
+      EstimatedDisburseDto estimatedDisburseDto = recalculateDisburse(request);
 
 
       Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
@@ -875,12 +866,11 @@ public class LoanSubmissionService {
 
   @Transactional
   public CreatedSimulationDto createSimulation(
-    Authentication authentication,
+    Customer customer,
     CreateSimulationRequest request
   ) throws Exception {
     try {
       final String bouwheerCode = request.getInvoices().getFirst().getBouwheerCode();
-      final Customer customer = CustomerUtils.authenticateCustomer(authentication);
       if (customer == null) {
         throw CommonInvalidException.cannotAccessResource();
       }
@@ -910,7 +900,7 @@ public class LoanSubmissionService {
         );
       }
 
-      final EstimatedDisburseDto calculateDisburse = calculateDisburse(authentication, simulation);
+      final EstimatedDisburseDto calculateDisburse = calculateDisburse(customer, simulation);
       if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
         throw new IllegalStateException("Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
           "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
@@ -939,7 +929,6 @@ public class LoanSubmissionService {
         .build();
 
       final FinancingHdr createdFinancingHdr = financingHdrService.create(
-        authentication,
         customer,
         bouwheer,
         product,
@@ -971,12 +960,11 @@ public class LoanSubmissionService {
 
   @Transactional
   public CreatedSimulationDto createSimulation_TU(
-    Authentication authentication,
+    Customer customer,
     CreateSimulationRequest request
   ) throws Exception {
     try {
       final String bouwheerCode = request.getInvoices().getFirst().getBouwheerCode();
-      final Customer customer = CustomerUtils.authenticateCustomer(authentication);
       if (customer == null) {
         throw CommonInvalidException.cannotAccessResource();
       }
@@ -1006,7 +994,7 @@ public class LoanSubmissionService {
         );
       }
 
-      final EstimatedDisburseDto calculateDisburse = calculateDisburse(authentication, simulation);
+      final EstimatedDisburseDto calculateDisburse = calculateDisburse(customer, simulation);
       if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
         throw new IllegalStateException("Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
           "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
@@ -1035,7 +1023,6 @@ public class LoanSubmissionService {
         .build();
 
       final FinancingHdr createdFinancingHdr = financingHdrService.create(
-        authentication,
         customer,
         bouwheer,
         product,
@@ -1083,11 +1070,10 @@ public class LoanSubmissionService {
   }
 
   public void createLoanSubmission(
-    Authentication authentication,
+    Customer custCOde,
     CreateLoanApplicationRequest request
   ) throws Exception {
     try {
-      final Customer custCOde = CustomerUtils.authenticateCustomer(authentication);
       if (custCOde == null) {
         throw CommonInvalidException.cannotAccessResource();
       }
@@ -1428,7 +1414,7 @@ public class LoanSubmissionService {
   }
 
   public ExternalIntegrationLoanSimulationDto externalIntegrationSimulation(
-    Authentication authentication,
+    Customer customer,
     String token
   ) throws JsonProcessingException, SignatureException {
     try {
@@ -1436,7 +1422,7 @@ public class LoanSubmissionService {
         return null;
       }
 
-      VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, token);
+      VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
       Optional<ExternalIntegrationLoanSimulationDto> find = importantNotesService.findExternalIntegrationByBouwheerCode(
         vendorTokenExtractor.getBouwheerCode().toString(),
         vendorTokenExtractor.getVendorCode()
@@ -1493,20 +1479,20 @@ public class LoanSubmissionService {
     }
   }
 
-  private VendorTokenExtractor vendorTokenExtractor(Authentication authentication, String token) throws SignatureException {
+  private VendorTokenExtractor vendorTokenExtractor(Customer customer, String token) throws SignatureException {
     return new VendorTokenExtractor(
       bouwheerRepository,
       jwtLoanSubmissionService,
-      authentication,
+      customer,
       token
     );
   }
 
-  private Cwr isCustomerExistingByCwr(Authentication authentication, String token) throws SignatureException, JsonProcessingException {
-    final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, token);
+  private Cwr isCustomerExistingByCwr(Customer customer, String token) throws SignatureException, JsonProcessingException {
+    final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
     final ExistingCustomerDto existingCustomer = existingCustomerService.findLastByVendorCode(vendorTokenExtractor.getVendorCode())
       .orElse(null);
-    if (authentication == null) {
+    if (customer == null) {
       InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService
         .inquiryVendor(vendorTokenExtractor.getVendorCode())
         .getData();
@@ -1530,7 +1516,6 @@ public class LoanSubmissionService {
       return cwr;
     }
 
-    final Customer customer = CustomerUtils.authenticateCustomer(authentication);
     final String identityType = customer.getCustIdTypeCode(),
       identityNo = customer.getCompany() != null
         ? customer.getCompany().getIdentityNo()
@@ -1581,7 +1566,7 @@ public class LoanSubmissionService {
     public VendorTokenExtractor(
       BouwheerRepository bouwheerRepository,
       JwtLoanSubmissionService jwtLoanSubmissionService,
-      Authentication authentication,
+      Customer customer,
       String token
     ) throws SignatureException {
       JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(token);
@@ -1604,13 +1589,12 @@ public class LoanSubmissionService {
 
       if (jwtSimulasiModel != null) {
         vendorCode = jwtSimulasiModel.getVendorCode();
-      } else if (authentication != null) {
-        CustomerDto cust = CustomerUtils.authenticateCustomerDto(authentication);
-        if (cust == null) {
+      } else if (customer != null) {
+        if (customer.getCustExternalCode() == null) {
           throw CommonInvalidException.cannotAccessResource();
         }
 
-        vendorCode = cust.getCustExternalCode();
+        vendorCode = customer.getCustExternalCode();
       } else {
         vendorCode = null;
       }

@@ -4,6 +4,7 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.modules.branch_admin.service.AssignmentSubmissionService;
 import com.kmkbe.modules.branch_admin.service.SignerService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -12,7 +13,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -34,6 +34,7 @@ import java.util.stream.Collectors;
 public class SignerController {
     private final SignerService signerService;
     private final AssignmentSubmissionService assignmentSubmissionService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping("/list")
     public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
@@ -51,9 +52,12 @@ public class SignerController {
 
     @GetMapping("/person/list/{financingHdrCode}")
     public CommonResult<List<DebtorDto>> getSignerPersonList(
-            @PathVariable String financingHdrCode,
-            Authentication authentication) {
-        List<DebtorDto> signerPersonList = signerService.signerPersonList(financingHdrCode, authentication);
+            @PathVariable String financingHdrCode
+    ) throws SignatureException {
+        List<DebtorDto> signerPersonList = signerService.signerPersonList(
+                financingHdrCode,
+                currentUserService.internalUsername()
+        );
         return new CommonResult<List<DebtorDto>>().success(signerPersonList);
     }
 
@@ -72,10 +76,10 @@ public class SignerController {
 
     @PostMapping("/person")
     public CommonResult<String> createDebtor(
-            @RequestBody DebtorDto debtorDto,
-            Authentication authentication) {
+            @RequestBody DebtorDto debtorDto
+    ) {
         try {
-            signerService.createDebtor(debtorDto, authentication);
+            signerService.createDebtor(debtorDto, currentUserService.internalUsername());
             return new CommonResult<String>()
                     .success("NIK belum terdaftar. Link registrasi telah dikirim ke email " +
                             debtorDto.getEmail());
@@ -115,9 +119,12 @@ public class SignerController {
 
     @GetMapping("/signer-doc/list/{financingHdrCode}")
     public CommonResult<List<SignerDocDto>> getSignerDocList(
-            @PathVariable String financingHdrCode,
-            Authentication authentication) {
-        List<SignerDocDto> signerDocList = signerService.signerDocList(financingHdrCode, authentication);
+            @PathVariable String financingHdrCode
+    ) throws SignatureException {
+        List<SignerDocDto> signerDocList = signerService.signerDocList(
+                financingHdrCode,
+                currentUserService.internalUsername()
+        );
         return new CommonResult<List<SignerDocDto>>().success(signerDocList);
     }
 
@@ -148,20 +155,23 @@ public class SignerController {
 
     @GetMapping("/download-doc/{documentId}")
     public ResponseEntity<ApiResponse<?>> downloadDocument(
-            @PathVariable String documentId,
-            Authentication authentication) {
+            @PathVariable String documentId
+    ) throws SignatureException {
 
-        return signerService.downloadDocument(documentId, authentication);
+        return signerService.downloadDocument(documentId, currentUserService.internalUsername());
     }
 
     // cek db
     @GetMapping("/check-signer/danasakti/{financingHdrCode}/{agreementCode}")
     public CommonResult<Map<String, Object>> checkSignerDanasakti(
             @PathVariable String financingHdrCode,
-            @PathVariable String agreementCode,
-            Authentication authentication) {
+            @PathVariable String agreementCode
+    ) throws SignatureException {
 
-        List<DebtorDto> signerPersonList = signerService.checkSignerDanasakti(financingHdrCode, authentication);
+        List<DebtorDto> signerPersonList = signerService.checkSignerDanasakti(
+                financingHdrCode,
+                currentUserService.internalUsername()
+        );
 
         Map<String, Object> responseData = new HashMap<>();
 

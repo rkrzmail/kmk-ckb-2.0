@@ -16,6 +16,7 @@ import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.RedisAttackRepository;
 import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.feign.model.dto.CsulGetVendorDto;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
@@ -32,7 +33,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
@@ -66,6 +66,7 @@ public class AuthController {
   private final BouwheerRepository bouwheerRepository;
   private final ApiCsulAdapter apiCsulAdapter;
   private final CustomerRepository customerRepository;
+  private final CurrentUserService currentUserService;
 
   //@Transactional
   @PostMapping("/sign-up")
@@ -269,12 +270,11 @@ public class AuthController {
 
   @DeleteMapping("/sign-out")
   public CommonResult<Object> signOut(
-    Authentication authentication,
     HttpServletRequest request,
     HttpServletResponse response
   ) throws SignatureException, IllegalStateException {
-    final String result = authService.logout(authentication);
-    logoutHandler.logout(request, response, authentication);
+    final String result = authService.logout(currentUserService.customer());
+    logoutHandler.logout(request, response, null);
     return new CommonResult<>().success(
       result
     );

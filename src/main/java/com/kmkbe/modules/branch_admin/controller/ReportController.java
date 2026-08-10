@@ -148,7 +148,7 @@ public class ReportController {
                 agreementCode,
                 branchManager,
                 areaSalesManager,
-                currentUserService.internalUser().getUsername()
+                currentUserService.internalUsername()
         );
 
         return ResponseEntity.ok(response);

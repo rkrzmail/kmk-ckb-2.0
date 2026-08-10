@@ -24,13 +24,11 @@ import com.kmkbe.modules.remote.request.InquiryAgreementRemoteRequest;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -164,7 +162,7 @@ public class AgreementService {
     }
 
     public void upload(
-            Authentication authentication,
+            MstUser user,
             MultipartFile multipartFile,
             String agreementCode
     ) throws Exception {
@@ -180,8 +178,6 @@ public class AgreementService {
 
             AgreementFile agreementFile = agreementFileRepository.findTopByAgreementOrderByAgreementFileId(agreement)
                     .orElse(null);
-
-            final MstUser user = UserInternalUtils.authenticateUser(authentication);
 
             if (agreement.getFinancingHdr() == null) {
                 throw new IllegalArgumentException("Agreement Financing not found");
@@ -280,7 +276,7 @@ public class AgreementService {
 
     @Transactional
     public void createInquiryAgreement(
-            Authentication authentication,
+            MstUser user,
             CreateInquiryAgreementRequest request
     ) throws Exception {
         try {
@@ -301,7 +297,6 @@ public class AgreementService {
                         .build();
             }
 
-            final MstUser user = UserInternalUtils.authenticateUser(authentication);
             final FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(request.getFinancingHdrCode()))
                     .orElseThrow(() -> new IllegalStateException("Financing not found or not valid"));
             final Customer customer = financingHdr.getCustomer();
