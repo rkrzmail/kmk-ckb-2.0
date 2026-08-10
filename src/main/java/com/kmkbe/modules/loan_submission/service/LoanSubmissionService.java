@@ -43,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -86,10 +87,10 @@ public class LoanSubmissionService {
   private final ApiCsulAdapter apiCsulAdapter;
 
   public List<PostedInvoiceDto> fetchActiveInvoice(
-    Authentication authentication,
     String token
   ) throws Exception {
     try {
+      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
       final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, token);
       CsulInquiryInvoiceRemoteDto inquiryInvoiceRemote = null;
 
@@ -180,19 +181,9 @@ public class LoanSubmissionService {
       //jika data banyak berpotensi timeout
       List<PostedInvoiceDto> result = new ArrayList<>();
       for (int i = 0; i < inquiryInvoiceRemote.getRow().size(); i++) {
-        CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto remoteDto = inquiryInvoiceRemote.getRow().get(i);
         if (StringUtil.isNullOrEmpty(inquiryInvoiceRemote.getRow().get(i).getPoNumber())) {
-          continue;//hide yng po nya kosong
+          continue;
         }
-
-        /// hide check
-                /*Optional<Invoice>  invoice =  invoiceRepository.findByBouwheerInvNAndCustInvNo(
-                        vendorTokenExtractor.getBouwheerCode().toString(),
-                        inquiryInvoiceRemote.getRow().get(i).getReference());
-                if (invoice.isPresent()) {
-                    //invoice sudah direquest
-                    continue;
-                }*/
 
         Date invDate, invDueDate;
         try {
@@ -211,7 +202,6 @@ public class LoanSubmissionService {
             && !currency.equalsIgnoreCase("rupiah")
             && !currency.equalsIgnoreCase("rp")
         ) {
-          //invoiceAmount = invoiceAmount.multiply(BigDecimal.valueOf(baseUsdToIdr));
           currency = "IDR";
         }
 

@@ -82,11 +82,10 @@ public class LoanSubmissionController {
 
   @GetMapping("/invoices")
   public CommonResult<List<PostedInvoiceDto>> getActiveInvoices(
-    Authentication authentication,
     String token
   ) throws Exception {
     return new CommonResult<List<PostedInvoiceDto>>().success(
-      loanSubmissionService.fetchActiveInvoice(authentication, token)
+      loanSubmissionService.fetchActiveInvoice(token)
     );
   }
 
