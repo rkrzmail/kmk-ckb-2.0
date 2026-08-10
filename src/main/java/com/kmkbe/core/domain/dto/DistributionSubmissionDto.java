@@ -27,4 +27,7 @@ public class DistributionSubmissionDto {
     private String custStatus;
     private StatusLabelDto status;
     private LocalDateTime dtmCrt;
+    private String npwp;
+    private String ao;
+    private String address;
 }

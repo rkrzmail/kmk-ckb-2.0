@@ -10,21 +10,31 @@ import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.exception.BusinessException;
+import com.kmkbe.helpers.base.BaseResponse;
+import com.kmkbe.helpers.base.BaseResponseBuilder;
+import com.kmkbe.helpers.constant.AppConstants;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.common.service.EmailService;
+import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.major_account.request.AssignInvoiceToBranchRequest;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.user.entity.MstBranch;
+import com.kmkbe.modules.user.entity.MstEmployee;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.security.SignatureException;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -38,22 +48,24 @@ public class DistributionSubmissionService {
   private final MstBranchRepository mstBranchRepository;
   private final BranchAreaMappingRepository branchAreaMappingRepository;
   private final ConfigRemoteService configRemoteService;
+  private final CustomerRepository customerRepository;
+
 
   public DistributionSubmissionService(FinancingHdrRepository financingHdrRepository,
                                        EmailService emailService,
                                        MstBranchRepository mstBranchRepository,
                                        BranchAreaMappingRepository branchAreaMappingRepository,
-                                       ConfigRemoteService configRemoteService) {
+                                       ConfigRemoteService configRemoteService,
+                                       CustomerRepository customerRepository) {
     this.financingHdrRepository = financingHdrRepository;
     this.emailService = emailService;
     this.mstBranchRepository = mstBranchRepository;
     this.branchAreaMappingRepository = branchAreaMappingRepository;
     this.configRemoteService = configRemoteService;
+    this.customerRepository = customerRepository;
   }
 
-  public PaginationResult<DistributionSubmissionDto> submissionDistribution(
-    PaginationRequest request
-  ) {
+  public PaginationResult<DistributionSubmissionDto> submissionDistribution(PaginationRequest request) {
     try {
 
       List<FinancingHdr> finHdrAll = financingHdrRepository.findAllByRaw();
@@ -109,8 +121,6 @@ public class DistributionSubmissionService {
               branchRecommendedCode = branchAreaMapping.get().getMstBranch().getBranchCode();
               branchRecommended = branchAreaMapping.get().getMstBranch().getBranchName();
             }
-
-
           }
           MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
             e,
@@ -134,6 +144,13 @@ public class DistributionSubmissionService {
               .statusLabel(mappedFinancingStatus.getLabel())
               .color(color)
               .build())
+            .npwp(e.getCustomer().getNpwp())
+            .address(e.getBouwheer().getLegalAddress())
+            .ao(Optional.ofNullable(e.getMstBranch())
+              .map(MstBranch::getEmployees)
+              .map(Collection::stream)
+              .flatMap(stream -> stream.map(MstEmployee::getEmployeeName).findFirst())
+              .orElse(null))
             .dtmCrt(e.getDtmCrt())
             .build();
         }
@@ -162,133 +179,145 @@ public class DistributionSubmissionService {
     }
   }
 
-  public void assignSubmission(
-    Authentication authentication,
-    AssignInvoiceToBranchRequest request
-  ) throws SignatureException {
-    try {
-      final UUID financingHdrCode;
-      try {
-        financingHdrCode = UUID.fromString(request.getFinancingHdrCode());
-      } catch (IllegalArgumentException ignored) {
-        throw new IllegalStateException("Invalid given financingHdrCode");
-      }
+  /**
+   *
+   * @param request
+   * @return
+   * @throws SignatureException
+   */
+  public BaseResponse assignSubmission(AssignInvoiceToBranchRequest request) throws SignatureException {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    final UUID financingHdrCode;
 
-      MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
-      MstBranch mstBranch = mstBranchRepository.findByBranchCode(request.getBranchCode())
-        .orElseThrow(() -> new IllegalStateException("Branch Not Found with given argument"));
-      FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
-        .orElseThrow(() -> new IllegalStateException("Financing Not Found with given argument"));
+    financingHdrCode = UUID.fromString(request.getFinancingHdrCode());
+    MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
 
-      String sring = Utils.valueOf(financingHdr.getFinancingStep());//ASSIGNMENT
-      if (Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("PAID")) {
-        throw new IllegalStateException("PAID given financingHdrCode");
-      }
-      if (Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("NEW")
-        || Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("ASSIGNMENT")
-        || Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("ASSIGN")) {
+    /**
+     * Find branch
+     */
+    MstBranch mstBranch = mstBranchRepository.findByBranchCode(request.getBranchCode())
+      .orElseThrow(() -> new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Branch Not Found with given argument"));
 
-      } else {
-        throw new IllegalStateException("Status is not assigned");
-      }
+    /**
+     * Find financeing HDR
+     */
+    FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
+      .orElseThrow(() -> new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Financing Not Found with given argument"));
 
-      // Major account melakukan assignment leads ke cabang
-      financingHdr.setFinancingStatus("INPROCESS");
-      financingHdr.setFinancingStep("ASSIGNMENT");
-      financingHdr.setMstBranch(mstBranch);
-      financingHdr.setDtmUpd(DateTimeUtils.now());
-      financingHdr.setUsrUpd(authenticateUser.getUsername());
-      financingHdrRepository.save(financingHdr);
-
-      if (mstBranch.getEmployees() != null && !mstBranch.getEmployees().isEmpty()) {
-        final List<InvoiceEmailPayload> invoices = financingHdr.getFinancingDtls()
-          .stream()
-          .map((item) ->
-            InvoiceEmailPayload.builder()
-              .invoiceNo(item.getInvoice().getCustInvNo())
-              .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
-              .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
-              .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-              .description("Invoice By Trakindo")
-              .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
-              .build()
-          ).toList();
-
-        final double totalFeeAmt =
-          financingHdr.getAdminFeeAmt()
-            + financingHdr.getLegalFeeAmtNett()
-            + financingHdr.getInsuranceFeeAmt()
-            + financingHdr.getOthersFeeAmt()
-            + financingHdr.getProvisionFeeAmt()
-            + financingHdr.getSurveyFeeAmtNett();
-
-        //getAPI AO,BH
-        MailPositionDto to = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "BM/BOH");
-        MailPositionDto ccRM = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "RM");
-        MailPositionDto ccAO = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "AO/AM");
-
-        String toEmail = mstBranch.getEmployees().stream().toList().getFirst().getEmail();  //"radema.panjaitan@csul.co.id",
-        String ccEmail = null;
-        if (to != null && to.getData() != null && to.getData().size() > 0) {
-          StringBuilder stringBuilder = new StringBuilder();
-          for (int i = 0; i < to.getData().size(); i++) {
-            stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
-            stringBuilder.append(to.getData().get(i).getEmail());
-          }
-          toEmail = stringBuilder.toString();
-        }
-        StringBuilder stringBuilder = new StringBuilder();
-        if (ccRM != null && ccRM.getData() != null && ccRM.getData().size() > 0) {
-          for (int i = 0; i < ccRM.getData().size(); i++) {
-            stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
-            stringBuilder.append(ccRM.getData().get(i).getEmail());
-          }
-          ccEmail = stringBuilder.toString();
-        }
-        if (ccAO != null && ccAO.getData() != null && ccAO.getData().size() > 0) {
-          for (int i = 0; i < ccAO.getData().size(); i++) {
-            stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
-            stringBuilder.append(ccAO.getData().get(i).getEmail());
-          }
-          ccEmail = stringBuilder.toString();
-        }
-
-        String phone = financingHdr.getCustomer().getCustMobilePhone();
-        if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
-          if (financingHdr.getCustomer().getCompany() != null) {
-            phone = financingHdr.getCustomer().getCompany().getPhone();
-          }
-        }
-
-        //kirim email assign dan re assign
-        emailService.sendNotificationBranchAssign(
-          toEmail,
-          financingHdr.getBouwheer().getBouwheerName(),
-          mstBranch.getBranchName(),
-          LoanDisburseEmailPayload.builder()
-            .financingCode(financingHdr.getFinancingHdrCode().toString())
-            .applicationDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
-            .companyName(financingHdr.getCustomer().getCustName())
-            .email(financingHdr.getCustomer().getCustEmail())
-            .phoneNumber(phone)
-            .tenor(financingHdr.getTenor())
-            .toEmail(toEmail)
-            .ccEmail(ccEmail)
-            .financingCode(financingHdr.getFinancingHdrCode().toString())
-            .financingDueDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDueDate()))
-            .retention(CommonFormattingUtils.formatAmount(financingHdr.getRetention()))
-            .financingAmt(CommonFormattingUtils.formatAmount(financingHdr.getFinancingAmt()))
-            .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-            .invoiceAmt(CommonFormattingUtils.formatAmount(financingHdr.getTotalInvoiceAmt()))
-            .disburseAmt(CommonFormattingUtils.formatAmount(financingHdr.getDisburseAmt()))
-            .invoices(invoices)
-            .build()
-        );
-      }
-
-    } catch (Exception e) {
-      log.error("assignSubmission: error {}", e.getMessage());
-      throw e;
+    /**
+     * Validate staus
+     */
+    if (Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("PAID")) {
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", financingHdr.getFinancingStep());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81 + "Financing step has been " + financingHdr.getFinancingStep());
     }
+
+    if (Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("NEW")
+      || Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("ASSIGNMENT")
+      || Utils.valueOf(financingHdr.getFinancingStep()).equalsIgnoreCase("ASSIGN")) {
+    } else {
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", financingHdr.getFinancingStep());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81 + "Financing step has been " + financingHdr.getFinancingStep());
+    }
+
+    /**
+     * Assign process
+     */
+    financingHdr.setFinancingStatus("INPROCESS");
+    financingHdr.setFinancingStep("ASSIGNMENT");
+    financingHdr.setMstBranch(mstBranch);
+    financingHdr.setDtmUpd(DateTimeUtils.now());
+    financingHdr.setUsrUpd(authenticateUser.getUsername());
+    financingHdrRepository.save(financingHdr);
+
+    if (mstBranch.getEmployees() != null && !mstBranch.getEmployees().isEmpty()) {
+      final List<InvoiceEmailPayload> invoices = financingHdr.getFinancingDtls()
+        .stream()
+        .map((item) ->
+          InvoiceEmailPayload.builder()
+            .invoiceNo(item.getInvoice().getCustInvNo())
+            .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
+            .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+            .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
+            .description("Invoice By Trakindo")
+            .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+            .build()
+        ).toList();
+
+      final double totalFeeAmt =
+        financingHdr.getAdminFeeAmt()
+          + financingHdr.getLegalFeeAmtNett()
+          + financingHdr.getInsuranceFeeAmt()
+          + financingHdr.getOthersFeeAmt()
+          + financingHdr.getProvisionFeeAmt()
+          + financingHdr.getSurveyFeeAmtNett();
+
+      //getAPI AO,BH
+      MailPositionDto to = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "BM/BOH");
+      MailPositionDto ccRM = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "RM");
+      MailPositionDto ccAO = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "AO/AM");
+
+      String toEmail = mstBranch.getEmployees().stream().toList().getFirst().getEmail();  //"radema.panjaitan@csul.co.id",
+      String ccEmail = null;
+      if (to != null && to.getData() != null && to.getData().size() > 0) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < to.getData().size(); i++) {
+          stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
+          stringBuilder.append(to.getData().get(i).getEmail());
+        }
+        toEmail = stringBuilder.toString();
+      }
+      StringBuilder stringBuilder = new StringBuilder();
+      if (ccRM != null && ccRM.getData() != null && ccRM.getData().size() > 0) {
+        for (int i = 0; i < ccRM.getData().size(); i++) {
+          stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
+          stringBuilder.append(ccRM.getData().get(i).getEmail());
+        }
+        ccEmail = stringBuilder.toString();
+      }
+      if (ccAO != null && ccAO.getData() != null && ccAO.getData().size() > 0) {
+        for (int i = 0; i < ccAO.getData().size(); i++) {
+          stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
+          stringBuilder.append(ccAO.getData().get(i).getEmail());
+        }
+        ccEmail = stringBuilder.toString();
+      }
+
+      String phone = financingHdr.getCustomer().getCustMobilePhone();
+      if (financingHdr.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
+        if (financingHdr.getCustomer().getCompany() != null) {
+          phone = financingHdr.getCustomer().getCompany().getPhone();
+        }
+      }
+
+      /**
+       * Send email assign or reassign
+       */
+      emailService.sendNotificationBranchAssign(
+        toEmail,
+        financingHdr.getBouwheer().getBouwheerName(),
+        mstBranch.getBranchName(),
+        LoanDisburseEmailPayload.builder()
+          .financingCode(financingHdr.getFinancingHdrCode().toString())
+          .applicationDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
+          .companyName(financingHdr.getCustomer().getCustName())
+          .email(financingHdr.getCustomer().getCustEmail())
+          .phoneNumber(phone)
+          .tenor(financingHdr.getTenor())
+          .toEmail(toEmail)
+          .ccEmail(ccEmail)
+          .financingCode(financingHdr.getFinancingHdrCode().toString())
+          .financingDueDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDueDate()))
+          .retention(CommonFormattingUtils.formatAmount(financingHdr.getRetention()))
+          .financingAmt(CommonFormattingUtils.formatAmount(financingHdr.getFinancingAmt()))
+          .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+          .invoiceAmt(CommonFormattingUtils.formatAmount(financingHdr.getTotalInvoiceAmt()))
+          .disburseAmt(CommonFormattingUtils.formatAmount(financingHdr.getDisburseAmt()))
+          .invoices(invoices)
+          .build()
+      );
+    }
+
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
   }
 }

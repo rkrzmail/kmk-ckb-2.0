@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.dto.PostedInvoiceDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.request.AssignInvoiceToBranchRequest;
@@ -58,11 +59,7 @@ public class DistributionSubmissionController {
   }
 
   @PutMapping("/assign")
-  public CommonResult<Object> createAssign(
-    Authentication authentication,
-    @Valid @RequestBody AssignInvoiceToBranchRequest request
-  ) throws SignatureException {
-    distributionSubmissionService.assignSubmission(authentication, request);
-    return new CommonResult<>().success(null);
+  public BaseResponse createAssign(@Valid @RequestBody AssignInvoiceToBranchRequest request) throws SignatureException {
+    return distributionSubmissionService.assignSubmission(request);
   }
 }
