@@ -264,7 +264,6 @@ public class SbuCkbController {
   public CommonResult<Object>
   invoicePaid(
     @PathVariable("jwtToken") String jwtToken,
-    Authentication authentication,
     HttpServletRequest httpServletRequest,
     @Valid @RequestBody FinancingInvoicePaidRequest request
   ) throws Exception {
@@ -276,7 +275,6 @@ public class SbuCkbController {
       }
 
       FinancingHdr financingHdr = financingHdrService.paidFinancing(
-        authentication,
         request,
         providedApiKey
       );
@@ -300,7 +298,6 @@ public class SbuCkbController {
   public CommonResult<Object>
   inquiryDisburse(
     @PathVariable("jwtToken") String jwtToken,
-    Authentication authentication,
     HttpServletRequest httpServletRequest,
     @Valid @RequestBody FinancingInvoicePaidRequest request
   ) throws Exception {
@@ -312,7 +309,6 @@ public class SbuCkbController {
       }
 
       FinancingHdr financingHdr = financingHdrService.paidFinancing(
-        authentication,
         request,
         providedApiKey
       );

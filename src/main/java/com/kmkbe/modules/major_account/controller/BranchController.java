@@ -7,16 +7,15 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.major_account.service.BranchAreaMappingService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.kmkbe.core.security.CurrentUserService;
 
 import java.security.SignatureException;
 import java.util.List;
@@ -32,6 +31,7 @@ import java.util.List;
 public class BranchController {
     private final MstBranchService mstBranchService;
     private final BranchAreaMappingService branchAreaMappingService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping("/master")
     public CommonResult<List<BranchDto>> getBranchListA() {
@@ -41,20 +41,17 @@ public class BranchController {
     }
 
     @GetMapping("/list")
-    public CommonResult<PaginationResult<BranchAreaMappingDto>> getList(
-            Authentication authentication, PaginationRequest request
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
+    public CommonResult<PaginationResult<BranchAreaMappingDto>> getList(PaginationRequest request) throws SignatureException {
+        currentUserService.authenticatedInternalUser();
         return new CommonResult<PaginationResult<BranchAreaMappingDto>>().success(
                 branchAreaMappingService.listBranch(request)
         );
     }
 
     @GetMapping("/placement")
-    public CommonResult<PaginationResult<BranchAreaMappingDto>> getBranchList(
-            Authentication authentication, PaginationRequest request
+    public CommonResult<PaginationResult<BranchAreaMappingDto>> getBranchList(PaginationRequest request
     ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
+        currentUserService.authenticatedInternalUser();
         return new CommonResult<PaginationResult<BranchAreaMappingDto>>().success(
                 branchAreaMappingService.placementBranch(request)
         );
@@ -66,11 +63,9 @@ public class BranchController {
     )
     public CommonResult<Object> postUploadPlacementBranch(
             HttpServletRequest httpServletRequest,
-            Authentication authentication,
             @Valid @RequestPart MultipartFile file
     ) {
-
-        branchAreaMappingService.updateBranch(httpServletRequest, authentication, file);
+        branchAreaMappingService.updateBranch(httpServletRequest, file);
         return new CommonResult<>().success(   null );
 
 

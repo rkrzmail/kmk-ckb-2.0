@@ -8,7 +8,6 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.major_account.service.BranchAreaMappingService;
 import com.kmkbe.modules.major_account.service.MstProductService;
 
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -17,15 +16,14 @@ import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import com.kmkbe.core.security.CurrentUserService;
 
 import java.security.SignatureException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 
 @Validated
 @RestController
@@ -38,13 +36,13 @@ import java.util.Optional;
 public class MstProductController {
   private final MstProductService productService;
   private final BranchAreaMappingService branchAreaMappingService;
+  private final CurrentUserService currentUserService;
 
 
   @GetMapping("/list")
-  public CommonResult<PaginationResult<ProductDto>> getList(
-    Authentication authentication, @ParameterObject PaginationRequest request
+  public CommonResult<PaginationResult<ProductDto>> getList(@ParameterObject PaginationRequest request
   ) throws SignatureException {
-    UserInternalUtils.authenticated(authentication);
+    currentUserService.authenticatedInternalUser();
     return new CommonResult<PaginationResult<ProductDto>>().success(
       productService.listProduct(request)
     );
@@ -52,10 +50,10 @@ public class MstProductController {
 
   @GetMapping("/listitem/{id}")
   public CommonResult<PaginationResult<ProductDto>> getListItem(
-    Authentication authentication, @ParameterObject PaginationRequest request,
+    @ParameterObject PaginationRequest request,
     @PathVariable("id") Long id
   ) throws SignatureException {
-    UserInternalUtils.authenticated(authentication);
+    currentUserService.authenticatedInternalUser();
     return new CommonResult<PaginationResult<ProductDto>>().success(
       productService.listProductItem(request, id)
     );
@@ -67,22 +65,20 @@ public class MstProductController {
   )
   public CommonResult<Object> postUploadPlacementBranch(
     HttpServletRequest httpServletRequest,
-    Authentication authentication,
     @Valid @RequestPart MultipartFile file
   ) throws SignatureException {
-    UserInternalUtils.authenticated(authentication);
+    currentUserService.authenticatedInternalUser();
 
-    productService.uploadProduct(httpServletRequest, authentication, file);
+    productService.uploadProduct(httpServletRequest, file);
     return new CommonResult<>().success(null);
   }
 
   // TAMBAH PRODUK
   @PostMapping("/create")
   public CommonResult<ProductDto> createProduct(
-    Authentication authentication,
     @Valid @RequestBody ProductDto productDto
   ) throws SignatureException {
-    UserInternalUtils.authenticated(authentication);
+    currentUserService.authenticatedInternalUser();
 
     ProductDto createdProduct = productService.createProduct(productDto);
 

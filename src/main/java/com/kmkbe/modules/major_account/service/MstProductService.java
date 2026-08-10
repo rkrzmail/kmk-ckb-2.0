@@ -41,7 +41,6 @@ public class MstProductService {
 
   @Transactional
   public void uploadProduct(HttpServletRequest httpServletRequest,
-                            Authentication authentication,
                             MultipartFile file) {
     productRepository.deleteAll();
 

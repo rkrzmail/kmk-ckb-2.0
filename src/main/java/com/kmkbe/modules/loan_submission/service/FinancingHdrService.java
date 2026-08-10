@@ -660,7 +660,6 @@ public class FinancingHdrService {
     }
 
     public FinancingHdr paidFinancing(
-            Authentication authentication,
             FinancingInvoicePaidRequest request,
             String apiKey
     ) throws SignatureException {
@@ -672,15 +671,10 @@ public class FinancingHdrService {
                 throw new IllegalStateException("Invalid given financingCode");
             }
 
-            final String user;
-            if (authentication != null) {
-                MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
-                user = authenticateUser.getUsername();
-            } else if (!StringUtil.isNullOrEmpty(apiKey)) {
-                user = "POST";
-            } else {
+            if (StringUtil.isNullOrEmpty(apiKey)) {
                 throw new IllegalStateException("can perform action, invalid credentials given");
             }
+            final String user = "POST";
 
             FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
                     .orElseThrow(() -> new IllegalStateException("Financing Not Found with given financingCode"));

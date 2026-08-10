@@ -7,11 +7,9 @@ import com.kmkbe.modules.user.entity.MstEmployee;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
@@ -26,9 +24,8 @@ public class UserInternalService {
     private final MstUserRepository mstUserRepository;
 
     @Transactional
-    public UserDto profile(Authentication authentication) throws SignatureException {
+    public UserDto profile(MstUser authenticateUser) throws SignatureException {
         try {
-            MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
             MstUser user = mstUserRepository.findById(authenticateUser.getUserCode()).orElseThrow();
             MstEmployee employee = user.getEmployee();
 

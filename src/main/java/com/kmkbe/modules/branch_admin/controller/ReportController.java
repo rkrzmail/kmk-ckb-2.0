@@ -4,24 +4,17 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.modules.branch_admin.service.ReportService;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
-import net.sf.jasperreports.engine.JRException;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.*;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
-import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/v1/report")
@@ -30,11 +23,14 @@ public class ReportController {
     @Autowired
     private ReportService reportService;
 
+    @Autowired
+    private CurrentUserService currentUserService;
+
     @GetMapping("/visitor")
     public CommonResult<PaginationResult<VisitorDto>> getlistVisitor(
-            Authentication authentication, PaginationRequest request
+            PaginationRequest request
     ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
+        currentUserService.authenticatedInternalUser();
         return new CommonResult<PaginationResult<VisitorDto>>().success(
                 reportService.getVisitorReport(request)
         );
@@ -42,9 +38,9 @@ public class ReportController {
 
     @GetMapping("/proyeksi")
     public CommonResult<PaginationResult<ProyeksiReportDto>> getlistProyeksi(
-            Authentication authentication, PaginationRequest request
+            PaginationRequest request
     ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
+        currentUserService.authenticatedInternalUser();
         return new CommonResult<PaginationResult<ProyeksiReportDto>>().success(
                 reportService.getProyeksiReport(request)
         );
@@ -52,9 +48,9 @@ public class ReportController {
 
     @GetMapping("/summary/branch")
     public CommonResult<PaginationResult<SummaryByBranchDto>> getlistSummaryByBranch(
-            Authentication authentication, PaginationRequest request
+            PaginationRequest request
     ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
+        currentUserService.authenticatedInternalUser();
         return new CommonResult<PaginationResult<SummaryByBranchDto>>().success(
                 reportService.getSummaryByBranch(request)
         );
@@ -62,9 +58,9 @@ public class ReportController {
 
     @GetMapping("/summary/ao")
     public CommonResult<PaginationResult<SummaryByAODto>> getAllReportBranchByAO(
-            Authentication authentication, PaginationRequest request
+            PaginationRequest request
     ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
+        currentUserService.authenticatedInternalUser();
         return new CommonResult<PaginationResult<SummaryByAODto>>().success(
                 reportService.getAllReportBranchByAO(request)
         );
@@ -72,9 +68,9 @@ public class ReportController {
 
     @GetMapping("/summary/detail")
     public CommonResult<PaginationResult<SummaryDetailDto>> getAllReportSummaryDetail(
-            Authentication authentication, PaginationRequest request
+            PaginationRequest request
     ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
+        currentUserService.authenticatedInternalUser();
         return new CommonResult<PaginationResult<SummaryDetailDto>>().success(
                 reportService.getSummaryDetail(request)
         );
@@ -82,9 +78,9 @@ public class ReportController {
 
     @GetMapping("/duedate")
     public CommonResult<PaginationResult<ReportDueDateDto>> getAllContractDueDate(
-            Authentication authentication, PaginationRequest request
+            PaginationRequest request
     ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
+        currentUserService.authenticatedInternalUser();
         return new CommonResult<PaginationResult<ReportDueDateDto>>().success(
                 reportService.getDueDateDetail(request)
         );
@@ -144,16 +140,15 @@ public class ReportController {
             @PathVariable String financingHdrCode,
             @PathVariable String agreementCode,
             @PathVariable String branchManager,
-            @PathVariable String areaSalesManager,
-            Authentication authentication
-    ) {
+            @PathVariable String areaSalesManager
+    ) throws SignatureException {
 
         SigningResponse response = reportService.sendDocumentForSigning(
                 financingHdrCode,
                 agreementCode,
                 branchManager,
                 areaSalesManager,
-                authentication
+                currentUserService.internalUser().getUsername()
         );
 
         return ResponseEntity.ok(response);

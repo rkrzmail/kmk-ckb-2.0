@@ -16,11 +16,9 @@ import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -163,7 +161,7 @@ public class DistributionSubmissionService {
   }
 
   public void assignSubmission(
-    Authentication authentication,
+    MstUser authenticateUser,
     AssignInvoiceToBranchRequest request
   ) throws SignatureException {
     try {
@@ -174,7 +172,6 @@ public class DistributionSubmissionService {
         throw new IllegalStateException("Invalid given financingHdrCode");
       }
 
-      MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
       MstBranch mstBranch = mstBranchRepository.findByBranchCode(request.getBranchCode())
         .orElseThrow(() -> new IllegalStateException("Branch Not Found with given argument"));
       FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
