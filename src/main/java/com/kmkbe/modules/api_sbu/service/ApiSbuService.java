@@ -235,7 +235,7 @@ public class ApiSbuService {
    * @param request
    * @return
    */
-  public BaseResponse update(String id, ApiSbuRequest request) {
+  public BaseResponseBuilder<ApiSbuResponse> update(String id, ApiSbuRequest request) {
     Optional<ApiSbu> apiSbuOptional = apiSbuRepository.findById(Long.valueOf(id));
     if (apiSbuOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", id);
@@ -268,8 +268,8 @@ public class ApiSbuService {
 
     Optional<ApiSbu> apiSbuOptional = apiSbuRepository.findById(Long.valueOf(id));
     if (apiSbuOptional.isEmpty()) {
-      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", id);
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81 + "ID " + id);
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + " {} ", id);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81);
     }
 
     ApiSbu apiSbu = apiSbuOptional.get();
