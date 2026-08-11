@@ -761,7 +761,6 @@ public class SignerService {
 
       HttpEntity<Map<String, Object>> requestEntity = new HttpEntity<>(requestBody, requestHeaders);
 
-      RestTemplate restTemplate = new RestTemplate();
       ResponseEntity<ExternalDownloadResponse> response;
 
       try {
@@ -882,8 +881,6 @@ public class SignerService {
   }
 
   private void checkExternalSigningStatus(List<AgreementFileSigning> fileSignings, String username) {
-    RestTemplate restTemplate = new RestTemplate();
-
     for (AgreementFileSigning signing : fileSignings) {
       try {
         Map<String, Object> request = new HashMap<>();

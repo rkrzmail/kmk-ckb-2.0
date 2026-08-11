@@ -10,12 +10,12 @@ import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.SimulationHistRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.user.entity.MstAppRoleFormUser;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import io.netty.util.internal.StringUtil;
@@ -23,8 +23,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -40,19 +38,22 @@ public class AssignmentSubmissionService {
   private final AgreementFileRepository agreementFileRepository;
   private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
   private final SimulationHistRepository simulationHistRepository;
+  private final CurrentUserService currentUserService;
 
   public AssignmentSubmissionService(FinancingHdrRepository financingHdrRepository,
                                      MstUserRepository mstUserRepository,
                                      AgreementRepository agreementRepository,
                                      AgreementFileRepository agreementFileRepository,
                                      MstAppRoleFormUserRepository mstAppRoleFormUserRepository,
-                                     SimulationHistRepository simulationHistRepository) {
+                                     SimulationHistRepository simulationHistRepository,
+                                     CurrentUserService currentUserService) {
     this.financingHdrRepository = financingHdrRepository;
     this.mstUserRepository = mstUserRepository;
     this.agreementRepository = agreementRepository;
     this.agreementFileRepository = agreementFileRepository;
     this.mstAppRoleFormUserRepository = mstAppRoleFormUserRepository;
     this.simulationHistRepository = simulationHistRepository;
+    this.currentUserService = currentUserService;
   }
 
   public PaginationResult<AssignmentDto> assignmentList(
@@ -60,8 +61,6 @@ public class AssignmentSubmissionService {
     PaginationRequest request
   ) throws SignatureException {
     try {
-      Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-
       int pageNo = 0, pageSize = 10;
 
       if (request.getPageNo() != null) {
@@ -77,7 +76,7 @@ public class AssignmentSubmissionService {
       }
 
 
-      MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
+      MstUser authenticateUser = currentUserService.internalUser();
       MstUser user = mstUserRepository.findById(authenticateUser.getUserCode()).orElseThrow();
 
       String financingStatusFilter = null,

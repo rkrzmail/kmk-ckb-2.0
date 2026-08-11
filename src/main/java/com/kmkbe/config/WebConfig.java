@@ -21,6 +21,8 @@ import java.util.concurrent.Executors;
 public class WebConfig implements WebMvcConfigurer {
 
     private final ObjectMapper mapper;
+    @Value("${kmk.file-storage.root:uploads}")
+    private String uploadRoot;
 
     @Override
     public void configureMessageConverters(List<HttpMessageConverter<?>> converters) {
@@ -52,9 +54,13 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/uploads/**")
-                .addResourceLocations("file://uploads/", "file:\\uploads\\", "file:/uploads\\")
+                .addResourceLocations(toResourceLocation(uploadRoot))
                 .setCachePeriod(3600)
                 .resourceChain(true)
                 .addResolver(new PathResourceResolver());
+    }
+
+    private String toResourceLocation(String path) {
+        return Paths.get(path).toAbsolutePath().normalize().toUri().toString();
     }
 }

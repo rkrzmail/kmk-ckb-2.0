@@ -1,5 +1,6 @@
 package com.kmkbe.modules.bouwheer.service;
 
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
@@ -21,8 +22,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -35,9 +34,11 @@ import java.util.UUID;
 @Service
 public class BouwheerService {
   private final BouwheerRepository bouwheerRepository;
+  private final CurrentUserService currentUserService;
 
-  public BouwheerService(BouwheerRepository bouwheerRepository) {
+  public BouwheerService(BouwheerRepository bouwheerRepository, CurrentUserService currentUserService) {
     this.bouwheerRepository = bouwheerRepository;
+    this.currentUserService = currentUserService;
   }
 
   /**
@@ -101,7 +102,6 @@ public class BouwheerService {
    * @return
    */
   public BaseResponse create(BouwheerRequest request) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findFirstByBouwheerName(request.getBouwheerName().toUpperCase());
     if (bouwheerOptional.isPresent()) {
       log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getBouwheerName());
@@ -129,7 +129,7 @@ public class BouwheerService {
       .termOfPayment(request.getTermOfPayment())
       .gracePeriod(request.getGracePeriod())
       .isActive(request.getIsActive())
-      .usrCrt(authentication.getName())
+      .usrCrt(currentUserService.usernameOrDefault("UNKNOWN"))
       .aesKey(request.getAesKey())
       .secretKey(request.getSecretKey())
       .apiKey(request.getApiKey())
@@ -144,7 +144,6 @@ public class BouwheerService {
    * @return
    */
   public BaseResponse update(String id, BouwheerRequest request) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(id));
     if (bouwheerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getBouwheerName());
@@ -153,7 +152,7 @@ public class BouwheerService {
 
     Bouwheer bouwheer = bouwheerOptional.get();
     BeanUtils.copyProperties(request, bouwheer);
-    bouwheer.setUsrUpd(authentication.getName());
+    bouwheer.setUsrUpd(currentUserService.usernameOrDefault("UNKNOWN"));
     bouwheer.setDtmUpd(LocalDateTime.now());
     bouwheerRepository.save(bouwheer);
 

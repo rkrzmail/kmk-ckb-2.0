@@ -5,6 +5,7 @@ import com.kmkbe.feign.model.request.CsulPostLoginRequest;
 import com.kmkbe.feign.model.dto.CsulPostLoginDto;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
@@ -27,8 +28,12 @@ public class CsulTokenManager {
   @Value("${feign.csul.ckb.client-secret}")
   private String clientSecret;
 
-  private final RestTemplate restTemplate = new RestTemplate();
+  private final RestTemplate restTemplate;
   private final AtomicReference<String> cachedToken = new AtomicReference<>();
+
+  public CsulTokenManager(@Qualifier("restTemplate") RestTemplate restTemplate) {
+    this.restTemplate = restTemplate;
+  }
 
   public String getToken() {
     if (cachedToken.get() == null) {
