@@ -3,13 +3,13 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.repository.*;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.customer.model.entity.Customer;
-import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.nikita.utils.Utils;
 import jakarta.persistence.EntityManager;
@@ -18,8 +18,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -36,6 +34,7 @@ public class CustomerDashboardService {
   private final NotifDebtorRepository notifDebtorRepository;
   private final AgreementFileSigningRepository agreementFileSigningRepository;
   private final FinancingHdrRepository financingHdrRepository;
+  private final CurrentUserService currentUserService;
 
   public CustomerDashboardService(FinancingHdrService financingHdrService,
                                   CwrRepository cwrRepository,
@@ -43,7 +42,8 @@ public class CustomerDashboardService {
                                   AgreementRepository agreementRepository,
                                   NotifDebtorRepository notifDebtorRepository,
                                   AgreementFileSigningRepository agreementFileSigningRepository,
-                                  FinancingHdrRepository financingHdrRepository) {
+                                  FinancingHdrRepository financingHdrRepository,
+                                  CurrentUserService currentUserService) {
     this.financingHdrService = financingHdrService;
     this.cwrRepository = cwrRepository;
     this.entityManager = entityManager;
@@ -51,6 +51,7 @@ public class CustomerDashboardService {
     this.notifDebtorRepository = notifDebtorRepository;
     this.agreementFileSigningRepository = agreementFileSigningRepository;
     this.financingHdrRepository = financingHdrRepository;
+    this.currentUserService = currentUserService;
   }
 
   /**
@@ -59,8 +60,7 @@ public class CustomerDashboardService {
    * @throws SignatureException
    */
   public BaseResponseBuilder<CustomerPlafondDto> plafond() throws SignatureException {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-    Customer customer = CustomerUtils.authenticateCustomer(authentication);
+    Customer customer = currentUserService.customer();
     Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer);
     if (financingHdrOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", customer.getCustName());
@@ -146,8 +146,7 @@ public class CustomerDashboardService {
    * @throws SignatureException
    */
   public BaseResponseBuilder<CustomerDashboardDto> mainDashboard() throws SignatureException {
-     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-     Customer authenticatedCustomer = CustomerUtils.authenticateCustomer(authentication);
+     Customer authenticatedCustomer = currentUserService.customer();
       Optional<Cwr> lastOptional = cwrRepository.findTopByCustomerOrderByDtmUpdDescUsrCrtDesc(authenticatedCustomer);
       if (lastOptional.isEmpty()) {
         return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,new CustomerDashboardDto());

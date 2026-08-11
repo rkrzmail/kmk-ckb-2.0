@@ -2,6 +2,7 @@ package com.kmkbe.modules.api_sbu.service;
 
 
 import com.kmkbe.core.service.JwtGeneratorService;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
@@ -25,8 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -46,12 +45,16 @@ public class ApiSbuService {
   private final ApiSbuRepository apiSbuRepository;
   private final BouwheerRepository bouwheerRepository;
   private final JwtGeneratorService jwtGeneratorService;
+  private final CurrentUserService currentUserService;
 
   public ApiSbuService(ApiSbuRepository apiSbuRepository,
-                       BouwheerRepository bouwheerRepository, JwtGeneratorService jwtGeneratorService) {
+                       BouwheerRepository bouwheerRepository,
+                       JwtGeneratorService jwtGeneratorService,
+                       CurrentUserService currentUserService) {
     this.apiSbuRepository = apiSbuRepository;
     this.bouwheerRepository = bouwheerRepository;
     this.jwtGeneratorService = jwtGeneratorService;
+    this.currentUserService = currentUserService;
   }
 
   /**
@@ -169,7 +172,6 @@ public class ApiSbuService {
    * @return
    */
   public BaseResponseBuilder<ApiSbuResponse> create(ApiSbuRequest request) {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     /**
      * Find Bouwheer Code
      */
@@ -207,7 +209,7 @@ public class ApiSbuService {
       .expiredDate(request.getExpiredDate().toInstant()
         .atZone(ZoneId.systemDefault())
         .toLocalDate().atStartOfDay())
-      .usrCrt(authentication.getName())
+      .usrCrt(currentUserService.usernameOrDefault("UNKNOWN"))
       .dtmCrt(LocalDateTime.now())
       .build()
     );

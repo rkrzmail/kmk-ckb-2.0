@@ -54,6 +54,13 @@ public class CurrentUserService {
         return username;
     }
 
+    public String usernameOrDefault(String defaultUsername) {
+        return optionalAuthentication()
+                .map(Authentication::getName)
+                .filter(username -> username != null && !username.isBlank())
+                .orElse(defaultUsername);
+    }
+
     private Authentication authentication() throws SignatureException {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
