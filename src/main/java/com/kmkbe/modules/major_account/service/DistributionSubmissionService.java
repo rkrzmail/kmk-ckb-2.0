@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.*;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.exception.BusinessException;
@@ -23,13 +24,10 @@ import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.entity.MstEmployee;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.nikita.utils.SpecPagination;
 import com.kmkbe.nikita.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -49,6 +47,7 @@ public class DistributionSubmissionService {
   private final BranchAreaMappingRepository branchAreaMappingRepository;
   private final ConfigRemoteService configRemoteService;
   private final CustomerRepository customerRepository;
+  private final CurrentUserService currentUserService;
 
 
   public DistributionSubmissionService(FinancingHdrRepository financingHdrRepository,
@@ -56,13 +55,15 @@ public class DistributionSubmissionService {
                                        MstBranchRepository mstBranchRepository,
                                        BranchAreaMappingRepository branchAreaMappingRepository,
                                        ConfigRemoteService configRemoteService,
-                                       CustomerRepository customerRepository) {
+                                       CustomerRepository customerRepository,
+                                       CurrentUserService currentUserService) {
     this.financingHdrRepository = financingHdrRepository;
     this.emailService = emailService;
     this.mstBranchRepository = mstBranchRepository;
     this.branchAreaMappingRepository = branchAreaMappingRepository;
     this.configRemoteService = configRemoteService;
     this.customerRepository = customerRepository;
+    this.currentUserService = currentUserService;
   }
 
   public PaginationResult<DistributionSubmissionDto> submissionDistribution(PaginationRequest request) {
@@ -186,11 +187,10 @@ public class DistributionSubmissionService {
    * @throws SignatureException
    */
   public BaseResponse assignSubmission(AssignInvoiceToBranchRequest request) throws SignatureException {
-    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
     final UUID financingHdrCode;
 
     financingHdrCode = UUID.fromString(request.getFinancingHdrCode());
-    MstUser authenticateUser = UserInternalUtils.authenticateUser(authentication);
+    MstUser authenticateUser = currentUserService.internalUser();
 
     /**
      * Find branch

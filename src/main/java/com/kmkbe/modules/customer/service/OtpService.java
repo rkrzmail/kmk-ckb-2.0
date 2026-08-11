@@ -5,7 +5,6 @@ import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.OtpLog;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.OtpRepository;
-import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.request.RequestOtpRequest;
 import com.kmkbe.modules.customer.model.request.VerifyOtpRequest;
@@ -20,11 +19,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.text.DecimalFormat;
+import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Optional;
-import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
@@ -35,16 +33,18 @@ public class OtpService {
     private final EmailService emailService;
     private final CustomerService customerService;
     private final BCryptPasswordEncoder bcryptEncoder;
+    private final Clock clock;
+    private final OtpGenerator otpGenerator;
 
     public OtpLog create(@NonNull Customer customer, @NonNull OtpType type) throws Exception {
-        final LocalDateTime now = DateTimeUtils.now();
+        final LocalDateTime now = now();
         final OtpLog otpLog = new OtpLog();
         otpLog.setEmail(customer.getCustEmail());
         otpLog.setMobilePhone(customer.getCustMobilePhone());
         otpLog.setGeneratedDate(now);
         otpLog.setExpiredDate(now.plus(5, ChronoUnit.MINUTES));
         otpLog.setUsrCrt(customer.getCustName());
-        otpLog.setDtmCrt(DateTimeUtils.now());
+        otpLog.setDtmCrt(now());
         otpLog.setIsUsed(false);
         otpLog.setOtpCode(genOtp());
         //otpLog.setOtpCode("1111");
@@ -74,13 +74,13 @@ public class OtpService {
         emailService.sendNotificationActive(customer);
 
         final OtpLog otp = findCustomerOtp.getOtpLog();
-        if (DateTimeUtils.now().isAfter(otp.getExpiredDate())) {
+        if (now().isAfter(otp.getExpiredDate())) {
             throw new IllegalStateException("Otp is Expired");
         }
 
         otp.setIsUsed(true);
         otp.setUsrUpd(customer.getCustName());
-        otp.setDtmUpd(DateTimeUtils.now());
+        otp.setDtmUpd(now());
 
         otpRepository.save(otp);
         return "Sign up successfully";
@@ -94,7 +94,7 @@ public class OtpService {
             return new RequestOtpDto(
                     genRequestId(email, Utils.RND()),
                     email,
-                    DateTimeUtils.now().plus(5, ChronoUnit.MINUTES)
+                    now().plus(5, ChronoUnit.MINUTES)
             );
         }else{
             final Customer cust = find.get();
@@ -133,13 +133,13 @@ public class OtpService {
         
         
 
-        if (DateTimeUtils.now().isAfter(otp.getExpiredDate())) {
+        if (now().isAfter(otp.getExpiredDate())) {
             throw new IllegalStateException("Otp is expired, try to resend again");
         }
 
         otp.setIsUsed(true);
         otp.setUsrUpd(customer.getCustName());
-        otp.setDtmUpd(DateTimeUtils.now());
+        otp.setDtmUpd(now());
         otpRepository.save(otp);
 
         return "Otp verified, try to enter new pin";
@@ -164,7 +164,7 @@ public class OtpService {
     }
 
     private String genOtp() {
-        return new DecimalFormat("0000").format(new Random().nextInt(9999));
+        return otpGenerator.generate();
     }
 
     public String genRequestId(Customer cust, OtpLog otpLog) {
@@ -255,7 +255,7 @@ public class OtpService {
     // New Method to generate OTP without customer lookup
     @Transactional
     public OtpLog generateOtpForEmail(String email, OtpType type) throws Exception {
-        final LocalDateTime now = DateTimeUtils.now();
+        final LocalDateTime now = now();
         final OtpLog otpLog = new OtpLog();
         otpLog.setEmail(email); // Directly set the email
         otpLog.setGeneratedDate(now);
@@ -305,7 +305,7 @@ public class OtpService {
         OtpLog otpLog = otpLogOptional.get();
 
         // Check if the OTP is expired
-        if (DateTimeUtils.now().isAfter(otpLog.getExpiredDate())) {
+        if (now().isAfter(otpLog.getExpiredDate())) {
             throw new IllegalStateException("OTP has expired.");
         }
 
@@ -317,10 +317,14 @@ public class OtpService {
         // Mark the OTP as used
         otpLog.setIsUsed(true);
         otpLog.setUsrUpd("system"); // Or any user identifier
-        otpLog.setDtmUpd(DateTimeUtils.now());
+        otpLog.setDtmUpd(now());
 
         otpRepository.save(otpLog); // Save the updated OTP log
 
         return "OTP verification successful!";
+    }
+
+    private LocalDateTime now() {
+        return LocalDateTime.now(clock);
     }
 }
