@@ -17,9 +17,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 )
 public interface CsulVendorFeignClient {
 
-  @GetMapping(value = "/api/v1/sbu/ckb/vendor", consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+  @GetMapping(value = "/api/v1/sbu/ckb/vendor")
   CsulApiResponseWrapper<CsulGetVendorDto> getVendorData(@RequestParam("vendor_code") String vendorCode);
 
-  @GetMapping(value = "/api/v1/sbu/ckb/listpostedinvoice",consumes = MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+  @GetMapping(value = "/api/v1/sbu/ckb/listpostedinvoice")
   CsulApiResponseWrapper<CsulInquiryInvoiceRemoteDto> getListPostedInvoice(@RequestParam("vendor_code") String vendorCode);
 }
