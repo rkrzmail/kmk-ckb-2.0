@@ -538,23 +538,16 @@ public class SignerService {
   }
 
   public PersonDto getSignersFromExternalApi(String financingHdrCode, String agreementNo) {
-    boolean useHardcode = false; // Ganti nilai ini untuk switch mode
-
     try {
       String custNo;
       String cwrNo;
 
-      if (useHardcode) {
-        custNo = "41000001137";
-        cwrNo = "41350CWR2024454";
-      } else {
-        UUID uuid = UUID.fromString(financingHdrCode);
-        Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid, agreementNo)
-          .orElseThrow(() -> new RuntimeException("Agreement not found"));
+      UUID uuid = UUID.fromString(financingHdrCode);
+      Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid, agreementNo)
+        .orElseThrow(() -> new RuntimeException("Agreement not found"));
 
-        custNo = agreement.getCwr().getCustomer().getCustNo();
-        cwrNo = agreement.getCwr().getCwrCode();
-      }
+      custNo = agreement.getCwr().getCustomer().getCustNo();
+      cwrNo = agreement.getCwr().getCwrCode();
 
       SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
       ExternalApiResponse response = callExternalApi(request);
@@ -742,9 +735,9 @@ public class SignerService {
           .body(new ApiResponse<>(false, "DocumentId is required", null, null, null));
       }
 
-      String doc = String.valueOf(agreementFileSigningRepository.findByDocumentId(documentId));
+      Optional<AgreementFileSigning> doc = agreementFileSigningRepository.findByDocumentId(documentId);
 
-      if (doc == null) {
+      if (doc.isEmpty()) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
           .body(new ApiResponse<>(false, "Document not found in database", null, null, null));
       }
@@ -973,21 +966,6 @@ public class SignerService {
         AgreementFileSigning updated = agreementFileSigningRepository.save(signing);
       }
     }
-  }
-
-  private String determineStatusFromSigners(List<Map<String, String>> signers) {
-    if (signers == null || signers.isEmpty()) {
-      return "Menunggu TTD";
-    }
-
-    for (Map<String, String> signer : signers) {
-      String signStatus = signer.get("signStatus");
-      if ("1".equals(signStatus)) return "signed";
-      if ("2".equals(signStatus)) return "Sign Failed";
-      if ("3".equals(signStatus)) return "Signing in Process";
-    }
-
-    return "Menunggu TTD";
   }
 
   private void updateFinancingStep(String financingHdrCode, String stampStatus) {

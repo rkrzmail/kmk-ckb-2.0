@@ -286,12 +286,8 @@ public class CwrService {
     }
 
     public List<String> inquiryListAggr(String cwrCode) {
+        List<String> list = new ArrayList<>();
         try {
-
-
-            final List<InquiryCwrRemoteDto> data;
-            List<String> list = new ArrayList<>();
-            try {
 
                 final BaseMstRemoteResponseDto<List<InquiryAgreementByNoCwrRemoteDto>> agreementResponse =
                         cwrRemoteService
@@ -359,12 +355,7 @@ public class CwrService {
             //  "41950241610",
             //]
 
-            return list;
-
-        } catch (Exception e) {
-            log.error("inquiryCwr: error {}", e.getMessage());
-            throw e;
-        }
+        return list;
     }
 
     public void validateCwr(String cwrNo) {

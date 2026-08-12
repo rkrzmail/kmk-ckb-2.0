@@ -405,8 +405,7 @@ public class AgreementService {
 
         } catch (Exception igonred) {}*/
 
-        boolean bypass = true;
-        if (!bypass) {
+        if (!bypassRemotePosting()) {
             BaseSimpleRemoteResponseDto<Object> postedResponse = financingRemoteService.postedSubmission(
                     FinancingSubmissionRequest.builder()
                             .vendorCode(customer.getCustExternalCode())
@@ -443,6 +442,10 @@ public class AgreementService {
                         .invoices(invoices)
                         .build()
         );
+    }
+
+    boolean bypassRemotePosting() {
+        return true;
     }
 
     private Map<String, Object> findCsulBank() throws JsonProcessingException {
