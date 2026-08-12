@@ -20,21 +20,6 @@ public class ApiCsulAdapter {
   }
 
   /**
-   * Login Confins
-   * @param request
-   * @return
-   */
-  public CsulPostLoginDto login(CsulPostLoginRequest request) {
-    CsulApiResponseWrapper<CsulPostLoginDto> responseWrapper = csulAuthFeignClient.login(request);
-
-    if (responseWrapper == null || responseWrapper.getData() == null) {
-      return null;
-    }
-
-    return responseWrapper.getData();
-  }
-
-  /**
    *
    * @param vendorCode
    * @return

@@ -58,7 +58,7 @@ public class CsulTokenManager {
   private void executeLogin() {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
-    CsulPostLoginRequest credentials = new CsulPostLoginRequest(username ,password, clientSecret);
+    CsulPostLoginRequest credentials = new CsulPostLoginRequest(username, password, clientSecret);
     HttpEntity<CsulPostLoginRequest> requestEntity = new HttpEntity<>(credentials, headers);
 
     try {
@@ -68,15 +68,24 @@ public class CsulTokenManager {
 
       ResponseEntity<CsulPostLoginDto> responseEntity = restTemplate.postForEntity(fullUrl, requestEntity, CsulPostLoginDto.class);
       CsulPostLoginDto response = responseEntity.getBody();
-      log.info("RAMCO {} ",response);
-      if (response != null && response.getData().getToken()!= null) {
+
+      log.info("RAMCO {} ", response);
+
+      if (response != null && response.getData() != null && response.getData().getToken() != null) {
         cachedToken.set("Bearer " + response.getData().getToken());
       } else {
-        log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", response);
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Authentication failed: Token string payload was null");
+        log.info("{} {}", ErrorConstant.ERROR_MESSAGE_80, response);
+        throw new BusinessException(
+          HttpStatus.CONFLICT,
+          ErrorConstant.ERROR_CODE_80,
+          "Authentication failed: Token string payload was null or response data was empty"
+        );
       }
+    } catch (BusinessException be) {
+      throw be;
     } catch (Exception e) {
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}",e.getMessage());
+      log.error("Login failed due to system error: ", e);
+      log.info("{} {}", ErrorConstant.ERROR_MESSAGE_80, e.getMessage());
     }
   }
 }
