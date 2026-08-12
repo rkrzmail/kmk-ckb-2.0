@@ -84,8 +84,12 @@ public class CsulTokenManager {
     } catch (BusinessException be) {
       throw be;
     } catch (Exception e) {
-      log.error("Login failed due to system error: ", e);
-      log.info("{} {}", ErrorConstant.ERROR_MESSAGE_80, e.getMessage());
+      log.error("Login failed due to system error: {} ", e.getMessage());
+      throw new BusinessException(
+        HttpStatus.CONFLICT,
+        ErrorConstant.ERROR_CODE_80,
+        "Authentication failed response data was empty"
+      );
     }
   }
 }

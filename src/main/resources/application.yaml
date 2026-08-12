@@ -25,6 +25,22 @@ spring:
       max-request-size: 100MB
   profiles:
     active: dev
+
+  # Feign Configuration
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 10000
+            readTimeout: 60000
+            loggerLevel: FULL
+            errorDecoder: com.kmkbe.feign.config.FeignErrorDecoder
+      httpclient:
+        hc5:
+          enabled: true
+        follow-redirects: false
+
 security:
   jwt:
     secret-key: 84b6e04f3268b78e7fee1883733e47aff50b88d1184b3512f2b5bffadb99d7eb

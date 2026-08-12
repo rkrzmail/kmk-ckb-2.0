@@ -11,108 +11,115 @@ import java.util.List;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CsulGetVendorDto {
-    @JsonProperty("vendor_id")
-    private String vendorId;
+  @JsonProperty("vendor_id")
+  private String vendorId;
 
-    @JsonProperty("sap_code")
-    private String sapCode;
+  @JsonProperty("sap_code")
+  private String sapCode;
 
-    @JsonProperty("vendor_name")
-    private String vendorName;
+  @JsonProperty("vendor_name")
+  private String vendorName;
 
-    @JsonProperty("founded_date")
-    private String foundedDate;
+  @JsonProperty("founded_date")
+  private String foundedDate;
 
-    private String npwp;
+  private String npwp;
 
-    @JsonProperty("npwp_url")
-    private String npwpUrl;
+  @JsonProperty("npwp_url")
+  private String npwpUrl;
 
-    @JsonProperty("nip_siup")
-    private String nipSiup;
+  @JsonProperty("nip_siup")
+  private String nipSiup;
 
-    @JsonProperty("nip_siup_link")
-    private String nipSiupLink;
+  @JsonProperty("nip_siup_link")
+  private String nipSiupLink;
 
-    @JsonProperty("pkp_number")
-    private String pkpNumber;
+  @JsonProperty("pkp_number")
+  private String pkpNumber;
 
-    @JsonProperty("pkp_link")
-    private String pkpLink;
+  @JsonProperty("pkp_link")
+  private String pkpLink;
 
-    @JsonProperty("jenis_perusahaan")
-    private String jenisPerusahaan;
+  @JsonProperty("jenis_perusahaan")
+  private String jenisPerusahaan;
 
-    @JsonProperty("ktp_npwp_vendor_stock_id")
-    private String ktpNpwpVendorStockId;
+  @JsonProperty("ktp_npwp_vendor_stock_id")
+  private String ktpNpwpVendorStockId;
 
-    @JsonProperty("ktp_npwp_vendor_stock_link")
-    private String ktpNpwpVendorStockLink;
+  @JsonProperty("ktp_npwp_vendor_stock_link")
+  private String ktpNpwpVendorStockLink;
 
-    @JsonProperty("laporan_keuangan_link")
-    private String laporanKeuanganLink;
+  @JsonProperty("laporan_keuangan_link")
+  private String laporanKeuanganLink;
 
-    @JsonProperty("akta_pendirian_link")
-    private String aktaPendirianLink;
+  @JsonProperty("akta_pendirian_link")
+  private String aktaPendirianLink;
 
-    @JsonProperty("akta_perubahan_link")
-    private String aktaPerubahanLink;
+  @JsonProperty("akta_perubahan_link")
+  private String aktaPerubahanLink;
 
-    @JsonProperty("pengesahan_kemenkumham_link")
-    private String pengesahanKemenkumhamLink;
+  @JsonProperty("pengesahan_kemenkumham_link")
+  private String pengesahanKemenkumhamLink;
 
-    private String email;
-    private String phone;
-    private String website;
-    private String fax;
+  private String email;
+  private String phone;
+  private String website;
+  private String fax;
 
-    @JsonProperty("ktp_directur")
-    private String ktpDirectur;
+  @JsonProperty("ktp_directur")
+  private String ktpDirectur;
 
-    @JsonProperty("ktp_direktur_link")
-    private String ktpDirekturLink;
+  @JsonProperty("ktp_direktur_link")
+  private String ktpDirekturLink;
 
-    @JsonProperty("position_ref")
-    private Integer positionRef;
+  @JsonProperty("position_ref")
+  private Integer positionRef;
 
-    @JsonProperty("vendor_building")
-    private BuildingDetail vendorBuilding;
+  @JsonProperty("vendor_building")
+  private BuildingDetail vendorBuilding;
 
-    @JsonProperty("bank_detail")
-    private List<InquiryVendorRemoteDto.BankDetail> bankDetail;
+  @JsonProperty("bank_detail")
+  private List<InquiryVendorRemoteDto.BankDetail> bankDetail;
 
-    @JsonProperty("vendor_registration_doc")
-    private List<InquiryVendorRemoteDto.VendorRegistrationDoc> vendorRegistrationDoc;
+  @JsonProperty("vendor_registration_doc")
+  private List<InquiryVendorRemoteDto.VendorRegistrationDoc> vendorRegistrationDoc;
 
-    @JsonProperty("other_document_vendor")
-    private List<InquiryVendorRemoteDto.OtherDocument> otherDocument;
+  @JsonProperty("other_document_vendor")
+  private List<InquiryVendorRemoteDto.OtherDocument> otherDocument;
 
 
   @Getter
-    @Setter
-    public static class BuildingDetail {
-      @JsonProperty("ownership_status")
-      private String ownershipStatus;
+  @Setter
+  public static class BuildingDetail {
+    @JsonProperty("ownership_status")
+    private Integer ownershipStatus;
 
-      @JsonProperty("jenis")
-      private String jenis;
+    @JsonProperty("jenis")
+    private Integer jenis;
 
-      @JsonProperty("category")
-      private String category;
+    @JsonProperty("category")
+    private Integer category;
 
-      @JsonProperty("address_detail")
-      private String addressDetail;
 
-      @JsonProperty("address_info")
-      private String addressInfo;
+    @JsonProperty("document_no")
+    private Integer documentNo;
 
-      @JsonProperty("state_name")
-      private String stateName;
+    @JsonProperty("building_address")
+    private Integer buildingAddress;
 
-      @JsonProperty("city_name")
-      private String cityName;
+    @JsonProperty("address_detail")
+    private String addressDetail;
 
-      @JsonProperty("district_name")
-      private String districtName;
-    }
+    @JsonProperty("address_info")
+    private String addressInfo;
+
+    @JsonProperty("state_name")
+    private String stateName;
+
+    @JsonProperty("city_name")
+    private String cityName;
+
+    @JsonProperty("district_name")
+    private String districtName;
   }
+}

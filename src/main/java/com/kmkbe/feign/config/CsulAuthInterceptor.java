@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class CsulAuthInterceptor implements RequestInterceptor {
 
+
   private final CsulTokenManager csulTokenManager;
 
   public CsulAuthInterceptor(CsulTokenManager csulTokenManager) {

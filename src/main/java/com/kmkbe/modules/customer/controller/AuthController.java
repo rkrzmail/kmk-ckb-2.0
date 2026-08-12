@@ -5,7 +5,9 @@ import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.dto.LoginDto;
 import com.kmkbe.core.domain.dto.RequestOtpDto;
+import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BaseResponse;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.OtpLog;
@@ -33,6 +35,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,6 +44,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -76,24 +80,19 @@ public class AuthController {
     final CsulGetVendorDto vendor;
 
     // Validate duplicate vendor ID
-    Optional<Customer>customerOptional = customerRepository.findByVendorId(request.getVendorId());
-    if(customerOptional.isPresent()){
-      throw new IllegalArgumentException("Vendor code has been register! " + request.getVendorId());
+    Optional<Customer> customerOptional = customerRepository.findByVendorId(request.getVendorId());
+    if (customerOptional.isPresent()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getVendorId());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "Vendor code has been register! ");
     }
 
-    try {
-      vendor = apiCsulAdapter.findByCode(request.getVendorCode());
-      log.info("Inquiry Vendor {} ",vendor.toString());
-
-    } catch (Exception e) {
-      log.info("Error get inquiry vendor {} ",e.getMessage());
-      throw CommonInvalidException.builder()
-        .title("Vendor ID Perusahaan Tidak Ditemukan")
-        .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
-          "Dana Sakti. Harap melakukan pengecekan ulang")
-        .build();
+    vendor = apiCsulAdapter.findByCode(request.getVendorCode());
+    if (vendor == null) {
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", request.getBouwheerCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, ErrorConstant.ERROR_MESSAGE_80 + "Vendor ID Perusahaan Tidak Ditemukan");
     }
 
+    log.info("Inquiry Vendor {} ", vendor);
     // Validate Bouwheer Code
     Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
     if (bouwheerOptional.isEmpty()) {
@@ -104,14 +103,13 @@ public class AuthController {
     if (request.getCustomerType().equalsIgnoreCase("perusahaan")) {
       type = CustomerType.Company;
       String address = "", province = "", city = "", kecamatan = "", kelurahan = "";
-      if (
-        vendor.getVendorBuilding() != null
-      ) {
-        address = vendor.getVendorBuilding().getAddressInfo();
-        province = vendor.getVendorBuilding().getStateName();
-        city = vendor.getVendorBuilding().getCityName();
-        kecamatan = vendor.getVendorBuilding().getDistrictName();
-        kelurahan = vendor.getVendorBuilding().getDistrictName();
+
+      if (vendor.getVendorBuilding() != null) {
+        address = Optional.ofNullable(vendor.getVendorBuilding().getAddressInfo()).orElse("");
+        province = Optional.ofNullable(vendor.getVendorBuilding().getStateName()).orElse("");
+        city = Optional.ofNullable(vendor.getVendorBuilding().getCityName()).orElse("");
+        kecamatan = Optional.ofNullable(vendor.getVendorBuilding().getDistrictName()).orElse("");
+        kelurahan = Optional.ofNullable(vendor.getVendorBuilding().getDistrictName()).orElse("");
       }
 
       LocalDateTime staySince;
@@ -159,45 +157,48 @@ public class AuthController {
 
 
     documentService.mappingFromInquiryVendor(cust, InquiryVendorRemoteDto.builder()
-        .vendorId(vendor.getVendorId())
-        .sapCode(vendor.getSapCode())
-        .vendorName(vendor.getVendorName())
-        .foundedDate(vendor.getFoundedDate())
-        .npwp(vendor.getNpwp())
-        .npwpLink(vendor.getNpwpUrl())
-        .nipSiup(vendor.getNipSiup())
-        .nipSiupLink(vendor.getNipSiupLink())
-        .pkpNumber(vendor.getPkpNumber())
-        .pkpLink(vendor.getPkpLink())
-        .jenisPerusahaan(vendor.getJenisPerusahaan())
-        .jenisPerusahaanName(vendor.getJenisPerusahaan())
-        .jenisPerusahaanDescription(vendor.getJenisPerusahaan())
-        .ktpNpwpVendorStockId(vendor.getKtpNpwpVendorStockId())
-        .ktpNpwpVendorStockLink(vendor.getKtpNpwpVendorStockLink())
-        .aktaPendirianLink(vendor.getAktaPendirianLink())
-        .aktaPerubahanLink(vendor.getAktaPerubahanLink())
-        .pengesahanKemenkumhamLink(vendor.getPengesahanKemenkumhamLink())
-        .vendorBuilding(Arrays.asList(InquiryVendorRemoteDto.VendorBuilding.builder()
-            .ownershipStatus(vendor.getVendorBuilding().getOwnershipStatus())
-            .jenis(vendor.getVendorBuilding().getJenis())
-            .category(vendor.getVendorBuilding().getCategory())
-            .addressDetail(vendor.getVendorBuilding().getAddressDetail())
-            .addressInfo(vendor.getVendorBuilding().getAddressInfo())
-            .stateName(vendor.getVendorBuilding().getStateName())
-            .cityName(vendor.getVendorBuilding().getCityName())
-            .districtName(vendor.getVendorBuilding().getDistrictName())
-          .build()))
-        .laporanKeuanganLink(vendor.getLaporanKeuanganLink())
-        .email(vendor.getEmail())
-        .phone(vendor.getPhone())
-        .website(vendor.getWebsite())
-        .fax(vendor.getFax())
-        .ktpDirectur(vendor.getKtpDirectur())
-        .ktpDirekturLink(vendor.getKtpDirekturLink())
-        .positionRef(vendor.getPositionRef())
-        .bankDetail(vendor.getBankDetail())
-        .vendorRegistrationDoc(vendor.getVendorRegistrationDoc())
-        .otherDocument(vendor.getOtherDocument())
+      .vendorId(vendor.getVendorId())
+      .sapCode(vendor.getSapCode())
+      .vendorName(vendor.getVendorName())
+      .foundedDate(vendor.getFoundedDate())
+      .npwp(vendor.getNpwp())
+      .npwpLink(vendor.getNpwpUrl())
+      .nipSiup(vendor.getNipSiup())
+      .nipSiupLink(vendor.getNipSiupLink())
+      .pkpNumber(vendor.getPkpNumber())
+      .pkpLink(vendor.getPkpLink())
+      .jenisPerusahaan(vendor.getJenisPerusahaan())
+      .jenisPerusahaanName(vendor.getJenisPerusahaan())
+      .jenisPerusahaanDescription(vendor.getJenisPerusahaan())
+      .ktpNpwpVendorStockId(vendor.getKtpNpwpVendorStockId())
+      .ktpNpwpVendorStockLink(vendor.getKtpNpwpVendorStockLink())
+      .aktaPendirianLink(vendor.getAktaPendirianLink())
+      .aktaPerubahanLink(vendor.getAktaPerubahanLink())
+      .pengesahanKemenkumhamLink(vendor.getPengesahanKemenkumhamLink())
+      .vendorBuilding(Collections.singletonList(InquiryVendorRemoteDto.VendorBuilding.builder()
+        .ownershipStatus(vendor.getVendorBuilding() != null && vendor.getVendorBuilding().getOwnershipStatus() != null
+          ? String.valueOf(vendor.getVendorBuilding().getOwnershipStatus()) : "0")
+        .jenis(vendor.getVendorBuilding() != null && vendor.getVendorBuilding().getJenis() != null
+          ? String.valueOf(vendor.getVendorBuilding().getJenis()) : "0")
+        .category(vendor.getVendorBuilding() != null && vendor.getVendorBuilding().getCategory() != null
+          ? String.valueOf(vendor.getVendorBuilding().getCategory()) : "0")
+        .addressDetail(vendor.getVendorBuilding() != null ? vendor.getVendorBuilding().getAddressDetail() : "")
+        .addressInfo(vendor.getVendorBuilding() != null ? vendor.getVendorBuilding().getAddressInfo() : "")
+        .stateName(vendor.getVendorBuilding() != null ? vendor.getVendorBuilding().getStateName() : "")
+        .cityName(vendor.getVendorBuilding() != null ? vendor.getVendorBuilding().getCityName() : "")
+        .districtName(vendor.getVendorBuilding() != null ? vendor.getVendorBuilding().getDistrictName() : "")
+        .build()))
+      .laporanKeuanganLink(vendor.getLaporanKeuanganLink())
+      .email(vendor.getEmail())
+      .phone(vendor.getPhone())
+      .website(vendor.getWebsite())
+      .fax(vendor.getFax())
+      .ktpDirectur(vendor.getKtpDirectur())
+      .ktpDirekturLink(vendor.getKtpDirekturLink())
+      .positionRef(vendor.getPositionRef())
+      .bankDetail(vendor.getBankDetail())
+      .vendorRegistrationDoc(vendor.getVendorRegistrationDoc())
+      .otherDocument(vendor.getOtherDocument())
       .build());
 
     final OtpLog otpLog = otpService.create(cust, OtpService.OtpType.SIGNUP);
