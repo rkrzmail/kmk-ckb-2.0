@@ -36,6 +36,7 @@ spring:
             readTimeout: 60000
             loggerLevel: FULL
             errorDecoder: com.kmkbe.feign.config.FeignErrorDecoder
+            decodeSlash: false
       httpclient:
         hc5:
           enabled: true
