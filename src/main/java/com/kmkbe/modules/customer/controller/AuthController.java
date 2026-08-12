@@ -88,10 +88,9 @@ public class AuthController {
     } catch (Exception e) {
       log.info("Error get inquiry vendor {} ",e.getMessage());
       throw CommonInvalidException.builder()
-        .title("Perusahaan Tidak Ditemukan")
+        .title("Vendor ID Perusahaan Tidak Ditemukan")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
-          "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak PT. Trakindo Utama.")
+          "Dana Sakti. Harap melakukan pengecekan ulang")
         .build();
     }
 
