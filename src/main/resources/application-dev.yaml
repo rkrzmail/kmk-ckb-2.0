@@ -154,7 +154,7 @@ feign:
           errorDecoder: com.kmkbe.feign.config # Catch global
   csul:
     ckb:
-      url: https://api-ckbvendorportal.dipstrategy.co.id
+      url: http://10.144.250.13:5000
       username: ramco
       password: RamcoVDC2026!
       client-secret: SecretRamco2026!
