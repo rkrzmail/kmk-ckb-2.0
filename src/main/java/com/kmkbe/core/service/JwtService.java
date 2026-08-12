@@ -1,6 +1,5 @@
 package com.kmkbe.core.service;
 
-import com.kmkbe.core.utils.DateTimeUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -17,8 +16,8 @@ import org.springframework.security.oauth2.jwt.JwtEncoderParameters;
 import org.springframework.stereotype.Service;
 
 import java.security.Key;
+import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
@@ -39,10 +38,12 @@ public class JwtService {
 
     private final JwtDecoder jwtDecoder;
     private final JwtEncoder jwtEncoder;
+    private final Clock clock;
 
-    public JwtService(@Lazy JwtDecoder jwtDecoder, @Lazy JwtEncoder jwtEncoder) {
+    public JwtService(@Lazy JwtDecoder jwtDecoder, @Lazy JwtEncoder jwtEncoder, Clock clock) {
         this.jwtDecoder = jwtDecoder;
         this.jwtEncoder = jwtEncoder;
+        this.clock = clock;
     }
 
     public String extractUsername(String token) {
@@ -83,13 +84,15 @@ public class JwtService {
             UserDetails userDetails,
             long expiration
     ) {
+        Instant now = clock.instant();
+
         return Jwts
                 .builder()
                 .setClaims(extraClaims)
                 .setSubject(userDetails.getUsername())
                 .setIssuer(userDetails.getUsername() + "@DanaSakti")
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + expiration))
+                .setIssuedAt(Date.from(now))
+                .setExpiration(Date.from(now.plusMillis(expiration)))
                 .setAudience("https://dev1-danasakti.csulfinance.com")
                 .signWith(getSignInKey(), SignatureAlgorithm.HS256)
                 .compact();
@@ -105,12 +108,12 @@ public class JwtService {
     }
 
     public String generateOauth2Token(Authentication authentication) {
-        LocalDateTime now = DateTimeUtils.now();
+        Instant now = clock.instant();
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer("self")
-                .issuedAt(Instant.now())
-                .expiresAt(Instant.now().plus(10, ChronoUnit.HOURS))
+                .issuedAt(now)
+                .expiresAt(now.plus(10, ChronoUnit.HOURS))
                 .subject(authentication.getName())
                 .build();
 
@@ -118,7 +121,7 @@ public class JwtService {
     }
 
     private boolean isTokenExpired(String token) {
-        return extractExpiration(token).before(new Date());
+        return extractExpiration(token).before(Date.from(clock.instant()));
     }
 
     private Date extractExpiration(String token) {

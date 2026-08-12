@@ -2,7 +2,6 @@ package com.kmkbe.modules.loan_submission.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.InvoiceMapper;
@@ -409,27 +408,11 @@ public class FinancingDtlService {
 
             @Nullable InquiryNewInfoAgreementRequest inquiryNewInfoAgreementRequest ) throws JsonProcessingException {
         try {
-            final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
-            final HttpEntity<InquiryNewInfoAgreementRequest> requestArgs = new HttpEntity<>(
-                    inquiryNewInfoAgreementRequest,
-                    headers
-            );
-
-            final ResponseEntity<String> response = restTemplate.exchange(
+            return postRemote(
                     baseRemoteService.Agrmnt_GetNewInfoByAgrmntNo(),
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
+                    inquiryNewInfoAgreementRequest,
+                    InquiryNewInfoAgreementDto.class
             );
-
-            String stsr = String.valueOf(response.getBody());
-            ObjectMapper om = new ObjectMapper();
-            om.registerModule(new JavaTimeModule());
-            InquiryNewInfoAgreementDto root = om.readValue(stsr, InquiryNewInfoAgreementDto.class);
-            return  root;//response.getBody();
-
-
         } catch (Exception e) {
             log.error("mstRefMasterInput: {}", e.getMessage());
             throw e;
@@ -439,25 +422,11 @@ public class FinancingDtlService {
     public InquiryDataAgreementDto inquiryDataAgreement(
             @Nullable InquiryDataAgreementRequest inquiryDataAgreementRequest ) throws JsonProcessingException {
         try {
-            final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
-            final HttpEntity<InquiryDataAgreementRequest> requestArgs = new HttpEntity<>(
-                    inquiryDataAgreementRequest,
-                    headers
-            );
-
-            final ResponseEntity<String> response = restTemplate.exchange(
+            return postRemote(
                     baseRemoteService.Agrmnt_GetAgrmntByAgrmntNo(),
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
+                    inquiryDataAgreementRequest,
+                    InquiryDataAgreementDto.class
             );
-             int  o = response.getStatusCode().value();
-            String stsr = String.valueOf(response.getBody());
-            ObjectMapper om = new ObjectMapper();
-            om.registerModule(new JavaTimeModule());
-            InquiryDataAgreementDto root = om.readValue(stsr, InquiryDataAgreementDto.class);
-            return  root;//response.getBody();
         } catch (Exception e) {
             log.error("mstRefMasterInput: {}", e.getMessage());
             throw e;
@@ -468,26 +437,11 @@ public class FinancingDtlService {
 
             @Nullable InquiryOutstandingBillDetailtRequest inquiryOutstandingBillDetailtRequest ) throws JsonProcessingException {
         try {
-            final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
-            final HttpEntity<InquiryOutstandingBillDetailtRequest> requestArgs = new HttpEntity<>(
-                    inquiryOutstandingBillDetailtRequest,
-                    headers
-            );
-
-            final ResponseEntity<String> response = restTemplate.exchange(
+            return postRemote(
                     baseRemoteService.OnlinePayment_GetOutstandingBillDetailByAgrmntNo(),
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
+                    inquiryOutstandingBillDetailtRequest,
+                    InquiryOutstandingBillDetailtDto.class
             );
-            int  o = response.getStatusCode().value();
-            String stsr = String.valueOf(response.getBody());
-            ObjectMapper om = new ObjectMapper();
-            om.registerModule(new JavaTimeModule());
-            InquiryOutstandingBillDetailtDto root = om.readValue(stsr, InquiryOutstandingBillDetailtDto.class);
-            return  root;//response.getBody();
-
         } catch (Exception e) {
             log.error("mstRefMasterInput: {}", e.getMessage());
             throw e;
@@ -499,26 +453,11 @@ public class FinancingDtlService {
 
             @Nullable InquiryReceiveAmountRequest inquiryReceiveAmountRequest ) throws JsonProcessingException {
         try {
-            final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
-            final HttpEntity<InquiryReceiveAmountRequest> requestArgs = new HttpEntity<>(
-                    inquiryReceiveAmountRequest,
-                    headers
-            );
-
-            final ResponseEntity<String> response = restTemplate.exchange(
+            return postRemote(
                     baseRemoteService.PrepaidAlloc_GetRcvAmtValueByParamPriorityCodeV2(),
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
+                    inquiryReceiveAmountRequest,
+                    InquiryReceiveAmountRequestDto.class
             );
-            int  o = response.getStatusCode().value();
-            String stsr = String.valueOf(response.getBody());
-            ObjectMapper om = new ObjectMapper();
-            om.registerModule(new JavaTimeModule());
-            InquiryReceiveAmountRequestDto root = om.readValue(stsr, InquiryReceiveAmountRequestDto.class);
-            return  root;//response.getBody();
-
         } catch (Exception e) {
             log.error("mstRefMasterInput: {}", e.getMessage());
             throw e;
@@ -530,32 +469,34 @@ public class FinancingDtlService {
 
             @Nullable SubmitPaymentReceiveRequest submitPaymentReceiveRequest ) throws JsonProcessingException {
         try {
-            final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
-            final HttpEntity<SubmitPaymentReceiveRequest> requestArgs = new HttpEntity<>(
-                    submitPaymentReceiveRequest,
-                    headers
-            );
-
-
-
-            final ResponseEntity<String> response = restTemplate.exchange(
+            return postRemote(
                     baseRemoteService.PaymentReceive_SubmitPaymentReceiveFromApi(),
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
+                    submitPaymentReceiveRequest,
+                    SubmitPaymentReceiveRequestDto.class
             );
-            //int  o = response.getStatusCode().value();
-            String stsr = String.valueOf(response.getBody());
-            ObjectMapper om = new ObjectMapper();
-            om.registerModule(new JavaTimeModule());
-            SubmitPaymentReceiveRequestDto root = om.readValue(stsr, SubmitPaymentReceiveRequestDto.class);
-            return  root;//response.getBody();
-
         } catch (Exception e) {
             log.error("mstRefMasterInput: {}", e.getMessage());
             throw e;
         }
+    }
+
+    private <T> T postRemote(String url, Object request, Class<T> responseType) throws JsonProcessingException {
+        final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
+        final HttpEntity<Object> requestArgs = new HttpEntity<>(
+                request,
+                headers
+        );
+
+        final ResponseEntity<String> response = restTemplate.exchange(
+                url,
+                HttpMethod.POST,
+                requestArgs,
+                new ParameterizedTypeReference<>() {
+                }
+        );
+
+        String responseBody = String.valueOf(response.getBody());
+        return objectMapper.readValue(responseBody, responseType);
     }
 
     public double getBillingAmount(ArrayList<InquiryOutstandingBillDetailtDto.ListBillingDetail>  listBillingDetails, String billName){

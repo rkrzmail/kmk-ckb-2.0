@@ -7,10 +7,10 @@ import com.kmkbe.core.domain.model.ValidationResponse;
 import com.kmkbe.modules.api_sbu.repository.ApiSbuRepository;
 import io.jsonwebtoken.*;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Optional;
@@ -29,8 +29,13 @@ import java.util.Optional;
 @Service
 public class JwtValidatorService {
 
-  @Autowired
-  private ApiSbuRepository apiSbuRepository;
+  private final ApiSbuRepository apiSbuRepository;
+  private final Clock clock;
+
+  public JwtValidatorService(ApiSbuRepository apiSbuRepository, Clock clock) {
+    this.apiSbuRepository = apiSbuRepository;
+    this.clock = clock;
+  }
 
   /**
    * Validasi JWT token
@@ -95,7 +100,7 @@ public class JwtValidatorService {
 
     // === STEP 5: Cek expiry ===
     Date expDate = claims.getExpiration();
-    if (expDate != null && expDate.before(new Date())) {
+    if (expDate != null && expDate.before(Date.from(clock.instant()))) {
       throw new ExpiredJwtException(null, claims, "Token sudah expired pada: " + expDate);
     }
 

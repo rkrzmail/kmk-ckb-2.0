@@ -7,6 +7,7 @@ import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Optional;
@@ -16,15 +17,17 @@ import java.util.UUID;
 @Slf4j
 public class DbRefreshTokenServices implements IRefreshTokenServices {
     private final JdbcTemplate jdbcTemplate;
+    private final Clock clock;
 
-    public DbRefreshTokenServices(JdbcTemplate jdbcTemplate) {
+    public DbRefreshTokenServices(JdbcTemplate jdbcTemplate, Clock clock) {
         this.jdbcTemplate = jdbcTemplate;
+        this.clock = clock;
     }
 
     @Override
     public RefreshToken create(IRefreshTokenServices.User user) {
         try {
-            final RefreshToken payload = defaultPayload(user);
+            final RefreshToken payload = defaultPayload(user, clock);
 
             jdbcTemplate.update(
                     "insert into public._refresh_token (user_code, refresh_token, expired_date) values (?, ?, ?)",
@@ -63,7 +66,7 @@ public class DbRefreshTokenServices implements IRefreshTokenServices {
 
             Calendar expiredDt = Calendar.getInstance();
             expiredDt.setTimeInMillis(last.getExpiredDate().getTime());
-            Date now = new Date();
+            Date now = Date.from(clock.instant());
             String expiredDtStr = DateTimeUtils.SDF_STANDARD_DATE_TIME.format(expiredDt.getTimeInMillis());
             String nowStr = DateTimeUtils.SDF_STANDARD_DATE_TIME.format(now.getTime());
 

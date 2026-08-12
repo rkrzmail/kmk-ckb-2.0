@@ -4,6 +4,7 @@ import com.kmkbe.core.domain.model.RefreshToken;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.time.Clock;
 import java.util.Date;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -16,12 +17,17 @@ public interface IRefreshTokenServices {
     RefreshToken verify(String refreshToken) throws IllegalAccessException;
 
     default RefreshToken defaultPayload(User user) {
+        return defaultPayload(user, Clock.systemDefaultZone());
+    }
+
+    default RefreshToken defaultPayload(User user, Clock clock) {
         RefreshToken refreshToken = new RefreshToken();
+        Date issuedDate = Date.from(clock.instant());
         refreshToken.setUserCode(user.getUserCode());
         refreshToken.setRefreshToken(UUID.randomUUID());
-        refreshToken.setExpiredDate(new Date(System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1)));
-        //refreshToken.setExpiredDate(new Date(System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(5)));
-        refreshToken.setIssuedDate(new Date());
+        refreshToken.setExpiredDate(Date.from(issuedDate.toInstant().plusMillis(TimeUnit.DAYS.toMillis(1))));
+        //refreshToken.setExpiredDate(Date.from(issuedDate.toInstant().plusMillis(TimeUnit.MINUTES.toMillis(5))));
+        refreshToken.setIssuedDate(issuedDate);
         return refreshToken;
     }
 
