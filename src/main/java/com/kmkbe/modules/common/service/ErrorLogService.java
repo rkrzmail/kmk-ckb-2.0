@@ -5,6 +5,7 @@ import com.kmkbe.core.utils.HttpUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.core.domain.entity.ErrorLog;
 import com.kmkbe.core.domain.repository.ErrorLogRepository;
+import com.kmkbe.helpers.constant.AppConstants;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +40,7 @@ public class ErrorLogService {
             errorLog.setPageUrl(servletRequest.getRequestURI());
             errorLog.setMethodName(thrownElement.getMethodName());
             errorLog.setRequestParam(ObjectUtils.jsonToStr(HttpUtils.createRequestLog(servletRequest, HttpUtils.DEFAULT_MAX_PAYLOAD_LENGTH)));
-            errorLog.setUsrCrt("SYSTEM");
+            errorLog.setUsrCrt(AppConstants.CREATOR);
             errorLog.setDtmCrt(DateTimeUtils.now());
             errorLogRepository.save(errorLog);
         } catch (Exception e) {
