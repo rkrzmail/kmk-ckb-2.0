@@ -182,9 +182,9 @@ public class Customer implements UserDetails {
   @Column(name = "bouwheer", length = 36)
   private String bouwheer;
 
-  @OneToOne(cascade = CascadeType.ALL)
-  @JoinColumn(name = "bouwheer", referencedColumnName = "bouwheer_code", insertable = false, updatable = false)
-  private Bouwheer bouwheerDetail;
+//  @OneToOne(cascade = CascadeType.ALL)
+//  @JoinColumn(name = "bouwheer", referencedColumnName = "bouwheer_code", insertable = false, updatable = false)
+//  private Bouwheer bouwheerDetail;
 
 
 }

@@ -271,9 +271,9 @@ public class CustomerService {
       response.setForceLogout(item.getForceLogout());
       response.setVendorId(item.getVendorId());
       response.setBouwheerCode(String.valueOf(item.getBouwheer()));
-      response.setBouwheerName(Optional.ofNullable(item.getBouwheerDetail())
-        .map(Bouwheer::getBouwheerName)
-        .orElse(null));
+//      response.setBouwheerName(Optional.ofNullable(item.getBouwheerDetail())
+//        .map(Bouwheer::getBouwheerName)
+//        .orElse(null));
       response.setApprovalStatus(item.getApprovalStatus());
       response.setApprovalNote(item.getApprovalNote());
       response.setApprovalBy(item.getApprovalBy());
@@ -302,9 +302,9 @@ public class CustomerService {
     Customer customer = customerOptional.get();
     CustomerResponse response = new CustomerResponse();
     BeanUtils.copyProperties(customer, response);
-    response.setBouwheerName(Optional.ofNullable(customer.getBouwheerDetail())
-      .map(Bouwheer::getBouwheerName)
-      .orElse(null));
+//    response.setBouwheerName(Optional.ofNullable(customer.getBouwheerDetail())
+//      .map(Bouwheer::getBouwheerName)
+//      .orElse(null));
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, response);
   }
