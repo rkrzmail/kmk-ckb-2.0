@@ -10,6 +10,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
@@ -56,21 +58,38 @@ public class CsulTokenManager {
   private void executeLogin() {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
-    CsulPostLoginRequest credentials = new CsulPostLoginRequest(username ,password, clientSecret);
+    CsulPostLoginRequest credentials = new CsulPostLoginRequest(username, password, clientSecret);
     HttpEntity<CsulPostLoginRequest> requestEntity = new HttpEntity<>(credentials, headers);
 
     try {
-      ResponseEntity<CsulPostLoginDto> responseEntity = restTemplate.postForEntity(apiBaseCKB.concat("/api/v1/webhook/token"), requestEntity, CsulPostLoginDto.class);
+      String fullUrl = UriComponentsBuilder.fromHttpUrl(apiBaseCKB)
+        .path("/api/v1/webhook/token")
+        .toUriString();
+
+      ResponseEntity<CsulPostLoginDto> responseEntity = restTemplate.postForEntity(fullUrl, requestEntity, CsulPostLoginDto.class);
       CsulPostLoginDto response = responseEntity.getBody();
-      log.info("RAMCO {} ",response);
-      if (response != null && response.getData().getToken()!= null) {
+
+      log.info("RAMCO {} ", response);
+
+      if (response != null && response.getData() != null && response.getData().getToken() != null) {
         cachedToken.set("Bearer " + response.getData().getToken());
       } else {
-        log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", response);
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Authentication failed: Token string payload was null");
+        log.info("{} {}", ErrorConstant.ERROR_MESSAGE_80, response);
+        throw new BusinessException(
+          HttpStatus.CONFLICT,
+          ErrorConstant.ERROR_CODE_80,
+          "Authentication failed: Token string payload was null or response data was empty"
+        );
       }
+    } catch (BusinessException be) {
+      throw be;
     } catch (Exception e) {
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}",e.getMessage());
+      log.error("Login failed due to system error: {} ", e.getMessage());
+      throw new BusinessException(
+        HttpStatus.CONFLICT,
+        ErrorConstant.ERROR_CODE_80,
+        "Authentication failed response data was empty"
+      );
     }
   }
 }

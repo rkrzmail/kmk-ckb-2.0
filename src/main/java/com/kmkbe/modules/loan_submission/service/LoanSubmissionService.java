@@ -875,7 +875,9 @@ public class LoanSubmissionService {
         throw CommonInvalidException.cannotAccessResource();
       }
 
-      final Product product = productRepository.findById(request.getProductId()).orElseThrow();
+      final Product product = productRepository.findById(request.getProductId())
+        .orElseThrow(() -> new IllegalStateException("Product ID not found or not valid"));
+
       final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode))
         .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
 

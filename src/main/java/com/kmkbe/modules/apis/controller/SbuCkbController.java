@@ -3,7 +3,6 @@ package com.kmkbe.modules.apis.controller;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
@@ -16,8 +15,6 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.ValidationResponse;
 import com.kmkbe.modules.api_sbu.repository.ApiSbuRepository;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
-import com.kmkbe.core.domain.request.InquiryDisburseRequest;
-import com.kmkbe.core.domain.response.InquiryDisburseResult;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.service.*;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
@@ -27,18 +24,13 @@ import com.kmkbe.modules.loan_submission.service.FinancingDtlService;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.FinancingService;
 import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
-import com.kmkbe.modules.remote.service.InvoiceRemoteDto;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.annotation.Nullable;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.security.SignatureException;
@@ -55,54 +47,37 @@ import java.util.*;
   name = "/api/v1/sbu/ckb",
   description = ""
 )
-
 public class SbuCkbController {
-  private final SbuRemoteService sbuRemoteService;
-  private final RestTemplate restTemplate;
   private final FinancingHdrService financingHdrService;
 
   private final FinancingService financingService;
   private final FinancingDtlService financingDtlService;
   private final ApiSbuRepository apiSbuRepository;
-  private final JwtService jwtService;
   private final JwtGeneratorService jwtGeneratorService;
-  private final JwtValidatorService jwtValidatorService;
   private final ObjectMapper objectMapper;
-  private final AuthenticationManager authenticationManager;
   private final LoanSubmissionService loanSubmissionService;
   private final CustomerRepository customerRepository;
   private final ApiSbuCkbService apiSbuCkbService;
 
-  public SbuCkbController(SbuRemoteService sbuRemoteService,
-                          RestTemplate restTemplate,
-                          FinancingHdrService financingHdrService,
+  public SbuCkbController(FinancingHdrService financingHdrService,
                           FinancingService financingService,
                           FinancingDtlService financingDtlService,
                           ApiSbuRepository apiSbuRepository,
-                          JwtService jwtService,
                           JwtGeneratorService jwtGeneratorService,
-                          JwtValidatorService jwtValidatorService,
                           ObjectMapper objectMapper,
-                          AuthenticationManager authenticationManager,
                           LoanSubmissionService loanSubmissionService,
                           CustomerRepository customerRepository,
-                          ApiSbuCkbService apiSbuCkbService,
-                          InvoiceRemoteDto invoiceRemoteDto) {
-    this.sbuRemoteService = sbuRemoteService;
-    this.restTemplate = restTemplate;
+                          ApiSbuCkbService apiSbuCkbService
+  ) {
     this.financingHdrService = financingHdrService;
     this.financingService = financingService;
     this.financingDtlService = financingDtlService;
     this.apiSbuRepository = apiSbuRepository;
-    this.jwtService = jwtService;
     this.jwtGeneratorService = jwtGeneratorService;
-    this.jwtValidatorService = jwtValidatorService;
     this.objectMapper = objectMapper;
-    this.authenticationManager = authenticationManager;
     this.loanSubmissionService = loanSubmissionService;
     this.customerRepository = customerRepository;
     this.apiSbuCkbService = apiSbuCkbService;
-    this.invoiceRemoteDto = invoiceRemoteDto;
   }
 
   @PostMapping(value = "/test/{jwtToken}", consumes = MediaType.ALL_VALUE)
@@ -164,7 +139,7 @@ public class SbuCkbController {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString("33cade0f-4ce6-46e5-be19-258eddb7e6a6"));
     if (customerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Customer Bouwheer not found");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer Bouwheer not found");
     }
 
     Customer customer = customerOptional.get();
@@ -173,16 +148,16 @@ public class SbuCkbController {
     );
   }
 
-  @PostMapping(value = "/simulations/{jwtToken}")
+  @PostMapping(value = "/submissions/{jwtToken}")
   public CommonResult<CreatedSimulationDto> createSimulation(
-    @RequestBody CreateSimulationRequest request,
+    @RequestBody @Valid CreateSimulationRequest request,
     @PathVariable("jwtToken") String jwtToken,
     @RequestHeader("ApiKey") String apiKey
   ) throws Exception {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString("33cade0f-4ce6-46e5-be19-258eddb7e6a6"));
     if (customerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Customer Bouwheer not found");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer Bouwheer not found");
     }
 
     Customer customer = customerOptional.get();
@@ -192,36 +167,19 @@ public class SbuCkbController {
     );
   }
 
-  private final InvoiceRemoteDto invoiceRemoteDto;
-
-//  @PostMapping(value = "/listpostedinvoice/{jwtToken}")
-//  public CommonResult<CsulInquiryInvoiceRemoteDto> listpostedinvoice(
-//    @PathVariable("jwtToken") String jwtToken,
-//    @RequestBody(required = false) Object rawBody
-//  ) throws Exception {
-//    JsonNode node = objectMapper.valueToTree(rawBody);
-//    String vendorCode = node.path("vendorCode").asText();
-//
-//    BaseSimpleRemoteResponseDto<CsulInquiryInvoiceRemoteDto> inquiryInvoice = invoiceRemoteDto.inquiryInvoice(vendorCode);
-//
-//    return new CommonResult<CsulInquiryInvoiceRemoteDto>().success(
-//      inquiryInvoice.getData(),
-//      ""
-//    );
-//  }
-
   @PostMapping(value = "/listpostedinvoice/{jwtToken}")
   public CommonResult<CsulInquiryInvoiceRemoteDto> getListPostedInvoice(
     @PathVariable("jwtToken") String jwtToken,
     @RequestBody(required = false) Object rawBody
-  ){
+  ) {
     JsonNode node = objectMapper.valueToTree(rawBody);
     String vendorCode = node.path("vendorCode").asText();
     return apiSbuCkbService.inquiryListPostedInvoice(vendorCode);
   }
 
-  @GetMapping(value = "/financing/status") //approvals/status
+  @GetMapping(value = "/financing/status/{jwtToken}") //approvals/status
   public CommonResult<Object> updateApproval(
+    @PathVariable("jwtToken") String jwtToken,
     HttpServletRequest httpServletRequest
   ) {
 
@@ -231,8 +189,6 @@ public class SbuCkbController {
       throw new IllegalApiKeyException();
     }
 
-    String strSecret = apiSbu.get().getAppSecret();
-    String strApp = apiSbu.get().getAppPath();
     try {
       financingService.recallApprovalStatus();
     } catch (Exception ignored) {
@@ -248,7 +204,7 @@ public class SbuCkbController {
     @PathVariable("jwtToken") String jwtToken,
     HttpServletRequest httpServletRequest,
     @Valid @RequestBody FinancingInvoicePaidRequest request
-  ) throws Exception {
+  ) {
     try {
       String providedApiKey = httpServletRequest.getHeader("ApiKey");
       Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(providedApiKey);
@@ -275,14 +231,13 @@ public class SbuCkbController {
     }
   }
 
-
   @PostMapping(value = "/inquiry/disburse/{jwtToken}")
   public CommonResult<Object>
   inquiryDisburse(
     @PathVariable("jwtToken") String jwtToken,
     HttpServletRequest httpServletRequest,
     @Valid @RequestBody FinancingInvoicePaidRequest request
-  ) throws Exception {
+  ) {
     try {
       String providedApiKey = httpServletRequest.getHeader("ApiKey");
       Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(providedApiKey);
@@ -298,35 +253,6 @@ public class SbuCkbController {
       return new CommonResult<>().success(null);
     } catch (Exception e) {
       return new CommonResult<>().fail(500, e.getMessage());
-    }
-  }
-
-
-  public InquiryDisburseResult inquiryDisburse(@Nullable InquiryDisburseRequest inquiryDisburseRequest) throws JsonProcessingException {
-    try {
-      final HttpHeaders headers = sbuRemoteService.adInsKeyHeaders();
-      final HttpEntity<InquiryDisburseRequest> requestArgs = new HttpEntity<>(
-        inquiryDisburseRequest,
-        headers
-      );
-
-      final ResponseEntity<String> response = restTemplate.exchange(
-        sbuRemoteService.inquiry_Disburse(),
-        HttpMethod.POST,
-        requestArgs,
-        new ParameterizedTypeReference<>() {
-        }
-      );
-      //int  o = response.getStatusCode().value();
-      String stsr = String.valueOf(response.getBody());
-      ObjectMapper om = new ObjectMapper();
-      om.registerModule(new JavaTimeModule());
-      InquiryDisburseResult root = om.readValue(stsr, InquiryDisburseResult.class);
-      return root;//response.getBody();
-
-    } catch (Exception e) {
-      log.error("mstRefMasterInput: {}", e.getMessage());
-      throw e;
     }
   }
 }

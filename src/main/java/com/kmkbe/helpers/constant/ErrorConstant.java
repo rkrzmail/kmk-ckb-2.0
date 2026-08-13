@@ -18,14 +18,14 @@ public class ErrorConstant {
   public static final Integer ERROR_CODE_84 = 84;
 
   //Error Message
-  public static final String ERROR_MESSAGE_404= "Not Found";
-  public static final String ERROR_MESSAGE_409= "Conflict";
-  public static final String ERROR_MESSAGE_500= "Internal Server Error";
+  public static final String ERROR_MESSAGE_404= "Not Found ";
+  public static final String ERROR_MESSAGE_409= "Conflict ";
+  public static final String ERROR_MESSAGE_500= "Internal Server Error ";
 
-  public static final String ERROR_MESSAGE_80 = "Error Business Exception";
-  public static final String ERROR_MESSAGE_81 = "Record not found";
-  public static final String ERROR_MESSAGE_82 = "Captcha is not valid";
+  public static final String ERROR_MESSAGE_80 = "Error Business Exception ";
+  public static final String ERROR_MESSAGE_81 = "Record not found ";
+  public static final String ERROR_MESSAGE_82 = "Captcha is not valid ";
   public static final String ERROR_MESSAGE_83 = "Invalid API-KEY ";
-  public static final String ERROR_MESSAGE_84 = "Record already exist";
+  public static final String ERROR_MESSAGE_84 = "Record already exist ";
 
 }

@@ -161,16 +161,9 @@ app:
 
 # Feign Configuration
 feign:
-  client:
-    config:
-      default: # This "default" keyword applies to ALL Feign clients
-        connectTimeout: 10000       # 10 seconds to connect
-        readTimeout: 60000          # 60 seconds to wait for data
-        loggerLevel: FULL           # Log request headers, body, and metadata
-        errorDecoder: com.kmkbe.feign.config # Catch global
   csul:
     ckb:
-      url: http://10.144.250.13:5000 #https://api-ckbvendorportal.dipstrategy.co.id
+      url: https://api-ckbvendorportal.dipstrategy.co.id
       username: ramco
       password: RamcoVDC2026!
       client-secret: SecretRamco2026!

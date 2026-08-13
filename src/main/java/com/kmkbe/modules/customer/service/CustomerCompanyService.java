@@ -21,13 +21,6 @@ import java.util.UUID;
 public class CustomerCompanyService {
   private final CustomerCompanyRepository customerCompanyRepository;
 
-  public void get() {
-    try {
-
-    } catch (Exception e) {
-      log.error("get: {}", e.getMessage());
-    }
-  }
 
   public void create(Customer customer, SignUpRequest.Company companyReq) {
     try {
@@ -40,31 +33,29 @@ public class CustomerCompanyService {
       }
 
       final CustomerCompany company = new CustomerCompany();
-      {
-        company.setCustCompanyCode(UUID.randomUUID());
-        company.setCustomer(customer);
-        company.setCustCompanyType(companyReq.getCompanyType());
-        company.setCompanyModel(companyReq.getCompanyModel());
-        company.setIdentityType(companyReq.getIdentityType());
-        company.setIdentityNo(companyReq.getIdentityNo());
-        company.setIdentityIssuedDate(companyReq.getIdentityIssuedDate());
-        company.setIdentityExpiredDate(companyReq.getIdentityExpiredDate());
-        company.setCompanyAddress(companyReq.getCompanyAddress());
-        company.setRt(companyReq.getRt());
-        company.setRw(companyReq.getRw());
-        company.setKelurahan(companyReq.getKelurahan());
-        company.setKecamatan(companyReq.getKecamatan());
-        company.setCity(companyReq.getCity());
-        company.setProvince(companyReq.getProvince());
-        company.setZipCode(companyReq.getZipCode());
-        company.setArea(companyReq.getArea());
-        company.setPhone(companyReq.getPhone());
-        company.setOwnershipStatus(companyReq.getOwnershipStatus());
-        company.setStaySince(companyReq.getStaySince());
-        company.setStayLength(CustomerUtils.calculateStayLength(companyReq.getStaySince()));
-        company.setUsrCrt(customer.getCustName());
-        company.setDtmCrt(DateTimeUtils.now());
-      }
+      company.setCustCompanyCode(UUID.randomUUID());
+      company.setCustomer(customer);
+      company.setCustCompanyType(companyReq.getCompanyType());
+      company.setCompanyModel(companyReq.getCompanyModel());
+      company.setIdentityType(companyReq.getIdentityType());
+      company.setIdentityNo(companyReq.getIdentityNo());
+      company.setIdentityIssuedDate(companyReq.getIdentityIssuedDate());
+      company.setIdentityExpiredDate(companyReq.getIdentityExpiredDate());
+      company.setCompanyAddress(companyReq.getCompanyAddress());
+      company.setRt(companyReq.getRt());
+      company.setRw(companyReq.getRw());
+      company.setKelurahan(companyReq.getKelurahan());
+      company.setKecamatan(companyReq.getKecamatan());
+      company.setCity(companyReq.getCity());
+      company.setProvince(companyReq.getProvince());
+      company.setZipCode(companyReq.getZipCode());
+      company.setArea(companyReq.getArea());
+      company.setPhone(companyReq.getPhone());
+      company.setOwnershipStatus(companyReq.getOwnershipStatus());
+      company.setStaySince(companyReq.getStaySince());
+      company.setStayLength(CustomerUtils.calculateStayLength(companyReq.getStaySince()));
+      company.setUsrCrt(customer.getCustName());
+      company.setDtmCrt(DateTimeUtils.now());
 
       customerCompanyRepository.save(company);
     } catch (Exception e) {
@@ -97,25 +88,20 @@ public class CustomerCompanyService {
       company.setIdentityIssuedDate(Utils.toInstant(request.getIdentityIssuedDate()));
       company.setIdentityExpiredDate(Utils.toInstant(request.getIdentityExpiredDate()));
       company.setCompanyAddress(request.getCompanyAddress());
-      {
-        company.setKelurahan(addressRequest.getKelurahan());
-        company.setKecamatan(addressRequest.getKecamatan());
-        company.setProvince(addressRequest.getProvince());//ketinggalan
-        company.setCity(addressRequest.getCity());
-        company.setZipCode(addressRequest.getZipCode());
-        company.setArea(addressRequest.getArea());
-        company.setRt(addressRequest.getRt());
-        company.setRw(addressRequest.getRw());
-        company.setProvince(addressRequest.getProvince());
-      }
+      company.setKelurahan(addressRequest.getKelurahan());
+      company.setKecamatan(addressRequest.getKecamatan());
+      company.setProvince(addressRequest.getProvince());//ketinggalan
+      company.setCity(addressRequest.getCity());
+      company.setZipCode(addressRequest.getZipCode());
+      company.setArea(addressRequest.getArea());
+      company.setRt(addressRequest.getRt());
+      company.setRw(addressRequest.getRw());
+      company.setProvince(addressRequest.getProvince());
       company.setPhone(request.getPhone());
       company.setOwnershipStatus(request.getOwnershipStatus());
       company.setStaySince(Utils.toInstant(request.getStaySince()));
       company.setStayLength(CustomerUtils.calculateStayLength(Utils.toInstant(request.getStaySince())));
-
       company.setDirectorName(request.getDirectorName());
-
-
       return customerCompanyRepository.save(company);
     } catch (Exception e) {
       log.error("update: {}", e.getMessage());

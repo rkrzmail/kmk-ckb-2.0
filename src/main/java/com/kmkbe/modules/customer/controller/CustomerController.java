@@ -90,19 +90,15 @@ public class CustomerController {
       result.setAddress(CustomerMapper.addressDtoFromPersonal(customer.getPersonal()));
       result.setPersonal(CustomerMapper.INSTANCE.personalDtoFromEntity(customer.getPersonal()));
     }
-    try {
-      if (result.getAddress() != null) {
-        if (result.getAddress().getArea() == null) {
-          result.getAddress().setArea("");
-        }
-      }
-      if (result.getCompany() != null) {
-        if (result.getCompany().getDirectorName() == null) {
-          result.getCompany().setDirectorName("");
-        }
-      }
-    } catch (Exception ignored) {
+
+    if (result.getAddress() != null && result.getAddress().getArea() == null) {
+      result.getAddress().setArea("");
     }
+
+    if (result.getCompany() != null && result.getCompany().getDirectorName() == null) {
+      result.getCompany().setDirectorName("");
+    }
+
     return new CommonResult<CustomerDto>().success(result);
   }
 
@@ -165,17 +161,13 @@ public class CustomerController {
       result.setPersonal(CustomerMapper.INSTANCE.personalDtoFromEntity(personal));
       result.setForceLogout(customer.getForceLogout());
     }
-
-//        ObjectMapper mapper = new ObjectMapper();
-//        System.out.println("Returning DTO: " + mapper.writeValueAsString(result));
-
     return new CommonResult<CustomerDto>().success(result);
   }
 
   @GetMapping("/profilefap")
   public CommonResult<ProfileFapDto> getProfileFap(
     HttpServletRequest request
-  ) throws SignatureException {
+  ) {
     return new CommonResult<ProfileFapDto>().success(
       customerService.prolifeFAP(request)
     );
@@ -184,7 +176,7 @@ public class CustomerController {
   @GetMapping("/profile/sip")
   public CommonResult<ProfileSITDto> getProfileSit(
     HttpServletRequest request
-  ) throws SignatureException {
+  ) {
     return new CommonResult<ProfileSITDto>().success(
       customerService.prolifeSIT(request)
     );
@@ -193,7 +185,7 @@ public class CustomerController {
   @GetMapping("/invoices")
   public CommonResult<PaginationResult<PostedInvoiceDto>> getPostedInvoices(
     PaginationRequest request
-  ) throws SignatureException {
+  ) {
     return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
       invoiceService.customerActiveInvoices(request)
     );
@@ -236,7 +228,7 @@ public class CustomerController {
     @PathVariable String custCode,
     PaginationRequest request,
     HttpServletRequest httpServletRequest
-  ) throws SignatureException {
+  ) {
     return new CommonResult<PaginationResult<LegalFileDto>>().success(
       documentService.uploadedCustomerDoc(
         custCode,
