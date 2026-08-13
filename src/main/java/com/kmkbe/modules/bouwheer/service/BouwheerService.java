@@ -129,7 +129,7 @@ public class BouwheerService {
       .termOfPayment(request.getTermOfPayment())
       .gracePeriod(request.getGracePeriod())
       .isActive(request.getIsActive())
-      .usrCrt(currentUserService.usernameOrDefault("UNKNOWN"))
+      .usrCrt(currentUserService.usernameOrDefault(AppConstants.CREATOR))
       .aesKey(request.getAesKey())
       .secretKey(request.getSecretKey())
       .apiKey(request.getApiKey())
@@ -152,7 +152,7 @@ public class BouwheerService {
 
     Bouwheer bouwheer = bouwheerOptional.get();
     BeanUtils.copyProperties(request, bouwheer);
-    bouwheer.setUsrUpd(currentUserService.usernameOrDefault("UNKNOWN"));
+    bouwheer.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
     bouwheer.setDtmUpd(LocalDateTime.now());
     bouwheerRepository.save(bouwheer);
 

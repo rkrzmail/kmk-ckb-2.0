@@ -209,7 +209,7 @@ public class ApiSbuService {
       .expiredDate(request.getExpiredDate().toInstant()
         .atZone(ZoneId.systemDefault())
         .toLocalDate().atStartOfDay())
-      .usrCrt(currentUserService.usernameOrDefault("UNKNOWN"))
+      .usrCrt(currentUserService.usernameOrDefault(AppConstants.CREATOR))
       .dtmCrt(LocalDateTime.now())
       .build()
     );

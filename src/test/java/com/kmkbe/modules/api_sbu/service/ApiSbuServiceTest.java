@@ -1,5 +1,6 @@
 package com.kmkbe.modules.api_sbu.service;
 
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.service.JwtGeneratorService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BasePaginationRequest;
@@ -52,6 +53,9 @@ class ApiSbuServiceTest {
 
   @Mock
   private Authentication authentication;
+
+  @Mock
+  private CurrentUserService currentUserService;
 
   private BasePaginationRequest basePaginationRequest;
   private ApiSbu apiSbu;
