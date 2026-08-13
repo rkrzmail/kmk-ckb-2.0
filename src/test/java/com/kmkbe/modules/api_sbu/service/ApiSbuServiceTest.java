@@ -6,6 +6,7 @@ import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
+import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.modules.api_sbu.model.request.ApiSbuRequest;
 import com.kmkbe.modules.api_sbu.model.response.ApiSbuResponse;
@@ -188,7 +189,7 @@ class ApiSbuServiceTest {
     when(apiSbuRepository.findByBouwheerCodeAndAppName(BOUWHEER_CODE, request.getAppName())).thenReturn(Optional.empty());
     when(jwtGeneratorService.generateToken(anyString(), anyString(), eq(BOUWHEER_CODE.toString()), eq(EXPIRED_DATE)))
         .thenReturn("jwt-token");
-    when(currentUserService.usernameOrDefault("UNKNOWN")).thenReturn("creator");
+    when(currentUserService.usernameOrDefault(AppConstants.CREATOR)).thenReturn(AppConstants.CREATOR);
     when(apiSbuRepository.save(any(ApiSbu.class))).thenAnswer(invocation -> {
       ApiSbu apiSbu = invocation.getArgument(0);
       apiSbu.setSesId(99L);
@@ -200,7 +201,7 @@ class ApiSbuServiceTest {
     assertThat(response.getData().getSesId()).isEqualTo(99L);
     assertThat(response.getData().getAppName()).isEqualTo("Created App");
     assertThat(response.getData().getTokenJwt()).isEqualTo("jwt-token");
-    assertThat(response.getData().getUsrCrt()).isEqualTo("creator");
+    assertThat(response.getData().getUsrCrt()).isEqualTo(AppConstants.CREATOR);
     assertThat(response.getData().getSesStatus()).isEqualTo("ACTIVE");
     assertThat(response.getData().getAppKey()).isNotBlank();
     assertThat(response.getData().getAppSecret()).isNotBlank();
@@ -215,7 +216,7 @@ class ApiSbuServiceTest {
         .thenReturn(Optional.of(existingDifferentApp));
     when(jwtGeneratorService.generateToken(anyString(), anyString(), eq(BOUWHEER_CODE.toString()), eq(EXPIRED_DATE)))
         .thenReturn("jwt-token");
-    when(currentUserService.usernameOrDefault("UNKNOWN")).thenReturn("creator");
+    when(currentUserService.usernameOrDefault(AppConstants.CREATOR)).thenReturn(AppConstants.CREATOR);
     when(apiSbuRepository.save(any(ApiSbu.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     BaseResponseBuilder<ApiSbuResponse> response = service.create(request);

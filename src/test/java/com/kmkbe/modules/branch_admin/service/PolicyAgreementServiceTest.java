@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.PolicyAgreementHistoryRepository;
 import com.kmkbe.core.domain.repository.PolicyAgreementRepository;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.helpers.constant.AppConstants;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,7 +49,7 @@ class PolicyAgreementServiceTest {
     @Test
     void createPolicyAgreementSavesEntityAndReturnsInputDto() {
         PolicyAgreementDto request = dto("Policy", "Description", "Content", 1, true);
-        when(currentUserService.usernameOrDefault("UNKNOWN")).thenReturn("creator");
+        when(currentUserService.usernameOrDefault(AppConstants.CREATOR)).thenReturn(AppConstants.CREATOR);
 
         CommonResult<PolicyAgreementDto> result = service.createPolicyAgreement(request);
 
@@ -63,7 +64,7 @@ class PolicyAgreementServiceTest {
         assertThat(saved.getPolicyContent()).isEqualTo("Content");
         assertThat(saved.getVersion()).isEqualTo(1);
         assertThat(saved.getIsActive()).isTrue();
-        assertThat(saved.getUsrCrt()).isEqualTo("creator");
+        assertThat(saved.getUsrCrt()).isEqualTo(AppConstants.CREATOR);
         assertThat(saved.getDtmCrt()).isNotNull();
     }
 
@@ -161,7 +162,7 @@ class PolicyAgreementServiceTest {
         PolicyAgreement existing = policy(1L, "POL001", "Old", "Old Desc", "Old Content", 2, true);
         PolicyAgreementDto request = dto("New", "New Desc", "New Content", 99, false);
         when(policyAgreementRepository.findById(1L)).thenReturn(Optional.of(existing));
-        when(currentUserService.usernameOrDefault("UNKNOWN")).thenReturn("updater");
+        when(currentUserService.usernameOrDefault(AppConstants.CREATOR)).thenReturn(AppConstants.CREATOR);
 
         CommonResult<PolicyAgreementDto> result = service.updatePolicyAgreement(1L, request);
 
@@ -176,7 +177,7 @@ class PolicyAgreementServiceTest {
         assertThat(historyCaptor.getValue().getPolicyContent()).isEqualTo("Old Content");
         assertThat(historyCaptor.getValue().getVersion()).isEqualTo(2);
         verify(policyAgreementRepository).save(existing);
-        assertThat(existing.getUsrUpd()).isEqualTo("updater");
+        assertThat(existing.getUsrUpd()).isEqualTo(AppConstants.CREATOR);
         assertThat(existing.getDtmUpd()).isNotNull();
     }
 

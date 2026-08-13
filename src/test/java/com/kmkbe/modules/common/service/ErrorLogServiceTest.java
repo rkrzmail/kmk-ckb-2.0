@@ -44,7 +44,7 @@ class ErrorLogServiceTest {
     assertThat(saved.getErrorMsg()).isEqualTo("boom");
     assertThat(saved.getPageUrl()).isEqualTo("/api/test");
     assertThat(saved.getMethodName()).isNotBlank();
-    assertThat(saved.getUsrCrt()).isEqualTo("SYSTEM");
+    assertThat(saved.getUsrCrt()).isEqualTo("system");
     assertThat(saved.getDtmCrt()).isNotNull();
     assertThat(saved.getRequestParam()).contains("127.0.0.1");
   }

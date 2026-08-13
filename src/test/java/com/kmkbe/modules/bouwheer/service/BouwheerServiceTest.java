@@ -5,6 +5,7 @@ import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
+import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.model.request.BouwheerRequest;
 import com.kmkbe.modules.bouwheer.model.response.BouwheerResponse;
@@ -119,7 +120,7 @@ class BouwheerServiceTest {
   void createSavesUppercaseBouwheerWhenNameIsUnique() {
     BouwheerRequest request = bouwheerRequest("pt new");
     when(bouwheerRepository.findFirstByBouwheerName("PT NEW")).thenReturn(Optional.empty());
-    when(currentUserService.usernameOrDefault("UNKNOWN")).thenReturn("creator");
+    when(currentUserService.usernameOrDefault(AppConstants.CREATOR)).thenReturn(AppConstants.CREATOR);
 
     BaseResponse response = service.create(request);
 
@@ -147,7 +148,7 @@ class BouwheerServiceTest {
     assertThat(saved.getTermOfPayment()).isEqualTo(request.getTermOfPayment());
     assertThat(saved.getGracePeriod()).isEqualTo(request.getGracePeriod());
     assertThat(saved.getIsActive()).isEqualTo(request.getIsActive());
-    assertThat(saved.getUsrCrt()).isEqualTo("creator");
+    assertThat(saved.getUsrCrt()).isEqualTo(AppConstants.CREATOR);
     assertThat(saved.getAesKey()).isEqualTo(request.getAesKey());
     assertThat(saved.getSecretKey()).isEqualTo(request.getSecretKey());
     assertThat(saved.getApiKey()).isEqualTo(request.getApiKey());
@@ -162,7 +163,7 @@ class BouwheerServiceTest {
 
     assertThatThrownBy(() -> service.create(request))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("Record already exist");
+        .hasMessage("Record already exist ");
   }
 
   @Test
@@ -170,7 +171,7 @@ class BouwheerServiceTest {
     Bouwheer existing = bouwheer(BOUWHEER_CODE, "PT OLD");
     BouwheerRequest request = bouwheerRequest("PT UPDATED");
     when(bouwheerRepository.findByBouwheerCode(BOUWHEER_CODE)).thenReturn(Optional.of(existing));
-    when(currentUserService.usernameOrDefault("UNKNOWN")).thenReturn("updater");
+    when(currentUserService.usernameOrDefault(AppConstants.CREATOR)).thenReturn(AppConstants.CREATOR);
 
     BaseResponse response = service.update(BOUWHEER_CODE.toString(), request);
 
@@ -180,7 +181,7 @@ class BouwheerServiceTest {
     Bouwheer saved = captor.getValue();
     assertThat(saved.getBouwheerName()).isEqualTo("PT UPDATED");
     assertThat(saved.getLegalAddress()).isEqualTo(request.getLegalAddress());
-    assertThat(saved.getUsrUpd()).isEqualTo("updater");
+    assertThat(saved.getUsrUpd()).isEqualTo(AppConstants.CREATOR);
     assertThat(saved.getDtmUpd()).isNotNull();
   }
 
@@ -191,7 +192,7 @@ class BouwheerServiceTest {
 
     assertThatThrownBy(() -> service.update(BOUWHEER_CODE.toString(), request))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("Record already exist");
+        .hasMessage("Record already exist ");
   }
 
   @Test
@@ -238,7 +239,7 @@ class BouwheerServiceTest {
 
     assertThatThrownBy(() -> service.findById(BOUWHEER_CODE.toString()))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("Record already exist");
+        .hasMessage("Record already exist ");
   }
 
   private static Bouwheer bouwheer(UUID code, String name) {
