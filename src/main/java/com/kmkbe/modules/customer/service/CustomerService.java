@@ -86,7 +86,7 @@ public class CustomerService {
         throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Customer has been active");
       }
 
-      CustomerUtils.clearCustomerInactiveData(jdbcTemplate, find.get());
+//      CustomerUtils.clearCustomerInactiveData(jdbcTemplate, find.get());
       final String encodePin = bcryptEncoder.encode(request.getPin());
 
       final Customer customer = new Customer();
