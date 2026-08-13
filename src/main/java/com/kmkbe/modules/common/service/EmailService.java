@@ -12,7 +12,6 @@ import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
@@ -656,28 +655,6 @@ public class EmailService {
     } catch (Exception e) {
       log.error("sendMailMessage, error {}", e.getMessage());
       return false;
-    }
-  }
-
-
-  @Getter
-  private static class CsulMailSender {
-    private MailRemoteDto internalMail;
-    private final JavaMailSender mailSender;
-
-
-    private CsulMailSender(
-      MailConfig mailConfig,
-      ConfigRemoteService configRemoteService
-    ) throws MessagingException {
-      internalMail = configRemoteService.fetchEmailInfo();
-      mailSender = mailConfig.javaMailSender(
-        internalMail.getServerUrl(),
-        internalMail.getPort(),
-        internalMail.getUsername(),
-        internalMail.getPassword(),
-        internalMail.getEnableSSL() != null && internalMail.getEnableSSL()
-      );
     }
   }
 

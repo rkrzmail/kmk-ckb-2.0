@@ -504,11 +504,7 @@ public class ReportService {
         CompletableFuture<AppFactoringResponse> factoringFuture = apiResponseFuture.thenApplyAsync(apiResponse ->
                         ExecutionTimer.logExecutionTime("getFactoringData", () ->
                                 safeApiCall(() -> externalApiService.getAppFactoringData(apiResponse.getAppId()),
-                                        new AppFactoringResponse() {{
-                                            setDiskontoAmount("0");
-                                            setTotalRetentionAmount("0");
-                                            setTotalInvoiceAmount("0");
-                                        }}
+                                        defaultAppFactoringResponse()
                                 )
                         )
                 , executor);
@@ -675,8 +671,11 @@ public class ReportService {
         params.put("AppFeeInsurance", fmtRupiah(BigDecimal.ZERO));
         params.put("AppFeeCreditInsurance", fmtRupiah(BigDecimal.ZERO));
 
+        List<FinancialDataResponse.AgreementFee> feeList = financialData != null && financialData.getFeeList() != null
+                ? financialData.getFeeList()
+                : Collections.emptyList();
 
-        for (var fee : financialData.getFeeList()) {
+        for (var fee : feeList) {
             if (fee.getFeeTypeName() != null) {
                 if (fee.getFeeTypeName().equalsIgnoreCase("BIAYA FACTORING")) {
                     appFeeFactoring = new BigDecimal(fee.getFeeAmount());
@@ -751,10 +750,13 @@ public class ReportService {
                 financingHdr,
                 new PaginationRequest()
         );
+        List<PostedInvoiceDto> invoices = invoiceResult != null && invoiceResult.getList() != null
+                ? invoiceResult.getList()
+                : Collections.emptyList();
 
         String invoiceDueDateParam = "-";
-        if (invoiceResult != null && invoiceResult.getList() != null && !invoiceResult.getList().isEmpty()) {
-            for (PostedInvoiceDto invoice : invoiceResult.getList()) {
+        if (!invoices.isEmpty()) {
+            for (PostedInvoiceDto invoice : invoices) {
                 Map<String, String> row = new HashMap<>();
                 row.put("nomor_invoice", invoice.getCustomerInvoiceNo() != null ? invoice.getCustomerInvoiceNo() : "-");
                 row.put("tanggal_invoice", fmtDateObj2(invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : "-"));
@@ -765,7 +767,7 @@ public class ReportService {
                 tableData3.add(row);
             }
 
-            PostedInvoiceDto firstInvoice = invoiceResult.getList().get(0);
+            PostedInvoiceDto firstInvoice = invoices.get(0);
             if (firstInvoice.getInvoiceDueDate() != null) {
                 invoiceDueDateParam = fmtDateObj2(firstInvoice.getInvoiceDueDate());
             }
@@ -786,7 +788,7 @@ public class ReportService {
         // tabel 2
         List<Map<String, String>> tableData2 = new ArrayList<>();
 
-        for (PostedInvoiceDto invoice : invoiceResult.getList()) {
+        for (PostedInvoiceDto invoice : invoices) {
             Map<String, String> row = new HashMap<>();
             row.put("nomor_invoice", invoice.getCustomerInvoiceNo() != null ? invoice.getCustomerInvoiceNo() : "-");
             row.put("tanggal_invoice", fmtDateObj2(invoice.getInvoiceDate() != null ? invoice.getInvoiceDate() : "-"));
@@ -807,12 +809,12 @@ public class ReportService {
         // tabel 1
         int counter = 1;
         List<Map<String, String>> tableData = new ArrayList<>();
-        for (PostedInvoiceDto invoice : invoiceResult.getList()) {
+        for (PostedInvoiceDto invoice : invoices) {
             BigDecimal amt = invoice.getInvoiceAmount() != null ? new BigDecimal(invoice.getInvoiceAmount().toString()) : BigDecimal.ZERO;
             totalPiutang = totalPiutang.add(amt);
         }
 
-        for (PostedInvoiceDto invoice : invoiceResult.getList()) {
+        for (PostedInvoiceDto invoice : invoices) {
 
             Map<String, String> row = new HashMap<>();
             row.put("no", String.valueOf(counter++));
@@ -845,6 +847,14 @@ public class ReportService {
 
         return jasperReportRenderer.renderToPdf("/Reports/main_report.jasper", params);
 
+    }
+
+    private AppFactoringResponse defaultAppFactoringResponse() {
+        AppFactoringResponse response = new AppFactoringResponse();
+        response.setDiskontoAmount("0");
+        response.setTotalRetentionAmount("0");
+        response.setTotalInvoiceAmount("0");
+        return response;
     }
 
     private static String fmtDateObj(Object val) {
@@ -1020,11 +1030,6 @@ public class ReportService {
                     branchManager,
                     areaSalesManager
             );
-
-            try {
-                String requestJson = new ObjectMapper().writeValueAsString(request);
-            } catch (Exception e) {
-            }
 
             ExternalSigningResponse esignResponse = signingClient.sendDocumentSigning(request);
 
