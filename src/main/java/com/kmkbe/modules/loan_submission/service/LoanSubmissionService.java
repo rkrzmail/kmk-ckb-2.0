@@ -908,10 +908,14 @@ public class LoanSubmissionService {
           "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
       }
 
-
-      if (calculateDisburse.getTotalInvoiceAmount().doubleValue() < 50000000) {
-        throw new IllegalStateException("Untuk melanjukan pengajuan silahkan tambahkan jumlah invoice yang ingin" + " " +
-          "diajukan hingga mencapai minimal   Rp 50.000.000");
+      // Ensure calculateDisburse and its nested value are not null before checking doubleValue()
+      if (calculateDisburse.getTotalInvoiceAmount() != null) {
+        if (calculateDisburse.getTotalInvoiceAmount().doubleValue() < 50000000) {
+          throw new IllegalStateException("Untuk melanjutkan pengajuan silahkan tambahkan jumlah invoice yang ingin " +
+            "diajukan hingga mencapai minimal Rp 50.000.000");
+        }
+      } else {
+        throw new IllegalStateException("Data perhitungan invoice tidak ditemukan atau bernilai kosong.");
       }
 
       final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
