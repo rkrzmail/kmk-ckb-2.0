@@ -45,10 +45,10 @@ class ApiSbuCkbServiceTest {
 
   private ApiSbuCkbService service;
 
-  @BeforeEach
-  void setUp() {
-    service = new ApiSbuCkbService(apiCsulAdapter, new ObjectMapper(), apiSbuRepository, jwtValidatorService);
-  }
+//  @BeforeEach
+//  void setUp() {
+//    service = new ApiSbuCkbService(apiCsulAdapter, new ObjectMapper(), apiSbuRepository, jwtValidatorService);
+//  }
 
   @Test
   void apiValidationReturnsValidationResponseWhenApiKeyBouwheerAndTokenAreValid() throws IOException {
