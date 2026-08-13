@@ -34,7 +34,7 @@ public class CustomerResponse extends BaseResponse {
   private AddressDto address;
   private Boolean forceLogout;
   private String vendorId;
-  private UUID bouwheerCode;
+  private String bouwheerCode;
   private String bouwheerName;
   private String approvalStatus;
   private String approvalNote;

@@ -19,17 +19,16 @@ public interface CustomerRepository extends JpaRepository<Customer, Long>, Pagin
 
     Optional<Customer> findByCustCode(UUID custCode);
 
-    Optional<Customer> findByCustEmailAndCustPin(String email, String pin);
-
-    boolean existsByCustEmailAndCustIdNoNot(String custEmail, String custIdNo);
-
     boolean existsByCustEmailIgnoreCaseAndCustIdNoNot(String email, String custIdNo);
 
-   Optional<Customer> findByBouwheerCode(UUID bouwheerCode);
+   Optional<Customer> findByBouwheer(String bouwheerCode);
 
    Page<Customer> findAll(Pageable pageable);
 
    Page<Customer> findAll(Specification<Customer> specification, Pageable pageable);
 
    Optional<Customer> findByVendorId(String vendorId);
+
+   Optional<Customer> findByBouwheerAndVendorId(String bouwheer, String vendorId);
+
 }

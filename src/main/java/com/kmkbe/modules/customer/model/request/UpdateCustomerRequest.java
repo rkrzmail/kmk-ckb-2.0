@@ -1,17 +1,16 @@
 package com.kmkbe.modules.customer.model.request;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 
 import java.util.Date;
 
 @Getter
 @Setter
+@Data
+@Builder
+@AllArgsConstructor
 @NoArgsConstructor
-@ToString
 public class UpdateCustomerRequest {
   @NotNull(message = "NPWP is required, key: npwp")
   private String npwp;

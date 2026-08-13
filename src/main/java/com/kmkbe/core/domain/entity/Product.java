@@ -18,11 +18,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "product")
 public class Product {
-//    @Id
-//    @ColumnDefault("nextval('product_product_id_seq'::regclass)")
-//    @Column(name = "product_id", nullable = false)
-//    private Long productId;
-
     @Id
     @ColumnDefault("nextval('product_product_id_seq'::regclass)")
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // Pastikan auto-generated
