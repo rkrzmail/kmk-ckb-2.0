@@ -1,6 +1,7 @@
 package com.kmkbe.core.domain.dto;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.kmkbe.core.domain.entity.Product;
 import lombok.Builder;
 import lombok.Getter;
 
@@ -25,4 +26,5 @@ public class EstimatedDisburseDto {
     private Double provisionRate;
     private Double effectiveRate;
     private Double adminRate;
+    private Product product;
 }

@@ -1,7 +1,11 @@
 package com.kmkbe.modules.apis.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.adapter.ApiCsulAdapter;
+import com.kmkbe.core.domain.dto.CreatedSimulationDto;
+import com.kmkbe.core.domain.dto.EstimatedDisburseDto;
+import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.service.JwtGeneratorService;
 import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.ValidationResponse;
@@ -11,27 +15,117 @@ import com.kmkbe.core.service.JwtValidatorService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
 import com.kmkbe.helpers.constant.ErrorConstant;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
+import com.kmkbe.modules.customer.model.entity.Customer;
+import com.kmkbe.modules.customer.repository.CustomerRepository;
+import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
+import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
+import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
+import com.kmkbe.modules.loan_submission.service.FinancingDtlService;
+import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
+import com.kmkbe.modules.loan_submission.service.FinancingService;
+import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-
-import java.io.IOException;
-import java.util.Optional;
+import java.security.SignatureException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.util.*;
 
 @Slf4j
 @Service
 public class ApiSbuCkbService {
 
   private final ApiCsulAdapter apiCsulAdapter;
-  private final ObjectMapper objectMapper;
   private final ApiSbuRepository apiSbuRepository;
   private final JwtValidatorService jwtValidatorService;
+  private final CustomerRepository customerRepository;
+  private final LoanSubmissionService loanSubmissionService;
+  private final BouwheerRepository bouwheerRepository;
+  private final JwtGeneratorService jwtGeneratorService;
+  private final FinancingService financingService;
+  private final FinancingHdrService financingHdrService;
+  private final FinancingDtlService financingDtlService;
 
-  public ApiSbuCkbService(ApiCsulAdapter apiCsulAdapter, ObjectMapper objectMapper, ApiSbuRepository apiSbuRepository, JwtValidatorService jwtValidatorService) {
+
+  public ApiSbuCkbService(ApiCsulAdapter apiCsulAdapter,
+                          ApiSbuRepository apiSbuRepository,
+                          JwtValidatorService jwtValidatorService,
+                          CustomerRepository customerRepository,
+                          LoanSubmissionService loanSubmissionService,
+                          BouwheerRepository bouwheerRepository,
+                          JwtGeneratorService jwtGeneratorService,
+                          FinancingService financingService,
+                          FinancingHdrService financingHdrService,
+                          FinancingDtlService financingDtlService
+  ) {
     this.apiCsulAdapter = apiCsulAdapter;
-    this.objectMapper = objectMapper;
     this.apiSbuRepository = apiSbuRepository;
     this.jwtValidatorService = jwtValidatorService;
+    this.customerRepository = customerRepository;
+    this.loanSubmissionService = loanSubmissionService;
+    this.bouwheerRepository = bouwheerRepository;
+    this.jwtGeneratorService = jwtGeneratorService;
+    this.financingService = financingService;
+    this.financingHdrService = financingHdrService;
+    this.financingDtlService = financingDtlService;
+  }
+
+
+  /**
+   * Create Token
+   *
+   * @param apiKey
+   * @return
+   */
+  public CommonResult<Map<String, Object>> createToken(String apiKey) {
+    Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
+    if (apiSbu.isEmpty()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", apiKey);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Invalid Bouwheer API-KEY");
+    }
+
+    CommonResult<Map<String, Object>> result;
+    String strSecret = apiSbu.get().getAppSecret();
+    String bouwheerCode = apiSbu.get().getBouwheerCode().toString();
+
+    Date now = new Date();
+    Date expireDate = new Date(now.getTime() + (10 * 60 * 1000)); // now + 10 menit
+
+    Map<String, Object> response;
+    try {
+      String token = jwtGeneratorService.generateToken(
+        apiKey,
+        strSecret,
+        bouwheerCode,
+        expireDate
+      );
+
+      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+      String expireDateFormatted = sdf.format(expireDate);
+
+      response = new HashMap<>();
+      response.put("token", token);
+      response.put("bouwheer", bouwheerCode);
+      response.put("expired_at", expireDateFormatted);
+
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Update JWT", apiKey);
+      ApiSbu apiSbuUpdateJWT = apiSbu.get();
+      apiSbuUpdateJWT.setTokenJwt(token);
+      apiSbuUpdateJWT.setExpiredDate(expireDate.toInstant()
+        .atZone(ZoneId.systemDefault())
+        .toLocalDate().atStartOfDay());
+      apiSbuRepository.save(apiSbuUpdateJWT);
+
+      result = new CommonResult<Map<String, Object>>().success(response);
+    } catch (IllegalArgumentException e) {
+      result = new CommonResult<Map<String, Object>>().fail(HttpStatus.UNAUTHORIZED.value(), e.getMessage());
+    }
+
+    return result;
   }
 
   /**
@@ -39,12 +133,12 @@ public class ApiSbuCkbService {
    * @param apiKey
    * @param jwtToken
    * @return
-   * @throws IOException
    */
-  public ValidationResponse apiValidation(String apiKey, String jwtToken) throws IOException {
+  public ValidationResponse apiValidation(String apiKey, String jwtToken) {
     Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
     if (apiSbu.isEmpty()) {
-      throw new IllegalApiKeyException();
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", apiKey);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Invalid Bouwheer API-KEY");
     }
 
     ValidationResponse validationResponse = jwtValidatorService.validate(apiKey, jwtToken, apiSbu.get());
@@ -70,5 +164,147 @@ public class ApiSbuCkbService {
     return new CommonResult<CsulInquiryInvoiceRemoteDto>().success(
       inquiryInvoice
     );
+  }
+
+  /**
+   * Submission
+   *
+   * @param request
+   * @return
+   * @throws Exception
+   */
+  public CommonResult<CreatedSimulationDto> submission(CreateSimulationRequest request) throws Exception {
+    /**
+     * Check Bouwheer Code
+     */
+    UUID bouwheerUuid = UUID.fromString(request.getBouwheerCode());
+    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(bouwheerUuid);
+    if (bouwheerOptional.isEmpty()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Bouwheer not found");
+    }
+
+    Customer customer;
+    Optional<Customer> customerOptional = customerRepository.findByBouwheerAndVendorId(request.getBouwheerCode(), request.getVendorCode());
+    if (customerOptional.isPresent()) {
+      customer = customerOptional.get();
+    } else {
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "Create new {}", request.getBouwheerCode());
+      customer = customerRepository.save(Customer.builder()
+        .custCode(UUID.randomUUID())
+        .custName("Customer - " + bouwheerOptional.get().getBouwheerName())
+        .isActive(false)
+        .build());
+    }
+
+    var result = loanSubmissionService.createSimulation(customer, request);
+    return new CommonResult<CreatedSimulationDto>().success(
+      result
+    );
+  }
+
+  /**
+   * Calculate Disburse
+   *
+   * @param request
+   * @return
+   * @throws SignatureException
+   * @throws ParseException
+   * @throws JsonProcessingException
+   */
+  public CommonResult<EstimatedDisburseDto> calculateDisburse(CalculateSimulationRequest request) throws SignatureException, ParseException, JsonProcessingException {
+    /**
+     * Check Bouwheer Code
+     */
+    Optional<Customer> customerOptional = customerRepository.findByBouwheer(request.getBouwheerCode());
+    if (customerOptional.isEmpty()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer Bouwheer not found");
+    }
+
+    Customer customer = customerOptional.get();
+    return new CommonResult<EstimatedDisburseDto>().success(
+      loanSubmissionService.calculateDisburse(customer, request)
+    );
+  }
+
+  /**
+   * Update Approval
+   *
+   * @param apiKey
+   * @return
+   */
+  public CommonResult<Object> approval(String apiKey) {
+/**
+ * Check Bouwheer Code
+ */
+
+    Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
+    if (apiSbu.isEmpty()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", apiSbu);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "API SBU not found");
+    }
+
+    financingService.recallApprovalStatus();
+
+    return new CommonResult<>().success(null);
+  }
+
+  /**
+   * Update Invoice PAID
+   *
+   * @param apiKey
+   * @param request
+   * @return
+   * @throws Exception
+   */
+  public CommonResult<Object> invoicePaid(String apiKey, FinancingInvoicePaidRequest request) throws Exception {
+    /**
+     * Check Bouwheer Code
+     */
+    Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
+    if (apiSbu.isEmpty()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", apiSbu);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "API SBU not found");
+    }
+
+    FinancingHdr financingHdr = financingHdrService.paidFinancing(
+      request,
+      apiKey
+    );
+
+    financingDtlService.updatePaid(request, financingHdr);
+
+    try {
+      financingDtlService.paymentReceive(request, financingHdr);
+    } catch (Exception ignored) {
+      //akan ada proses skeduler
+    }
+    return new CommonResult<>().success(null);
+  }
+
+  /**
+   * Inquery Disbursement
+   *
+   * @param apiKey
+   * @param request
+   * @return
+   * @throws SignatureException
+   */
+  public CommonResult<Object> inquiryDisburse(String apiKey, FinancingInvoicePaidRequest request) throws SignatureException {
+    /**
+     * Check Bouwheer Code
+     */
+    Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
+    if (apiSbu.isEmpty()) {
+      throw new IllegalApiKeyException();
+    }
+
+    financingHdrService.paidFinancing(
+      request,
+      apiKey
+    );
+
+    return new CommonResult<>().success(null);
   }
 }

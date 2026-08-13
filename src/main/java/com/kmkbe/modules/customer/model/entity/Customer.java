@@ -4,6 +4,7 @@ import com.kmkbe.core.domain.entity.ChangePasswordLog;
 import com.kmkbe.core.domain.entity.CustomerCompany;
 import com.kmkbe.core.domain.entity.CustomerPersonal;
 import com.kmkbe.core.domain.entity.LoginLog;
+import com.kmkbe.helpers.utils.UuidConverter;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import jakarta.persistence.*;
 import lombok.*;
@@ -178,11 +179,12 @@ public class Customer implements UserDetails {
     this.forceLogout = forceLogout;
   }
 
-  @Column(name = "bouwheer_code", length = 30)
-  private UUID bouwheerCode;
+  @Column(name = "bouwheer", length = 36)
+  private String bouwheer;
 
   @OneToOne(cascade = CascadeType.ALL)
-  @JoinColumn(name = "bouwheer_code", referencedColumnName = "bouwheer_code",insertable=false, updatable=false)
+  @JoinColumn(name = "bouwheer", referencedColumnName = "bouwheer_code", insertable = false, updatable = false)
   private Bouwheer bouwheerDetail;
+
 
 }

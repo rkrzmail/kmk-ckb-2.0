@@ -13,6 +13,10 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class CreateSimulationRequest  extends BaseRequest {
+
+  @NotNull(message = "Vendor Code is required")
+  private String vendorCode;
+
   @NotNull(message = "Bouwheer is required")
   private String bouwheerCode;
 
