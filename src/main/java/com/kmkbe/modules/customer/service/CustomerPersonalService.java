@@ -21,14 +21,6 @@ import java.util.UUID;
 public class CustomerPersonalService {
   private final CustomerPersonalRepository customerPersonalRepository;
 
-  public void get() {
-    try {
-
-    } catch (Exception e) {
-      log.error("get: {}", e.getMessage());
-    }
-  }
-
   public void create(Customer cust, SignUpRequest.Personal personalReq) {
     final boolean userExists = customerPersonalRepository
       .findByCustomer(cust)
@@ -39,33 +31,30 @@ public class CustomerPersonalService {
     }
 
     final CustomerPersonal personal = new CustomerPersonal();
-    {
-      personal.setCustPersonalCode(UUID.randomUUID());
-      personal.setCustomer(cust);
-      personal.setBirthPlace(personalReq.getBirthPlace());
-      personal.setBirthDate(personalReq.getBirthDate());
-      personal.setGender(personalReq.getGender());
-      personal.setIdentityType(personalReq.getIdentityType());
-      personal.setIdentityNo(personalReq.getIdentityNo());
-      personal.setExpiredDate(personalReq.getExpiredDate());
-      personal.setMotherMaidenName(personalReq.getMotherMaidenName());
-      personal.setMaritalStatus(personalReq.getMaritalStatus());
-      personal.setCustModel(personalReq.getCustomerModel().name());
-      personal.setLegalAddress(personalReq.getLegalAddress());
-      personal.setRt(personalReq.getRt());
-      personal.setRw(personalReq.getRw());
-      personal.setKelurahan(personalReq.getKelurahan());
-      personal.setKecamatan(personalReq.getKecamatan());
-      personal.setCity(personalReq.getCity());
-      personal.setProvince(personalReq.getProvince());
-      personal.setZipCode(personalReq.getZipCode());
-      personal.setArea(personalReq.getArea());
-      personal.setPhone(personalReq.getPhone());
-      personal.setOwnershipStatus(personalReq.getOwnershipStatus());
-      personal.setStaySince(personalReq.getStaySince());
-      personal.setStayLength(CustomerUtils.calculateStayLength(personalReq.getStaySince()));
-    }
-
+    personal.setCustPersonalCode(UUID.randomUUID());
+    personal.setCustomer(cust);
+    personal.setBirthPlace(personalReq.getBirthPlace());
+    personal.setBirthDate(personalReq.getBirthDate());
+    personal.setGender(personalReq.getGender());
+    personal.setIdentityType(personalReq.getIdentityType());
+    personal.setIdentityNo(personalReq.getIdentityNo());
+    personal.setExpiredDate(personalReq.getExpiredDate());
+    personal.setMotherMaidenName(personalReq.getMotherMaidenName());
+    personal.setMaritalStatus(personalReq.getMaritalStatus());
+    personal.setCustModel(personalReq.getCustomerModel().name());
+    personal.setLegalAddress(personalReq.getLegalAddress());
+    personal.setRt(personalReq.getRt());
+    personal.setRw(personalReq.getRw());
+    personal.setKelurahan(personalReq.getKelurahan());
+    personal.setKecamatan(personalReq.getKecamatan());
+    personal.setCity(personalReq.getCity());
+    personal.setProvince(personalReq.getProvince());
+    personal.setZipCode(personalReq.getZipCode());
+    personal.setArea(personalReq.getArea());
+    personal.setPhone(personalReq.getPhone());
+    personal.setOwnershipStatus(personalReq.getOwnershipStatus());
+    personal.setStaySince(personalReq.getStaySince());
+    personal.setStayLength(CustomerUtils.calculateStayLength(personalReq.getStaySince()));
     customerPersonalRepository.save(personal);
   }
 
@@ -99,16 +88,14 @@ public class CustomerPersonalService {
       personal.setMaritalStatus(request.getMaritalStatus());
       personal.setCustModel(request.getCustModel());
       personal.setLegalAddress(request.getLegalAddress());
-      {
-        personal.setRt(addressRequest.getRt());
-        personal.setRw(addressRequest.getRw());
-        personal.setKelurahan(addressRequest.getKelurahan());
-        personal.setKecamatan(addressRequest.getKecamatan());
-        personal.setCity(addressRequest.getCity());
-        personal.setProvince(addressRequest.getProvince());
-        personal.setZipCode(addressRequest.getZipCode());
-        personal.setArea(addressRequest.getArea());
-      }
+      personal.setRt(addressRequest.getRt());
+      personal.setRw(addressRequest.getRw());
+      personal.setKelurahan(addressRequest.getKelurahan());
+      personal.setKecamatan(addressRequest.getKecamatan());
+      personal.setCity(addressRequest.getCity());
+      personal.setProvince(addressRequest.getProvince());
+      personal.setZipCode(addressRequest.getZipCode());
+      personal.setArea(addressRequest.getArea());
       personal.setPhone(request.getPhone());
       personal.setOwnershipStatus(request.getOwnershipStatus());
       personal.setStaySince(Utils.toInstant(request.getStaySince()));

@@ -1,11 +1,14 @@
 package com.kmkbe.core.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.*;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommonResult<T> {
+
+  @JsonProperty("isSuccess")
   private boolean isSuccess;
   private int code;
   private String message;

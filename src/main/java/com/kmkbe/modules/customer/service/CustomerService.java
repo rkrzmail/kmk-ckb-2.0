@@ -70,74 +70,59 @@ public class CustomerService {
     this.emailService = emailService;
   }
 
-  public Customer create(
-    SignUpRequest request,
-    CustomerType type
-  ) throws CommonInvalidException {
-    try {
-      if (!request.isAgreeTc()) {
-        log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", false);
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Setujui Syarat dan Ketentuan for sign up");
-      }
+  public Customer create(SignUpRequest request, CustomerType type) {
+    if (!request.isAgreeTc()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", false);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Setujui Syarat dan Ketentuan for sign up");
+    }
 
-      final Optional<Customer> find = customerRepository.findByCustEmail(request.getEmail());
-      if (find.isPresent()) {
-        log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", false);
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Customer has been active");
-      }
+    final Optional<Customer> find = customerRepository.findByCustEmail(request.getEmail());
+    if (find.isPresent()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", false);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer has been active");
+    }
 
 //      CustomerUtils.clearCustomerInactiveData(jdbcTemplate, find.get());
-      final String encodePin = bcryptEncoder.encode(request.getPin());
+    final String encodePin = bcryptEncoder.encode(request.getPin());
 
-      final Customer customer = new Customer();
-      customer.setCustCode(UUID.randomUUID());
-      customer.setCustName(request.getName());
-      customer.setCustEmail(request.getEmail().toLowerCase());
+    final Customer customer = new Customer();
+    customer.setCustCode(UUID.randomUUID());
+    customer.setCustName(request.getName());
+    customer.setCustEmail(request.getEmail().toLowerCase());
 
-      if (request.getCustomerNo() != null && !request.getCustomerNo().isEmpty()) {
-        customer.setCustNo(request.getCustomerNo());
-      }
-
-      if (type == CustomerType.Company) {
-        customer.setCustIdTypeCode(CustomerIdType.NPWP.name());
-        if (request.getCustomerIdNo() != null && request.getCustomerIdNo().length() < 16) {
-          //throw new Exception("NPWP minimal 16 Karakter");
-        }
-      } else {
-        customer.setCustIdTypeCode(CustomerIdType.KTP.name());
-        if (
-          request.getCustomerIdNo() != null
-            && request.getCustomerIdNo().length() != 16
-        ) {
-          log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", request.getCustomerIdNo());
-          throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"KTP minimal dan maksimal 16 Karakter");
-        }
-      }
-
-      customer.setCustTypeCode(type.name());
-      customer.setCustIdNo(request.getCustomerIdNo());
-      customer.setCustMobilePhone(FormatingUtils.formatOnlyNumber(request.getMobilePhone()));
-      customer.setAgreeTc(request.isAgreeTc());
-      customer.setCustPin(encodePin);
-      customer.setIsEmailValid(false);
-      customer.setBouwheerCode(UUID.fromString(request.getBouwheerCode()));
-      customer.setVendorId(request.getVendorId());
-      customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
-      customer.setActive(false);
-
-      if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
-        customer.setCustExternalCode(request.getVendorCode());
-      }
-
-      customer.setUsrCrt(customer.getCustName());
-      customer.setDtmCrt(DateTimeUtils.now());
-      return customerRepository.save(customer);
-    } catch (CommonInvalidException e) {
-      log.error("create, error {}", e.getMessage());
-      throw e;
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+    if (request.getCustomerNo() != null && !request.getCustomerNo().isEmpty()) {
+      customer.setCustNo(request.getCustomerNo());
     }
+
+    boolean isCompany = (type == CustomerType.Company);
+
+// 1. Set ID Type Code cleanly using a ternary operator
+    customer.setCustIdTypeCode(isCompany ? CustomerIdType.NPWP.name() : CustomerIdType.KTP.name());
+
+// 2. Single KTP length check block (removed empty/commented code)
+    if (!isCompany && request.getCustomerIdNo() != null && request.getCustomerIdNo().length() != 16) {
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", request.getCustomerIdNo());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "KTP minimal dan maksimal 16 Karakter");
+    }
+
+    customer.setCustTypeCode(type.name());
+    customer.setCustIdNo(request.getCustomerIdNo());
+    customer.setCustMobilePhone(FormatingUtils.formatOnlyNumber(request.getMobilePhone()));
+    customer.setAgreeTc(request.isAgreeTc());
+    customer.setCustPin(encodePin);
+    customer.setIsEmailValid(false);
+    customer.setBouwheerCode(UUID.fromString(request.getBouwheerCode()));
+    customer.setVendorId(request.getVendorId());
+    customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
+    customer.setActive(false);
+
+    if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
+      customer.setCustExternalCode(request.getVendorCode());
+    }
+
+    customer.setUsrCrt(customer.getCustName());
+    customer.setDtmCrt(DateTimeUtils.now());
+    return customerRepository.save(customer);
   }
 
   public void activated(Customer customer) {
@@ -286,7 +271,7 @@ public class CustomerService {
       return response;
     }).toList();
 
-    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,PageCustomerResponse.builder()
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, PageCustomerResponse.builder()
       .content(responses)
       .pagination(PageableUtil.pageToPagination(page))
       .build());
@@ -306,12 +291,12 @@ public class CustomerService {
 
     Customer customer = customerOptional.get();
     CustomerResponse response = new CustomerResponse();
-    BeanUtils.copyProperties(customer,response);
+    BeanUtils.copyProperties(customer, response);
     response.setBouwheerName(Optional.ofNullable(customer.getBouwheerDetail())
       .map(Bouwheer::getBouwheerName)
       .orElse(null));
 
-    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,response);
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, response);
   }
 
   /**
@@ -320,17 +305,17 @@ public class CustomerService {
    * @return
    * @throws MessagingException
    */
-  public BaseResponse approval(ApprovalRequest request, String username){
+  public BaseResponse approval(ApprovalRequest request, String username) {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(request.getCustCode());
     if (customerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getCustCode());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81,"Customer not found");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Customer not found");
     }
 
     Customer customer = customerOptional.get();
     if (!customer.getApprovalStatus().equals("OPEN")) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", request.getApprovalStatus());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,"Customer has been process with status is ");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer has been process with status is ");
     }
 
     customer.setApprovalStatus(request.getApprovalStatus().toUpperCase().trim());
@@ -341,7 +326,7 @@ public class CustomerService {
     customerRepository.save(customer);
 
     // Send mail
-    emailService.customerVerification(customer.getCustEmail().toLowerCase(),customer.getCustName(),customer.getCustIdNo(), CommonUtils.generateOtp());
+    emailService.customerVerification(customer.getCustEmail().toLowerCase(), customer.getCustName(), customer.getCustIdNo(), CommonUtils.generateOtp());
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
   }
