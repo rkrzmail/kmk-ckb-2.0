@@ -5,9 +5,10 @@ import com.kmkbe.modules.api_sbu.repository.ApiSbuRepository;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 
@@ -24,8 +25,13 @@ import java.util.Optional;
 @Service
 public class JwtGeneratorService {
 
-    @Autowired
-    private ApiSbuRepository apiSbuRepository;
+    private final ApiSbuRepository apiSbuRepository;
+    private final Clock clock;
+
+    public JwtGeneratorService(ApiSbuRepository apiSbuRepository, Clock clock) {
+        this.apiSbuRepository = apiSbuRepository;
+        this.clock = clock;
+    }
 
     /**
      * Generate JWT token
@@ -38,7 +44,7 @@ public class JwtGeneratorService {
 
         // ...lookup app_secret sama seperti sebelumnya...
 
-        Date now  = new Date();
+        Date now = Date.from(clock.instant());
 
 
         String jwtToken = Jwts.builder()
@@ -66,8 +72,9 @@ public class JwtGeneratorService {
         String appSecret = appSbuOpt.get().getAppSecret();
 
         // === STEP 2: Hitung waktu expired ===
-        Date now        = new Date();
-        Date expireDate = new Date(now.getTime() + (expireInSeconds * 1000));
+        Instant nowInstant = clock.instant();
+        Date now = Date.from(nowInstant);
+        Date expireDate = Date.from(nowInstant.plusSeconds(expireInSeconds));
 
         // === STEP 3: Build & sign JWT ===
         String jwtToken = Jwts.builder()

@@ -8,20 +8,16 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
-import com.kmkbe.nikita.utils.Utils;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.poi.ss.usermodel.*;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.InputStream;
 import java.util.*;
 
 @Service
@@ -30,6 +26,7 @@ import java.util.*;
 public class BranchAreaMappingService {
     private final BranchAreaMappingRepository branchAreaMappingRepository;
     private final MstBranchRepository mstBranchRepository;
+    private final BranchAreaMappingExcelParser branchAreaMappingExcelParser;
 
     public PaginationResult<BranchAreaMappingDto> placementBranch(
             PaginationRequest request
@@ -82,22 +79,16 @@ public class BranchAreaMappingService {
 
         List<BranchAreaMapping> dataEntities = new ArrayList<>();
 
-        try (InputStream inputStream = file.getInputStream();
-             Workbook workbook = new XSSFWorkbook(inputStream)) {
-
-            Sheet sheet = workbook.getSheetAt(0);
-            for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue; // Lewati header
-
-
-                Optional<MstBranch> mstBranch = mstBranchRepository.findByBranchCode(String.valueOf(((int)getAsNumber(row, 5))));
+        try {
+            for (BranchAreaMappingExcelParser.BranchAreaMappingRow row : branchAreaMappingExcelParser.parse(file)) {
+                Optional<MstBranch> mstBranch = mstBranchRepository.findByBranchCode(row.branchCode());
 
                 if (mstBranch.isEmpty()) continue;
                 BranchAreaMapping dataEntity =  BranchAreaMapping.builder()
-                        .branchAreaMappingId((long)getAsNumber(row, 0))
-                        .area(getAsString(row, 1))
-                        .province(getAsString(row, 2))
-                        .city(getAsString(row, 3))
+                        .branchAreaMappingId(row.branchAreaMappingId())
+                        .area(row.area())
+                        .province(row.province())
+                        .city(row.city())
                         .mstBranch(mstBranch.get())
 
                         .isActive(true)
@@ -105,21 +96,17 @@ public class BranchAreaMappingService {
                         .dtmCrt(DateTimeUtils.nowLocal())
                         .build();
 
-
-
-
-
                 dataEntities.add(dataEntity);
             }
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("updateBranch parse: error {}", e.getMessage());
             throw new RuntimeException(e);
         }
 
         try {
             branchAreaMappingRepository.saveAll(dataEntities);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("updateBranch save: error {}", e.getMessage());
             throw new RuntimeException(e);
         }
 
@@ -205,33 +192,4 @@ public class BranchAreaMappingService {
         }
     }*/
 
-    public boolean getAsBoolean(Row row, int column) {
-        return Boolean.valueOf(String.valueOf(get(row, column))) ;
-    }
-    public String getAsString(Row row, int column) {
-        return String.valueOf(get(row, column));
-    }
-    public double getAsNumber(Row row, int column) {
-        return Utils.getDouble(get(row, column));
-    }
-    public Object get(Row row, int column) {
-        if (row.getCell(column) == null ){
-            return null;
-        }else  if (row.getCell(column).getCellType() == CellType.NUMERIC){
-            return row.getCell(column).getNumericCellValue();
-        }else if (row.getCell(column).getCellType() == CellType.STRING){
-            return row.getCell(column).getStringCellValue();
-        }else if (row.getCell(column).getCellType() == CellType.BOOLEAN){
-            return row.getCell(column).getBooleanCellValue();
-        }else if (row.getCell(column).getCellType() == CellType.ERROR){
-            return row.getCell(column).getErrorCellValue();
-        }else if (row.getCell(column).getCellType() == CellType.FORMULA){
-            return row.getCell(column).getCellFormula();
-        }else if (row.getCell(column).getCellType() == CellType._NONE){
-            return "";
-        }else{
-            return null;
-        }
-
-    }
 }

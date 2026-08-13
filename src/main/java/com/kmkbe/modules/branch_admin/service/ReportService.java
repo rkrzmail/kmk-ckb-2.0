@@ -4,7 +4,6 @@ package com.kmkbe.modules.branch_admin.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
-import com.kmkbe.core.domain.mapper.AgreementFileSigningMapper;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
@@ -17,16 +16,14 @@ import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
-import net.sf.jasperreports.engine.*;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
-import net.sf.jasperreports.engine.util.JRLoader;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.io.*;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -37,12 +34,12 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import net.sf.jasperreports.engine.JRException;
 
 @Service
 public class ReportService {
@@ -60,11 +57,6 @@ public class ReportService {
 
     @Autowired
     private AgreementFileSigningRepository agreementFileSigningRepository;
-
-    @Autowired
-    private NotifDebtorRepository notifDebtorRepository;
-
-    private AgreementFileSigningMapper agreementFileSigningMapper = AgreementFileSigningMapper.INSTANCE;
 
     @Autowired
     private VisitorRepository visitorRepository;
@@ -97,7 +89,18 @@ public class ReportService {
     @Autowired
     private DebtorRepository debtorRepository;
 
-    private final ExecutorService executor = Executors.newFixedThreadPool(5);
+    @Autowired
+    @Qualifier("taskExecutor")
+    private Executor executor;
+
+    @Autowired
+    private JasperReportRenderer jasperReportRenderer;
+
+    @Autowired
+    private SigningClient signingClient;
+
+    @Autowired
+    private AgreementFileSigningService agreementFileSigningService;
 
     private void ensureJwtToken() {
         jwtToken = authRemoteService.fetchAuthJwt().getData();
@@ -840,15 +843,7 @@ public class ReportService {
 
         params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
 
-        InputStream reportStream = getClass().getResourceAsStream("/Reports/main_report.jasper");
-        if (reportStream == null) {
-            throw new FileNotFoundException("main_report.jasper tidak ditemukan di /Reports");
-        }
-        JasperReport jasperReport = (JasperReport) JRLoader.loadObject(reportStream);
-
-        JRDataSource dataSource = new JREmptyDataSource();
-        JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, params, dataSource);
-        return JasperExportManager.exportReportToPdf(jasperPrint);
+        return jasperReportRenderer.renderToPdf("/Reports/main_report.jasper", params);
 
     }
 
@@ -1031,10 +1026,10 @@ public class ReportService {
             } catch (Exception e) {
             }
 
-            ExternalSigningResponse esignResponse = externalApiService.callEsignApi(request);
+            ExternalSigningResponse esignResponse = signingClient.sendDocumentSigning(request);
 
             if (esignResponse.getStatus().getCode() == 0) {
-                saveToDatabase(
+                agreementFileSigningService.saveSigningResult(
                         agreementCode,
                         esignResponse.getDocuments().get(0).getDocumentId(),
                         username,
@@ -1143,77 +1138,6 @@ public class ReportService {
                 .seqNo("2")
                 .build());
         return signers;
-    }
-
-    private AgreementFileSigningDto saveToDatabase(String agreementCode, String documentId, String username, String financingHdrCode) {
-
-        String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
-        List<Debtor> signerList = debtorRepository.findActiveSignerByDebtorName(debtorName);
-
-        Debtor debtor;
-        if (signerList.isEmpty()) {
-            throw new RuntimeException("Tidak ada data signer active dari financingHdr = " + financingHdrCode);
-        } else {
-            debtor = signerList.get(0);
-        }
-
-        List<AgreementFileSigning> existingList = agreementFileSigningRepository.findByAgreementCode(agreementCode);
-
-        AgreementFileSigning entity;
-        if (!existingList.isEmpty()) {
-            entity = existingList.get(0);
-
-            if (existingList.size() > 1) {
-                agreementFileSigningRepository.deleteAll(existingList.subList(1, existingList.size()));
-            }
-
-        } else {
-            entity = AgreementFileSigning.builder()
-                    .agreementCode(agreementCode)
-                    .fileTypeCode("E_SIGN_DOC")
-                    .fileName("PERJANJIAN_1A_" + agreementCode + ".pdf")
-                    .usrCrt(username)
-                    .dtmCrt(LocalDateTime.now())
-                    .build();
-        }
-
-        entity.setStamp("Not Signed");
-        entity.setSigner(debtor.getKaryawanName());
-        entity.setEmailSigner(debtor.getEmail());
-        entity.setIdentityNo(debtor.getIdentityNo());
-        entity.setDocumentId(documentId);
-        entity.setFinancingHdrCode(financingHdrCode);
-        entity.setUsrUpd(username);
-        entity.setDtmUpd(LocalDateTime.now());
-
-        AgreementFileSigning saveDoc =  agreementFileSigningRepository.save(entity);
-
-        updateFinancingStep(financingHdrCode);
-
-        String custCode = String.valueOf(financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
-                .map(finHdr -> finHdr.getCustomer().getCustCode())
-                .orElseThrow(() -> new RuntimeException("FinancingHdr dengan code "
-                        + financingHdrCode + " tidak ditemukan")));
-
-        notifDebtorRepository.save(NotifDebtor.builder()
-                .notification("Permintaan Tanda Tangan Dokumen")
-                .description("Dokumen yang memerlukan tanda tangan " + debtor.getKaryawanName() + ", telah tersedia. Mohon segera mendandatangani dokumen tersebut atau menghubungi pihak terkait.")
-                .financingHdrCode(financingHdrCode)
-                .custCode(custCode)
-                .usrCrt(username)
-                .dtmCrt(LocalDateTime.now())
-                .build());
-
-        return agreementFileSigningMapper.entityToDto(saveDoc);
-
-    }
-
-    private void updateFinancingStep(String financingHdrCode) {
-        financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
-                .ifPresent(finHdr -> {
-                    finHdr.setFinancingStep("SIGNING");
-                    financingHdrRepository.save(finHdr);
-                });
     }
 
     private String getBranchCodeFromAgreement(String agreementCode) {

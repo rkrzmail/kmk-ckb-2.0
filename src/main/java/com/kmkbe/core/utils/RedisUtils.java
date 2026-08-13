@@ -1,9 +1,11 @@
 package com.kmkbe.core.utils;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.ListOperations;
+import org.springframework.data.redis.core.RedisCallback;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.core.ScanOptions;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Component;
@@ -12,12 +14,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 @Component
 @RequiredArgsConstructor
 public class RedisUtils<T> {
+    private static final long SCAN_COUNT = 1_000L;
+
     private final RedisTemplate<String, T> redisTemplate;
     private final ValueOperations<String, T> valueOperations;
     private final ListOperations<String, T> listOperations;
@@ -60,32 +63,33 @@ public class RedisUtils<T> {
     }
 
     public List<String> getAllKeys() {
-        List<String> result = new ArrayList<>();
-        RedisConnectionFactory factory = redisTemplate.getConnectionFactory();
-        if (factory != null) {
-            Set<byte[]> keys = factory.getConnection().keyCommands().keys("*".getBytes());
-            if (keys != null) {
-                for (byte[] data : keys) {
-                    result.add(new String(data, StandardCharsets.UTF_8));
-                }
-            }
+        return scanKeys("*");
+    }
+
+    public List<T> getAllEntirePairs() {
+        List<T> result = new ArrayList<>();
+        for (String key : scanKeys("*")) {
+            result.add(valueOperations.get(key));
         }
 
         return result;
     }
 
-    public List<T> getAllEntirePairs() {
-        List<T> result = new ArrayList<>();
-        RedisConnectionFactory factory = redisTemplate.getConnectionFactory();
-        if (factory != null) {
-            Set<byte[]> keys = factory.getConnection().keyCommands().keys("*".getBytes());
-            if (keys != null) {
-                for (byte[] data : keys) {
-                    result.add(valueOperations.get(data));
+    private List<String> scanKeys(String pattern) {
+        List<String> result = new ArrayList<>();
+        ScanOptions options = ScanOptions.scanOptions()
+                .match(pattern)
+                .count(SCAN_COUNT)
+                .build();
+
+        List<String> scannedKeys = redisTemplate.execute((RedisCallback<List<String>>) connection -> {
+            try (Cursor<byte[]> cursor = connection.scan(options)) {
+                while (cursor.hasNext()) {
+                    result.add(new String(cursor.next(), StandardCharsets.UTF_8));
                 }
             }
-        }
-
-        return result;
+            return result;
+        });
+        return scannedKeys != null ? scannedKeys : result;
     }
 }
