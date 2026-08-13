@@ -1,5 +1,6 @@
 package com.kmkbe.modules.customer.model.request;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.kmkbe.core.converter.ToLowerCaseDeserializer;
@@ -87,6 +88,8 @@ public class SignUpRequest extends BaseRequest {
     private String area;
     private String phone;
     private String ownershipStatus;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDateTime staySince;
   }
 
@@ -100,8 +103,12 @@ public class SignUpRequest extends BaseRequest {
     private String companyModel;
     private String identityType;
     private String identityNo;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDateTime identityIssuedDate;
+
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDateTime identityExpiredDate;
+
     private String companyAddress;
     private String custIdNo;
 
@@ -114,11 +121,15 @@ public class SignUpRequest extends BaseRequest {
   @ToString
   public static class Personal extends AddressDetail {
     private String birthPlace;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDateTime birthDate;
+
     private String gender;
     private String identityType;
     private String identityNo;
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDateTime expiredDate;
+
     private String motherMaidenName;
     private String maritalStatus;
     private CustomerModel customerModel;
