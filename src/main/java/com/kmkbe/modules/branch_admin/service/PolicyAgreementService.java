@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.PolicyAgreementHistoryRepository;
 import com.kmkbe.core.domain.repository.PolicyAgreementRepository;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.helpers.constant.AppConstants;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -32,7 +33,7 @@ public class PolicyAgreementService {
         policyAgreement.setIsActive(policyAgreementDto.getIsActive());
 //        policyAgreement.setUsrCrt("SYSTEM");
 
-        String currentUsername = currentUserService.usernameOrDefault("UNKNOWN");  // Jika tidak ada user, beri default "UNKNOWN"
+        String currentUsername = currentUserService.usernameOrDefault(AppConstants.CREATOR);
 
         policyAgreement.setUsrCrt(currentUsername);
         policyAgreement.setDtmCrt(LocalDateTime.now());
@@ -218,7 +219,7 @@ public class PolicyAgreementService {
         history.setDtmCrt(policy.getDtmCrt());
         policyAgreementHistoryRepository.save(history);
 
-        String currentUsername = currentUserService.usernameOrDefault("UNKNOWN");
+        String currentUsername = currentUserService.usernameOrDefault(AppConstants.CREATOR);
         policy.setPolicyName(policyAgreementDto.getPolicyName());
         policy.setPolicyDescription(policyAgreementDto.getPolicyDescription());
         policy.setPolicyContent(policyAgreementDto.getPolicyContent());
