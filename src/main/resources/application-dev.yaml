@@ -148,7 +148,7 @@ csul:
 feign:
   csul:
     ckb:
-      url: http://10.144.250.13:5000
+      url: https://api-ckbvendorportal.dipstrategy.co.id
       username: ramco
       password: RamcoVDC2026!
       client-secret: SecretRamco2026!
