@@ -19,6 +19,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -47,7 +48,13 @@ class EmailServiceTest {
 
   @BeforeEach
   void setUp() {
-    service = new EmailService(emailTemplateRepository, configRemoteService, mailConfig, errorLogRepository);
+    service = new EmailService(
+      emailTemplateRepository,
+      configRemoteService,
+      mailConfig,
+      errorLogRepository,
+      new MockEnvironment().withProperty("env", "prod")
+    );
     ReflectionTestUtils.setField(service, "testingMailHost", "smtp.test");
     ReflectionTestUtils.setField(service, "testingMailPort", 2525);
     ReflectionTestUtils.setField(service, "testingMailUsername", "test-user");
@@ -69,6 +76,39 @@ class EmailServiceTest {
     EmailTemplate sent = captor.getValue();
     assertThat(sent.getMailTo()).isEqualTo("customer@example.com");
     assertThat(sent.getBodyMail()).isEqualTo("Hi Customer customer@example.com KTP001 1234");
+  }
+
+  @Test
+  void sendOtpUsesYamlMailConfigForNonProductionEnvironment() throws Exception {
+    EmailService localService = new EmailService(
+      emailTemplateRepository,
+      configRemoteService,
+      mailConfig,
+      errorLogRepository,
+      new MockEnvironment().withProperty("env", "local")
+    );
+    ReflectionTestUtils.setField(localService, "mailHost", "smtp.local");
+    ReflectionTestUtils.setField(localService, "mailPort", 587);
+    ReflectionTestUtils.setField(localService, "mailUsername", "local-user");
+    ReflectionTestUtils.setField(localService, "mailPassword", "local-pass");
+    ReflectionTestUtils.setField(localService, "mailEnableSSL", true);
+
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_VERIFY", true))
+      .thenReturn(template("M_CUST_VERIFY", "{email}:{otp_code}"));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+
+    localService.sendOtp2("user@example.com", "1111");
+
+    ArgumentCaptor<MailRemoteDto> mailCaptor = ArgumentCaptor.forClass(MailRemoteDto.class);
+    verify(mailConfig).sendHtmlEmail(mailCaptor.capture(), any(EmailTemplate.class), eq(true));
+    verify(configRemoteService, never()).fetchEmailInfo();
+
+    MailRemoteDto mail = mailCaptor.getValue();
+    assertThat(mail.getServerUrl()).isEqualTo("smtp.local");
+    assertThat(mail.getPort()).isEqualTo(587);
+    assertThat(mail.getUsername()).isEqualTo("local-user");
+    assertThat(mail.getPassword()).isEqualTo("local-pass");
+    assertThat(mail.getEnableSSL()).isTrue();
   }
 
   @Test

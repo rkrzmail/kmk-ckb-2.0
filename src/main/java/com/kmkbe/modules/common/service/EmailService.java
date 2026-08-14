@@ -14,11 +14,13 @@ import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -48,6 +50,22 @@ public class EmailService {
   private final ConfigRemoteService configRemoteService;
   private final MailConfig mailConfig;
   private final ErrorLogRepository errorLogRepository;
+  private final Environment environment;
+
+  @Value("${spring.mail.host:}")
+  private String mailHost;
+
+  @Value("${spring.mail.port:0}")
+  private Integer mailPort;
+
+  @Value("${spring.mail.username:}")
+  private String mailUsername;
+
+  @Value("${spring.mail.password:}")
+  private String mailPassword;
+
+  @Value("${spring.mail.properties.mail.smtp.starttls.enable:true}")
+  private Boolean mailEnableSSL;
 
   @Value("${testing.mail.host}")
   private String testingMailHost;
@@ -110,12 +128,14 @@ public class EmailService {
     EmailTemplateRepository emailTemplateRepository,
     ConfigRemoteService configRemoteService,
     MailConfig mailConfig,
-    ErrorLogRepository errorLogRepository
+    ErrorLogRepository errorLogRepository,
+    Environment environment
   ) {
     this.emailTemplateRepository = emailTemplateRepository;
     this.configRemoteService = configRemoteService;
     this.mailConfig = mailConfig;
     this.errorLogRepository = errorLogRepository;
+    this.environment = environment;
   }
 
   @Async
@@ -613,6 +633,37 @@ public class EmailService {
     return helper;
   }
 
+  private MailRemoteDto resolveMailConfig() {
+    if (isProductionEnvironment()) {
+      MailRemoteDto remoteMail = configRemoteService.fetchEmailInfo();
+      log.info(
+        "EmailService using remote mail config host={} port={} username={}",
+        remoteMail.getServerUrl(),
+        remoteMail.getPort(),
+        remoteMail.getUsername()
+      );
+      return remoteMail;
+    }
+
+    log.info("EmailService using yaml mail config host={} port={} username={}", mailHost, mailPort, mailUsername);
+    return MailRemoteDto.builder()
+      .serverUrl(mailHost)
+      .port(mailPort)
+      .username(mailUsername)
+      .password(mailPassword)
+      .enableSSL(Boolean.TRUE.equals(mailEnableSSL))
+      .build();
+  }
+
+  private boolean isProductionEnvironment() {
+    String env = environment.getProperty("env", "");
+    return isProductionValue(env) || Arrays.stream(environment.getActiveProfiles()).anyMatch(this::isProductionValue);
+  }
+
+  private boolean isProductionValue(String value) {
+    return "prod".equalsIgnoreCase(value) || "production".equalsIgnoreCase(value);
+  }
+
   @LogMethod
   private boolean sendMailMessage(
     EmailTemplate template,
@@ -622,7 +673,7 @@ public class EmailService {
       //CsulMailSender csulMailSender = new CsulMailSender(mailConfig, configRemoteService);
       int attempts = 0;
       boolean success = false;
-      MailRemoteDto internalMail = configRemoteService.fetchEmailInfo();
+      MailRemoteDto internalMail = resolveMailConfig();
       for (int i = 0; i < MAX_SENT_FAIL_ATTEMPTS; i++) {
         try {
           mailConfig.sendHtmlEmail(
@@ -633,7 +684,7 @@ public class EmailService {
           success = true;
         } catch (Exception e) {
           attempts++;
-          log.error("EmailService Failed to send email to {} due to {}", email, e.getMessage());
+          log.error("EmailService failed to send email to {} on attempt {}", email, attempts, e);
           log.error("EmailService try attempts: {}", attempts);
 
         }
@@ -653,7 +704,7 @@ public class EmailService {
 
       return true;
     } catch (Exception e) {
-      log.error("sendMailMessage, error {}", e.getMessage());
+      log.error("sendMailMessage failed for {}", email, e);
       return false;
     }
   }
