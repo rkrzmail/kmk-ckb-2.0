@@ -47,15 +47,22 @@ public class MailConfig {
   }
 
   public Properties getProperties(String host, Integer port, boolean isSsl) {
+    boolean implicitSsl = isSsl || isImplicitSslPort(port);
+    boolean startTls = !implicitSsl;
+
     Properties props = new Properties();
     props.setProperty("mail.smtp.host", host);
     props.put("mail.smtp.ssl.trust", host);
     props.put("mail.transport.protocol", "smtp");
     props.put("mail.smtp.auth", "true");
     props.put("mail.smtp.socketFactory.port", port);
-    props.put("mail.smtp.starttls.enable", "true");
+    props.put("mail.smtp.starttls.enable", String.valueOf(startTls));
+    props.put("mail.smtp.starttls.required", String.valueOf(startTls));
+    props.put("mail.smtp.connectiontimeout", "5000");
+    props.put("mail.smtp.timeout", "5000");
+    props.put("mail.smtp.writetimeout", "5000");
 
-    if (isSsl) {
+    if (implicitSsl) {
       props.put("mail.smtp.ssl.enable", "true");
       props.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
       props.put("mail.smtp.socketFactory.fallback", "true");
@@ -173,16 +180,32 @@ public class MailConfig {
   }
 
   private static Properties getProperties(MailRemoteDto mail, boolean enabledSsl) {
+    boolean implicitSsl = isImplicitSslPort(mail.getPort());
+    boolean startTls = Boolean.TRUE.equals(enabledSsl) && !implicitSsl;
+
     Properties properties = new Properties();
     properties.put("mail.smtp.host", mail.getServerUrl());
     properties.put("mail.smtp.port", mail.getPort());
     properties.put("mail.smtp.auth", "true");
-    properties.put("mail.smtp.starttls.enable", enabledSsl ? "true" : "false");
-    properties.put("mail.smtp.starttls.required", enabledSsl ? "true" : "false");
+    properties.put("mail.smtp.starttls.enable", String.valueOf(startTls));
+    properties.put("mail.smtp.starttls.required", String.valueOf(startTls));
     properties.put("mail.smtp.user", mail.getUsername());
-    if (enabledSsl) {
+    properties.put("mail.smtp.connectiontimeout", "5000");
+    properties.put("mail.smtp.timeout", "5000");
+    properties.put("mail.smtp.writetimeout", "5000");
+    if (Boolean.TRUE.equals(enabledSsl) || implicitSsl) {
       properties.put("mail.smtp.ssl.trust", mail.getServerUrl());
     }
+    if (implicitSsl) {
+      properties.put("mail.smtp.ssl.enable", "true");
+      properties.put("mail.smtp.socketFactory.port", mail.getPort());
+      properties.put("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+      properties.put("mail.smtp.socketFactory.fallback", "true");
+    }
     return properties;
+  }
+
+  private static boolean isImplicitSslPort(Integer port) {
+    return port != null && port == 465;
   }
 }
