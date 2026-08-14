@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.adapter.ApiCsulAdapter;
 import com.kmkbe.core.domain.dto.CreatedSimulationDto;
 import com.kmkbe.core.domain.dto.EstimatedDisburseDto;
+import com.kmkbe.core.domain.dto.StatusLabelDto;
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.service.JwtGeneratorService;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
@@ -201,7 +203,7 @@ public class ApiSbuCkbService {
         .custName("Customer - " + bouwheerOptional.get().getBouwheerName())
         .custIdNo(request.getVendorCode())
         .custMobilePhone(request.getVendorCode())
-        .custEmail("tmp."+request.getVendorCode()+"danasakti.com")
+        .custEmail("tmp." + request.getVendorCode() + "danasakti.com")
         .isEmailValid(false)
         .approvalStatus("OPEN")
         .isPhoneValid(false)
@@ -299,7 +301,7 @@ public class ApiSbuCkbService {
       apiKey
     );
 
-    log.info("Financing Financing Header Code {} ,  Step {} , Status {}, ",request.getFinancingCode(),financingHdr.getFinancingStep(),financingHdr.getFinancingStatus());
+    log.info("Financing Financing Header Code {} ,  Step {} , Status {}, ", request.getFinancingCode(), financingHdr.getFinancingStep(), financingHdr.getFinancingStatus());
     financingDtlService.updatePaid(request, financingHdr);
 
     try {
@@ -333,5 +335,44 @@ public class ApiSbuCkbService {
     );
 
     return new CommonResult<>().success(null);
+  }
+
+  /**
+   * Update financing status
+   * @param apiKey
+   * @param financingHdrCode
+   * @return
+   */
+  public CommonResult<StatusLabelDto> statusFinancing(String apiKey, String financingHdrCode
+  ) {
+    Optional<ApiSbu> apiSbu = apiSbuRepository.findByAppKey(apiKey);
+    if (apiSbu.isEmpty()) {
+      throw new IllegalApiKeyException();
+    }
+
+    FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+    MappedFinancingStatus mapped = new MappedFinancingStatus(financingHdr, MappedFinancingStatus.Type.Customer);
+
+    String finStatus = financingHdr.getFinancingStatus();
+    String color;
+    if (finStatus.equalsIgnoreCase("new")) {
+      color = "#808080";
+    } else if (finStatus.equalsIgnoreCase("inprocess")
+      || finStatus.equalsIgnoreCase("signing")
+      || finStatus.equalsIgnoreCase("signed")
+      || finStatus.equalsIgnoreCase("live")
+      || finStatus.equalsIgnoreCase("golive")) {
+      color = "#ccffcc";
+    } else {
+      color = "#FF5C5C";
+    }
+
+    StatusLabelDto dto = StatusLabelDto.builder()
+      .status(mapped.getStatus())
+      .statusLabel(mapped.getLabel())
+      .color(color)
+      .build();
+
+    return new CommonResult<StatusLabelDto>().success(dto);
   }
 }
