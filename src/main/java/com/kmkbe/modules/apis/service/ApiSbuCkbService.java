@@ -6,6 +6,7 @@ import com.kmkbe.core.domain.dto.CreatedSimulationDto;
 import com.kmkbe.core.domain.dto.EstimatedDisburseDto;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.service.JwtGeneratorService;
+import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.ValidationResponse;
@@ -18,21 +19,22 @@ import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.customer.model.entity.Customer;
+import com.kmkbe.modules.customer.model.request.SignUpRequest;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
+import com.kmkbe.modules.customer.service.CustomerCompanyService;
+import com.kmkbe.modules.customer.service.CustomerService;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
-import com.kmkbe.modules.loan_submission.service.FinancingDtlService;
-import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
-import com.kmkbe.modules.loan_submission.service.FinancingService;
-import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
+import com.kmkbe.modules.loan_submission.service.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.time.ZoneId;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Slf4j
@@ -49,6 +51,9 @@ public class ApiSbuCkbService {
   private final FinancingService financingService;
   private final FinancingHdrService financingHdrService;
   private final FinancingDtlService financingDtlService;
+  private final CustomerCompanyService customerCompanyService;
+  private final DocumentService documentService;
+  private final CustomerService customerService;
 
 
   public ApiSbuCkbService(ApiCsulAdapter apiCsulAdapter,
@@ -60,7 +65,10 @@ public class ApiSbuCkbService {
                           JwtGeneratorService jwtGeneratorService,
                           FinancingService financingService,
                           FinancingHdrService financingHdrService,
-                          FinancingDtlService financingDtlService
+                          FinancingDtlService financingDtlService,
+                          CustomerCompanyService customerCompanyService,
+                          DocumentService documentService,
+                          CustomerService customerService
   ) {
     this.apiCsulAdapter = apiCsulAdapter;
     this.apiSbuRepository = apiSbuRepository;
@@ -72,6 +80,9 @@ public class ApiSbuCkbService {
     this.financingService = financingService;
     this.financingHdrService = financingHdrService;
     this.financingDtlService = financingDtlService;
+    this.customerCompanyService = customerCompanyService;
+    this.documentService = documentService;
+    this.customerService = customerService;
   }
 
 
@@ -93,7 +104,7 @@ public class ApiSbuCkbService {
     String bouwheerCode = apiSbu.get().getBouwheerCode().toString();
 
     Date now = new Date();
-    Date expireDate = new Date(now.getTime() + (10 * 60 * 1000)); // now + 10 menit
+    Date expireDate = new Date(now.getTime() + (30 * 60 * 1000)); // now + 30 menit
 
     Map<String, Object> response;
     try {
@@ -111,14 +122,6 @@ public class ApiSbuCkbService {
       response.put("token", token);
       response.put("bouwheer", bouwheerCode);
       response.put("expired_at", expireDateFormatted);
-
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Update JWT", apiKey);
-      ApiSbu apiSbuUpdateJWT = apiSbu.get();
-      apiSbuUpdateJWT.setTokenJwt(token);
-      apiSbuUpdateJWT.setExpiredDate(expireDate.toInstant()
-        .atZone(ZoneId.systemDefault())
-        .toLocalDate().atStartOfDay());
-      apiSbuRepository.save(apiSbuUpdateJWT);
 
       result = new CommonResult<Map<String, Object>>().success(response);
     } catch (IllegalArgumentException e) {
@@ -185,15 +188,38 @@ public class ApiSbuCkbService {
     }
 
     Customer customer;
-    Optional<Customer> customerOptional = customerRepository.findByBouwheerAndVendorId(request.getBouwheerCode(), request.getVendorCode());
+    Optional<Customer> customerOptional = customerRepository.findByBouwheerAndCustExternalCode(request.getBouwheerCode(), request.getVendorCode());
     if (customerOptional.isPresent()) {
       customer = customerOptional.get();
     } else {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "Create new {}", request.getBouwheerCode());
+
       customer = customerRepository.save(Customer.builder()
         .custCode(UUID.randomUUID())
+        .bouwheer(request.getBouwheerCode())
+        .custExternalCode(request.getVendorCode())
         .custName("Customer - " + bouwheerOptional.get().getBouwheerName())
+        .custIdNo(request.getVendorCode())
+        .custMobilePhone(request.getVendorCode())
+        .custEmail("tmp."+request.getVendorCode()+"danasakti.com")
+        .isEmailValid(false)
+        .approvalStatus("OPEN")
+        .isPhoneValid(false)
+        .isWaActive(false)
+        .agreeTc(true)
+        .agreeLegalShare(true)
         .isActive(false)
+        .usrCrt(AppConstants.CREATOR)
+        .custIdTypeCode("NPWP")
+        .custTypeCode("Company")
+        .dtmCrt(LocalDateTime.now())
+        .build());
+      /**
+       * Insert temp customer company
+       */
+      customerCompanyService.create(customer, SignUpRequest.Company.builder()
+        .identityType("NPWP")
+        .identityNo(request.getVendorCode())
         .build());
     }
 
@@ -212,7 +238,7 @@ public class ApiSbuCkbService {
    * @throws ParseException
    * @throws JsonProcessingException
    */
-  public CommonResult<EstimatedDisburseDto> calculateDisburse(CalculateSimulationRequest request) throws SignatureException, ParseException, JsonProcessingException {
+  public CommonResult<EstimatedDisburseDto> simulation(CalculateSimulationRequest request) throws SignatureException, ParseException, JsonProcessingException {
     /**
      * Check Bouwheer Code
      */
@@ -273,6 +299,7 @@ public class ApiSbuCkbService {
       apiKey
     );
 
+    log.info("Financing Financing Header Code {} ,  Step {} , Status {}, ",request.getFinancingCode(),financingHdr.getFinancingStep(),financingHdr.getFinancingStatus());
     financingDtlService.updatePaid(request, financingHdr);
 
     try {

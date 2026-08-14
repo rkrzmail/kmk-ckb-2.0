@@ -6,7 +6,6 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
 import com.kmkbe.modules.apis.service.ApiSbuCkbService;
 import com.kmkbe.core.domain.model.CommonResult;
-import com.kmkbe.core.service.*;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
@@ -59,7 +58,7 @@ public class SbuCkbController {
      * Check token Auth
      */
     apiSbuCkbService.apiValidation(apiKey, jwtToken);
-    return apiSbuCkbService.calculateDisburse(request);
+    return apiSbuCkbService.simulation(request);
   }
 
   @PostMapping(value = "/submissions/{jwtToken}")

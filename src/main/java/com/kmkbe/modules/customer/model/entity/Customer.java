@@ -93,9 +93,6 @@ public class Customer implements UserDetails {
   @Column
   private LocalDateTime dtmUpd;
 
-  @Column(name = "vendor_id", length = 60)
-  private String vendorId;
-
   @Column(name = "approval_status", length = 10)
   private String approvalStatus;
 

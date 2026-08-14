@@ -101,7 +101,7 @@ public class LoanSubmissionService {
         if (customer == null) {
           throw new IllegalArgumentException("Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
         }
-        List<Invoice> dbInvoices = financingHdrRepository.findFinancingHeaderByVendorId(customer.getVendorId());
+        List<Invoice> dbInvoices = financingHdrRepository.findFinancingHeaderByCustCode(customer.getCustExternalCode());
 
         log.info("Count invoice Simulation result {}", dbInvoices.size());
 
@@ -339,11 +339,11 @@ public class LoanSubmissionService {
           + product.getLegalFee()
           + adminFee
           + product.getOthersFee();
-        provisionFeeAmount = new BigDecimal(provisionRateFee).setScale(0, RoundingMode.HALF_UP);
-        surveyFeeAmount = new BigDecimal(product.getSurveyFee()).setScale(0, RoundingMode.HALF_UP);
-        legalFeeAmount = new BigDecimal(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
-        adminFeeAmount = new BigDecimal(adminFee).setScale(0, RoundingMode.HALF_UP);
-        othersFeeAmount = new BigDecimal(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
+        provisionFeeAmount = BigDecimal.valueOf(provisionRateFee).setScale(0, RoundingMode.HALF_UP);
+        surveyFeeAmount = BigDecimal.valueOf(product.getSurveyFee()).setScale(0, RoundingMode.HALF_UP);
+        legalFeeAmount = BigDecimal.valueOf(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
+        adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
+        othersFeeAmount = BigDecimal.valueOf(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
       } else {
         provisionFeeAmount = new BigDecimal(0);
         surveyFeeAmount = new BigDecimal(0);
@@ -354,15 +354,15 @@ public class LoanSubmissionService {
       }
 
       double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
-      final BigDecimal serviceFee = new BigDecimal(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
-      final BigDecimal estimated = new BigDecimal(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
+      final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
+      final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
 
       return EstimatedDisburseDto.builder()
         .productId(product.getProductId())
         .financingAmount(ntfResult.setScale(0, RoundingMode.HALF_UP)) //yng diajukan
         .serviceFeeAmount(serviceFee)
         .estimatedDisburseAmount(estimated)
-        .interestFeeAmount(new BigDecimal(interestAmount).setScale(0, RoundingMode.HALF_UP))//interest
+        .interestFeeAmount(BigDecimal.valueOf(interestAmount).setScale(0, RoundingMode.HALF_UP))//interest
         .provisionFeeAmount(provisionFeeAmount)
         .adminFeeAmount(adminFeeAmount)
         .othersFeeAmount(othersFeeAmount)
@@ -887,7 +887,11 @@ public class LoanSubmissionService {
       DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
     );
 
+    /**
+     * Calculate
+     */
     final EstimatedDisburseDto calculateDisburse = calculateDisburse(customer, simulation);
+
     if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
       throw new IllegalStateException("Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
         "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");

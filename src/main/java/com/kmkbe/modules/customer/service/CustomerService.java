@@ -9,7 +9,6 @@ import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.helpers.utils.PageableUtil;
-import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.modules.customer.model.response.CustomerResponse;
@@ -71,7 +70,7 @@ public class CustomerService {
   public Customer create(SignUpRequest request, CustomerType type) {
 
     // Validate duplicate vendor ID
-    Optional<Customer> customerOptional = customerRepository.findByVendorId(request.getVendorId());
+    Optional<Customer> customerOptional = customerRepository.findByCustExternalCode(request.getVendorId());
     if (customerOptional.isPresent() && customerOptional.get().isActive()) {
       log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getVendorId());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "Vendor code has been register! ");
@@ -82,13 +81,8 @@ public class CustomerService {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Setujui Syarat dan Ketentuan for sign up");
     }
 
-    final Optional<Customer> find = customerRepository.findByCustEmail(request.getEmail());
-    if (find.isPresent()) {
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", false);
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer has been active");
-    }
 
-//      CustomerUtils.clearCustomerInactiveData(jdbcTemplate, find.get());
+//  CustomerUtils.clearCustomerInactiveData(jdbcTemplate, find.get());
     final String encodePin = bcryptEncoder.encode(request.getPin());
 
     Customer customer = new Customer();
@@ -124,14 +118,11 @@ public class CustomerService {
     customer.setCustPin(encodePin);
     customer.setIsEmailValid(false);
     customer.setBouwheer(request.getBouwheerCode());
-    customer.setVendorId(request.getVendorId());
     customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
     customer.setActive(false);
-
     if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
       customer.setCustExternalCode(request.getVendorCode());
     }
-
     customer.setUsrCrt(customer.getCustName());
     customer.setDtmCrt(DateTimeUtils.now());
     return customerRepository.save(customer);
@@ -270,7 +261,6 @@ public class CustomerService {
       response.setIsActive(item.isActive());
       response.setDtmCrt(item.getDtmCrt());
       response.setForceLogout(item.getForceLogout());
-      response.setVendorId(item.getVendorId());
       response.setBouwheerCode(String.valueOf(item.getBouwheer()));
 //      response.setBouwheerName(Optional.ofNullable(item.getBouwheerDetail())
 //        .map(Bouwheer::getBouwheerName)
