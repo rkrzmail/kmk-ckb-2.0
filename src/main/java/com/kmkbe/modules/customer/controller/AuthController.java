@@ -79,13 +79,7 @@ public class AuthController {
   ) throws Exception {
     final CsulGetVendorDto vendor;
 
-    // Validate duplicate vendor ID
-    Optional<Customer> customerOptional = customerRepository.findByVendorId(request.getVendorId());
-    if (customerOptional.isPresent()) {
-      log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getVendorId());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "Vendor code has been register! ");
-    }
-
+    // Find vendor code use API
     vendor = apiCsulAdapter.findByCode(request.getVendorCode());
     if (vendor == null) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", request.getBouwheerCode());

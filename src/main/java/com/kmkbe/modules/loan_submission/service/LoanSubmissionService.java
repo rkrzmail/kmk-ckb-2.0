@@ -101,7 +101,7 @@ public class LoanSubmissionService {
         if (customer == null) {
           throw new IllegalArgumentException("Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
         }
-        List<Invoice> dbInvoices = financingHdrRepository.findFinancingHeaderByVendorId(customer.getVendorId());
+        List<Invoice> dbInvoices = financingHdrRepository.findFinancingHeaderByCustCode(customer.getCustExternalCode());
 
         log.info("Count invoice Simulation result {}", dbInvoices.size());
 
@@ -269,14 +269,11 @@ public class LoanSubmissionService {
     try {
       final BigDecimal ntfResult = request.getTotalInvoiceAmount()
         .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
-      //.setScale(0, RoundingMode.UP);
 
-      final Optional<Product> findProduct = productRepository.findNtfRange(ntfResult.doubleValue());
+      final Optional<Product> findProduct = productRepository.findFirstByAmountInRange(ntfResult.doubleValue());
 
       if (findProduct.isEmpty()) {
-        // return null;
         throw new IllegalStateException("Mohon maaf, Product yang sesuai limit tidak ditemukan");
-
       }
 
       final Product product = findProduct.get();
@@ -342,11 +339,11 @@ public class LoanSubmissionService {
           + product.getLegalFee()
           + adminFee
           + product.getOthersFee();
-        provisionFeeAmount = new BigDecimal(provisionRateFee).setScale(0, RoundingMode.HALF_UP);
-        surveyFeeAmount = new BigDecimal(product.getSurveyFee()).setScale(0, RoundingMode.HALF_UP);
-        legalFeeAmount = new BigDecimal(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
-        adminFeeAmount = new BigDecimal(adminFee).setScale(0, RoundingMode.HALF_UP);
-        othersFeeAmount = new BigDecimal(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
+        provisionFeeAmount = BigDecimal.valueOf(provisionRateFee).setScale(0, RoundingMode.HALF_UP);
+        surveyFeeAmount = BigDecimal.valueOf(product.getSurveyFee()).setScale(0, RoundingMode.HALF_UP);
+        legalFeeAmount = BigDecimal.valueOf(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
+        adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
+        othersFeeAmount = BigDecimal.valueOf(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
       } else {
         provisionFeeAmount = new BigDecimal(0);
         surveyFeeAmount = new BigDecimal(0);
@@ -357,15 +354,15 @@ public class LoanSubmissionService {
       }
 
       double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
-      final BigDecimal serviceFee = new BigDecimal(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
-      final BigDecimal estimated = new BigDecimal(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
+      final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
+      final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
 
       return EstimatedDisburseDto.builder()
         .productId(product.getProductId())
         .financingAmount(ntfResult.setScale(0, RoundingMode.HALF_UP)) //yng diajukan
         .serviceFeeAmount(serviceFee)
         .estimatedDisburseAmount(estimated)
-        .interestFeeAmount(new BigDecimal(interestAmount).setScale(0, RoundingMode.HALF_UP))//interest
+        .interestFeeAmount(BigDecimal.valueOf(interestAmount).setScale(0, RoundingMode.HALF_UP))//interest
         .provisionFeeAmount(provisionFeeAmount)
         .adminFeeAmount(adminFeeAmount)
         .othersFeeAmount(othersFeeAmount)
@@ -481,16 +478,13 @@ public class LoanSubmissionService {
       final Optional<Product> findProduct = productRepository.findNtfRange(ntfResult.doubleValue());
 
       if (findProduct.isEmpty()) {
-        // return null;
         throw new IllegalStateException("Mohon maaf, Product yang sesuai limit tidak ditemukan");
-
       }
 
       final Product product = findProduct.get();
-
-      Double provisionRate = findProduct.get().getProvisionRate(),
-        effectiveRate = findProduct.get().getEffectiveRate(),
-        adminRate = findProduct.get().getAdminRate();
+      Double provisionRate = findProduct.get().getProvisionRate();
+      Double effectiveRate = findProduct.get().getEffectiveRate();
+      Double adminRate = findProduct.get().getAdminRate();
 
 
       Optional<Agreement> agreements = agreementRepository.findTopByFinancingHdr(finHdr);
@@ -566,6 +560,7 @@ public class LoanSubmissionService {
         .adminRate(adminRate)
         .effectiveRate(effectiveRate)
         .provisionRate(provisionRate)
+        .product(product)
         .build();
     } catch (Exception e) {
       log.error("recalculateDisburse, error {}", e.getMessage());
@@ -869,94 +864,83 @@ public class LoanSubmissionService {
     Customer customer,
     CreateSimulationRequest request
   ) throws Exception {
-    try {
-      final String bouwheerCode = request.getInvoices().getFirst().getBouwheerCode();
-      if (customer == null) {
-        throw CommonInvalidException.cannotAccessResource();
-      }
 
-      final Product product = productRepository.findById(request.getProductId())
-        .orElseThrow(() -> new IllegalStateException("Product ID not found or not valid"));
+    final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()))
+      .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
 
-      final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode))
-        .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
+    final double totalInvoiceAmount = request.getInvoices()
+      .stream()
+      .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
+      .sum();
 
-      final double totalInvoiceAmount = request.getInvoices()
-        .stream()
-        .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
-        .sum();
+    final Date maxInvoiceDueDate = request.getInvoices()
+      .stream()
+      .map(PostedInvoicePayload::getInvoiceDueDate)
+      .max(Date::compareTo)
+      .get();
 
-      final Date maxInvoiceDueDate = request.getInvoices()
-        .stream()
-        .map(PostedInvoicePayload::getInvoiceDueDate)
-        .max(Date::compareTo)
-        .get();
+    final CalculateSimulationRequest simulation = new CalculateSimulationRequest();
+    simulation.setDisbursePercentage(request.getDisbursePercentage());
+    simulation.setTotalInvoiceAmount(BigDecimal.valueOf(totalInvoiceAmount).setScale(2, RoundingMode.CEILING));
+    simulation.setBouwheerCode(request.getInvoices().getFirst().getBouwheerCode());
+    simulation.setInvoiceDueDate(
+      DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
+    );
 
-      final CalculateSimulationRequest simulation = new CalculateSimulationRequest();
-      {
-        simulation.setDisbursePercentage(request.getDisbursePercentage());
-        simulation.setTotalInvoiceAmount(BigDecimal.valueOf(totalInvoiceAmount).setScale(2, RoundingMode.CEILING));
-        simulation.setBouwheerCode(request.getInvoices().getFirst().getBouwheerCode());
-        simulation.setInvoiceDueDate(
-          DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
-        );
-      }
+    /**
+     * Calculate
+     */
+    final EstimatedDisburseDto calculateDisburse = calculateDisburse(customer, simulation);
 
-      final EstimatedDisburseDto calculateDisburse = calculateDisburse(customer, simulation);
-      if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
-        throw new IllegalStateException("Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
-          "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
-      }
-
-
-      if (calculateDisburse.getTotalInvoiceAmount().doubleValue() < 50000000) {
-        throw new IllegalStateException("Untuk melanjukan pengajuan silahkan tambahkan jumlah invoice yang ingin" + " " +
-          "diajukan hingga mencapai minimal   Rp 50.000.000");
-      }
-
-      final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
-        .financingAmount(calculateDisburse.getFinancingAmount())
-        .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
-        .maxInvoiceDate(maxInvoiceDueDate)
-        .totalInvoiceAmount(totalInvoiceAmount)
-        .interestFeeAmount(calculateDisburse.getInterestFeeAmount())
-        .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
-        .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
-        .othersFeeAmount(calculateDisburse.getOthersFeeAmount())
-        .legalFeeAmount(calculateDisburse.getLegalFeeAmount())
-        .surveyFeeAmount(calculateDisburse.getSurveyFeeAmount())
-        .adminRate(calculateDisburse.getAdminRate())
-        .effectiveRate(calculateDisburse.getEffectiveRate())
-        .provisionRate(calculateDisburse.getProvisionRate())
-        .build();
-
-      final FinancingHdr createdFinancingHdr = financingHdrService.create(
-        customer,
-        bouwheer,
-        product,
-        request,
-        simulationDisburseResult
-      );
-
-      final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, request);
-
-      financingDtlService.createBulk(
-        customer,
-        bouwheer,
-        createdFinancingHdr,
-        request.getInvoices(),
-        createdInvoices
-      );
-
-      return CreatedSimulationDto.builder()
-        .productId(request.getProductId())
-        .financingHdrCode(createdFinancingHdr.getFinancingHdrCode())
-        .invoices(createdInvoices)
-        .build();
-    } catch (Exception e) {
-      log.error("createSimulation, error {}", e.getMessage());
-      throw e;
+    if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
+      throw new IllegalStateException("Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
+        "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
     }
+
+    // Ensure calculateDisburse and its nested value are not null before checking doubleValue()
+    if (calculateDisburse.getTotalInvoiceAmount().doubleValue() < 50000000) {
+      throw new IllegalStateException("Untuk melanjutkan pengajuan silahkan tambahkan jumlah invoice yang ingin " +
+        "diajukan hingga mencapai minimal Rp 50.000.000");
+    }
+    final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
+      .financingAmount(calculateDisburse.getFinancingAmount())
+      .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
+      .maxInvoiceDate(maxInvoiceDueDate)
+      .totalInvoiceAmount(totalInvoiceAmount)
+      .interestFeeAmount(calculateDisburse.getInterestFeeAmount())
+      .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
+      .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
+      .othersFeeAmount(calculateDisburse.getOthersFeeAmount())
+      .legalFeeAmount(calculateDisburse.getLegalFeeAmount())
+      .surveyFeeAmount(calculateDisburse.getSurveyFeeAmount())
+      .adminRate(calculateDisburse.getAdminRate())
+      .effectiveRate(calculateDisburse.getEffectiveRate())
+      .provisionRate(calculateDisburse.getProvisionRate())
+      .build();
+
+    final FinancingHdr createdFinancingHdr = financingHdrService.create(
+      customer,
+      bouwheer,
+      calculateDisburse.getProduct(),
+      request,
+      simulationDisburseResult
+    );
+
+    final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, request);
+
+    financingDtlService.createBulk(
+      customer,
+      bouwheer,
+      createdFinancingHdr,
+      request.getInvoices(),
+      createdInvoices
+    );
+
+    return CreatedSimulationDto.builder()
+      .productId(request.getProductId())
+      .financingHdrCode(createdFinancingHdr.getFinancingHdrCode())
+      .invoices(createdInvoices)
+      .build();
   }
 
 

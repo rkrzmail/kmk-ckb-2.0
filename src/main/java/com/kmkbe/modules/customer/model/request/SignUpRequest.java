@@ -16,11 +16,10 @@ import org.hibernate.validator.constraints.Length;
 
 import java.time.LocalDateTime;
 
-@Getter
-@Setter
 @AllArgsConstructor
 @NoArgsConstructor
-@ToString
+@Builder
+@Data
 public class SignUpRequest extends BaseRequest {
   @NotNull(message = "vendorCode cannot be null")
   @NotEmpty(message = "vendorCode cannot be empty")

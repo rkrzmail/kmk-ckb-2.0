@@ -9,7 +9,6 @@ import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.helpers.utils.PageableUtil;
-import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.modules.customer.model.response.CustomerResponse;
@@ -17,7 +16,6 @@ import com.kmkbe.modules.customer.model.response.PageCustomerResponse;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.enums.ApprovalStatus;
-import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.helpers.utils.CommonUtils;
@@ -27,7 +25,6 @@ import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.SignUpRequest;
 import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.model.request.UpdateFapRequest;
-import com.kmkbe.modules.customer.utils.CustomerUtils;
 import jakarta.mail.MessagingException;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -71,22 +68,31 @@ public class CustomerService {
   }
 
   public Customer create(SignUpRequest request, CustomerType type) {
+
+    // Validate duplicate vendor ID
+    Optional<Customer> customerOptional = customerRepository.findByCustEmail(request.getEmail());
+    if (customerOptional.isPresent() && customerOptional.get().isActive()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getVendorId());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "Email vendor has been register! "+customerOptional.get().getCustName());
+    }
+
     if (!request.isAgreeTc()) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", false);
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Setujui Syarat dan Ketentuan for sign up");
     }
 
-    final Optional<Customer> find = customerRepository.findByCustEmail(request.getEmail());
-    if (find.isPresent()) {
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", false);
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer has been active");
-    }
 
-//      CustomerUtils.clearCustomerInactiveData(jdbcTemplate, find.get());
+//  CustomerUtils.clearCustomerInactiveData(jdbcTemplate, find.get());
     final String encodePin = bcryptEncoder.encode(request.getPin());
 
-    final Customer customer = new Customer();
-    customer.setCustCode(UUID.randomUUID());
+    Customer customer = new Customer();
+    if(customerOptional.isPresent() && !customerOptional.get().isActive()){
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Update Customer ", request.getVendorId());
+      customer = customerOptional.get();
+    }else{
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Create Customer ", request.getVendorId());
+      customer.setCustCode(UUID.randomUUID());
+    }
     customer.setCustName(request.getName());
     customer.setCustEmail(request.getEmail().toLowerCase());
 
@@ -111,15 +117,12 @@ public class CustomerService {
     customer.setAgreeTc(request.isAgreeTc());
     customer.setCustPin(encodePin);
     customer.setIsEmailValid(false);
-    customer.setBouwheerCode(UUID.fromString(request.getBouwheerCode()));
-    customer.setVendorId(request.getVendorId());
+    customer.setBouwheer(request.getBouwheerCode());
     customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
     customer.setActive(false);
-
     if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
       customer.setCustExternalCode(request.getVendorCode());
     }
-
     customer.setUsrCrt(customer.getCustName());
     customer.setDtmCrt(DateTimeUtils.now());
     return customerRepository.save(customer);
@@ -136,7 +139,6 @@ public class CustomerService {
   public Customer update(
     Customer customer,
     UpdateCustomerRequest request
-
   ) throws SignatureException {
     try {
       boolean emailChanged = false;
@@ -259,11 +261,10 @@ public class CustomerService {
       response.setIsActive(item.isActive());
       response.setDtmCrt(item.getDtmCrt());
       response.setForceLogout(item.getForceLogout());
-      response.setVendorId(item.getVendorId());
-      response.setBouwheerCode(item.getBouwheerCode());
-      response.setBouwheerName(Optional.ofNullable(item.getBouwheerDetail())
-        .map(Bouwheer::getBouwheerName)
-        .orElse(null));
+      response.setBouwheerCode(String.valueOf(item.getBouwheer()));
+//      response.setBouwheerName(Optional.ofNullable(item.getBouwheerDetail())
+//        .map(Bouwheer::getBouwheerName)
+//        .orElse(null));
       response.setApprovalStatus(item.getApprovalStatus());
       response.setApprovalNote(item.getApprovalNote());
       response.setApprovalBy(item.getApprovalBy());
@@ -292,9 +293,9 @@ public class CustomerService {
     Customer customer = customerOptional.get();
     CustomerResponse response = new CustomerResponse();
     BeanUtils.copyProperties(customer, response);
-    response.setBouwheerName(Optional.ofNullable(customer.getBouwheerDetail())
-      .map(Bouwheer::getBouwheerName)
-      .orElse(null));
+//    response.setBouwheerName(Optional.ofNullable(customer.getBouwheerDetail())
+//      .map(Bouwheer::getBouwheerName)
+//      .orElse(null));
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, response);
   }
