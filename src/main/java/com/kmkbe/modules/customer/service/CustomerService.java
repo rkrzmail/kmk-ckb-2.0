@@ -70,10 +70,10 @@ public class CustomerService {
   public Customer create(SignUpRequest request, CustomerType type) {
 
     // Validate duplicate vendor ID
-    Optional<Customer> customerOptional = customerRepository.findByCustExternalCode(request.getVendorId());
+    Optional<Customer> customerOptional = customerRepository.findByCustEmail(request.getEmail());
     if (customerOptional.isPresent() && customerOptional.get().isActive()) {
       log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getVendorId());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "Vendor code has been register! ");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "Email vendor has been register! "+customerOptional.get().getCustName());
     }
 
     if (!request.isAgreeTc()) {

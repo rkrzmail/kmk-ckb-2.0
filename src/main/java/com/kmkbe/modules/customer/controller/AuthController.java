@@ -79,6 +79,7 @@ public class AuthController {
   ) throws Exception {
     final CsulGetVendorDto vendor;
 
+    // Find vendor code use API
     vendor = apiCsulAdapter.findByCode(request.getVendorCode());
     if (vendor == null) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", request.getBouwheerCode());
