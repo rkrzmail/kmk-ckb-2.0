@@ -97,9 +97,9 @@ public class SbuCkbController {
   }
 
   @GetMapping(value = "/financing/status/{jwtToken}") //approvals/status
-  public CommonResult<Object> updateApproval(
+  public CommonResult<StatusLabelDto>  updateFinancingStatus(
     @PathVariable("jwtToken") String jwtToken,
-    @RequestHeader("ApiKey") String apiKey
+    @RequestHeader("ApiKey") String apiKey,@RequestParam("financingHdrCode") String financingHdrCode
   ) {
 
     /**
@@ -107,7 +107,7 @@ public class SbuCkbController {
      */
     apiSbuCkbService.apiValidation(apiKey, jwtToken);
 
-    return apiSbuCkbService.approval(apiKey);
+    return apiSbuCkbService.statusFinancing(apiKey,financingHdrCode);
   }
 
   @PostMapping(value = "/invoice-paid/{jwtToken}")
