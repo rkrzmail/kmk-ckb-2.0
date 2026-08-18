@@ -270,7 +270,10 @@ public class LoanSubmissionService {
       final BigDecimal ntfResult = request.getTotalInvoiceAmount()
         .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
 
-      final Optional<Product> findProduct = productRepository.findFirstByAmountInRange(ntfResult.doubleValue());
+      final Optional<Product> findProduct = findProductByAmountAndBouwheer(
+        ntfResult.doubleValue(),
+        request.getBouwheerCode()
+      );
 
       if (findProduct.isEmpty()) {
         throw new IllegalStateException("Mohon maaf, Product yang sesuai limit tidak ditemukan");
@@ -475,7 +478,8 @@ public class LoanSubmissionService {
         .multiply(BigDecimal.valueOf(schemaRate / 100.0));
       //.setScale(0, RoundingMode.UP);
 
-      final Optional<Product> findProduct = productRepository.findNtfRange(ntfResult.doubleValue());
+      UUID bouwheerCode = finHdr.getBouwheer() != null ? finHdr.getBouwheer().getBouwheerCode() : null;
+      final Optional<Product> findProduct = findProductByNtfRangeAndBouwheer(ntfResult.doubleValue(), bouwheerCode);
 
       if (findProduct.isEmpty()) {
         throw new IllegalStateException("Mohon maaf, Product yang sesuai limit tidak ditemukan");
@@ -955,7 +959,7 @@ public class LoanSubmissionService {
         throw CommonInvalidException.cannotAccessResource();
       }
 
-      final Product product = productRepository.findById(request.getProductId()).orElseThrow();
+      final Product product = findProductByIdAndBouwheer(request.getProductId(), bouwheerCode);
       final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode))
         .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
 
@@ -1541,6 +1545,52 @@ public class LoanSubmissionService {
     } catch (Exception e) {
       return null;
     }
+  }
+
+  private Optional<Product> findProductByAmountAndBouwheer(Double amount, String bouwheerCode) {
+    UUID parsedBouwheerCode = parseBouwheerCode(bouwheerCode);
+    if (parsedBouwheerCode != null) {
+      Optional<Product> product = productRepository.findFirstByAmountInRangeAndBouwheerCode(amount, parsedBouwheerCode);
+      if (product.isPresent()) {
+        return product;
+      }
+    }
+
+    return productRepository.findFirstByAmountInRange(amount);
+  }
+
+  private Optional<Product> findProductByNtfRangeAndBouwheer(Double amount, UUID bouwheerCode) {
+    if (bouwheerCode != null) {
+      Optional<Product> product = productRepository.findNtfRangeByBouwheerCode(amount, bouwheerCode);
+      if (product.isPresent()) {
+        return product;
+      }
+    }
+
+    return productRepository.findNtfRange(amount);
+  }
+
+  private Product findProductByIdAndBouwheer(Long productId, String bouwheerCode) {
+    Product product = productRepository.findById(productId).orElseThrow();
+    UUID parsedBouwheerCode = parseBouwheerCode(bouwheerCode);
+
+    if (parsedBouwheerCode == null || product.getBouwheer() == null) {
+      return product;
+    }
+
+    if (!parsedBouwheerCode.equals(product.getBouwheer().getBouwheerCode())) {
+      throw new IllegalStateException("Product not found for selected Bouwheer");
+    }
+
+    return product;
+  }
+
+  private UUID parseBouwheerCode(String bouwheerCode) {
+    if (StringUtil.isNullOrEmpty(bouwheerCode)) {
+      return null;
+    }
+
+    return UUID.fromString(bouwheerCode);
   }
 
   @Getter

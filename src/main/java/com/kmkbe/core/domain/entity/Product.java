@@ -1,5 +1,6 @@
 package com.kmkbe.core.domain.entity;
 
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -38,6 +39,10 @@ public class Product {
     // @NotNull
     @Column(name = "product_code", nullable = false, length = 100)
     private String productCode;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "bouwheer_code")
+    private Bouwheer bouwheer;
 
    // @NotNull
     @Column(name = "effective_date", nullable = false)
@@ -85,6 +90,7 @@ public class Product {
 
    // @NotNull
     @Column(name = "is_active", nullable = false)
+    @Builder.Default
     private Boolean isActive = false;
 
     @Size(max = 50)

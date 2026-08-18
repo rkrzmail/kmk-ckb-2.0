@@ -2,12 +2,21 @@ package com.kmkbe.modules.major_account.service;
 
 import com.kmkbe.core.domain.dto.ProductDto;
 import com.kmkbe.core.domain.entity.Product;
-import com.kmkbe.core.domain.mapper.ProductMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.ProductRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.exception.BusinessException;
+import com.kmkbe.helpers.base.BasePaginationRequest;
+import com.kmkbe.helpers.base.BaseResponse;
+import com.kmkbe.helpers.base.BaseResponseBuilder;
+import com.kmkbe.helpers.constant.AppConstants;
+import com.kmkbe.helpers.utils.PageableUtil;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.persistence.criteria.JoinType;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,7 +25,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -26,14 +34,111 @@ import java.util.List;
 
 import java.util.ArrayList;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class MstProductService {
   private final ProductRepository productRepository;
+  private final BouwheerRepository bouwheerRepository;
   private final ProductExcelParser productExcelParser;
-  private static final ProductMapper productMapper = ProductMapper.INSTANCE;
+  private final CurrentUserService currentUserService;
+  public BaseResponseBuilder<List<ProductDto>> all() {
+    List<ProductDto> products = productRepository.findAll()
+      .stream()
+      .map(this::toDto)
+      .toList();
+
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, products);
+  }
+
+  public BaseResponseBuilder<PaginationResult<ProductDto>> pages(BasePaginationRequest request) {
+    String sortBy = request.getSortBy() != null && !request.getSortBy().isEmpty() ? request.getSortBy() : "productId";
+    Pageable pageable = PageableUtil.createPageRequest(
+      request,
+      request.getPageSize(),
+      request.getPageNo(),
+      sortBy,
+      request.getSortType()
+    );
+
+    Page<Product> page = productRepository.findAll((root, query, builder) -> {
+      if (request.getSearchValue() == null || request.getSearchValue().isBlank()) {
+        return builder.conjunction();
+      }
+
+      String searchValue = "%" + request.getSearchValue().toLowerCase() + "%";
+      String searchBy = request.getSearchBy() != null ? request.getSearchBy() : "productName";
+
+      if ("bouwheerName".equalsIgnoreCase(searchBy)) {
+        return builder.like(builder.lower(root.join("bouwheer", JoinType.LEFT).get("bouwheerName")), searchValue);
+      }
+
+      if ("bouwheerCode".equalsIgnoreCase(searchBy)) {
+        return builder.equal(root.join("bouwheer", JoinType.LEFT).get("bouwheerCode"), UUID.fromString(request.getSearchValue()));
+      }
+
+      if ("productId".equalsIgnoreCase(searchBy)) {
+        return builder.equal(root.get("productId"), Long.valueOf(request.getSearchValue()));
+      }
+
+      if ("branchCode".equalsIgnoreCase(searchBy)) {
+        return builder.like(builder.lower(root.get("branchCode")), searchValue);
+      }
+
+      if ("productCode".equalsIgnoreCase(searchBy)) {
+        return builder.like(builder.lower(root.get("productCode")), searchValue);
+      }
+
+      return builder.like(builder.lower(root.get("productName")), searchValue);
+    }, pageable);
+
+    return new BaseResponseBuilder<>(
+      true,
+      AppConstants.CODE_OK,
+      AppConstants.PROCESS_SUCCESSFULLY,
+      PaginationResult.<ProductDto>builder()
+        .currentPage(page.getNumber() + 1)
+        .totalData(page.getTotalElements())
+        .totalPage(page.getTotalPages())
+        .list(page.getContent().stream().map(this::toDto).toList())
+        .build()
+    );
+  }
+
+  @Transactional
+  public BaseResponse create(ProductDto productDto) {
+    validateProductCodeAvailable(productDto.getProductCode(), null);
+
+    Product product = fromDto(productDto, new Product());
+    product.setUsrCrt(currentUserService.usernameOrDefault(AppConstants.CREATOR));
+    product.setDtmCrt(DateTimeUtils.nowLocal());
+    productRepository.save(product);
+
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
+  }
+
+  @Transactional
+  public BaseResponse update(Long productId, ProductDto productDto) {
+    Product product = productRepository.findById(productId)
+      .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Product not found"));
+
+    validateProductCodeAvailable(productDto.getProductCode(), productId);
+    fromDto(productDto, product);
+    product.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
+    product.setDtmUpd(DateTimeUtils.nowLocal());
+    productRepository.save(product);
+
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
+  }
+
+  public BaseResponse findById(Long productId) {
+    Product product = productRepository.findById(productId)
+      .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Product not found"));
+
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, toDto(product));
+  }
 
   @Transactional
   public void uploadProduct(HttpServletRequest httpServletRequest,
@@ -103,25 +208,7 @@ public class MstProductService {
       Page<Product> pagination = productRepository.findAll(PageRequest.of(pageNo, pageSize));
 
       List<ProductDto> result = pagination.stream()
-        .map((e) -> ProductDto.builder()
-          .productId(e.getProductId())
-          .productCode(e.getProductCode())
-          .productName(e.getProductName())
-          .ntfTo(e.getNtfTo())
-          .ntfFrom(e.getNtfFrom())
-          .branchCode(e.getBranchCode())
-          .effectiveDate(e.getEffectiveDate())
-          .adminLimitFee(e.getAdminLimitFee())
-          .adminRate(e.getAdminRate())
-          .legalFee(e.getLegalFee())
-          .othersFee(e.getOthersFee())
-          .insuranceRate(e.getInsuranceRate())
-          .provisionRate(e.getProvisionRate())
-          .effectiveRate(e.getEffectiveRate())
-          .surveyFee(e.getSurveyFee())
-          .isActive(e.getIsActive())
-          .status(e.getIsActive() ? "ACTIVE" : "INACTIVE")
-          .build())
+        .map(this::toDto)
         .toList();
 
       return PaginationResult.<ProductDto>builder()
@@ -162,25 +249,7 @@ public class MstProductService {
 
 
       List<ProductDto> result = pagination.stream()
-        .map((e) -> ProductDto.builder()
-          .productId(e.getProductId())
-          .productCode(e.getProductCode())
-          .productName(e.getProductName())
-          .ntfTo(e.getNtfTo())
-          .ntfFrom(e.getNtfFrom())
-          .branchCode(e.getBranchCode())
-          .effectiveDate(e.getEffectiveDate())
-          .adminLimitFee(e.getAdminLimitFee())
-          .adminRate(e.getAdminRate())
-          .legalFee(e.getLegalFee())
-          .othersFee(e.getOthersFee())
-          .insuranceRate(e.getInsuranceRate())
-          .provisionRate(e.getProvisionRate())
-          .effectiveRate(e.getEffectiveRate())
-          .surveyFee(e.getSurveyFee())
-          .isActive(e.getIsActive())
-          .status(e.getIsActive() ? "ACTIVE" : "INACTIVE")
-          .build())
+        .map(this::toDto)
         .toList();
 
       return PaginationResult.<ProductDto>builder()
@@ -198,32 +267,13 @@ public class MstProductService {
   //tambah produk
   @Transactional
   public ProductDto createProduct(ProductDto productDto) {
-    // Mengonversi ProductDto menjadi Product (Entity)
-    Product product = Product.builder()
-      .productCode(productDto.getProductCode())
-      .branchCode(productDto.getBranchCode())
-      .productName(productDto.getProductName())
-      .effectiveDate(productDto.getEffectiveDate())
-      .ntfFrom(productDto.getNtfFrom())
-      .ntfTo(productDto.getNtfTo())
-      .effectiveRate(productDto.getEffectiveRate())
-      .provisionRate(productDto.getProvisionRate())
-      .surveyFee(productDto.getSurveyFee())
-      .legalFee(productDto.getLegalFee())
-      .adminLimitFee(productDto.getAdminLimitFee())
-      .adminRate(productDto.getAdminRate())
-      .insuranceRate(productDto.getInsuranceRate())
-      .othersFee(productDto.getOthersFee())
-      .isActive(productDto.getIsActive())
-      .usrCrt("SYSTEM")  // atau bisa diganti sesuai dengan user yang menginput
-      .dtmCrt(DateTimeUtils.nowLocal())  // timestamp saat produk dibuat
-      .build();
+    Product product = fromDto(productDto, new Product());
+    product.setUsrCrt(currentUserService.usernameOrDefault(AppConstants.CREATOR));
+    product.setDtmCrt(DateTimeUtils.nowLocal());
 
-    // Menyimpan Product ke database
     Product savedProduct = productRepository.save(product);
 
-    // Mengonversi kembali Product ke ProductDto untuk dikirim ke controller
-    return productMapper.entityToDto(savedProduct);
+    return toDto(savedProduct);
   }
 
 
@@ -258,6 +308,7 @@ public class MstProductService {
       existingProduct.setProductName(productDetails.getProductName());
       existingProduct.setProductCode(productDetails.getProductCode());
       existingProduct.setBranchCode(productDetails.getBranchCode());
+      existingProduct.setBouwheer(productDetails.getBouwheer());
       existingProduct.setEffectiveDate(productDetails.getEffectiveDate());
       existingProduct.setNtfFrom(productDetails.getNtfFrom());
       existingProduct.setNtfTo(productDetails.getNtfTo());
@@ -279,5 +330,75 @@ public class MstProductService {
     } else {
       throw new RuntimeException("Product not found with code: " + productCode);
     }
+  }
+
+  private Product fromDto(ProductDto productDto, Product product) {
+    product.setProductCode(productDto.getProductCode());
+    product.setBranchCode(productDto.getBranchCode());
+    product.setProductName(productDto.getProductName());
+    product.setBouwheer(resolveBouwheer(productDto.getBouwheerCode()));
+    product.setEffectiveDate(productDto.getEffectiveDate());
+    product.setNtfFrom(productDto.getNtfFrom());
+    product.setNtfTo(productDto.getNtfTo());
+    product.setEffectiveRate(productDto.getEffectiveRate());
+    product.setProvisionRate(productDto.getProvisionRate());
+    product.setSurveyFee(productDto.getSurveyFee());
+    product.setLegalFee(productDto.getLegalFee());
+    product.setAdminLimitFee(productDto.getAdminLimitFee());
+    product.setAdminRate(productDto.getAdminRate());
+    product.setInsuranceRate(productDto.getInsuranceRate());
+    product.setOthersFee(productDto.getOthersFee());
+    product.setIsActive(productDto.getIsActive());
+    return product;
+  }
+
+  private ProductDto toDto(Product product) {
+    Bouwheer bouwheer = product.getBouwheer();
+    return ProductDto.builder()
+      .productId(product.getProductId())
+      .productCode(product.getProductCode())
+      .branchCode(product.getBranchCode())
+      .bouwheerCode(bouwheer != null ? bouwheer.getBouwheerCode() : null)
+      .bouwheerName(bouwheer != null ? bouwheer.getBouwheerName() : null)
+      .productName(product.getProductName())
+      .effectiveDate(product.getEffectiveDate())
+      .ntfFrom(product.getNtfFrom())
+      .ntfTo(product.getNtfTo())
+      .effectiveRate(product.getEffectiveRate())
+      .provisionRate(product.getProvisionRate())
+      .surveyFee(product.getSurveyFee())
+      .legalFee(product.getLegalFee())
+      .adminLimitFee(product.getAdminLimitFee())
+      .adminRate(product.getAdminRate())
+      .insuranceRate(product.getInsuranceRate())
+      .othersFee(product.getOthersFee())
+      .isActive(product.getIsActive())
+      .status(Boolean.TRUE.equals(product.getIsActive()) ? "ACTIVE" : "INACTIVE")
+      .usrCrt(product.getUsrCrt())
+      .dtmCrt(product.getDtmCrt())
+      .usrUpd(product.getUsrUpd())
+      .dtmUpd(product.getDtmUpd())
+      .build();
+  }
+
+  private Bouwheer resolveBouwheer(UUID bouwheerCode) {
+    if (bouwheerCode == null) {
+      return null;
+    }
+
+    return bouwheerRepository.findByBouwheerCode(bouwheerCode)
+      .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Bouwheer not found"));
+  }
+
+  private void validateProductCodeAvailable(String productCode, Long currentProductId) {
+    if (productCode == null || productCode.isBlank()) {
+      return;
+    }
+
+    productRepository.findByProductCodeIgnoreCase(productCode)
+      .filter(product -> currentProductId == null || !product.getProductId().equals(currentProductId))
+      .ifPresent(product -> {
+        throw new BusinessException(HttpStatus.CONFLICT, AppConstants.CODE_CONFLICT, "Product code already exists");
+      });
   }
 }

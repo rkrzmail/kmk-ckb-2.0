@@ -5,6 +5,7 @@ import lombok.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Getter
@@ -17,6 +18,8 @@ public class ProductDto implements Serializable {
     private Long productId;
     private String productCode;
     private String branchCode;
+    private UUID bouwheerCode;
+    private String bouwheerName;
     private String productName;
     private LocalDateTime effectiveDate;
     private Double ntfFrom;
