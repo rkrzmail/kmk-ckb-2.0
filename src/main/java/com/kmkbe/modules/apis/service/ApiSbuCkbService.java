@@ -24,7 +24,6 @@ import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.model.request.SignUpRequest;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.service.CustomerCompanyService;
-import com.kmkbe.modules.customer.service.CustomerService;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
@@ -54,9 +53,6 @@ public class ApiSbuCkbService {
   private final FinancingHdrService financingHdrService;
   private final FinancingDtlService financingDtlService;
   private final CustomerCompanyService customerCompanyService;
-  private final DocumentService documentService;
-  private final CustomerService customerService;
-
 
   public ApiSbuCkbService(ApiCsulAdapter apiCsulAdapter,
                           ApiSbuRepository apiSbuRepository,
@@ -68,9 +64,7 @@ public class ApiSbuCkbService {
                           FinancingService financingService,
                           FinancingHdrService financingHdrService,
                           FinancingDtlService financingDtlService,
-                          CustomerCompanyService customerCompanyService,
-                          DocumentService documentService,
-                          CustomerService customerService
+                          CustomerCompanyService customerCompanyService
   ) {
     this.apiCsulAdapter = apiCsulAdapter;
     this.apiSbuRepository = apiSbuRepository;
@@ -83,8 +77,6 @@ public class ApiSbuCkbService {
     this.financingHdrService = financingHdrService;
     this.financingDtlService = financingDtlService;
     this.customerCompanyService = customerCompanyService;
-    this.documentService = documentService;
-    this.customerService = customerService;
   }
 
 
