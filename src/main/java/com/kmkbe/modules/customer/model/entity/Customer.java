@@ -8,6 +8,8 @@ import com.kmkbe.helpers.utils.UuidConverter;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.NotFound;
+import org.hibernate.annotations.NotFoundAction;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -177,12 +179,11 @@ public class Customer implements UserDetails {
   }
 
   @Column(name = "bouwheer", length = 36)
-  private String bouwheer;
+  private UUID bouwheer;
 
-//  @OneToOne(cascade = CascadeType.ALL)
-//  @JoinColumn(name = "bouwheer", referencedColumnName = "bouwheer_code", insertable = false, updatable = false)
-//  private Bouwheer bouwheerDetail;
-
-
+  @OneToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "bouwheer", referencedColumnName = "bouwheer_code", insertable = false, updatable = false)
+  @NotFound(action = NotFoundAction.IGNORE)
+  private Bouwheer bouwheerDetail;
 
 }
