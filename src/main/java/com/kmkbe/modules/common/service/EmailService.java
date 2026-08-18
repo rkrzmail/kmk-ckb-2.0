@@ -634,7 +634,7 @@ public class EmailService {
   }
 
   private MailRemoteDto resolveMailConfig() {
-    if (isProductionEnvironment()) {
+    if (isProductionEnvironment() || isDevelopmentEnvironment()) {
       MailRemoteDto remoteMail = configRemoteService.fetchEmailInfo();
       log.info(
         "EmailService using remote mail config host={} port={} username={}",
@@ -660,8 +660,17 @@ public class EmailService {
     return isProductionValue(env) || Arrays.stream(environment.getActiveProfiles()).anyMatch(this::isProductionValue);
   }
 
+  private boolean isDevelopmentEnvironment() {
+    String env = environment.getProperty("env", "");
+    return isDevelopmentValue(env) || Arrays.stream(environment.getActiveProfiles()).anyMatch(this::isDevelopmentValue);
+  }
+
   private boolean isProductionValue(String value) {
     return "prod".equalsIgnoreCase(value) || "production".equalsIgnoreCase(value);
+  }
+
+  private boolean isDevelopmentValue(String value) {
+    return "dev".equalsIgnoreCase(value) || "development".equalsIgnoreCase(value);
   }
 
   @LogMethod
