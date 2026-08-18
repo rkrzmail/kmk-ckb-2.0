@@ -5,6 +5,8 @@ import com.kmkbe.core.domain.entity.Product;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.helpers.base.BasePaginationRequest;
+import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.major_account.service.BranchAreaMappingService;
 import com.kmkbe.modules.major_account.service.MstProductService;
 
@@ -38,6 +40,38 @@ public class MstProductController {
   private final BranchAreaMappingService branchAreaMappingService;
   private final CurrentUserService currentUserService;
 
+  @GetMapping
+  public BaseResponse getAllProduct() throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return productService.all();
+  }
+
+  @GetMapping("/pages")
+  public BaseResponse getPageProduct(@Valid @ParameterObject BasePaginationRequest request) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return productService.pages(request);
+  }
+
+  @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+  public BaseResponse postCreateProduct(@Valid @RequestBody ProductDto productDto) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return productService.create(productDto);
+  }
+
+  @PutMapping(value = "/{id}", consumes = MediaType.APPLICATION_JSON_VALUE, produces = MediaType.APPLICATION_JSON_VALUE)
+  public BaseResponse putUpdateProduct(
+    @PathVariable Long id,
+    @Valid @RequestBody ProductDto productDto
+  ) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return productService.update(id, productDto);
+  }
+
+  @GetMapping(value = "/{id}", produces = MediaType.APPLICATION_JSON_VALUE)
+  public BaseResponse getProduct(@PathVariable Long id) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return productService.findById(id);
+  }
 
   @GetMapping("/list")
   public CommonResult<PaginationResult<ProductDto>> getList(@ParameterObject PaginationRequest request
