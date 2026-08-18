@@ -14,7 +14,7 @@ import com.kmkbe.modules.customer.model.request.RequestOtpRequest;
 import com.kmkbe.modules.customer.model.request.VerifyOtpRequest;
 import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.customer.service.OtpService;
-import com.kmkbe.nikita.utils.Utils;
+import com.kmkbe.helpers.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

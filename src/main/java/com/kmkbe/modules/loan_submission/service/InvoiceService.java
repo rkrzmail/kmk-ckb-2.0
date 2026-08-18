@@ -17,7 +17,7 @@ import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
-import com.kmkbe.nikita.utils.Utils;
+import com.kmkbe.helpers.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

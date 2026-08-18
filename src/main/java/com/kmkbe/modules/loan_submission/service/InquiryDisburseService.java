@@ -4,11 +4,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import com.kmkbe.core.domain.entity.*;
-import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
-import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.model.PencarianPayload;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.*;
@@ -21,7 +18,7 @@ import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
-import com.kmkbe.nikita.utils.Utils;
+import com.kmkbe.helpers.utils.Utils;
 import jakarta.annotation.Nullable;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +30,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import java.time.LocalDateTime;
 import java.util.*;
 
 @Service

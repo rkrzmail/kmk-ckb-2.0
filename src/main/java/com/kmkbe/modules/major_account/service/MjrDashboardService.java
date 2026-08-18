@@ -3,7 +3,7 @@ package com.kmkbe.modules.major_account.service;
 import com.kmkbe.core.domain.dto.MjrAccDashboardDto;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.major_account.request.MjrDashboardRequest;
-import com.kmkbe.nikita.utils.Utils;
+import com.kmkbe.helpers.utils.Utils;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import lombok.RequiredArgsConstructor;

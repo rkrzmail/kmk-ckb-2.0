@@ -5,7 +5,7 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.dto.LoanSubmissionSessionDto;
-import com.kmkbe.nikita.utils.Utils;
+import com.kmkbe.helpers.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;

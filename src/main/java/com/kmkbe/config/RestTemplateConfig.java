@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.kmkbe.core.converter.ObjectToUrlEncodedConverter;
-import com.kmkbe.nikita.utils.PlainDoubleSerializer;
+import com.kmkbe.helpers.utils.PlainDoubleSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;

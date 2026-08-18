@@ -11,7 +11,7 @@ import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
-import com.kmkbe.nikita.utils.Utils;
+import com.kmkbe.helpers.utils.Utils;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;

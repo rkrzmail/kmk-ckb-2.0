@@ -15,7 +15,7 @@ import com.kmkbe.core.utils.UriUtils;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
-import com.kmkbe.nikita.utils.SpecPagination;
+import com.kmkbe.helpers.utils.SpecPagination;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;

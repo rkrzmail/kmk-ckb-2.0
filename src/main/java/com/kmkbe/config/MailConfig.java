@@ -2,14 +2,13 @@ package com.kmkbe.config;
 
 import com.kmkbe.core.domain.dto.MailRemoteDto;
 import com.kmkbe.core.domain.entity.EmailTemplate;
-import com.kmkbe.nikita.utils.Utils;
+import com.kmkbe.helpers.utils.Utils;
 import jakarta.mail.*;
 import jakarta.mail.internet.*;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
