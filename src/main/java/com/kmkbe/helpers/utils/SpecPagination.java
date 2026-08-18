@@ -1,6 +1,5 @@
-package com.kmkbe.nikita.utils;
+package com.kmkbe.helpers.utils;
 
-import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import org.springframework.data.domain.Page;

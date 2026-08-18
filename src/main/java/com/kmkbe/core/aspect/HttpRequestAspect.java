@@ -8,9 +8,7 @@ import com.kmkbe.core.middleware.HttpServletRequestCopier;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
-import com.kmkbe.nikita.data.Nson;
 import io.netty.util.internal.StringUtil;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -24,8 +22,6 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.thymeleaf.util.StringUtils;
-
-import java.time.LocalDateTime;
 import java.util.Map;
 
 @Aspect
