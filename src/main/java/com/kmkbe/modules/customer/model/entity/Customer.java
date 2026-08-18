@@ -8,11 +8,13 @@ import com.kmkbe.helpers.utils.UuidConverter;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.NotFound;
 import org.hibernate.annotations.NotFoundAction;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -179,6 +181,7 @@ public class Customer implements UserDetails {
   }
 
   @Column(name = "bouwheer", length = 36)
+  @JdbcTypeCode(Types.VARCHAR)
   private UUID bouwheer;
 
   @OneToOne(fetch = FetchType.LAZY)
