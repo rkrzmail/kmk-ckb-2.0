@@ -9,6 +9,7 @@ import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.helpers.utils.PageableUtil;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.modules.customer.model.response.CustomerResponse;
@@ -124,7 +125,7 @@ public class CustomerService {
     customer.setAgreeTc(request.isAgreeTc());
     customer.setCustPin(encodePin);
     customer.setIsEmailValid(false);
-    customer.setBouwheer(request.getBouwheerCode());
+    customer.setBouwheer(UUID.fromString(request.getBouwheerCode()));
     customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
     customer.setActive(false);
     if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
@@ -269,9 +270,9 @@ public class CustomerService {
       response.setDtmCrt(item.getDtmCrt());
       response.setForceLogout(item.getForceLogout());
       response.setBouwheerCode(String.valueOf(item.getBouwheer()));
-//      response.setBouwheerName(Optional.ofNullable(item.getBouwheerDetail())
-//        .map(Bouwheer::getBouwheerName)
-//        .orElse(null));
+      response.setBouwheerName(Optional.ofNullable(item.getBouwheerDetail())
+        .map(Bouwheer::getBouwheerName)
+        .orElse(null));
       response.setApprovalStatus(item.getApprovalStatus());
       response.setApprovalNote(item.getApprovalNote());
       response.setApprovalBy(item.getApprovalBy());
@@ -300,9 +301,9 @@ public class CustomerService {
     Customer customer = customerOptional.get();
     CustomerResponse response = new CustomerResponse();
     BeanUtils.copyProperties(customer, response);
-//    response.setBouwheerName(Optional.ofNullable(customer.getBouwheerDetail())
-//      .map(Bouwheer::getBouwheerName)
-//      .orElse(null));
+    response.setBouwheerName(Optional.ofNullable(customer.getBouwheerDetail())
+      .map(Bouwheer::getBouwheerName)
+      .orElse(null));
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, response);
   }
