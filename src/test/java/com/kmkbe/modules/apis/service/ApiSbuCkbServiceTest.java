@@ -1,15 +1,20 @@
 package com.kmkbe.modules.apis.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.adapter.ApiCsulAdapter;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.ValidationResponse;
 import com.kmkbe.core.exception.IllegalApiKeyException;
+import com.kmkbe.core.service.JwtGeneratorService;
 import com.kmkbe.core.service.JwtValidatorService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
 import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.modules.api_sbu.repository.ApiSbuRepository;
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
+import com.kmkbe.modules.customer.repository.CustomerRepository;
+import com.kmkbe.modules.customer.service.CustomerCompanyService;
+import com.kmkbe.modules.customer.service.CustomerService;
+import com.kmkbe.modules.loan_submission.service.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -42,13 +47,43 @@ class ApiSbuCkbServiceTest {
 
   @Mock
   private JwtValidatorService jwtValidatorService;
-
+  @Mock
   private ApiSbuCkbService service;
+  @Mock
+  private CustomerRepository customerRepository;
+  @Mock
+  private LoanSubmissionService loanSubmissionService;
+  @Mock
+  private BouwheerRepository bouwheerRepository;
+  @Mock
+  private JwtGeneratorService jwtGeneratorService;
+  @Mock
+  private FinancingService financingService;
+  @Mock
+  private FinancingHdrService financingHdrService;
+  @Mock
+  private FinancingDtlService financingDtlService;
+  @Mock
+  private CustomerCompanyService customerCompanyService;
+  @Mock
+  private DocumentService documentService;
+  @Mock
+  private CustomerService customerService;
 
-//  @BeforeEach
-//  void setUp() {
-//    service = new ApiSbuCkbService(apiCsulAdapter, new ObjectMapper(), apiSbuRepository, jwtValidatorService);
-//  }
+  @BeforeEach
+  void setUp() {
+    service = new ApiSbuCkbService(apiCsulAdapter,
+      apiSbuRepository,
+      jwtValidatorService,
+      customerRepository,
+      loanSubmissionService,
+      bouwheerRepository,
+      jwtGeneratorService,
+      financingService,
+      financingHdrService,
+      financingDtlService,
+      customerCompanyService);
+  }
 
   @Test
   void apiValidationReturnsValidationResponseWhenApiKeyBouwheerAndTokenAreValid() throws IOException {
@@ -69,14 +104,14 @@ class ApiSbuCkbServiceTest {
     when(apiSbuRepository.findByAppKey(API_KEY)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> service.apiValidation(API_KEY, JWT_TOKEN))
-        .isInstanceOf(IllegalApiKeyException.class)
-        .hasMessage("Cannot set trust request with client, Credentials doesn't provide or invalid");
+        .isInstanceOf(BusinessException.class)
+        .hasMessage("Invalid Bouwheer API-KEY");
     verify(apiSbuRepository).findByAppKey(API_KEY);
     verifyNoInteractions(jwtValidatorService);
   }
 
   @Test
-  void apiValidationThrowsBusinessExceptionWhenBouwheerDoesNotMatch() throws IOException {
+  void apiValidationThrowsBusinessExceptionWhenBouwheerDoesNotMatch() {
     ApiSbu apiSbu = apiSbu();
     ValidationResponse validationResponse = validationResponse(UUID.randomUUID().toString(), futureEpochSecond());
     when(apiSbuRepository.findByAppKey(API_KEY)).thenReturn(Optional.of(apiSbu));
@@ -85,6 +120,7 @@ class ApiSbuCkbServiceTest {
     assertThatThrownBy(() -> service.apiValidation(API_KEY, JWT_TOKEN))
         .isInstanceOf(BusinessException.class)
         .hasMessage("Invalid Bouwheer Code");
+
     verify(apiSbuRepository).findByAppKey(API_KEY);
     verify(jwtValidatorService).validate(API_KEY, JWT_TOKEN, apiSbu);
   }
