@@ -181,8 +181,7 @@ public class Customer implements UserDetails {
   }
 
   @Column(name = "bouwheer", length = 36)
-  @JdbcTypeCode(Types.VARCHAR)
-  private UUID bouwheer;
+  private String bouwheer;
 
   @OneToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "bouwheer", referencedColumnName = "bouwheer_code", insertable = false, updatable = false)

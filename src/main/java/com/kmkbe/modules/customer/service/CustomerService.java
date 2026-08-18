@@ -125,7 +125,7 @@ public class CustomerService {
     customer.setAgreeTc(request.isAgreeTc());
     customer.setCustPin(encodePin);
     customer.setIsEmailValid(false);
-    customer.setBouwheer(UUID.fromString(request.getBouwheerCode()));
+    customer.setBouwheer(request.getBouwheerCode());
     customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
     customer.setActive(false);
     if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
