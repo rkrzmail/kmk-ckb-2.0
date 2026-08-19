@@ -14,7 +14,9 @@ import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
+import com.kmkbe.exception.BusinessException;
 import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
+import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.AuditTrailService;
@@ -27,6 +29,7 @@ import com.kmkbe.modules.loan_submission.request.CreateLoanApplicationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.SaveImportantNotesRequest;
 import com.kmkbe.modules.product.model.entity.Product;
+import com.kmkbe.modules.product.repository.ProductRepository;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.remote.service.CurrencyRemoteService;
@@ -41,6 +44,7 @@ import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -1719,25 +1723,19 @@ public class LoanSubmissionService {
 
   private Optional<Product> findProductByAmountAndBouwheer(Double amount, String bouwheerCode) {
     UUID parsedBouwheerCode = parseBouwheerCode(bouwheerCode);
-    if (parsedBouwheerCode != null) {
-      Optional<Product> product = productRepository.findFirstByAmountInRangeAndBouwheerCode(amount, parsedBouwheerCode);
-      if (product.isPresent()) {
-        return product;
+      Optional<Product> productOptional = productRepository.findFirstByAmountInRangeAndBouwheerCode(amount, parsedBouwheerCode);
+      if (productOptional.isEmpty()) {
+        throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Product not found");
       }
-    }
-
-    return productRepository.findFirstByAmountInRange(amount);
+    return productOptional;
   }
 
   private Optional<Product> findProductByNtfRangeAndBouwheer(Double amount, UUID bouwheerCode) {
-    if (bouwheerCode != null) {
-      Optional<Product> product = productRepository.findNtfRangeByBouwheerCode(amount, bouwheerCode);
-      if (product.isPresent()) {
-        return product;
-      }
+    Optional<Product> productOptional = productRepository.findFirstByAmountInRangeAndBouwheerCode(amount, bouwheerCode);
+    if (productOptional.isEmpty()) {
+      throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Product not found");
     }
-
-    return productRepository.findNtfRange(amount);
+    return productOptional;
   }
 
   private Product findProductByIdAndBouwheer(Long productId, String bouwheerCode) {
