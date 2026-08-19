@@ -1,4 +1,4 @@
-package com.kmkbe.core.domain.dto;
+package com.kmkbe.modules.product.model.dto;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.*;

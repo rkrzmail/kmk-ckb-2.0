@@ -17,6 +17,7 @@ import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.helpers.utils.Utils;
+import com.kmkbe.modules.product.model.entity.Product;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.JoinType;

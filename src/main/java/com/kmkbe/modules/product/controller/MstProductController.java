@@ -1,14 +1,14 @@
-package com.kmkbe.modules.major_account.controller;
+package com.kmkbe.modules.product.controller;
 
-import com.kmkbe.core.domain.dto.ProductDto;
-import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.modules.product.model.dto.ProductDto;
+import com.kmkbe.modules.product.model.entity.Product;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.major_account.service.BranchAreaMappingService;
-import com.kmkbe.modules.major_account.service.MstProductService;
+import com.kmkbe.modules.product.service.MstProductService;
 
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;

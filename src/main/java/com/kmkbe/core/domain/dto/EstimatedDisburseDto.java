@@ -1,7 +1,7 @@
 package com.kmkbe.core.domain.dto;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.modules.product.model.entity.Product;
 import lombok.Builder;
 import lombok.Getter;
 
