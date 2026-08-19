@@ -4,20 +4,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.constant.AuditActorType;
-import com.kmkbe.core.domain.entity.AuditTrail;
-import com.kmkbe.core.domain.repository.AuditTrailRepository;
+import com.kmkbe.core.domain.event.AuditTrailEvent;
 import com.kmkbe.core.utils.AuditMaskingUtils;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.user.entity.MstUser;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Propagation;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
@@ -30,10 +28,9 @@ import java.util.UUID;
 public class AuditTrailService {
   private static final String UNKNOWN = "UNKNOWN";
 
-  private final AuditTrailRepository auditTrailRepository;
+  private final ApplicationEventPublisher eventPublisher;
   private final ObjectMapper objectMapper;
 
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void record(String moduleName,
                      AuditAction action,
                      String entityName,
@@ -45,32 +42,32 @@ public class AuditTrailService {
       Actor actor = resolveActor(authentication);
       HttpServletRequest request = currentRequest();
 
-      auditTrailRepository.save(AuditTrail.builder()
-        .traceId(traceId(request))
-        .actorType(actor.actorType())
-        .actorUsername(actor.username())
-        .actorId(actor.actorId())
-        .sourceIp(sourceIp(request))
-        .userAgent(header(request, "User-Agent"))
-        .moduleName(moduleName)
-        .action(action)
-        .entityName(entityName)
-        .entityId(entityId != null ? String.valueOf(entityId) : null)
-        .beforeData(toMaskedJson(beforeData))
-        .afterData(toMaskedJson(afterData))
-        .requestPath(request != null ? request.getRequestURI() : null)
-        .httpMethod(request != null ? request.getMethod() : null)
-        .responseStatus(200)
-        .success(true)
-        .createdAt(LocalDateTime.now())
-        .build());
+      eventPublisher.publishEvent(new AuditTrailEvent(
+        traceId(request),
+        actor.actorType(),
+        actor.username(),
+        actor.actorId(),
+        sourceIp(request),
+        header(request, "User-Agent"),
+        moduleName,
+        action,
+        entityName,
+        entityId != null ? String.valueOf(entityId) : null,
+        toMaskedJson(beforeData),
+        toMaskedJson(afterData),
+        request != null ? request.getRequestURI() : null,
+        request != null ? request.getMethod() : null,
+        200,
+        true,
+        null,
+        LocalDateTime.now()
+      ));
     } catch (Exception e) {
-      log.warn("Failed to write audit trail for module={}, action={}, entityName={}, entityId={}: {}",
+      log.warn("Failed to publish audit trail for module={}, action={}, entityName={}, entityId={}: {}",
         moduleName, action, entityName, entityId, e.getMessage());
     }
   }
 
-  @Transactional(propagation = Propagation.REQUIRES_NEW)
   public void recordAuthentication(String moduleName,
                                    AuditActorType actorType,
                                    String username,
@@ -81,27 +78,28 @@ public class AuditTrailService {
       HttpServletRequest request = currentRequest();
       String actorUsername = valueOrDefault(username);
 
-      auditTrailRepository.save(AuditTrail.builder()
-        .traceId(traceId(request))
-        .actorType(actorType != null ? actorType : AuditActorType.UNKNOWN)
-        .actorUsername(actorUsername)
-        .actorId(actorId != null ? String.valueOf(actorId) : null)
-        .sourceIp(sourceIp(request))
-        .userAgent(header(request, "User-Agent"))
-        .moduleName(moduleName)
-        .action(AuditAction.LOGIN)
-        .entityName("Authentication")
-        .entityId(actorUsername)
-        .afterData(toMaskedJson(new AuthenticationAuditData(actorUsername, success)))
-        .requestPath(request != null ? request.getRequestURI() : null)
-        .httpMethod(request != null ? request.getMethod() : null)
-        .responseStatus(success ? 200 : 401)
-        .success(success)
-        .errorMessage(errorMessage)
-        .createdAt(LocalDateTime.now())
-        .build());
+      eventPublisher.publishEvent(new AuditTrailEvent(
+        traceId(request),
+        actorType != null ? actorType : AuditActorType.UNKNOWN,
+        actorUsername,
+        actorId != null ? String.valueOf(actorId) : null,
+        sourceIp(request),
+        header(request, "User-Agent"),
+        moduleName,
+        AuditAction.LOGIN,
+        "Authentication",
+        actorUsername,
+        null,
+        toMaskedJson(new AuthenticationAuditData(actorUsername, success)),
+        request != null ? request.getRequestURI() : null,
+        request != null ? request.getMethod() : null,
+        success ? 200 : 401,
+        success,
+        errorMessage,
+        LocalDateTime.now()
+      ));
     } catch (Exception e) {
-      log.warn("Failed to write authentication audit trail for module={}, username={}: {}",
+      log.warn("Failed to publish authentication audit trail for module={}, username={}: {}",
         moduleName, username, e.getMessage());
     }
   }
