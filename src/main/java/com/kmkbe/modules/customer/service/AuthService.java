@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.domain.entity.OtpLog;
 import com.kmkbe.core.domain.entity.RedisLog;
 import com.kmkbe.core.domain.entity.RedisAttack;
+import com.kmkbe.core.domain.constant.AuditActorType;
 import com.kmkbe.core.domain.repository.OtpRepository;
 import com.kmkbe.core.domain.repository.RedisAttackRepository;
 import com.kmkbe.core.domain.repository.RedisRepository;
@@ -13,6 +14,7 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.common.service.LoginLogService;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.core.domain.constant.LoginRole;
 import com.kmkbe.core.domain.dto.LoginDto;
 import com.kmkbe.modules.customer.model.entity.Customer;
@@ -55,6 +57,7 @@ public class AuthService {
   private final OtpRepository otpRepository;
   private final RedisRepository redisRepository;
   private final RedisAttackRepository redisAttackRepository;
+  private final AuditTrailService auditTrailService;
 
   @Qualifier("DbRefreshTokenServices")
   //@Qualifier("CacheRefreshTokenServices")
@@ -162,8 +165,36 @@ public class AuthService {
         .build();
       redisRepository.save(redis);
 
+      auditTrailService.recordAuthentication(
+        "CUSTOMER_AUTH",
+        AuditActorType.CUSTOMER,
+        cust.getCustEmail(),
+        cust.getCustCode(),
+        true,
+        null
+      );
+
       return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,loginDto);
     } catch (CommonInvalidException e) {
+      auditTrailService.recordAuthentication(
+        "CUSTOMER_AUTH",
+        AuditActorType.CUSTOMER,
+        request.email(),
+        null,
+        false,
+        e.getMessage()
+      );
+      log.error("AuthService signIn: {}", e.getMessage());
+      throw e;
+    } catch (Exception e) {
+      auditTrailService.recordAuthentication(
+        "CUSTOMER_AUTH",
+        AuditActorType.CUSTOMER,
+        request.email(),
+        null,
+        false,
+        e.getMessage()
+      );
       log.error("AuthService signIn: {}", e.getMessage());
       throw e;
     }
@@ -206,8 +237,16 @@ public class AuthService {
       final String newPin = bcryptEncoder.encode(request.pin());
 
       cust.setCustPin(newPin);
-      customerRepository.save(cust);
+      Customer saved = customerRepository.save(cust);
       changePasswordLogService.create(cust, oldPin, newPin);
+      auditTrailService.record(
+        "CUSTOMER",
+        com.kmkbe.core.domain.constant.AuditAction.UPDATE,
+        "Customer",
+        saved.getCustCode(),
+        new PasswordChangeAuditData(saved.getCustEmail(), false),
+        new PasswordChangeAuditData(saved.getCustEmail(), true)
+      );
 
       return "Forgot pin successfully, try to login with new pin now";
     } catch (Exception e) {
@@ -248,5 +287,8 @@ public class AuthService {
       log.error("AuthService refreshToken: {}", e.getMessage());
       throw e;
     }
+  }
+
+  private record PasswordChangeAuditData(String email, boolean pinChanged) {
   }
 }

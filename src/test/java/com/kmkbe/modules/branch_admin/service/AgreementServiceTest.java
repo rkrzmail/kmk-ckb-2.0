@@ -26,6 +26,7 @@ import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
@@ -60,6 +61,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -80,6 +82,7 @@ class AgreementServiceTest {
     @Mock private CwrRemoteService cwrRemoteService;
     @Mock private FileStorageService fileStorageService;
     @Mock private EmailService emailService;
+    @Mock private AuditTrailService auditTrailService;
 
     private ObjectMapper objectMapper;
     private AgreementService service;
@@ -99,8 +102,11 @@ class AgreementServiceTest {
                 cwrRemoteService,
                 fileStorageService,
                 objectMapper,
-                emailService
+                emailService,
+                auditTrailService
         );
+        lenient().when(agreementFileRepository.save(any(AgreementFile.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -474,7 +480,8 @@ class AgreementServiceTest {
                 cwrRemoteService,
                 fileStorageService,
                 objectMapper,
-                emailService
+                emailService,
+                auditTrailService
         ) {
             @Override
             boolean bypassRemotePosting() {

@@ -1,5 +1,6 @@
 package com.kmkbe.modules.loan_submission.service;
 
+import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.dto.DocumentTemplateFinancingDto;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.dto.LegalFileDto;
@@ -12,6 +13,7 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.UriUtils;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
@@ -49,6 +51,7 @@ public class DocumentService {
     private final CustomerRemoteService customerRemoteService;
     private final CustomerRepository customerRepository;
     private final FinancingHdrRepository financingHdrRepository;
+    private final AuditTrailService auditTrailService;
 
     public List<DocumentTemplateFinancingDto> fetchDocumentTemplateFinancing(
             Customer customer
@@ -330,6 +333,24 @@ public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
                     uploadedPath,
                     uploadName
             );
+            auditTrailService.record(
+                    "DOCUMENT",
+                    AuditAction.UPLOAD,
+                    "LegalFile",
+                    dto.getFileId(),
+                    toLegalFileAuditData(existingFile),
+                    new LegalFileAuditData(
+                            dto.getFileId(),
+                            customer.getCustCode(),
+                            customer.getCustName(),
+                            mstFileType.getFileTypeCode(),
+                            mstFileType.getFileTypeName(),
+                            dto.getFileName(),
+                            uploadedPath,
+                            file.getContentType(),
+                            dto.getUploadedDate()
+                    )
+            );
 //FileUtils.getFilePathFromFullPath(uploadedPath)
             if (existingFile != null && !existingFile.getFilePath().contains("http")) {
                 //fileStorageService.delete(existingFile.getFilePath() + "/" + existingFile.getFileName(), "");
@@ -348,7 +369,9 @@ public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
 
     public void delete(Long id) {
         try {
+            LegalFile legalFile = legalFileService.findByFileId(id);
             legalFileService.delete(id);
+            auditTrailService.record("DOCUMENT", AuditAction.DELETE, "LegalFile", id, toLegalFileAuditData(legalFile), null);
         } catch (Exception e) {
             log.error("deteleLegalFile, error {}", e.getMessage());
             throw e;
@@ -373,15 +396,18 @@ public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
             }
             if (legalFile.getFilePath().contains("http")) {
                 headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+                auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "LegalFile", legalFile.getFileId(), null, toLegalFileAuditData(legalFile));
                 return new ResponseEntity<>(null, headers, HttpStatus.OK);
             }
 
-            return fileStorageService.downloadUploadFile(
+            ResponseEntity<Resource> response = fileStorageService.downloadUploadFile(
                     httpServletRequest,
                     legalFile.getFilePath(),
                     legalFile.getFileName(),
                     String.valueOf(httpServletRequest.getParameter("cd"))
             );
+            auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "LegalFile", legalFile.getFileId(), null, toLegalFileAuditData(legalFile));
+            return response;
         } catch (Exception e) {
             log.error("documentByLegalFileId, error {}", e.getMessage());
             throw e;
@@ -402,14 +428,17 @@ public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
 
             if (agreementFile.getFilePath().contains("http")) {
                 headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
+                auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "AgreementFile", agreementFile.getAgreementFileId(), null, toAgreementFileAuditData(agreementFile));
                 return new ResponseEntity<>(null, headers, HttpStatus.OK);
             }
 
-            return fileStorageService.downloadUploadFile(
+            ResponseEntity<Resource> response = fileStorageService.downloadUploadFile(
                     httpServletRequest,
                     agreementFile.getFilePath(),
                     agreementFile.getFileName(), ""
             );
+            auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "AgreementFile", agreementFile.getAgreementFileId(), null, toAgreementFileAuditData(agreementFile));
+            return response;
         } catch (Exception e) {
             log.error("agreementDocByAgreementId, error {}", e.getMessage());
             throw e;
@@ -894,6 +923,67 @@ public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
             log.error("mappingFromInquiryVendor, error {}", e.getMessage());
             throw e;
         }
+    }
+
+    private LegalFileAuditData toLegalFileAuditData(LegalFile legalFile) {
+        if (legalFile == null) {
+            return null;
+        }
+
+        Customer customer = legalFile.getCustCode();
+        MstFileType fileType = legalFile.getFileTypeCode();
+        return new LegalFileAuditData(
+                legalFile.getFileId(),
+                customer != null ? customer.getCustCode() : null,
+                customer != null ? customer.getCustName() : null,
+                fileType != null ? fileType.getFileTypeCode() : null,
+                fileType != null ? fileType.getFileTypeName() : null,
+                legalFile.getFileName(),
+                legalFile.getFilePath(),
+                legalFile.getContentType(),
+                legalFile.getDtmUpd() != null ? legalFile.getDtmUpd() : legalFile.getDtmCrt()
+        );
+    }
+
+    private AgreementFileAuditData toAgreementFileAuditData(AgreementFile agreementFile) {
+        if (agreementFile == null) {
+            return null;
+        }
+
+        Agreement agreement = agreementFile.getAgreement();
+        return new AgreementFileAuditData(
+                agreementFile.getAgreementFileId(),
+                agreement != null ? agreement.getAgreementCode() : null,
+                agreement != null && agreement.getFinancingHdr() != null ? agreement.getFinancingHdr().getFinancingHdrCode() : null,
+                agreementFile.getMstFileType() != null ? agreementFile.getMstFileType().getFileTypeCode() : null,
+                agreementFile.getFileName(),
+                agreementFile.getFilePath(),
+                agreementFile.getContentType()
+        );
+    }
+
+    private record LegalFileAuditData(
+            Long fileId,
+            UUID custCode,
+            String custName,
+            String fileTypeCode,
+            String fileTypeName,
+            String fileName,
+            String filePath,
+            String contentType,
+            java.time.LocalDateTime uploadedDate
+    ) {
+    }
+
+    private record AgreementFileAuditData(
+            Long agreementFileId,
+            String agreementCode,
+            UUID financingHdrCode,
+            String fileTypeCode,
+            String fileName,
+            String filePath,
+            String contentType
+    ) {
     }
 
     public PaginationResult<LegalFileDto> uploadedCustomerDoc(

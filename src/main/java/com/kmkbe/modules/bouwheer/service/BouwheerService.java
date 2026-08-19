@@ -1,5 +1,6 @@
 package com.kmkbe.modules.bouwheer.service;
 
+import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BasePaginationRequest;
@@ -9,6 +10,7 @@ import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.helpers.utils.CommonUtils;
 import com.kmkbe.helpers.utils.PageableUtil;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.model.request.BouwheerRequest;
 import com.kmkbe.modules.bouwheer.model.response.BouwheerResponse;
@@ -35,10 +37,14 @@ import java.util.UUID;
 public class BouwheerService {
   private final BouwheerRepository bouwheerRepository;
   private final CurrentUserService currentUserService;
+  private final AuditTrailService auditTrailService;
 
-  public BouwheerService(BouwheerRepository bouwheerRepository, CurrentUserService currentUserService) {
+  public BouwheerService(BouwheerRepository bouwheerRepository,
+                         CurrentUserService currentUserService,
+                         AuditTrailService auditTrailService) {
     this.bouwheerRepository = bouwheerRepository;
     this.currentUserService = currentUserService;
+    this.auditTrailService = auditTrailService;
   }
 
   /**
@@ -108,7 +114,7 @@ public class BouwheerService {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84);
     }
 
-    bouwheerRepository.save(Bouwheer.builder()
+    Bouwheer saved = bouwheerRepository.save(Bouwheer.builder()
       .bouwheerCode(UUID.randomUUID())
       .bouwheerName(request.getBouwheerName().toUpperCase())
       .legalAddress(request.getLegalAddress())
@@ -135,6 +141,7 @@ public class BouwheerService {
       .apiKey(request.getApiKey())
       .dtmCrt(LocalDateTime.now())
       .build());
+    auditTrailService.record("BOUWHEER", AuditAction.CREATE, "Bouwheer", saved.getBouwheerCode(), null, toResponse(saved));
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
   }
@@ -151,10 +158,12 @@ public class BouwheerService {
     }
 
     Bouwheer bouwheer = bouwheerOptional.get();
+    BouwheerResponse before = toResponse(bouwheer);
     BeanUtils.copyProperties(request, bouwheer);
     bouwheer.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
     bouwheer.setDtmUpd(LocalDateTime.now());
-    bouwheerRepository.save(bouwheer);
+    Bouwheer saved = bouwheerRepository.save(bouwheer);
+    auditTrailService.record("BOUWHEER", AuditAction.UPDATE, "Bouwheer", saved.getBouwheerCode(), before, toResponse(saved));
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
   }
@@ -173,7 +182,11 @@ public class BouwheerService {
 
     Bouwheer bouwheer = bouwheerOptional.get();
 
-    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, BouwheerResponse.builder()
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, toResponse(bouwheer));
+  }
+
+  private BouwheerResponse toResponse(Bouwheer bouwheer) {
+    return BouwheerResponse.builder()
       .bouwheerCode(bouwheer.getBouwheerCode())
       .bouwheerName(bouwheer.getBouwheerName())
       .legalAddress(bouwheer.getLegalAddress())
@@ -201,7 +214,7 @@ public class BouwheerService {
       .aesKey(bouwheer.getAesKey())
       .secretKey(bouwheer.getSecretKey())
       .apiKey(bouwheer.getApiKey())
-      .build());
+      .build();
   }
 
 }
