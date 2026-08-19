@@ -6,6 +6,7 @@ import com.kmkbe.core.domain.dto.SignerCsulRequest;
 import com.kmkbe.core.domain.dto.SignerGroupedDto;
 import com.kmkbe.core.domain.entity.CsulSigner;
 import com.kmkbe.core.domain.repository.CsulSignerRepository;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
 import com.kmkbe.modules.user.entity.MstBranch;
@@ -30,6 +31,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,6 +42,7 @@ class CsulSignerServiceTest {
   @Mock private MstBranchRepository mstBranchRepository;
   @Mock private AuthRemoteService authRemoteService;
   @Mock private EmailAo emailAo;
+  @Mock private AuditTrailService auditTrailService;
 
   private CsulSignerService service;
 
@@ -50,8 +53,10 @@ class CsulSignerServiceTest {
         csulSignerRepository,
         mstBranchRepository,
         authRemoteService,
-        emailAo
+        emailAo,
+        auditTrailService
     );
+    lenient().when(csulSignerRepository.save(any(CsulSigner.class))).thenAnswer(invocation -> invocation.getArgument(0));
   }
 
   @Test

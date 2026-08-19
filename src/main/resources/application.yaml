@@ -63,3 +63,12 @@ server:
   port: '8443'
 jwt:
   refreshExpirationDateInMs: '9000000'
+
+audit:
+  executor:
+    core-pool-size: 2
+    max-pool-size: 5
+    queue-capacity: 1000
+  retry:
+    max-attempts: 3
+    initial-delay-ms: 200

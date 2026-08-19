@@ -3,6 +3,7 @@ package com.kmkbe.modules.branch_admin.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
@@ -17,6 +18,7 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FileUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
@@ -59,6 +61,7 @@ public class AgreementService {
     private final FileStorageService fileStorageService;
     private final ObjectMapper objectMapper;
     private final EmailService emailService;
+    private final AuditTrailService auditTrailService;
 
     public Agreement findByCode(String code) {
         try {
@@ -178,6 +181,7 @@ public class AgreementService {
 
             AgreementFile agreementFile = agreementFileRepository.findTopByAgreementOrderByAgreementFileId(agreement)
                     .orElse(null);
+            AgreementFileAuditData before = toAgreementFileAuditData(agreementFile);
 
             if (agreement.getFinancingHdr() == null) {
                 throw new IllegalArgumentException("Agreement Financing not found");
@@ -203,7 +207,8 @@ public class AgreementService {
                         .dtmCrt(DateTimeUtils.now())
                         .build();
 
-                agreementFileRepository.save(agreementFile);
+                AgreementFile savedAgreementFile = agreementFileRepository.save(agreementFile);
+                auditTrailService.record("AGREEMENT", AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), null, toAgreementFileAuditData(savedAgreementFile));
             } else {
                 //fileStorageService.delete(agreementFile.getFilePath() + "/" + agreementFile.getFileName(), "");
 
@@ -211,7 +216,8 @@ public class AgreementService {
                 agreementFile.setFilePath(FileUtils.getFilePathFromFullPath(uploadedPath));
                 agreementFile.setDtmUpd(DateTimeUtils.now());
                 agreementFile.setUsrUpd(user.getUsername());
-                agreementFileRepository.save(agreementFile);
+                AgreementFile savedAgreementFile = agreementFileRepository.save(agreementFile);
+                auditTrailService.record("AGREEMENT", AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), before, toAgreementFileAuditData(savedAgreementFile));
             }
 
 
@@ -334,9 +340,18 @@ public class AgreementService {
             }
 
             if (!agreements.isEmpty()) {
-                agreementRepository.saveAll(agreements);
+                Iterable<Agreement> savedAgreements = agreementRepository.saveAll(agreements);
+                auditTrailService.record(
+                        "AGREEMENT",
+                        AuditAction.CREATE,
+                        "Agreement",
+                        request.getAgreementNo(),
+                        null,
+                        agreementsAuditData(savedAgreements)
+                );
             }
 
+            FinancingAgreementAuditData before = toFinancingAgreementAuditData(financingHdr);
             proceedFinancing(
                     financingHdr,
                     request,
@@ -346,7 +361,8 @@ public class AgreementService {
             // Branch admin melakukan singkron agreement
             financingHdr.setFinancingStatus("INPROCESS");
             financingHdr.setFinancingStep("INPROCESS");
-            financingHdrRepository.save(financingHdr);
+            FinancingHdr savedFinancing = financingHdrRepository.save(financingHdr);
+            auditTrailService.record("AGREEMENT", AuditAction.UPDATE, "FinancingHdr", savedFinancing.getFinancingHdrCode(), before, toFinancingAgreementAuditData(savedFinancing));
         } catch (Exception e) {
             log.error("createAgreement: error {}", e.getMessage());
             throw e;
@@ -463,5 +479,103 @@ public class AgreementService {
         if (agreement != null) {
             throw new IllegalStateException("Nomor Pencairan sudah di masukkan sebelumnya, silahkan masukkan Nomor Pencairan yg lain");
         }
+    }
+
+    private AgreementFileAuditData toAgreementFileAuditData(AgreementFile agreementFile) {
+        if (agreementFile == null) {
+            return null;
+        }
+
+        Agreement agreement = agreementFile.getAgreement();
+        return new AgreementFileAuditData(
+                agreementFile.getAgreementFileId(),
+                agreement != null ? agreement.getAgreementCode() : null,
+                agreement != null && agreement.getFinancingHdr() != null ? agreement.getFinancingHdr().getFinancingHdrCode() : null,
+                agreementFile.getMstFileType() != null ? agreementFile.getMstFileType().getFileTypeCode() : null,
+                agreementFile.getFileName(),
+                agreementFile.getFilePath(),
+                agreementFile.getContentType(),
+                agreementFile.getUsrCrt(),
+                agreementFile.getDtmCrt(),
+                agreementFile.getUsrUpd(),
+                agreementFile.getDtmUpd()
+        );
+    }
+
+    private List<AgreementAuditData> agreementsAuditData(Iterable<Agreement> agreements) {
+        List<AgreementAuditData> result = new ArrayList<>();
+        agreements.forEach(agreement -> result.add(toAgreementAuditData(agreement)));
+        return result;
+    }
+
+    private AgreementAuditData toAgreementAuditData(Agreement agreement) {
+        if (agreement == null) {
+            return null;
+        }
+
+        return new AgreementAuditData(
+                agreement.getAgreementCode(),
+                agreement.getApplicationCode(),
+                agreement.getCwr() != null ? agreement.getCwr().getCwrCode() : null,
+                agreement.getFinancingHdr() != null ? agreement.getFinancingHdr().getFinancingHdrCode() : null,
+                agreement.getFacility(),
+                agreement.getCurrency(),
+                agreement.getFinancingAmt(),
+                agreement.getStatus(),
+                agreement.getProductOffering()
+        );
+    }
+
+    private FinancingAgreementAuditData toFinancingAgreementAuditData(FinancingHdr financingHdr) {
+        if (financingHdr == null) {
+            return null;
+        }
+
+        return new FinancingAgreementAuditData(
+                financingHdr.getFinancingHdrCode(),
+                financingHdr.getFinancingStatus(),
+                financingHdr.getFinancingStep(),
+                financingHdr.getTotalInvoiceAmt(),
+                financingHdr.getFinancingAmt(),
+                financingHdr.getDisburseAmt()
+        );
+    }
+
+    private record AgreementFileAuditData(
+            Long agreementFileId,
+            String agreementCode,
+            UUID financingHdrCode,
+            String fileTypeCode,
+            String fileName,
+            String filePath,
+            String contentType,
+            String usrCrt,
+            java.time.LocalDateTime dtmCrt,
+            String usrUpd,
+            java.time.LocalDateTime dtmUpd
+    ) {
+    }
+
+    private record AgreementAuditData(
+            String agreementCode,
+            String applicationCode,
+            String cwrCode,
+            UUID financingHdrCode,
+            String facility,
+            String currency,
+            Double financingAmt,
+            String status,
+            String productOffering
+    ) {
+    }
+
+    private record FinancingAgreementAuditData(
+            UUID financingHdrCode,
+            String financingStatus,
+            String financingStep,
+            Double totalInvoiceAmt,
+            Double financingAmt,
+            Double disburseAmt
+    ) {
     }
 }

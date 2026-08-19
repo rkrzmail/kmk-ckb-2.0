@@ -24,6 +24,7 @@ import com.kmkbe.core.domain.repository.NotifDebtorRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import jakarta.persistence.EntityNotFoundException;
@@ -55,6 +56,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -71,6 +73,7 @@ class SignerServiceTest {
   @Mock private AgreementFileSigningRepository agreementFileSigningRepository;
   @Mock private AssignmentSubmissionService assignmentSubmissionService;
   @Mock private NotifDebtorRepository notifDebtorRepository;
+  @Mock private AuditTrailService auditTrailService;
   @Mock private BaseRemoteService baseRemoteService;
   @Mock private HttpServletRequest httpServletRequest;
 
@@ -87,10 +90,12 @@ class SignerServiceTest {
         agreementFileSigningRepository,
         assignmentSubmissionService,
         notifDebtorRepository,
+        auditTrailService,
         baseRemoteService
     );
     ReflectionTestUtils.setField(service, "adinsKey", "adins-key");
     ReflectionTestUtils.setField(service, "adInsKey", "adins-key");
+    lenient().when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
   }
 
   @Test

@@ -1,11 +1,13 @@
 package com.kmkbe.modules.major_account.service;
 
+import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.dto.BranchAreaMappingDto;
 import com.kmkbe.core.domain.entity.BranchAreaMapping;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.BranchAreaMappingRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -27,6 +29,7 @@ public class BranchAreaMappingService {
     private final BranchAreaMappingRepository branchAreaMappingRepository;
     private final MstBranchRepository mstBranchRepository;
     private final BranchAreaMappingExcelParser branchAreaMappingExcelParser;
+    private final AuditTrailService auditTrailService;
 
     public PaginationResult<BranchAreaMappingDto> placementBranch(
             PaginationRequest request
@@ -105,6 +108,18 @@ public class BranchAreaMappingService {
 
         try {
             branchAreaMappingRepository.saveAll(dataEntities);
+            auditTrailService.record(
+                    "BRANCH_AREA_MAPPING",
+                    AuditAction.IMPORT,
+                    "BranchAreaMapping",
+                    null,
+                    null,
+                    new ImportExcelAuditData(
+                            file != null ? file.getOriginalFilename() : null,
+                            dataEntities.size(),
+                            "Branch area mapping Excel import replaced existing branch area mapping data"
+                    )
+            );
         } catch (Exception e) {
             log.error("updateBranch save: error {}", e.getMessage());
             throw new RuntimeException(e);
@@ -191,5 +206,8 @@ public class BranchAreaMappingService {
             throw e;
         }
     }*/
+
+    private record ImportExcelAuditData(String fileName, int rowCount, String description) {
+    }
 
 }

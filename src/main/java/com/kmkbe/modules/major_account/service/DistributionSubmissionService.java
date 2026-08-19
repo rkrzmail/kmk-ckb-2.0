@@ -1,5 +1,6 @@
 package com.kmkbe.modules.major_account.service;
 
+import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.StatusLabelDto;
 import com.kmkbe.core.domain.dto.email.MailPositionDto;
@@ -16,6 +17,7 @@ import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.major_account.request.AssignInvoiceToBranchRequest;
@@ -48,6 +50,7 @@ public class DistributionSubmissionService {
   private final ConfigRemoteService configRemoteService;
   private final CustomerRepository customerRepository;
   private final CurrentUserService currentUserService;
+  private final AuditTrailService auditTrailService;
 
 
   public DistributionSubmissionService(FinancingHdrRepository financingHdrRepository,
@@ -56,7 +59,8 @@ public class DistributionSubmissionService {
                                        BranchAreaMappingRepository branchAreaMappingRepository,
                                        ConfigRemoteService configRemoteService,
                                        CustomerRepository customerRepository,
-                                       CurrentUserService currentUserService) {
+                                       CurrentUserService currentUserService,
+                                       AuditTrailService auditTrailService) {
     this.financingHdrRepository = financingHdrRepository;
     this.emailService = emailService;
     this.mstBranchRepository = mstBranchRepository;
@@ -64,6 +68,7 @@ public class DistributionSubmissionService {
     this.configRemoteService = configRemoteService;
     this.customerRepository = customerRepository;
     this.currentUserService = currentUserService;
+    this.auditTrailService = auditTrailService;
   }
 
   public PaginationResult<DistributionSubmissionDto> submissionDistribution(PaginationRequest request) {
@@ -203,6 +208,7 @@ public class DistributionSubmissionService {
      */
     FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
       .orElseThrow(() -> new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Financing Not Found with given argument"));
+    DistributionSubmissionAuditData before = toAuditData(financingHdr);
 
     /**
      * Validate staus
@@ -228,7 +234,15 @@ public class DistributionSubmissionService {
     financingHdr.setMstBranch(mstBranch);
     financingHdr.setDtmUpd(DateTimeUtils.now());
     financingHdr.setUsrUpd(authenticateUser.getUsername());
-    financingHdrRepository.save(financingHdr);
+    FinancingHdr savedFinancing = financingHdrRepository.save(financingHdr);
+    auditTrailService.record(
+      "DISTRIBUTION_SUBMISSION",
+      AuditAction.UPDATE,
+      "FinancingHdr",
+      savedFinancing.getFinancingHdrCode(),
+      before,
+      toAuditData(savedFinancing)
+    );
 
     if (mstBranch.getEmployees() != null && !mstBranch.getEmployees().isEmpty()) {
       final List<InvoiceEmailPayload> invoices = financingHdr.getFinancingDtls()
@@ -319,5 +333,51 @@ public class DistributionSubmissionService {
     }
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
+  }
+
+  private DistributionSubmissionAuditData toAuditData(FinancingHdr financingHdr) {
+    if (financingHdr == null) {
+      return null;
+    }
+
+    var customer = financingHdr.getCustomer();
+    var bouwheer = financingHdr.getBouwheer();
+    MstBranch branch = financingHdr.getMstBranch();
+    return new DistributionSubmissionAuditData(
+      financingHdr.getFinancingHdrCode(),
+      customer != null ? customer.getCustCode() : null,
+      customer != null ? customer.getCustName() : null,
+      customer != null ? customer.getCustEmail() : null,
+      bouwheer != null ? bouwheer.getBouwheerCode() : null,
+      bouwheer != null ? bouwheer.getBouwheerName() : null,
+      branch != null ? branch.getBranchCode() : null,
+      branch != null ? branch.getBranchName() : null,
+      financingHdr.getFinancingStatus(),
+      financingHdr.getFinancingStep(),
+      financingHdr.getTotalInvoiceAmt(),
+      financingHdr.getFinancingAmt(),
+      financingHdr.getDisburseAmt(),
+      financingHdr.getUsrUpd(),
+      financingHdr.getDtmUpd()
+    );
+  }
+
+  private record DistributionSubmissionAuditData(
+    UUID financingHdrCode,
+    UUID custCode,
+    String custName,
+    String custEmail,
+    UUID bouwheerCode,
+    String bouwheerName,
+    String branchCode,
+    String branchName,
+    String financingStatus,
+    String financingStep,
+    Double totalInvoiceAmt,
+    Double financingAmt,
+    Double disburseAmt,
+    String usrUpd,
+    java.time.LocalDateTime dtmUpd
+  ) {
   }
 }

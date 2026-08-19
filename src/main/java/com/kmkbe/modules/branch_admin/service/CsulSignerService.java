@@ -1,9 +1,11 @@
 package com.kmkbe.modules.branch_admin.service;
 
+import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.CsulSigner;
 import com.kmkbe.core.domain.mapper.CsulSignerMapper;
 import com.kmkbe.core.domain.repository.CsulSignerRepository;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
 import com.kmkbe.modules.user.entity.MstBranch;
@@ -32,6 +34,7 @@ public class CsulSignerService {
     private final MstBranchRepository mstBranchRepository;
     private final AuthRemoteService authRemoteService;
     private final EmailAo emailAo;
+    private final AuditTrailService auditTrailService;
     private final String apiKey = "YiByHB@CSUL_DEV";
     private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
 
@@ -251,6 +254,7 @@ public class CsulSignerService {
                 .build();
 
         CsulSigner savedSigner = csulSignerRepository.save(entity);
+        auditTrailService.record("CSUL_SIGNER", AuditAction.CREATE, "CsulSigner", savedSigner.getSignerId(), null, toAuditData(savedSigner));
 
         return csulSignerMapper.entityToDto(savedSigner);
     }
@@ -260,6 +264,7 @@ public class CsulSignerService {
         try {
             CsulSigner entity = csulSignerRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Signer dengan ID " + id + " tidak ditemukan"));
+            CsulSignerAuditData before = toAuditData(entity);
 
 //            if (csulSignerRepository.existsByIdentityNo(request.getIdentityNo())
 //                    && !request.getIdentityNo().equals(entity.getIdentityNo())) {
@@ -319,7 +324,8 @@ public class CsulSignerService {
             entity.setDtmCrt(LocalDateTime.now());
             entity.setSignhubStatus(signhubStatus); // kalau ada field ini di entity-mu
 
-            csulSignerRepository.save(entity);
+            CsulSigner saved = csulSignerRepository.save(entity);
+            auditTrailService.record("CSUL_SIGNER", AuditAction.UPDATE, "CsulSigner", saved.getSignerId(), before, toAuditData(saved));
 
             // Response object
             SignerCsulRequest response = request;
@@ -361,6 +367,7 @@ public class CsulSignerService {
     public String updateSignerStatus(String identityNo, String username) {
         CsulSigner signer = csulSignerRepository.findByIdentityNo(identityNo)
                 .orElseThrow(() -> new RuntimeException("Signer dengan identityNo " + identityNo + " tidak ditemukan"));
+        CsulSignerAuditData before = toAuditData(signer);
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -388,11 +395,49 @@ public class CsulSignerService {
             signer.setSignhubStatus("Registered");
             signer.setUsrUpd(username);
             signer.setDtmUpd(LocalDateTime.now());
-            csulSignerRepository.save(signer);
+            CsulSigner saved = csulSignerRepository.save(signer);
+            auditTrailService.record("CSUL_SIGNER", AuditAction.UPDATE, "CsulSigner", saved.getSignerId(), before, toAuditData(saved));
             return "Signer sudah register dan aktivasi";
         } else {
             return "Signer masih belum terdaftar";
         }
+    }
+
+    private CsulSignerAuditData toAuditData(CsulSigner signer) {
+        if (signer == null) {
+            return null;
+        }
+
+        return new CsulSignerAuditData(
+                signer.getSignerId(),
+                signer.getKaryawanName(),
+                signer.getJabatan(),
+                signer.getIdentityNo(),
+                signer.getEmail(),
+                signer.getNoTelp(),
+                signer.getIsActive(),
+                signer.getSignhubStatus(),
+                signer.getUsrCrt(),
+                signer.getDtmCrt(),
+                signer.getUsrUpd(),
+                signer.getDtmUpd()
+        );
+    }
+
+    private record CsulSignerAuditData(
+            Long signerId,
+            String karyawanName,
+            String jabatan,
+            String identityNo,
+            String email,
+            String noTelp,
+            Boolean active,
+            String signhubStatus,
+            String usrCrt,
+            LocalDateTime dtmCrt,
+            String usrUpd,
+            LocalDateTime dtmUpd
+    ) {
     }
 
 }

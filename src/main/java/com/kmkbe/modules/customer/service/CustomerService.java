@@ -1,5 +1,6 @@
 package com.kmkbe.modules.customer.service;
 
+import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.constant.CustomerIdType;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.dto.*;
@@ -22,6 +23,7 @@ import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.helpers.utils.CommonUtils;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.common.service.EmailService;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.SignUpRequest;
 import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
@@ -43,6 +45,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -55,17 +58,20 @@ public class CustomerService {
   private final JdbcTemplate jdbcTemplate;
   private final FinancingHdrRepository financingHdrRepository;
   private final EmailService emailService;
+  private final AuditTrailService auditTrailService;
 
   public CustomerService(CustomerRepository customerRepository,
                          BCryptPasswordEncoder bcryptEncoder,
                          JdbcTemplate jdbcTemplate,
                          FinancingHdrRepository financingHdrRepository,
-                         EmailService emailService) {
+                         EmailService emailService,
+                         AuditTrailService auditTrailService) {
     this.customerRepository = customerRepository;
     this.bcryptEncoder = bcryptEncoder;
     this.jdbcTemplate = jdbcTemplate;
     this.financingHdrRepository = financingHdrRepository;
     this.emailService = emailService;
+    this.auditTrailService = auditTrailService;
   }
 
   public Customer create(SignUpRequest request, CustomerType type) {
@@ -94,9 +100,11 @@ public class CustomerService {
     final String encodePin = bcryptEncoder.encode(request.getPin());
 
     Customer customer = new Customer();
+    CustomerAuditData before = null;
     if(customerOptional.isPresent() && !customerOptional.get().isActive()){
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Update Customer ", request.getVendorId());
       customer = customerOptional.get();
+      before = toAuditData(customer);
     }else{
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Create Customer ", request.getVendorId());
       customer.setCustCode(UUID.randomUUID());
@@ -133,15 +141,26 @@ public class CustomerService {
     }
     customer.setUsrCrt(customer.getCustName());
     customer.setDtmCrt(DateTimeUtils.now());
-    return customerRepository.save(customer);
+    Customer saved = customerRepository.save(customer);
+    auditTrailService.record(
+      "CUSTOMER",
+      before == null ? AuditAction.CREATE : AuditAction.UPDATE,
+      "Customer",
+      saved.getCustCode(),
+      before,
+      toAuditData(saved)
+    );
+    return saved;
   }
 
   public void activated(Customer customer) {
+    CustomerAuditData before = toAuditData(customer);
     customer.setIsEmailValid(true);
     customer.setActive(true);
     customer.setUsrUpd(customer.getCustName());
     customer.setDtmUpd(DateTimeUtils.now());
-    customerRepository.save(customer);
+    Customer saved = customerRepository.save(customer);
+    auditTrailService.record("CUSTOMER", AuditAction.UPDATE, "Customer", saved.getCustCode(), before, toAuditData(saved));
   }
 
   public Customer update(
@@ -150,6 +169,7 @@ public class CustomerService {
   ) throws SignatureException {
     try {
       boolean emailChanged = false;
+      CustomerAuditData before = toAuditData(customer);
 
       String oldEmail = customer.getCustEmail();
       String newEmail = request.getCustEmail();
@@ -171,6 +191,7 @@ public class CustomerService {
       customer.setNpwp(request.getNpwp());
       try {
         customer = customerRepository.save(customer);
+        auditTrailService.record("CUSTOMER", AuditAction.UPDATE, "Customer", customer.getCustCode(), before, toAuditData(customer));
       } catch (DataIntegrityViolationException e) {
         throw new IllegalArgumentException("Email already exists, please use another one");
       }
@@ -327,16 +348,81 @@ public class CustomerService {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer has been process with status is ");
     }
 
-    customer.setApprovalStatus(request.getApprovalStatus().toUpperCase().trim());
-    customer.setActive(request.getApprovalStatus().equals("APPROVED"));
+    CustomerAuditData before = toAuditData(customer);
+    String approvalStatus = request.getApprovalStatus().toUpperCase().trim();
+    customer.setApprovalStatus(approvalStatus);
+    customer.setActive("APPROVED".equals(approvalStatus));
     customer.setApprovalNote(request.getApprovalNote());
     customer.setApprovalBy(username);
     customer.setApprovalAt(DateTimeUtils.now());
-    customerRepository.save(customer);
+    Customer saved = customerRepository.save(customer);
+    auditTrailService.record(
+      "CUSTOMER",
+      "APPROVED".equals(approvalStatus) ? AuditAction.APPROVE : AuditAction.REJECT,
+      "Customer",
+      saved.getCustCode(),
+      before,
+      toAuditData(saved)
+    );
 
     // Send mail
     emailService.customerVerification(customer.getCustEmail().toLowerCase(), customer.getCustName(), customer.getCustIdNo(), CommonUtils.generateOtp());
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
+  }
+
+  private CustomerAuditData toAuditData(Customer customer) {
+    if (customer == null) {
+      return null;
+    }
+
+    return new CustomerAuditData(
+      customer.getCustCode(),
+      customer.getCustNo(),
+      customer.getCustName(),
+      customer.getCustTypeCode(),
+      customer.getCustIdTypeCode(),
+      customer.getCustIdNo(),
+      customer.getCustEmail(),
+      customer.getCustMobilePhone(),
+      customer.getIsEmailValid(),
+      customer.getIsPhoneValid(),
+      customer.getIsWaActive(),
+      customer.getAgreeTc(),
+      customer.getAgreeLegalShare(),
+      customer.getCustExternalCode(),
+      customer.isActive(),
+      customer.getBouwheer(),
+      customer.getApprovalStatus(),
+      customer.getApprovalNote(),
+      customer.getApprovalBy(),
+      customer.getApprovalAt(),
+      customer.getNpwp()
+    );
+  }
+
+  private record CustomerAuditData(
+    UUID custCode,
+    String custNo,
+    String custName,
+    String custTypeCode,
+    String custIdTypeCode,
+    String custIdNo,
+    String custEmail,
+    String custMobilePhone,
+    Boolean emailValid,
+    Boolean phoneValid,
+    Boolean waActive,
+    Boolean agreeTc,
+    Boolean agreeLegalShare,
+    String custExternalCode,
+    boolean active,
+    String bouwheer,
+    String approvalStatus,
+    String approvalNote,
+    String approvalBy,
+    LocalDateTime approvalAt,
+    String npwp
+  ) {
   }
 }

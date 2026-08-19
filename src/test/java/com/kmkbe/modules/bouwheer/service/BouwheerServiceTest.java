@@ -6,6 +6,7 @@ import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.model.request.BouwheerRequest;
 import com.kmkbe.modules.bouwheer.model.response.BouwheerResponse;
@@ -54,11 +55,15 @@ class BouwheerServiceTest {
   @Mock
   private CurrentUserService currentUserService;
 
+  @Mock
+  private AuditTrailService auditTrailService;
+
   private BouwheerService service;
 
   @BeforeEach
   void setUp() {
-    service = new BouwheerService(bouwheerRepository, currentUserService);
+    service = new BouwheerService(bouwheerRepository, currentUserService, auditTrailService);
+    lenient().when(bouwheerRepository.save(any(Bouwheer.class))).thenAnswer(invocation -> invocation.getArgument(0));
   }
 
   @Test

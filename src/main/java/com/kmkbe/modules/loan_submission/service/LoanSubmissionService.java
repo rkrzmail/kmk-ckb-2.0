@@ -2,6 +2,7 @@ package com.kmkbe.modules.loan_submission.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.adapter.ApiCsulAdapter;
+import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.dto.email.MailPositionDto;
@@ -16,6 +17,7 @@ import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
@@ -82,6 +84,7 @@ public class LoanSubmissionService {
   private final MstBranchRepository mstBranchRepository;
   private final CustomerRepository customerRepository;
   private final ApiCsulAdapter apiCsulAdapter;
+  private final AuditTrailService auditTrailService;
 
   public List<PostedInvoiceDto> fetchActiveInvoice(
     Customer customer,
@@ -589,6 +592,7 @@ public class LoanSubmissionService {
             throw new Exception("financingHdr not found");
           }
           FinancingHdr finHdr = financingHdr.get();
+          FinancingAuditData before = toFinancingAuditData(finHdr);
           finHdr.setDisburseAmt(simulationHist.getEstDisbust());
           finHdr.setRetention(simulationHist.getRetention());
           finHdr.setAdminFeeAmt(simulationHist.getAdminAmt());
@@ -601,7 +605,15 @@ public class LoanSubmissionService {
             finHdr.setEffectiveRate(simulationHist.getEffectiveRate());
           }
           finHdr.setFinancingAmt(simulationHist.getFinancingAmt());
-          financingHdrRepository.save(finHdr);
+          FinancingHdr savedFinancing = financingHdrRepository.save(finHdr);
+          auditTrailService.record(
+            "LOAN_SUBMISSION",
+            AuditAction.UPDATE,
+            "FinancingHdr",
+            savedFinancing.getFinancingHdrCode(),
+            before,
+            toFinancingAuditData(savedFinancing)
+          );
 
           //send email Perubahan Simuilasi Ke debitur
           try {
@@ -717,10 +729,12 @@ public class LoanSubmissionService {
 
 
       String histCodeUpdate = request.getParameter("histCodeUpdate");
+      SimulationAuditData beforeSimulation = null;
       if (histCodeUpdate != null && histCodeUpdate.length() >= 32) {
         Optional<SimulationHist> simulationHistOptional = simulationHistRepository.findTopBySimulationHistCode(UUID.fromString(histCodeUpdate));
         if (simulationHistOptional.isPresent()) {
           simulationHist = simulationHistOptional.get();
+          beforeSimulation = toSimulationAuditData(simulationHist);
 
           simulationHist.setAdminAmt(estimatedDisburseDto.getAdminFeeAmount().doubleValue());
           simulationHist.setRetention((double) (100 - schemaRate));
@@ -734,7 +748,15 @@ public class LoanSubmissionService {
 
         }
       }
-      simulationHistRepository.save(simulationHist);
+      SimulationHist savedSimulation = simulationHistRepository.save(simulationHist);
+      auditTrailService.record(
+        "LOAN_SUBMISSION_SIMULATION",
+        beforeSimulation == null ? AuditAction.GENERATE : AuditAction.UPDATE,
+        "SimulationHist",
+        savedSimulation.getSimulationHistCode(),
+        beforeSimulation,
+        toSimulationAuditData(savedSimulation)
+      );
 
            /*emailService.sendNotificationChangeLimit(
                 customer,
@@ -941,11 +963,29 @@ public class LoanSubmissionService {
       createdInvoices
     );
 
-    return CreatedSimulationDto.builder()
+    CreatedSimulationDto result = CreatedSimulationDto.builder()
       .productId(request.getProductId())
       .financingHdrCode(createdFinancingHdr.getFinancingHdrCode())
       .invoices(createdInvoices)
       .build();
+    auditTrailService.record(
+      "LOAN_SUBMISSION_SIMULATION",
+      AuditAction.CREATE,
+      "FinancingHdr",
+      createdFinancingHdr.getFinancingHdrCode(),
+      null,
+      new CreatedSimulationAuditData(
+        createdFinancingHdr.getFinancingHdrCode(),
+        customer.getCustCode(),
+        bouwheer.getBouwheerCode(),
+        request.getProductId(),
+        createdInvoices.size(),
+        totalInvoiceAmount,
+        createdFinancingHdr.getFinancingAmt(),
+        createdFinancingHdr.getDisburseAmt()
+      )
+    );
+    return result;
   }
 
 
@@ -1049,11 +1089,29 @@ public class LoanSubmissionService {
         createdInvoices
       );
 
-      return CreatedSimulationDto.builder()
+      CreatedSimulationDto result = CreatedSimulationDto.builder()
         .productId(request.getProductId())
         .financingHdrCode(createdFinancingHdr.getFinancingHdrCode())
         .invoices(createdInvoices)
         .build();
+      auditTrailService.record(
+        "LOAN_SUBMISSION_SIMULATION",
+        AuditAction.CREATE,
+        "FinancingHdr",
+        createdFinancingHdr.getFinancingHdrCode(),
+        null,
+        new CreatedSimulationAuditData(
+          createdFinancingHdr.getFinancingHdrCode(),
+          customer.getCustCode(),
+          bouwheer.getBouwheerCode(),
+          request.getProductId(),
+          createdInvoices.size(),
+          totalInvoiceAmount,
+          createdFinancingHdr.getFinancingAmt(),
+          createdFinancingHdr.getDisburseAmt()
+        )
+      );
+      return result;
     } catch (Exception e) {
       log.error("createSimulation, error {}", e.getMessage());
       throw e;
@@ -1105,6 +1163,7 @@ public class LoanSubmissionService {
 
 
       final FinancingHdr financing = financingHdrService.getByCode(request.getFinancingHdrCode());
+      FinancingAuditData before = toFinancingAuditData(financing);
       {
         financing.setFinancingStatus(FinancingStatus.NEW.name());
         financing.setFinancingStep(FinancingStatus.NEW.name());
@@ -1331,6 +1390,14 @@ public class LoanSubmissionService {
 
         financingHdrRepository.save(financing);
       }
+      auditTrailService.record(
+        "LOAN_SUBMISSION",
+        AuditAction.SUBMIT,
+        "FinancingHdr",
+        financing.getFinancingHdrCode(),
+        before,
+        toFinancingAuditData(financing)
+      );
 
       final FinancingHdrDto createdFinancing = financingHdrService.dtoFromEntity(financing);
 
@@ -1546,6 +1613,108 @@ public class LoanSubmissionService {
     } catch (Exception e) {
       return null;
     }
+  }
+
+  private FinancingAuditData toFinancingAuditData(FinancingHdr financing) {
+    if (financing == null) {
+      return null;
+    }
+
+    Customer customer = financing.getCustomer();
+    Bouwheer bouwheer = financing.getBouwheer();
+    MstBranch branch = financing.getMstBranch();
+    return new FinancingAuditData(
+      financing.getFinancingHdrCode(),
+      customer != null ? customer.getCustCode() : null,
+      customer != null ? customer.getCustEmail() : null,
+      customer != null ? customer.getCustName() : null,
+      bouwheer != null ? bouwheer.getBouwheerCode() : null,
+      bouwheer != null ? bouwheer.getBouwheerName() : null,
+      branch != null ? branch.getBranchCode() : null,
+      branch != null ? branch.getBranchName() : null,
+      financing.getInvoiceQty(),
+      financing.getTenor(),
+      financing.getRetention(),
+      financing.getTotalInvoiceAmt(),
+      financing.getFinancingAmt(),
+      financing.getDisburseAmt(),
+      financing.getAdminFeeAmt(),
+      financing.getInterestAmt(),
+      financing.getEffectiveRate(),
+      financing.getFinancingStatus(),
+      financing.getFinancingStep(),
+      financing.getVendorId()
+    );
+  }
+
+  private SimulationAuditData toSimulationAuditData(SimulationHist simulationHist) {
+    if (simulationHist == null) {
+      return null;
+    }
+
+    FinancingHdr financing = simulationHist.getFinancingHdr();
+    return new SimulationAuditData(
+      simulationHist.getSimulationHistCode(),
+      financing != null ? financing.getFinancingHdrCode() : null,
+      simulationHist.getTotalInvoiceAmt(),
+      simulationHist.getRetention(),
+      simulationHist.getAdminAmt(),
+      simulationHist.getFinancingAmt(),
+      simulationHist.getEffectiveRate(),
+      simulationHist.getEstDisbust(),
+      simulationHist.getInterestAmt(),
+      simulationHist.getIsUsed()
+    );
+  }
+
+  private record FinancingAuditData(
+    UUID financingHdrCode,
+    UUID custCode,
+    String custEmail,
+    String custName,
+    UUID bouwheerCode,
+    String bouwheerName,
+    String branchCode,
+    String branchName,
+    Long invoiceQty,
+    Long tenor,
+    Double retention,
+    Double totalInvoiceAmt,
+    Double financingAmt,
+    Double disburseAmt,
+    Double adminFeeAmt,
+    Double interestAmt,
+    Double effectiveRate,
+    String financingStatus,
+    String financingStep,
+    String vendorId
+  ) {
+  }
+
+  private record SimulationAuditData(
+    UUID simulationHistCode,
+    UUID financingHdrCode,
+    Double totalInvoiceAmt,
+    Double retention,
+    Double adminAmt,
+    Double financingAmt,
+    Double effectiveRate,
+    Double estimatedDisburseAmount,
+    Double interestAmt,
+    Boolean used
+  ) {
+  }
+
+  private record CreatedSimulationAuditData(
+    UUID financingHdrCode,
+    UUID custCode,
+    UUID bouwheerCode,
+    Long productId,
+    int invoiceCount,
+    double totalInvoiceAmount,
+    Double financingAmt,
+    Double disburseAmt
+  ) {
   }
 
   private Optional<Product> findProductByAmountAndBouwheer(Double amount, String bouwheerCode) {

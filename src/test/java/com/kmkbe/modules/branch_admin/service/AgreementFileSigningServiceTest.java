@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.repository.AgreementFileSigningRepository;
 import com.kmkbe.core.domain.repository.DebtorRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.NotifDebtorRepository;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -32,11 +33,13 @@ class AgreementFileSigningServiceTest {
         FinancingHdrRepository financingHdrRepository = mock(FinancingHdrRepository.class);
         DebtorRepository debtorRepository = mock(DebtorRepository.class);
         NotifDebtorRepository notifDebtorRepository = mock(NotifDebtorRepository.class);
+        AuditTrailService auditTrailService = mock(AuditTrailService.class);
         AgreementFileSigningService service = new AgreementFileSigningService(
                 signingRepository,
                 financingHdrRepository,
                 debtorRepository,
-                notifDebtorRepository
+                notifDebtorRepository,
+                auditTrailService
         );
         String agreementCode = "AGR001";
         String documentId = "DOC001";
@@ -57,6 +60,7 @@ class AgreementFileSigningServiceTest {
         when(debtorRepository.findActiveSignerByDebtorName("Debtor Name")).thenReturn(List.of(debtor));
         when(signingRepository.findByAgreementCode(agreementCode)).thenReturn(List.of());
         when(signingRepository.save(any(AgreementFileSigning.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(financingHdrRepository.findByFinancingHdrCode(financingHdrCode)).thenReturn(Optional.of(financingHdr));
 
         service.saveSigningResult(agreementCode, documentId, username, financingHdrCode.toString());
@@ -89,11 +93,13 @@ class AgreementFileSigningServiceTest {
         FinancingHdrRepository financingHdrRepository = mock(FinancingHdrRepository.class);
         DebtorRepository debtorRepository = mock(DebtorRepository.class);
         NotifDebtorRepository notifDebtorRepository = mock(NotifDebtorRepository.class);
+        AuditTrailService auditTrailService = mock(AuditTrailService.class);
         AgreementFileSigningService service = new AgreementFileSigningService(
                 signingRepository,
                 financingHdrRepository,
                 debtorRepository,
-                notifDebtorRepository
+                notifDebtorRepository,
+                auditTrailService
         );
         String agreementCode = "AGR002";
         String documentId = "DOC002";
@@ -122,6 +128,7 @@ class AgreementFileSigningServiceTest {
         when(debtorRepository.findActiveSignerByDebtorName("Debtor Name")).thenReturn(List.of(debtor));
         when(signingRepository.findByAgreementCode(agreementCode)).thenReturn(List.of(existing, duplicate));
         when(signingRepository.save(any(AgreementFileSigning.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(financingHdrRepository.findByFinancingHdrCode(financingHdrCode)).thenReturn(Optional.of(financingHdr));
 
         service.saveSigningResult(agreementCode, documentId, username, financingHdrCode.toString());
@@ -140,11 +147,13 @@ class AgreementFileSigningServiceTest {
         FinancingHdrRepository financingHdrRepository = mock(FinancingHdrRepository.class);
         DebtorRepository debtorRepository = mock(DebtorRepository.class);
         NotifDebtorRepository notifDebtorRepository = mock(NotifDebtorRepository.class);
+        AuditTrailService auditTrailService = mock(AuditTrailService.class);
         AgreementFileSigningService service = new AgreementFileSigningService(
                 signingRepository,
                 financingHdrRepository,
                 debtorRepository,
-                notifDebtorRepository
+                notifDebtorRepository,
+                auditTrailService
         );
         String agreementCode = "AGR002A";
         String documentId = "DOC002A";
@@ -169,6 +178,7 @@ class AgreementFileSigningServiceTest {
         when(debtorRepository.findActiveSignerByDebtorName("Debtor Name")).thenReturn(List.of(debtor));
         when(signingRepository.findByAgreementCode(agreementCode)).thenReturn(List.of(existing));
         when(signingRepository.save(any(AgreementFileSigning.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(financingHdrRepository.findByFinancingHdrCode(financingHdrCode)).thenReturn(Optional.of(financingHdr));
 
         service.saveSigningResult(agreementCode, documentId, username, financingHdrCode.toString());
@@ -183,11 +193,13 @@ class AgreementFileSigningServiceTest {
         FinancingHdrRepository financingHdrRepository = mock(FinancingHdrRepository.class);
         DebtorRepository debtorRepository = mock(DebtorRepository.class);
         NotifDebtorRepository notifDebtorRepository = mock(NotifDebtorRepository.class);
+        AuditTrailService auditTrailService = mock(AuditTrailService.class);
         AgreementFileSigningService service = new AgreementFileSigningService(
                 signingRepository,
                 financingHdrRepository,
                 debtorRepository,
-                notifDebtorRepository
+                notifDebtorRepository,
+                auditTrailService
         );
         UUID financingHdrCode = UUID.randomUUID();
         when(financingHdrRepository.findDebtorNameByFinancingHdrCode(financingHdrCode)).thenReturn("Debtor Name");
@@ -205,11 +217,13 @@ class AgreementFileSigningServiceTest {
         FinancingHdrRepository financingHdrRepository = mock(FinancingHdrRepository.class);
         DebtorRepository debtorRepository = mock(DebtorRepository.class);
         NotifDebtorRepository notifDebtorRepository = mock(NotifDebtorRepository.class);
+        AuditTrailService auditTrailService = mock(AuditTrailService.class);
         AgreementFileSigningService service = new AgreementFileSigningService(
                 signingRepository,
                 financingHdrRepository,
                 debtorRepository,
-                notifDebtorRepository
+                notifDebtorRepository,
+                auditTrailService
         );
         UUID financingHdrCode = UUID.randomUUID();
         Debtor debtor = Debtor.builder()

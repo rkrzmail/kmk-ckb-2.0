@@ -1,6 +1,7 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.DebtorMapper;
 import com.kmkbe.core.domain.model.CommonResult;
@@ -8,6 +9,7 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,6 +47,7 @@ public class SignerService {
   private final AgreementFileSigningRepository agreementFileSigningRepository;
   private final AssignmentSubmissionService assignmentSubmissionService;
   private final NotifDebtorRepository notifDebtorRepository;
+  private final AuditTrailService auditTrailService;
 
   private final Map<String, List<String>> signerCache = new ConcurrentHashMap<>();
 
@@ -212,11 +215,13 @@ public class SignerService {
 
       Debtor debtor = debtorRepository.findById(debtorDto.getDebtorId())
         .orElseThrow(() -> new RuntimeException("Debtor not found with id " + debtorDto.getDebtorId()));
+      DebtorAuditData before = toDebtorAuditData(debtor);
 
       debtor.setSignhubStatus(finalSignhubStatus);
       debtor.setSignerStatus(debtorDto.getSignerStatus());
 
-      debtorRepository.save(debtor);
+      Debtor savedDebtor = debtorRepository.save(debtor);
+      auditTrailService.record("SIGNER", AuditAction.UPDATE, "Debtor", savedDebtor.getDebtorId(), before, toDebtorAuditData(savedDebtor));
 
     } catch (Exception e) {
       debtorDto.setSignerStatus("not active");
@@ -225,9 +230,11 @@ public class SignerService {
       Debtor debtor = debtorRepository.findById(debtorDto.getDebtorId())
         .orElse(null);
       if (debtor != null) {
+        DebtorAuditData before = toDebtorAuditData(debtor);
         debtor.setSignerStatus("not active");
         debtor.setSignhubStatus("not register");
-        debtorRepository.save(debtor);
+        Debtor savedDebtor = debtorRepository.save(debtor);
+        auditTrailService.record("SIGNER", AuditAction.UPDATE, "Debtor", savedDebtor.getDebtorId(), before, toDebtorAuditData(savedDebtor));
       }
 
       System.err.println("Error checking registration for NIK: " + identityNo);
@@ -475,6 +482,7 @@ public class SignerService {
       .build();
 
     Debtor savedDebtor = debtorRepository.save(debtor);
+    auditTrailService.record("SIGNER", AuditAction.CREATE, "Debtor", savedDebtor.getDebtorId(), null, toDebtorAuditData(savedDebtor));
 
     String custCode = String.valueOf(financingHdrRepository.findByFinancingHdrCode(UUID.fromString(debtorDto.getFinancingHdrCode()))
       .map(finHdr -> finHdr.getCustomer().getCustCode())
@@ -861,6 +869,7 @@ public class SignerService {
 
   private void checkExternalSigningStatus(List<AgreementFileSigning> fileSignings, String username) {
     for (AgreementFileSigning signing : fileSignings) {
+      AgreementFileSigningAuditData before = toAgreementFileSigningAuditData(signing);
       try {
         Map<String, Object> request = new HashMap<>();
         Map<String, String> audit = new HashMap<>();
@@ -950,6 +959,7 @@ public class SignerService {
         signing.setStamp("Menunggu TTD");
       } finally {
         AgreementFileSigning updated = agreementFileSigningRepository.save(signing);
+        auditTrailService.record("SIGNING_STATUS", AuditAction.UPDATE, "AgreementFileSigning", updated.getAgreementFileId(), before, toAgreementFileSigningAuditData(updated));
       }
     }
   }
@@ -957,6 +967,7 @@ public class SignerService {
   private void updateFinancingStep(String financingHdrCode, String stampStatus) {
     financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
       .ifPresent(finHdr -> {
+        FinancingSigningAuditData before = toFinancingSigningAuditData(finHdr);
         if ("Signing in Process".equalsIgnoreCase(stampStatus)) {
           finHdr.setFinancingStep("SIGNING");
         } else if ("Menunggu TTD".equalsIgnoreCase(stampStatus)) {
@@ -964,8 +975,98 @@ public class SignerService {
         } else if ("signed".equalsIgnoreCase(stampStatus)) {
           finHdr.setFinancingStep("SIGNED");
         }
-        financingHdrRepository.save(finHdr);
+        FinancingHdr saved = financingHdrRepository.save(finHdr);
+        auditTrailService.record("SIGNING_STATUS", AuditAction.UPDATE, "FinancingHdr", saved.getFinancingHdrCode(), before, toFinancingSigningAuditData(saved));
       });
+  }
+
+  private DebtorAuditData toDebtorAuditData(Debtor debtor) {
+    if (debtor == null) {
+      return null;
+    }
+
+    return new DebtorAuditData(
+      debtor.getDebtorId(),
+      debtor.getDebtorName(),
+      debtor.getKaryawanName(),
+      debtor.getJabatan(),
+      debtor.getIdentityNo(),
+      debtor.getEmail(),
+      debtor.getNoTelp(),
+      debtor.getIsActive(),
+      debtor.getSignerStatus(),
+      debtor.getSignhubStatus(),
+      debtor.getEmailDebtor(),
+      debtor.getFinancingHdrCode()
+    );
+  }
+
+  private AgreementFileSigningAuditData toAgreementFileSigningAuditData(AgreementFileSigning signing) {
+    if (signing == null) {
+      return null;
+    }
+
+    return new AgreementFileSigningAuditData(
+      signing.getAgreementFileId(),
+      signing.getAgreementCode(),
+      signing.getFileTypeCode(),
+      signing.getFileName(),
+      signing.stamp(),
+      signing.getDocumentId(),
+      signing.getSigner(),
+      signing.getEmailSigner(),
+      signing.getIdentityNo(),
+      signing.getFinancingHdrCode(),
+      signing.getSignProgress(),
+      signing.getVerifDate()
+    );
+  }
+
+  private FinancingSigningAuditData toFinancingSigningAuditData(FinancingHdr financingHdr) {
+    if (financingHdr == null) {
+      return null;
+    }
+
+    return new FinancingSigningAuditData(
+      financingHdr.getFinancingHdrCode(),
+      financingHdr.getFinancingStatus(),
+      financingHdr.getFinancingStep()
+    );
+  }
+
+  private record DebtorAuditData(
+    Long debtorId,
+    String debtorName,
+    String karyawanName,
+    String jabatan,
+    String identityNo,
+    String email,
+    String noTelp,
+    Boolean active,
+    String signerStatus,
+    String signhubStatus,
+    String emailDebtor,
+    String financingHdrCode
+  ) {
+  }
+
+  private record AgreementFileSigningAuditData(
+    Long agreementFileId,
+    String agreementCode,
+    String fileTypeCode,
+    String fileName,
+    String stamp,
+    String documentId,
+    String signer,
+    String emailSigner,
+    String identityNo,
+    String financingHdrCode,
+    String signProgress,
+    LocalDateTime verifDate
+  ) {
+  }
+
+  private record FinancingSigningAuditData(UUID financingHdrCode, String financingStatus, String financingStep) {
   }
 
   public List<DebtorDto> checkSignerDanasakti(String financingHdrCode, String username) {
