@@ -1,8 +1,8 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.dto.ProductDto;
-import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.modules.product.model.dto.ProductDto;
+import com.kmkbe.modules.product.model.entity.Product;
 import com.kmkbe.core.domain.mapper.ProductMapper;
 import com.kmkbe.core.domain.repository.ProductRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;

@@ -4,15 +4,16 @@ import com.kmkbe.core.domain.entity.ChangePasswordLog;
 import com.kmkbe.core.domain.entity.CustomerCompany;
 import com.kmkbe.core.domain.entity.CustomerPersonal;
 import com.kmkbe.core.domain.entity.LoginLog;
-import com.kmkbe.helpers.utils.UuidConverter;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.NotFound;
 import org.hibernate.annotations.NotFoundAction;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
+import java.sql.Types;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -179,11 +180,11 @@ public class Customer implements UserDetails {
   }
 
   @Column(name = "bouwheer", length = 36)
-  private UUID bouwheer;
+  private String bouwheer;
 
-  @OneToOne(fetch = FetchType.LAZY)
-  @JoinColumn(name = "bouwheer", referencedColumnName = "bouwheer_code", insertable = false, updatable = false)
-  @NotFound(action = NotFoundAction.IGNORE)
-  private Bouwheer bouwheerDetail;
+//  @OneToOne(fetch = FetchType.LAZY)
+//  @JoinColumn(name = "bouwheer", referencedColumnName = "bouwheer_code", insertable = false, updatable = false)
+//  @NotFound(action = NotFoundAction.IGNORE)
+//  private Bouwheer bouwheerDetail;
 
 }

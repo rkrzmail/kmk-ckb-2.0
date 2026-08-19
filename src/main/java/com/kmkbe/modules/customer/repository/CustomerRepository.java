@@ -21,12 +21,12 @@ public interface CustomerRepository extends JpaRepository<Customer, Long>, Pagin
 
     boolean existsByCustEmailIgnoreCaseAndCustIdNoNot(String email, String custIdNo);
 
-   Optional<Customer> findByBouwheer(UUID bouwheerCode);
+   Optional<Customer> findByBouwheer(String bouwheerCode);
 
    Page<Customer> findAll(Pageable pageable);
 
    Page<Customer> findAll(Specification<Customer> specification, Pageable pageable);
 
-   Optional<Customer> findByBouwheerAndCustExternalCode(UUID bouwheer, String vendorId);
+   Optional<Customer> findByBouwheerAndCustExternalCode(String bouwheer, String vendorId);
 
 }

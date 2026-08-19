@@ -1,7 +1,7 @@
 package com.kmkbe.core.domain.mapper;
 
-import com.kmkbe.core.domain.dto.ProductDto;
-import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.modules.product.model.dto.ProductDto;
+import com.kmkbe.modules.product.model.entity.Product;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;

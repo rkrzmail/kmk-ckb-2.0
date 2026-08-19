@@ -182,7 +182,7 @@ public class ApiSbuCkbService {
     }
 
     Customer customer;
-    Optional<Customer> customerOptional = customerRepository.findByBouwheerAndCustExternalCode(UUID.fromString(request.getBouwheerCode()), request.getVendorCode());
+    Optional<Customer> customerOptional = customerRepository.findByBouwheerAndCustExternalCode(request.getBouwheerCode(), request.getVendorCode());
     if (customerOptional.isPresent()) {
       customer = customerOptional.get();
     } else {
@@ -190,7 +190,7 @@ public class ApiSbuCkbService {
 
       customer = customerRepository.save(Customer.builder()
         .custCode(UUID.randomUUID())
-        .bouwheer(UUID.fromString(request.getBouwheerCode()))
+        .bouwheer(request.getBouwheerCode())
         .custExternalCode(request.getVendorCode())
         .custName("Customer - " + bouwheerOptional.get().getBouwheerName())
         .custIdNo(request.getVendorCode())
@@ -236,7 +236,7 @@ public class ApiSbuCkbService {
     /**
      * Check Bouwheer Code
      */
-    Optional<Customer> customerOptional = customerRepository.findByBouwheer(UUID.fromString(request.getBouwheerCode()));
+    Optional<Customer> customerOptional = customerRepository.findByBouwheer(request.getBouwheerCode());
     if (customerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer Bouwheer not found");

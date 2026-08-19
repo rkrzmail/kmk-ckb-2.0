@@ -1,4 +1,4 @@
-package com.kmkbe.modules.major_account.service;
+package com.kmkbe.modules.product.service;
 
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.helpers.utils.Utils;

@@ -1,7 +1,7 @@
-package com.kmkbe.modules.major_account.service;
+package com.kmkbe.modules.product.service;
 
-import com.kmkbe.core.domain.dto.ProductDto;
-import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.modules.product.model.dto.ProductDto;
+import com.kmkbe.modules.product.model.entity.Product;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.ProductRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;

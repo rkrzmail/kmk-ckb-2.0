@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 
 public record VerifyOtpRequest(
+
         String requestId,
         @NotNull(message = "email is required")
         @NotEmpty(message = "email is empty")

@@ -1,6 +1,6 @@
 package com.kmkbe.core.domain.repository;
 
-import com.kmkbe.core.domain.entity.Product;
+import com.kmkbe.modules.product.model.entity.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;

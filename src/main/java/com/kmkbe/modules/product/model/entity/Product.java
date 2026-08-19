@@ -1,8 +1,7 @@
-package com.kmkbe.core.domain.entity;
+package com.kmkbe.modules.product.model.entity;
 
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
