@@ -7,7 +7,7 @@ import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
 import com.kmkbe.modules.apis.service.ApiSbuCkbService;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
-import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
+import com.kmkbe.modules.loan_submission.request.CreateSubmissionRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -63,7 +63,7 @@ public class SbuCkbController {
 
   @PostMapping(value = "/submissions/{jwtToken}")
   public CommonResult<CreatedSimulationDto> createSimulation(
-    @RequestBody @Valid CreateSimulationRequest request,
+    @RequestBody @Valid CreateSubmissionRequest request,
     @PathVariable("jwtToken") String jwtToken,
     @RequestHeader("ApiKey") String apiKey
   ) throws Exception {

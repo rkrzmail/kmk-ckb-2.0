@@ -26,6 +26,7 @@ import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.service.CustomerCompanyService;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
+import com.kmkbe.modules.loan_submission.request.CreateSubmissionRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.loan_submission.service.*;
 import lombok.extern.slf4j.Slf4j;
@@ -170,7 +171,7 @@ public class ApiSbuCkbService {
    * @return
    * @throws Exception
    */
-  public CommonResult<CreatedSimulationDto> submission(CreateSimulationRequest request) throws Exception {
+  public CommonResult<CreatedSimulationDto> submission(CreateSubmissionRequest request) throws Exception {
     /**
      * Check Bouwheer Code
      */
@@ -217,7 +218,14 @@ public class ApiSbuCkbService {
         .build());
     }
 
-    var result = loanSubmissionService.createSimulation(customer, request);
+    var result = loanSubmissionService.createSimulation(customer, CreateSimulationRequest.builder()
+        .vendorCode(request.getVendorCode())
+      .bouwheerCode(request.getBouwheerCode())
+        .productId(request.getProductId())
+        .disbursePercentage(request.getDisbursePercentage())
+        .totalInvoiceAmount(request.getTotalInvoiceAmount())
+        .invoices(request.getInvoices())
+      .build());
     return new CommonResult<CreatedSimulationDto>().success(
       result
     );
@@ -236,7 +244,7 @@ public class ApiSbuCkbService {
     /**
      * Check Bouwheer Code
      */
-    Optional<Customer> customerOptional = customerRepository.findByBouwheer(request.getBouwheerCode());
+    Optional<Customer> customerOptional = customerRepository.findFirstByBouwheer(request.getBouwheerCode());
     if (customerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer Bouwheer not found");

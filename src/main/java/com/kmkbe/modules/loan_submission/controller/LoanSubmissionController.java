@@ -83,7 +83,7 @@ public class LoanSubmissionController {
     String token
   ) throws Exception {
     return new CommonResult<List<PostedInvoiceDto>>().success(
-      loanSubmissionService.fetchActiveInvoice(currentUserService.customerOrNull(), token)
+      loanSubmissionService.fetchActiveInvoice(currentUserService.customer(), token)
     );
   }
 
@@ -99,7 +99,7 @@ public class LoanSubmissionController {
     CalculateSimulationRequest request
   ) throws SignatureException, JsonProcessingException, ParseException {
     return new CommonResult<EstimatedDisburseDto>().success(
-      loanSubmissionService.calculateDisburse(currentUserService.customerOrNull(), request)
+      loanSubmissionService.calculateDisburse(currentUserService.customer(), request)
     );
   }
 

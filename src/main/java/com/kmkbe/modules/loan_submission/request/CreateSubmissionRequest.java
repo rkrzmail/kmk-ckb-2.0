@@ -2,9 +2,11 @@ package com.kmkbe.modules.loan_submission.request;
 
 import com.kmkbe.core.domain.model.PostedInvoicePayload;
 import com.kmkbe.helpers.base.BaseRequest;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.List;
 
@@ -12,10 +14,12 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class CreateSimulationRequest  extends BaseRequest {
+public class CreateSubmissionRequest extends BaseRequest {
 
+  @NotNull(message = "Vendor Code is required")
   private String vendorCode;
 
+  @NotNull(message = "Bouwheer is required")
   private String bouwheerCode;
 
   private Long productId;

@@ -27,20 +27,6 @@ public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpec
     @Param("bouwheerCode") UUID bouwheerCode
   );
 
-  @Query(
-    value = "select * from product " +
-      "where ntf_from <= :amount " +
-      "and ntf_to >= :amount " +
-      "and is_active='t' " +
-      "and bouwheer_code = :bouwheerCode " +
-      "limit 1",
-    nativeQuery = true
-  )
-  Optional<Product> findNtfRangeByBouwheerCode(
-    @Param("amount") Double amount,
-    @Param("bouwheerCode") UUID bouwheerCode
-  );
-
   default Optional<List<Product>> getAllActive() {
     return findAllByIsActiveOrderByIsActive(true);
   }

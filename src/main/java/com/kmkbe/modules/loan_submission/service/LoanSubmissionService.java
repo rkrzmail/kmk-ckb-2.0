@@ -17,6 +17,7 @@ import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
 import com.kmkbe.helpers.constant.AppConstants;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.AuditTrailService;
@@ -24,10 +25,7 @@ import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.service.ExistingCustomerService;
-import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
-import com.kmkbe.modules.loan_submission.request.CreateLoanApplicationRequest;
-import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
-import com.kmkbe.modules.loan_submission.request.SaveImportantNotesRequest;
+import com.kmkbe.modules.loan_submission.request.*;
 import com.kmkbe.modules.product.model.entity.Product;
 import com.kmkbe.modules.product.repository.ProductRepository;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
@@ -44,6 +42,7 @@ import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.jfree.util.Log;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -89,167 +88,177 @@ public class LoanSubmissionService {
   private final CustomerRepository customerRepository;
   private final ApiCsulAdapter apiCsulAdapter;
   private final AuditTrailService auditTrailService;
+  private final FinancingDtlRepository financingDtlRepository;
 
   public List<PostedInvoiceDto> fetchActiveInvoice(
     Customer customer,
     String token
   ) throws Exception {
-    try {
-      final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
-      CsulInquiryInvoiceRemoteDto inquiryInvoiceRemote = null;
+//    try {
+    final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
+    CsulInquiryInvoiceRemoteDto inquiryInvoiceRemote = null;
 
-      try {
-        //ambil data dari api
-        inquiryInvoiceRemote = apiCsulAdapter.findListPostedInvoice(vendorTokenExtractor.getVendorCode());  // invoiceRemoteDto.inquiryInvoice(vendorTokenExtractor.getVendorCode()).getData();
-        log.info("Reponse Inquery API by vendor {} , payload {} ", vendorTokenExtractor.getVendorCode(), inquiryInvoiceRemote.getDocumentStatus());
+//      try {
+//        //ambil data dari api
+//        inquiryInvoiceRemote = apiCsulAdapter.findListPostedInvoice(vendorTokenExtractor.getVendorCode());  // invoiceRemoteDto.inquiryInvoice(vendorTokenExtractor.getVendorCode()).getData();
+//        log.info("Reponse Inquery API by vendor {} , payload {} ", vendorTokenExtractor.getVendorCode(), inquiryInvoiceRemote.getDocumentStatus());
+//
+//      } catch (Exception e) {
+//        log.warn("API invoice gagal, fallback ke database: {}", e.getMessage());
 
-      } catch (Exception e) {
-        log.warn("API invoice gagal, fallback ke database: {}", e.getMessage());
-
-        if (customer == null) {
-          throw new IllegalArgumentException("Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
-        }
-        List<Invoice> dbInvoices = financingHdrRepository.findFinancingHeaderByCustCode(customer.getCustExternalCode());
-
-        log.info("Count invoice Simulation result {}", dbInvoices.size());
-
-        SimpleDateFormat sdf = DateTimeUtils.SDF_STANDARD_DATE;
-        List<CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto> rows = new ArrayList<>();
-        for (Invoice inv : dbInvoices) {
-          rows.add(CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto.builder()
-            .vendorNo(vendorTokenExtractor.getVendorCode())
-            .reference(inv.getCustInvNo())
-            .accountingDocument(inv.getBouwheerInvNo())
-            .poNumber(inv.getPoNumber())
-            .amount(inv.getInvoiceAmt() != null ? String.valueOf(inv.getInvoiceAmt()) : "0")
-            .currency("IDR")
-            .netDueDate(inv.getInvoiceDueDate() != null
-              ? sdf.format(Date.from(inv.getInvoiceDueDate().atZone(java.time.ZoneId.systemDefault()).toInstant()))
-              : "")
-            .postingDate(inv.getPostingDate() != null ? sdf.format(inv.getPostingDate()) : "")
-            .description(inv.getInvoiceDescription())
-            .build());
-        }
-        inquiryInvoiceRemote = CsulInquiryInvoiceRemoteDto.builder()
-          .blacklistStatus(false)   // bypass cek blacklist
-          .documentStatus("01")     // bypass cek doc status (bukan 03/04)
-          .row(rows)
-          .count(rows.size())
-          .build();
-      }
-
-      /**
-       * Process
-       */
-      if (inquiryInvoiceRemote == null) {
-        throw CommonInvalidException.builder()
-          .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
-          .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
-            "Dana Sakti. Harap melakukan pengecekan ulang " +
-            "dengan pihak PT. Trakindo Utama.")
-          .build();
-      }
-
-      if (Boolean.TRUE.equals(inquiryInvoiceRemote.getBlacklistStatus())) {
-        throw CommonInvalidException.builder()
-          .title("Perusahaan Anda Terdaftar dalam Daftar Blacklist")
-          .message("Perusahaan Anda saat ini terdaftar dalam daftar " +
-            "blacklist PT Trakindo Utama, sehingga Anda " +
-            "belum dapat menggunakan Dana Sakti.")
-          .build();
-      }
-
-      if (inquiryInvoiceRemote.getDocumentStatus().equals("03") || inquiryInvoiceRemote.getDocumentStatus().equals("04")) {
-        throw CommonInvalidException.builder()
-          .title("Mohon Maaf, Anda Tidak Memenuhi Syarat")
-          .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
-            "Dana Sakti. Harap melakukan pengecekan ulang " +
-            "dengan pihak PT. Trakindo Utama.")
-          .build();
-      }
-
-      if (inquiryInvoiceRemote.getRow().isEmpty()) {
-        throw CommonInvalidException.builder()
-          .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
-          .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
-            "Dana Sakti. Harap melakukan pengecekan ulang " +
-            "dengan pihak PT. Trakindo Utama.")
-          .build();
-      }
-
-      final SimpleDateFormat sdfNoSeperator = new SimpleDateFormat("yyyyMMdd");
-      //double baseUsdToIdr = currencyRemoteService.fetchIdrFrom("usd");
-
-
-      //jika data banyak berpotensi timeout
-      List<PostedInvoiceDto> result = new ArrayList<>();
-      for (int i = 0; i < inquiryInvoiceRemote.getRow().size(); i++) {
-        if (StringUtil.isNullOrEmpty(inquiryInvoiceRemote.getRow().get(i).getPoNumber())) {
-          continue;
-        }
-
-        Date invDate, invDueDate;
-        try {
-          invDate = DateTimeUtils.SDF_STANDARD_DATE.parse(inquiryInvoiceRemote.getRow().get(i).getPostingDate());
-          invDueDate = DateTimeUtils.SDF_STANDARD_DATE.parse(inquiryInvoiceRemote.getRow().get(i).getNetDueDate());
-        } catch (Exception e) {
-          invDate = sdfNoSeperator.parse(inquiryInvoiceRemote.getRow().get(i).getPostingDate());
-          invDueDate = sdfNoSeperator.parse(inquiryInvoiceRemote.getRow().get(i).getNetDueDate());
-        }
-
-        BigDecimal invoiceAmount = BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim()));
-        String currency = inquiryInvoiceRemote.getRow().get(i).getCurrency(),
-          description = inquiryInvoiceRemote.getRow().get(i).getDescription();
-        if (
-          !currency.equalsIgnoreCase("idr")
-            && !currency.equalsIgnoreCase("rupiah")
-            && !currency.equalsIgnoreCase("rp")
-        ) {
-          currency = "IDR";
-        }
-
-        if (StringUtil.isNullOrEmpty(description)) {
-          description = "Invoice By Trakindo";
-        }
-
-        Date postingDate = null;
-        try {
-          postingDate = DateTimeUtils.SDF_STANDARD_DATE.parse(inquiryInvoiceRemote.getRow().get(i).getPostingDate());
-        } catch (Exception e) {
-          try {
-            postingDate = sdfNoSeperator.parse(inquiryInvoiceRemote.getRow().get(i).getPostingDate());
-          } catch (Exception ignored) {
-          }
-        }
-
-        result.add(PostedInvoiceDto.builder()
-          .bouwheerCode(vendorTokenExtractor.getBouwheerCode().toString())
-          .bouwheerName(vendorTokenExtractor.getBouwheerName())
-          .customerInvoiceNo(inquiryInvoiceRemote.getRow().get(i).getReference())
-          .bouwheerInvoiceNo(inquiryInvoiceRemote.getRow().get(i).getAccountingDocument())
-          .poNumber(inquiryInvoiceRemote.getRow().get(i).getPoNumber())
-          .postingDate(postingDate)
-          .invoiceDate(invDate)
-          .invoiceDueDate(invDueDate)
-          .invoiceAmount(invoiceAmount)
-          .invoiceDescription(description)
-          .currencyCode(currency)
-          .amountConverter(
-            PostedInvoiceDto.AmountConverter.builder()
-              //.base(BigDecimal.valueOf(baseUsdToIdr))
-              .fromCurrencyCode(inquiryInvoiceRemote.getRow().get(i).getCurrency())
-              .toCurrencyCode("IDR")
-              .amount(BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim())))
-              .build()
-          )
-          .build());
-      }
-
-      return result;
-    } catch (Exception e) {
-      log.error("fetchActiveInvoice, error {}", e.getMessage());
-      throw e;
+    if (customer.getCustCode() == null) {
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
     }
+
+    Log.info("Customer code {} " + customer.getCustExternalCode());
+
+    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(customer.getBouwheer()));
+    if (bouwheerOptional.isEmpty()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Bouwheer code not found " + customer.getBouwheer());
+    }
+// CHANGE THIS LINE: Call the invoiceRepository instead
+    List<Invoice> dbInvoices = invoiceRepository.findInvoicesByCustCode(String.valueOf(customer.getCustCode()));
+
+// The rest of your code remains exactly the same!
+    SimpleDateFormat sdf = DateTimeUtils.SDF_STANDARD_DATE;
+    List<CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto> rows = new ArrayList<>();
+    for (Invoice inv : dbInvoices) {
+      rows.add(CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto.builder()
+        .vendorNo(vendorTokenExtractor.getVendorCode())
+        .reference(inv.getCustInvNo())
+        .accountingDocument(inv.getBouwheerInvNo())
+        .poNumber(inv.getPoNumber())
+        .amount(inv.getInvoiceAmt() != null ? String.valueOf(inv.getInvoiceAmt()) : "0")
+        .currency("IDR")
+        .netDueDate(inv.getInvoiceDueDate() != null
+          ? sdf.format(Date.from(inv.getInvoiceDueDate().atZone(java.time.ZoneId.systemDefault()).toInstant()))
+          : "")
+        .postingDate(inv.getPostingDate() != null ? sdf.format(inv.getPostingDate()) : "")
+        .description(inv.getInvoiceDescription())
+        .build());
+    }
+    inquiryInvoiceRemote = CsulInquiryInvoiceRemoteDto.builder()
+      .blacklistStatus(false)   // bypass cek blacklist
+      .documentStatus("01")     // bypass cek doc status (bukan 03/04)
+      .row(rows)
+      .count(rows.size())
+      .build();
+//      }
+
+    /**
+     * Process
+     */
+    if (inquiryInvoiceRemote == null) {
+      throw CommonInvalidException.builder()
+        .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
+        .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
+          "Dana Sakti. Harap melakukan pengecekan ulang " +
+          "dengan pihak PT. Trakindo Utama.")
+        .build();
+    }
+
+    if (Boolean.TRUE.equals(inquiryInvoiceRemote.getBlacklistStatus())) {
+      throw CommonInvalidException.builder()
+        .title("Perusahaan Anda Terdaftar dalam Daftar Blacklist")
+        .message("Perusahaan Anda saat ini terdaftar dalam daftar " +
+          "blacklist PT Trakindo Utama, sehingga Anda " +
+          "belum dapat menggunakan Dana Sakti.")
+        .build();
+    }
+
+    if (inquiryInvoiceRemote.getDocumentStatus().equals("03") || inquiryInvoiceRemote.getDocumentStatus().equals("04")) {
+      throw CommonInvalidException.builder()
+        .title("Mohon Maaf, Anda Tidak Memenuhi Syarat")
+        .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
+          "Dana Sakti. Harap melakukan pengecekan ulang " +
+          "dengan pihak PT. Trakindo Utama.")
+        .build();
+    }
+
+    if (inquiryInvoiceRemote.getRow().isEmpty()) {
+      throw CommonInvalidException.builder()
+        .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
+        .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
+          "Dana Sakti. Harap melakukan pengecekan ulang " +
+          "dengan pihak PT. Trakindo Utama.")
+        .build();
+    }
+
+    final SimpleDateFormat sdfNoSeperator = new SimpleDateFormat("yyyyMMdd");
+    //double baseUsdToIdr = currencyRemoteService.fetchIdrFrom("usd");
+
+
+    //jika data banyak berpotensi timeout
+    List<PostedInvoiceDto> result = new ArrayList<>();
+    for (int i = 0; i < inquiryInvoiceRemote.getRow().size(); i++) {
+      if (StringUtil.isNullOrEmpty(inquiryInvoiceRemote.getRow().get(i).getPoNumber())) {
+        continue;
+      }
+
+      Date invDate, invDueDate;
+      try {
+        invDate = DateTimeUtils.SDF_STANDARD_DATE.parse(inquiryInvoiceRemote.getRow().get(i).getPostingDate());
+        invDueDate = DateTimeUtils.SDF_STANDARD_DATE.parse(inquiryInvoiceRemote.getRow().get(i).getNetDueDate());
+      } catch (Exception e) {
+        invDate = sdfNoSeperator.parse(inquiryInvoiceRemote.getRow().get(i).getPostingDate());
+        invDueDate = sdfNoSeperator.parse(inquiryInvoiceRemote.getRow().get(i).getNetDueDate());
+      }
+
+      BigDecimal invoiceAmount = BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim()));
+      String currency = inquiryInvoiceRemote.getRow().get(i).getCurrency(),
+        description = inquiryInvoiceRemote.getRow().get(i).getDescription();
+      if (
+        !currency.equalsIgnoreCase("idr")
+          && !currency.equalsIgnoreCase("rupiah")
+          && !currency.equalsIgnoreCase("rp")
+      ) {
+        currency = "IDR";
+      }
+
+      if (StringUtil.isNullOrEmpty(description)) {
+        description = "Invoice By Trakindo";
+      }
+
+      Date postingDate = null;
+      try {
+        postingDate = DateTimeUtils.SDF_STANDARD_DATE.parse(inquiryInvoiceRemote.getRow().get(i).getPostingDate());
+      } catch (Exception e) {
+        try {
+          postingDate = sdfNoSeperator.parse(inquiryInvoiceRemote.getRow().get(i).getPostingDate());
+        } catch (Exception ignored) {
+        }
+      }
+
+      result.add(PostedInvoiceDto.builder()
+        .bouwheerCode(String.valueOf(bouwheerOptional.get().getBouwheerCode()))
+        .bouwheerName(bouwheerOptional.get().getBouwheerName())
+        .customerInvoiceNo(inquiryInvoiceRemote.getRow().get(i).getReference())
+        .bouwheerInvoiceNo(inquiryInvoiceRemote.getRow().get(i).getAccountingDocument())
+        .poNumber(inquiryInvoiceRemote.getRow().get(i).getPoNumber())
+        .postingDate(postingDate)
+        .invoiceDate(invDate)
+        .invoiceDueDate(invDueDate)
+        .invoiceAmount(invoiceAmount)
+        .invoiceDescription(description)
+        .currencyCode(currency)
+        .amountConverter(
+          PostedInvoiceDto.AmountConverter.builder()
+            //.base(BigDecimal.valueOf(baseUsdToIdr))
+            .fromCurrencyCode(inquiryInvoiceRemote.getRow().get(i).getCurrency())
+            .toCurrencyCode("IDR")
+            .amount(BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim())))
+            .build()
+        )
+        .build());
+    }
+
+    return result;
+//    } catch (Exception e) {
+//      log.error("fetchActiveInvoice, error {}", e.getMessage());
+//      throw e;
+//    }
   }
 
   public List<DisbursePercentageDto> fetchDisbursePercentage() {
@@ -896,7 +905,7 @@ public class LoanSubmissionService {
     CreateSimulationRequest request
   ) throws Exception {
 
-    final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()))
+    final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(customer.getBouwheer()))
       .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
 
     final double totalInvoiceAmount = request.getInvoices()
@@ -949,6 +958,22 @@ public class LoanSubmissionService {
       .provisionRate(calculateDisburse.getProvisionRate())
       .build();
 
+
+    /**
+     * Valdiate duplicate invoice
+     */
+
+    for (PostedInvoicePayload invoicePayload :request.getInvoices()){
+      Optional<FinancingDtl> financingDtlOptional = financingDtlRepository.findFirstByBouwheerInvNo(invoicePayload.getBouwheerInvoiceNo());
+      if (financingDtlOptional.isPresent()){
+        log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "Bouwheer Invoice No " + invoicePayload.getBouwheerInvoiceNo());
+      }
+    }
+
+    /**
+     * Insert Financing Header
+     */
     final FinancingHdr createdFinancingHdr = financingHdrService.create(
       customer,
       bouwheer,
@@ -957,8 +982,21 @@ public class LoanSubmissionService {
       simulationDisburseResult
     );
 
-    final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, request);
+    /**
+     * Insert Invoice Serive
+     */
+    final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, CreateSubmissionRequest.builder()
+      .vendorCode(request.getVendorCode())
+      .bouwheerCode(request.getBouwheerCode())
+      .productId(request.getProductId())
+      .disbursePercentage(request.getDisbursePercentage())
+      .totalInvoiceAmount(request.getTotalInvoiceAmount())
+      .invoices(request.getInvoices())
+      .build());
 
+    /**
+     * Insert Financing detail
+     */
     financingDtlService.createBulk(
       customer,
       bouwheer,
@@ -972,6 +1010,10 @@ public class LoanSubmissionService {
       .financingHdrCode(createdFinancingHdr.getFinancingHdrCode())
       .invoices(createdInvoices)
       .build();
+
+    /**
+     * Insert Audit trail
+     */
     auditTrailService.record(
       "LOAN_SUBMISSION_SIMULATION",
       AuditAction.CREATE,
@@ -1083,7 +1125,14 @@ public class LoanSubmissionService {
                 //throw new IllegalStateException("Terjdi kesalahan saat mengambil data invoice dari pihak PT. Trakindo Utama.");
             }*/
 
-      final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, request);
+      final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, CreateSubmissionRequest.builder()
+        .vendorCode(request.getVendorCode())
+        .bouwheerCode(request.getBouwheerCode())
+        .productId(request.getProductId())
+        .disbursePercentage(request.getDisbursePercentage())
+        .totalInvoiceAmount(request.getTotalInvoiceAmount())
+        .invoices(request.getInvoices())
+        .build());
 
       financingDtlService.createBulk(
         customer,
@@ -1723,10 +1772,10 @@ public class LoanSubmissionService {
 
   private Optional<Product> findProductByAmountAndBouwheer(Double amount, String bouwheerCode) {
     UUID parsedBouwheerCode = parseBouwheerCode(bouwheerCode);
-      Optional<Product> productOptional = productRepository.findFirstByAmountInRangeAndBouwheerCode(amount, parsedBouwheerCode);
-      if (productOptional.isEmpty()) {
-        throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Product not found");
-      }
+    Optional<Product> productOptional = productRepository.findFirstByAmountInRangeAndBouwheerCode(amount, parsedBouwheerCode);
+    if (productOptional.isEmpty()) {
+      throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Product not found");
+    }
     return productOptional;
   }
 
