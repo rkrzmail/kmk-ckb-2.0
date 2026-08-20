@@ -220,7 +220,7 @@ public class ApiSbuCkbService {
 
     var result = loanSubmissionService.createSimulation(customer, CreateSimulationRequest.builder()
         .vendorCode(request.getVendorCode())
-      .bouwheerCode(request.getBouwheerCode())
+        .bouwheerCode(request.getBouwheerCode())
         .productId(request.getProductId())
         .disbursePercentage(request.getDisbursePercentage())
         .totalInvoiceAmount(request.getTotalInvoiceAmount())

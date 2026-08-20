@@ -964,10 +964,13 @@ public class LoanSubmissionService {
      */
 
     for (PostedInvoicePayload invoicePayload :request.getInvoices()){
-      Optional<FinancingDtl> financingDtlOptional = financingDtlRepository.findFirstByBouwheerInvNo(invoicePayload.getBouwheerInvoiceNo());
-      if (financingDtlOptional.isPresent()){
+      Optional<Invoice> invoiceOptional = invoiceRepository.findByCustomerAndBouwheerInvNoAndCustInvNo(customer,invoicePayload.getBouwheerInvoiceNo(),invoicePayload.getCustomerInvoiceNo());
+      if (invoiceOptional.isPresent()){
         log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "Bouwheer Invoice No " + invoicePayload.getBouwheerInvoiceNo());
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 +
+          "Bouwheer "+customer.getCustExternalCode()+
+          " Bouwheer Invoice No " + invoicePayload.getBouwheerInvoiceNo()+
+          " and Customer Invoice No "+invoicePayload.getCustomerInvoiceNo());
       }
     }
 
