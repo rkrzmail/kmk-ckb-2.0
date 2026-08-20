@@ -1,4 +1,4 @@
-package com.kmkbe.core.domain.repository;
+package com.kmkbe.modules.product.repository;
 
 import com.kmkbe.modules.product.model.entity.Product;
 import org.springframework.data.domain.Page;
@@ -15,16 +15,6 @@ import java.util.UUID;
 
 public interface ProductRepository extends JpaRepository<Product, Long>, JpaSpecificationExecutor<Product> {
   Optional<List<Product>> findAllByIsActiveOrderByIsActive(Boolean isActive);
-
-  @Query(
-    value = "select * from product where ntf_from <= :amount and ntf_to >= :amount AND is_active='t' LIMIT 1;",
-    nativeQuery = true
-  )
-  Optional<Product> findNtfRange(@Param("amount") Double amount);
-
-
-  @Query("SELECT p FROM Product p WHERE :amount BETWEEN p.ntfFrom AND p.ntfTo AND p.isActive = true")
-  Optional<Product> findFirstByAmountInRange(@Param("amount") Double amount);
 
   @Query(
     "SELECT p FROM Product p " +

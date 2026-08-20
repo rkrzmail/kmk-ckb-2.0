@@ -3,7 +3,7 @@ package com.kmkbe.modules.product.service;
 import com.kmkbe.modules.product.model.dto.ProductDto;
 import com.kmkbe.modules.product.model.entity.Product;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.repository.ProductRepository;
+import com.kmkbe.modules.product.repository.ProductRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.utils.DateTimeUtils;
