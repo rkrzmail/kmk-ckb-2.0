@@ -49,8 +49,7 @@ public class ConfigRemoteService {
                     url,
                     HttpMethod.GET,
                     request,
-                    new ParameterizedTypeReference<>() {
-                    }
+                    MailRemoteDto.class
             );
 
             System.out.println("Successfully get email config");
