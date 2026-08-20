@@ -15,29 +15,18 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, UUID>, JpaSpecificationExecutor<Invoice> {
-    Optional<Invoice> findByBouwheerInvNo(String bouwheerInvNo);
 
-    Long countByCustomer(Customer customer);
+  Optional<Invoice> findFirstByCustomerAndBouwheerInvNoAndCustInvNo(
+    Customer customer,
+    String bouwheerInvNo,
+    String custInvNo
+  );
 
-    Optional<Invoice> findByCustomerAndBouwheerInvNoAndCustInvNo(
-            Customer customer,
-            String bouwheerInvNo,
-            String custInvNo
-    );
-
-    Page<Invoice> findByCustomer(
-            Customer cust,
-            Specification<Invoice> spec,
-            Pageable pageable
-    );
-
-    List<Invoice> findAllByCustomer(
-            Customer customer
-    );
-    Optional<Invoice> findByBouwheerInvNoAndCustInvNo(
-            String bouwheerInvNo,
-            String custInvNo
-    );
+  Page<Invoice> findByCustomer(
+    Customer cust,
+    Specification<Invoice> spec,
+    Pageable pageable
+  );
 
   @Query(value = "select i.* from financing_hdr fh " +
     "join financing_dtl fd on fh.financing_hdr_code = fd.financing_hdr_code " +

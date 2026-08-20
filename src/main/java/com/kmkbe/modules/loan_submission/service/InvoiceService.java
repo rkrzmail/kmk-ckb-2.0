@@ -13,6 +13,7 @@ import com.kmkbe.core.domain.repository.InvoiceRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.spec.FinancingDtlSpec;
 import com.kmkbe.core.domain.spec.InvoiceSpec;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
@@ -42,16 +43,6 @@ public class InvoiceService {
   private final FinancingDtlRepository financingDtlRepository;
   private final InvoiceRepository invoiceRepository;
 
-  public Invoice byBouwheerInvoiceNo(String bouwheerInvoiceNo) throws Exception {
-    try {
-      Optional<Invoice> find = invoiceRepository.findByBouwheerInvNo(bouwheerInvoiceNo);
-      return find.orElse(null);
-    } catch (Exception e) {
-      log.error("byBouwheerInvoiceNo, error {}", e.getMessage());
-      throw e;
-    }
-  }
-
   public void create(Invoice invoice) throws Exception {
     try {
       invoiceRepository.save(invoice);
@@ -65,65 +56,83 @@ public class InvoiceService {
     Customer customer,
     Bouwheer bouwheer,
     CreateSubmissionRequest request
-  ) throws Exception {
+  ) {
     try {
-      List<Invoice> invoices = request.getInvoices()
-        .stream()
-        .map((posted) -> Invoice.builder()
-          .customer(customer)
-          .bouwheer(bouwheer)
-          .bouwheerInvNo(posted.getBouwheerInvoiceNo())
-          .custInvNo(posted.getCustomerInvoiceNo())
-          .invoiceDescription(
-            StringUtil.isNullOrEmpty(posted.getInvoiceDescription())
-              ? "Invoice By CKB"
-              : posted.getInvoiceDescription()
-          )
-          .invoiceDate(Utils.toInstant(posted.getInvoiceDate()))
-          .invoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()))
-          .invoiceAmt(posted.getInvoiceAmount().doubleValue())
-          .poNumber(posted.getPoNumber())
-          .postingDate(posted.getPostingDate())
-          .usrCrt(customer.getCustName())
-          .build())
-        .toList();
+//      List<Invoice> invoices = request.getInvoices()
+//        .stream()
+//        .map((posted) -> Invoice.builder()
+//          .customer(customer)
+//          .bouwheer(bouwheer)
+//          .bouwheerInvNo(posted.getBouwheerInvoiceNo())
+//          .custInvNo(posted.getCustomerInvoiceNo())
+//          .invoiceDescription(
+//            StringUtil.isNullOrEmpty(posted.getInvoiceDescription())
+//              ? "Invoice By CKB"
+//              : posted.getInvoiceDescription()
+//          )
+//          .invoiceDate(Utils.toInstant(posted.getInvoiceDate()))
+//          .invoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()))
+//          .invoiceAmt(posted.getInvoiceAmount().doubleValue())
+//          .poNumber(posted.getPoNumber())
+//          .postingDate(posted.getPostingDate())
+//          .usrCrt(customer.getCustName())
+//          .build())
+//        .toList();
+//
+//      return invoiceRepository.saveAll(invoices)
+//        .stream()
+//        .map(InvoiceMapper.INSTANCE::dtoFromEntity)
+//        .toList();
 
+      List<Invoice> invoices = request.getInvoices().stream().map(posted -> {
+        // 1. Check if the invoice already exists in the database
+        return invoiceRepository.findFirstByCustomerAndBouwheerInvNoAndCustInvNo(
+            customer,
+            posted.getBouwheerInvoiceNo(),
+            posted.getCustomerInvoiceNo()
+          )
+          .map(existingInvoice -> {
+            // 2. If it EXISTS -> Update the fields using Setters
+            existingInvoice.setInvoiceDescription(
+              StringUtil.isNullOrEmpty(posted.getInvoiceDescription()) ? "Invoice By CKB" : posted.getInvoiceDescription()
+            );
+            existingInvoice.setInvoiceDate(Utils.toInstant(posted.getInvoiceDate()));
+            existingInvoice.setInvoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()));
+            existingInvoice.setInvoiceAmt(posted.getInvoiceAmount().doubleValue());
+            existingInvoice.setPoNumber(posted.getPoNumber());
+            existingInvoice.setPostingDate(posted.getPostingDate());
+
+            // Set update audit trails instead of create audit trails
+            existingInvoice.setUsrUpd(customer.getCustName());
+            existingInvoice.setDtmUpd(DateTimeUtils.now());
+
+            return existingInvoice;
+          })
+          .orElseGet(() ->
+            // 3. If it DOES NOT exist -> Create a new one using the Builder
+            Invoice.builder()
+              .customer(customer)
+              .bouwheer(bouwheer)
+              .bouwheerInvNo(posted.getBouwheerInvoiceNo())
+              .custInvNo(posted.getCustomerInvoiceNo())
+              .invoiceDescription(StringUtil.isNullOrEmpty(posted.getInvoiceDescription()) ? "Invoice By CKB" : posted.getInvoiceDescription())
+              .invoiceDate(Utils.toInstant(posted.getInvoiceDate()))
+              .invoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()))
+              .invoiceAmt(posted.getInvoiceAmount().doubleValue())
+              .poNumber(posted.getPoNumber())
+              .postingDate(posted.getPostingDate())
+              .usrCrt(customer.getCustName())
+              .build()
+          );
+      }).toList();
+
+// 4. Save everything (Hibernate will automatically run UPDATEs for existing entities and INSERTs for new ones)
       return invoiceRepository.saveAll(invoices)
         .stream()
         .map(InvoiceMapper.INSTANCE::dtoFromEntity)
         .toList();
     } catch (Exception e) {
       log.error("createBulk, error {}", e.getMessage());
-      throw e;
-    }
-  }
-
-  public PaginationResult<InvoiceDto> getPaginate(
-    Authentication authentication,
-    PaginationRequest request
-  ) throws Exception {
-    try {
-      final Customer customer = CustomerUtils.authenticateCustomer(authentication);
-      final Page<Invoice> invoicesPagination = invoiceRepository.findByCustomer(
-        customer,
-        InvoiceSpec.list(request),
-        PageRequest.of(request.getPageNo(), request.getPageSize())
-      );
-
-      List<InvoiceDto> invoices = invoicesPagination.getContent()
-        .stream()
-        .map(InvoiceMapper.INSTANCE::dtoFromEntity)
-        .toList();
-
-      PaginationResult<InvoiceDto> dto = new PaginationResult<>();
-      dto.setCurrentPage(invoicesPagination.getNumber());
-      dto.setTotalData(invoicesPagination.getTotalElements());
-      dto.setTotalPage(invoicesPagination.getTotalPages());
-      dto.setList(invoices);
-
-      return dto;
-    } catch (Exception e) {
-      log.error("fetchInvoice, error {}", e.getMessage());
       throw e;
     }
   }

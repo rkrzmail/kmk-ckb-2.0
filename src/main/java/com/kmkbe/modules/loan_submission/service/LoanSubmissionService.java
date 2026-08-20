@@ -958,22 +958,6 @@ public class LoanSubmissionService {
       .provisionRate(calculateDisburse.getProvisionRate())
       .build();
 
-
-    /**
-     * Valdiate duplicate invoice
-     */
-
-    for (PostedInvoicePayload invoicePayload :request.getInvoices()){
-      Optional<Invoice> invoiceOptional = invoiceRepository.findByCustomerAndBouwheerInvNoAndCustInvNo(customer,invoicePayload.getBouwheerInvoiceNo(),invoicePayload.getCustomerInvoiceNo());
-      if (invoiceOptional.isPresent()){
-        log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 +
-          "Bouwheer "+customer.getCustExternalCode()+
-          " Bouwheer Invoice No " + invoicePayload.getBouwheerInvoiceNo()+
-          " and Customer Invoice No "+invoicePayload.getCustomerInvoiceNo());
-      }
-    }
-
     /**
      * Insert Financing Header
      */
