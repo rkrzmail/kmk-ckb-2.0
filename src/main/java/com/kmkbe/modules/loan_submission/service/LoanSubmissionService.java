@@ -155,7 +155,7 @@ public class LoanSubmissionService {
         .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
           "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak PT. Trakindo Utama.")
+          "dengan pihak " + bouwheerOptional.get().getBouwheerName())
         .build();
     }
 
@@ -163,7 +163,7 @@ public class LoanSubmissionService {
       throw CommonInvalidException.builder()
         .title("Perusahaan Anda Terdaftar dalam Daftar Blacklist")
         .message("Perusahaan Anda saat ini terdaftar dalam daftar " +
-          "blacklist PT Trakindo Utama, sehingga Anda " +
+          "blacklist " + bouwheerOptional.get().getBouwheerName() + ", sehingga Anda " +
           "belum dapat menggunakan Dana Sakti.")
         .build();
     }
@@ -173,7 +173,7 @@ public class LoanSubmissionService {
         .title("Mohon Maaf, Anda Tidak Memenuhi Syarat")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
           "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak PT. Trakindo Utama.")
+          "dengan pihak " + bouwheerOptional.get().getBouwheerName())
         .build();
     }
 
@@ -182,7 +182,7 @@ public class LoanSubmissionService {
         .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
           "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak PT. Trakindo Utama.")
+          "dengan pihak " + bouwheerOptional.get().getBouwheerName())
         .build();
     }
 
@@ -957,22 +957,6 @@ public class LoanSubmissionService {
       .effectiveRate(calculateDisburse.getEffectiveRate())
       .provisionRate(calculateDisburse.getProvisionRate())
       .build();
-
-
-    /**
-     * Valdiate duplicate invoice
-     */
-
-    for (PostedInvoicePayload invoicePayload :request.getInvoices()){
-      Optional<Invoice> invoiceOptional = invoiceRepository.findByCustomerAndBouwheerInvNoAndCustInvNo(customer,invoicePayload.getBouwheerInvoiceNo(),invoicePayload.getCustomerInvoiceNo());
-      if (invoiceOptional.isPresent()){
-        log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getBouwheerCode());
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 +
-          "Bouwheer "+customer.getCustExternalCode()+
-          " Bouwheer Invoice No " + invoicePayload.getBouwheerInvoiceNo()+
-          " and Customer Invoice No "+invoicePayload.getCustomerInvoiceNo());
-      }
-    }
 
     /**
      * Insert Financing Header

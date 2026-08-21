@@ -53,7 +53,7 @@ public class Invoice {
   )
   private Bouwheer bouwheer;
 
-  @OneToOne(mappedBy = "invoice")
+  @OneToOne(mappedBy = "invoice",fetch = FetchType.LAZY)
   private FinancingDtl financingDtl;
 
   @Size(max = 50)
