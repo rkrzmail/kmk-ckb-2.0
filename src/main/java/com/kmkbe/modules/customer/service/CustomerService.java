@@ -83,7 +83,7 @@ public class CustomerService {
     }
 
     // Validate duplicate vendor ID
-    if (customerOptional.isPresent() && customerOptional.get().getCustExternalCode().equals(request.getVendorCode())) {
+    if (customerOptional.isPresent() && customerOptional.get().getCustExternalCode().equals(request.getVendorCode()) && !customerOptional.get().getCustEmail().equals(request.getEmail())) {
       log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getVendorId());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "Vendor ID has been register! "+customerOptional.get().getCustName());
     }

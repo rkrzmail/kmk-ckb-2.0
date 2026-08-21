@@ -155,7 +155,7 @@ public class LoanSubmissionService {
         .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
           "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak PT. Trakindo Utama.")
+          "dengan pihak " + bouwheerOptional.get().getBouwheerName())
         .build();
     }
 
@@ -163,7 +163,7 @@ public class LoanSubmissionService {
       throw CommonInvalidException.builder()
         .title("Perusahaan Anda Terdaftar dalam Daftar Blacklist")
         .message("Perusahaan Anda saat ini terdaftar dalam daftar " +
-          "blacklist PT Trakindo Utama, sehingga Anda " +
+          "blacklist " + bouwheerOptional.get().getBouwheerName() + ", sehingga Anda " +
           "belum dapat menggunakan Dana Sakti.")
         .build();
     }
@@ -173,7 +173,7 @@ public class LoanSubmissionService {
         .title("Mohon Maaf, Anda Tidak Memenuhi Syarat")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
           "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak PT. Trakindo Utama.")
+          "dengan pihak " + bouwheerOptional.get().getBouwheerName())
         .build();
     }
 
@@ -182,7 +182,7 @@ public class LoanSubmissionService {
         .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
           "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak PT. Trakindo Utama.")
+          "dengan pihak " + bouwheerOptional.get().getBouwheerName())
         .build();
     }
 

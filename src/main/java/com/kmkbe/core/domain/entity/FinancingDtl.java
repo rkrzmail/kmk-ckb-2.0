@@ -29,7 +29,7 @@ public class FinancingDtl {
   private Long financingDtlId;
 
   @NotNull
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @ManyToOne(fetch = FetchType.EAGER)
   @JoinColumn(
     name = "financing_hdr_code",
     referencedColumnName = "financing_hdr_code",
@@ -39,7 +39,7 @@ public class FinancingDtl {
   private FinancingHdr financingHdr;
 
   @NotNull
-  @OneToOne(cascade = CascadeType.ALL)
+  @OneToOne(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
   @JoinColumn(
     name = "invoice_code",
     referencedColumnName = "invoice_code",

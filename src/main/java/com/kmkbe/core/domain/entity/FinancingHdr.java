@@ -177,7 +177,7 @@ public class FinancingHdr implements Serializable {
   )
   private MstBranch mstBranch;
 
-  @OneToMany(mappedBy = "financingHdr")
+  @OneToMany(mappedBy = "financingHdr", fetch = FetchType.LAZY)
   private Set<FinancingDtl> financingDtls;
 
   @OneToMany(mappedBy = "financingHdr")

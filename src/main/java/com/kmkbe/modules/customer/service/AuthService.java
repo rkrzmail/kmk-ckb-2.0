@@ -40,6 +40,7 @@ import com.kmkbe.modules.loan_submission.service.DocumentService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
+import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -63,6 +64,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
+@AllArgsConstructor
 public class AuthService {
   private final CustomerRepository customerRepository;
   private final OtpService otpService;
@@ -76,7 +78,7 @@ public class AuthService {
   private final RedisAttackRepository redisAttackRepository;
   private final AuditTrailService auditTrailService;
   private final ApiCsulAdapter apiCsulAdapter;
- private final BouwheerRepository bouwheerRepository;
+  private final BouwheerRepository bouwheerRepository;
   private final CustomerService customerService;
   private final CustomerCompanyService customerCompanyService;
   private final CustomerPersonalService customerPersonalService;
@@ -85,44 +87,6 @@ public class AuthService {
   @Qualifier("DbRefreshTokenServices")
   //@Qualifier("CacheRefreshTokenServices")
   private final IRefreshTokenServices refreshTokenServices;
-
-  public AuthService(CustomerRepository customerRepository,
-                     OtpService otpService,
-                     JwtService jwtService,
-                     LoginLogService loginLogService,
-                     ChangePasswordLogService changePasswordLogService,
-                     BCryptPasswordEncoder bcryptEncoder,
-                     AuthenticationManager authenticationManager,
-                     OtpRepository otpRepository,
-                     RedisRepository redisRepository,
-                     RedisAttackRepository redisAttackRepository,
-                     AuditTrailService auditTrailService,
-                     ApiCsulAdapter apiCsulAdapter,
-                     BouwheerRepository bouwheerRepository,
-                     CustomerService customerService,
-                     CustomerCompanyService customerCompanyService,
-                     CustomerPersonalService customerPersonalService,
-                     DocumentService documentService,
-                     IRefreshTokenServices refreshTokenServices) {
-    this.customerRepository = customerRepository;
-    this.otpService = otpService;
-    this.jwtService = jwtService;
-    this.loginLogService = loginLogService;
-    this.changePasswordLogService = changePasswordLogService;
-    this.bcryptEncoder = bcryptEncoder;
-    this.authenticationManager = authenticationManager;
-    this.otpRepository = otpRepository;
-    this.redisRepository = redisRepository;
-    this.redisAttackRepository = redisAttackRepository;
-    this.auditTrailService = auditTrailService;
-    this.apiCsulAdapter = apiCsulAdapter;
-    this.bouwheerRepository = bouwheerRepository;
-    this.customerService = customerService;
-    this.customerCompanyService = customerCompanyService;
-    this.customerPersonalService = customerPersonalService;
-    this.documentService = documentService;
-    this.refreshTokenServices = refreshTokenServices;
-  }
 
   @Transactional
   public CommonResult<RequestOtpDto> signUp(SignUpRequest request
