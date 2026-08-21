@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.mapper.InvoiceMapper;
 import com.kmkbe.core.domain.model.PostedInvoicePayload;
 import com.kmkbe.core.domain.repository.FinancingDtlRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
+import com.kmkbe.core.domain.repository.InvoiceRepository;
 import com.kmkbe.core.domain.repository.PaymentReceiveHistoryRepository;
 import com.kmkbe.core.domain.request.*;
 import com.kmkbe.core.service.BaseRemoteService;
@@ -24,6 +25,7 @@ import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -66,35 +68,112 @@ public class FinancingDtlService {
     List<InvoiceDto> createdInvoices
   ) {
     try {
-      return IntStream.range(0, postedInvoices.size())
-        .mapToObj((index) -> {
-          final FinancingDtl detail = new FinancingDtl();
-          {
-            Invoice invoice = InvoiceMapper.INSTANCE.entityFromDto(
-              createdInvoices
-                .stream()
-                .filter(item -> item.getBouwheerInvNo().equals(postedInvoices.get(index).getBouwheerInvoiceNo()))
-                .findFirst()
-                .orElseThrow(() -> new IllegalStateException(""))
-            );
+//      return IntStream.range(0, postedInvoices.size())
+//        .mapToObj((index) -> {
+//          final FinancingDtl detail = new FinancingDtl();
+//          {
+//            Invoice invoice = InvoiceMapper.INSTANCE.entityFromDto(
+//              createdInvoices
+//                .stream()
+//                .filter(item -> item.getBouwheerInvNo().equals(postedInvoices.get(index).getBouwheerInvoiceNo()))
+//                .findFirst()
+//                .orElseThrow(() -> new IllegalStateException(""))
+//            );
+//
+//            invoice.setUsrCrt(customer.getCustName());
+//            invoice.setDtmCrt(DateTimeUtils.now());
+//            invoice.setCustomer(customer);
+//            invoice.setBouwheer(bouwheer);
+//
+//            detail.setInvoice(invoice);
+//            detail.setFinancingDtlCode(UUID.randomUUID());
+//            detail.setBouwheerInvNo(postedInvoices.get(index).getBouwheerInvoiceNo());
+//            detail.setFinancingHdr(financingHdr);
+//            detail.setUsrCrt(customer.getCustName());
+//            detail.setDtmCrt(DateTimeUtils.now());
+//          }
+//          financingDtlRepository.save(detail);
+//          return detail;
+//        })
+//        .toList();
 
-            invoice.setUsrCrt(customer.getCustName());
-            invoice.setDtmCrt(DateTimeUtils.now());
-            invoice.setCustomer(customer);
-            invoice.setBouwheer(bouwheer);
+      if (postedInvoices == null || postedInvoices.isEmpty()) {
+        return Collections.emptyList();
+      }
 
-            detail.setInvoice(invoice);
-            detail.setFinancingDtlCode(UUID.randomUUID());
-            detail.setBouwheerInvNo(postedInvoices.get(index).getBouwheerInvoiceNo());
-            detail.setFinancingHdr(financingHdr);
-            detail.setUsrCrt(customer.getCustName());
-            detail.setDtmCrt(DateTimeUtils.now());
-          }
+      // FIX 1: Merge or re-fetch the header into the CURRENT active transaction session.
+      // This stops the "Unable to find" error if the header was created in a separate transaction block.
+      FinancingHdr managedHdr = financingHdrRepository.findById(financingHdr.getFinancingHdrCode())
+        .orElseGet(() -> financingHdrRepository.saveAndFlush(financingHdr));
 
-          financingDtlRepository.save(detail);
-          return detail;
-        })
+      // 2. Map createdInvoices for O(1) lookups
+      Map<String, InvoiceDto> createdInvoiceMap = createdInvoices.stream()
+        .filter(item -> item.getBouwheerInvNo() != null)
+        .collect(Collectors.toMap(
+          InvoiceDto::getBouwheerInvNo,
+          item -> item,
+          (existing, replacement) -> existing
+        ));
+
+      // 3. Extract invoice numbers for the SQL IN batch fetch
+      List<String> invoiceNumbers = postedInvoices.stream()
+        .map(PostedInvoicePayload::getBouwheerInvoiceNo)
+        .filter(Objects::nonNull)
         .toList();
+
+      // 4. Batch query existing records (Ensure your repository method ends with "In")
+      Map<String, FinancingDtl> existingDetailsMap = financingDtlRepository
+        .findByBouwheerInvNoIn(invoiceNumbers)
+        .stream()
+        .collect(Collectors.toMap(FinancingDtl::getBouwheerInvNo, dtl -> dtl));
+
+      List<FinancingDtl> detailsToSave = new ArrayList<>();
+      LocalDateTime now = DateTimeUtils.now();
+      String creatorName = customer.getCustName();
+
+      // 5. In-memory data synchronization loop
+      for (var postedInvoice : postedInvoices) {
+        String invNo = postedInvoice.getBouwheerInvoiceNo();
+        if (invNo == null) continue;
+
+        InvoiceDto invoiceDto = Optional.ofNullable(createdInvoiceMap.get(invNo))
+          .orElseThrow(() -> new IllegalStateException("Invoice data missing for number: " + invNo));
+
+        // Map DTO to Entity
+        Invoice invoice = InvoiceMapper.INSTANCE.entityFromDto(invoiceDto);
+        invoice.setUsrCrt(creatorName);
+        invoice.setDtmCrt(now);
+        invoice.setCustomer(customer);
+        invoice.setBouwheer(bouwheer);
+
+        // FIX 2: If Invoice entity also has a link to FinancingHdr, set it here!
+        // This prevents Invoice cascades from throwing the "Unable to find" error.
+        // invoice.setFinancingHdr(managedHdr); // <-- Uncomment this line if the property exists in Invoice.java
+
+        FinancingDtl existingDtl = existingDetailsMap.get(invNo);
+
+        if (existingDtl != null) {
+          // UPDATE EXPLICITLY (Safe from BeanUtils overwrite side effects)
+          existingDtl.setInvoice(invoice);
+          existingDtl.setFinancingHdr(managedHdr); // Bind to active session header
+          existingDtl.setUsrUpd(creatorName);
+          existingDtl.setDtmUpd(now);
+          detailsToSave.add(existingDtl);
+        } else {
+          // INSERT
+          FinancingDtl newDetail = new FinancingDtl();
+          newDetail.setInvoice(invoice);
+          newDetail.setFinancingDtlCode(UUID.randomUUID());
+          newDetail.setBouwheerInvNo(invNo);
+          newDetail.setFinancingHdr(managedHdr); // Bind to active session header
+          newDetail.setUsrCrt(creatorName);
+          newDetail.setDtmCrt(now);
+          detailsToSave.add(newDetail);
+        }
+      }
+
+      // 6. Bulk commit to database
+      return financingDtlRepository.saveAll(detailsToSave);
     } catch (Exception e) {
       log.error("createBulk, error {}", e.getMessage());
       throw e;
@@ -112,6 +191,7 @@ public class FinancingDtlService {
 
   /**
    * Update Invoice PAID
+   *
    * @param request
    * @param financingHdr
    */

@@ -40,12 +40,12 @@ import java.util.stream.Collectors;
 @Service
 @Slf4j
 public class FinancingHdrService {
-    private final FinancingHdrRepository financingHdrRepository;
-    private final InvoiceRepository invoiceRepository;
-    private final RedisRepository redisRepository;
-    private final AgreementRepository agreementRepository;
-    private final DisbursementLogRepository disbursementLogRepository;
-    private final FinancingDtlRepository financingDtlRepository;
+  private final FinancingHdrRepository financingHdrRepository;
+  private final InvoiceRepository invoiceRepository;
+  private final RedisRepository redisRepository;
+  private final AgreementRepository agreementRepository;
+  private final DisbursementLogRepository disbursementLogRepository;
+  private final FinancingDtlRepository financingDtlRepository;
 
   public FinancingHdrService(FinancingHdrRepository financingHdrRepository, InvoiceRepository invoiceRepository, RedisRepository redisRepository, AgreementRepository agreementRepository, DisbursementLogRepository disbursementLogRepository, FinancingDtlRepository financingDtlRepository) {
     this.financingHdrRepository = financingHdrRepository;
@@ -56,307 +56,306 @@ public class FinancingHdrService {
     this.financingDtlRepository = financingDtlRepository;
   }
 
-    public FinancingHdr create(
-            Customer customer,
-            Bouwheer bouwheer,
-            Product product,
-            CreateSimulationRequest request,
-            SimulationDisburseResult simulationResult
-    ) {
+  public FinancingHdr create(
+    Customer customer,
+    Bouwheer bouwheer,
+    Product product,
+    CreateSimulationRequest request,
+    SimulationDisburseResult simulationResult
+  ) {
+    try {
+      final PostedInvoicePayload firstInvoice = request.getInvoices().getFirst();
+      FinancingHdr header = new FinancingHdr();
+      {
+        final double disburseAmount = simulationResult.getEstimatedDisburseAmount().doubleValue();
+        final double totalInvoiceAmount = simulationResult.getTotalInvoiceAmount();
+        final double financingAmount = simulationResult.getFinancingAmount().doubleValue();
+
+        // ((tanggal due date invoice) 10 - hari berjalan) + 7 (bouwheer grace period)
+        Long top = (long) DateTimeUtils.dateDiffInDay(new Date(), request.getInvoices().getFirst().getInvoiceDueDate());
+
+        header.setFinancingHdrCode(UUID.randomUUID());
+        header.setCustomer(customer);
+        header.setBouwheer(bouwheer);
+        header.setTenor(top + bouwheer.getGracePeriod());
+        header.setFinancingDate(DateTimeUtils.now());
+        header.setCurrencyCode(firstInvoice.getCurrencyCode());
+        header.setInvoiceQty((long) request.getInvoices().size());
+        header.setInterestType("COF"); // not clear
+        header.setTermOfPayment(top); // not clear
+        header.setGracePeriod(bouwheer.getGracePeriod()); // get from bouwheer grace_period
+        header.setRetention(100 - request.getDisbursePercentage()); // not clear
+        header.setTotalInvoiceAmt(totalInvoiceAmount);
+        header.setFinancingAmt(financingAmount);
+        header.setDisburseAmt(disburseAmount);
+        header.setInterestAmt(simulationResult.getInterestFeeAmount().doubleValue()); // not clear
+        header.setFinancingDueDate(Utils.toInstant(simulationResult.getMaxInvoiceDate())); // not clear
+        header.setProvisionFeeAmt(simulationResult.getProvisionFeeAmount().doubleValue()); // not clear
+        header.setProvisionFeePercentage(simulationResult.getProvisionRate());
+        header.setAdminFeePercentage(simulationResult.getAdminRate());
+        header.setEffectiveRate(simulationResult.getEffectiveRate());
+        header.setSurveyFeeAmt(simulationResult.getSurveyFeeAmount().doubleValue());
+        header.setLegalFeeAmt(simulationResult.getLegalFeeAmount().doubleValue());
+        header.setOthersFeeAmt(simulationResult.getOthersFeeAmount().doubleValue());
+        header.setAdminFeeAmt(simulationResult.getAdminFeeAmount().doubleValue());
+
+        header.setSurveyFeeAmtNett(simulationResult.getSurveyFeeAmount().doubleValue());
+        header.setLegalFeeAmtNett(simulationResult.getLegalFeeAmount().doubleValue());
+        header.setInsuranceFeeAmt(0.0);
+        header.setInsuranceFeePercentage(0.0);
+        header.setAdminLimitAmt(0.0);
+
+        header.setDisburseDate(DateTimeUtils.now());
+        header.setFinancingStatus(""); // fresh input will store as NEW
+        header.setFinancingStep("");
+        header.setUsrCrt(customer.getCustName());
+        header.setDtmCrt(DateTimeUtils.now());
+
+
+        header = financingHdrRepository.save(header);
+      }
+
+      return header;
+    } catch (Exception e) {
+      log.error("create, error {}", e.getMessage());
+      throw e;
+    }
+  }
+
+  public FinancingHdr getByCode(UUID code) throws Exception {
+    try {
+      return financingHdrRepository.findByFinancingHdrCode(code).orElseThrow(
+        () -> CommonInvalidException.builder()
+          .title("Tidak ada data financing")
+          .message("Tidak ada data financing")
+          .build()
+      );
+    } catch (Exception e) {
+      log.error("getByCode, error {}", e.getMessage());
+      throw e;
+    }
+  }
+
+  public FinancingHdrDto dtoFromEntity(FinancingHdr entity) throws Exception {
+    try {
+      FinancingHdrDto dto = FinancingMapper.INSTANCE.hdrDtoFromEntity(entity);
+      dto.setCustomer(entity.getCustomer());
+      dto.setBouwheer(entity.getBouwheer());
+      return dto;
+    } catch (Exception e) {
+      log.error("dtoFromEntity, error {}", e.getMessage());
+      throw e;
+    }
+  }
+
+  public void delete(FinancingHdr financingHdr) {
+    try {
+      financingHdrRepository.delete(financingHdr);
+    } catch (Exception e) {
+      log.error("delete, error {}", e.getMessage());
+      throw e;
+    }
+  }
+
+  public PaginationResult<PaidInvoiceDto> paidInvoiceNew(
+    PaginationRequest request
+  ) {
+    try {
+      int pageNo = 0, pageSize = 10;
+
+      if (request.getPageNo() != null) {
+        pageNo = request.getPageNo();
+      }
+
+      if (request.getPageSize() != null) {
+        pageSize = request.getPageSize();
+      }
+
+      if (pageNo > 0) {
+        pageNo = pageNo - 1;
+      }
+
+      final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAllByRawOrder(
+        PageRequest.of(pageNo, pageSize)
+        //FinancingHdrSpec.bySearchBy(request.getSearchBy(), request.getSearchValue())
+      );
+
+
+      return paginatePaidInvoice(
+        financingHdrs,
+        pageNo
+      );
+    } catch (Exception e) {
+      log.error("paidInvoice, error {}", e.getMessage());
+      throw e;
+    }
+  }
+
+  public PaginationResult<PaidInvoiceDto> listPaidUnpaidInvoice(
+    PaginationRequest request
+  ) {
+    try {
+      int pageNo = getZeroBasedPageNo(request);
+      int pageSize = getPageSize(request);
+      Page<Invoice> invoices = invoiceRepository.findAll(
+        buildPaidInvoiceSpecification(request),
+        PageRequest.of(pageNo, pageSize)
+      );
+      List<PaidInvoiceDto> invoiceDtos = invoices
+        .stream()
+        .map(this::toPaidInvoiceDto)
+        .filter(Objects::nonNull)
+        .toList();
+
+      return PaginationResult.<PaidInvoiceDto>builder()
+        .currentPage(pageNo + 1)
+        .totalData(invoices.getTotalElements())
+        .totalPage(invoices.getTotalPages())
+        .list(invoiceDtos)
+        .build();
+
+    } catch (Exception e) {
+      log.error("paidInvoice, error {}", e.getMessage());
+      throw e;
+    }
+  }
+
+  public PaginationResult<PaidInvoiceDto> paidInvoice(
+    PaginationRequest request
+  ) {
+    try {
+      int pageNo = 0, pageSize = 10;
+
+      if (request.getPageNo() != null) {
+        pageNo = request.getPageNo();
+      }
+      if (request.getPageSize() != null) {
+        pageSize = request.getPageSize();
+      }
+      if (pageNo > 0) {
+        pageNo = pageNo - 1;
+      }
+
+      final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAll(
+        FinancingHdrSpec.byStepStatus(request.getSearchBy(), request.getSearchValue()),
+        PageRequest.of(pageNo, pageSize)
+      );
+
+      return paginatePaidInvoice(
+        financingHdrs,
+        pageNo
+      );
+    } catch (Exception e) {
+      log.error("paidInvoice, error {}", e.getMessage());
+      throw e;
+    }
+  }
+
+  public PaginationResult<PaidInvoiceDto> paginatePaidInvoice(
+    Page<FinancingHdr> financingHdrs,
+    int pageNo
+  ) {
+    if (pageNo > 0) {
+      pageNo = pageNo - 1;
+    }
+
+    final List<PaidInvoiceDto> paidInvoiceDto = financingHdrs
+      .stream()
+      .map((e) -> {
+        FinancingDtl financingDtl = null;
         try {
-            final PostedInvoicePayload firstInvoice = request.getInvoices().getFirst();
-            FinancingHdr header = new FinancingHdr();
-            {
-                final double disburseAmount = simulationResult.getEstimatedDisburseAmount().doubleValue();
-                final double totalInvoiceAmount = simulationResult.getTotalInvoiceAmount();
-                final double financingAmount = simulationResult.getFinancingAmount().doubleValue();
+          financingDtl = e.getFinancingDtls()
+            .stream()
+            .findFirst()
+            .orElse(null);
 
-                // ((tanggal due date invoice) 10 - hari berjalan) + 7 (bouwheer grace period)
-                Long top = (long) DateTimeUtils.dateDiffInDay(new Date(), request.getInvoices().getFirst().getInvoiceDueDate());
-
-                header.setFinancingHdrCode(UUID.randomUUID());
-                header.setCustomer(customer);
-                header.setBouwheer(bouwheer);
-                header.setTenor(top + bouwheer.getGracePeriod());
-                header.setFinancingDate(DateTimeUtils.now());
-                header.setCurrencyCode(firstInvoice.getCurrencyCode());
-                header.setInvoiceQty((long) request.getInvoices().size());
-                header.setInterestType("COF"); // not clear
-                header.setTermOfPayment(top); // not clear
-                header.setGracePeriod(bouwheer.getGracePeriod()); // get from bouwheer grace_period
-                header.setRetention(100 - request.getDisbursePercentage()); // not clear
-                header.setTotalInvoiceAmt(totalInvoiceAmount);
-                header.setFinancingAmt(financingAmount);
-                header.setDisburseAmt(disburseAmount);
-                header.setInterestAmt(simulationResult.getInterestFeeAmount().doubleValue()); // not clear
-                header.setFinancingDueDate(Utils.toInstant(simulationResult.getMaxInvoiceDate())); // not clear
-                header.setProvisionFeeAmt(simulationResult.getProvisionFeeAmount().doubleValue()); // not clear
-                header.setProvisionFeePercentage(simulationResult.getProvisionRate());
-                header.setAdminFeePercentage(simulationResult.getAdminRate());
-                header.setEffectiveRate(simulationResult.getEffectiveRate());
-                header.setSurveyFeeAmt(simulationResult.getSurveyFeeAmount().doubleValue());
-                header.setLegalFeeAmt(simulationResult.getLegalFeeAmount().doubleValue());
-                header.setOthersFeeAmt(simulationResult.getOthersFeeAmount().doubleValue());
-                header.setAdminFeeAmt(simulationResult.getAdminFeeAmount().doubleValue());
-
-                header.setSurveyFeeAmtNett(simulationResult.getSurveyFeeAmount().doubleValue());
-                header.setLegalFeeAmtNett(simulationResult.getLegalFeeAmount().doubleValue());
-                header.setInsuranceFeeAmt(0.0);
-                header.setInsuranceFeePercentage(0.0);
-                header.setAdminLimitAmt(0.0);
-
-                header.setDisburseDate(DateTimeUtils.now());
-                header.setFinancingStatus(""); // fresh input will store as NEW
-                header.setFinancingStep("");
-                header.setUsrCrt(customer.getCustName());
-                header.setDtmCrt(DateTimeUtils.now());
+        } catch (Exception e2) {
 
 
-                header = financingHdrRepository.save(header);
-
-
-            }
-
-            return header;
-        } catch (Exception e) {
-            log.error("create, error {}", e.getMessage());
-            throw e;
         }
-    }
 
-    public FinancingHdr getByCode(UUID code) throws Exception {
         try {
-            return financingHdrRepository.findByFinancingHdrCode(code).orElseThrow(
-                    () -> CommonInvalidException.builder()
-                            .title("Tidak ada data financing")
-                            .message("Tidak ada data financing")
-                            .build()
-            );
-        } catch (Exception e) {
-            log.error("getByCode, error {}", e.getMessage());
-            throw e;
+          List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdrOrderByDtmCrtDesc(e);
+          financingDtl = financingDtls.getFirst();
+
+        } catch (Exception e2) {
+          e2.printStackTrace();
         }
+
+
+        String invoiceNo = (financingDtl != null && financingDtl.getInvoice() != null)
+          ? financingDtl.getInvoice().getCustInvNo()
+          : null;
+        Date paidDate = (financingDtl != null && financingDtl.getInvoice() != null)
+          ? Utils.fromInstant(financingDtl.getInvoice().getInvoiceDate())
+          : null;
+        Date dueDate = (financingDtl != null && financingDtl.getInvoice() != null)
+          ? Utils.fromInstant(financingDtl.getInvoice().getInvoiceDueDate())
+          : null;
+        BigDecimal paidAmount = (financingDtl != null && financingDtl.getInvoice() != null)
+          ? BigDecimal.valueOf(financingDtl.getInvoice().getInvoiceAmt())
+          : null;
+        MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
+          e,
+          MappedFinancingStatus.Type.Repayment
+        );
+
+        String color = getColor(e);
+        Customer customer = e.getCustomer();
+        String customerName = customer.getCustName();
+
+        return PaidInvoiceDto.builder()
+          .invoiceNo(invoiceNo)
+          .custName(customerName)
+          .bouwheerName(e.getBouwheer().getBouwheerName())
+          .paidDate(paidDate)
+          .dueDate(dueDate)
+          .paidAmount(paidAmount)
+          .status(StatusLabelDto.builder()
+            .status(mappedFinancingStatus.getStatus())
+            .statusLabel(mappedFinancingStatus.getLabel())
+            .color(color)
+            .build())
+          .build();
+      })
+      .toList();
+
+    List<PaidInvoiceDto> paidInvoiceDto2 = new ArrayList<>();
+    ;
+    for (PaidInvoiceDto invoiceDto : paidInvoiceDto) {
+      if (invoiceDto != null) {
+        paidInvoiceDto2.add(invoiceDto);
+      }
+    }
+    return PaginationResult.<PaidInvoiceDto>builder()
+      .currentPage(pageNo + 1)
+      .totalData(financingHdrs.getTotalElements())
+      .totalPage(financingHdrs.getTotalPages())
+      .list(paidInvoiceDto)
+      .build();
+  }
+
+  public PaginationResult<DisburseInvoiceDto> paginatePaidDisbursement(
+    Page<FinancingHdr> financingHdrs,
+    int pageNo
+  ) {
+    if (pageNo > 0) {
+      pageNo = pageNo - 1;
     }
 
-    public FinancingHdrDto dtoFromEntity(FinancingHdr entity) throws Exception {
-        try {
-            FinancingHdrDto dto = FinancingMapper.INSTANCE.hdrDtoFromEntity(entity);
-            dto.setCustomer(entity.getCustomer());
-            dto.setBouwheer(entity.getBouwheer());
-            return dto;
-        } catch (Exception e) {
-            log.error("dtoFromEntity, error {}", e.getMessage());
-            throw e;
+    final List<DisburseInvoiceDto> disburseInvoiceDto = financingHdrs
+      .stream()
+      .map((e) -> {
+
+        List<Agreement> agreements = agreementRepository.findByFinancingHdr_FinancingHdrCode(e.getFinancingHdrCode());
+
+        if (agreements.size() == 0) {
+          return null;
         }
-    }
-
-    public void delete(FinancingHdr financingHdr) {
-        try {
-            financingHdrRepository.delete(financingHdr);
-        } catch (Exception e) {
-            log.error("delete, error {}", e.getMessage());
-            throw e;
+        Agreement agreement = agreements.getLast();//las
+        if (agreement == null) {
+          return null;
         }
-    }
-
-    public PaginationResult<PaidInvoiceDto> paidInvoiceNew(
-            PaginationRequest request
-    ) {
-        try {
-            int pageNo = 0, pageSize = 10;
-
-            if (request.getPageNo() != null) {
-                pageNo = request.getPageNo();
-            }
-
-            if (request.getPageSize() != null) {
-                pageSize = request.getPageSize();
-            }
-
-            if (pageNo > 0) {
-                pageNo = pageNo - 1;
-            }
-
-            final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAllByRawOrder(
-                    PageRequest.of(pageNo, pageSize)
-                    //FinancingHdrSpec.bySearchBy(request.getSearchBy(), request.getSearchValue())
-            );
-
-
-            return paginatePaidInvoice(
-                    financingHdrs,
-                    pageNo
-            );
-        } catch (Exception e) {
-            log.error("paidInvoice, error {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    public PaginationResult<PaidInvoiceDto> listPaidUnpaidInvoice(
-            PaginationRequest request
-    ){
-        try {
-            int pageNo = getZeroBasedPageNo(request);
-            int pageSize = getPageSize(request);
-            Page<Invoice> invoices = invoiceRepository.findAll(
-                    buildPaidInvoiceSpecification(request),
-                    PageRequest.of(pageNo, pageSize)
-            );
-            List<PaidInvoiceDto> invoiceDtos = invoices
-                    .stream()
-                    .map(this::toPaidInvoiceDto)
-                    .filter(Objects::nonNull)
-                    .toList();
-
-            return PaginationResult.<PaidInvoiceDto>builder()
-                    .currentPage(pageNo + 1)
-                    .totalData(invoices.getTotalElements())
-                    .totalPage(invoices.getTotalPages())
-                    .list(invoiceDtos)
-                    .build();
-
-        } catch (Exception e) {
-            log.error("paidInvoice, error {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    public PaginationResult<PaidInvoiceDto> paidInvoice(
-            PaginationRequest request
-    ) {
-        try {
-            int pageNo = 0, pageSize = 10;
-
-            if (request.getPageNo() != null) {
-                pageNo = request.getPageNo();
-            }
-            if (request.getPageSize() != null) {
-                pageSize = request.getPageSize();
-            }
-            if (pageNo > 0) {
-                pageNo = pageNo - 1;
-            }
-
-            final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAll(
-                    FinancingHdrSpec.byStepStatus(request.getSearchBy(),request.getSearchValue()),
-                    PageRequest.of(pageNo, pageSize)
-            );
-
-            return paginatePaidInvoice (
-                    financingHdrs,
-                    pageNo
-            );
-        } catch (Exception e) {
-            log.error("paidInvoice, error {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    public PaginationResult<PaidInvoiceDto> paginatePaidInvoice(
-            Page<FinancingHdr> financingHdrs,
-            int pageNo
-    ) {
-        if (pageNo > 0) {
-            pageNo = pageNo - 1;
-        }
-
-        final List<PaidInvoiceDto> paidInvoiceDto = financingHdrs
-                .stream()
-                .map((e) -> {
-                    FinancingDtl financingDtl = null;
-                    try {
-                        financingDtl = e.getFinancingDtls()
-                                .stream()
-                                .findFirst()
-                                .orElse(null);
-
-                    }catch (Exception e2) {
-
-
-                    }
-
-                    try {
-                        List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdrOrderByDtmCrtDesc(e);
-                        financingDtl =  financingDtls.getFirst();
-
-                    }catch (Exception e2) {
-                        e2.printStackTrace();
-                    }
-
-
-                    String invoiceNo = (financingDtl != null && financingDtl.getInvoice() != null)
-                            ? financingDtl.getInvoice().getCustInvNo()
-                            : null;
-                    Date paidDate = (financingDtl != null && financingDtl.getInvoice() != null)
-                            ? Utils.fromInstant(financingDtl.getInvoice().getInvoiceDate())
-                            : null;
-                    Date dueDate = (financingDtl != null && financingDtl.getInvoice() != null)
-                            ? Utils.fromInstant(financingDtl.getInvoice().getInvoiceDueDate())
-                            : null;
-                    BigDecimal paidAmount = (financingDtl != null && financingDtl.getInvoice() != null)
-                            ? BigDecimal.valueOf(financingDtl.getInvoice().getInvoiceAmt())
-                            : null;
-                    MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
-                            e,
-                            MappedFinancingStatus.Type.Repayment
-                    );
-
-                    String color = getColor(e);
-                    Customer customer = e.getCustomer();
-                    String customerName = customer.getCustName();
-
-                    return PaidInvoiceDto.builder()
-                            .invoiceNo(invoiceNo)
-                            .custName(customerName)
-                            .bouwheerName(e.getBouwheer().getBouwheerName())
-                            .paidDate(paidDate)
-                            .dueDate(dueDate)
-                            .paidAmount(paidAmount)
-                            .status(StatusLabelDto.builder()
-                                    .status(mappedFinancingStatus.getStatus())
-                                    .statusLabel(mappedFinancingStatus.getLabel())
-                                    .color(color)
-                                    .build())
-                            .build();
-                })
-                .toList();
-
-        List<PaidInvoiceDto> paidInvoiceDto2 = new ArrayList<>();;
-        for (PaidInvoiceDto invoiceDto : paidInvoiceDto) {
-            if (invoiceDto != null) {
-                paidInvoiceDto2.add(invoiceDto);
-            }
-        }
-        return PaginationResult.<PaidInvoiceDto>builder()
-                .currentPage(pageNo + 1)
-                .totalData(financingHdrs.getTotalElements())
-                .totalPage(financingHdrs.getTotalPages())
-                .list(paidInvoiceDto)
-                .build();
-    }
-
-    public PaginationResult<DisburseInvoiceDto> paginatePaidDisbursement(
-            Page<FinancingHdr> financingHdrs,
-            int pageNo
-    ) {
-        if (pageNo > 0) {
-            pageNo = pageNo - 1;
-        }
-
-        final List<DisburseInvoiceDto> disburseInvoiceDto = financingHdrs
-                .stream()
-                .map((e) -> {
-
-                    List<Agreement>  agreements = agreementRepository.findByFinancingHdr_FinancingHdrCode(e.getFinancingHdrCode());
-
-                    if (agreements.size() == 0) {
-                        return null;
-                    }
-                    Agreement agreement = agreements.getLast();//las
-                    if (agreement == null) {
-                        return null;
-                    }
 
                     /*DisbursementLog disbursementLog = disbursementLogRepository.findByAgreement_AgreementCode(agreement.getAgreementCode());
                     if (disbursementLog == null) {
@@ -364,81 +363,83 @@ public class FinancingHdrService {
                     }*/
 
 
-                    FinancingDtl financingDtl = null;
-                    try {
-                         financingDtl = e.getFinancingDtls()
-                               .stream()
-                               .findFirst()
-                               .orElse(null);
-                   }catch (Exception exception) {}
-
-                    Date paidDate = (financingDtl != null && financingDtl.getInvoice() != null)
-                            ? Utils.fromInstant(financingDtl.getInvoice().getInvoiceDate())
-                            : null;
-                    String color = getColor(e);
-                    Customer customer = e.getCustomer();
-                    String customerName = customer.getCustName();
-                    MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
-                            e,
-                            MappedFinancingStatus.Type.Disbursement
-                    );
-
-                    return DisburseInvoiceDto.builder()
-                            .agreementNo(agreement.getAgreementCode())
-                            .custName(customerName)
-                            .bouwheerName(e.getBouwheer().getBouwheerName())
-                            .disburseDate(Utils.fromInstant(e.getDisburseDate()))
-                            .paidDate(paidDate)
-                            //.retentionRefund(BigDecimal.valueOf(disbursementLog.getApAmt()))
-                            //.paidAmount(BigDecimal.valueOf(disbursementLog.getApPaidAmt()==null?0:disbursementLog.getApPaidAmt()))
-                            //.disburseAmount(BigDecimal.valueOf(disbursementLog.getApAmt()))
-                            .retentionRefundDate(DateTimeUtils.nowDate()). // disbursementLog.getApDueDate()
-                            status(StatusLabelDto.builder()
-                                    .status(mappedFinancingStatus.getStatus())
-                                    .statusLabel(mappedFinancingStatus.getLabel())
-                                    .color(color)
-                                    .build())
-                            .build();
-                })
-                .toList();
-
-        List<DisburseInvoiceDto> disburseInvoiceDto2 = new ArrayList<>();;
-        for (DisburseInvoiceDto invoiceDto : disburseInvoiceDto) {
-            if (invoiceDto != null) {
-                disburseInvoiceDto2.add(invoiceDto);
-            }
+        FinancingDtl financingDtl = null;
+        try {
+          financingDtl = e.getFinancingDtls()
+            .stream()
+            .findFirst()
+            .orElse(null);
+        } catch (Exception exception) {
         }
 
-        return PaginationResult.<DisburseInvoiceDto>builder()
-                .currentPage(pageNo + 1)
-                .totalData(financingHdrs.getTotalElements())
-                .totalPage(financingHdrs.getTotalPages())
-                .list(disburseInvoiceDto2)
-                .build();
+        Date paidDate = (financingDtl != null && financingDtl.getInvoice() != null)
+          ? Utils.fromInstant(financingDtl.getInvoice().getInvoiceDate())
+          : null;
+        String color = getColor(e);
+        Customer customer = e.getCustomer();
+        String customerName = customer.getCustName();
+        MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
+          e,
+          MappedFinancingStatus.Type.Disbursement
+        );
+
+        return DisburseInvoiceDto.builder()
+          .agreementNo(agreement.getAgreementCode())
+          .custName(customerName)
+          .bouwheerName(e.getBouwheer().getBouwheerName())
+          .disburseDate(Utils.fromInstant(e.getDisburseDate()))
+          .paidDate(paidDate)
+          //.retentionRefund(BigDecimal.valueOf(disbursementLog.getApAmt()))
+          //.paidAmount(BigDecimal.valueOf(disbursementLog.getApPaidAmt()==null?0:disbursementLog.getApPaidAmt()))
+          //.disburseAmount(BigDecimal.valueOf(disbursementLog.getApAmt()))
+          .retentionRefundDate(DateTimeUtils.nowDate()). // disbursementLog.getApDueDate()
+            status(StatusLabelDto.builder()
+            .status(mappedFinancingStatus.getStatus())
+            .statusLabel(mappedFinancingStatus.getLabel())
+            .color(color)
+            .build())
+          .build();
+      })
+      .toList();
+
+    List<DisburseInvoiceDto> disburseInvoiceDto2 = new ArrayList<>();
+    ;
+    for (DisburseInvoiceDto invoiceDto : disburseInvoiceDto) {
+      if (invoiceDto != null) {
+        disburseInvoiceDto2.add(invoiceDto);
+      }
     }
 
-    private static String getColor(FinancingHdr e) {
-        String color;
-        if (e == null || e.getFinancingStatus() == null) {
-            color = "#808080";
-        } else if (e.getFinancingStatus().equalsIgnoreCase("new")) {
-            color = "#808080";
-        } else if (
-                e.getFinancingStatus().equalsIgnoreCase("inprocess")
-                        || e.getFinancingStatus().equalsIgnoreCase("signing")
-                        || e.getFinancingStatus().equalsIgnoreCase("signed")
-                        || e.getFinancingStatus().equalsIgnoreCase("live")
-                        || e.getFinancingStatus().equalsIgnoreCase("golive")
+    return PaginationResult.<DisburseInvoiceDto>builder()
+      .currentPage(pageNo + 1)
+      .totalData(financingHdrs.getTotalElements())
+      .totalPage(financingHdrs.getTotalPages())
+      .list(disburseInvoiceDto2)
+      .build();
+  }
 
-        ) {
-            color = "#ccffcc";
-        } else {
-            color = "#FF5C5C";
-        }
-        return color;
+  private static String getColor(FinancingHdr e) {
+    String color;
+    if (e == null || e.getFinancingStatus() == null) {
+      color = "#808080";
+    } else if (e.getFinancingStatus().equalsIgnoreCase("new")) {
+      color = "#808080";
+    } else if (
+      e.getFinancingStatus().equalsIgnoreCase("inprocess")
+        || e.getFinancingStatus().equalsIgnoreCase("signing")
+        || e.getFinancingStatus().equalsIgnoreCase("signed")
+        || e.getFinancingStatus().equalsIgnoreCase("live")
+        || e.getFinancingStatus().equalsIgnoreCase("golive")
+
+    ) {
+      color = "#ccffcc";
+    } else {
+      color = "#FF5C5C";
     }
+    return color;
+  }
 
-//    public PaginationResult<DisburseInvoiceDto> listdisburseAggrement(PaginationRequest request){
+  //    public PaginationResult<DisburseInvoiceDto> listdisburseAggrement(PaginationRequest request){
 //        try {
 //            request.setPageSize(1000);
 //            List<Agreement> agreements = agreementRepository.findAll();
@@ -506,408 +507,404 @@ public class FinancingHdrService {
 //        }
 //
 //    }
-    public PaginationResult<DisburseInvoiceDto> listdisburseAggrement(PaginationRequest request) {
-        List<String> errorLogs = new ArrayList<>();
+  public PaginationResult<DisburseInvoiceDto> listdisburseAggrement(PaginationRequest request) {
+    List<String> errorLogs = new ArrayList<>();
 
-        try {
-            int pageNo = getZeroBasedPageNo(request);
-            int pageSize = getPageSize(request);
-            Page<Agreement> agreements = agreementRepository.findAll(
-                    buildDisbursementSpecification(request),
-                    PageRequest.of(pageNo, pageSize)
-            );
-            List<DisburseInvoiceDto> disburseInvoiceDtos = agreements
-                    .stream()
-                    .map(agreement -> toDisburseInvoiceDto(agreement, errorLogs))
-                    .filter(Objects::nonNull)
-                    .toList();
+    try {
+      int pageNo = getZeroBasedPageNo(request);
+      int pageSize = getPageSize(request);
+      Page<Agreement> agreements = agreementRepository.findAll(
+        buildDisbursementSpecification(request),
+        PageRequest.of(pageNo, pageSize)
+      );
+      List<DisburseInvoiceDto> disburseInvoiceDtos = agreements
+        .stream()
+        .map(agreement -> toDisburseInvoiceDto(agreement, errorLogs))
+        .filter(Objects::nonNull)
+        .toList();
 
-            return PaginationResult.<DisburseInvoiceDto>builder()
-                    .currentPage(pageNo + 1)
-                    .totalData(agreements.getTotalElements())
-                    .totalPage(agreements.getTotalPages())
-                    .list(disburseInvoiceDtos)
-                    .build();
+      return PaginationResult.<DisburseInvoiceDto>builder()
+        .currentPage(pageNo + 1)
+        .totalData(agreements.getTotalElements())
+        .totalPage(agreements.getTotalPages())
+        .list(disburseInvoiceDtos)
+        .build();
 
-        } catch (Exception e) {
-            log.error("paidInvoice, fatal error {}", e.getMessage());
-            throw e;
-        } finally {
-            if (!errorLogs.isEmpty()) {
-                String formattedErrors = errorLogs.stream()
-                        .map(err -> "- " + err) // kasih prefix bullet
-                        .collect(Collectors.joining("\n")); // gabung dengan newline
+    } catch (Exception e) {
+      log.error("paidInvoice, fatal error {}", e.getMessage());
+      throw e;
+    } finally {
+      if (!errorLogs.isEmpty()) {
+        String formattedErrors = errorLogs.stream()
+          .map(err -> "- " + err) // kasih prefix bullet
+          .collect(Collectors.joining("\n")); // gabung dengan newline
 
-                log.warn("Missing date:\n{}", formattedErrors);
-            }
-        }
+        log.warn("Missing date:\n{}", formattedErrors);
+      }
     }
+  }
 
 
-    private PaidInvoiceDto toPaidInvoiceDto(Invoice invoice) {
-        try {
-            FinancingDtl financingDtl = invoice.getFinancingDtl();
-            if (financingDtl == null || financingDtl.getFinancingHdr() == null) {
-                return null;
-            }
-
-            FinancingHdr financingHdr = financingDtl.getFinancingHdr();
-            MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
-                    financingHdr,
-                    MappedFinancingStatus.Type.Repayment
-            );
-
-            if (mappedFinancingStatus.getStatus() == null || mappedFinancingStatus.getStatus().isBlank()) {
-                return null;
-            }
-
-            Customer customer = invoice.getCustomer();
-            Bouwheer bouwheer = invoice.getBouwheer();
-
-            return PaidInvoiceDto.builder()
-                    .invoiceNo(invoice.getCustInvNo())
-                    .custName(customer != null ? customer.getCustName() : "-")
-                    .bouwheerName(bouwheer != null ? bouwheer.getBouwheerName() : "-")
-                    .paidDate(invoice.getInvoiceDate() != null ? Utils.fromInstant(invoice.getInvoiceDate()) : null)
-                    .dueDate(invoice.getInvoiceDueDate() != null ? Utils.fromInstant(invoice.getInvoiceDueDate()) : null)
-                    .paidAmount(invoice.getInvoiceAmt() != null ? BigDecimal.valueOf(invoice.getInvoiceAmt()) : null)
-                    .status(StatusLabelDto.builder()
-                            .status(mappedFinancingStatus.getStatus())
-                            .statusLabel(mappedFinancingStatus.getLabel())
-                            .color(getColor(financingHdr))
-                            .build())
-                    .build();
-        } catch (EntityNotFoundException ex) {
-            log.warn("Invoice {} gagal dimapping: {}", invoice.getInvoiceCode(), ex.getMessage());
-            return null;
-        }
-    }
-
-    private DisburseInvoiceDto toDisburseInvoiceDto(Agreement agreement, List<String> errorLogs) {
-        try {
-            FinancingHdr financingHdr = agreement.getFinancingHdr();
-            if (financingHdr == null) {
-                errorLogs.add("Agreement " + agreement.getAgreementCode() + " tidak punya FinancingHdr");
-                return null;
-            }
-
-            MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
-                    financingHdr,
-                    MappedFinancingStatus.Type.Disbursement
-            );
-
-            if (mappedFinancingStatus.getStatus() == null || mappedFinancingStatus.getStatus().isBlank()) {
-                errorLogs.add("Agreement " + agreement.getAgreementCode() + " FinancingStatus kosong");
-                return null;
-            }
-
-            BigDecimal paidAmount = BigDecimal.ZERO;
-            List<DisbursementLog> disbursementLog = disbursementLogRepository.findAllByAgreement(agreement);
-            if (disbursementLog != null && !disbursementLog.isEmpty() && disbursementLog.get(0).getApPaidAmt() != null) {
-                paidAmount = BigDecimal.valueOf(disbursementLog.get(0).getApPaidAmt());
-            }
-
-            Customer customer = financingHdr.getCustomer();
-            Bouwheer bouwheer = financingHdr.getBouwheer();
-
-            return DisburseInvoiceDto.builder()
-                    .agreementNo(agreement.getAgreementCode())
-                    .custName(customer != null ? customer.getCustName() : "-")
-                    .bouwheerName(bouwheer != null ? bouwheer.getBouwheerName() : "-")
-                    .disburseDate(financingHdr.getDisburseDate() != null ? Utils.fromInstant(financingHdr.getDisburseDate()) : null)
-                    .paidDate(financingHdr.getDisburseDate() != null ? Utils.fromInstant(financingHdr.getDisburseDate()) : null)
-                    .retentionRefund(BigDecimal.ZERO)
-                    .paidAmount(paidAmount)
-                    .disburseAmount(financingHdr.getDisburseAmt() != null ? BigDecimal.valueOf(financingHdr.getDisburseAmt()) : BigDecimal.ZERO)
-                    .retentionRefundDate(DateTimeUtils.nowDate())
-                    .status(StatusLabelDto.builder()
-                            .status(mappedFinancingStatus.getStatus())
-                            .statusLabel(mappedFinancingStatus.getLabel())
-                            .color(getColor(financingHdr))
-                            .build())
-                    .build();
-
-        } catch (EntityNotFoundException ex) {
-            errorLogs.add("Agreement " + agreement.getAgreementCode() + " gagal: " + ex.getMessage());
-            return null;
-        } catch (Exception ex) {
-            errorLogs.add("Agreement " + agreement.getAgreementCode() + " error umum: " + ex.getMessage());
-            return null;
-        }
-    }
-
-    private int getZeroBasedPageNo(PaginationRequest request) {
-        int pageNo = request.getPageNo() != null ? request.getPageNo() : 1;
-        return pageNo > 0 ? pageNo - 1 : 0;
-    }
-
-    private int getPageSize(PaginationRequest request) {
-        return request.getPageSize() != null && request.getPageSize() > 0 ? request.getPageSize() : 10;
-    }
-
-    private Specification<Invoice> buildPaidInvoiceSpecification(PaginationRequest request) {
-        return (root, query, criteriaBuilder) -> {
-            if (query != null) {
-                query.distinct(true);
-            }
-
-            List<Predicate> predicates = new ArrayList<>();
-            var financingDtlJoin = root.join("financingDtl", JoinType.INNER);
-            var financingHdrJoin = financingDtlJoin.join("financingHdr", JoinType.INNER);
-            predicates.add(buildRepaymentStatusPredicate(criteriaBuilder, financingHdrJoin));
-            addDateRangePredicate(predicates, criteriaBuilder, root.get("invoiceDate"), request);
-
-            String searchValue = normalizeSearchValue(request);
-            if (StringUtil.isNullOrEmpty(searchValue)) {
-                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-            }
-
-            String searchBy = normalizeSearchBy(request);
-            switch (searchBy) {
-                case "invoiceno", "noinvoice", "custinvno" ->
-                        predicates.add(like(criteriaBuilder, root.get("custInvNo"), searchValue));
-                case "custname", "namadebitur" ->
-                        predicates.add(like(criteriaBuilder, root.join("customer", JoinType.LEFT).get("custName"), searchValue));
-                case "bouwheername", "pemberikerja" ->
-                        predicates.add(like(criteriaBuilder, root.join("bouwheer", JoinType.LEFT).get("bouwheerName"), searchValue));
-                case "paiddate", "tanggalinvoice", "tanggalpembayarantenagakerja" ->
-                        addEqualDatePredicate(predicates, criteriaBuilder, root.get("invoiceDate"), request.getSearchValue());
-                case "invoiceduedate", "jatuhtempoinvoice", "jatuhtempo" ->
-                        addEqualDatePredicate(predicates, criteriaBuilder, root.get("invoiceDueDate"), request.getSearchValue());
-                case "paidamount", "jumlahtagihan", "nilaipembiayaan" ->
-                        addEqualDoublePredicate(predicates, criteriaBuilder, root.get("invoiceAmt"), searchValue);
-                case "status" ->
-                        predicates.add(criteriaBuilder.or(
-                                like(criteriaBuilder, financingHdrJoin.get("financingStatus"), searchValue),
-                                like(criteriaBuilder, financingHdrJoin.get("financingStep"), searchValue)
-                        ));
-                default -> predicates.add(criteriaBuilder.or(
-                        like(criteriaBuilder, root.get("custInvNo"), searchValue),
-                        like(criteriaBuilder, root.join("customer", JoinType.LEFT).get("custName"), searchValue),
-                        like(criteriaBuilder, root.join("bouwheer", JoinType.LEFT).get("bouwheerName"), searchValue)
-                ));
-            }
-
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
-    }
-
-    private Specification<Agreement> buildDisbursementSpecification(PaginationRequest request) {
-        return (root, query, criteriaBuilder) -> {
-            if (query != null) {
-                query.distinct(true);
-            }
-
-            List<Predicate> predicates = new ArrayList<>();
-            var financingHdrJoin = root.join("financingHdr", JoinType.LEFT);
-            addDateRangePredicate(predicates, criteriaBuilder, financingHdrJoin.get("disburseDate"), request);
-
-            String searchValue = normalizeSearchValue(request);
-            if (StringUtil.isNullOrEmpty(searchValue)) {
-                return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-            }
-
-            String searchBy = normalizeSearchBy(request);
-            switch (searchBy) {
-                case "agreementno", "agreementcode" ->
-                        predicates.add(like(criteriaBuilder, root.get("agreementCode"), searchValue));
-                case "custname", "namadebitur" ->
-                        predicates.add(like(criteriaBuilder, financingHdrJoin.join("customer", JoinType.LEFT).get("custName"), searchValue));
-                case "bouwheername", "pemberikerja" ->
-                        predicates.add(like(criteriaBuilder, financingHdrJoin.join("bouwheer", JoinType.LEFT).get("bouwheerName"), searchValue));
-                case "disburseamount", "nilaipengajuan" ->
-                        addEqualDoublePredicate(predicates, criteriaBuilder, financingHdrJoin.get("disburseAmt"), searchValue);
-                case "paiddate", "disbursedate", "tanggalpencairan", "tanggalpembayarantenagakerja" ->
-                        addEqualDatePredicate(predicates, criteriaBuilder, financingHdrJoin.get("disburseDate"), request.getSearchValue());
-                case "status" ->
-                        predicates.add(like(criteriaBuilder, financingHdrJoin.get("financingStatus"), searchValue));
-                default -> predicates.add(criteriaBuilder.or(
-                        like(criteriaBuilder, root.get("agreementCode"), searchValue),
-                        like(criteriaBuilder, financingHdrJoin.join("customer", JoinType.LEFT).get("custName"), searchValue),
-                        like(criteriaBuilder, financingHdrJoin.join("bouwheer", JoinType.LEFT).get("bouwheerName"), searchValue),
-                        like(criteriaBuilder, financingHdrJoin.get("financingStatus"), searchValue)
-                ));
-            }
-
-            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
-        };
-    }
-
-    private Predicate buildRepaymentStatusPredicate(
-            jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder,
-            jakarta.persistence.criteria.From<?, ?> financingHdrJoin
-    ) {
-        var financingStatus = criteriaBuilder.lower(financingHdrJoin.get("financingStatus"));
-        var financingStep = criteriaBuilder.lower(financingHdrJoin.get("financingStep"));
-
-        return criteriaBuilder.or(
-                criteriaBuilder.and(
-                        criteriaBuilder.equal(financingStatus, "inprocess"),
-                        criteriaBuilder.equal(financingStep, "signed")
-                ),
-                criteriaBuilder.and(
-                        criteriaBuilder.equal(financingStatus, "live"),
-                        financingStep.in("golive", "paid")
-                ),
-                criteriaBuilder.and(
-                        criteriaBuilder.equal(financingStatus, "completed"),
-                        criteriaBuilder.equal(financingStep, "refund")
-                )
-        );
-    }
-
-    private void addDateRangePredicate(
-            List<Predicate> predicates,
-            jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder,
-            jakarta.persistence.criteria.Expression<LocalDateTime> path,
-            PaginationRequest request
-    ) {
-        if (request.getStartDate() != null) {
-            predicates.add(criteriaBuilder.greaterThanOrEqualTo(path, toStartOfDay(request.getStartDate())));
-        }
-
-        if (request.getEndDate() != null) {
-            predicates.add(criteriaBuilder.lessThanOrEqualTo(path, toEndOfDay(request.getEndDate())));
-        }
-    }
-
-    private void addEqualDatePredicate(
-            List<Predicate> predicates,
-            jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder,
-            jakarta.persistence.criteria.Expression<LocalDateTime> path,
-            String value
-    ) {
-        Date date = parseSearchDate(value);
-        if (date == null) {
-            return;
-        }
-
-        predicates.add(criteriaBuilder.between(path, toStartOfDay(date), toEndOfDay(date)));
-    }
-
-    private void addEqualDoublePredicate(
-            List<Predicate> predicates,
-            jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder,
-            jakarta.persistence.criteria.Expression<Double> path,
-            String value
-    ) {
-        Double number = Utils.getDouble(value);
-        predicates.add(criteriaBuilder.equal(path, number));
-    }
-
-    private Date parseSearchDate(String value) {
-        if (StringUtil.isNullOrEmpty(value)) {
-            return null;
-        }
-
-        List<String> patterns = List.of("dd/MM/yyyy", "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss");
-        for (String pattern : patterns) {
-            try {
-                SimpleDateFormat formatter = new SimpleDateFormat(pattern);
-                formatter.setLenient(false);
-                return formatter.parse(value);
-            } catch (ParseException ignored) {
-            }
-        }
-
+  private PaidInvoiceDto toPaidInvoiceDto(Invoice invoice) {
+    try {
+      FinancingDtl financingDtl = invoice.getFinancingDtl();
+      if (financingDtl == null || financingDtl.getFinancingHdr() == null) {
         return null;
+      }
+
+      FinancingHdr financingHdr = financingDtl.getFinancingHdr();
+      MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
+        financingHdr,
+        MappedFinancingStatus.Type.Repayment
+      );
+
+      if (mappedFinancingStatus.getStatus() == null || mappedFinancingStatus.getStatus().isBlank()) {
+        return null;
+      }
+
+      Customer customer = invoice.getCustomer();
+      Bouwheer bouwheer = invoice.getBouwheer();
+
+      return PaidInvoiceDto.builder()
+        .invoiceNo(invoice.getCustInvNo())
+        .custName(customer != null ? customer.getCustName() : "-")
+        .bouwheerName(bouwheer != null ? bouwheer.getBouwheerName() : "-")
+        .paidDate(invoice.getInvoiceDate() != null ? Utils.fromInstant(invoice.getInvoiceDate()) : null)
+        .dueDate(invoice.getInvoiceDueDate() != null ? Utils.fromInstant(invoice.getInvoiceDueDate()) : null)
+        .paidAmount(invoice.getInvoiceAmt() != null ? BigDecimal.valueOf(invoice.getInvoiceAmt()) : null)
+        .status(StatusLabelDto.builder()
+          .status(mappedFinancingStatus.getStatus())
+          .statusLabel(mappedFinancingStatus.getLabel())
+          .color(getColor(financingHdr))
+          .build())
+        .build();
+    } catch (EntityNotFoundException ex) {
+      log.warn("Invoice {} gagal dimapping: {}", invoice.getInvoiceCode(), ex.getMessage());
+      return null;
+    }
+  }
+
+  private DisburseInvoiceDto toDisburseInvoiceDto(Agreement agreement, List<String> errorLogs) {
+    try {
+      FinancingHdr financingHdr = agreement.getFinancingHdr();
+      if (financingHdr == null) {
+        errorLogs.add("Agreement " + agreement.getAgreementCode() + " tidak punya FinancingHdr");
+        return null;
+      }
+
+      MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
+        financingHdr,
+        MappedFinancingStatus.Type.Disbursement
+      );
+
+      if (mappedFinancingStatus.getStatus() == null || mappedFinancingStatus.getStatus().isBlank()) {
+        errorLogs.add("Agreement " + agreement.getAgreementCode() + " FinancingStatus kosong");
+        return null;
+      }
+
+      BigDecimal paidAmount = BigDecimal.ZERO;
+      List<DisbursementLog> disbursementLog = disbursementLogRepository.findAllByAgreement(agreement);
+      if (disbursementLog != null && !disbursementLog.isEmpty() && disbursementLog.get(0).getApPaidAmt() != null) {
+        paidAmount = BigDecimal.valueOf(disbursementLog.get(0).getApPaidAmt());
+      }
+
+      Customer customer = financingHdr.getCustomer();
+      Bouwheer bouwheer = financingHdr.getBouwheer();
+
+      return DisburseInvoiceDto.builder()
+        .agreementNo(agreement.getAgreementCode())
+        .custName(customer != null ? customer.getCustName() : "-")
+        .bouwheerName(bouwheer != null ? bouwheer.getBouwheerName() : "-")
+        .disburseDate(financingHdr.getDisburseDate() != null ? Utils.fromInstant(financingHdr.getDisburseDate()) : null)
+        .paidDate(financingHdr.getDisburseDate() != null ? Utils.fromInstant(financingHdr.getDisburseDate()) : null)
+        .retentionRefund(BigDecimal.ZERO)
+        .paidAmount(paidAmount)
+        .disburseAmount(financingHdr.getDisburseAmt() != null ? BigDecimal.valueOf(financingHdr.getDisburseAmt()) : BigDecimal.ZERO)
+        .retentionRefundDate(DateTimeUtils.nowDate())
+        .status(StatusLabelDto.builder()
+          .status(mappedFinancingStatus.getStatus())
+          .statusLabel(mappedFinancingStatus.getLabel())
+          .color(getColor(financingHdr))
+          .build())
+        .build();
+
+    } catch (EntityNotFoundException ex) {
+      errorLogs.add("Agreement " + agreement.getAgreementCode() + " gagal: " + ex.getMessage());
+      return null;
+    } catch (Exception ex) {
+      errorLogs.add("Agreement " + agreement.getAgreementCode() + " error umum: " + ex.getMessage());
+      return null;
+    }
+  }
+
+  private int getZeroBasedPageNo(PaginationRequest request) {
+    int pageNo = request.getPageNo() != null ? request.getPageNo() : 1;
+    return pageNo > 0 ? pageNo - 1 : 0;
+  }
+
+  private int getPageSize(PaginationRequest request) {
+    return request.getPageSize() != null && request.getPageSize() > 0 ? request.getPageSize() : 10;
+  }
+
+  private Specification<Invoice> buildPaidInvoiceSpecification(PaginationRequest request) {
+    return (root, query, criteriaBuilder) -> {
+      if (query != null) {
+        query.distinct(true);
+      }
+
+      List<Predicate> predicates = new ArrayList<>();
+      var financingDtlJoin = root.join("financingDtl", JoinType.INNER);
+      var financingHdrJoin = financingDtlJoin.join("financingHdr", JoinType.INNER);
+      predicates.add(buildRepaymentStatusPredicate(criteriaBuilder, financingHdrJoin));
+      addDateRangePredicate(predicates, criteriaBuilder, root.get("invoiceDate"), request);
+
+      String searchValue = normalizeSearchValue(request);
+      if (StringUtil.isNullOrEmpty(searchValue)) {
+        return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+      }
+
+      String searchBy = normalizeSearchBy(request);
+      switch (searchBy) {
+        case "invoiceno", "noinvoice", "custinvno" ->
+          predicates.add(like(criteriaBuilder, root.get("custInvNo"), searchValue));
+        case "custname", "namadebitur" ->
+          predicates.add(like(criteriaBuilder, root.join("customer", JoinType.LEFT).get("custName"), searchValue));
+        case "bouwheername", "pemberikerja" ->
+          predicates.add(like(criteriaBuilder, root.join("bouwheer", JoinType.LEFT).get("bouwheerName"), searchValue));
+        case "paiddate", "tanggalinvoice", "tanggalpembayarantenagakerja" ->
+          addEqualDatePredicate(predicates, criteriaBuilder, root.get("invoiceDate"), request.getSearchValue());
+        case "invoiceduedate", "jatuhtempoinvoice", "jatuhtempo" ->
+          addEqualDatePredicate(predicates, criteriaBuilder, root.get("invoiceDueDate"), request.getSearchValue());
+        case "paidamount", "jumlahtagihan", "nilaipembiayaan" ->
+          addEqualDoublePredicate(predicates, criteriaBuilder, root.get("invoiceAmt"), searchValue);
+        case "status" -> predicates.add(criteriaBuilder.or(
+          like(criteriaBuilder, financingHdrJoin.get("financingStatus"), searchValue),
+          like(criteriaBuilder, financingHdrJoin.get("financingStep"), searchValue)
+        ));
+        default -> predicates.add(criteriaBuilder.or(
+          like(criteriaBuilder, root.get("custInvNo"), searchValue),
+          like(criteriaBuilder, root.join("customer", JoinType.LEFT).get("custName"), searchValue),
+          like(criteriaBuilder, root.join("bouwheer", JoinType.LEFT).get("bouwheerName"), searchValue)
+        ));
+      }
+
+      return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+    };
+  }
+
+  private Specification<Agreement> buildDisbursementSpecification(PaginationRequest request) {
+    return (root, query, criteriaBuilder) -> {
+      if (query != null) {
+        query.distinct(true);
+      }
+
+      List<Predicate> predicates = new ArrayList<>();
+      var financingHdrJoin = root.join("financingHdr", JoinType.LEFT);
+      addDateRangePredicate(predicates, criteriaBuilder, financingHdrJoin.get("disburseDate"), request);
+
+      String searchValue = normalizeSearchValue(request);
+      if (StringUtil.isNullOrEmpty(searchValue)) {
+        return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+      }
+
+      String searchBy = normalizeSearchBy(request);
+      switch (searchBy) {
+        case "agreementno", "agreementcode" ->
+          predicates.add(like(criteriaBuilder, root.get("agreementCode"), searchValue));
+        case "custname", "namadebitur" ->
+          predicates.add(like(criteriaBuilder, financingHdrJoin.join("customer", JoinType.LEFT).get("custName"), searchValue));
+        case "bouwheername", "pemberikerja" ->
+          predicates.add(like(criteriaBuilder, financingHdrJoin.join("bouwheer", JoinType.LEFT).get("bouwheerName"), searchValue));
+        case "disburseamount", "nilaipengajuan" ->
+          addEqualDoublePredicate(predicates, criteriaBuilder, financingHdrJoin.get("disburseAmt"), searchValue);
+        case "paiddate", "disbursedate", "tanggalpencairan", "tanggalpembayarantenagakerja" ->
+          addEqualDatePredicate(predicates, criteriaBuilder, financingHdrJoin.get("disburseDate"), request.getSearchValue());
+        case "status" -> predicates.add(like(criteriaBuilder, financingHdrJoin.get("financingStatus"), searchValue));
+        default -> predicates.add(criteriaBuilder.or(
+          like(criteriaBuilder, root.get("agreementCode"), searchValue),
+          like(criteriaBuilder, financingHdrJoin.join("customer", JoinType.LEFT).get("custName"), searchValue),
+          like(criteriaBuilder, financingHdrJoin.join("bouwheer", JoinType.LEFT).get("bouwheerName"), searchValue),
+          like(criteriaBuilder, financingHdrJoin.get("financingStatus"), searchValue)
+        ));
+      }
+
+      return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+    };
+  }
+
+  private Predicate buildRepaymentStatusPredicate(
+    jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder,
+    jakarta.persistence.criteria.From<?, ?> financingHdrJoin
+  ) {
+    var financingStatus = criteriaBuilder.lower(financingHdrJoin.get("financingStatus"));
+    var financingStep = criteriaBuilder.lower(financingHdrJoin.get("financingStep"));
+
+    return criteriaBuilder.or(
+      criteriaBuilder.and(
+        criteriaBuilder.equal(financingStatus, "inprocess"),
+        criteriaBuilder.equal(financingStep, "signed")
+      ),
+      criteriaBuilder.and(
+        criteriaBuilder.equal(financingStatus, "live"),
+        financingStep.in("golive", "paid")
+      ),
+      criteriaBuilder.and(
+        criteriaBuilder.equal(financingStatus, "completed"),
+        criteriaBuilder.equal(financingStep, "refund")
+      )
+    );
+  }
+
+  private void addDateRangePredicate(
+    List<Predicate> predicates,
+    jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder,
+    jakarta.persistence.criteria.Expression<LocalDateTime> path,
+    PaginationRequest request
+  ) {
+    if (request.getStartDate() != null) {
+      predicates.add(criteriaBuilder.greaterThanOrEqualTo(path, toStartOfDay(request.getStartDate())));
     }
 
-    private Predicate like(
-            jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder,
-            jakarta.persistence.criteria.Expression<String> path,
-            String value
-    ) {
-        return criteriaBuilder.like(criteriaBuilder.lower(path), "%" + value.toLowerCase() + "%");
+    if (request.getEndDate() != null) {
+      predicates.add(criteriaBuilder.lessThanOrEqualTo(path, toEndOfDay(request.getEndDate())));
+    }
+  }
+
+  private void addEqualDatePredicate(
+    List<Predicate> predicates,
+    jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder,
+    jakarta.persistence.criteria.Expression<LocalDateTime> path,
+    String value
+  ) {
+    Date date = parseSearchDate(value);
+    if (date == null) {
+      return;
     }
 
-    private LocalDateTime toStartOfDay(Date date) {
-        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay();
+    predicates.add(criteriaBuilder.between(path, toStartOfDay(date), toEndOfDay(date)));
+  }
+
+  private void addEqualDoublePredicate(
+    List<Predicate> predicates,
+    jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder,
+    jakarta.persistence.criteria.Expression<Double> path,
+    String value
+  ) {
+    Double number = Utils.getDouble(value);
+    predicates.add(criteriaBuilder.equal(path, number));
+  }
+
+  private Date parseSearchDate(String value) {
+    if (StringUtil.isNullOrEmpty(value)) {
+      return null;
     }
 
-    private LocalDateTime toEndOfDay(Date date) {
-        return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().atTime(23, 59, 59);
+    List<String> patterns = List.of("dd/MM/yyyy", "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss");
+    for (String pattern : patterns) {
+      try {
+        SimpleDateFormat formatter = new SimpleDateFormat(pattern);
+        formatter.setLenient(false);
+        return formatter.parse(value);
+      } catch (ParseException ignored) {
+      }
     }
 
-    private String normalizeSearchBy(PaginationRequest request) {
-        return Utils.valueOf(request.getSearchBy()).replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+    return null;
+  }
+
+  private Predicate like(
+    jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder,
+    jakarta.persistence.criteria.Expression<String> path,
+    String value
+  ) {
+    return criteriaBuilder.like(criteriaBuilder.lower(path), "%" + value.toLowerCase() + "%");
+  }
+
+  private LocalDateTime toStartOfDay(Date date) {
+    return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().atStartOfDay();
+  }
+
+  private LocalDateTime toEndOfDay(Date date) {
+    return date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate().atTime(23, 59, 59);
+  }
+
+  private String normalizeSearchBy(PaginationRequest request) {
+    return Utils.valueOf(request.getSearchBy()).replaceAll("[^A-Za-z0-9]", "").toLowerCase();
+  }
+
+  private String normalizeSearchValue(PaginationRequest request) {
+    return Utils.valueOf(request.getSearchValue()).trim();
+  }
+
+
+  public PaginationResult<DisburseInvoiceDto> disburseInvoice(
+    PaginationRequest request,
+    FinancingHdr financingHdr
+  ) {
+    try {
+      int pageNo = 0, pageSize = 10;
+
+      if (request.getPageNo() != null) {
+        pageNo = request.getPageNo();
+      }
+      if (request.getPageSize() != null) {
+        pageSize = request.getPageSize();
+      }
+      if (pageNo > 0) {
+        pageNo = pageNo - 1;
+      }
+
+      final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAll(
+        FinancingHdrSpec.byDisbursement(request.getSearchBy(), request.getSearchValue()),
+        PageRequest.of(pageNo, pageSize)
+      );
+
+      return paginatePaidDisbursement(
+        financingHdrs,
+        pageNo
+      );
+
+    } catch (Exception e) {
+      log.error("disburseInvoice, error {}", e.getMessage());
+      throw e;
     }
+  }
 
-    private String normalizeSearchValue(PaginationRequest request) {
-        return Utils.valueOf(request.getSearchValue()).trim();
+  public FinancingHdr paidFinancing(
+    FinancingInvoicePaidRequest request,
+    String apiKey
+  ) throws SignatureException {
+    try {
+      final UUID financingHdrCode;
+      try {
+        financingHdrCode = UUID.fromString(request.getFinancingCode());
+      } catch (IllegalArgumentException ignored) {
+        throw new IllegalStateException("Invalid given financingCode");
+      }
+
+      if (StringUtil.isNullOrEmpty(apiKey)) {
+        throw new IllegalStateException("can perform action, invalid credentials given");
+      }
+      final String user = "POST";
+
+      FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
+        .orElseThrow(() -> new IllegalStateException("Financing Not Found with given financingCode"));
+
+      financingHdr.setFinancingStatus("LIVE");
+      financingHdr.setFinancingStep("PAID");
+
+      financingHdr.setUsrUpd(user);
+      financingHdr.setDtmUpd(DateTimeUtils.now());
+      return financingHdrRepository.save(financingHdr);
+    } catch (Exception e) {
+      log.error("paidFinancing, error {}", e.getMessage());
+      throw e;
     }
+  }
 
-
-
-
-    public PaginationResult<DisburseInvoiceDto> disburseInvoice(
-            PaginationRequest request,
-            FinancingHdr financingHdr
-    ) {
-        try {
-            int pageNo = 0, pageSize = 10;
-
-            if (request.getPageNo() != null) {
-                pageNo = request.getPageNo();
-            }
-            if (request.getPageSize() != null) {
-                pageSize = request.getPageSize();
-            }
-            if (pageNo > 0) {
-                pageNo = pageNo - 1;
-            }
-
-            final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAll(
-              FinancingHdrSpec.byDisbursement(request.getSearchBy(), request.getSearchValue()),
-              PageRequest.of(pageNo, pageSize)
-            );
-
-            return paginatePaidDisbursement(
-                    financingHdrs,
-                    pageNo
-            );
-
-        } catch (Exception e) {
-            log.error("disburseInvoice, error {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    public FinancingHdr paidFinancing(
-            FinancingInvoicePaidRequest request,
-            String apiKey
-    ) throws SignatureException {
-        try {
-            final UUID financingHdrCode;
-            try {
-                financingHdrCode = UUID.fromString(request.getFinancingCode());
-            } catch (IllegalArgumentException ignored) {
-                throw new IllegalStateException("Invalid given financingCode");
-            }
-
-            if (StringUtil.isNullOrEmpty(apiKey)) {
-                throw new IllegalStateException("can perform action, invalid credentials given");
-            }
-            final String user = "POST";
-
-            FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
-                    .orElseThrow(() -> new IllegalStateException("Financing Not Found with given financingCode"));
-
-            financingHdr.setFinancingStatus("LIVE");
-            financingHdr.setFinancingStep("PAID");
-
-            financingHdr.setUsrUpd(user);
-            financingHdr.setDtmUpd(DateTimeUtils.now());
-            return financingHdrRepository.save(financingHdr);
-        } catch (Exception e) {
-            log.error("paidFinancing, error {}", e.getMessage());
-            throw e;
-        }
-    }
-
-    public FinancingHdr findByCode(String financingHdrCode) {
-        return financingHdrRepository
-                .findByFinancingHdrCode(UUID.fromString(financingHdrCode))
-                .orElseThrow(() -> new IllegalStateException("Invalid given financingHdrCode"));
-    }
+  public FinancingHdr findByCode(String financingHdrCode) {
+    return financingHdrRepository
+      .findByFinancingHdrCode(UUID.fromString(financingHdrCode))
+      .orElseThrow(() -> new IllegalStateException("Invalid given financingHdrCode"));
+  }
 }
