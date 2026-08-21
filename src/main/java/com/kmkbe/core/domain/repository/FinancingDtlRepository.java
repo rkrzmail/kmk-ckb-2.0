@@ -16,59 +16,57 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID>, JpaSpecificationExecutor<FinancingDtl> {
-    Optional<List<FinancingDtl>> findAllByFinancingHdr(FinancingHdr financingHdr);
+  Optional<List<FinancingDtl>> findAllByFinancingHdr(FinancingHdr financingHdr);
 
-    Optional<List<FinancingDtl>> findByUsrCrt(String usrCrt);
+  List<FinancingDtl> findAllByFinancingHdrOrderByDtmCrtDesc(FinancingHdr financingHdr);
 
-    List<FinancingDtl> findAllByFinancingHdrOrderByDtmCrtDesc(FinancingHdr financingHdr);
+  @Query(
+    value = """
+      
+      SELECT  fd.* FROM financing_dtl  fd
+      JOIN financing_hdr fh ON (fd.financing_hdr_code=fh.financing_hdr_code)
+      JOIN invoice i ON (i.invoice_code=fd.invoice_code)
+      WHERE
+      fh.cust_code  = :custCode and
+      fh.financing_status is not null  and
+      fh.financing_status <> 'LIVE' and
+      fh.financing_status <> '' and
+      i.invoice_due_date BETWEEN CURRENT_DATE and date_add(NOW(),INTERVAL '14 DAY')
+      
+      """,
+    countQuery = """
+      
+      SELECT  COUNT(fd.*) FROM financing_dtl  fd
+      JOIN financing_hdr fh ON (fd.financing_hdr_code=fh.financing_hdr_code)
+      JOIN invoice i ON (i.invoice_code=fd.invoice_code)
+      WHERE 
+      fh.cust_code = :custCode and
+      fh.financing_status is not null  and
+      fh.financing_status <> 'LIVE' and
+      fh.financing_status <> '' and
+      i.invoice_due_date BETWEEN CURRENT_DATE and date_add(NOW(),INTERVAL '14 DAY')
+      
+      """,
 
-    Optional<FinancingDtl> findFirstByBouwheerInvNo(String bouwheerInvNo);
-
-    @Query(
-            value = """
-
-                    SELECT  fd.* FROM financing_dtl  fd
-                    JOIN financing_hdr fh ON (fd.financing_hdr_code=fh.financing_hdr_code)
-                    JOIN invoice i ON (i.invoice_code=fd.invoice_code)
-                    WHERE
-                    fh.cust_code  = :custCode and
-                    fh.financing_status is not null  and
-                    fh.financing_status <> 'LIVE' and
-                    fh.financing_status <> '' and
-                    i.invoice_due_date BETWEEN CURRENT_DATE and date_add(NOW(),INTERVAL '14 DAY')
-
-                    """,
-            countQuery = """
-
-                    SELECT  COUNT(fd.*) FROM financing_dtl  fd
-                    JOIN financing_hdr fh ON (fd.financing_hdr_code=fh.financing_hdr_code)
-                    JOIN invoice i ON (i.invoice_code=fd.invoice_code)
-                    WHERE 
-                    fh.cust_code = :custCode and
-                    fh.financing_status is not null  and
-                    fh.financing_status <> 'LIVE' and
-                    fh.financing_status <> '' and
-                    i.invoice_due_date BETWEEN CURRENT_DATE and date_add(NOW(),INTERVAL '14 DAY')
-
-                    """,
-
-                    nativeQuery = true
-    )
-    Page<FinancingDtl> findByCustomer(
-            @Param("custCode") String custCode,
-            Pageable pageable
-    );
+    nativeQuery = true
+  )
+  Page<FinancingDtl> findByCustomer(
+    @Param("custCode") String custCode,
+    Pageable pageable
+  );
 
 
+  Page<FinancingDtl> findByFinancingHdr(
+    FinancingHdr financingHdr,
+    Pageable pageable
+  );
 
-    Page<FinancingDtl> findByFinancingHdr(
-            FinancingHdr financingHdr,
-            Pageable pageable
-    );
+  @NonNull
+  Page<FinancingDtl> findAll(
+    @NonNull Specification<FinancingDtl> spec,
+    @NonNull Pageable pageable
+  );
 
-    @NonNull
-    Page<FinancingDtl> findAll(
-            @NonNull Specification<FinancingDtl> spec,
-            @NonNull Pageable pageable
-    );
+  List<FinancingDtl> findByBouwheerInvNoIn(List<String> invoiceNumbers);
+
 }

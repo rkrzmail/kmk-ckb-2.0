@@ -961,13 +961,37 @@ public class LoanSubmissionService {
     /**
      * Insert Financing Header
      */
-    final FinancingHdr createdFinancingHdr = financingHdrService.create(
-      customer,
-      bouwheer,
-      calculateDisburse.getProduct(),
-      request,
-      simulationDisburseResult
-    );
+//    final FinancingHdr createdFinancingHdr = financingHdrService.create(
+//      customer,
+//      bouwheer,
+//      calculateDisburse.getProduct(),
+//      request,
+//      simulationDisburseResult
+//    );
+
+    // 1. Ekstrak semua nomor invoice dari request terlebih dahulu
+    List<String> invoiceNumbers = request.getInvoices().stream()
+      .map(PostedInvoicePayload::getBouwheerInvoiceNo)
+      .filter(Objects::nonNull)
+      .toList();
+
+// 2. Cek ke FinancingDtlRepository apakah nomor invoice ini sudah punya detail & header
+    List<FinancingDtl> existingDetails = financingDtlRepository.findByBouwheerInvNoIn(invoiceNumbers);
+
+    FinancingHdr finalFinancingHdr;
+
+    if (!existingDetails.isEmpty()) {
+      finalFinancingHdr = existingDetails.getFirst().getFinancingHdr();
+    } else {
+      // SKENARIO B: Benar-benar data baru, silakan buat Header baru
+      finalFinancingHdr = financingHdrService.create(
+        customer,
+        bouwheer,
+        calculateDisburse.getProduct(),
+        request,
+        simulationDisburseResult
+      );
+    }
 
     /**
      * Insert Invoice Serive
@@ -987,14 +1011,14 @@ public class LoanSubmissionService {
     financingDtlService.createBulk(
       customer,
       bouwheer,
-      createdFinancingHdr,
+      finalFinancingHdr,
       request.getInvoices(),
       createdInvoices
     );
 
     CreatedSimulationDto result = CreatedSimulationDto.builder()
       .productId(request.getProductId())
-      .financingHdrCode(createdFinancingHdr.getFinancingHdrCode())
+      .financingHdrCode(finalFinancingHdr.getFinancingHdrCode())
       .invoices(createdInvoices)
       .build();
 
@@ -1005,17 +1029,17 @@ public class LoanSubmissionService {
       "LOAN_SUBMISSION_SIMULATION",
       AuditAction.CREATE,
       "FinancingHdr",
-      createdFinancingHdr.getFinancingHdrCode(),
+      finalFinancingHdr.getFinancingHdrCode(),
       null,
       new CreatedSimulationAuditData(
-        createdFinancingHdr.getFinancingHdrCode(),
+        finalFinancingHdr.getFinancingHdrCode(),
         customer.getCustCode(),
         bouwheer.getBouwheerCode(),
         request.getProductId(),
         createdInvoices.size(),
         totalInvoiceAmount,
-        createdFinancingHdr.getFinancingAmt(),
-        createdFinancingHdr.getDisburseAmt()
+        finalFinancingHdr.getFinancingAmt(),
+        finalFinancingHdr.getDisburseAmt()
       )
     );
     return result;
