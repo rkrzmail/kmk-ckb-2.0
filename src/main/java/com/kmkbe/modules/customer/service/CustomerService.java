@@ -10,7 +10,6 @@ import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.helpers.utils.PageableUtil;
-import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.modules.customer.model.response.CustomerResponse;
@@ -78,7 +77,7 @@ public class CustomerService {
 
     // Validate duplicate email ID
     Optional<Customer> customerOptional = customerRepository.findByCustEmail(request.getEmail());
-    if (customerOptional.isPresent() && customerOptional.get().isActive()) {
+    if (customerOptional.isPresent() && customerOptional.get().isActive() && Boolean.TRUE.equals(customerOptional.get().getIsEmailValid())) {
       log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getVendorId());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "Email vendor has been register! "+customerOptional.get().getCustName());
     }

@@ -21,8 +21,6 @@ public interface MstFileTypeRepository extends JpaRepository<MstFileType, String
 
     Optional<MstFileType> findTopByFileTypeNameOrderByFileTypeIdDesc(String fileTypeName);
 
-    Optional<MstFileType> findToByOrderByFileTypeIdDesc();
-
     Page<MstFileType> findAllByFileAllocationInOrderByFileTypeIdDesc(
             List<String> fileAllocation,
             Pageable pageable
