@@ -60,6 +60,7 @@ public class BouwheerService {
       .bouwheerName(bouwheer.getBouwheerName())
       .legalAddress(bouwheer.getLegalAddress())
       .isActive(bouwheer.getIsActive())
+        .minRetention(bouwheer.getMinRetention())
       .usrCrt(bouwheer.getUsrCrt())
       .dtmCrt(bouwheer.getDtmCrt())
       .usrUpd(bouwheer.getUsrUpd())
@@ -91,6 +92,7 @@ public class BouwheerService {
       .picName(bouwheer.getPicName())
       .picEmail(bouwheer.getPicEmail())
       .picMobilePhone(bouwheer.getPicMobilePhone())
+      .minRetention(bouwheer.getMinRetention())
       .usrCrt(bouwheer.getUsrCrt())
       .dtmCrt(bouwheer.getDtmCrt())
       .usrUpd(bouwheer.getUsrUpd())
@@ -139,6 +141,7 @@ public class BouwheerService {
       .aesKey(request.getAesKey())
       .secretKey(request.getSecretKey())
       .apiKey(request.getApiKey())
+      .minRetention(request.getMinRetention())
       .dtmCrt(LocalDateTime.now())
       .build());
     auditTrailService.record("BOUWHEER", AuditAction.CREATE, "Bouwheer", saved.getBouwheerCode(), null, toResponse(saved));
@@ -214,6 +217,7 @@ public class BouwheerService {
       .aesKey(bouwheer.getAesKey())
       .secretKey(bouwheer.getSecretKey())
       .apiKey(bouwheer.getApiKey())
+      .minRetention(bouwheer.getMinRetention())
       .build();
   }
 

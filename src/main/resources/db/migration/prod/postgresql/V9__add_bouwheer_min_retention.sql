@@ -1,0 +1,2 @@
+ALTER TABLE bouwheer
+ADD COLUMN IF NOT EXISTS min_retention FLOAT DEFAULT 0;

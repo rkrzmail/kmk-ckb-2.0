@@ -134,6 +134,9 @@ public class Bouwheer {
   @Column(name = "api_key")
   private String apiKey;
 
+  @Column(name = "min_retention")
+  private Float minRetention;
+
   @Size(max = 50)
   @NotNull
   @Column(name = "usr_crt", nullable = false, length = 50)
