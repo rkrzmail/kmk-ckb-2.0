@@ -39,7 +39,7 @@ public class FinancingDtl {
   private FinancingHdr financingHdr;
 
   @NotNull
-  @OneToOne(cascade = CascadeType.ALL,fetch = FetchType.EAGER)
+  @OneToOne(cascade = CascadeType.ALL, fetch = FetchType.EAGER)
   @JoinColumn(
     name = "invoice_code",
     referencedColumnName = "invoice_code",

@@ -106,7 +106,7 @@ public class LoanSubmissionController {
   @GetMapping("/simulations/recalculate")
   public CommonResult<EstimatedDisburseDto> getReCalculateDisburse(
     HttpServletRequest request
-  ) throws Exception {
+  ) {
     return new CommonResult<EstimatedDisburseDto>().success(
       loanSubmissionService.recalculateDisburse(request)
     );

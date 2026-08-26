@@ -56,10 +56,7 @@ public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID
   );
 
 
-  Page<FinancingDtl> findByFinancingHdr(
-    FinancingHdr financingHdr,
-    Pageable pageable
-  );
+  Page<FinancingDtl> findByFinancingHdr(FinancingHdr financingHdr, Pageable pageable);
 
   @NonNull
   Page<FinancingDtl> findAll(
@@ -68,5 +65,6 @@ public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID
   );
 
   List<FinancingDtl> findByBouwheerInvNoIn(List<String> invoiceNumbers);
+
 
 }
