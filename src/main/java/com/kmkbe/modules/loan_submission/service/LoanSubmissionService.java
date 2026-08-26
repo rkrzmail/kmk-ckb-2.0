@@ -392,6 +392,7 @@ public class LoanSubmissionService {
         .effectiveRate(effectiveRate)
         .provisionRate(provisionRate)
         .totalInvoiceAmount(request.getTotalInvoiceAmount())
+        .product(findProduct.get())
         .build();
     } catch (Exception e) {
       log.error("calculateDisburse, error {}", e.getMessage());
@@ -478,8 +479,7 @@ public class LoanSubmissionService {
 
   public EstimatedDisburseDto recalculateDisburse(
     HttpServletRequest request
-  ) throws Exception {
-    try {
+  ) {
       int schemaRate = Utils.getInt(request.getParameter("schemaRate"));
       int intestRate = Utils.getInt(request.getParameter("intestRate"));
 
@@ -487,32 +487,24 @@ public class LoanSubmissionService {
       String financingHdrCode = request.getParameter("financingHdrCode");
       Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
       if (financingHdr.isEmpty()) {
-        throw new Exception("financingHdr not found");
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_409, "FinancingHdr not found");
       }
       FinancingHdr finHdr = financingHdr.get();
 
-      final BigDecimal ntfResult = new BigDecimal(finHdr.getTotalInvoiceAmt())
+      final BigDecimal ntfResult = BigDecimal.valueOf(finHdr.getTotalInvoiceAmt())
         .multiply(BigDecimal.valueOf(schemaRate / 100.0));
       //.setScale(0, RoundingMode.UP);
 
       UUID bouwheerCode = finHdr.getBouwheer() != null ? finHdr.getBouwheer().getBouwheerCode() : null;
-      final Optional<Product> findProduct = findProductByNtfRangeAndBouwheer(ntfResult.doubleValue(), bouwheerCode);
-
+      Optional<Product> findProduct = findProductByNtfRangeAndBouwheer(ntfResult.doubleValue(), bouwheerCode);
       if (findProduct.isEmpty()) {
-        throw new IllegalStateException("Mohon maaf, Product yang sesuai limit tidak ditemukan");
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_409, "Product not found");
       }
 
       final Product product = findProduct.get();
       Double provisionRate = findProduct.get().getProvisionRate();
       Double effectiveRate = findProduct.get().getEffectiveRate();
       Double adminRate = findProduct.get().getAdminRate();
-
-
-      Optional<Agreement> agreements = agreementRepository.findTopByFinancingHdr(finHdr);
-      if (agreements.isEmpty()) {
-        //throw new Exception("agreements not found");
-      }
-
 
       BigDecimal
         provisionFeeAmount,
@@ -549,30 +541,30 @@ public class LoanSubmissionService {
           + product.getLegalFee()
           + adminFee
           + product.getOthersFee();
-        provisionFeeAmount = new BigDecimal(provisionRateFee).setScale(0, RoundingMode.HALF_UP);
-        surveyFeeAmount = new BigDecimal(product.getSurveyFee()).setScale(0, RoundingMode.HALF_UP);
-        legalFeeAmount = new BigDecimal(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
-        adminFeeAmount = new BigDecimal(adminFee).setScale(0, RoundingMode.HALF_UP);
-        othersFeeAmount = new BigDecimal(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
+        provisionFeeAmount = BigDecimal.valueOf(provisionRateFee).setScale(0, RoundingMode.HALF_UP);
+        surveyFeeAmount = BigDecimal.valueOf(product.getSurveyFee()).setScale(0, RoundingMode.HALF_UP);
+        legalFeeAmount = BigDecimal.valueOf(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
+        adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
+        othersFeeAmount = BigDecimal.valueOf(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
       } else {
         provisionFeeAmount = new BigDecimal(0);
         surveyFeeAmount = new BigDecimal(0);
         legalFeeAmount = new BigDecimal(0);
-        adminFeeAmount = new BigDecimal(adminFee).setScale(0, RoundingMode.HALF_UP);
+        adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
         othersFeeAmount = new BigDecimal(0);
         jumlahBiaya = adminFee + product.getOthersFee();
       }
 
       double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
-      final BigDecimal serviceFee = new BigDecimal(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
-      final BigDecimal estimated = new BigDecimal(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
+      final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
+      final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
 
       return EstimatedDisburseDto.builder()
         .productId(product.getProductId())
         .financingAmount(ntfResult.setScale(0, RoundingMode.HALF_UP)) //yng diajukan
         .serviceFeeAmount(serviceFee)
         .estimatedDisburseAmount(estimated)
-        .interestFeeAmount(new BigDecimal(interestAmount).setScale(0, RoundingMode.HALF_UP))//interest
+        .interestFeeAmount(BigDecimal.valueOf(interestAmount).setScale(0, RoundingMode.HALF_UP))//interest
         .provisionFeeAmount(provisionFeeAmount)
         .adminFeeAmount(adminFeeAmount)
         .othersFeeAmount(othersFeeAmount)
@@ -581,12 +573,8 @@ public class LoanSubmissionService {
         .adminRate(adminRate)
         .effectiveRate(effectiveRate)
         .provisionRate(provisionRate)
-        .product(product)
+        .product(findProduct.get())
         .build();
-    } catch (Exception e) {
-      log.error("recalculateDisburse, error {}", e.getMessage());
-      throw e;
-    }
   }
 
   @Transactional

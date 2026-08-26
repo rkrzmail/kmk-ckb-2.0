@@ -1,6 +1,7 @@
 package com.kmkbe.core.domain.dto;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.product.model.entity.Product;
 import lombok.Builder;
 import lombok.Getter;
@@ -10,7 +11,7 @@ import java.math.BigDecimal;
 @JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
 @Getter
 @Builder
-public class EstimatedDisburseDto {
+public class EstimatedDisburseDto extends BaseResponse {
     private Long productId;
     private BigDecimal financingAmount;
     private BigDecimal serviceFeeAmount;
