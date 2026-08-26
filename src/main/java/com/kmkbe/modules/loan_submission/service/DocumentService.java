@@ -317,7 +317,7 @@ public class DocumentService {
             }*/
 
       final String uploadDir = customer.getCustCode() + "/loan_submission";
-      final String uploadName = mstFileType.getFileTypeCode() + "_" + file.getOriginalFilename();
+      final String uploadName = file.getOriginalFilename();
       final String uploadedPath = fileStorageService.save(
         file,
         uploadDir,

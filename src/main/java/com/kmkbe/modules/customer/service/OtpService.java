@@ -69,8 +69,7 @@ public class OtpService {
     );
 
     final Customer customer = findCustomerOtp.getCustomer();
-    customerService.activated(customer);
-    emailService.sendNotificationActive(customer);
+    customerService.verifyEmail(customer);
 
     final OtpLog otp = findCustomerOtp.getOtpLog();
     if (now().isAfter(otp.getExpiredDate())) {

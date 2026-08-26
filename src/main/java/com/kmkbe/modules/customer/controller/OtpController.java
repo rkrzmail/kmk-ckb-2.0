@@ -9,10 +9,9 @@ import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
-import com.kmkbe.modules.customer.model.request.LoginRequest;
+import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.customer.model.request.RequestOtpRequest;
 import com.kmkbe.modules.customer.model.request.VerifyOtpRequest;
-import com.kmkbe.modules.customer.service.AuthService;
 import com.kmkbe.modules.customer.service.OtpService;
 import com.kmkbe.helpers.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -33,7 +32,6 @@ import java.util.Optional;
 )
 @RequiredArgsConstructor
 public class OtpController {
-  private final AuthService authService;
   private final OtpService otpService;
   private final RedisRepository redisRepository;
   private final RedisAttackRepository redisAttackRepository;
@@ -86,18 +84,13 @@ public class OtpController {
 
     }
 
-    LoginRequest loginRequest = new LoginRequest(
-      request.email(),
-      request.pin()
-    );
-
     String message = otpService.verifySignUp(request);
 
 
     redisAttack.setCountAttack(0);
     redisAttack.setModifiedDate(DateTimeUtils.nowDate());
     redisAttackRepository.save(redisAttack);
-    return authService.signIn(loginRequest);
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, message, null);
   }
 
   @PutMapping("/verify/forgot-pin")

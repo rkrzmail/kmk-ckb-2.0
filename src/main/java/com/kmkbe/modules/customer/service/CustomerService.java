@@ -186,6 +186,16 @@ public class CustomerService {
     auditTrailService.record("CUSTOMER", AuditAction.UPDATE, "Customer", saved.getCustCode(), before, toAuditData(saved));
   }
 
+  public void verifyEmail(Customer customer) {
+    CustomerAuditData before = toAuditData(customer);
+    customer.setIsEmailValid(true);
+    customer.setActive(false);
+    customer.setUsrUpd(customer.getCustName());
+    customer.setDtmUpd(DateTimeUtils.now());
+    Customer saved = customerRepository.save(customer);
+    auditTrailService.record("CUSTOMER", AuditAction.UPDATE, "Customer", saved.getCustCode(), before, toAuditData(saved));
+  }
+
   public Customer update(
     Customer customer,
     UpdateCustomerRequest request

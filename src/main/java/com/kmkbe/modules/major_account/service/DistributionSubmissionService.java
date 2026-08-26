@@ -79,14 +79,17 @@ public class DistributionSubmissionService {
         @Override
         public DistributionSubmissionDto eval(FinancingHdr e) {
           String city = "";
+          String address = "";
           if (e.getCustomer() != null) {
             if (e.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
               if (e.getCustomer().getCompany() != null) {
                 city = e.getCustomer().getCompany().getCity();
+                address = e.getCustomer().getCompany().getCompanyAddress();
               }
             } else {
               if (e.getCustomer().getPersonal() != null) {
                 city = e.getCustomer().getPersonal().getCity();
+                address = e.getCustomer().getPersonal().getLegalAddress();
               }
             }
           }
@@ -151,7 +154,7 @@ public class DistributionSubmissionService {
               .color(color)
               .build())
             .npwp(e.getCustomer().getNpwp())
-            .address(e.getBouwheer().getLegalAddress())
+            .address(address)
             .ao(Optional.ofNullable(e.getMstBranch())
               .map(MstBranch::getEmployees)
               .map(Collection::stream)

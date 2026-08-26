@@ -63,8 +63,20 @@ public class CustomerDashboardService {
     Customer customer = currentUserService.customer();
     Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer);
     if (financingHdrOptional.isEmpty()) {
-      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", customer.getCustName());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Customer Financing HDR  not found");
+      return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, CustomerPlafondDto.builder()
+        .custCode(customer.getCustCode())
+        .custName(customer.getCustName())
+        .custIdTypeCode(customer.getCustIdTypeCode())
+        .custIdNo(customer.getCustIdNo())
+        .email(customer.getCustEmail())
+        .custTypeCode(customer.getCustTypeCode())
+        .plafond(CustomerPlafondDto.PlafondDto.builder()
+          .plafond(BigDecimal.ZERO)
+          .totalPlafond(BigDecimal.ZERO)
+          .availablePlafond(BigDecimal.ZERO)
+          .jumlahInvoice(BigDecimal.ZERO)
+          .build())
+        .build());
     }
     return plafondByFinancingHdrCode(financingHdrOptional.get().getFinancingHdrCode().toString());
   }
