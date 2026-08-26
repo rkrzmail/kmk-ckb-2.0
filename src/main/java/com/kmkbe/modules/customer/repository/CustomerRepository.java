@@ -29,4 +29,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long>, Pagin
 
    Optional<Customer> findByBouwheerAndCustExternalCode(String bouwheer, String vendorId);
 
+  Optional<Customer> findByCustExternalCode(String vendorCode);
+
+
 }

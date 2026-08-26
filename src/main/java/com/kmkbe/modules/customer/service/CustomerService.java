@@ -75,42 +75,72 @@ public class CustomerService {
 
   public Customer create(SignUpRequest request, CustomerType type) {
 
-    // Validate duplicate email ID
-    Optional<Customer> customerOptional = customerRepository.findByCustEmail(request.getEmail());
-    if (customerOptional.isPresent() && customerOptional.get().isActive() && Boolean.TRUE.equals(customerOptional.get().getIsEmailValid())) {
-      log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getVendorId());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "Email vendor has been register! "+customerOptional.get().getCustName());
-    }
-
-    // Validate duplicate vendor ID
-    if (customerOptional.isPresent() && customerOptional.get().getCustExternalCode().equals(request.getVendorCode()) && !customerOptional.get().getCustEmail().equals(request.getEmail())) {
-      log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", request.getVendorId());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84 + "Vendor ID has been register! "+customerOptional.get().getCustName());
-    }
-
-
+    /**
+     * Validate Agree TC
+     */
     if (!request.isAgreeTc()) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", false);
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Setujui Syarat dan Ketentuan for sign up");
     }
 
+    String inputEmail = request.getEmail().toLowerCase();
+    String inputVendorCode = request.getVendorCode();
 
-//  CustomerUtils.clearCustomerInactiveData(jdbcTemplate, find.get());
+    /**
+     * Check Email and vendor Code
+     */
+    Optional<Customer> customerByVendor = customerRepository.findByCustExternalCode(inputVendorCode);
+    Optional<Customer> customerByEmail = customerRepository.findByCustEmail(inputEmail);
+
+    /**
+     * Validate Email unique
+     */
+    if (customerByEmail.isPresent() && customerByEmail.get().isActive()) {
+      Customer existingEmailOwner = customerByEmail.get();
+      if (!existingEmailOwner.getCustExternalCode().equals(inputVendorCode)) {
+        log.info("Email {} sudah digunakan oleh vendor lain: {}", inputEmail, existingEmailOwner.getCustExternalCode());
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Email sudah terdaftar dengan vendor lain!");
+      }
+    }
+
+    /**
+     * Validate Email active
+     */
+    if (customerByVendor.isPresent()) {
+      Customer existingVendor = customerByVendor.get();
+      if (!existingVendor.getCustEmail().equals(inputEmail) && Boolean.TRUE.equals(existingVendor.getIsEmailValid())) {
+        log.info("Vendor {} gagal update email karena email lama sudah terverifikasi valid", inputVendorCode);
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Tidak bisa mengubah email yang sudah terverifikasi!");
+      }
+    }
+
+    /**
+     * Update Customer
+     */
     final String encodePin = bcryptEncoder.encode(request.getPin());
-
     Customer customer = new Customer();
     CustomerAuditData before = null;
-    if(customerOptional.isPresent() && !customerOptional.get().isActive()){
+
+    if (customerByVendor.isPresent()) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Update Customer ", request.getVendorId());
-      customer = customerOptional.get();
+      customer = customerByVendor.get();
       before = toAuditData(customer);
-    }else{
+    } else {
+      // CREATE
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Create Customer ", request.getVendorId());
       customer.setCustCode(UUID.randomUUID());
+      customer.setIsEmailValid(false);
+      customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
+      customer.setActive(false);
+      if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
+        customer.setCustExternalCode(request.getVendorCode());
+      }
     }
+    /**
+     * Set update data
+     */
     customer.setCustName(request.getName());
     customer.setCustEmail(request.getEmail().toLowerCase());
-
     if (request.getCustomerNo() != null && !request.getCustomerNo().isEmpty()) {
       customer.setCustNo(request.getCustomerNo());
     }
@@ -131,13 +161,7 @@ public class CustomerService {
     customer.setCustMobilePhone(FormatingUtils.formatOnlyNumber(request.getMobilePhone()));
     customer.setAgreeTc(request.isAgreeTc());
     customer.setCustPin(encodePin);
-    customer.setIsEmailValid(false);
     customer.setBouwheer(request.getBouwheerCode());
-    customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
-    customer.setActive(false);
-    if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
-      customer.setCustExternalCode(request.getVendorCode());
-    }
     customer.setUsrCrt(customer.getCustName());
     customer.setDtmCrt(DateTimeUtils.now());
     Customer saved = customerRepository.save(customer);
