@@ -277,8 +277,13 @@ public class AuthService {
       }
       //check singgle session
 
-
       final Customer cust = findCust.get();
+
+      if(!cust.isActive()){
+        log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.email());
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Your Account not active, please confirm to Admin");
+      }
+
       if (!bcryptEncoder.matches(request.pin(), cust.getCustPin())) {
         throw CommonInvalidException.invalidPin();
       }
@@ -332,17 +337,6 @@ public class AuthService {
       );
 
       return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,loginDto);
-    } catch (CommonInvalidException e) {
-      auditTrailService.recordAuthentication(
-        "CUSTOMER_AUTH",
-        AuditActorType.CUSTOMER,
-        request.email(),
-        null,
-        false,
-        e.getMessage()
-      );
-      log.error("AuthService signIn: {}", e.getMessage());
-      throw e;
     } catch (Exception e) {
       auditTrailService.recordAuthentication(
         "CUSTOMER_AUTH",

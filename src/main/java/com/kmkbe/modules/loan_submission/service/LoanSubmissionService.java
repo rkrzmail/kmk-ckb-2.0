@@ -297,9 +297,9 @@ public class LoanSubmissionService {
       }
 
       final Product product = findProduct.get();
-      Double provisionRate = findProduct.get().getProvisionRate(),
-        effectiveRate = findProduct.get().getEffectiveRate(),
-        adminRate = findProduct.get().getAdminRate();
+      Double provisionRate = findProduct.get().getProvisionRate();
+      Double effectiveRate = findProduct.get().getEffectiveRate();
+      Double adminRate = findProduct.get().getAdminRate();
       boolean byPass = false;
       boolean isCustomerExisting = false;
       Cwr validateCwr = null;
@@ -1626,8 +1626,8 @@ public class LoanSubmissionService {
       return cwr;
     }
 
-    final String identityType = customer.getCustIdTypeCode(),
-      identityNo = customer.getCompany() != null
+    final String identityType = customer.getCustIdTypeCode();
+    final String identityNo = customer.getCompany() != null
         ? customer.getCompany().getIdentityNo()
         : (customer.getPersonal() != null ? customer.getPersonal().getIdentityNo() : customer.getCustIdNo());
 

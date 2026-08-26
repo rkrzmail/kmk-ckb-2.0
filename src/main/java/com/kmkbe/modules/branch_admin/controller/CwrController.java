@@ -25,94 +25,93 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/v1/cwr")
 @Tag(
-        name = "Persetujuan Kredit Endpoints",
-        description = "Berisi endpoints data persetujuan/kelayakan kredit debitur"
+  name = "Persetujuan Kredit Endpoints",
+  description = "Berisi endpoints data persetujuan/kelayakan kredit debitur"
 )
 @RequiredArgsConstructor
 public class CwrController {
-    private final CwrService cwrService;
-    private final InvoiceService invoiceService;
-    private final FinancingHdrService financingHdrService;
-    private final CurrentUserService currentUserService;
+  private final CwrService cwrService;
+  private final InvoiceService invoiceService;
+  private final FinancingHdrService financingHdrService;
+  private final CurrentUserService currentUserService;
 
-    @GetMapping("/list/{custCode}")
-    public CommonResult<PaginationResult<CwrListDto>> getCwrList(
-            @PathVariable("custCode") String custCode,
-            PaginationRequest request
-    ) throws SignatureException {
+  @GetMapping("/list/{custCode}")
+  public CommonResult<PaginationResult<CwrListDto>> getCwrList(
+    @PathVariable("custCode") String custCode,
+    PaginationRequest request
+  ) throws SignatureException {
 
-        currentUserService.authenticatedInternalUser();
+    currentUserService.authenticatedInternalUser();
 
-        return new CommonResult<PaginationResult<CwrListDto>>().success(
-                cwrService.list(custCode, request)
-        );
+    return new CommonResult<PaginationResult<CwrListDto>>().success(
+      cwrService.list(custCode, request)
+    );
+  }
+
+  @GetMapping("/detail/{cwrCode}/{financingHdrCode}")
+  public CommonResult<DetailCwrDto> getCwr(
+    @PathVariable("cwrCode") String cwrCode,
+    @PathVariable("financingHdrCode") String financingHdrCode
+  ) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<DetailCwrDto>().success(
+      cwrService.detail(cwrCode, financingHdrCode)
+    );
+  }
+
+  @GetMapping("/list-agreement/{cwrCode}/{financingHdrCode}")
+  public CommonResult<List<String>> getListAggr(
+    @PathVariable("cwrCode") String cwrCode,
+    @PathVariable("financingHdrCode") String financingHdrCode
+
+  ) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<List<String>>().success(
+      cwrService.inquiryListAggr(cwrCode)
+    );
+  }
+
+  @GetMapping("/inquiry")
+  public CommonResult<InquiryCwrDto> getInquiryCwr(
+    @RequestParam("cwrNo") String cwrNo
+  ) throws JsonProcessingException, ParseException, SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<InquiryCwrDto>().success(
+      cwrService.inquiryCwr(cwrNo)
+    );
+  }
+
+  @PostMapping("/inquiry/create")
+  public CommonResult<Object> createInquiryCwr(
+    @Valid @RequestBody CreateInquiryCwrRequest request
+  ) throws SignatureException, ParseException, JsonProcessingException {
+
+    cwrService.createInquiryCwr(currentUserService.internalUser(), request);
+    return new CommonResult<>().success(
+      null
+    );
+  }
+
+  @GetMapping("/invoices/{financingHdrCode}")
+  public CommonResult<PaginationResult<PostedInvoiceDto>> getCwrInvoices(
+    @PathVariable("financingHdrCode") String financingHdrCode,
+    PaginationRequest request
+  ) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    PaginationResult<PostedInvoiceDto> result = PaginationResult.empty(
+      request.getPageNo()
+    );
+
+    FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+    if (financingHdr != null) {
+      result = invoiceService.invoiceSubmissionByFinancingHdr(
+        financingHdr,
+        request
+      );
     }
 
-    @GetMapping("/detail/{cwrCode}/{financingHdrCode}")
-    public CommonResult<DetailCwrDto> getCwr(
-            @PathVariable("cwrCode") String cwrCode,
-            @PathVariable("financingHdrCode") String financingHdrCode
-    ) throws SignatureException {
-        currentUserService.authenticatedInternalUser();
-        return new CommonResult<DetailCwrDto>().success(
-                cwrService.detail(cwrCode, financingHdrCode)
-        );
-    }
-
-    @GetMapping("/list-agreement/{cwrCode}/{financingHdrCode}")
-    public CommonResult<List<String>> getListAggr(
-            @PathVariable("cwrCode") String cwrCode,
-            @PathVariable("financingHdrCode") String financingHdrCode
-
-    ) throws SignatureException  {
-        currentUserService.authenticatedInternalUser();
-        return new CommonResult<List<String>>().success(
-                cwrService.inquiryListAggr (cwrCode)
-        );
-    }
-    @GetMapping("/inquiry")
-    public CommonResult<InquiryCwrDto> getInquiryCwr(
-            @RequestParam("cwrNo") String cwrNo
-    ) throws JsonProcessingException, ParseException, SignatureException {
-        currentUserService.authenticatedInternalUser();
-        return new CommonResult<InquiryCwrDto>().success(
-                cwrService.inquiryCwr(cwrNo)
-        );
-    }
-
-    @PostMapping("/inquiry/create")
-    public CommonResult<Object> createInquiryCwr(
-            @Valid @RequestBody CreateInquiryCwrRequest request
-    ) throws SignatureException, ParseException, JsonProcessingException {
-
-        cwrService.createInquiryCwr(currentUserService.internalUser(), request);
-        return new CommonResult<>().success(
-                null
-        );
-    }
-
-    @GetMapping("/invoices/{financingHdrCode}")
-    public CommonResult<PaginationResult<PostedInvoiceDto>> getCwrInvoices(
-            @PathVariable("financingHdrCode") String financingHdrCode,
-            PaginationRequest request
-    ) throws SignatureException {
-        currentUserService.authenticatedInternalUser();
-        PaginationResult<PostedInvoiceDto> result = PaginationResult.empty(
-                request.getPageNo()
-        );
-
-        FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
-        if (financingHdr != null) {
-
-
-            result = invoiceService.invoiceSubmissionByFinancingHdr(
-                    financingHdr,
-                    request
-            );
-        }
-
-        return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
-                result
-        );
-    }
+    return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
+      result
+    );
+  }
 }

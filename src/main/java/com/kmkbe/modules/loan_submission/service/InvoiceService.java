@@ -24,6 +24,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -34,6 +35,8 @@ import java.security.SignatureException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
 @Service
@@ -151,65 +154,32 @@ public class InvoiceService {
     PaginationRequest request
   ) {
     try {
-      int pageNo = 0, pageSize = 10;
+      int pageNo = (request.getPageNo() != null && request.getPageNo() > 0) ? request.getPageNo() - 1 : 0;
+      int pageSize = (request.getPageSize() != null) ? request.getPageSize() : 10;
 
-      if (request.getPageNo() != null) {
-        pageNo = request.getPageNo();
-      }
-      if (request.getPageSize() != null) {
-        pageSize = request.getPageSize();
-      }
+      Pageable pageable = PageRequest.of(pageNo, pageSize);
+      Page<FinancingDtl> financingDtls;
 
-      if (pageNo > 0) {
-        pageNo = pageNo - 1;
-      }
-
-      Page<FinancingDtl> financingDtls = null;
-      if (request.getSearchBy() != null) {
-        final String searchBy = request.getSearchBy();
-        final String searchValue = request.getSearchValue();
-
+      if (request.getSearchBy() != null && !request.getSearchValue().trim().isEmpty()) {
         financingDtls = financingDtlRepository.findAll(
           Specification.where(
-            FinancingDtlSpec.custInvoiceFilterBy(financingHdr.getFinancingHdrCode(), request.getSearchBy(), request.getSearchValue())
+            FinancingDtlSpec.custInvoiceFilterBy(
+              financingHdr.getFinancingHdrCode(),
+              request.getSearchBy(),
+              request.getSearchValue()
+            )
           ),
-          PageRequest.of(pageNo, pageSize)
+          pageable
         );
-
-                /*    Specification<FinancingDtl> spec = Specification.where((root, query, criteriaBuilder) -> {
-                        return criteriaBuilder.equal(root.get("financingHdr"),   financingHdr  );
-                     });
-
-
-                spec = spec.and((root, query, criteriaBuilder) -> {
-                        // Lakukan join antara Product dan Category
-
-                        Join<FinancingHdr, FinancingDtl> joinDtl = root.join("financingDtls", JoinType.INNER);
-                        Join<FinancingHdr, Customer> joinCust = root.join("customer", JoinType.INNER);
-                        Join<FinancingHdr, Bouwheer> joinBouwheer = root.join("bouwheer", JoinType.INNER);
-                        switch (searchBy){
-                            case "customer":
-                                return criteriaBuilder.like(joinCust.get(searchBy), "%" + searchValue + "%");
-                            default:
-
-                        }
-                        return criteriaBuilder.like(root.get(searchBy), "%" + searchValue + "%");
-                    });
-
-                   financingDtls = financingDtlRepository.findAll(spec,    PageRequest.of(pageNo, pageSize)
-                );*/
-
-      }
-
-      if (financingDtls == null) {
-
+      } else {
         financingDtls = financingDtlRepository.findByFinancingHdr(
           financingHdr,
-          PageRequest.of(pageNo, pageSize)
+          pageable
         );
       }
 
 
+      log.info("Invoice Details :  {} ",financingDtls.stream().toList());
       return paginateInvoice(
         financingDtls,
         pageNo
@@ -219,6 +189,7 @@ public class InvoiceService {
       throw e;
     }
   }
+
 
   public PaginationResult<CustomerCreditFacilityDto> customerCreditFacilities(
     Authentication authentication,
