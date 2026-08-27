@@ -181,10 +181,4 @@ public class Customer implements UserDetails {
 
   @Column(name = "bouwheer", length = 36)
   private String bouwheer;
-
-//  @OneToOne(fetch = FetchType.LAZY)
-//  @JoinColumn(name = "bouwheer", referencedColumnName = "bouwheer_code", insertable = false, updatable = false)
-//  @NotFound(action = NotFoundAction.IGNORE)
-//  private Bouwheer bouwheerDetail;
-
 }
