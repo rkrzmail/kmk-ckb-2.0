@@ -67,7 +67,8 @@ public class CustomerService {
                          JdbcTemplate jdbcTemplate,
                          FinancingHdrRepository financingHdrRepository,
                          EmailService emailService,
-                         AuditTrailService auditTrailService, BouwheerRepository bouwheerRepository) {
+                         AuditTrailService auditTrailService,
+                         BouwheerRepository bouwheerRepository) {
     this.customerRepository = customerRepository;
     this.bcryptEncoder = bcryptEncoder;
     this.jdbcTemplate = jdbcTemplate;

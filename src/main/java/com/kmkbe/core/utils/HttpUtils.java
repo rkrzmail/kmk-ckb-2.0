@@ -15,106 +15,106 @@ import java.util.Map;
 
 public class HttpUtils {
 
-    public static final int DEFAULT_MAX_PAYLOAD_LENGTH = 50000;
+  public static final int DEFAULT_MAX_PAYLOAD_LENGTH = 50000;
 
-    public static Map<String, Object> createRequestLog(
-            HttpServletRequest request,
-            int payloadLength
+  public static Map<String, Object> createRequestLog(
+    HttpServletRequest request,
+    int payloadLength
+  ) {
+    final Map<String, Object> result = new HashMap<>();
+
+    String queryString = request.getQueryString(),
+      client = request.getRemoteAddr(),
+      sessionId = null,
+      user = request.getRemoteUser();
+
+    String payload = null;
+    HttpHeaders headers = new ServletServerHttpRequest(request).getHeaders();
+
+    HttpSession session = request.getSession(false);
+    if (session != null) {
+      sessionId = session.getId();
+    }
+
+    if (
+      request.getContentType() != null
+        && !request.getContentType().equals("multipart/form-data")
     ) {
-        final Map<String, Object> result = new HashMap<>();
-
-        String queryString = request.getQueryString(),
-                client = request.getRemoteAddr(),
-                sessionId = null,
-                user = request.getRemoteUser();
-
-        String payload = null;
-        HttpHeaders headers = new ServletServerHttpRequest(request).getHeaders();
-
-        HttpSession session = request.getSession(false);
-        if (session != null) {
-            sessionId = session.getId();
+      HttpServletRequestCopier wrapper = WebUtils.getNativeRequest(request, HttpServletRequestCopier.class);
+      if (wrapper != null) {
+        byte[] buf = wrapper.getContentAsByteArray();
+        if (buf.length > 0) {
+          int length = Math.min(buf.length, payloadLength);
+          try {
+            payload = new String(buf, 0, length, wrapper.getCharacterEncoding());
+          } catch (UnsupportedEncodingException ignored) {
+          }
         }
-
-        if (
-                request.getContentType() != null
-                        && !request.getContentType().equals("multipart/form-data")
-        ) {
-            HttpServletRequestCopier wrapper = WebUtils.getNativeRequest(request, HttpServletRequestCopier.class);
-            if (wrapper != null) {
-                byte[] buf = wrapper.getContentAsByteArray();
-                if (buf.length > 0) {
-                    int length = Math.min(buf.length, payloadLength);
-                    try {
-                        payload = new String(buf, 0, length, wrapper.getCharacterEncoding());
-                    } catch (UnsupportedEncodingException ignored) {
-                    }
-                }
-            }
-        }
-
-        result.put("queryString", queryString);
-        result.put("headers", headers);
-        result.put("payload", ObjectUtils.strToJson(payload));
-        result.put("client", client);
-        result.put("sessionId", sessionId);
-        result.put("user", user);
-
-        return result;
+      }
     }
 
-    public static Map<String, Object> createResponseLog(
-            HttpServletResponse response,
-            int payloadLength
+    result.put("queryString", queryString);
+    result.put("headers", headers);
+    result.put("payload", ObjectUtils.strToJson(payload));
+    result.put("client", client);
+    result.put("sessionId", sessionId);
+    result.put("user", user);
+
+    return result;
+  }
+
+  public static Map<String, Object> createResponseLog(
+    HttpServletResponse response,
+    int payloadLength
+  ) {
+    final Map<String, Object> result = new HashMap<>();
+
+    final int statusCode = response.getStatus();
+    final String contentType = response.getContentType();
+    String payload = null;
+
+    if (
+      response.getContentType() != null
+        && (
+        response.getContentType().equals("application/octet-stream")
+          || response.getContentType().equals("application/json")
+      )
     ) {
-        final Map<String, Object> result = new HashMap<>();
-
-        final int statusCode = response.getStatus();
-        final String contentType = response.getContentType();
-        String payload = null;
-
-        if (
-                response.getContentType() != null
-                        && (
-                        response.getContentType().equals("application/octet-stream")
-                                || response.getContentType().equals("application/json")
-                )
-        ) {
-            HttpServletResponseCopier wrapper = WebUtils.getNativeResponse(response, HttpServletResponseCopier.class);
-            if (wrapper != null) {
-                byte[] buf = wrapper.getContentAsByteArray();
-                if (buf.length > 0) {
-                    int length = Math.min(buf.length, payloadLength);
-                    try {
-                        payload = new String(buf, 0, length, wrapper.getCharacterEncoding());
-                    } catch (UnsupportedEncodingException ignored) {
-                    }
-                }
-            }
+      HttpServletResponseCopier wrapper = WebUtils.getNativeResponse(response, HttpServletResponseCopier.class);
+      if (wrapper != null) {
+        byte[] buf = wrapper.getContentAsByteArray();
+        if (buf.length > 0) {
+          int length = Math.min(buf.length, payloadLength);
+          try {
+            payload = new String(buf, 0, length, wrapper.getCharacterEncoding());
+          } catch (UnsupportedEncodingException ignored) {
+          }
         }
-
-        result.put("statusCode", statusCode);
-        result.put("contentType", contentType);
-        result.put("payload", ObjectUtils.strToJson(payload));
-
-        return result;
+      }
     }
 
-    public static String getHeaderBearerToken(HttpServletRequest request) {
-        final String authHeader = getHeaderAuthorization(request);
+    result.put("statusCode", statusCode);
+    result.put("contentType", contentType);
+    result.put("payload", ObjectUtils.strToJson(payload));
 
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return null;
-        }
+    return result;
+  }
 
-        return authHeader.substring("Bearer ".length());
+  public static String getHeaderBearerToken(HttpServletRequest request) {
+    final String authHeader = getHeaderAuthorization(request);
+
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+      return null;
     }
 
-    public static String getHeaderAuthorization(HttpServletRequest request){
-        return request.getHeader("Authorization");
-    }
+    return authHeader.substring("Bearer ".length());
+  }
 
-    public static String getHeaderApiKey(HttpServletRequest request){
-        return request.getHeader("API-Key");
-    }
+  public static String getHeaderAuthorization(HttpServletRequest request) {
+    return request.getHeader("Authorization");
+  }
+
+  public static String getHeaderApiKey(HttpServletRequest request) {
+    return request.getHeader("API-Key");
+  }
 }

@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.exception.BusinessException;
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
@@ -36,6 +37,7 @@ class CustomerServiceIssueRegressionTest {
   @Mock private FinancingHdrRepository financingHdrRepository;
   @Mock private EmailService emailService;
   @Mock private AuditTrailService auditTrailService;
+  @Mock private BouwheerRepository bouwheerRepository;
 
   private CustomerService service;
 
@@ -47,7 +49,8 @@ class CustomerServiceIssueRegressionTest {
       jdbcTemplate,
       financingHdrRepository,
       emailService,
-      auditTrailService
+      auditTrailService,
+      bouwheerRepository
     );
   }
 

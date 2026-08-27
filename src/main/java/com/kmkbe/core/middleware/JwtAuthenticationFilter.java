@@ -42,330 +42,329 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    @Value("${spring.profiles.active}")
-    private String profileActives;
+  @Value("${spring.profiles.active}")
+  private String profileActives;
 
-    @Value("${security.api.key}")
-    private String apiKey;
+  @Value("${security.api.key}")
+  private String apiKey;
 
-    @Value("${env}")
-    private String envString;
+  @Value("${env}")
+  private String envString;
 
-    public static final String[] ENDPOINTS_WHITELIST_FINANCING = {
-            "/api/v1/financing/invoice-paid",
-            "/api/v1/financing/approvals/status",
-            "/api/v1/financing/sch/cwr/status",
-    };
-
-
-
-    public static final String[] ENDPOINTS_WHITELIST_LOAN_SUBMISSION = {
-            "/api/v1/loan-submissions",
-            "/api/v1/loan-submissions/invoices",
-            "/api/v1/loan-submissions/importance-notes",
-            "/api/v1/loan-submissions/simulations/percentage",
-            "/api/v1/loan-submissions/simulations/calculate",
-            "/api/v1/loan-submissions/simulations/recalculate",
-            "/api/v1/loan-submissions/simulations/viewcalculate",
-    };
-
-    public static final String[] ENDPOINTS_WHITELIST = {
-            "/api/v1/auth/sign-in",
-            "/api/v1/sbu/**",
-            "/api/v1/auth/sign-up",
-            "/api/v1/auth/forgot-pin",
-            "/api/v1/auth/refresh-token",
-            "/api/v1/otp/**",
-            "/api/v1/error/**",
-            "/api/v1/uploads/**",
-            "/api/v1/testing/**",
-            "/api/v1/documents/download/**",
-
-            // internal
-            //"/api/v1/internal/user/**",
-            "/api/v1/internal/auth/**",
-            //"/api/v1/internal/auth/refresh-token",
-
-            "/api/monitoring/**", // actuator replacement
-            "/uploads/**",
-            "/error/**",
-    };
-
-    public static final String[] ENDPOINTS_SWAGGERS = {
-            "/swagger-ui.html",
-            "/swagger-ui/**",
-            "/swagger-resources/**",
-            "/configuration/**",
-            "/webjars/**",
-            "/instances/**",
-
-            "/api/v1/api-docs/**",
-            "/api/v1/swagger-ui/**",
-            "/api/v1/swagger-resources/**",
-            "/api/v1/configuration/**",
-            "/api/v1/webjars/**",
-            "/api/v1/instances/**",
-    };
-
-    private final HandlerExceptionResolver handlerExceptionResolver;
-    private final JwtService jwtService;
-    private final JwtLoanSubmissionService jwtLoanSubmissionService;
-    private final UserDetailsService userDetailsService;
-    private final RedisRepository redisRepository;
+  public static final String[] ENDPOINTS_WHITELIST_FINANCING = {
+    "/api/v1/financing/invoice-paid",
+    "/api/v1/financing/approvals/status",
+    "/api/v1/financing/sch/cwr/status",
+  };
 
 
-    @Qualifier("internalUserDetailService")
-    private final UserDetailsService internalUserDetailsService;
+  public static final String[] ENDPOINTS_WHITELIST_LOAN_SUBMISSION = {
+    "/api/v1/loan-submissions",
+    "/api/v1/loan-submissions/invoices",
+    "/api/v1/loan-submissions/importance-notes",
+    "/api/v1/loan-submissions/simulations/percentage",
+    "/api/v1/loan-submissions/simulations/calculate",
+    "/api/v1/loan-submissions/simulations/recalculate",
+    "/api/v1/loan-submissions/simulations/viewcalculate",
+  };
 
-    /**
-     * <h5>In order to validate an request required:</h5>
-     * <ul>
-     *     <li>Validate API key</li>
-     *     <li>Validate white list</li>
-     *     <li>Validate loan submission</li>
-     * </ul>
-     * </br>
-     *
-     * <p>Loan Submission can access without Authorization and Authorized User</p>
-     */
-    @Override
-    protected void doFilterInternal(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
-        DateTimeUtils.envMode(envString);
-        try {
-            if (shouldValidateApiKey(request, response, filterChain)) {
-                return;
-            }
+  public static final String[] ENDPOINTS_WHITELIST = {
+    "/api/v1/auth/sign-in",
+    "/api/v1/sbu/**",
+    "/api/v1/auth/sign-up",
+    "/api/v1/auth/forgot-pin",
+    "/api/v1/auth/refresh-token",
+    "/api/v1/otp/**",
+    "/api/v1/error/**",
+    "/api/v1/uploads/**",
+    "/api/v1/testing/**",
+    "/api/v1/documents/download/**",
 
-            if (whiteListEndPointsValidation(request, response, filterChain)) {
-                return;
-            }
+    // internal
+    //"/api/v1/internal/user/**",
+    "/api/v1/internal/auth/**",
+    //"/api/v1/internal/auth/refresh-token",
 
-            if (lonaSubmissionValidation(request, response, filterChain)) {
-                return;
-            }
+    "/api/monitoring/**", // actuator replacement
+    "/uploads/**",
+    "/error/**",
+  };
 
-            setAuthenticate(request, response, filterChain);
-        } catch (ExpiredJwtException   e) {
-            request.setAttribute("exception", e);
+  public static final String[] ENDPOINTS_SWAGGERS = {
+    "/swagger-ui.html",
+    "/swagger-ui/**",
+    "/swagger-resources/**",
+    "/configuration/**",
+    "/webjars/**",
+    "/instances/**",
 
-            filterChain.doFilter(request, response);
-        } catch (  BadCredentialsException e) {
-            if (request.getRequestURI().contains("internal")){
-                RequestDispatcher dispatcher = request.getRequestDispatcher("/error/internal/unauthorized");
-                dispatcher.forward(request, response);
-            }else{
-                RequestDispatcher dispatcher = request.getRequestDispatcher("/error/unauthorized");
-                dispatcher.forward(request, response);
-            }
+    "/api/v1/api-docs/**",
+    "/api/v1/swagger-ui/**",
+    "/api/v1/swagger-resources/**",
+    "/api/v1/configuration/**",
+    "/api/v1/webjars/**",
+    "/api/v1/instances/**",
+  };
 
-            return; // Stop further processing
-        } catch (Exception e) {
-            logger.error("failed on set user authentication, {}", e);
-            handlerExceptionResolver.resolveException(request, response, null, e);
-        }
+  private final HandlerExceptionResolver handlerExceptionResolver;
+  private final JwtService jwtService;
+  private final JwtLoanSubmissionService jwtLoanSubmissionService;
+  private final UserDetailsService userDetailsService;
+  private final RedisRepository redisRepository;
+
+
+  @Qualifier("internalUserDetailService")
+  private final UserDetailsService internalUserDetailsService;
+
+  /**
+   * <h5>In order to validate an request required:</h5>
+   * <ul>
+   *     <li>Validate API key</li>
+   *     <li>Validate white list</li>
+   *     <li>Validate loan submission</li>
+   * </ul>
+   * </br>
+   *
+   * <p>Loan Submission can access without Authorization and Authorized User</p>
+   */
+  @Override
+  protected void doFilterInternal(
+    @NonNull HttpServletRequest request,
+    @NonNull HttpServletResponse response,
+    @NonNull FilterChain filterChain
+  ) throws ServletException, IOException {
+    DateTimeUtils.envMode(envString);
+    try {
+      if (shouldValidateApiKey(request, response, filterChain)) {
+        return;
+      }
+
+      if (whiteListEndPointsValidation(request, response, filterChain)) {
+        return;
+      }
+
+      if (lonaSubmissionValidation(request, response, filterChain)) {
+        return;
+      }
+
+      setAuthenticate(request, response, filterChain);
+    } catch (ExpiredJwtException e) {
+      request.setAttribute("exception", e);
+
+      filterChain.doFilter(request, response);
+    } catch (BadCredentialsException e) {
+      if (request.getRequestURI().contains("internal")) {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/error/internal/unauthorized");
+        dispatcher.forward(request, response);
+      } else {
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/error/unauthorized");
+        dispatcher.forward(request, response);
+      }
+
+      return; // Stop further processing
+    } catch (Exception e) {
+      logger.error("failed on set user authentication, {}", e);
+      handlerExceptionResolver.resolveException(request, response, null, e);
+    }
+  }
+
+  private void setAuthenticate(
+    @NonNull HttpServletRequest request,
+    @NonNull HttpServletResponse response,
+    @NonNull FilterChain filterChain
+  ) throws ServletException, IOException {
+    final String authHeader = HttpUtils.getHeaderAuthorization(request);
+    if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+      filterChain.doFilter(request, response);
+      return;
     }
 
-    private void setAuthenticate(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
-        final String authHeader = HttpUtils.getHeaderAuthorization(request);
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            filterChain.doFilter(request, response);
-            return;
-        }
+
+    final String jwt = authHeader.substring("Bearer ".length());
+    final String username = jwtService.extractUsername(jwt);
+    final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 
-        final String jwt = authHeader.substring("Bearer ".length());
-        final String username = jwtService.extractUsername(jwt);
-        final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    final String rtoken = request.getHeader("rtoken");
+    Optional<RedisLog> redisLog = redisRepository.findFirstByRedis(username);
+    if (rtoken.equalsIgnoreCase("")) {
+      //abaikan
+    } else if (redisLog.isPresent()) {
+      if (request.getRequestURI().toLowerCase().contains("/loan-submissions/create")) {
 
+      } else if (!redisLog.get().getSession().equalsIgnoreCase(rtoken)) {
+        //throw new BadCredentialsException("Invalid token, Multi Login");
+      }
+    } else {
+      //throw new BadCredentialsException("Invalid token, Multi Login");
+    }
 
-        final String rtoken = request.getHeader("rtoken");
-        Optional<RedisLog> redisLog = redisRepository.findFirstByRedis(username);
-        if(rtoken.equalsIgnoreCase("")){
-            //abaikan
-        }else  if (redisLog.isPresent()){
-            if (request.getRequestURI().toLowerCase().contains("/loan-submissions/create")){
+    if (username != null && authentication == null) {
+      UserDetails user;
+      try {
+        user = userDetailsService.loadUserByUsername(username);
+      } catch (Exception e) {
+        user = internalUserDetailsService.loadUserByUsername(username);
+      }
 
-            } else if (!redisLog.get().getSession().equalsIgnoreCase(rtoken)){
-                //throw new BadCredentialsException("Invalid token, Multi Login");
-            }
-        }else{
-            //throw new BadCredentialsException("Invalid token, Multi Login");
-        }
+      if (jwtService.isTokenValid(jwt, user)) {
+        authenticate(user, request);
+      }
+    }
 
-        if (username != null && authentication == null) {
-            UserDetails user;
-            try {
-                user = userDetailsService.loadUserByUsername(username);
-            } catch (Exception e) {
-                user = internalUserDetailsService.loadUserByUsername(username);
-            }
+    filterChain.doFilter(request, response);
+  }
 
-            if (jwtService.isTokenValid(jwt, user)) {
-                authenticate(user, request);
-            }
-        }
+  private void authenticate(UserDetails userDetails, @NonNull HttpServletRequest request) {
+    final UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
+      userDetails,
+      UUID.randomUUID(),
+      userDetails.getAuthorities()
+    );
 
+    authToken.setDetails(
+      new WebAuthenticationDetailsSource()
+        .buildDetails(request)
+    );
+
+    SecurityContextHolder.getContext().setAuthentication(authToken);
+  }
+
+  private boolean whiteListEndPointsValidation(
+    @NonNull HttpServletRequest request,
+    @NonNull HttpServletResponse response,
+    @NonNull FilterChain filterChain
+  ) throws ServletException, IOException {
+    for (String endpoint : ENDPOINTS_WHITELIST) {
+      if (new AntPathRequestMatcher(endpoint).matches(request)) {
         filterChain.doFilter(request, response);
-    }
-
-    private void authenticate(UserDetails userDetails, @NonNull HttpServletRequest request) {
-        final UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
-                userDetails,
-                UUID.randomUUID(),
-                userDetails.getAuthorities()
-        );
-
-        authToken.setDetails(
-                new WebAuthenticationDetailsSource()
-                        .buildDetails(request)
-        );
-
-        SecurityContextHolder.getContext().setAuthentication(authToken);
-    }
-
-    private boolean whiteListEndPointsValidation(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
-        for (String endpoint : ENDPOINTS_WHITELIST) {
-            if (new AntPathRequestMatcher(endpoint).matches(request)) {
-                filterChain.doFilter(request, response);
-                return true;
-            }
-        }
-        for (String endpoint : ENDPOINTS_WHITELIST_FINANCING) {
-            if (new AntPathRequestMatcher(endpoint).matches(request)) {
-                filterChain.doFilter(request, response);
-                return true;
-            }
-            String sts = request.getRequestURI();
-            if (endpoint.endsWith( request.getRequestURI())) {
-                filterChain.doFilter(request, response);
-                return true;
-            }
-        }
-
-
-        return false;
-    }
-
-    private boolean lonaSubmissionValidation(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
-        final String loanSubmissionBypassToken = request.getParameter("token"); //determine loan-submission whitelist when token integrate valid
-        boolean invalidBouwheer = false;
-        if (
-                !StringUtil.isNullOrEmpty(loanSubmissionBypassToken)
-                        && new OrRequestMatcher(
-                        new AntPathRequestMatcher("/api/v1/loan-submissions"),
-                        new AntPathRequestMatcher("/api/v1/loan-submissions/invoices"),
-                        new AntPathRequestMatcher("/api/v1/loan-submissions/importance-notes"),
-                        new AntPathRequestMatcher("/api/v1/loan-submissions/simulations/percentage"),
-                        new AntPathRequestMatcher("/api/v1/loan-submissions/simulations/calculate")
-                ).matches(request)
-        ) {
-            if (
-                    loanSubmissionBypassToken.equalsIgnoreCase("1")
-                            || loanSubmissionBypassToken.equalsIgnoreCase("2")
-                            || loanSubmissionBypassToken.equalsIgnoreCase("3")
-            ) {
-                filterChain.doFilter(request, response);
-                return true;
-            }
-
-            if (new AntPathRequestMatcher("/api/v1/loan-submissions/**").matches(request)) {
-                JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(loanSubmissionBypassToken);
-                if (jwtSimulasiModel == null) {
-                    invalidBouwheer = true;
-                } else if (!StringUtil.isNullOrEmpty(jwtSimulasiModel.getBouwheerCode())) {
-                    filterChain.doFilter(request, response);
-                    return true;
-                }
-            }
-        } else {
-            if (HttpUtils.getHeaderAuthorization(request) == null) {
-                for (String endpoint : ENDPOINTS_WHITELIST_LOAN_SUBMISSION) {
-                    if (new AntPathRequestMatcher(endpoint).matches(request)) {
-                        filterChain.doFilter(request, response);
-                        return true;
-                    }
-                }
-            }
-        }
-
-        if (invalidBouwheer) {
-            handlerExceptionResolver.resolveException(request, response, null, new Exception("External request need passing an valid token"));
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean shouldValidateApiKey(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain
-    ) throws ServletException, IOException {
-        if (
-                new OrRequestMatcher(
-                        new AntPathRequestMatcher("/api/monitoring/**")
-                ).matches(request)
-        ) {
-            if (apiKeyValidation(request, response)) {
-                filterChain.doFilter(request, response);
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    private boolean apiKeyValidation(
-            @NonNull HttpServletRequest request,
-            @NonNull HttpServletResponse response
-    ) {
-        final String providedApiKey = HttpUtils.getHeaderApiKey(request);
-        if (providedApiKey == null || !providedApiKey.equals(apiKey)) {
-            handlerExceptionResolver.resolveException(request, response, null, new IllegalApiKeyException());
-            return false;
-        }
-
         return true;
+      }
+    }
+    for (String endpoint : ENDPOINTS_WHITELIST_FINANCING) {
+      if (new AntPathRequestMatcher(endpoint).matches(request)) {
+        filterChain.doFilter(request, response);
+        return true;
+      }
+      String sts = request.getRequestURI();
+      if (endpoint.endsWith(request.getRequestURI())) {
+        filterChain.doFilter(request, response);
+        return true;
+      }
     }
 
-    private void notSecureRefreshToken(
-            @NonNull HttpServletRequest request,
-            ExpiredJwtException e
+
+    return false;
+  }
+
+  private boolean lonaSubmissionValidation(
+    @NonNull HttpServletRequest request,
+    @NonNull HttpServletResponse response,
+    @NonNull FilterChain filterChain
+  ) throws ServletException, IOException {
+    final String loanSubmissionBypassToken = request.getParameter("token"); //determine loan-submission whitelist when token integrate valid
+    boolean invalidBouwheer = false;
+    if (
+      !StringUtil.isNullOrEmpty(loanSubmissionBypassToken)
+        && new OrRequestMatcher(
+        new AntPathRequestMatcher("/api/v1/loan-submissions"),
+        new AntPathRequestMatcher("/api/v1/loan-submissions/invoices"),
+        new AntPathRequestMatcher("/api/v1/loan-submissions/importance-notes"),
+        new AntPathRequestMatcher("/api/v1/loan-submissions/simulations/percentage"),
+        new AntPathRequestMatcher("/api/v1/loan-submissions/simulations/calculate")
+      ).matches(request)
     ) {
-        String isRefreshToken = request.getHeader("isRefreshToken");
-        String requestURL = request.getRequestURL().toString();
+      if (
+        loanSubmissionBypassToken.equalsIgnoreCase("1")
+          || loanSubmissionBypassToken.equalsIgnoreCase("2")
+          || loanSubmissionBypassToken.equalsIgnoreCase("3")
+      ) {
+        filterChain.doFilter(request, response);
+        return true;
+      }
 
-        if (isRefreshToken != null && isRefreshToken.equals("true") && requestURL.contains("refresh-token")) {
-            allowForRefreshToken(e, request);
-        } else {
-            request.setAttribute("exception", e);
+      if (new AntPathRequestMatcher("/api/v1/loan-submissions/**").matches(request)) {
+        JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(loanSubmissionBypassToken);
+        if (jwtSimulasiModel == null) {
+          invalidBouwheer = true;
+        } else if (!StringUtil.isNullOrEmpty(jwtSimulasiModel.getBouwheerCode())) {
+          filterChain.doFilter(request, response);
+          return true;
         }
+      }
+    } else {
+      if (HttpUtils.getHeaderAuthorization(request) == null) {
+        for (String endpoint : ENDPOINTS_WHITELIST_LOAN_SUBMISSION) {
+          if (new AntPathRequestMatcher(endpoint).matches(request)) {
+            filterChain.doFilter(request, response);
+            return true;
+          }
+        }
+      }
     }
 
-    private void allowForRefreshToken(ExpiredJwtException ex, HttpServletRequest request) {
-        UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
-                null,
-                null,
-                null
-        );
-        SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
-        request.setAttribute("claims", ex.getClaims());
+    if (invalidBouwheer) {
+      handlerExceptionResolver.resolveException(request, response, null, new Exception("External request need passing an valid token"));
+      return true;
     }
+
+    return false;
+  }
+
+  private boolean shouldValidateApiKey(
+    @NonNull HttpServletRequest request,
+    @NonNull HttpServletResponse response,
+    @NonNull FilterChain filterChain
+  ) throws ServletException, IOException {
+    if (
+      new OrRequestMatcher(
+        new AntPathRequestMatcher("/api/monitoring/**")
+      ).matches(request)
+    ) {
+      if (apiKeyValidation(request, response)) {
+        filterChain.doFilter(request, response);
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  private boolean apiKeyValidation(
+    @NonNull HttpServletRequest request,
+    @NonNull HttpServletResponse response
+  ) {
+    final String providedApiKey = HttpUtils.getHeaderApiKey(request);
+    if (providedApiKey == null || !providedApiKey.equals(apiKey)) {
+      handlerExceptionResolver.resolveException(request, response, null, new IllegalApiKeyException());
+      return false;
+    }
+
+    return true;
+  }
+
+  private void notSecureRefreshToken(
+    @NonNull HttpServletRequest request,
+    ExpiredJwtException e
+  ) {
+    String isRefreshToken = request.getHeader("isRefreshToken");
+    String requestURL = request.getRequestURL().toString();
+
+    if (isRefreshToken != null && isRefreshToken.equals("true") && requestURL.contains("refresh-token")) {
+      allowForRefreshToken(e, request);
+    } else {
+      request.setAttribute("exception", e);
+    }
+  }
+
+  private void allowForRefreshToken(ExpiredJwtException ex, HttpServletRequest request) {
+    UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken = new UsernamePasswordAuthenticationToken(
+      null,
+      null,
+      null
+    );
+    SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
+    request.setAttribute("claims", ex.getClaims());
+  }
 }
