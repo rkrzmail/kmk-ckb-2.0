@@ -113,7 +113,7 @@ public class LoanSubmissionService {
 
     Log.info("Customer code {} " + customer.getCustExternalCode());
 
-    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(customer.getBouwheer()));
+    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(customer.getBouwheer()!=null?UUID.fromString(customer.getBouwheer()):null);
     if (bouwheerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Bouwheer code not found " + customer.getBouwheer());
@@ -155,7 +155,7 @@ public class LoanSubmissionService {
         .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
           "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak " + vendorTokenExtractor.getBouwheerName() + ".")
+          "dengan pihak " + bouwheerOptional.get().getBouwheerName() + ".")
         .build();
     }
 
@@ -163,7 +163,7 @@ public class LoanSubmissionService {
       throw CommonInvalidException.builder()
         .title("Perusahaan Anda Terdaftar dalam Daftar Blacklist")
         .message("Perusahaan Anda saat ini terdaftar dalam daftar " +
-          "blacklist " + vendorTokenExtractor.getBouwheerName() + ", sehingga Anda " +
+          "blacklist " + bouwheerOptional.get().getBouwheerName() + ", sehingga Anda " +
           "belum dapat menggunakan Dana Sakti.")
         .build();
     }
@@ -173,7 +173,7 @@ public class LoanSubmissionService {
         .title("Mohon Maaf, Anda Tidak Memenuhi Syarat")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
           "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak " + vendorTokenExtractor.getBouwheerName() + ".")
+          "dengan pihak " + bouwheerOptional.get().getBouwheerName() + ".")
         .build();
     }
 
@@ -182,7 +182,7 @@ public class LoanSubmissionService {
         .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
           "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak " + vendorTokenExtractor.getBouwheerName() + ".")
+          "dengan pihak " + bouwheerOptional.get().getBouwheerName() + ".")
         .build();
     }
 
@@ -218,7 +218,7 @@ public class LoanSubmissionService {
       }
 
       if (StringUtil.isNullOrEmpty(description)) {
-        description = "Invoice By Trakindo";
+        description = "Invoice By "+bouwheerOptional.get().getBouwheerName();
       }
 
       Date postingDate = null;
@@ -631,7 +631,7 @@ public class LoanSubmissionService {
                   .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
                   .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                   .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-                  .description("Invoice By Trakindo")
+                  .description("Invoice By "+createdFinancing.getBouwheer().getBouwheerName())
                   .bouwheerName(createdFinancing.getBouwheer().getBouwheerName())
                   .build()
               ).toList();
@@ -756,26 +756,6 @@ public class LoanSubmissionService {
         beforeSimulation,
         toSimulationAuditData(savedSimulation)
       );
-
-           /*emailService.sendNotificationChangeLimit(
-                customer,
-                LoanDisburseEmailPayload.builder()
-                        .financingCode(createdFinancing.getFinancingHdrCode().toString())
-                        .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
-                        //.companyName(createdFinancing.getBouwheer().getBouwheerName())
-                        .companyName(createdFinancing.getCustomer().getCustName())
-                        .phoneNumber(phoneNumber)
-                        .tenor(createdFinancing.getTenor())
-                        .financingCode(createdFinancing.getFinancingHdrCode().toString())
-                        .financingDueDate(DateTimeUtils.formatToDate(createdFinancing.getFinancingDueDate()))
-                        .retention(CommonFormattingUtils.formatAmount(createdFinancing.getRetention()))
-                        .financingAmt(CommonFormattingUtils.formatAmount(createdFinancing.getFinancingAmt()))
-                        .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-                        .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getTotalInvoiceAmt()))
-                        .disburseAmt(CommonFormattingUtils.formatAmount(createdFinancing.getDisburseAmt()))
-                        .invoices(invoices)
-                        .build()
-        );*/
     } catch (Exception e) {
       e.printStackTrace();
       throw new Exception(e.getMessage());
@@ -783,115 +763,15 @@ public class LoanSubmissionService {
 
 
     return null;
-       /* try {
-            final String bouwheerCode = "";//request.getInvoices().getFirst().getBouwheerCode();
-            final Customer customer = CustomerUtils.authenticateCustomer(authentication);
-            if (customer == null) {
-                throw CommonInvalidException.cannotAccessResource();
-            }
-
-            final Product product = productRepository.findById(request.getProductId()).orElseThrow();
-            final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode))
-                    .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
-
-            final double totalInvoiceAmount = request.getInvoices()
-                    .stream()
-                    .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
-                    .sum();
-
-            final Date maxInvoiceDueDate = request.getInvoices()
-                    .stream()
-                    .map(PostedInvoicePayload::getInvoiceDueDate)
-                    .max(Date::compareTo)
-                    .get();
-
-            final CalculateSimulationRequest simulation = new CalculateSimulationRequest();
-            {
-                simulation.setDisbursePercentage(request.getDisbursePercentage());
-                simulation.setTotalInvoiceAmount(BigDecimal.valueOf(totalInvoiceAmount).setScale(2, RoundingMode.CEILING));
-                simulation.setBouwheerCode(request.getInvoices().getFirst().getBouwheerCode());
-                simulation.setInvoiceDueDate(
-                        DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
-                );
-            }
-
-            final EstimatedDisburseDto calculateDisburse = calculateDisburse(authentication, simulation);
-            if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
-                throw new IllegalStateException("Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
-                        "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
-            }
-
-            final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
-                    .financingAmount(calculateDisburse.getFinancingAmount())
-                    .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
-                    .maxInvoiceDate(maxInvoiceDueDate)
-                    .totalInvoiceAmount(totalInvoiceAmount)
-                    .interestFeeAmount(calculateDisburse.getInterestFeeAmount())
-                    .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
-                    .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
-                    .othersFeeAmount(calculateDisburse.getOthersFeeAmount())
-                    .legalFeeAmount(calculateDisburse.getLegalFeeAmount())
-                    .surveyFeeAmount(calculateDisburse.getSurveyFeeAmount())
-                    .adminRate(calculateDisburse.getAdminRate())
-                    .effectiveRate(calculateDisburse.getEffectiveRate())
-                    .provisionRate(calculateDisburse.getProvisionRate())
-                    .build();
-
-            final FinancingHdr createdFinancingHdr = financingHdrService.create(
-                    authentication,
-                    customer,
-                    bouwheer,
-                    product,
-                    request,
-                    simulationDisburseResult
-            );
-
-           *//* final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, null);
-            final InquiryInvoiceRemoteDto inquiryInvoiceRemote;
-
-            try {
-                inquiryInvoiceRemote = invoiceRemoteDto.inquiryInvoice(vendorTokenExtractor.getVendorCode()).getData();
-                List<InquiryInvoiceRemoteDto.InvoiceRemoteDto> invoiceRemoteDto = inquiryInvoiceRemote.getRow();
-                List<PostedInvoiceDto> postedInvoices = new ArrayList<>();
-                for (InquiryInvoiceRemoteDto.InvoiceRemoteDto invoice : invoiceRemoteDto) {
-                    for (PostedInvoicePayload postedInvoicePayload : request.getInvoices()) {
-                        if (invoice.getReference().equals(postedInvoicePayload.getInvoiceCode())) {
-                            postedInvoices.add(postedInvoicePayload.toPostedInvoiceDto());
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                //throw new IllegalStateException("Terjdi kesalahan saat mengambil data invoice dari pihak PT. Trakindo Utama.");
-            }*//*
-
-            final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, request);
-
-            financingDtlService.createBulk(
-                    customer,
-                    bouwheer,
-                    createdFinancingHdr,
-                    request.getInvoices(),
-                    createdInvoices
-            );
-
-            return CreatedSimulationDto.builder()
-                    .productId(request.getProductId())
-                    .financingHdrCode(createdFinancingHdr.getFinancingHdrCode())
-                    .invoices(createdInvoices)
-                    .build();
-        } catch (Exception e) {
-            log.error("createSimulation, error {}", e.getMessage());
-            throw e;
-        }*/
   }
 
   @Transactional
   public CreatedSimulationDto createSimulation(
     Customer customer,
     CreateSimulationRequest request
-  ) throws Exception {
+  ) throws SignatureException, ParseException, JsonProcessingException {
 
-    final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(customer.getBouwheer()))
+    final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(customer.getBouwheer()!=null?UUID.fromString(customer.getBouwheer()):null)
       .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
 
     final double totalInvoiceAmount = request.getInvoices()
@@ -1818,7 +1698,7 @@ public class LoanSubmissionService {
       JwtLoanSubmissionService jwtLoanSubmissionService,
       Customer customer,
       String token
-    ) throws SignatureException {
+    ) {
       JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(token);
       UUID bc = jwtSimulasiModel != null ? UUID.fromString(jwtSimulasiModel.getBouwheerCode()) : UUID.randomUUID();
 

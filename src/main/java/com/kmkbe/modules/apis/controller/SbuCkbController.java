@@ -10,7 +10,6 @@ import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSubmissionRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.*;
@@ -97,9 +96,9 @@ public class SbuCkbController {
   }
 
   @GetMapping(value = "/financing/status/{jwtToken}") //approvals/status
-  public CommonResult<StatusLabelDto>  updateFinancingStatus(
+  public CommonResult<StatusLabelDto> updateFinancingStatus(
     @PathVariable("jwtToken") String jwtToken,
-    @RequestHeader("ApiKey") String apiKey,@RequestParam("financingHdrCode") String financingHdrCode
+    @RequestHeader("ApiKey") String apiKey, @RequestParam("financingHdrCode") String financingHdrCode
   ) {
 
     /**
@@ -107,7 +106,7 @@ public class SbuCkbController {
      */
     apiSbuCkbService.apiValidation(apiKey, jwtToken);
 
-    return apiSbuCkbService.statusFinancing(apiKey,financingHdrCode);
+    return apiSbuCkbService.statusFinancing(apiKey, financingHdrCode);
   }
 
   @PostMapping(value = "/invoice-paid/{jwtToken}")
@@ -115,7 +114,6 @@ public class SbuCkbController {
   invoicePaid(
     @PathVariable("jwtToken") String jwtToken,
     @RequestHeader("ApiKey") String apiKey,
-    HttpServletRequest httpServletRequest,
     @Valid @RequestBody FinancingInvoicePaidRequest request
   ) throws Exception {
 
@@ -133,7 +131,7 @@ public class SbuCkbController {
     @PathVariable("jwtToken") String jwtToken,
     @RequestHeader("ApiKey") String apiKey,
     @Valid @RequestBody FinancingInvoicePaidRequest request
-  ) throws SignatureException {
+  ) {
     /**
      * Check token Auth
      */

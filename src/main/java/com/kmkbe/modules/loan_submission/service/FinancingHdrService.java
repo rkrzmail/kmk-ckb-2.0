@@ -12,6 +12,8 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.spec.FinancingHdrSpec;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.exception.BusinessException;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
@@ -26,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -871,35 +874,25 @@ public class FinancingHdrService {
   }
 
   public FinancingHdr paidFinancing(
-    FinancingInvoicePaidRequest request,
-    String apiKey
-  ) throws SignatureException {
-    try {
-      final UUID financingHdrCode;
-      try {
-        financingHdrCode = UUID.fromString(request.getFinancingCode());
-      } catch (IllegalArgumentException ignored) {
-        throw new IllegalStateException("Invalid given financingCode");
-      }
+    FinancingInvoicePaidRequest request
+  ) {
 
-      if (StringUtil.isNullOrEmpty(apiKey)) {
-        throw new IllegalStateException("can perform action, invalid credentials given");
-      }
-      final String user = "POST";
-
-      FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
-        .orElseThrow(() -> new IllegalStateException("Financing Not Found with given financingCode"));
-
-      financingHdr.setFinancingStatus("LIVE");
-      financingHdr.setFinancingStep("PAID");
-
-      financingHdr.setUsrUpd(user);
-      financingHdr.setDtmUpd(DateTimeUtils.now());
-      return financingHdrRepository.save(financingHdr);
-    } catch (Exception e) {
-      log.error("paidFinancing, error {}", e.getMessage());
-      throw e;
+    if (request.getFinancingCode() == null || request.getFinancingCode().isEmpty()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", false);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Invalid given financingCode");
     }
+
+    final String user = "POST";
+
+    FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(request.getFinancingCode()))
+      .orElseThrow(() -> new IllegalStateException("Financing Not Found with given financingCode"));
+
+    financingHdr.setFinancingStatus("LIVE");
+    financingHdr.setFinancingStep("PAID");
+
+    financingHdr.setUsrUpd(user);
+    financingHdr.setDtmUpd(DateTimeUtils.now());
+    return financingHdrRepository.save(financingHdr);
   }
 
   public FinancingHdr findByCode(String financingHdrCode) {

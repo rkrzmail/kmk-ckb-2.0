@@ -37,6 +37,7 @@ public class CustomerDto {
   private Boolean forceLogout;
   private String vendorId;
   private UUID bouwheerCode;
+  private String bouwheerName;
   private String approvalStatus;
   private String approvalNote;
   private String approvalBy;

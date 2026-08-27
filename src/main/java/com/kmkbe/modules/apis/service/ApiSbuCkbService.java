@@ -297,18 +297,13 @@ public class ApiSbuCkbService {
     }
 
     FinancingHdr financingHdr = financingHdrService.paidFinancing(
-      request,
-      apiKey
+      request
     );
 
     log.info("Financing Financing Header Code {} ,  Step {} , Status {}, ", request.getFinancingCode(), financingHdr.getFinancingStep(), financingHdr.getFinancingStatus());
     financingDtlService.updatePaid(request, financingHdr);
 
-    try {
-      financingDtlService.paymentReceive(request, financingHdr);
-    } catch (Exception ignored) {
-      //akan ada proses skeduler
-    }
+    financingDtlService.paymentReceive(request, financingHdr);
     return new CommonResult<>().success(null);
   }
 
@@ -318,9 +313,8 @@ public class ApiSbuCkbService {
    * @param apiKey
    * @param request
    * @return
-   * @throws SignatureException
    */
-  public CommonResult<Object> inquiryDisburse(String apiKey, FinancingInvoicePaidRequest request) throws SignatureException {
+  public CommonResult<Object> inquiryDisburse(String apiKey, FinancingInvoicePaidRequest request) {
     /**
      * Check Bouwheer Code
      */
@@ -330,8 +324,7 @@ public class ApiSbuCkbService {
     }
 
     financingHdrService.paidFinancing(
-      request,
-      apiKey
+      request
     );
 
     return new CommonResult<>().success(null);

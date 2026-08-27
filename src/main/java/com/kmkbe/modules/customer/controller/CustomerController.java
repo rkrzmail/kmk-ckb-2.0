@@ -8,6 +8,8 @@ import com.kmkbe.core.domain.mapper.CustomerMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.helpers.base.BasePaginationRequest;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.customer.model.dto.CustomerDto;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
@@ -59,6 +61,7 @@ public class CustomerController {
   private final FinancingHdrRepository financingHdrRepository;
   private final CustomerRepository customerRepository;
   private final CurrentUserService currentUserService;
+  private final BouwheerRepository bouwheerRepository;
 
 
   @GetMapping
@@ -98,6 +101,10 @@ public class CustomerController {
     if (result.getCompany() != null && result.getCompany().getDirectorName() == null) {
       result.getCompany().setDirectorName("");
     }
+
+    result.setBouwheerName(bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null? UUID.fromString(customer.getBouwheer()) :null)
+      .map(Bouwheer::getBouwheerName)
+      .orElse(null));
 
     return new CommonResult<CustomerDto>().success(result);
   }

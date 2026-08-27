@@ -8,7 +8,6 @@ import com.kmkbe.core.domain.mapper.InvoiceMapper;
 import com.kmkbe.core.domain.model.PostedInvoicePayload;
 import com.kmkbe.core.domain.repository.FinancingDtlRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
-import com.kmkbe.core.domain.repository.InvoiceRepository;
 import com.kmkbe.core.domain.repository.PaymentReceiveHistoryRepository;
 import com.kmkbe.core.domain.request.*;
 import com.kmkbe.core.service.BaseRemoteService;
@@ -30,8 +29,6 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 @Service
 @Slf4j
 public class FinancingDtlService {
@@ -197,7 +194,6 @@ public class FinancingDtlService {
    */
   public void updatePaid(FinancingInvoicePaidRequest request, FinancingHdr financingHdr) {
     try {
-      // 1. Ambil data detail financing dari repository
       List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
         .orElse(Collections.emptyList());
 
@@ -287,216 +283,173 @@ public class FinancingDtlService {
   }
 
   public void paymentReceive(FinancingInvoicePaidRequest request, FinancingHdr financingHdr) throws Exception {
-    try {
-      String noAggrNo = financingHdr.getAgreement().size() == 0 ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();
-      LocalDateTime settelmanetDate = request.getInvoicePaid().isEmpty() ? DateTimeUtils.now() : Utils.toInstant(request.getInvoicePaid().get(0).getClearingDate());
-      ;
-      String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
 
+    String noAggrNo = financingHdr.getAgreement().isEmpty() ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();
+    LocalDateTime settlementDate = request.getInvoicePaid().isEmpty() ? DateTimeUtils.now() : Utils.toInstant(request.getInvoicePaid().getFirst().getClearingDate());
 
-      //Inquiry Data Agreement
-      InquiryDataAgreementRequest inquiryReceiveAmountRequest = new InquiryDataAgreementRequest();
-      inquiryReceiveAmountRequest.setRequestDateTime(sToday);
-      inquiryReceiveAmountRequest.setTrxNo(noAggrNo);
-      InquiryDataAgreementDto inquiryDataAgreementDto = inquiryDataAgreement(inquiryReceiveAmountRequest);
+    String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
+    //Inquiry Data Agreement to Confins
+    log.info("Inquiry Data Agreement to Confins, Financing HDR code {} ", request.getFinancingCode());
+    InquiryDataAgreementDto inquiryDataAgreementDto = inquiryDataAgreement(InquiryDataAgreementRequest.builder()
+      .trxNo(noAggrNo)
+      .requestDateTime(sToday)
+      .build());
 
-      //Inquiry New Info by Agreement
-      InquiryNewInfoAgreementRequest inquiryNewInfoAgreementRequest = new InquiryNewInfoAgreementRequest();
-      inquiryNewInfoAgreementRequest.setRequestDateTime(sToday);
-      inquiryNewInfoAgreementRequest.setAgrmntNo(noAggrNo);
-      inquiryNewInfoAgreementRequest.setValueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settelmanetDate)));
-      inquiryNewInfoAgreementRequest.setRequestDateTime(sToday);
-      InquiryNewInfoAgreementDto inquiryNewInfoAgreementDto = inquiryNewInfoAgreement(inquiryNewInfoAgreementRequest);
+    //Inquiry New Info by Agreement to Confins
+    log.info("Inquiry new info Agreement to Confins, Financing HDR code {} ", request.getFinancingCode());
+    InquiryNewInfoAgreementDto inquiryNewInfoAgreementDto = inquiryNewInfoAgreement(InquiryNewInfoAgreementRequest.builder()
+      .agrmntNo(noAggrNo)
+      .requestDateTime(sToday)
+      .valueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settlementDate)))
+      .build());
 
-      //Inquiry Outstanding Bill Detail
-      InquiryOutstandingBillDetailtRequest inquiryOutstandingBillDetailtRequest = new InquiryOutstandingBillDetailtRequest();
-      inquiryOutstandingBillDetailtRequest.setRequestDateTime(sToday);
-      inquiryOutstandingBillDetailtRequest.setAgrmntNo(noAggrNo);
-      inquiryOutstandingBillDetailtRequest.setValueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settelmanetDate)));
-      inquiryOutstandingBillDetailtRequest.setRequestDateTime(sToday);
-      InquiryOutstandingBillDetailtDto inquiryOutstandingBillDetailtDto = inquiryOutstandingBillDetailt(inquiryOutstandingBillDetailtRequest);
+    //Inquiry Outstanding Bill Detail
+    log.info("Inquiry Outstanding Bill Detail Agreement to Confins, Financing HDR code {} ", request.getFinancingCode());
+    InquiryOutstandingBillDetailtDto inquiryOutstandingBillDetailtDto = inquiryOutstandingBillDetailt(InquiryOutstandingBillDetailtRequest.builder()
+      .agrmntNo(noAggrNo)
+      .requestDateTime(sToday)
+      .valueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settlementDate)))
+      .build());
 
-
-      //insert Table
-      try {
-        PaymentReceiveHistory paymentReceiveHistory = PaymentReceiveHistory.builder().build();
-        paymentReceiveHistory.setAgreementCode(noAggrNo);
-        paymentReceiveHistory.setBouwheer(financingHdr.getBouwheer());
-        paymentReceiveHistory.setCurrency(inquiryDataAgreementDto.getAgrmntObj().currCode);
-        paymentReceiveHistory.setGoliveDate(inquiryDataAgreementDto.getAgrmntObj().goLiveDt);
-        paymentReceiveHistory.setEffectiveDate(inquiryDataAgreementDto.getAgrmntObj().effectiveDt);
-        paymentReceiveHistory.setDueDate(inquiryDataAgreementDto.getAgrmntObj().nextInstDueDt);
-
-        paymentReceiveHistory.setSettlementDte(settelmanetDate);
-        int tenor = 0;
-        if (settelmanetDate.toInstant(ZoneOffset.UTC).toEpochMilli() < inquiryDataAgreementDto.getAgrmntObj().nextInstDueDt.toInstant(ZoneOffset.UTC).toEpochMilli()) {
-          tenor = (int) Utils.dateDuration(settelmanetDate, inquiryDataAgreementDto.getAgrmntObj().effectiveDt).toDays();
-        } else {
-          tenor = (int) Utils.dateDuration(inquiryDataAgreementDto.getAgrmntObj().nextInstDueDt, inquiryDataAgreementDto.getAgrmntObj().effectiveDt).toDays();
-        }
-        paymentReceiveHistory.setRealTenor(Math.abs(tenor));//financingHdr.getTenor().intValue()
-        paymentReceiveHistory.setNtfAmt(inquiryDataAgreementDto.getAgrmntObj().ntfAmt);
-        paymentReceiveHistory.setTotalInvAmt(financingHdr.getTotalInvoiceAmt());
-        paymentReceiveHistory.setLcRate(inquiryDataAgreementDto.getAgrmntObj().lcInstRatePrml);
-        paymentReceiveHistory.setLcDays(0);//Jika settlement_date > due_date, maka settlement_date – due_date, jika tidak maka lc_days = 0
-        paymentReceiveHistory.setLcAmt(getBillingAmount(inquiryOutstandingBillDetailtDto.getListBillingDetail(), "LC Installment Amount"));//BillDetailName = LC Installment Amount
-        paymentReceiveHistory.setInterestAmt(inquiryNewInfoAgreementDto.interestAmt);
-        paymentReceiveHistory.setRetention(financingHdr.getRetention());
-        paymentReceiveHistory.setRetentionAmt(getBillingAmount(inquiryOutstandingBillDetailtDto.getListBillingDetail(), "Retention Amount"));//Retention Amount
-        paymentReceiveHistory.setSettlementAmt(getBillingAmount(inquiryOutstandingBillDetailtDto.getListBillingDetail(), "Amount To Be Paid"));//BillDetailName = Amount To Be Paid
-        paymentReceiveHistory.setRefundAmt(paymentReceiveHistory.getTotalInvAmt() - paymentReceiveHistory.getSettlementAmt());//Nilai pada kolom total_inv_amt - settlement_amt
-        //paymentReceiveHistory.setPaymentReceiveNo(null);
-        paymentReceiveHistory.setUsrCrt(financingHdr.getUsrCrt());
-        paymentReceiveHistory.setDtmCrt(DateTimeUtils.now());
-
-
-        paymentReceiveHistoryRepository.save(paymentReceiveHistory);
-      } catch (Exception ignored) {
-        //on duplicate update
-        ignored.printStackTrace();
-      }
-
-      paymentReceiveSubmitUpdate(financingHdr, settelmanetDate);
-    } catch (Exception e) {
-      log.error("updatePaid, error {}", e.getMessage());
-      throw e;
+    log.info("Save payment history, Financing HDR code {} ", request.getFinancingCode());
+    PaymentReceiveHistory paymentReceiveHistory = PaymentReceiveHistory.builder().build();
+    paymentReceiveHistory.setAgreementCode(noAggrNo);
+    paymentReceiveHistory.setBouwheer(financingHdr.getBouwheer());
+    paymentReceiveHistory.setCurrency(inquiryDataAgreementDto.getAgrmntObj().currCode);
+    paymentReceiveHistory.setGoliveDate(inquiryDataAgreementDto.getAgrmntObj().goLiveDt);
+    paymentReceiveHistory.setEffectiveDate(inquiryDataAgreementDto.getAgrmntObj().effectiveDt);
+    paymentReceiveHistory.setDueDate(inquiryDataAgreementDto.getAgrmntObj().nextInstDueDt);
+    paymentReceiveHistory.setSettlementDte(settlementDate);
+    int tenor;
+    if (settlementDate.toInstant(ZoneOffset.UTC).toEpochMilli() < inquiryDataAgreementDto.getAgrmntObj().nextInstDueDt.toInstant(ZoneOffset.UTC).toEpochMilli()) {
+      tenor = (int) Utils.dateDuration(settlementDate, inquiryDataAgreementDto.getAgrmntObj().effectiveDt).toDays();
+    } else {
+      tenor = (int) Utils.dateDuration(inquiryDataAgreementDto.getAgrmntObj().nextInstDueDt, inquiryDataAgreementDto.getAgrmntObj().effectiveDt).toDays();
     }
+    paymentReceiveHistory.setRealTenor(Math.abs(tenor));//financingHdr.getTenor().intValue()
+    paymentReceiveHistory.setNtfAmt(inquiryDataAgreementDto.getAgrmntObj().ntfAmt);
+    paymentReceiveHistory.setTotalInvAmt(financingHdr.getTotalInvoiceAmt());
+    paymentReceiveHistory.setLcRate(inquiryDataAgreementDto.getAgrmntObj().lcInstRatePrml);
+    paymentReceiveHistory.setLcDays(0);//Jika settlement_date > due_date, maka settlement_date – due_date, jika tidak maka lc_days = 0
+    paymentReceiveHistory.setLcAmt(getBillingAmount(inquiryOutstandingBillDetailtDto.getListBillingDetail(), "LC Installment Amount"));//BillDetailName = LC Installment Amount
+    paymentReceiveHistory.setInterestAmt(inquiryNewInfoAgreementDto.interestAmt);
+    paymentReceiveHistory.setRetention(financingHdr.getRetention());
+    paymentReceiveHistory.setRetentionAmt(getBillingAmount(inquiryOutstandingBillDetailtDto.getListBillingDetail(), "Retention Amount"));//Retention Amount
+    paymentReceiveHistory.setSettlementAmt(getBillingAmount(inquiryOutstandingBillDetailtDto.getListBillingDetail(), "Amount To Be Paid"));//BillDetailName = Amount To Be Paid
+    paymentReceiveHistory.setRefundAmt(paymentReceiveHistory.getTotalInvAmt() - paymentReceiveHistory.getSettlementAmt());//Nilai pada kolom total_inv_amt - settlement_amt
+    //paymentReceiveHistory.setPaymentReceiveNo(null);
+    paymentReceiveHistory.setUsrCrt(financingHdr.getUsrCrt());
+    paymentReceiveHistory.setDtmCrt(DateTimeUtils.now());
+    paymentReceiveHistoryRepository.save(paymentReceiveHistory);
+
+    paymentReceiveSubmitUpdate(financingHdr, settlementDate);
   }
 
   public void paymentReceiveSubmitUpdate(FinancingHdr financingHdr, LocalDateTime settelmanetDate) throws Exception {
-    try {
-      String noAggrNo = financingHdr.getAgreement().size() == 0 ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();
-      String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
-      String noCode = financingHdr.getFinancingHdrCode().toString();
 
-      Optional<PaymentReceiveHistory> paymentReceiveHistoryDto = paymentReceiveHistoryRepository.findTopByAgreementCode(noAggrNo);
-            /*
-            Inquiry than Submit
-             */
-      //Inquiry Receive Amount
-      InquiryReceiveAmountRequest receiveAmountRequest = new InquiryReceiveAmountRequest();
-      receiveAmountRequest.setRequestDateTime(sToday);
-      ArrayList<InquiryReceiveAmountRequest.RcvAmtList> rcvAmtLists = new ArrayList<>();
-      List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr).orElse(null);
+    String noAggrNo = financingHdr.getAgreement().isEmpty() ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();
+    String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
+    String noCode = financingHdr.getFinancingHdrCode().toString();
 
-      InquiryReceiveAmountRequest.RcvAmtList rcvAmtList = new InquiryReceiveAmountRequest.RcvAmtList();
-      rcvAmtList.agrmntNo = noAggrNo;//karena hanya 1 agrrement per financeheader, isi 1 saja
-      rcvAmtList.rcvAmt = Utils.formatNoExponent(financingHdr.getTotalInvoiceAmt());
-      rcvAmtLists.add(rcvAmtList);
-      receiveAmountRequest.setValueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settelmanetDate)));
-      receiveAmountRequest.setRcvAmtList(rcvAmtLists);
-      InquiryReceiveAmountRequestDto receiveAmountRequestDto = inquiryReceiveAmountRequest(receiveAmountRequest);//CALL API
+    Optional<PaymentReceiveHistory> paymentReceiveHistoryDto = paymentReceiveHistoryRepository.findTopByAgreementCode(noAggrNo);
+
+    log.info("Inquiry Receive Amount Confins, Financing HDR code {} ", financingHdr.getFinancingHdrCode());
+    InquiryReceiveAmountRequest receiveAmountRequest = new InquiryReceiveAmountRequest();
+    receiveAmountRequest.setRequestDateTime(sToday);
+    ArrayList<InquiryReceiveAmountRequest.RcvAmtList> rcvAmtLists = new ArrayList<>();
+    InquiryReceiveAmountRequest.RcvAmtList rcvAmtList = new InquiryReceiveAmountRequest.RcvAmtList();
+    rcvAmtList.agrmntNo = noAggrNo;//karena hanya 1 agrrement per financeheader, isi 1 saja
+    rcvAmtList.rcvAmt = Utils.formatNoExponent(financingHdr.getTotalInvoiceAmt());
+    rcvAmtLists.add(rcvAmtList);
+    receiveAmountRequest.setValueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settelmanetDate)));
+    receiveAmountRequest.setRcvAmtList(rcvAmtLists);
+    InquiryReceiveAmountRequestDto receiveAmountRequestDto = inquiryReceiveAmountRequest(receiveAmountRequest);//CALL API
 
 
-      //Submit Payment Receive
-      SubmitPaymentReceiveRequest submitPaymentReceiveRequest = new SubmitPaymentReceiveRequest();
-      submitPaymentReceiveRequest.setRefNo(noCode);
+    log.info("Submit Payment Receive Confins, Financing HDR code {} ", financingHdr.getFinancingHdrCode());
+    SubmitPaymentReceiveRequest submitPaymentReceiveRequest = new SubmitPaymentReceiveRequest();
+    submitPaymentReceiveRequest.setRefNo(noCode);
 
-      String rcvStr = "";
-      if (financingHdr.getCustomer() != null) {
-        try {
-          rcvStr = financingHdr.getCustomer().getCustNo() + "-" + financingHdr.getCustomer().getCustName();
-        } catch (Exception ignored) {
-        }
-      } else {
-        Optional<FinancingHdr> hdr = financingHdrRepository.findByFinancingHdrCode(financingHdr.getFinancingHdrCode());
-        if (!hdr.isEmpty()) {
-          try {
-            rcvStr = hdr.get().getCustomer().getCustNo() + "-" + hdr.get().getCustomer().getCustName();
-          } catch (Exception ignored) {
-          }
-        }
-      }
+    String rcvStr = "";
+    if (financingHdr.getCustomer() != null) {
+      rcvStr = financingHdr.getCustomer().getCustNo() + "-" + financingHdr.getCustomer().getCustName();
+    } else {
       Optional<FinancingHdr> hdr = financingHdrRepository.findByFinancingHdrCode(financingHdr.getFinancingHdrCode());
-      if (!hdr.isEmpty()) {
-        try {
-          rcvStr = hdr.get().getCustomer().getCustNo() + "-" + hdr.get().getCustomer().getCustName();
-        } catch (Exception ignored) {
+      if (hdr.isPresent()) {
+        rcvStr = hdr.get().getCustomer().getCustNo() + "-" + hdr.get().getCustomer().getCustName();
+      }
+    }
+
+    Optional<FinancingHdr> hdr = financingHdrRepository.findByFinancingHdrCode(financingHdr.getFinancingHdrCode());
+    if (hdr.isPresent()) {
+      rcvStr = hdr.get().getCustomer().getCustNo() + "-" + hdr.get().getCustomer().getCustName();
+    }
+    submitPaymentReceiveRequest.setRefNo(noCode);
+    submitPaymentReceiveRequest.setReceiptFormNo("");
+    submitPaymentReceiveRequest.setRcvFrom(rcvStr);//gabungan
+
+    submitPaymentReceiveRequest.setOfficeBankAccCode("MDRLSIDR99");
+    submitPaymentReceiveRequest.setExchangeRateAmt(1);
+    submitPaymentReceiveRequest.isTempReceiptForm = false;
+    submitPaymentReceiveRequest.setWopCode("BANK");
+    //submitPaymentReceiveRequest.setValueDt( sToday  );//DateTimeUtils.getDateOnly(settelmanetDate.toString())
+    submitPaymentReceiveRequest.setValueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settelmanetDate)));
+
+    submitPaymentReceiveRequest.setMrPayRecipientCode("CSH");//MrPayRecipientCode
+    submitPaymentReceiveRequest.setSuspdNo("");
+    ArrayList<SubmitPaymentReceiveRequest.ListPayRcvDApiObj> listPayRcvDApiObjs = new ArrayList<>();
+    SubmitPaymentReceiveRequest.ListPayRcvDApiObj listPayRcvDApiObj = new SubmitPaymentReceiveRequest.ListPayRcvDApiObj();
+    listPayRcvDApiObj.agrmntNo = noAggrNo;
+    listPayRcvDApiObj.rcvAmt = financingHdr.getTotalInvoiceAmt();
+
+    listPayRcvDApiObj.isAutoAlloc = true;
+    listPayRcvDApiObj.allocCurrCode = "IDR";
+    listPayRcvDApiObj.rcvTrxType = "AGR";
+    listPayRcvDApiObj.refNo = noCode;
+    listPayRcvDApiObj.exchangeRateAmt = 1;
+    //settlement_amt
+    paymentReceiveHistoryDto.ifPresent(paymentReceiveHistory -> listPayRcvDApiObj.totalAmtToBePaid = Utils.formatNoExponent(paymentReceiveHistory.getSettlementAmt()));
+    ArrayList<SubmitPaymentReceiveRequest.PayRcvDAllocAPIList> payRcvDAllocAPILists = new ArrayList<>();
+    ArrayList<InquiryReceiveAmountRequestDto.AllocMapList> allocMapLists = receiveAmountRequestDto.getAllocMapList();
+
+    if (allocMapLists != null && !allocMapLists.isEmpty()) {
+      InquiryReceiveAmountRequestDto.AllocMapList allocMapList = allocMapLists.getFirst();//ambil yng pertama
+      for (int j = 0; j < allocMapList.allocList.size(); j++) {
+        InquiryReceiveAmountRequestDto.AllocList allocList = allocMapList.allocList.get(j);
+
+        if (allocList.rcvAmt >= 1) {
+          SubmitPaymentReceiveRequest.PayRcvDAllocAPIList payRcvDAllocAPIList = new SubmitPaymentReceiveRequest.PayRcvDAllocAPIList();
+          payRcvDAllocAPIList.refPaymentAllocCode = allocList.paymentAllocCode;   // RcvAmt memiliki nilai > 0
+          payRcvDAllocAPIList.allocAmt = Utils.formatNoExponent(allocList.rcvAmt);
+          payRcvDAllocAPIList.officeCode = "";
+          payRcvDAllocAPIList.descr = "";
+          payRcvDAllocAPIList.bizUnitCode = "";
+
+          payRcvDAllocAPILists.add(payRcvDAllocAPIList);
         }
       }
-      submitPaymentReceiveRequest.setRefNo(noCode);
-      submitPaymentReceiveRequest.setReceiptFormNo("");
-      submitPaymentReceiveRequest.setRcvFrom(rcvStr);//gabungan
-
-      submitPaymentReceiveRequest.setOfficeBankAccCode("MDRLSIDR99");
-      submitPaymentReceiveRequest.setExchangeRateAmt(1);
-      submitPaymentReceiveRequest.isTempReceiptForm = false;
-      submitPaymentReceiveRequest.setWopCode("BANK");
-      //submitPaymentReceiveRequest.setValueDt( sToday  );//DateTimeUtils.getDateOnly(settelmanetDate.toString())
-      submitPaymentReceiveRequest.setValueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settelmanetDate)));
-
-      submitPaymentReceiveRequest.setMrPayRecipientCode("CSH");//MrPayRecipientCode
-      submitPaymentReceiveRequest.setSuspdNo("");
-      ArrayList<SubmitPaymentReceiveRequest.ListPayRcvDApiObj> listPayRcvDApiObjs = new ArrayList<>();
-      SubmitPaymentReceiveRequest.ListPayRcvDApiObj listPayRcvDApiObj = new SubmitPaymentReceiveRequest.ListPayRcvDApiObj();
-      listPayRcvDApiObj.agrmntNo = noAggrNo;
-      listPayRcvDApiObj.rcvAmt = financingHdr.getTotalInvoiceAmt();
-
-      listPayRcvDApiObj.isAutoAlloc = true;
-      listPayRcvDApiObj.allocCurrCode = "IDR";
-      listPayRcvDApiObj.rcvTrxType = "AGR";
-      listPayRcvDApiObj.refNo = noCode;
-      listPayRcvDApiObj.exchangeRateAmt = 1;
-      if (paymentReceiveHistoryDto.isPresent()) {
-        PaymentReceiveHistory paymentReceiveHistory = paymentReceiveHistoryDto.get();
-        listPayRcvDApiObj.totalAmtToBePaid = Utils.formatNoExponent(paymentReceiveHistory.getSettlementAmt());//settlement_amt
-      }
-      ArrayList<SubmitPaymentReceiveRequest.PayRcvDAllocAPIList> payRcvDAllocAPILists = new ArrayList<>();
-      ArrayList<InquiryReceiveAmountRequestDto.AllocMapList> allocMapLists = receiveAmountRequestDto.getAllocMapList();
-
-      if (allocMapLists != null && !allocMapLists.isEmpty()) {
-        InquiryReceiveAmountRequestDto.AllocMapList allocMapList = allocMapLists.getFirst();//ambil yng pertama
-        for (int j = 0; j < allocMapList.allocList.size(); j++) {
-          InquiryReceiveAmountRequestDto.AllocList allocList = allocMapList.allocList.get(j);
-
-          if (allocList.rcvAmt >= 1) {
-            SubmitPaymentReceiveRequest.PayRcvDAllocAPIList payRcvDAllocAPIList = new SubmitPaymentReceiveRequest.PayRcvDAllocAPIList();
-            payRcvDAllocAPIList.refPaymentAllocCode = allocList.paymentAllocCode;   // RcvAmt memiliki nilai > 0
-            payRcvDAllocAPIList.allocAmt = Utils.formatNoExponent(allocList.rcvAmt);
-            payRcvDAllocAPIList.officeCode = "";
-            payRcvDAllocAPIList.descr = "";
-            payRcvDAllocAPIList.bizUnitCode = "";
-
-            payRcvDAllocAPILists.add(payRcvDAllocAPIList);
-          }
-        }
-      }
+    }
 
 
-      listPayRcvDApiObj.payRcvDAllocAPIList = payRcvDAllocAPILists;
-      listPayRcvDApiObjs.add(listPayRcvDApiObj);
-      submitPaymentReceiveRequest.setListPayRcvDApiObj(listPayRcvDApiObjs);
-      submitPaymentReceiveRequest.setExchangeRateAmt(1);
+    listPayRcvDApiObj.payRcvDAllocAPIList = payRcvDAllocAPILists;
+    listPayRcvDApiObjs.add(listPayRcvDApiObj);
+    submitPaymentReceiveRequest.setListPayRcvDApiObj(listPayRcvDApiObjs);
+    submitPaymentReceiveRequest.setExchangeRateAmt(1);
+    submitPaymentReceiveRequest.setRequestDateTime(sToday);
+    SubmitPaymentReceiveRequestDto submitPaymentReceiveRequestDto = submitPaymentReceiveRequest(submitPaymentReceiveRequest);
 
-      submitPaymentReceiveRequest.setRequestDateTime(sToday);
-
-      SubmitPaymentReceiveRequestDto submitPaymentReceiveRequestDto = submitPaymentReceiveRequest(submitPaymentReceiveRequest);
-
-      if (submitPaymentReceiveRequestDto.getStatusCode().equalsIgnoreCase("200")) {
-        //Optional<PaymentReceiveHistory> paymentReceiveHistoryDto = paymentReceiveHistoryRepository.findTopByAgreementCode(noAggrNo);
-
-        //Update Table
-        try {
-          if (paymentReceiveHistoryDto.isPresent()) {
-            PaymentReceiveHistory paymentReceiveHistory = paymentReceiveHistoryDto.get();
-            paymentReceiveHistory.setPaymentReceiveNo(submitPaymentReceiveRequestDto.getPayRcvNo());
-            paymentReceiveHistory.setUsrUpd(financingHdr.getUsrCrt());
-            paymentReceiveHistory.setDtmUpd(DateTimeUtils.now());
-            paymentReceiveHistoryRepository.save(paymentReceiveHistory);
-          }
-        } catch (Exception ignored) {
-          //on duplicate update
-        }
-      }
-
-    } catch (Exception e) {
-      log.error("updatePaid, error {}", e.getMessage());
-      throw e;
+    if (submitPaymentReceiveRequestDto.getStatusCode().equalsIgnoreCase("200") && paymentReceiveHistoryDto.isPresent()) {
+      log.info("Update payment receive {} ", paymentReceiveHistoryDto.get().getPaymentReceiveNo());
+      log.info("Update Payment Receive History, Financing HDR code {} ", financingHdr.getFinancingHdrCode());
+      PaymentReceiveHistory paymentReceiveHistory = paymentReceiveHistoryDto.get();
+      paymentReceiveHistory.setPaymentReceiveNo(submitPaymentReceiveRequestDto.getPayRcvNo());
+      paymentReceiveHistory.setUsrUpd(financingHdr.getUsrCrt());
+      paymentReceiveHistory.setDtmUpd(DateTimeUtils.now());
+      paymentReceiveHistoryRepository.save(paymentReceiveHistory);
     }
   }
 
   public InquiryNewInfoAgreementDto inquiryNewInfoAgreement(
-
     @Nullable InquiryNewInfoAgreementRequest inquiryNewInfoAgreementRequest) throws JsonProcessingException {
     try {
       return postRemote(

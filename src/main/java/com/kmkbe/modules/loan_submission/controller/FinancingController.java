@@ -12,7 +12,6 @@ import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.loan_submission.service.FinancingDtlService;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.FinancingService;
-import com.kmkbe.modules.loan_submission.service.InquiryDisburseService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -34,15 +33,13 @@ public class FinancingController {
   private final FinancingHdrService financingHdrService;
   private final FinancingService financingService;
   private final FinancingDtlService financingDtlService;
-  private final InquiryDisburseService inquiryDisburseService;
   private final CurrentUserService currentUserService;
 
   @PostMapping("/invoice-paid")
-  public CommonResult<Object>
-  invoicePaid(
+  public CommonResult<Object> invoicePaid(
     HttpServletRequest httpServletRequest,
     @Valid @RequestBody FinancingInvoicePaidRequest request
-  ) throws Exception {
+  ) {
     try {
       String providedApiKey = httpServletRequest.getHeader("ApiKey");
       if (!providedApiKey.equals("$2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC")) {
@@ -50,12 +47,10 @@ public class FinancingController {
       }
 
       FinancingHdr financingHdr = financingHdrService.paidFinancing(
-        request,
-        providedApiKey
+        request
       );
 
       financingDtlService.updatePaid(request, financingHdr);
-
 
       try {
         financingDtlService.paymentReceive(request, financingHdr);
