@@ -194,6 +194,7 @@ public class AssignmentSubmissionService {
             .agreementCode(agreementCode)
             .custCode(e.getCustomer().getCustCode())
             .custName(e.getCustomer().getCustName())
+            .bouwheerCode(e.getBouwheer().getBouwheerCode())
             .bouwheerName(e.getBouwheer().getBouwheerName())
             .verifDate(null)
             .dueDate(Utils.fromInstant(e.getFinancingDueDate()))

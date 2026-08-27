@@ -125,15 +125,6 @@ public class CommonInvalidException extends RuntimeException {
                 .build();
     }
 
-    public static CommonInvalidException blacklist() {
-        return CommonInvalidException.builder()
-                .title("Perusaahaan anda terdapat di data blacklist")
-                .message("Pada saat ini anda berada di daftar blacklist PT. Trakindo Utama, sehingga anda belum dapat menggunakan Dana Sakti")
-                .action(Action.builder().title("Kembali").uri("/auth/sign-in").build())
-                .headerMessage("User blacklist")
-                .build();
-    }
-
     public static CommonInvalidException invalidInternalUser() {
         return CommonInvalidException.builder()
                 .title("Email atau Password tidak valid")

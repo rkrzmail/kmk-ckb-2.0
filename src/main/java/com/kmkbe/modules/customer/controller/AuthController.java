@@ -72,7 +72,7 @@ public class AuthController {
   ) {
     //validate dan bruce attack
     String key = "forgot:" + request.email();
-    int counter = 0;
+    int counter;
     RedisAttack redisAttack;
     Optional<RedisAttack> redisAttacks = redisAttackRepository.findTopByRedis(key);
     if (redisAttacks.isEmpty()) {
