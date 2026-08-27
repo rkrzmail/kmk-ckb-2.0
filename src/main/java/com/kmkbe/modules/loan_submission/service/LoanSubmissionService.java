@@ -409,12 +409,6 @@ public class LoanSubmissionService {
       Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financeCode));
       if (financingHdr.isPresent()) {
         FinancingHdr fin = financingHdr.get();
-                /*fin.setCustomer(null);
-                fin.setBouwheer(null);
-                fin.setMstBranch(null);
-                fin.setFinancingDtls(null);
-                fin.setAgreement(null);
-                fin.setSimulationHistories(null);*/
         double effectiveRate = fin.getEffectiveRate();
         if (effectiveRate < 1) {
           effectiveRate = effectiveRate * 100;

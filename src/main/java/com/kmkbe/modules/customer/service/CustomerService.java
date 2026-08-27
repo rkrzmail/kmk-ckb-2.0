@@ -10,6 +10,8 @@ import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.helpers.utils.PageableUtil;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.modules.customer.model.response.CustomerResponse;
@@ -58,19 +60,21 @@ public class CustomerService {
   private final FinancingHdrRepository financingHdrRepository;
   private final EmailService emailService;
   private final AuditTrailService auditTrailService;
+  private final BouwheerRepository bouwheerRepository;
 
   public CustomerService(CustomerRepository customerRepository,
                          BCryptPasswordEncoder bcryptEncoder,
                          JdbcTemplate jdbcTemplate,
                          FinancingHdrRepository financingHdrRepository,
                          EmailService emailService,
-                         AuditTrailService auditTrailService) {
+                         AuditTrailService auditTrailService, BouwheerRepository bouwheerRepository) {
     this.customerRepository = customerRepository;
     this.bcryptEncoder = bcryptEncoder;
     this.jdbcTemplate = jdbcTemplate;
     this.financingHdrRepository = financingHdrRepository;
     this.emailService = emailService;
     this.auditTrailService = auditTrailService;
+    this.bouwheerRepository = bouwheerRepository;
   }
 
   public Customer create(SignUpRequest request, CustomerType type) {
@@ -295,6 +299,7 @@ public class CustomerService {
     Page<Customer> page = customerRepository.findAll((Root<Customer> root, CriteriaQuery<?> query, CriteriaBuilder builder) ->
       builder.and(builder.like(root.get(request.getSearchBy()), '%' + request.getSearchValue() + '%')), pageable);
 
+
     List<CustomerResponse> responses = page.getContent().stream().map(item -> {
       CustomerResponse response = new CustomerResponse();
       response.setCustCode(item.getCustCode());
@@ -314,9 +319,9 @@ public class CustomerService {
       response.setDtmCrt(item.getDtmCrt());
       response.setForceLogout(item.getForceLogout());
       response.setBouwheerCode(String.valueOf(item.getBouwheer()));
-//      response.setBouwheerName(Optional.ofNullable(item.getBouwheerDetail())
-//        .map(Bouwheer::getBouwheerName)
-//        .orElse(null));
+      response.setBouwheerName(bouwheerRepository.findByBouwheerCode(item.getBouwheer() != null? UUID.fromString(item.getBouwheer()) :null)
+        .map(Bouwheer::getBouwheerName)
+        .orElse(null));
       response.setApprovalStatus(item.getApprovalStatus());
       response.setApprovalNote(item.getApprovalNote());
       response.setApprovalBy(item.getApprovalBy());
@@ -345,9 +350,9 @@ public class CustomerService {
     Customer customer = customerOptional.get();
     CustomerResponse response = new CustomerResponse();
     BeanUtils.copyProperties(customer, response);
-//    response.setBouwheerName(Optional.ofNullable(customer.getBouwheerDetail())
-//      .map(Bouwheer::getBouwheerName)
-//      .orElse(null));
+    response.setBouwheerName(bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null? UUID.fromString(customer.getBouwheer()) :null)
+      .map(Bouwheer::getBouwheerName)
+      .orElse(null));
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, response);
   }
