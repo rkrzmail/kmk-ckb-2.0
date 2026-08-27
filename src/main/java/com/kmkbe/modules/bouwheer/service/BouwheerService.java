@@ -60,7 +60,7 @@ public class BouwheerService {
       .bouwheerName(bouwheer.getBouwheerName())
       .legalAddress(bouwheer.getLegalAddress())
       .isActive(bouwheer.getIsActive())
-        .minRetention(bouwheer.getMinRetention())
+      .minRetention(bouwheer.getMinRetention())
       .usrCrt(bouwheer.getUsrCrt())
       .dtmCrt(bouwheer.getDtmCrt())
       .usrUpd(bouwheer.getUsrUpd())
