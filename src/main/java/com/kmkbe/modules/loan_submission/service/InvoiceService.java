@@ -60,7 +60,6 @@ public class InvoiceService {
     Bouwheer bouwheer,
     CreateSubmissionRequest request
   ) {
-    try {
 //      List<Invoice> invoices = request.getInvoices()
 //        .stream()
 //        .map((posted) -> Invoice.builder()
@@ -87,57 +86,52 @@ public class InvoiceService {
 //        .map(InvoiceMapper.INSTANCE::dtoFromEntity)
 //        .toList();
 
-      List<Invoice> invoices = request.getInvoices().stream().map(posted -> {
-        // 1. Check if the invoice already exists in the database
-        return invoiceRepository.findFirstByCustomerAndBouwheerInvNoAndCustInvNo(
-            customer,
-            posted.getBouwheerInvoiceNo(),
-            posted.getCustomerInvoiceNo()
-          )
-          .map(existingInvoice -> {
-            // 2. If it EXISTS -> Update the fields using Setters
-            existingInvoice.setInvoiceDescription(
-              StringUtil.isNullOrEmpty(posted.getInvoiceDescription()) ? "Invoice By CKB" : posted.getInvoiceDescription()
-            );
-            existingInvoice.setInvoiceDate(Utils.toInstant(posted.getInvoiceDate()));
-            existingInvoice.setInvoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()));
-            existingInvoice.setInvoiceAmt(posted.getInvoiceAmount().doubleValue());
-            existingInvoice.setPoNumber(posted.getPoNumber());
-            existingInvoice.setPostingDate(posted.getPostingDate());
-
-            // Set update audit trails instead of create audit trails
-            existingInvoice.setUsrUpd(customer.getCustName());
-            existingInvoice.setDtmUpd(DateTimeUtils.now());
-
-            return existingInvoice;
-          })
-          .orElseGet(() ->
-            // 3. If it DOES NOT exist -> Create a new one using the Builder
-            Invoice.builder()
-              .customer(customer)
-              .bouwheer(bouwheer)
-              .bouwheerInvNo(posted.getBouwheerInvoiceNo())
-              .custInvNo(posted.getCustomerInvoiceNo())
-              .invoiceDescription(StringUtil.isNullOrEmpty(posted.getInvoiceDescription()) ? "Invoice By CKB" : posted.getInvoiceDescription())
-              .invoiceDate(Utils.toInstant(posted.getInvoiceDate()))
-              .invoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()))
-              .invoiceAmt(posted.getInvoiceAmount().doubleValue())
-              .poNumber(posted.getPoNumber())
-              .postingDate(posted.getPostingDate())
-              .usrCrt(customer.getCustName())
-              .build()
+    List<Invoice> invoices = request.getInvoices().stream().map(posted -> {
+      // 1. Check if the invoice already exists in the database
+      return invoiceRepository.findFirstByCustomerAndBouwheerInvNoAndCustInvNo(
+          customer,
+          posted.getBouwheerInvoiceNo(),
+          posted.getCustomerInvoiceNo()
+        )
+        .map(existingInvoice -> {
+          // 2. If it EXISTS -> Update the fields using Setters
+          existingInvoice.setInvoiceDescription(
+            StringUtil.isNullOrEmpty(posted.getInvoiceDescription()) ? "Invoice By " + bouwheer.getBouwheerName() : posted.getInvoiceDescription()
           );
-      }).toList();
+//            existingInvoice.setInvoiceDate(Utils.toInstant(posted.getInvoiceDate()));
+//            existingInvoice.setInvoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()));
+//            existingInvoice.setInvoiceAmt(posted.getInvoiceAmount().doubleValue());
+//            existingInvoice.setPoNumber(posted.getPoNumber());
+//            existingInvoice.setPostingDate(posted.getPostingDate());
 
-// 4. Save everything (Hibernate will automatically run UPDATEs for existing entities and INSERTs for new ones)
-      return invoiceRepository.saveAll(invoices)
-        .stream()
-        .map(InvoiceMapper.INSTANCE::dtoFromEntity)
-        .toList();
-    } catch (Exception e) {
-      log.error("createBulk, error {}", e.getMessage());
-      throw e;
-    }
+          // Set update audit trails instead of create audit trails
+          existingInvoice.setUsrUpd(bouwheer.getBouwheerName());
+          existingInvoice.setDtmUpd(DateTimeUtils.now());
+
+          return existingInvoice;
+        })
+        .orElseGet(() ->
+          // 3. If it DOES NOT exist -> Create a new one using the Builder
+          Invoice.builder()
+            .customer(customer)
+            .bouwheer(bouwheer)
+            .bouwheerInvNo(posted.getBouwheerInvoiceNo())
+            .custInvNo(posted.getCustomerInvoiceNo())
+            .invoiceDescription(StringUtil.isNullOrEmpty(posted.getInvoiceDescription()) ? "Invoice By " + bouwheer.getBouwheerName() : posted.getInvoiceDescription())
+            .invoiceDate(Utils.toInstant(posted.getInvoiceDate()))
+            .invoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()))
+            .invoiceAmt(posted.getInvoiceAmount().doubleValue())
+            .poNumber(posted.getPoNumber())
+            .postingDate(posted.getPostingDate())
+            .usrCrt(bouwheer.getBouwheerName())
+            .build()
+        );
+    }).toList();
+
+    return invoiceRepository.saveAll(invoices)
+      .stream()
+      .map(InvoiceMapper.INSTANCE::dtoFromEntity)
+      .toList();
   }
 
   public void delete(Invoice invoice) {
@@ -179,7 +173,7 @@ public class InvoiceService {
       }
 
 
-      log.info("Invoice Details :  {} ",financingDtls.stream().toList());
+      log.info("Invoice Details :  {} ", financingDtls.stream().toList());
       return paginateInvoice(
         financingDtls,
         pageNo

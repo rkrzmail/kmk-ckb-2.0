@@ -835,21 +835,17 @@ public class LoanSubmissionService {
 //      simulationDisburseResult
 //    );
 
-    // 1. Ekstrak semua nomor invoice dari request terlebih dahulu
     List<String> invoiceNumbers = request.getInvoices().stream()
       .map(PostedInvoicePayload::getBouwheerInvoiceNo)
       .filter(Objects::nonNull)
       .toList();
 
-// 2. Cek ke FinancingDtlRepository apakah nomor invoice ini sudah punya detail & header
     List<FinancingDtl> existingDetails = financingDtlRepository.findByBouwheerInvNoIn(invoiceNumbers);
-
     FinancingHdr finalFinancingHdr;
 
     if (!existingDetails.isEmpty()) {
       finalFinancingHdr = existingDetails.getFirst().getFinancingHdr();
     } else {
-      // SKENARIO B: Benar-benar data baru, silakan buat Header baru
       finalFinancingHdr = financingHdrService.create(
         customer,
         bouwheer,
