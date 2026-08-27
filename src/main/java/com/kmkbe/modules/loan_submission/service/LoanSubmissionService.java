@@ -155,7 +155,7 @@ public class LoanSubmissionService {
         .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
           "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak " + bouwheerOptional.get().getBouwheerName())
+          "dengan pihak " + vendorTokenExtractor.getBouwheerName() + ".")
         .build();
     }
 
@@ -163,7 +163,7 @@ public class LoanSubmissionService {
       throw CommonInvalidException.builder()
         .title("Perusahaan Anda Terdaftar dalam Daftar Blacklist")
         .message("Perusahaan Anda saat ini terdaftar dalam daftar " +
-          "blacklist " + bouwheerOptional.get().getBouwheerName() + ", sehingga Anda " +
+          "blacklist " + vendorTokenExtractor.getBouwheerName() + ", sehingga Anda " +
           "belum dapat menggunakan Dana Sakti.")
         .build();
     }
@@ -173,7 +173,7 @@ public class LoanSubmissionService {
         .title("Mohon Maaf, Anda Tidak Memenuhi Syarat")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
           "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak " + bouwheerOptional.get().getBouwheerName())
+          "dengan pihak " + vendorTokenExtractor.getBouwheerName() + ".")
         .build();
     }
 
@@ -182,7 +182,7 @@ public class LoanSubmissionService {
         .title("Tidak Terdapat Invoice Yang Dapat Dibiayai")
         .message("Mohon maaf, saat ini Anda belum dapat menggunakan " +
           "Dana Sakti. Harap melakukan pengecekan ulang " +
-          "dengan pihak " + bouwheerOptional.get().getBouwheerName())
+          "dengan pihak " + vendorTokenExtractor.getBouwheerName() + ".")
         .build();
     }
 
@@ -264,7 +264,7 @@ public class LoanSubmissionService {
   public List<DisbursePercentageDto> fetchDisbursePercentage() {
     try {
       List<DisbursePercentageDto> result = new ArrayList<>();
-      for (double i = 50.0; i <= 90.0; i += 5.0) {
+      for (double i = 50.0; i <= 95.0; i += 5.0) {
         result.add(
           DisbursePercentageDto.builder()
             .disbursePercentage(i)
@@ -284,6 +284,10 @@ public class LoanSubmissionService {
     CalculateSimulationRequest request
   ) throws SignatureException, JsonProcessingException, ParseException {
     try {
+      if (request.getDisbursePercentage() == null || request.getDisbursePercentage() < 50.0 || request.getDisbursePercentage() > 95.0) {
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Persentase pencairan harus di antara 50% sampai 95%");
+      }
+
       final BigDecimal ntfResult = request.getTotalInvoiceAmount()
         .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
 

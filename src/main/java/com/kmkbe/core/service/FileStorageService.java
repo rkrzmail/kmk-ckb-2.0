@@ -89,7 +89,7 @@ public class FileStorageService {
             if (!uploadPath.toFile().exists()) {
                 Files.createDirectories(uploadPath);
             }
-            name = Utils.UUID();//Paths.get(name)
+            name = Utils.UUID() + "." + ext;//Paths.get(name)
 
             Path fileDestination = uploadPath.resolve(name)
                     .normalize()

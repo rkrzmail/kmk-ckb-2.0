@@ -123,6 +123,15 @@ public class LoanSubmissionController {
     );
   }
 
+  @GetMapping("/simulations/viewcalculate/{financeCode}")
+  public CommonResult<FinancingHdrDto> getViewCalculateDisburse(
+    @PathVariable("financeCode") String financeCode
+  ) throws SignatureException, JsonProcessingException, ParseException {
+    return new CommonResult<FinancingHdrDto>().success(
+      loanSubmissionService.viewCulateDisburse(financeCode, null)
+    );
+  }
+
   @GetMapping("/simulations/update")
   public CommonResult<CreatedSimulationDto> updateSimulation(
     HttpServletRequest request
