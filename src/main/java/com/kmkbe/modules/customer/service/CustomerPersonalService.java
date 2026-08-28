@@ -1,5 +1,7 @@
 package com.kmkbe.modules.customer.service;
 
+import com.kmkbe.exception.BusinessException;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.CustomerPersonal;
 import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
@@ -10,6 +12,7 @@ import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.helpers.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -27,7 +30,8 @@ public class CustomerPersonalService {
       .isPresent();
 
     if (userExists) {
-      throw new IllegalStateException("User already exists");
+      log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", cust.getCustName());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84);
     }
 
     final CustomerPersonal personal = new CustomerPersonal();
