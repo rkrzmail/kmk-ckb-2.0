@@ -352,7 +352,7 @@ public class AuthService {
   }
 
   @Transactional
-  public String logout(Customer cust) throws SignatureException {
+  public String logout(Customer cust) {
     try {
       if (cust == null) {
         throw new IllegalStateException("User has logged out");
