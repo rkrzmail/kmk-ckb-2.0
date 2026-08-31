@@ -33,7 +33,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -541,17 +540,33 @@ public class SignerService {
       Agreement agreement = agreementRepository.findByFinancingHdr_FinancingHdrCode2(uuid, agreementNo)
         .orElseThrow(() -> new RuntimeException("Agreement not found"));
 
+      if (agreement.getCwr() == null) {
+        throw new RuntimeException("CWR tidak ditemukan untuk agreement " + agreementNo);
+      }
+      if (agreement.getCwr().getCustomer() == null) {
+        throw new RuntimeException("Customer tidak ditemukan untuk agreement " + agreementNo);
+      }
+
       custNo = agreement.getCwr().getCustomer().getCustNo();
       cwrNo = agreement.getCwr().getCwrCode();
+      if (custNo == null || custNo.isBlank()) {
+        throw new RuntimeException("CustNo tidak tersedia untuk agreement " + agreementNo);
+      }
+      if (cwrNo == null || cwrNo.isBlank()) {
+        throw new RuntimeException("CwrNo tidak tersedia untuk agreement " + agreementNo);
+      }
 
       SignerRequestDto request = new SignerRequestDto(custNo, cwrNo, LocalDate.now().toString());
       ExternalApiResponse response = callExternalApi(request);
       return mapToPersonDto(response);
 
     } catch (Exception e) {
+      log.error("getSignersFromExternalApi failed. financingHdrCode={}, agreementNo={}, error={}",
+        financingHdrCode, agreementNo, e.getMessage(), e);
       PersonDto error = new PersonDto();
       error.setStatusCode("500");
       error.setMessage("Error: " + e.getMessage());
+      error.setSigners(List.of());
       return error;
     }
   }
@@ -608,10 +623,26 @@ public class SignerService {
   }
 
   public PersonDto mergeSigners(List<PersonDto> allSigners) {
+    List<PersonDto> safeSigners = Optional.ofNullable(allSigners).orElse(List.of());
+    List<String> errorMessages = safeSigners.stream()
+      .filter(Objects::nonNull)
+      .filter(p -> "500".equals(p.getStatusCode()))
+      .map(PersonDto::getMessage)
+      .filter(Objects::nonNull)
+      .toList();
+
+    if (!errorMessages.isEmpty()) {
+      PersonDto result = new PersonDto();
+      result.setStatusCode("500");
+      result.setMessage(String.join("; ", errorMessages));
+      result.setSigners(List.of());
+      return result;
+    }
 
     Set<String> seen = ConcurrentHashMap.newKeySet();
-    List<PersonDto.Signer> mergedList = allSigners.stream()
-      .flatMap(p -> p.getSigners() != null ? p.getSigners().stream() : Stream.empty())
+    List<PersonDto.Signer> mergedList = safeSigners.stream()
+      .filter(Objects::nonNull)
+      .flatMap(p -> Optional.ofNullable(p.getSigners()).orElse(List.of()).stream())
       .filter(s -> seen.add(s.getSignerName() + "_" + s.getSignerPosition()))
       .toList();
 
