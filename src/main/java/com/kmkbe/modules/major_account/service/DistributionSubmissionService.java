@@ -256,7 +256,7 @@ public class DistributionSubmissionService {
             .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
             .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
             .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-            .description("Invoice By Trakindo")
+            .description(item.getInvoice().getInvoiceDescription())
             .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
             .build()
         ).toList();

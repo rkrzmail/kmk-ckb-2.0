@@ -160,7 +160,7 @@ public class AgreementController {
                                     .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
                                     .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                                     .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-                                    .description("Invoice By Trakindo")
+                                    .description(item.getInvoice().getInvoiceDescription())
                                     .bouwheerName(createdFinancing.getBouwheer().getBouwheerName())
                                     .build()
                     ).toList();

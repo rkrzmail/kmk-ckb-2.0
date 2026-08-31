@@ -131,7 +131,7 @@ csul:
       getzipcode: http://172.21.10.149:8083/fou_getzipcode.php
     payment:
       v1: https://uat-confinsr3.csulfinance.com/api/payment/v1
-    adinskey: MWxHZ1ZmZEpubHkrNy9YdmFNZ3ZSVXlHRzV1emozM0hrN1AxYTRjRFg1a1NZUz0=
+    adinskey: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
     ar:
       v1: https://uat-confinsr3.csulfinance.com/api/ar/v1
   sisca:
