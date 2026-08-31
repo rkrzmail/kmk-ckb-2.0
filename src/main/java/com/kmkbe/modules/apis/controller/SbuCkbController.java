@@ -60,7 +60,7 @@ public class SbuCkbController {
     return apiSbuCkbService.simulation(request);
   }
 
-  @PostMapping(value = "/submissions/{jwtToken}")
+  @PostMapping(value = "/api/v1/sbu/ckb/submissions/{jwtToken}")
   public CommonResult<CreatedSimulationDto> createSimulation(
     @RequestBody @Valid CreateSubmissionRequest request,
     @PathVariable("jwtToken") String jwtToken,

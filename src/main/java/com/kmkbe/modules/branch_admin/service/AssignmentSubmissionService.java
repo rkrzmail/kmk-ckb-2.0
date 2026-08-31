@@ -56,7 +56,7 @@ public class AssignmentSubmissionService {
     this.currentUserService = currentUserService;
   }
 
-  public PaginationResult<AssignmentDto> assignmentList(
+  public PaginationResult<AssignmentDto>  assignmentList(
     HttpServletRequest httpServletRequest,
     PaginationRequest request
   ) throws SignatureException {

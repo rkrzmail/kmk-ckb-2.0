@@ -38,7 +38,7 @@ public class CwrRemoteService {
     private final ObjectMapper objectMapper;
 
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> inquiryCwr(
+    public BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>>  inquiryCwr(
             InquiryCwrRemoteRequest request
     ) throws JsonProcessingException {
         String jsonStr = "";
