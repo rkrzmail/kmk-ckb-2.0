@@ -146,10 +146,6 @@ public class CustomerService {
      */
     customer.setCustName(request.getName());
     customer.setCustEmail(request.getEmail().toLowerCase());
-    if (request.getCustomerNo() != null && !request.getCustomerNo().isEmpty()) {
-      customer.setCustNo(request.getCustomerNo());
-    }
-
     boolean isCompany = (type == CustomerType.Company);
 
 // 1. Set ID Type Code cleanly using a ternary operator
