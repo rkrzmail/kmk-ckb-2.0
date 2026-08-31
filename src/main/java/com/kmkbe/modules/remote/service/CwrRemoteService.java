@@ -189,8 +189,8 @@ public class CwrRemoteService {
         String jsonStr = "";
         String responseStr = null;
         int statusCode = 200;
-//        final String url = baseRemoteService.Los_Agreement_GetListAgreementDetailForCwrByCwrNo();
-        final String url = baseRemoteService.Los_Agreement_GetListAgreementDetailForCwrNo_forward();
+       final String url = baseRemoteService.Los_Agreement_GetListAgreementDetailForCwrByCwrNo();
+       // final String url = baseRemoteService.Los_Agreement_GetListAgreementDetailForCwrNo_forward();
         try {
             Map<String, Object> request = new HashMap<>();
             request.put("trxNo", cwrNo);

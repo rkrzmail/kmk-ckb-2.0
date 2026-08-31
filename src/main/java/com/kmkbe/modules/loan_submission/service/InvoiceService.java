@@ -320,7 +320,7 @@ public class InvoiceService {
           .invoiceAmount(BigDecimal.valueOf(e.getInvoice().getInvoiceAmt()))
           .invoiceDescription(
             StringUtil.isNullOrEmpty(e.getInvoice().getInvoiceDescription())
-              ? "Invoice By Trakindo"
+              ? "Invoice By "+e.getFinancingHdr().getBouwheer().getBouwheerName()
               : e.getInvoice().getInvoiceDescription()
           )
           .currencyCode("IDR")
@@ -372,7 +372,7 @@ public class InvoiceService {
           .bouwheerName(financingDtlPage.getContent().get(i).getFinancingHdr().getBouwheer().getBouwheerName())
           .invoiceAmount(new BigDecimal(financingDtlPage.getContent().get(i).getInvoice().getInvoiceAmt(), MathContext.DECIMAL64))
           .invoiceDescription(StringUtil.isNullOrEmpty(financingDtlPage.getContent().get(i).getInvoice().getInvoiceDescription())
-            ? "Invoice By Trakindo"
+            ? "Invoice By "+financingDtlPage.getContent().get(i).getFinancingHdr().getBouwheer().getBouwheerName()
             : financingDtlPage.getContent().get(i).getInvoice().getInvoiceDescription())
           .status(status.getStatus())
           .statusLabel(status.getLabel())
@@ -432,7 +432,7 @@ public class InvoiceService {
           .bouwheerName(financingDtlPage.getContent().get(i).getFinancingHdr().getBouwheer().getBouwheerName())
           .invoiceAmount(new BigDecimal(financingDtlPage.getContent().get(i).getInvoice().getInvoiceAmt(), MathContext.DECIMAL64))
           .invoiceDescription(StringUtil.isNullOrEmpty(financingDtlPage.getContent().get(i).getInvoice().getInvoiceDescription())
-            ? "Invoice By Trakindo"
+            ? "Invoice By "+financingDtlPage.getContent().get(i).getFinancingHdr().getBouwheer().getBouwheerName()
             : financingDtlPage.getContent().get(i).getInvoice().getInvoiceDescription())
           .status(status.getStatus())
           .statusLabel(status.getLabel())
