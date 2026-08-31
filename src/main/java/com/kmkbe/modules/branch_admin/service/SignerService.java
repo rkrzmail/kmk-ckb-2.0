@@ -33,6 +33,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -610,9 +611,10 @@ public class SignerService {
 
     Set<String> seen = ConcurrentHashMap.newKeySet();
     List<PersonDto.Signer> mergedList = allSigners.stream()
-      .flatMap(p -> p.getSigners().stream())
+      .flatMap(p -> p.getSigners() != null ? p.getSigners().stream() : Stream.empty())
       .filter(s -> seen.add(s.getSignerName() + "_" + s.getSignerPosition()))
       .toList();
+
 
     PersonDto result = new PersonDto();
     result.setStatusCode("200");
