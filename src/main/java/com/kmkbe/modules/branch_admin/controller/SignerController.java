@@ -95,19 +95,35 @@ public class SignerController {
     }
 
     @GetMapping("/getSigners/{financingHdrCode}/{agreementCode}")
-    public CommonResult<PersonDto> getSigners(
+
+    public ResponseEntity<CommonResult<PersonDto>> getSigners(
             @PathVariable String financingHdrCode,
             @PathVariable String agreementCode,
             HttpServletRequest httpServletRequest
     ) throws SignatureException{
-        PaginationResult<AssignmentDto> originalResult =
-                assignmentSubmissionService.assignmentList(httpServletRequest,new PaginationRequest());
+        try {
+            PaginationResult<AssignmentDto> originalResult =
+                    assignmentSubmissionService.assignmentList(httpServletRequest,new PaginationRequest());
 
-        List<AssignmentDto> originalList = originalResult.getList();
-        PersonDto allSigners = signerService.getSignersForGroup(financingHdrCode, originalList);
+            List<AssignmentDto> originalList = originalResult.getList();
+            PersonDto allSigners = signerService.getSignersForGroup(financingHdrCode, originalList);
 
-        return new CommonResult<PersonDto>().success(allSigners);
+            if ("500".equals(allSigners.getStatusCode())) {
+                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body(new CommonResult<PersonDto>().fail(500, allSigners.getMessage(), allSigners));
+            }
 
+            return ResponseEntity.ok(new CommonResult<PersonDto>().success(allSigners));
+        } catch (Exception e) {
+            log.error("getSigners failed. financingHdrCode={}, agreementCode={}, error={}",
+                    financingHdrCode, agreementCode, e.getMessage(), e);
+            PersonDto error = new PersonDto();
+            error.setStatusCode("500");
+            error.setMessage(e.getMessage());
+            error.setSigners(List.of());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new CommonResult<PersonDto>().fail(500, e.getMessage(), error));
+        }
     }
 
     @GetMapping("/signer-agreement/{financingHdrCode}")
