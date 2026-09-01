@@ -30,6 +30,9 @@ public class UpdateCustomerRequest {
   @NotNull(message = "Detail Alamat is required, key: address")
   private UpdateAddressRequest address;
 
+  @NotNull(message = "Required, key: custNo")
+  private String custNo;
+
   private UpdateCompanyRequest company;
   private UpdatePersonalRequest personal;
 

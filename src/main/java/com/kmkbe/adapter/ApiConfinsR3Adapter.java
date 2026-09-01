@@ -1,11 +1,9 @@
 package com.kmkbe.adapter;
 
+import com.kmkbe.core.domain.dto.CustomerRemoteDto;
 import com.kmkbe.feign.client.ConfinsR3FeignClient;
 import com.kmkbe.feign.model.dto.*;
-import com.kmkbe.feign.model.request.ConfinsR3GetCustomerNoRequest;
-import com.kmkbe.feign.model.request.ConfinsR3GetKeyValueActiveByCodeRequest;
-import com.kmkbe.feign.model.request.ConfinsR3GetPagingObjectBySQLRequest;
-import com.kmkbe.feign.model.request.CsulGetZipCodeRequest;
+import com.kmkbe.feign.model.request.*;
 import com.kmkbe.feign.model.response.ConfinsR3ApiResponseWrapper;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -95,5 +93,14 @@ public class ApiConfinsR3Adapter {
    */
   public ConfinsR3GetKeyValueActiveByCodeDto getKyValueByCode(ConfinsR3GetKeyValueActiveByCodeRequest request) {
     return confinsR3FeignClient.getKyValueByCode(request);
+  }
+
+  /**
+   *
+   * @param request
+   * @return
+   */
+  public CustomerRemoteDto getCustomerByKeyAndValue(ConfinsR3KeyAndValueObjRequest request) {
+    return confinsR3FeignClient.getCustomerByKeyAndValue(request);
   }
 }

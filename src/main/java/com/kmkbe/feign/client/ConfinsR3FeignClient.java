@@ -1,12 +1,10 @@
 package com.kmkbe.feign.client;
 
+import com.kmkbe.core.domain.dto.CustomerRemoteDto;
 import com.kmkbe.feign.config.ConfinsR3AuthInterceptor;
 import com.kmkbe.feign.config.FeignErrorDecoder;
 import com.kmkbe.feign.model.dto.*;
-import com.kmkbe.feign.model.request.ConfinsR3GetCustomerNoRequest;
-import com.kmkbe.feign.model.request.ConfinsR3GetKeyValueActiveByCodeRequest;
-import com.kmkbe.feign.model.request.ConfinsR3GetPagingObjectBySQLRequest;
-import com.kmkbe.feign.model.request.CsulGetZipCodeRequest;
+import com.kmkbe.feign.model.request.*;
 import com.kmkbe.feign.model.response.ConfinsR3ApiResponseWrapper;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -60,5 +58,10 @@ public interface ConfinsR3FeignClient {
     produces = "application/json"
   )
   ConfinsR3ApiResponseWrapper<ConfinsR3GetZipCodeDto> getAllZipcode(@RequestBody ConfinsR3GetPagingObjectBySQLRequest request);
+
+  @PostMapping(value = "/api/fou/v1/CustObj/GetObjectByKeyAndValue",
+    consumes = "application/json",
+    produces = "application/json")
+  CustomerRemoteDto getCustomerByKeyAndValue(@RequestBody ConfinsR3KeyAndValueObjRequest request);
 
 }

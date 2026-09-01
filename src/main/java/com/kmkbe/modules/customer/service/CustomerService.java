@@ -223,6 +223,7 @@ public class CustomerService {
       //customer.setCustTypeCode(request.getCustTypeCode());
       customer.setCustIdNo(request.getCustIdNo());
       customer.setNpwp(request.getNpwp());
+      customer.setCustNo(request.getCustNo());
       try {
         customer = customerRepository.save(customer);
         auditTrailService.record("CUSTOMER", AuditAction.UPDATE, "Customer", customer.getCustCode(), before, toAuditData(customer));
@@ -326,7 +327,7 @@ public class CustomerService {
       response.setDtmCrt(item.getDtmCrt());
       response.setForceLogout(item.getForceLogout());
       response.setBouwheerCode(String.valueOf(item.getBouwheer()));
-      response.setBouwheerName(bouwheerRepository.findByBouwheerCode(item.getBouwheer() != null? UUID.fromString(item.getBouwheer()) :null)
+      response.setBouwheerName(bouwheerRepository.findByBouwheerCode(item.getBouwheer() != null ? UUID.fromString(item.getBouwheer()) : null)
         .map(Bouwheer::getBouwheerName)
         .orElse(null));
       response.setApprovalStatus(item.getApprovalStatus());
@@ -357,7 +358,7 @@ public class CustomerService {
     Customer customer = customerOptional.get();
     CustomerResponse response = new CustomerResponse();
     BeanUtils.copyProperties(customer, response);
-    response.setBouwheerName(bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null? UUID.fromString(customer.getBouwheer()) :null)
+    response.setBouwheerName(bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null)
       .map(Bouwheer::getBouwheerName)
       .orElse(null));
 
