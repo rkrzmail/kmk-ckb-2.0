@@ -2,11 +2,13 @@ package com.kmkbe.modules.confinsr3.service;
 
 
 import com.kmkbe.adapter.ApiConfinsR3Adapter;
+import com.kmkbe.core.domain.dto.CustomerRemoteDto;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.feign.model.dto.*;
 import com.kmkbe.feign.model.request.ConfinsR3GetCustomerNoRequest;
 import com.kmkbe.feign.model.request.ConfinsR3GetKeyValueActiveByCodeRequest;
 import com.kmkbe.feign.model.request.ConfinsR3GetPagingObjectBySQLRequest;
+import com.kmkbe.feign.model.request.ConfinsR3KeyAndValueObjRequest;
 import com.kmkbe.feign.model.response.ConfinsR3ApiResponseWrapper;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
@@ -346,5 +348,28 @@ public class ConfinsR3Service {
       .customer(customerResponse)
       .customerPersonal(customerPersonalInfoResponse)
       .build());
+  }
+
+  /**
+   *
+   * @param key,value
+   * @return
+   */
+  public BaseResponseBuilder<CustomerRemoteDto> findCustomerByKeyAndValue(String key, String value) {
+    CustomerRemoteDto response = apiConfinsR3Adapter.getCustomerByKeyAndValue(ConfinsR3KeyAndValueObjRequest.builder()
+      .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
+        .keyAndValueObj(ConfinsR3KeyAndValueObjRequest.KeyAndValueObjDTO.builder()
+          .key(key)
+          .operator("eq")
+          .value(value)
+          .build())
+      .includeProperties(List.of())
+      .build());
+    if (response == null) {
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", value);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81);
+    }
+
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, response);
   }
 }

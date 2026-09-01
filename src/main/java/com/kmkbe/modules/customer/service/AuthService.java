@@ -131,7 +131,7 @@ public class AuthService {
         SignUpRequest.Company.builder()
           .companyModel("")
           .companyType(vendor.getJenisPerusahaan())
-          .identityType("AKTA")
+          .identityType("AKTA PENDIRIAN")
           .identityNo(request.getCustomerIdNo())
           .identityIssuedDate(DateTimeUtils.now())
           .identityExpiredDate(DateTimeUtils.now())
