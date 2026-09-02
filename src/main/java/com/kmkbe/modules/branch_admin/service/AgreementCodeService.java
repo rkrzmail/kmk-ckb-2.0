@@ -116,7 +116,7 @@ public class AgreementCodeService {
             String branchCode = financingHdrRepository.findBranchCodeByFinancingHdrCode(financingHdrCode);
 
             List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "RM", jwtToken);
-            String employeeName = employeeList.isEmpty() ? "N/A" : toCamelCase(employeeList.get(0).get("employeeName"));
+            String employeeName = employeeList.isEmpty() ? "N/A" : toCamelCase(employeeList.getFirst().get("employeeName"));
 
 //            String directorOrCustomerName = "Company".equals(customer.getCustTypeCode())
 //                    ? customer.getCustomerCompany().getDirectorName()
@@ -126,7 +126,7 @@ public class AgreementCodeService {
 
             List<Debtor> signerList = debtorRepository.findActiveSignerByDebtorName(debtorName);
 
-            String signerName = signerList.isEmpty() ? "-" : signerList.get(0).getKaryawanName();
+            String signerName = signerList.isEmpty() ? "-" : signerList.getFirst().getKaryawanName();
             String jabatan = signerList.isEmpty() ? "-" : signerList.get(0).getJabatan();
 
 //            String signerName = debtorRepository

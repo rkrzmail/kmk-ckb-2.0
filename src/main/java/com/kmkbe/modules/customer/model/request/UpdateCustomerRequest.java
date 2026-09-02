@@ -30,9 +30,6 @@ public class UpdateCustomerRequest {
   @NotNull(message = "Detail Alamat is required, key: address")
   private UpdateAddressRequest address;
 
-  @NotNull(message = "Required, key: custNo")
-  private String custNo;
-
   private UpdateCompanyRequest company;
   private UpdatePersonalRequest personal;
 
@@ -43,9 +40,6 @@ public class UpdateCustomerRequest {
   public static class UpdateCompanyRequest extends CommonField {
     @NotNull(message = "Tipe Perusahaan is required, key: custCompanyType")
     private String custCompanyType;
-
-    @NotNull(message = "Model Debitur is required, key: companyModel")
-    private String companyModel;
 
     @NotNull(message = "Jenis Identitas is required, key: identityType")
     private String identityType;
@@ -62,10 +56,11 @@ public class UpdateCustomerRequest {
     @NotNull(message = "Alamat Kantor is required, key: companyAddress")
     private String companyAddress;
 
-    //@NotNull(message = "directorName is required, key: directorName")
     private String directorName;
 
     private String area;
+
+    private String directorPhone;
   }
 
   @Getter

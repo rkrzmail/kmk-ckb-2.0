@@ -23,7 +23,7 @@ public class EstimatedDisburseDto extends BaseResponse {
     private BigDecimal legalFeeAmount;
     private BigDecimal surveyFeeAmount;
     private BigDecimal totalInvoiceAmount;
-
+    private BigDecimal totalNtfAmount;
     private Double provisionRate;
     private Double effectiveRate;
     private Double adminRate;

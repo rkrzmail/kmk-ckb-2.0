@@ -86,7 +86,6 @@ public class CustomerCompanyService {
 
       company.setCustomer(customer);
       company.setCustCompanyType(request.getCustCompanyType());
-      company.setCompanyModel(request.getCompanyModel());
       company.setIdentityType(request.getIdentityType());
       company.setIdentityNo(request.getIdentityNo());
       company.setIdentityIssuedDate(Utils.toInstant(request.getIdentityIssuedDate()));
@@ -106,7 +105,9 @@ public class CustomerCompanyService {
       company.setStaySince(Utils.toInstant(request.getStaySince()));
       company.setStayLength(CustomerUtils.calculateStayLength(Utils.toInstant(request.getStaySince())));
       company.setDirectorName(request.getDirectorName());
+      company.setDirectorPhone(request.getDirectorPhone());
       return customerCompanyRepository.save(company);
+
     } catch (Exception e) {
       log.error("update: {}", e.getMessage());
       throw e;
