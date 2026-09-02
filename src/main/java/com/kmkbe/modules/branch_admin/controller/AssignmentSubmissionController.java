@@ -8,8 +8,6 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.branch_admin.service.AssignmentSubmissionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;

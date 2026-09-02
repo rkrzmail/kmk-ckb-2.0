@@ -238,6 +238,7 @@ public class DistributionSubmissionService {
     financingHdr.setDtmUpd(DateTimeUtils.now());
     financingHdr.setUsrUpd(authenticateUser.getUsername());
     FinancingHdr savedFinancing = financingHdrRepository.save(financingHdr);
+
     auditTrailService.record(
       "DISTRIBUTION_SUBMISSION",
       AuditAction.UPDATE,

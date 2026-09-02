@@ -130,14 +130,14 @@ public class CustomerController {
 
 
       //mandaroty
-      setMessageIfError(request.getCompany().getIdentityNo(), "All field  cannot be null");
-      setMessageIfError(request.getCompany().getCompanyAddress(), "All field cannot be null");
-      setMessageIfError(request.getAddress().getZipCode(), "All field cannot be null");
-      setMessageIfError(String.valueOf(request.getCompany().getIdentityIssuedDate()), "All field cannot be null");
-      setMessageIfError(String.valueOf(request.getCompany().getStaySince()), "All field cannot be null");
-      setMessageIfError(String.valueOf(request.getCompany().getOwnershipStatus()), "All field cannot be null");
-      setMessageIfError(String.valueOf(request.getCompany().getCompanyModel()), "All field cannot be null");
-      setMessageIfError(String.valueOf(request.getCompany().getCustCompanyType()), "All field cannot be null");
+      setMessageIfError(request.getCompany().getIdentityNo(), "Identity No field  cannot be null");
+      setMessageIfError(request.getCompany().getCompanyAddress(), "Company Andress field cannot be null");
+      setMessageIfError(request.getAddress().getZipCode(), "Zipcode field cannot be null");
+      setMessageIfError(String.valueOf(request.getCompany().getIdentityIssuedDate()), "Company Identity Issued Date field cannot be null");
+      setMessageIfError(String.valueOf(request.getCompany().getStaySince()), "StaySince field cannot be null");
+      setMessageIfError(String.valueOf(request.getCompany().getOwnershipStatus()), "Ownership Status field cannot be null");
+      setMessageIfError(String.valueOf(request.getCompany().getCompanyModel()), "Company Model field cannot be null");
+      setMessageIfError(String.valueOf(request.getCompany().getCustCompanyType()), "Customer Company Type field cannot be null");
       //tanggal seejak
       if (request.getCompany().getStaySince().getTime() > Utils.NowDate().getTime()) {
         setMessageIfError(String.valueOf(request.getCompany().getCustCompanyType()), "Tanggal Sejak tidak boleh lebih dari hari ini");

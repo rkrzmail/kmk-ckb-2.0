@@ -331,6 +331,10 @@ public class SignerService {
         throw new RuntimeException("NIK yang digunakan sudah terdaftar");
       }
 
+      if (debtorRepository.existsByNoTelp(debtorDto.getIdentityNo())) {
+        throw new RuntimeException("No Telepon yang digunakan sudah terdaftar");
+      }
+
       HttpHeaders headers = new HttpHeaders();
       headers.setContentType(MediaType.APPLICATION_JSON);
       headers.set("x-api-key", apiKey);
@@ -342,7 +346,7 @@ public class SignerService {
       if (registerResponse.containsKey("registrationData")) {
         List<Map<String, Object>> registrationData = (List<Map<String, Object>>) registerResponse.get("registrationData");
         if (registrationData != null && !registrationData.isEmpty()) {
-          registrationStatus = (String) registrationData.get(0).get("registrationStatus");
+          registrationStatus = (String) registrationData.getFirst().get("registrationStatus");
         }
       }
 

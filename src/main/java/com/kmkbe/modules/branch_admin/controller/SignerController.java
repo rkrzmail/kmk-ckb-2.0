@@ -27,194 +27,194 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/v1/signer")
 @Tag(
-        name = "List table data debtor untuk signer person",
-        description = "Berisi endpoints data debtor"
+  name = "List table data debtor untuk signer person",
+  description = "Berisi endpoints data debtor"
 )
 @RequiredArgsConstructor
 public class SignerController {
-    private final SignerService signerService;
-    private final AssignmentSubmissionService assignmentSubmissionService;
-    private final CurrentUserService currentUserService;
+  private final SignerService signerService;
+  private final AssignmentSubmissionService assignmentSubmissionService;
+  private final CurrentUserService currentUserService;
 
-    @GetMapping("/list")
-    public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
-            HttpServletRequest httpServletRequest,
-            PaginationRequest request
-    ) throws SignatureException {
-        return new CommonResult<PaginationResult<AssignmentDto>>()
-                .success(
-                        signerService.assignmentListGroupByCustomer(
-                                httpServletRequest,
-                                request
-                        )
-                );
+  @GetMapping("/list")
+  public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
+    HttpServletRequest httpServletRequest,
+    PaginationRequest request
+  ) throws SignatureException {
+    return new CommonResult<PaginationResult<AssignmentDto>>()
+      .success(
+        signerService.assignmentListGroupByCustomer(
+          httpServletRequest,
+          request
+        )
+      );
+  }
+
+  @GetMapping("/person/list/{financingHdrCode}")
+  public CommonResult<List<DebtorDto>> getSignerPersonList(
+    @PathVariable String financingHdrCode
+  ) throws SignatureException {
+    List<DebtorDto> signerPersonList = signerService.signerPersonList(
+      financingHdrCode,
+      currentUserService.internalUsername()
+    );
+    return new CommonResult<List<DebtorDto>>().success(signerPersonList);
+  }
+
+  @GetMapping("/person/{id}")
+  public ResponseEntity<CommonResult<DebtorDto>> getPersonDetail(
+    @PathVariable Long id) {
+    CommonResult<DebtorDto> result = signerService.detailSigner(id);
+
+    if (result.isSuccess()) {
+      return ResponseEntity.ok(result);
+    } else {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
     }
+  }
 
-    @GetMapping("/person/list/{financingHdrCode}")
-    public CommonResult<List<DebtorDto>> getSignerPersonList(
-            @PathVariable String financingHdrCode
-    ) throws SignatureException {
-        List<DebtorDto> signerPersonList = signerService.signerPersonList(
-                financingHdrCode,
-                currentUserService.internalUsername()
-        );
-        return new CommonResult<List<DebtorDto>>().success(signerPersonList);
+
+  @PostMapping("/person")
+  public CommonResult<String> createDebtor(
+    @RequestBody DebtorDto debtorDto
+  ) {
+    try {
+      signerService.createDebtor(debtorDto, currentUserService.internalUsername());
+      return new CommonResult<String>()
+        .success("NIK belum terdaftar. Link registrasi telah dikirim ke email " +
+          debtorDto.getEmail());
+    } catch (Exception e) {
+      String errorMessage = e.getMessage();
+      if (errorMessage.contains("NIK sudah terdaftar")) {
+        return new CommonResult<String>()
+          .fail(409, errorMessage);
+      }
+      return new CommonResult<String>()
+        .fail(400, errorMessage);
     }
+  }
 
-    @GetMapping("/person/{id}")
-    public ResponseEntity<CommonResult<DebtorDto>> getPersonDetail(
-            @PathVariable Long id) {
-        CommonResult<DebtorDto> result = signerService.detailSigner(id);
+  @GetMapping("/getSigners/{financingHdrCode}/{agreementCode}")
 
-        if (result.isSuccess()) {
-            return ResponseEntity.ok(result);
-        } else {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(result);
-        }
+  public ResponseEntity<CommonResult<PersonDto>> getSigners(
+    @PathVariable String financingHdrCode,
+    @PathVariable String agreementCode,
+    HttpServletRequest httpServletRequest
+  ) throws SignatureException {
+    try {
+      PaginationResult<AssignmentDto> originalResult =
+        assignmentSubmissionService.assignmentList(httpServletRequest, new PaginationRequest());
+
+      List<AssignmentDto> originalList = originalResult.getList();
+      PersonDto allSigners = signerService.getSignersForGroup(financingHdrCode, originalList);
+
+      if ("500".equals(allSigners.getStatusCode())) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body(new CommonResult<PersonDto>().fail(500, allSigners.getMessage(), allSigners));
+      }
+
+      return ResponseEntity.ok(new CommonResult<PersonDto>().success(allSigners));
+    } catch (Exception e) {
+      log.error("getSigners failed. financingHdrCode={}, agreementCode={}, error={}",
+        financingHdrCode, agreementCode, e.getMessage(), e);
+      PersonDto error = new PersonDto();
+      error.setStatusCode("500");
+      error.setMessage(e.getMessage());
+      error.setSigners(List.of());
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body(new CommonResult<PersonDto>().fail(500, e.getMessage(), error));
     }
+  }
 
+  @GetMapping("/signer-agreement/{financingHdrCode}")
+  public CommonResult<List<SignerAgreementDto>> getAgreement(
+    @PathVariable String financingHdrCode) {
+    List<SignerAgreementDto> signerAgreement = signerService.signerAgreement(financingHdrCode);
+    return new CommonResult<List<SignerAgreementDto>>().success(signerAgreement);
+  }
 
-    @PostMapping("/person")
-    public CommonResult<String> createDebtor(
-            @RequestBody DebtorDto debtorDto
-    ) {
-        try {
-            signerService.createDebtor(debtorDto, currentUserService.internalUsername());
-            return new CommonResult<String>()
-                    .success("NIK belum terdaftar. Link registrasi telah dikirim ke email " +
-                            debtorDto.getEmail());
-        } catch (Exception e) {
-            String errorMessage = e.getMessage();
-            if (errorMessage.contains("NIK sudah terdaftar")) {
-                return new CommonResult<String>()
-                        .fail(409, errorMessage);
-            }
-            return new CommonResult<String>()
-                    .fail(400, errorMessage);
-        }
+  @GetMapping("/signer-doc/list/{financingHdrCode}")
+  public CommonResult<List<SignerDocDto>> getSignerDocList(
+    @PathVariable String financingHdrCode
+  ) throws SignatureException {
+    List<SignerDocDto> signerDocList = signerService.signerDocList(
+      financingHdrCode,
+      currentUserService.internalUsername()
+    );
+    return new CommonResult<List<SignerDocDto>>().success(signerDocList);
+  }
+
+  // cek confins
+  @GetMapping("/check-signer/{financingHdrCode}/{agreementNo}")
+  public CommonResult<SignerCheckResultDto> checkSigners(
+    @PathVariable String financingHdrCode,
+    @PathVariable String agreementNo) {
+    try {
+      SignerCheckResultDto result = signerService.compareSigners(financingHdrCode, agreementNo);
+
+      if (result.getUnmatchedSigners().isEmpty()) {
+        return new CommonResult<SignerCheckResultDto>()
+          .success(result);
+      } else {
+        return new CommonResult<SignerCheckResultDto>()
+          .fail(400, "Ada perubahan data signer pada confins", result);
+      }
+    } catch (IllegalArgumentException e) {
+      return new CommonResult<SignerCheckResultDto>()
+        .fail(400, e.getMessage(), null);
+    } catch (Exception e) {
+      return new CommonResult<SignerCheckResultDto>()
+        .fail(500, e.getMessage(), null);
     }
+  }
 
-    @GetMapping("/getSigners/{financingHdrCode}/{agreementCode}")
 
-    public ResponseEntity<CommonResult<PersonDto>> getSigners(
-            @PathVariable String financingHdrCode,
-            @PathVariable String agreementCode,
-            HttpServletRequest httpServletRequest
-    ) throws SignatureException{
-        try {
-            PaginationResult<AssignmentDto> originalResult =
-                    assignmentSubmissionService.assignmentList(httpServletRequest,new PaginationRequest());
+  @GetMapping("/download-doc/{documentId}")
+  public ResponseEntity<ApiResponse<?>> downloadDocument(
+    @PathVariable String documentId
+  ) throws SignatureException {
 
-            List<AssignmentDto> originalList = originalResult.getList();
-            PersonDto allSigners = signerService.getSignersForGroup(financingHdrCode, originalList);
+    return signerService.downloadDocument(documentId, currentUserService.internalUsername());
+  }
 
-            if ("500".equals(allSigners.getStatusCode())) {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                        .body(new CommonResult<PersonDto>().fail(500, allSigners.getMessage(), allSigners));
-            }
+  // cek db
+  @GetMapping("/check-signer/danasakti/{financingHdrCode}/{agreementCode}")
+  public CommonResult<Map<String, Object>> checkSignerDanasakti(
+    @PathVariable String financingHdrCode,
+    @PathVariable String agreementCode
+  ) throws SignatureException {
 
-            return ResponseEntity.ok(new CommonResult<PersonDto>().success(allSigners));
-        } catch (Exception e) {
-            log.error("getSigners failed. financingHdrCode={}, agreementCode={}, error={}",
-                    financingHdrCode, agreementCode, e.getMessage(), e);
-            PersonDto error = new PersonDto();
-            error.setStatusCode("500");
-            error.setMessage(e.getMessage());
-            error.setSigners(List.of());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new CommonResult<PersonDto>().fail(500, e.getMessage(), error));
-        }
+    List<DebtorDto> signerPersonList = signerService.checkSignerDanasakti(
+      financingHdrCode,
+      currentUserService.internalUsername()
+    );
+
+    Map<String, Object> responseData = new HashMap<>();
+
+    if (signerPersonList == null || signerPersonList.isEmpty()) {
+      responseData.put("signerName", null);
+      return new CommonResult<Map<String, Object>>()
+        .fail(404, "Signer tidak tersedia", responseData);
     }
+    List<String> signerNames = signerPersonList.stream()
+      .map(DebtorDto::getKaryawanName)
+      .collect(Collectors.toList());
 
-    @GetMapping("/signer-agreement/{financingHdrCode}")
-    public CommonResult<List<SignerAgreementDto>> getAgreement(
-            @PathVariable String financingHdrCode) {
-        List<SignerAgreementDto> signerAgreement = signerService.signerAgreement(financingHdrCode);
-        return new CommonResult<List<SignerAgreementDto>>().success(signerAgreement);
-    }
+    responseData.put("signerName", signerNames);
 
-    @GetMapping("/signer-doc/list/{financingHdrCode}")
-    public CommonResult<List<SignerDocDto>> getSignerDocList(
-            @PathVariable String financingHdrCode
-    ) throws SignatureException {
-        List<SignerDocDto> signerDocList = signerService.signerDocList(
-                financingHdrCode,
-                currentUserService.internalUsername()
-        );
-        return new CommonResult<List<SignerDocDto>>().success(signerDocList);
-    }
+    return new CommonResult<Map<String, Object>>()
+      .success(responseData);
+  }
 
-    // cek confins
-    @GetMapping("/check-signer/{financingHdrCode}/{agreementNo}")
-    public CommonResult<SignerCheckResultDto> checkSigners(
-            @PathVariable String financingHdrCode,
-            @PathVariable String agreementNo) {
-        try {
-            SignerCheckResultDto result = signerService.compareSigners(financingHdrCode, agreementNo);
+  @GetMapping("/check-send-document/{financingHdrCode}/{agreementCode}")
+  public CommonResult<Map<String, Object>> checkSendDocument(
+    @PathVariable String financingHdrCode,
+    @PathVariable String agreementCode) {
 
-            if (result.getUnmatchedSigners().isEmpty()) {
-                return new CommonResult<SignerCheckResultDto>()
-                        .success(result);
-            } else {
-                return new CommonResult<SignerCheckResultDto>()
-                        .fail(400, "Ada perubahan data signer pada confins", result);
-            }
-        } catch (IllegalArgumentException e) {
-            return new CommonResult<SignerCheckResultDto>()
-                    .fail(400, e.getMessage(), null);
-        } catch (Exception e) {
-            return new CommonResult<SignerCheckResultDto>()
-                    .fail(500, e.getMessage(), null);
-        }
-    }
+    Map<String, Object> responseData = signerService.checkSendDocument(financingHdrCode, agreementCode);
 
-
-    @GetMapping("/download-doc/{documentId}")
-    public ResponseEntity<ApiResponse<?>> downloadDocument(
-            @PathVariable String documentId
-    ) throws SignatureException {
-
-        return signerService.downloadDocument(documentId, currentUserService.internalUsername());
-    }
-
-    // cek db
-    @GetMapping("/check-signer/danasakti/{financingHdrCode}/{agreementCode}")
-    public CommonResult<Map<String, Object>> checkSignerDanasakti(
-            @PathVariable String financingHdrCode,
-            @PathVariable String agreementCode
-    ) throws SignatureException {
-
-        List<DebtorDto> signerPersonList = signerService.checkSignerDanasakti(
-                financingHdrCode,
-                currentUserService.internalUsername()
-        );
-
-        Map<String, Object> responseData = new HashMap<>();
-
-        if (signerPersonList == null || signerPersonList.isEmpty()) {
-            responseData.put("signerName", null);
-            return new CommonResult<Map<String, Object>>()
-                    .fail(404, "Signer tidak tersedia", responseData);
-        }
-        List<String> signerNames = signerPersonList.stream()
-                .map(DebtorDto::getKaryawanName)
-                .collect(Collectors.toList());
-
-        responseData.put("signerName", signerNames);
-
-        return new CommonResult<Map<String, Object>>()
-                .success(responseData);
-    }
-
-    @GetMapping("/check-send-document/{financingHdrCode}/{agreementCode}")
-    public CommonResult<Map<String, Object>> checkSendDocument(
-            @PathVariable String financingHdrCode,
-            @PathVariable String agreementCode) {
-
-        Map<String, Object> responseData = signerService.checkSendDocument(financingHdrCode, agreementCode);
-
-        return new CommonResult<Map<String, Object>>()
-                .success(responseData);
-    }
+    return new CommonResult<Map<String, Object>>()
+      .success(responseData);
+  }
 
 }

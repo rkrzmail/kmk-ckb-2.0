@@ -1234,9 +1234,6 @@ public class LoanSubmissionService {
         if (!isAutoASSIGNMENT) {
           //sed to major account
           try {
-//                        String mjrEmail = "radema.panjaitan@csul.co.id";
-
-
             final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
               .stream()
               .map((item) ->
@@ -1309,8 +1306,8 @@ public class LoanSubmissionService {
                 .invoices(invoices)
                 .build()
             );
-          } catch (Exception e) {
-
+          } catch (Exception ignored) {
+            log.error(ignored.getMessage());
           }
         }
 
@@ -1351,7 +1348,7 @@ public class LoanSubmissionService {
           + createdFinancing.getProvisionFeeAmt()
           + createdFinancing.getSurveyFeeAmtNett();
 
-      String phoneNumber = createdFinancing.getCustomer().getCustMobilePhone();
+      String phoneNumber = null;
       if (createdFinancing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
         Optional<CustomerCompany> customerCompany = customerCompanyRepository.findByCustomer(createdFinancing.getCustomer());
         if (customerCompany.isPresent()) {
@@ -1376,7 +1373,7 @@ public class LoanSubmissionService {
           .financingCode(createdFinancing.getFinancingHdrCode().toString())
           .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
           .companyName(customer.getCustName())//createdFinancing.getBouwheer().getBouwheerName()
-          .phoneNumber(phoneNumber)
+          .phoneNumber(phoneNumber ==null?createdFinancing.getCustomer().getCustMobilePhone():phoneNumber)
           .tenor(createdFinancing.getTenor())
           .financingCode(createdFinancing.getFinancingHdrCode().toString())
           .financingDueDate(DateTimeUtils.formatToDate(createdFinancing.getFinancingDueDate()))
