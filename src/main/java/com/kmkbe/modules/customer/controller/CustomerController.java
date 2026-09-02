@@ -12,10 +12,8 @@ import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.customer.model.dto.CustomerDto;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
-import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
-import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
@@ -57,8 +55,6 @@ public class CustomerController {
   private final InvoiceService invoiceService;
   private final CustomerDashboardListService customerDashboardListService;
   private final DocumentService documentService;
-  private final AgreementService agreementService;
-  private final FinancingHdrRepository financingHdrRepository;
   private final CustomerRepository customerRepository;
   private final CurrentUserService currentUserService;
   private final BouwheerRepository bouwheerRepository;
@@ -136,7 +132,6 @@ public class CustomerController {
       setMessageIfError(String.valueOf(request.getCompany().getIdentityIssuedDate()), "Company Identity Issued Date field cannot be null");
       setMessageIfError(String.valueOf(request.getCompany().getStaySince()), "StaySince field cannot be null");
       setMessageIfError(String.valueOf(request.getCompany().getOwnershipStatus()), "Ownership Status field cannot be null");
-      setMessageIfError(String.valueOf(request.getCompany().getCompanyModel()), "Company Model field cannot be null");
       setMessageIfError(String.valueOf(request.getCompany().getCustCompanyType()), "Customer Company Type field cannot be null");
       //tanggal seejak
       if (request.getCompany().getStaySince().getTime() > Utils.NowDate().getTime()) {
