@@ -396,6 +396,7 @@ public class LoanSubmissionService {
         .effectiveRate(effectiveRate)
         .provisionRate(provisionRate)
         .totalInvoiceAmount(request.getTotalInvoiceAmount())
+        .totalNtfAmount(ntfResult)
         .product(findProduct.get())
         .build();
     } catch (Exception e) {
@@ -804,7 +805,7 @@ public class LoanSubmissionService {
     }
 
     // Ensure calculateDisburse and its nested value are not null before checking doubleValue()
-    if (calculateDisburse.getTotalInvoiceAmount().doubleValue() < 50000000) {
+    if (calculateDisburse.getFinancingAmount().doubleValue() < 50000000) {
       throw new IllegalStateException("Untuk melanjutkan pengajuan silahkan tambahkan jumlah invoice yang ingin " +
         "diajukan hingga mencapai minimal Rp 50.000.000");
     }

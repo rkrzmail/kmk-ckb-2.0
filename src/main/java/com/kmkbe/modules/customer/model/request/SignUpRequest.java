@@ -37,8 +37,6 @@ public class SignUpRequest extends BaseRequest {
   @NotEmpty(message = "KTP/NPWP cannot be empty")
   private String customerIdNo;
 
-  private String customerNo;
-
   @NotNull(message = "Email cannot be null")
   @NotEmpty(message = "Email cannot be empty")
   @Pattern(regexp = CommonFormattingUtils.REGEX_EMAIL, message = "Email is not valid")

@@ -223,7 +223,6 @@ public class CustomerService {
       //customer.setCustTypeCode(request.getCustTypeCode());
       customer.setCustIdNo(request.getCustIdNo());
       customer.setNpwp(request.getNpwp());
-      customer.setCustNo(request.getCustNo());
       try {
         customer = customerRepository.save(customer);
         auditTrailService.record("CUSTOMER", AuditAction.UPDATE, "Customer", customer.getCustCode(), before, toAuditData(customer));

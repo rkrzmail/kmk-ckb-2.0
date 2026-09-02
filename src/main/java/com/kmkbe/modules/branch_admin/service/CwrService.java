@@ -166,12 +166,13 @@ public class CwrService {
             .build()
         );
         data = response.getData();
+        // Convert the list directly to a JSON string
+        String jsonResponse = objectMapper.writeValueAsString(data.stream().toList());
+        log.info("CWR Response {} ", jsonResponse);
       } catch (Exception e) {
         throw ex;
       }
-
-
-      if (data != null && !data.isEmpty()) {
+      if (!data.isEmpty()) {
         return InquiryCwrDto.builder()
           .cwrStartDate(DateTimeUtils.cSharpTimeStampToDate(data.getFirst().getStartDt()))
           .cwrEndDate(DateTimeUtils.cSharpTimeStampToDate(data.getFirst().getEndDt()))
@@ -179,8 +180,6 @@ public class CwrService {
           .loanAmt(BigDecimal.valueOf(data.getFirst().getRealisationAmt()))
           .plafondAmt(BigDecimal.valueOf(data.getFirst().getPlafondAmt()))
           .currency(data.getFirst().getCurrency())
-
-
           .realisationAmt(BigDecimal.valueOf(data.getFirst().getRealisationAmt()))
           .status(data.getFirst().getCwrStatDescr())
           .build();
@@ -247,11 +246,19 @@ public class CwrService {
             .status(inquiryCwr.getCwrStatDescr())
             .usrCrt(user.getUsername())
             .dtmCrt(DateTimeUtils.now())
-
             .usrUpd(user.getUsername())
             .dtmUpd(DateTimeUtils.now())
             .build();
           cwrRepository.save(cwr);
+
+          // Update Customer no
+
+            Optional<Customer>customerOptional = customerRepository.findByCustCode(customer.getCustCode());
+            if(customerOptional.isPresent()){Customer customerUpdate = customerOptional.get();
+            log.info("Save customer no for CWR {} , cust no {} ",inquiryCwr.getCwrNo(),inquiryCwr.getCustNo());
+            customerUpdate.setCustNo(inquiryCwr.getCustNo());
+            customerRepository.save(customerUpdate);
+          }
         }
       }
     } catch (Exception e) {

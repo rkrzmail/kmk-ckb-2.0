@@ -38,12 +38,8 @@ public class CsulTokenManager {
   }
 
   public String getToken() {
-    if (cachedToken.get() == null) {
       synchronized (this) {
-        if (cachedToken.get() == null) {
           executeLogin();
-        }
-      }
     }
     return cachedToken.get();
   }
@@ -69,7 +65,7 @@ public class CsulTokenManager {
       ResponseEntity<CsulPostLoginDto> responseEntity = restTemplate.postForEntity(fullUrl, requestEntity, CsulPostLoginDto.class);
       CsulPostLoginDto response = responseEntity.getBody();
 
-      log.info("RAMCO {} ", response);
+      log.info("CKB {} ", response);
 
       if (response != null && response.getData() != null && response.getData().getToken() != null) {
         cachedToken.set("Bearer " + response.getData().getToken());
