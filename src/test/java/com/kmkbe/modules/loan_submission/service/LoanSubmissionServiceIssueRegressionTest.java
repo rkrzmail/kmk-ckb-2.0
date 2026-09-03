@@ -2,11 +2,17 @@ package com.kmkbe.modules.loan_submission.service;
 
 import com.kmkbe.adapter.ApiCsulAdapter;
 import com.kmkbe.core.domain.dto.DisbursePercentageDto;
+import com.kmkbe.core.domain.dto.FinancingDtlDto;
+import com.kmkbe.core.domain.dto.FinancingHdrDto;
+import com.kmkbe.core.domain.dto.InvoiceDto;
+import com.kmkbe.core.domain.entity.CustomerCompany;
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
@@ -28,6 +34,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -151,5 +158,74 @@ class LoanSubmissionServiceIssueRegressionTest {
     service.assignMappedBranch(financing);
 
     assertThat(financing.getMstBranch()).isNull();
+  }
+
+  @Test
+  void simulationAdjustmentEmailUsesInvoiceDataDebtorPhoneAndTwoDecimalAmounts() {
+    Customer customer = Customer.builder()
+      .custCode(UUID.randomUUID())
+      .custName("PT Debitur")
+      .custTypeCode("Company")
+      .custIdNo("80.000.161.8")
+      .custExternalCode("800001618")
+      .custMobilePhone("800001618")
+      .build();
+    when(customerCompanyRepository.findByCustomer(customer)).thenReturn(Optional.of(
+      CustomerCompany.builder().customer(customer).phone(" 081234567890 ").build()
+    ));
+
+    InvoiceDto invoice = new InvoiceDto();
+    invoice.setCustInvNo("INV-001");
+    invoice.setInvoiceDescription("Jasa pengangkutan CKB");
+    invoice.setInvoiceAmt(BigDecimal.valueOf(6_000_000_000D));
+    invoice.setInvoiceDate(LocalDateTime.of(2026, 8, 1, 0, 0));
+    invoice.setInvoiceDueDate(LocalDateTime.of(2026, 9, 1, 0, 0));
+    FinancingDtlDto detail = new FinancingDtlDto();
+    detail.setInvoice(invoice);
+
+    FinancingHdrDto financing = FinancingHdrDto.builder()
+      .financingHdrCode(UUID.randomUUID())
+      .bouwheer(Bouwheer.builder().bouwheerName("PT Cipta Krida Bahari").build())
+      .details(List.of(detail))
+      .disburseDate(LocalDateTime.of(2026, 8, 2, 0, 0))
+      .financingDueDate(LocalDateTime.of(2026, 9, 2, 0, 0))
+      .tenor(30L)
+      .retention(20D)
+      .financingAmt(4_800_000_000D)
+      .totalInvoiceAmt(6_000_000_000D)
+      .disburseAmt(4_700_000_000D)
+      .adminFeeAmt(10_000D)
+      .legalFeeAmtNett(20_000D)
+      .insuranceFeeAmt(30_000D)
+      .othersFeeAmt(40_000D)
+      .provisionFeeAmt(50_000D)
+      .surveyFeeAmtNett(60_000D)
+      .build();
+
+    LoanDisburseEmailPayload payload = service.buildSimulationAdjustmentEmailPayload(financing, customer);
+
+    assertThat(payload.getPhoneNumber()).isEqualTo("081234567890");
+    assertThat(payload.getInvoiceAmt()).isEqualTo("6,000,000,000.00");
+    assertThat(payload.getFinancingAmt()).isEqualTo("4,800,000,000.00");
+    assertThat(payload.getDisburseAmt()).isEqualTo("4,700,000,000.00");
+    assertThat(payload.getTotalFeeAmt()).isEqualTo("210,000.00");
+    assertThat(payload.getRetention()).isEqualTo("20.00");
+    assertThat(payload.getInvoices()).singleElement().satisfies(emailInvoice -> {
+      assertThat(emailInvoice.getDescription()).isEqualTo("Jasa pengangkutan CKB");
+      assertThat(emailInvoice.getInvoiceAmt()).isEqualTo("6,000,000,000.00");
+    });
+  }
+
+  @Test
+  void debtorPhoneDoesNotReturnNpwpOrVendorCodeStoredAsPhone() {
+    Customer customer = Customer.builder()
+      .custTypeCode("Company")
+      .custIdNo("80.000.161.8")
+      .custExternalCode("800001618")
+      .custMobilePhone("800001618")
+      .build();
+    when(customerCompanyRepository.findByCustomer(customer)).thenReturn(Optional.empty());
+
+    assertThat(service.resolveDebtorPhone(customer)).isEmpty();
   }
 }
