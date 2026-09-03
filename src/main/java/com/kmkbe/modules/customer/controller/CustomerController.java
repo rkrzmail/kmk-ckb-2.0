@@ -246,9 +246,9 @@ public class CustomerController {
   }
 
   @PutMapping("/updateFapData")
-  public ResponseEntity<String> updateFapData(@RequestBody UpdateFapRequest request) {
+  public ResponseEntity<String> updateFapData(@Valid @RequestBody UpdateFapRequest request) {
     try {
-      customerService.updateFapData(request);
+      customerService.updateFapData(currentUserService.customer(), request);
       return ResponseEntity.ok("Fap data updated successfully");
     } catch (Exception e) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

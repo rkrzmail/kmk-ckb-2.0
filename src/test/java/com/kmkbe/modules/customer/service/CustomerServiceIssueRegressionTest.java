@@ -1,6 +1,8 @@
 package com.kmkbe.modules.customer.service;
 
 import com.kmkbe.core.domain.constant.CustomerType;
+import com.kmkbe.core.domain.constant.AuditAction;
+import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.exception.BusinessException;
@@ -10,6 +12,7 @@ import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.SignUpRequest;
+import com.kmkbe.modules.customer.model.request.UpdateFapRequest;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -247,6 +250,90 @@ class CustomerServiceIssueRegressionTest {
     verify(emailService).sendNotificationRejected(customer, "NPWP tidak sesuai");
     verify(emailService, never()).sendNotificationActive(any(Customer.class));
     verify(emailService, never()).customerVerification(anyString(), anyString(), anyString(), anyString());
+  }
+
+  @Test
+  void updateFapUpdatesTheRequestedFinancingOwnedByAuthenticatedCustomer() {
+    Customer customer = openCustomer();
+    UUID financingCode = UUID.randomUUID();
+    FinancingHdr financing = financing(financingCode, customer);
+    UpdateFapRequest request = new UpdateFapRequest();
+    request.setFinancingHdrCode(financingCode);
+    request.setFapDate(LocalDateTime.of(2026, 9, 3, 10, 30));
+    request.setFapStatus(" Repeat Order ");
+    when(financingHdrRepository.findByFinancingHdrCode(financingCode)).thenReturn(Optional.of(financing));
+    when(financingHdrRepository.save(financing)).thenReturn(financing);
+
+    service.updateFapData(customer, request);
+
+    assertThat(financing.getFapDate()).isEqualTo(LocalDateTime.of(2026, 9, 3, 10, 30));
+    assertThat(financing.getFapStatus()).isEqualTo("Repeat Order");
+    assertThat(financing.getUsrUpd()).isEqualTo(customer.getCustName());
+    assertThat(financing.getDtmUpd()).isNotNull();
+    verify(financingHdrRepository).save(financing);
+    verify(auditTrailService).record(
+      org.mockito.ArgumentMatchers.eq("LOAN_SUBMISSION"),
+      org.mockito.ArgumentMatchers.eq(AuditAction.UPDATE),
+      org.mockito.ArgumentMatchers.eq("FinancingHdr"),
+      org.mockito.ArgumentMatchers.eq(financingCode),
+      any(),
+      any()
+    );
+  }
+
+  @Test
+  void updateFapSupportsCurrentFrontendAndDefaultsDateForLatestFinancing() {
+    Customer customer = openCustomer();
+    FinancingHdr financing = financing(UUID.randomUUID(), customer);
+    UpdateFapRequest request = new UpdateFapRequest();
+    request.setEmail("ignored@example.com");
+    request.setFapStatus("Baru");
+    when(financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer))
+      .thenReturn(Optional.of(financing));
+    when(financingHdrRepository.save(financing)).thenReturn(financing);
+
+    service.updateFapData(customer, request);
+
+    assertThat(financing.getFapDate()).isNotNull();
+    assertThat(financing.getFapStatus()).isEqualTo("Baru");
+    verify(customerRepository, never()).findByCustEmail(anyString());
+  }
+
+  @Test
+  void updateFapRejectsFinancingOwnedByAnotherCustomer() {
+    Customer authenticatedCustomer = openCustomer();
+    Customer owner = Customer.builder().custCode(UUID.randomUUID()).build();
+    UUID financingCode = UUID.randomUUID();
+    UpdateFapRequest request = new UpdateFapRequest();
+    request.setFinancingHdrCode(financingCode);
+    request.setFapStatus("Baru");
+    when(financingHdrRepository.findByFinancingHdrCode(financingCode))
+      .thenReturn(Optional.of(financing(financingCode, owner)));
+
+    assertThatThrownBy(() -> service.updateFapData(authenticatedCustomer, request))
+      .isInstanceOf(IllegalArgumentException.class)
+      .hasMessage("FinancingHdr does not belong to authenticated customer");
+
+    verify(financingHdrRepository, never()).save(any(FinancingHdr.class));
+  }
+
+  @Test
+  void updateFapRejectsBlankStatus() {
+    UpdateFapRequest request = new UpdateFapRequest();
+    request.setFapStatus(" ");
+
+    assertThatThrownBy(() -> service.updateFapData(openCustomer(), request))
+      .isInstanceOf(IllegalArgumentException.class)
+      .hasMessage("FAP status is required");
+
+    verify(financingHdrRepository, never()).save(any(FinancingHdr.class));
+  }
+
+  private static FinancingHdr financing(UUID financingCode, Customer customer) {
+    FinancingHdr financing = new FinancingHdr();
+    financing.setFinancingHdrCode(financingCode);
+    financing.setCustomer(customer);
+    return financing;
   }
 
   private static Customer openCustomer() {

@@ -276,31 +276,57 @@ public class CustomerService {
       .build();
   }
 
-  public void updateFapData(UpdateFapRequest request) {
-    String email = request.getEmail();
-
-    Optional<Customer> customerOptional = customerRepository.findByCustEmail(email);
-    if (customerOptional.isPresent()) {
-      Customer customer = customerOptional.get();
-
-      UUID custCode = customer.getCustCode();
-
-      Pageable pageable = PageRequest.of(0, 1);
-      List<FinancingHdr> financingHdrList = financingHdrRepository.findLatestFinancingHdrByCustCode(custCode, pageable);
-
-      if (!financingHdrList.isEmpty()) {
-        FinancingHdr financingHdr = financingHdrList.get(0);
-
-        financingHdr.setFapDate(request.getFapDate());
-        financingHdr.setFapStatus(request.getFapStatus());
-
-        financingHdrRepository.save(financingHdr);
-      } else {
-        throw new IllegalArgumentException("No FinancingHdr found for custCode: " + custCode);
-      }
-    } else {
-      throw new IllegalArgumentException("Customer with email " + email + " not found");
+  public void updateFapData(Customer customer, UpdateFapRequest request) {
+    if (customer == null) {
+      throw new IllegalArgumentException("Authenticated customer is required");
     }
+    if (request.getFapStatus() == null || request.getFapStatus().isBlank()) {
+      throw new IllegalArgumentException("FAP status is required");
+    }
+
+    FinancingHdr financingHdr = resolveFapFinancing(customer, request.getFinancingHdrCode());
+    FapAuditData before = toFapAuditData(financingHdr);
+
+    financingHdr.setFapDate(request.getFapDate() != null ? request.getFapDate() : DateTimeUtils.now());
+    financingHdr.setFapStatus(request.getFapStatus().trim());
+    financingHdr.setUsrUpd(customer.getCustName());
+    financingHdr.setDtmUpd(DateTimeUtils.now());
+
+    FinancingHdr saved = financingHdrRepository.save(financingHdr);
+    auditTrailService.record(
+      "LOAN_SUBMISSION",
+      AuditAction.UPDATE,
+      "FinancingHdr",
+      saved.getFinancingHdrCode(),
+      before,
+      toFapAuditData(saved)
+    );
+  }
+
+  private FinancingHdr resolveFapFinancing(Customer customer, UUID financingHdrCode) {
+    FinancingHdr financingHdr;
+    if (financingHdrCode != null) {
+      financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
+        .orElseThrow(() -> new IllegalArgumentException("FinancingHdr not found: " + financingHdrCode));
+    } else {
+      financingHdr = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer)
+        .orElseThrow(() -> new IllegalArgumentException(
+          "No FinancingHdr found for custCode: " + customer.getCustCode()
+        ));
+    }
+
+    if (financingHdr.getCustomer() == null
+      || !customer.getCustCode().equals(financingHdr.getCustomer().getCustCode())) {
+      throw new IllegalArgumentException("FinancingHdr does not belong to authenticated customer");
+    }
+    return financingHdr;
+  }
+
+  private FapAuditData toFapAuditData(FinancingHdr financingHdr) {
+    return new FapAuditData(financingHdr.getFapDate(), financingHdr.getFapStatus());
+  }
+
+  private record FapAuditData(LocalDateTime fapDate, String fapStatus) {
   }
 
 
