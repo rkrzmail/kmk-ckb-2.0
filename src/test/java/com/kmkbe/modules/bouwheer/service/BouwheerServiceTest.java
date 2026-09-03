@@ -6,6 +6,7 @@ import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.model.request.BouwheerRequest;
@@ -168,7 +169,7 @@ class BouwheerServiceTest {
 
     assertThatThrownBy(() -> service.create(request))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("Record already exist ");
+        .hasMessage(ErrorConstant.ERROR_MESSAGE_84);
   }
 
   @Test
@@ -197,7 +198,7 @@ class BouwheerServiceTest {
 
     assertThatThrownBy(() -> service.update(BOUWHEER_CODE.toString(), request))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("Record already exist ");
+        .hasMessage(ErrorConstant.ERROR_MESSAGE_84);
   }
 
   @Test
@@ -244,7 +245,7 @@ class BouwheerServiceTest {
 
     assertThatThrownBy(() -> service.findById(BOUWHEER_CODE.toString()))
         .isInstanceOf(BusinessException.class)
-        .hasMessage("Record already exist ");
+        .hasMessage(ErrorConstant.ERROR_MESSAGE_84);
   }
 
   private static Bouwheer bouwheer(UUID code, String name) {
