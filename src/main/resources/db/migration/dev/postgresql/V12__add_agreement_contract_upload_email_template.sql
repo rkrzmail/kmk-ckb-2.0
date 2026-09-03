@@ -1,3 +1,6 @@
+ALTER TABLE public.email_template
+  ALTER COLUMN email_template_code TYPE VARCHAR(50);
+
 INSERT INTO public.email_template
   (email_template_code, subject_mail, body_mail, is_active, usr_crt, dtm_crt)
 VALUES

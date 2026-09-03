@@ -22,7 +22,7 @@ public class EmailTemplate {
     private Long emailTemplateId;
 
     @Id
-    @Column(nullable = false, length = 20)
+    @Column(nullable = false, length = 50)
     private String emailTemplateCode;
 
     @Column(length = 1000)

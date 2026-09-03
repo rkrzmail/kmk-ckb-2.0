@@ -1,3 +1,6 @@
+CREATE UNIQUE INDEX IF NOT EXISTS ux_email_template_email_template_code
+  ON public.email_template (email_template_code);
+
 INSERT INTO public.email_template
   (email_template_code, subject_mail, body_mail, is_active, usr_crt, dtm_crt)
 VALUES
