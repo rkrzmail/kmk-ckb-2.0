@@ -2,6 +2,7 @@ package com.kmkbe.modules.loan_submission.service;
 
 import com.kmkbe.adapter.ApiCsulAdapter;
 import com.kmkbe.core.domain.dto.DisbursePercentageDto;
+import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.exception.BusinessException;
@@ -9,6 +10,7 @@ import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.service.ExistingCustomerService;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
 import com.kmkbe.modules.product.repository.ProductRepository;
@@ -16,6 +18,7 @@ import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.remote.service.CurrencyRemoteService;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
+import com.kmkbe.modules.user.entity.MstBranch;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,10 +29,12 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class LoanSubmissionServiceIssueRegressionTest {
@@ -61,6 +66,7 @@ class LoanSubmissionServiceIssueRegressionTest {
   @Mock private ApiCsulAdapter apiCsulAdapter;
   @Mock private AuditTrailService auditTrailService;
   @Mock private FinancingDtlRepository financingDtlRepository;
+  @Mock private BranchAssignmentResolver branchAssignmentResolver;
 
   private LoanSubmissionService service;
 
@@ -93,7 +99,8 @@ class LoanSubmissionServiceIssueRegressionTest {
       customerRepository,
       apiCsulAdapter,
       auditTrailService,
-      financingDtlRepository
+      financingDtlRepository,
+      branchAssignmentResolver
     );
   }
 
@@ -119,5 +126,30 @@ class LoanSubmissionServiceIssueRegressionTest {
     assertThatThrownBy(() -> service.calculateDisburse(null, request))
       .isInstanceOf(BusinessException.class)
       .hasMessage("Persentase pencairan harus di antara 50% sampai 95%");
+  }
+
+  @Test
+  void assignMappedBranchSetsBranchForFirstSubmission() {
+    Customer customer = Customer.builder().custCode(UUID.randomUUID()).build();
+    MstBranch branch = MstBranch.builder().branchCode("JKT01").build();
+    FinancingHdr financing = new FinancingHdr();
+    financing.setCustomer(customer);
+    when(branchAssignmentResolver.resolve(customer)).thenReturn(Optional.of(branch));
+
+    service.assignMappedBranch(financing);
+
+    assertThat(financing.getMstBranch()).isSameAs(branch);
+  }
+
+  @Test
+  void assignMappedBranchLeavesBranchEmptyWhenNoMappingMatches() {
+    Customer customer = Customer.builder().custCode(UUID.randomUUID()).build();
+    FinancingHdr financing = new FinancingHdr();
+    financing.setCustomer(customer);
+    when(branchAssignmentResolver.resolve(customer)).thenReturn(Optional.empty());
+
+    service.assignMappedBranch(financing);
+
+    assertThat(financing.getMstBranch()).isNull();
   }
 }

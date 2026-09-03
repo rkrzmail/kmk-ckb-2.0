@@ -89,6 +89,7 @@ public class LoanSubmissionService {
   private final ApiCsulAdapter apiCsulAdapter;
   private final AuditTrailService auditTrailService;
   private final FinancingDtlRepository financingDtlRepository;
+  private final BranchAssignmentResolver branchAssignmentResolver;
 
   public List<PostedInvoiceDto> fetchActiveInvoice(
     Customer customer,
@@ -1099,32 +1100,24 @@ public class LoanSubmissionService {
 
 
         try {
-          String city = "", kelurahan = "", kecamatan = "";
-          if (financing.getCustomer() != null) {
-            if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
-              if (financing.getCustomer().getCompany() != null) {
-                city = financing.getCustomer().getCompany().getCity();
-                kelurahan = financing.getCustomer().getCompany().getKelurahan();
-                kecamatan = financing.getCustomer().getCompany().getKecamatan();
-              }
-            } else {
-              if (financing.getCustomer().getPersonal() != null) {
-                city = financing.getCustomer().getPersonal().getCity();
-                kelurahan = financing.getCustomer().getPersonal().getKelurahan();
-                kecamatan = financing.getCustomer().getPersonal().getKecamatan();
-              }
-            }
-          }
-          Optional<MstBranch> mstBranch = mstBranchRepository.findTopLikeBranchNameRawQuery(city, kelurahan, kecamatan);
-          mstBranch.ifPresent(financing::setMstBranch);
-        } catch (Exception ignored) {
+          assignMappedBranch(financing);
+        } catch (Exception exception) {
+          log.warn(
+            "Failed resolving branch mapping for financingHdrCode={}: {}",
+            financing.getFinancingHdrCode(),
+            exception.getMessage()
+          );
         }
 
 
         boolean isAutoASSIGNMENT = false;
         //set auto ASSIGNMENT
         try {
-          List<FinancingHdr> financingHdrs = financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer);
+          List<FinancingHdr> financingHdrs = new ArrayList<>();
+          if (financing.getMstBranch() != null) {
+            financingHdrs.add(financing);
+          }
+          financingHdrs.addAll(financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer));
           for (int t = 0; t < financingHdrs.size(); t++) {
             MstBranch hdrBranch = financingHdrs.get(t).getMstBranch();
 
@@ -1393,6 +1386,10 @@ public class LoanSubmissionService {
       log.error("createLoanSubmission, error {}", e.getMessage());
       throw e;
     }
+  }
+
+  void assignMappedBranch(FinancingHdr financing) {
+    branchAssignmentResolver.resolve(financing.getCustomer()).ifPresent(financing::setMstBranch);
   }
 
   public ExternalIntegrationLoanSimulationDto externalIntegrationSimulation(
