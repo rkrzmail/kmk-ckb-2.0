@@ -8,6 +8,7 @@ import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
+import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.SignUpRequest;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,12 +19,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -141,7 +145,120 @@ class CustomerServiceIssueRegressionTest {
 
     assertThat(customer.getIsEmailValid()).isTrue();
     assertThat(customer.isActive()).isFalse();
+    assertThat(customer.getUsrUpd()).isEqualTo("Debitur");
+    assertThat(customer.getDtmUpd()).isNotNull();
     verify(customerRepository).save(customer);
+  }
+
+  @Test
+  void rejectedCustomerReturnsToOpenOnlyAfterReRegistrationOtpIsVerified() {
+    Customer rejected = Customer.builder()
+      .custCode(UUID.randomUUID())
+      .custExternalCode("VENDOR-001")
+      .custName("Debitur Lama")
+      .custEmail("user@example.com")
+      .isEmailValid(true)
+      .isActive(false)
+      .approvalStatus(ApprovalStatus.REJECTED.name())
+      .approvalNote("Dokumen tidak sesuai")
+      .approvalBy("major.user")
+      .approvalAt(LocalDateTime.of(2026, 8, 1, 10, 0))
+      .build();
+
+    when(customerRepository.findFirstByCustExternalCode("VENDOR-001")).thenReturn(Optional.of(rejected));
+    when(customerRepository.findByCustEmail("user@example.com")).thenReturn(Optional.of(rejected));
+    when(bcryptEncoder.encode("123456")).thenReturn("encoded-pin");
+    when(customerRepository.save(any(Customer.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+    Customer registered = service.create(signUpRequest("VENDOR-001", "user@example.com"), CustomerType.Company);
+
+    assertThat(registered.getIsEmailValid()).isFalse();
+    assertThat(registered.isActive()).isFalse();
+    assertThat(registered.getApprovalStatus()).isEqualTo(ApprovalStatus.REJECTED.name());
+
+    service.verifyEmail(registered);
+
+    assertThat(registered.getIsEmailValid()).isTrue();
+    assertThat(registered.isActive()).isFalse();
+    assertThat(registered.getApprovalStatus()).isEqualTo(ApprovalStatus.OPEN.name());
+    assertThat(registered.getApprovalNote()).isNull();
+    assertThat(registered.getApprovalBy()).isNull();
+    assertThat(registered.getApprovalAt()).isNull();
+  }
+
+  @Test
+  void verifyingExistingOpenCustomerDoesNotClearApprovalMetadata() {
+    LocalDateTime approvalAt = LocalDateTime.of(2026, 8, 1, 10, 0);
+    Customer customer = Customer.builder()
+      .custCode(UUID.randomUUID())
+      .custName("Debitur")
+      .custEmail("user@example.com")
+      .isEmailValid(false)
+      .isActive(false)
+      .approvalStatus(ApprovalStatus.OPEN.name())
+      .approvalNote("Catatan yang masih berlaku")
+      .approvalBy("major.user")
+      .approvalAt(approvalAt)
+      .build();
+    when(customerRepository.save(customer)).thenReturn(customer);
+
+    service.verifyEmail(customer);
+
+    assertThat(customer.getApprovalStatus()).isEqualTo(ApprovalStatus.OPEN.name());
+    assertThat(customer.getApprovalNote()).isEqualTo("Catatan yang masih berlaku");
+    assertThat(customer.getApprovalBy()).isEqualTo("major.user");
+    assertThat(customer.getApprovalAt()).isEqualTo(approvalAt);
+  }
+
+  @Test
+  void approvalSendsAccountActiveEmailWhenCustomerIsApproved() {
+    Customer customer = openCustomer();
+    ApprovalRequest request = ApprovalRequest.builder()
+      .custCode(customer.getCustCode())
+      .approvalStatus(ApprovalStatus.APPROVED.name())
+      .build();
+    when(customerRepository.findByCustCode(customer.getCustCode())).thenReturn(Optional.of(customer));
+    when(customerRepository.save(customer)).thenReturn(customer);
+
+    service.approval(request, "major.user");
+
+    assertThat(customer.isActive()).isTrue();
+    assertThat(customer.getApprovalStatus()).isEqualTo(ApprovalStatus.APPROVED.name());
+    verify(emailService).sendNotificationActive(customer);
+    verify(emailService, never()).sendNotificationRejected(any(Customer.class), anyString());
+    verify(emailService, never()).customerVerification(anyString(), anyString(), anyString(), anyString());
+  }
+
+  @Test
+  void approvalSendsRejectionEmailWithApprovalNoteWhenCustomerIsRejected() {
+    Customer customer = openCustomer();
+    ApprovalRequest request = ApprovalRequest.builder()
+      .custCode(customer.getCustCode())
+      .approvalStatus(ApprovalStatus.REJECTED.name())
+      .approvalNote("NPWP tidak sesuai")
+      .build();
+    when(customerRepository.findByCustCode(customer.getCustCode())).thenReturn(Optional.of(customer));
+    when(customerRepository.save(customer)).thenReturn(customer);
+
+    service.approval(request, "major.user");
+
+    assertThat(customer.isActive()).isFalse();
+    assertThat(customer.getApprovalStatus()).isEqualTo(ApprovalStatus.REJECTED.name());
+    verify(emailService).sendNotificationRejected(customer, "NPWP tidak sesuai");
+    verify(emailService, never()).sendNotificationActive(any(Customer.class));
+    verify(emailService, never()).customerVerification(anyString(), anyString(), anyString(), anyString());
+  }
+
+  private static Customer openCustomer() {
+    return Customer.builder()
+      .custCode(UUID.randomUUID())
+      .custName("Debitur")
+      .custEmail("customer@example.com")
+      .custIdNo("NPWP001")
+      .isEmailValid(true)
+      .isActive(false)
+      .approvalStatus(ApprovalStatus.OPEN.name())
+      .build();
   }
 
   private static SignUpRequest signUpRequest(String vendorCode, String email) {

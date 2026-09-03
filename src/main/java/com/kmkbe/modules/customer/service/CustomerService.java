@@ -21,7 +21,6 @@ import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FormatingUtils;
-import com.kmkbe.helpers.utils.CommonUtils;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.common.service.AuditTrailService;
@@ -130,6 +129,10 @@ public class CustomerService {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Update Customer ", request.getVendorCode());
       customer = customerByVendor.get();
       before = toAuditData(customer);
+      if (ApprovalStatus.REJECTED.name().equals(customer.getApprovalStatus())) {
+        customer.setIsEmailValid(false);
+        customer.setActive(false);
+      }
     } else {
       // CREATE
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Create Customer ", request.getVendorCode());
@@ -189,8 +192,17 @@ public class CustomerService {
 
   public void verifyEmail(Customer customer) {
     CustomerAuditData before = toAuditData(customer);
+    boolean isRejectedReRegistration = ApprovalStatus.REJECTED.name().equals(customer.getApprovalStatus())
+      && Boolean.FALSE.equals(customer.getIsEmailValid());
+
     customer.setIsEmailValid(true);
     customer.setActive(false);
+    if (isRejectedReRegistration) {
+      customer.setApprovalStatus(ApprovalStatus.OPEN.name());
+      customer.setApprovalNote(null);
+      customer.setApprovalBy(null);
+      customer.setApprovalAt(null);
+    }
     customer.setUsrUpd(customer.getCustName());
     customer.setDtmUpd(DateTimeUtils.now());
     Customer saved = customerRepository.save(customer);
@@ -400,8 +412,11 @@ public class CustomerService {
       toAuditData(saved)
     );
 
-    // Send mail
-    emailService.customerVerification(customer.getCustEmail().toLowerCase(), customer.getCustName(), customer.getCustIdNo(), CommonUtils.generateOtp());
+    if (ApprovalStatus.APPROVED.name().equals(approvalStatus)) {
+      emailService.sendNotificationActive(saved);
+    } else {
+      emailService.sendNotificationRejected(saved, request.getApprovalNote());
+    }
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
   }
