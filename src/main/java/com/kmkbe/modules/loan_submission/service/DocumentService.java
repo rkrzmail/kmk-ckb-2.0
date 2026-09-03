@@ -1051,16 +1051,11 @@ public class DocumentService {
   public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentDebitur(
     HttpServletRequest httpServletRequest,
     PaginationRequest request,
-    Boolean isFirst,
-    String custCode,
     String financingHdrCode
-  ) throws SignatureException {
+  ) {
     try {
-      if (isFirst != null && isFirst) {
-        //fetchAndMappingDocVendor(authentication);
-      }
-
-      int pageNo = 0, pageSize = 10;
+      int pageNo = 0;
+      int pageSize = 10;
 
       if (request.getPageNo() != null) {
         pageNo = request.getPageNo();
@@ -1090,13 +1085,6 @@ public class DocumentService {
           LegalFile legalFile = null;
 
           try {
-                           /* Optional<Customer> customer =  customerRepository.findByCustCode(UUID.fromString(custCode));
-
-                            if (customer.isPresent()) {
-                                legalFile = legalFileService.fetchByMstFileTypeAndCust(customer.get(), file);
-
-                            }*/
-
             Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
             if (financingHdr.isPresent()) {
               legalFile = legalFileService.fetchByMstFileTypeAndCust(financingHdr.get().getCustomer(), file);

@@ -233,16 +233,12 @@ public class LoanSubmissionController {
   public CommonResult<PaginationResult<MstFileTypeDto>> getDocumentDebitur(
     HttpServletRequest httpServletRequest,
     PaginationRequest request,
-    Boolean isFirst,
-    @RequestParam("custCode") String custCode,
     @RequestParam("financingHdrCode") String financingHdrCode
-  ) throws Exception {
+  ) {
     return new CommonResult<PaginationResult<MstFileTypeDto>>().success(
       documentService.fetchAllLoanDocumentDebitur(
         httpServletRequest,
         request,
-        isFirst,
-        custCode,
         financingHdrCode
       )
     );
