@@ -47,10 +47,6 @@ public class SignUpRequest extends BaseRequest {
   @NotEmpty(message = "No. Hp cannot be empty")
   private String mobilePhone;
 
-  @NotNull(message = "ID Vendor cannot be null")
-  @NotEmpty(message = "ID Vendor cannot be empty")
-  private String vendorId;
-
   @NotNull(message = "Bouwheer cannot be null")
   @NotEmpty(message = "Bouwheer cannot be empty")
   private String bouwheerCode;

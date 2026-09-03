@@ -94,7 +94,7 @@ public class CustomerService {
     /**
      * Check Email and vendor Code
      */
-    Optional<Customer> customerByVendor = customerRepository.findByCustExternalCode(inputVendorCode);
+    Optional<Customer> customerByVendor = customerRepository.findFirstByCustExternalCode(inputVendorCode);
     Optional<Customer> customerByEmail = customerRepository.findByCustEmail(inputEmail);
 
     /**
@@ -127,12 +127,12 @@ public class CustomerService {
     CustomerAuditData before = null;
 
     if (customerByVendor.isPresent()) {
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Update Customer ", request.getVendorId());
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Update Customer ", request.getVendorCode());
       customer = customerByVendor.get();
       before = toAuditData(customer);
     } else {
       // CREATE
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Create Customer ", request.getVendorId());
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Create Customer ", request.getVendorCode());
       customer.setCustCode(UUID.randomUUID());
       customer.setIsEmailValid(false);
       customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));

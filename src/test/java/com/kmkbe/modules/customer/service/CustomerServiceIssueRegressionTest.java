@@ -3,7 +3,6 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.enums.ApprovalStatus;
-import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.AuditTrailService;
@@ -66,7 +65,7 @@ class CustomerServiceIssueRegressionTest {
       .build();
     SignUpRequest request = signUpRequest("VENDOR-001", "new@example.com");
 
-    when(customerRepository.findByCustExternalCode("VENDOR-001")).thenReturn(Optional.of(existing));
+    when(customerRepository.findFirstByCustExternalCode("VENDOR-001")).thenReturn(Optional.of(existing));
     when(customerRepository.findByCustEmail("new@example.com")).thenReturn(Optional.empty());
     when(bcryptEncoder.encode("123456")).thenReturn("encoded-pin");
     when(customerRepository.save(any(Customer.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -92,7 +91,7 @@ class CustomerServiceIssueRegressionTest {
       .approvalStatus(ApprovalStatus.OPEN.name())
       .build();
 
-    when(customerRepository.findByCustExternalCode("VENDOR-001")).thenReturn(Optional.of(existing));
+    when(customerRepository.findFirstByCustExternalCode("VENDOR-001")).thenReturn(Optional.of(existing));
     when(customerRepository.findByCustEmail("new@example.com")).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> service.create(signUpRequest("VENDOR-001", "new@example.com"), CustomerType.Company))
@@ -109,7 +108,7 @@ class CustomerServiceIssueRegressionTest {
       .isActive(true)
       .build();
 
-    when(customerRepository.findByCustExternalCode("VENDOR-001")).thenReturn(Optional.empty());
+    when(customerRepository.findFirstByCustExternalCode("VENDOR-001")).thenReturn(Optional.empty());
     when(customerRepository.findByCustEmail("used@example.com")).thenReturn(Optional.of(existingEmailOwner));
 
     assertThatThrownBy(() -> service.create(signUpRequest("VENDOR-001", "used@example.com"), CustomerType.Company))
@@ -148,7 +147,6 @@ class CustomerServiceIssueRegressionTest {
   private static SignUpRequest signUpRequest(String vendorCode, String email) {
     return SignUpRequest.builder()
       .vendorCode(vendorCode)
-      .vendorId(vendorCode)
       .name("Debitur")
       .customerType("Company")
       .customerIdNo("1234567890123456")
