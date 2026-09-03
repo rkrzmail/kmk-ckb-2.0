@@ -35,6 +35,7 @@ public class OtpService {
   private final BCryptPasswordEncoder bcryptEncoder;
   private final Clock clock;
   private final OtpGenerator otpGenerator;
+  private final MajorAccountRegistrationNotificationService majorAccountRegistrationNotificationService;
 
   public OtpLog create(@NonNull Customer customer, @NonNull OtpType type) throws Exception {
     final LocalDateTime now = now();
@@ -81,6 +82,7 @@ public class OtpService {
     otp.setDtmUpd(now());
 
     otpRepository.save(otp);
+    majorAccountRegistrationNotificationService.notifyRegistrationCompleted(customer);
     return "Sign up successfully";
   }
 

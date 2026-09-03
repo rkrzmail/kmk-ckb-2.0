@@ -146,6 +146,31 @@ class EmailServiceTest {
   }
 
   @Test
+  void sendNotificationCustomerVerificationUsesMajorAccountTemplateAndCustomerData() throws Exception {
+    Customer customer = customer();
+    customer.setCustExternalCode("V001");
+    customer.setCustTypeCode("Company");
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_VERIFY_MJR", true))
+      .thenReturn(template(
+        "M_CUST_VERIFY_MJR",
+        "{name}|{email}|{id_no}|{vendor_code}|{customer_type}"
+      ));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(false));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(false));
+
+    service.sendNotificationCustomerVerification(
+      "major1@csul.co.id;major2@csul.co.id",
+      customer
+    );
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(false));
+    assertThat(captor.getValue().getMailTo()).isEqualTo("major1@csul.co.id;major2@csul.co.id");
+    assertThat(captor.getValue().getBodyMail())
+      .isEqualTo("Customer|customer@example.com|KTP001|V001|Company");
+  }
+
+  @Test
   void notificationMethodsMapTemplatesRecipientsSubjectAndAdditionalArgs() throws Exception {
     Customer customer = customer();
     LoanDisburseEmailPayload loanPayload = loanPayload();

@@ -37,6 +37,7 @@ public class EmailService {
   private static final String M_CUST_CHANGE_OTP = "M_CUST_CHANGE_OTP";
   private static final String M_CUST_ACTIVE = "M_CUST_ACTIVE";
   private static final String M_CUST_REJECTED = "M_CUST_REJECTED";
+  private static final String M_CUST_VERIFY_MJR = "M_CUST_VERIFY_MJR";
   private static final String M_CUST_LOAN = "M_CUST_LOAN";//(3)
   private static final String M_CUST_LOAN_SUBMITED = "M_CUST_LOAN_SUBMITED";//(4)
   private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";//(2)
@@ -229,6 +230,29 @@ public class EmailService {
       send(customer.getCustEmail(), obj, M_CUST_REJECTED);
     } catch (Exception e) {
       log.error("Error sendNotificationRejected for {}", customer.getCustEmail(), e);
+    }
+  }
+
+  @Async
+  public void sendNotificationCustomerVerification(String recipients, Customer customer) {
+    try {
+      Map<String, Object> args = new HashMap<>();
+      args.put("name", customer.getCustName());
+      args.put("email", customer.getCustEmail());
+      args.put("id_no", customer.getCustIdNo());
+      args.put("additionalArgs", Map.of(
+        "vendor_code", customer.getCustExternalCode() == null ? "-" : customer.getCustExternalCode(),
+        "customer_type", customer.getCustTypeCode() == null ? "-" : customer.getCustTypeCode()
+      ));
+
+      send(recipients, args, M_CUST_VERIFY_MJR);
+    } catch (Exception e) {
+      log.error(
+        "sendNotificationCustomerVerification failed. customerCode={}, recipients={}",
+        customer == null ? null : customer.getCustCode(),
+        recipients,
+        e
+      );
     }
   }
 
