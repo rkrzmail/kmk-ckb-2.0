@@ -14,6 +14,8 @@ import com.kmkbe.core.domain.entity.GeneralSettingDtl;
 import com.kmkbe.core.domain.entity.Invoice;
 import com.kmkbe.core.domain.entity.MstFileType;
 import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
+import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.repository.AgreementFileRepository;
 import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.CwrRepository;
@@ -33,6 +35,8 @@ import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
+import com.kmkbe.modules.user.entity.MstBranch;
+import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -83,6 +87,7 @@ class AgreementServiceTest {
     @Mock private FileStorageService fileStorageService;
     @Mock private EmailService emailService;
     @Mock private AuditTrailService auditTrailService;
+    @Mock private MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
 
     private ObjectMapper objectMapper;
     private AgreementService service;
@@ -103,10 +108,18 @@ class AgreementServiceTest {
                 fileStorageService,
                 objectMapper,
                 emailService,
-                auditTrailService
+                auditTrailService,
+                mstAppRoleFormUserRepository
+        );
+        ReflectionTestUtils.setField(
+                service,
+                "bouwheerPicEmails",
+                "achmad.faqihuddin@ckb.co.id;ali.rohman@ckb.co.id"
         );
         lenient().when(agreementFileRepository.save(any(AgreementFile.class))).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        lenient().when(mstAppRoleFormUserRepository.findActiveBranchAdminEmails("412"))
+                .thenReturn(List.of("branch.admin@csul.co.id"));
     }
 
     @Test
@@ -336,7 +349,8 @@ class AgreementServiceTest {
         assertThat(financingHdr.getFinancingStatus()).isEqualTo("INPROCESS");
         assertThat(financingHdr.getFinancingStep()).isEqualTo("INPROCESS");
         verify(financingHdrRepository).save(financingHdr);
-        verify(emailService).sendNotificationBouwheerPayment(eq("pic@example.com"), any());
+        verify(emailService).sendNotificationContractUploadRequired(eq("branch.admin@csul.co.id"), any());
+        verify(emailService, never()).sendNotificationBouwheerPayment(any(), any());
         verify(financingRemoteService, never()).postedSubmission(any());
     }
 
@@ -362,7 +376,8 @@ class AgreementServiceTest {
         postingService.createInquiryAgreement(user, request);
 
         verify(financingRemoteService).postedSubmission(any(FinancingSubmissionRequest.class));
-        verify(emailService).sendNotificationBouwheerPayment(eq("remote@example.com"), any());
+        verify(emailService).sendNotificationContractUploadRequired(eq("branch.admin@csul.co.id"), any());
+        verify(emailService, never()).sendNotificationBouwheerPayment(any(), any());
     }
 
     @Test
@@ -386,7 +401,44 @@ class AgreementServiceTest {
 
         postingService.createInquiryAgreement(user, request);
 
-        verify(emailService).sendNotificationBouwheerPayment(eq("pic@example.com"), any());
+        verify(emailService).sendNotificationContractUploadRequired(eq("branch.admin@csul.co.id"), any());
+        verify(emailService, never()).sendNotificationBouwheerPayment(any(), any());
+    }
+
+    @Test
+    void contractUploadSendsBouwheerPaymentNotificationToConfiguredCkbPics() throws Exception {
+        FinancingHdr financingHdr = financingHdr();
+        financingHdr.setTenor(30L);
+        financingHdr.setDisburseDate(LocalDateTime.of(2026, 8, 15, 10, 0));
+        financingHdr.setFinancingDueDate(LocalDateTime.of(2026, 9, 15, 10, 0));
+        financingHdr.setTotalInvoiceAmt(1000D);
+        financingHdr.setDisburseAmt(900D);
+        financingHdr.getCustomer().setCustEmail("customer@example.com");
+        financingHdr.getCustomer().setCustTypeCode("Company");
+        financingHdr.getCustomer().setCustMobilePhone("08123456789");
+        stubBank();
+        when(financingDtlRepository.findAllByFinancingHdr(financingHdr))
+                .thenReturn(Optional.of(List.of(financingDtl(true))));
+
+        service.sendBouwheerPaymentNotification(financingHdr);
+        service.sendDebtorDisbursementNotification(financingHdr);
+
+        ArgumentCaptor<BouwheerPaymentEmailPayload> payloadCaptor =
+                ArgumentCaptor.forClass(BouwheerPaymentEmailPayload.class);
+        verify(emailService).sendNotificationBouwheerPayment(
+                eq("achmad.faqihuddin@ckb.co.id;ali.rohman@ckb.co.id"),
+                payloadCaptor.capture()
+        );
+        assertThat(payloadCaptor.getValue().getVendorCode()).isEqualTo("VENDOR001");
+        assertThat(payloadCaptor.getValue().getInvoices()).hasSize(1);
+        ArgumentCaptor<LoanDisburseEmailPayload> debtorPayloadCaptor =
+                ArgumentCaptor.forClass(LoanDisburseEmailPayload.class);
+        verify(emailService).sendNotificationLoanDisbursement(
+                eq(financingHdr.getCustomer()),
+                debtorPayloadCaptor.capture()
+        );
+        assertThat(debtorPayloadCaptor.getValue().getPhoneNumber()).isEqualTo("08123456789");
+        assertThat(debtorPayloadCaptor.getValue().getTotalFeeAmt()).isEqualTo(".0");
     }
 
     @Test
@@ -468,7 +520,7 @@ class AgreementServiceTest {
     }
 
     private AgreementService postingService(boolean bypass) {
-        return new AgreementService(
+        AgreementService postingService = new AgreementService(
                 mstFileTypeRepository,
                 agreementFileRepository,
                 agreementRepository,
@@ -481,13 +533,20 @@ class AgreementServiceTest {
                 fileStorageService,
                 objectMapper,
                 emailService,
-                auditTrailService
+                auditTrailService,
+                mstAppRoleFormUserRepository
         ) {
             @Override
             boolean bypassRemotePosting() {
                 return bypass;
             }
         };
+        ReflectionTestUtils.setField(
+                postingService,
+                "bouwheerPicEmails",
+                "achmad.faqihuddin@ckb.co.id;ali.rohman@ckb.co.id"
+        );
+        return postingService;
     }
 
     private void stubBank() {
@@ -508,6 +567,7 @@ class AgreementServiceTest {
         financingHdr.setFinancingHdrCode(FINANCING_HDR_CODE);
         financingHdr.setCustomer(customer());
         financingHdr.setBouwheer(bouwheer());
+        financingHdr.setMstBranch(MstBranch.builder().branchCode("412").branchName("JAKARTA 1").build());
         financingHdr.setFinancingAmt(1000D);
         financingHdr.setFinancingDate(LocalDateTime.of(2026, 8, 12, 10, 0));
         return financingHdr;

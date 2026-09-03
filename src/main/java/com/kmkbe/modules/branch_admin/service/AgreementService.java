@@ -7,7 +7,9 @@ import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
+import com.kmkbe.core.domain.model.AgreementContractEmailPayload;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
+import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -26,11 +28,13 @@ import com.kmkbe.modules.remote.request.InquiryAgreementRemoteRequest;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
+import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -62,6 +66,10 @@ public class AgreementService {
   private final ObjectMapper objectMapper;
   private final EmailService emailService;
   private final AuditTrailService auditTrailService;
+  private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
+
+  @Value("${notification.agreement.bouwheer-pic-emails:achmad.faqihuddin@ckb.co.id;ali.rohman@ckb.co.id}")
+  private String bouwheerPicEmails;
 
   public Agreement findByCode(String code) {
     try {
@@ -344,6 +352,7 @@ public class AgreementService {
       financingHdr.setFinancingStep("INPROCESS");
       FinancingHdr savedFinancing = financingHdrRepository.save(financingHdr);
       auditTrailService.record("AGREEMENT", AuditAction.UPDATE, "FinancingHdr", savedFinancing.getFinancingHdrCode(), before, toFinancingAgreementAuditData(savedFinancing));
+      sendContractUploadRequiredNotification(savedFinancing, request.getAgreementNo());
     } catch (Exception e) {
       log.error("createAgreement: error {}", e.getMessage());
       throw e;
@@ -381,27 +390,8 @@ public class AgreementService {
     Map<String, Object> obj = findCsulBank();
 
 
-    final List<InvoiceEmailPayload> invoices = financingDtls
-      .stream()
-      .map((item) ->
-        InvoiceEmailPayload.builder()
-          .invoiceNo(item.getInvoice().getCustInvNo())
-          .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
-          .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
-          .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-          .description(item.getInvoice().getInvoiceDescription())
-          .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
-          .build()
-      ).toList();
-
-    String email = financingHdr.getBouwheer().getPicEmail();
-
-        /*try {
-
-        } catch (Exception igonred) {}*/
-
     if (!bypassRemotePosting()) {
-      BaseSimpleRemoteResponseDto<Object> postedResponse = financingRemoteService.postedSubmission(
+      financingRemoteService.postedSubmission(
         FinancingSubmissionRequest.builder()
           .vendorCode(customer.getCustExternalCode())
           .accountNo(obj.get("accountNo").toString())
@@ -413,30 +403,151 @@ public class AgreementService {
           .financingInvoices(financingInvoices)
           .build()
       );
-      if (
-        postedResponse.getData() instanceof Map<?, ?> body
-          && body.get("email_address") != null
-      ) {
-        email = body.get("email_address").toString();
-      }
     }
+  }
 
+  public void sendBouwheerPaymentNotification(FinancingHdr financingHdr) {
+    try {
+      List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
+        .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
+      Map<String, Object> bank = findCsulBank();
 
-    /// no trow
-    emailService.sendNotificationBouwheerPayment(
-      email,
-      BouwheerPaymentEmailPayload.builder()
+      emailService.sendNotificationBouwheerPayment(
+        bouwheerPicEmails,
+        BouwheerPaymentEmailPayload.builder()
+          .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+          .vendorCode(financingHdr.getCustomer().getCustExternalCode())
+          .vendorName(financingHdr.getCustomer().getCustName())
+          .accountNo(bank.get("accountNo").toString())
+          .bankAccount(bank.get("accountName").toString())
+          .bankName(bank.get("bankName").toString())
+          .bankKey(bank.get("bankKey").toString())
+          .tglPengajuan(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
+          .invoices(toInvoiceEmailPayloads(financingHdr, financingDtls))
+          .build()
+      );
+    } catch (Exception e) {
+      log.error(
+        "sendBouwheerPaymentNotification failed. financingHdrCode={}, recipients={}",
+        financingHdr == null ? null : financingHdr.getFinancingHdrCode(),
+        bouwheerPicEmails,
+        e
+      );
+    }
+  }
+
+  public void sendDebtorDisbursementNotification(FinancingHdr financingHdr) {
+    try {
+      List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
+        .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
+      Customer customer = financingHdr.getCustomer();
+      String phoneNumber = customer.getCustMobilePhone();
+
+      if ("Company".equalsIgnoreCase(customer.getCustTypeCode())
+        && customer.getCompany() != null
+        && !StringUtil.isNullOrEmpty(customer.getCompany().getPhone())) {
+        phoneNumber = customer.getCompany().getPhone();
+      } else if ("Personal".equalsIgnoreCase(customer.getCustTypeCode())
+        && customer.getPersonal() != null
+        && !StringUtil.isNullOrEmpty(customer.getPersonal().getPhone())) {
+        phoneNumber = customer.getPersonal().getPhone();
+      }
+
+      double totalFeeAmount = valueOrZero(financingHdr.getAdminFeeAmt())
+        + valueOrZero(financingHdr.getLegalFeeAmtNett())
+        + valueOrZero(financingHdr.getInsuranceFeeAmt())
+        + valueOrZero(financingHdr.getOthersFeeAmt())
+        + valueOrZero(financingHdr.getProvisionFeeAmt())
+        + valueOrZero(financingHdr.getSurveyFeeAmtNett());
+
+      emailService.sendNotificationLoanDisbursement(
+        customer,
+        LoanDisburseEmailPayload.builder()
+          .financingCode(financingHdr.getFinancingHdrCode().toString())
+          .applicationDate(DateTimeUtils.formatToDate(financingHdr.getDisburseDate()))
+          .companyName(customer.getCustName())
+          .phoneNumber(phoneNumber)
+          .tenor(financingHdr.getTenor())
+          .financingDueDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDueDate()))
+          .retention(CommonFormattingUtils.formatAmount(valueOrZero(financingHdr.getRetention())))
+          .financingAmt(CommonFormattingUtils.formatAmount(valueOrZero(financingHdr.getFinancingAmt())))
+          .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmount))
+          .invoiceAmt(CommonFormattingUtils.formatAmount(valueOrZero(financingHdr.getTotalInvoiceAmt())))
+          .disburseAmt(CommonFormattingUtils.formatAmount(valueOrZero(financingHdr.getDisburseAmt())))
+          .invoices(toInvoiceEmailPayloads(financingHdr, financingDtls))
+          .build()
+      );
+    } catch (Exception e) {
+      log.error(
+        "sendDebtorDisbursementNotification failed. financingHdrCode={}, email={}",
+        financingHdr == null ? null : financingHdr.getFinancingHdrCode(),
+        financingHdr == null || financingHdr.getCustomer() == null
+          ? null
+          : financingHdr.getCustomer().getCustEmail(),
+        e
+      );
+    }
+  }
+
+  private double valueOrZero(Double value) {
+    return value == null ? 0D : value;
+  }
+
+  private void sendContractUploadRequiredNotification(FinancingHdr financingHdr, String agreementCode) {
+    try {
+      if (financingHdr.getMstBranch() == null) {
+        log.warn("Contract upload notification skipped: branch is empty for financingHdrCode={}", financingHdr.getFinancingHdrCode());
+        return;
+      }
+
+      List<String> recipients = mstAppRoleFormUserRepository.findActiveBranchAdminEmails(
+        financingHdr.getMstBranch().getBranchCode()
+      );
+      if (recipients.isEmpty()) {
+        log.warn(
+          "Contract upload notification skipped: no active Branch Admin email for branchCode={}",
+          financingHdr.getMstBranch().getBranchCode()
+        );
+        return;
+      }
+
+      emailService.sendNotificationContractUploadRequired(
+        String.join(";", recipients),
+        AgreementContractEmailPayload.builder()
+          .agreementCode(agreementCode)
+          .financingCode(financingHdr.getFinancingHdrCode().toString())
+          .vendorCode(financingHdr.getCustomer().getCustExternalCode())
+          .vendorName(financingHdr.getCustomer().getCustName())
+          .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+          .bouwheerPicEmails(bouwheerPicEmails.replace(";", ", "))
+          .branchName(financingHdr.getMstBranch().getBranchName())
+          .build()
+      );
+    } catch (Exception e) {
+      log.error(
+        "sendContractUploadRequiredNotification failed. financingHdrCode={}, agreementCode={}",
+        financingHdr == null ? null : financingHdr.getFinancingHdrCode(),
+        agreementCode,
+        e
+      );
+    }
+  }
+
+  private List<InvoiceEmailPayload> toInvoiceEmailPayloads(
+    FinancingHdr financingHdr,
+    List<FinancingDtl> financingDtls
+  ) {
+    return financingDtls.stream()
+      .filter(detail -> detail.getInvoice() != null)
+      .map(detail -> InvoiceEmailPayload.builder()
+        .invoiceNo(detail.getInvoice().getCustInvNo())
+        .invoiceAmt(CommonFormattingUtils.formatAmount(detail.getInvoice().getInvoiceAmt()))
+        .invoiceDate(DateTimeUtils.formatToDate(detail.getInvoice().getInvoiceDate()))
+        .invoiceDueDate(DateTimeUtils.formatToDate(detail.getInvoice().getInvoiceDueDate()))
+        .description(detail.getInvoice().getInvoiceDescription())
         .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
-        .vendorCode(customer.getCustExternalCode())
-        .vendorName(customer.getCustName())
-        .accountNo(obj.get("accountNo").toString())
-        .bankAccount(obj.get("accountName").toString())
-        .bankName(obj.get("bankName").toString())
-        .bankKey(obj.get("bankKey").toString())
-        .tglPengajuan(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
-        .invoices(invoices)
-        .build()
-    );
+        .build())
+      .toList();
   }
 
   boolean bypassRemotePosting() {

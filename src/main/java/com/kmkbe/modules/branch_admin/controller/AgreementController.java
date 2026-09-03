@@ -2,24 +2,15 @@ package com.kmkbe.modules.branch_admin.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.dto.AgreementDto;
-import com.kmkbe.core.domain.dto.FinancingHdrDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementDto;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.CommonResult;
-import com.kmkbe.core.domain.model.InvoiceEmailPayload;
-import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.repository.CustomerCompanyRepository;
-import com.kmkbe.core.domain.repository.CustomerPersonalRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
-import com.kmkbe.core.utils.CommonFormattingUtils;
-import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
 import com.kmkbe.modules.branch_admin.service.AgreementService;
-import com.kmkbe.modules.common.service.EmailService;
-import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
@@ -33,8 +24,6 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SignatureException;
-import java.util.List;
-import java.util.Optional;
 
 @Validated
 @RestController
@@ -49,9 +38,6 @@ public class AgreementController {
     private final FinancingRemoteService financingRemoteService;
     private final FinancingHdrService financingHdrService;
     private final FinancingHdrRepository financingHdrRepository;
-    private final EmailService emailService;
-    private final CustomerCompanyRepository customerCompanyRepository;
-    private final CustomerPersonalRepository customerPersonalRepository;
     private final CurrentUserService currentUserService;
 
     @GetMapping("/list/{cwrCode}/{financingHdrCode}")
@@ -143,78 +129,9 @@ public class AgreementController {
         financingHdr.setFinancingStep("SIGNED");//SIGNING
         financingHdrRepository.save(financingHdr);
 
-
-
-        try {
-            Customer customer = financingHdr.getCustomer();
-
-
-            final FinancingHdrDto createdFinancing = financingHdrService.dtoFromEntity(financingHdr);
-
-            final List<InvoiceEmailPayload> invoices = createdFinancing.getDetails()
-                    .stream()
-                    .map((item) ->
-                            InvoiceEmailPayload.builder()
-                                    //.seq(item.getInvoiceSeqno())
-                                    .invoiceNo(item.getInvoice().getCustInvNo())
-                                    .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
-                                    .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
-                                    .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-                                    .description(item.getInvoice().getInvoiceDescription())
-                                    .bouwheerName(createdFinancing.getBouwheer().getBouwheerName())
-                                    .build()
-                    ).toList();
-
-
-
-
-            final double totalFeeAmt =
-                    createdFinancing.getAdminFeeAmt()
-                            + createdFinancing.getLegalFeeAmtNett()
-                            + createdFinancing.getInsuranceFeeAmt()
-                            + createdFinancing.getOthersFeeAmt()
-                            + createdFinancing.getProvisionFeeAmt()
-                            + createdFinancing.getSurveyFeeAmtNett();
-
-            String phoneNumber = createdFinancing.getCustomer().getCustMobilePhone();
-            if(createdFinancing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")){
-                Optional<CustomerCompany> customerCompany = customerCompanyRepository.findByCustomer(createdFinancing.getCustomer());
-                if (customerCompany.isPresent()){
-                    if (customerCompany.get().getPhone()!=null && !customerCompany.get().getPhone().equalsIgnoreCase("")){
-                        phoneNumber = customerCompany.get().getPhone();
-                    }
-                }
-            }else{
-                Optional<CustomerPersonal> customerPersonal = customerPersonalRepository.findByCustomer(createdFinancing.getCustomer());
-                if (customerPersonal.isPresent()){
-                    if (customerPersonal.get().getPhone()!=null && !customerPersonal.get().getPhone().equalsIgnoreCase("")){
-                        phoneNumber = customerPersonal.get().getPhone();
-                    }
-                }
-            }
-
-            //kirim email setelah  pengajuan debitur telah disetujui (setelah uoload kontark)
-            emailService.sendNotificationLoanDisbursement(
-                    customer,
-                    LoanDisburseEmailPayload.builder()
-                            .financingCode(createdFinancing.getFinancingHdrCode().toString())
-                            .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
-                            .companyName(customer.getCustName())//createdFinancing.getBouwheer().getBouwheerName()
-                            .phoneNumber(phoneNumber)
-                            .tenor(createdFinancing.getTenor())
-                            .financingCode(createdFinancing.getFinancingHdrCode().toString())
-                            .financingDueDate(DateTimeUtils.formatToDate(createdFinancing.getFinancingDueDate()))
-                            .retention(CommonFormattingUtils.formatAmount(createdFinancing.getRetention()))
-                            .financingAmt(CommonFormattingUtils.formatAmount(createdFinancing.getFinancingAmt()))
-                            .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-                            .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getTotalInvoiceAmt()))
-                            .disburseAmt(CommonFormattingUtils.formatAmount(createdFinancing.getDisburseAmt()))
-                            .invoices(invoices)
-                            .build()
-            );
-        } catch (Exception ig) {
-            ig.printStackTrace();
-        }
+        // Notify Bouwheer/CKB only after the contract has been uploaded successfully.
+        agreementService.sendBouwheerPaymentNotification(financingHdr);
+        agreementService.sendDebtorDisbursementNotification(financingHdr);
        //sebelunya auto assing
 
         return new CommonResult<>().success(

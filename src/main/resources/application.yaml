@@ -72,3 +72,7 @@ audit:
   retry:
     max-attempts: 3
     initial-delay-ms: 200
+
+notification:
+  agreement:
+    bouwheer-pic-emails: ${AGREEMENT_BOUWHEER_PIC_EMAILS:achmad.faqihuddin@ckb.co.id;ali.rohman@ckb.co.id}
