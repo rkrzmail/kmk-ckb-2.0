@@ -90,6 +90,7 @@ class ReportServiceTest {
   @Mock private JasperReportRenderer jasperReportRenderer;
   @Mock private SigningClient signingClient;
   @Mock private AgreementFileSigningService agreementFileSigningService;
+  @Mock private SigningEligibilityService signingEligibilityService;
 
   private ReportService service;
 
@@ -585,6 +586,28 @@ class ReportServiceTest {
   }
 
   @Test
+  void sendDocumentForSigningRejectsUnregisteredEsignerBeforeGeneratingReport() throws Exception {
+    ReportService spy = org.mockito.Mockito.spy(new ReportService());
+    injectDependencies(spy);
+    when(agreementFileSigningRepository.findByAgreementCode("AGR001")).thenReturn(List.of());
+    org.mockito.Mockito.doThrow(new IllegalStateException(
+        SigningEligibilityService.SIGNER_NOT_REGISTERED_MESSAGE
+      ))
+      .when(signingEligibilityService)
+      .validateForSigning(FINANCING_HDR_CODE.toString(), "BM", "ASM");
+
+    SigningResponse result = spy.sendDocumentForSigning(
+      FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM", "maker"
+    );
+
+    assertThat(result.isSuccess()).isFalse();
+    assertThat(result.getMessage()).isEqualTo(SigningEligibilityService.SIGNER_NOT_REGISTERED_MESSAGE);
+    org.mockito.Mockito.verify(spy, org.mockito.Mockito.never())
+      .generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM");
+    org.mockito.Mockito.verifyNoInteractions(signingClient);
+  }
+
+  @Test
   void sendDocumentForSigningReturnsFailureForSigningApiErrorAndMissingSigner() throws Exception {
     ReportService spy = org.mockito.Mockito.spy(new ReportService());
     injectDependencies(spy);
@@ -715,6 +738,7 @@ class ReportServiceTest {
     ReflectionTestUtils.setField(target, "jasperReportRenderer", jasperReportRenderer);
     ReflectionTestUtils.setField(target, "signingClient", signingClient);
     ReflectionTestUtils.setField(target, "agreementFileSigningService", agreementFileSigningService);
+    ReflectionTestUtils.setField(target, "signingEligibilityService", signingEligibilityService);
   }
 
   private static PaginationRequest reportRequest() {

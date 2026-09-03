@@ -48,6 +48,7 @@ public class SignerService {
   private final AssignmentSubmissionService assignmentSubmissionService;
   private final NotifDebtorRepository notifDebtorRepository;
   private final AuditTrailService auditTrailService;
+  private final SigningEligibilityService signingEligibilityService;
 
   private final Map<String, List<String>> signerCache = new ConcurrentHashMap<>();
 
@@ -1140,6 +1141,17 @@ public class SignerService {
 
   public Map<String, Object> checkSendDocument(String financingHdrCode, String agreementCode) {
     Map<String, Object> response = new HashMap<>();
+
+    try {
+      signingEligibilityService.validateDebtorSigner(financingHdrCode);
+    } catch (IllegalArgumentException | IllegalStateException exception) {
+      response.put("canSend", false);
+      response.put("needConfirmation", false);
+      response.put("message", exception.getMessage());
+      return response;
+    }
+
+    response.put("canSend", true);
 
     List<AgreementFileSigning> existingFiles = agreementFileSigningRepository.findByAgreementCode(agreementCode);
 

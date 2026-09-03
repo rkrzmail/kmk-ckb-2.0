@@ -75,6 +75,7 @@ class SignerServiceTest {
   @Mock private NotifDebtorRepository notifDebtorRepository;
   @Mock private AuditTrailService auditTrailService;
   @Mock private BaseRemoteService baseRemoteService;
+  @Mock private SigningEligibilityService signingEligibilityService;
   @Mock private HttpServletRequest httpServletRequest;
 
   private SignerService service;
@@ -91,6 +92,7 @@ class SignerServiceTest {
         assignmentSubmissionService,
         notifDebtorRepository,
         auditTrailService,
+        signingEligibilityService,
         baseRemoteService
     );
     ReflectionTestUtils.setField(service, "adinsKey", "adins-key");
@@ -481,6 +483,23 @@ class SignerServiceTest {
   }
 
   @Test
+  void mergeSignersReturnsErrorMessageAndNeverThrowsWhenSignerListIsNull() {
+    PersonDto nullSignerList = new PersonDto();
+    nullSignerList.setStatusCode("200");
+    nullSignerList.setMessage("Success");
+
+    PersonDto externalError = new PersonDto();
+    externalError.setStatusCode("500");
+    externalError.setMessage("Error: CustNo tidak tersedia untuk agreement AGR001");
+
+    PersonDto result = service.mergeSigners(List.of(nullSignerList, externalError));
+
+    assertThat(result.getStatusCode()).isEqualTo("500");
+    assertThat(result.getMessage()).isEqualTo("Error: CustNo tidak tersedia untuk agreement AGR001");
+    assertThat(result.getSigners()).isEmpty();
+  }
+
+  @Test
   void signerAgreementReturnsRowsNotFoundAndBadRequest() {
     Agreement agreement = Agreement.builder().agreementCode("AGR001").financingHdr(financingHdr()).build();
     when(agreementRepository.findByFinancingHdr_FinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(List.of(agreement));
@@ -510,6 +529,7 @@ class SignerServiceTest {
     PersonDto error = service.getSignersFromExternalApi(FINANCING_HDR_CODE.toString(), "MISSING");
     assertThat(error.getStatusCode()).isEqualTo("500");
     assertThat(error.getMessage()).contains("Agreement not found");
+    assertThat(error.getSigners()).isEmpty();
   }
 
   @Test
@@ -874,6 +894,23 @@ class SignerServiceTest {
     when(financingHdrRepository.findDebtorNameByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn("Debtor");
     when(debtorRepository.findByDebtorName("Debtor")).thenReturn(null);
     assertThat(service.checkSignerDanasakti(FINANCING_HDR_CODE.toString(), "maker")).isEmpty();
+  }
+
+  @Test
+  void checkSendDocumentRejectsUnregisteredEsignerWithInformativeMessage() {
+    org.mockito.Mockito.doThrow(new IllegalStateException(
+        SigningEligibilityService.SIGNER_NOT_REGISTERED_MESSAGE
+      ))
+      .when(signingEligibilityService)
+      .validateDebtorSigner(FINANCING_HDR_CODE.toString());
+
+    Map<String, Object> result = service.checkSendDocument(FINANCING_HDR_CODE.toString(), "AGR001");
+
+    assertThat(result)
+      .containsEntry("canSend", false)
+      .containsEntry("needConfirmation", false)
+      .containsEntry("message", SigningEligibilityService.SIGNER_NOT_REGISTERED_MESSAGE);
+    org.mockito.Mockito.verifyNoInteractions(agreementFileSigningRepository);
   }
 
   private static Map<String, Object> registrationResponse(String status) {
