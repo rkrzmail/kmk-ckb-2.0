@@ -1,6 +1,7 @@
 package com.kmkbe.modules.customer.service;
 
 import com.kmkbe.adapter.ApiCsulAdapter;
+import com.kmkbe.core.domain.constant.CustomerModel;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.dto.RequestOtpDto;
@@ -150,17 +151,23 @@ public class AuthService {
           .staySince(staySince)
           .build()
       );
+
     } else if (request.getCustomerType().equalsIgnoreCase("perorangan")) {
       type = CustomerType.Personal;
     } else {
-      throw new Exception("Tipe Debitur is not valid or is not in list");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, ErrorConstant.ERROR_MESSAGE_80 + "Tipe Debitur is not valid or is not in list");
     }
 
     final Customer cust = customerService.create(request, type);
     if (type == CustomerType.Company) {
       customerCompanyService.create(cust, request.getCompany());
     } else {
-      customerPersonalService.create(cust, request.getPersonal());
+      customerPersonalService.create(cust,SignUpRequest.Personal.builder()
+        .customerModel(CustomerModel.Pegawai)
+        .identityType("KTP")
+        .identityNo(request.getCustomerIdNo())
+        .phone(request.getMobilePhone())
+        .build());
     }
 
 
