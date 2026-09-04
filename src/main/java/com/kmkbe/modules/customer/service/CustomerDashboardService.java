@@ -208,13 +208,9 @@ public class CustomerDashboardService {
         address = financingHdr.getCustomer().getPersonal() == null ? "" : String.valueOf(financingHdr.getCustomer().getPersonal().getLegalAddress());
         phoneNo = financingHdr.getCustomer().getPersonal() == null ? "" : financingHdr.getCustomer().getPersonal().getPhone();
       }
-      List<String> signerNames = financingHdrRepository.findSignerNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
-
-      long total = signerNames.stream()
-        .mapToLong(signer -> agreementFileSigningRepository.countBySigner(signer))
-        .sum();
-      Long totalBerjalan = financingHdrRepository.countSigningAndSigned(financingHdrCode);
-      Long totalBerakhir = financingHdrRepository.countCompleted(financingHdrCode);
+      long total = agreementFileSigningRepository.countUploadedAgreementsByCustomer(uuid);
+      long totalBerjalan = agreementFileSigningRepository.countRunningUploadedAgreementsByCustomer(uuid);
+      long totalBerakhir = agreementFileSigningRepository.countCompletedUploadedAgreementsByCustomer(uuid);
 
       return CustomerPerjanjianDto.builder()
         .financingHdrCode(financingHdr.getFinancingHdrCode())
@@ -230,8 +226,8 @@ public class CustomerDashboardService {
         .phoneNo(phoneNo)
         .agreementCode(agreement.getAgreementCode())
         .perjanjian(CustomerPerjanjianDto.PerjanjianDto.builder()
-          .perjanjianBerjalan(totalBerjalan != null ? totalBerjalan.intValue() : 0)
-          .perjanjianBerakhir(totalBerakhir != null ? totalBerakhir.intValue() : 0)
+          .perjanjianBerjalan(Math.toIntExact(totalBerjalan))
+          .perjanjianBerakhir(Math.toIntExact(totalBerakhir))
           .totalPerjanjian((int) total)
           .build())
 

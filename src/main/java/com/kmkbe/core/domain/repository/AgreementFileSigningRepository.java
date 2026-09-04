@@ -11,6 +11,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface AgreementFileSigningRepository extends JpaRepository<AgreementFileSigning, Long> {
 
@@ -32,4 +33,51 @@ public interface AgreementFileSigningRepository extends JpaRepository<AgreementF
     long countBySigner(String signerName);
 
     long countByFinancingHdrCodeAndStamp(String financingHdrCode, String stamp);
+
+    @Query(value = """
+      SELECT COUNT(DISTINCT afs.agreement_code)
+      FROM agreement_file_signing afs
+      JOIN financing_hdr agreement_fh
+        ON CAST(agreement_fh.financing_hdr_code AS VARCHAR) = afs.financing_hdr_code
+      WHERE agreement_fh.cust_code = (
+        SELECT current_fh.cust_code
+        FROM financing_hdr current_fh
+        WHERE current_fh.financing_hdr_code = :financingHdrCode
+      )
+      """, nativeQuery = true)
+    long countUploadedAgreementsByCustomer(
+      @Param("financingHdrCode") UUID financingHdrCode
+    );
+
+    @Query(value = """
+      SELECT COUNT(DISTINCT afs.agreement_code)
+      FROM agreement_file_signing afs
+      JOIN financing_hdr agreement_fh
+        ON CAST(agreement_fh.financing_hdr_code AS VARCHAR) = afs.financing_hdr_code
+      WHERE agreement_fh.cust_code = (
+        SELECT current_fh.cust_code
+        FROM financing_hdr current_fh
+        WHERE current_fh.financing_hdr_code = :financingHdrCode
+      )
+      AND UPPER(agreement_fh.financing_step) IN ('SIGNING', 'SIGNED', 'PAID')
+      """, nativeQuery = true)
+    long countRunningUploadedAgreementsByCustomer(
+      @Param("financingHdrCode") UUID financingHdrCode
+    );
+
+    @Query(value = """
+      SELECT COUNT(DISTINCT afs.agreement_code)
+      FROM agreement_file_signing afs
+      JOIN financing_hdr agreement_fh
+        ON CAST(agreement_fh.financing_hdr_code AS VARCHAR) = afs.financing_hdr_code
+      WHERE agreement_fh.cust_code = (
+        SELECT current_fh.cust_code
+        FROM financing_hdr current_fh
+        WHERE current_fh.financing_hdr_code = :financingHdrCode
+      )
+      AND UPPER(agreement_fh.financing_step) = 'COMPLETED'
+      """, nativeQuery = true)
+    long countCompletedUploadedAgreementsByCustomer(
+      @Param("financingHdrCode") UUID financingHdrCode
+    );
 }

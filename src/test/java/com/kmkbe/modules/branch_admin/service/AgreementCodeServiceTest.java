@@ -96,7 +96,7 @@ class AgreementCodeServiceTest {
         assertThat(result.getData().getDirectorName()).isEqualTo("-");
         assertThat(result.getData().getJabatan()).isEqualTo("-");
         assertThat(result.getData().getEmployeeName()).isEqualTo("N/A");
-        assertThat(result.getData().getBouwheerName()).isEqualTo("PT. TRAKINDO UTAMA");
+        assertThat(result.getData().getBouwheerName()).isEqualTo("PT BOUWHEER");
     }
 
     @Test

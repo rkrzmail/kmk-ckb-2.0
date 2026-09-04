@@ -19,6 +19,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -35,11 +36,14 @@ public class EmailService {
   private static final String M_CUST_VERIFY = "M_CUST_VERIFY";
   private static final String M_CUST_CHANGE_OTP = "M_CUST_CHANGE_OTP";
   private static final String M_CUST_ACTIVE = "M_CUST_ACTIVE";
+  private static final String M_CUST_REJECTED = "M_CUST_REJECTED";
+  private static final String M_CUST_VERIFY_MJR = "M_CUST_VERIFY_MJR";
   private static final String M_CUST_LOAN = "M_CUST_LOAN";//(3)
   private static final String M_CUST_LOAN_SUBMITED = "M_CUST_LOAN_SUBMITED";//(4)
   private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";//(2)
   private static final String M_BRANCH_ASSIGN_MJR = "M_BRANCH_ASSIGN_MJR";
   private static final String M_BOUWHEER_PAYMENT = "M_BOUWHEER_PAYMENT";
+  private static final String M_BRANCH_CONTRACT_UPLOAD = "M_BRANCH_CONTRACT_UPLOAD";
   private static final String M_CUST_LOAD_CHANGE = "M_CUST_LOAD_CHANGE";
   private static final String M_CUST_PENCAIRAN = "M_CUST_PENCAIRAN";//(5)
   private static final String M_SIM_LOAN = "M_SIM_LOAN";//(1)
@@ -208,6 +212,47 @@ public class EmailService {
       send(customer.getCustEmail(), obj, M_CUST_ACTIVE);
     } catch (Exception e) {
       log.error("Error sendNotificationActive {}", e.getMessage());
+    }
+  }
+
+  @Async
+  public void sendNotificationRejected(Customer customer, String approvalNote) {
+    try {
+      Map<String, Object> obj = new HashMap<>();
+      obj.put("name", customer.getCustName());
+      obj.put("id_no", customer.getCustIdNo());
+      obj.put("email", customer.getCustEmail());
+      obj.put("additionalArgs", Map.of(
+        "approval_note",
+        HtmlUtils.htmlEscape(approvalNote == null || approvalNote.isBlank() ? "-" : approvalNote)
+      ));
+
+      send(customer.getCustEmail(), obj, M_CUST_REJECTED);
+    } catch (Exception e) {
+      log.error("Error sendNotificationRejected for {}", customer.getCustEmail(), e);
+    }
+  }
+
+  @Async
+  public void sendNotificationCustomerVerification(String recipients, Customer customer) {
+    try {
+      Map<String, Object> args = new HashMap<>();
+      args.put("name", customer.getCustName());
+      args.put("email", customer.getCustEmail());
+      args.put("id_no", customer.getCustIdNo());
+      args.put("additionalArgs", Map.of(
+        "vendor_code", customer.getCustExternalCode() == null ? "-" : customer.getCustExternalCode(),
+        "customer_type", customer.getCustTypeCode() == null ? "-" : customer.getCustTypeCode()
+      ));
+
+      send(recipients, args, M_CUST_VERIFY_MJR);
+    } catch (Exception e) {
+      log.error(
+        "sendNotificationCustomerVerification failed. customerCode={}, recipients={}",
+        customer == null ? null : customer.getCustCode(),
+        recipients,
+        e
+      );
     }
   }
 
@@ -516,6 +561,31 @@ public class EmailService {
     }
   }
 
+  @Async
+  public void sendNotificationContractUploadRequired(
+    String branchAdminEmails,
+    AgreementContractEmailPayload payload
+  ) {
+    try {
+      Map<String, Object> args = new HashMap<>();
+      args.put("additionalArgs", ObjectUtils.objectToJson(payload));
+
+      EmailTemplate template = emailTemplateRepository
+        .findByEmailTemplateCodeAndIsActive(M_BRANCH_CONTRACT_UPLOAD, true);
+      template.setMailTo(branchAdminEmails);
+      template.setSubjectMail(template.getSubjectMail().replace("{agreementCode}", payload.getAgreementCode()));
+
+      send(args, template);
+    } catch (Exception e) {
+      log.error(
+        "sendNotificationContractUploadRequired failed. agreementCode={}, recipients={}",
+        payload == null ? null : payload.getAgreementCode(),
+        branchAdminEmails,
+        e
+      );
+    }
+  }
+
   private void send(
     final String email,
     final Map<String, Object> args,
@@ -617,7 +687,7 @@ public class EmailService {
     final boolean isHtml = template.getBodyMail().contains("html");
 
     helper.setFrom(EMAIL_FROM);
-    helper.setTo(template.getMailTo());
+    helper.setTo(template.getMailTo().split(";"));
     helper.setSubject(template.getSubjectMail());
     helper.setText(template.getBodyMail(), isHtml);
 

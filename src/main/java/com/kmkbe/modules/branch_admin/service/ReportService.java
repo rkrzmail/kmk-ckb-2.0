@@ -102,6 +102,9 @@ public class ReportService {
     @Autowired
     private AgreementFileSigningService agreementFileSigningService;
 
+    @Autowired
+    private SigningEligibilityService signingEligibilityService;
+
     private void ensureJwtToken() {
         jwtToken = authRemoteService.fetchAuthJwt().getData();
     }
@@ -1019,6 +1022,12 @@ public class ReportService {
                         .message("Dokumen dengan agreementCode " + agreementCode + " sudah ditandatangani, tidak bisa dikirim ulang.")
                         .build();
             }
+
+            signingEligibilityService.validateForSigning(
+                    financingHdrCode,
+                    branchManager,
+                    areaSalesManager
+            );
 
             byte[] pdfBytes = generateReport(financingHdrCode, agreementCode, branchManager, areaSalesManager);
 

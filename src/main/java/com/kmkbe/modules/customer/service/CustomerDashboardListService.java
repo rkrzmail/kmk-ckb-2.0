@@ -25,6 +25,7 @@ import java.security.SignatureException;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -150,6 +151,7 @@ public class CustomerDashboardListService {
                         return CustomerCreditFacilityNewDto.builder()
                                 //.agreementCode(agreement.isPresent()?agreement.get().getAgreementCode():"")
                                 .agreementCode(e.getAgreement().isEmpty()?"":e.getAgreement().stream().toList().getLast().getAgreementCode())
+                                .invoiceNo(invoiceNumbers(financingDtlRepository.findAllByFinancingHdrOrderByDtmCrtDesc(e)))
                                 .financingHdrCode(e.getFinancingHdrCode().toString())
                                 .custName(e.getCustomer().getCustName())
                                 .bouwheerName(e.getBouwheer().getBouwheerName())
@@ -181,6 +183,21 @@ public class CustomerDashboardListService {
             log.error("submissionDistribution: error {}", e.getMessage());
             throw e;
         }
+    }
+
+    String invoiceNumbers(List<FinancingDtl> financingDetails) {
+        if (financingDetails == null) {
+            return "";
+        }
+
+        return financingDetails.stream()
+                .map(FinancingDtl::getInvoice)
+                .filter(invoice -> invoice != null && invoice.getCustInvNo() != null)
+                .map(invoice -> invoice.getCustInvNo().trim())
+                .filter(invoiceNo -> !invoiceNo.isEmpty())
+                .distinct()
+                .sorted()
+                .collect(Collectors.joining(", "));
     }
 
 

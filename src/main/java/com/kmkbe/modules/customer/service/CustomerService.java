@@ -21,7 +21,6 @@ import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FormatingUtils;
-import com.kmkbe.helpers.utils.CommonUtils;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.common.service.AuditTrailService;
@@ -130,6 +129,10 @@ public class CustomerService {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Update Customer ", request.getVendorCode());
       customer = customerByVendor.get();
       before = toAuditData(customer);
+      if (ApprovalStatus.REJECTED.name().equals(customer.getApprovalStatus())) {
+        customer.setIsEmailValid(false);
+        customer.setActive(false);
+      }
     } else {
       // CREATE
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Create Customer ", request.getVendorCode());
@@ -189,8 +192,17 @@ public class CustomerService {
 
   public void verifyEmail(Customer customer) {
     CustomerAuditData before = toAuditData(customer);
+    boolean isRejectedReRegistration = ApprovalStatus.REJECTED.name().equals(customer.getApprovalStatus())
+      && Boolean.FALSE.equals(customer.getIsEmailValid());
+
     customer.setIsEmailValid(true);
     customer.setActive(false);
+    if (isRejectedReRegistration) {
+      customer.setApprovalStatus(ApprovalStatus.OPEN.name());
+      customer.setApprovalNote(null);
+      customer.setApprovalBy(null);
+      customer.setApprovalAt(null);
+    }
     customer.setUsrUpd(customer.getCustName());
     customer.setDtmUpd(DateTimeUtils.now());
     Customer saved = customerRepository.save(customer);
@@ -264,31 +276,57 @@ public class CustomerService {
       .build();
   }
 
-  public void updateFapData(UpdateFapRequest request) {
-    String email = request.getEmail();
-
-    Optional<Customer> customerOptional = customerRepository.findByCustEmail(email);
-    if (customerOptional.isPresent()) {
-      Customer customer = customerOptional.get();
-
-      UUID custCode = customer.getCustCode();
-
-      Pageable pageable = PageRequest.of(0, 1);
-      List<FinancingHdr> financingHdrList = financingHdrRepository.findLatestFinancingHdrByCustCode(custCode, pageable);
-
-      if (!financingHdrList.isEmpty()) {
-        FinancingHdr financingHdr = financingHdrList.get(0);
-
-        financingHdr.setFapDate(request.getFapDate());
-        financingHdr.setFapStatus(request.getFapStatus());
-
-        financingHdrRepository.save(financingHdr);
-      } else {
-        throw new IllegalArgumentException("No FinancingHdr found for custCode: " + custCode);
-      }
-    } else {
-      throw new IllegalArgumentException("Customer with email " + email + " not found");
+  public void updateFapData(Customer customer, UpdateFapRequest request) {
+    if (customer == null) {
+      throw new IllegalArgumentException("Authenticated customer is required");
     }
+    if (request.getFapStatus() == null || request.getFapStatus().isBlank()) {
+      throw new IllegalArgumentException("FAP status is required");
+    }
+
+    FinancingHdr financingHdr = resolveFapFinancing(customer, request.getFinancingHdrCode());
+    FapAuditData before = toFapAuditData(financingHdr);
+
+    financingHdr.setFapDate(request.getFapDate() != null ? request.getFapDate() : DateTimeUtils.now());
+    financingHdr.setFapStatus(request.getFapStatus().trim());
+    financingHdr.setUsrUpd(customer.getCustName());
+    financingHdr.setDtmUpd(DateTimeUtils.now());
+
+    FinancingHdr saved = financingHdrRepository.save(financingHdr);
+    auditTrailService.record(
+      "LOAN_SUBMISSION",
+      AuditAction.UPDATE,
+      "FinancingHdr",
+      saved.getFinancingHdrCode(),
+      before,
+      toFapAuditData(saved)
+    );
+  }
+
+  private FinancingHdr resolveFapFinancing(Customer customer, UUID financingHdrCode) {
+    FinancingHdr financingHdr;
+    if (financingHdrCode != null) {
+      financingHdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
+        .orElseThrow(() -> new IllegalArgumentException("FinancingHdr not found: " + financingHdrCode));
+    } else {
+      financingHdr = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer)
+        .orElseThrow(() -> new IllegalArgumentException(
+          "No FinancingHdr found for custCode: " + customer.getCustCode()
+        ));
+    }
+
+    if (financingHdr.getCustomer() == null
+      || !customer.getCustCode().equals(financingHdr.getCustomer().getCustCode())) {
+      throw new IllegalArgumentException("FinancingHdr does not belong to authenticated customer");
+    }
+    return financingHdr;
+  }
+
+  private FapAuditData toFapAuditData(FinancingHdr financingHdr) {
+    return new FapAuditData(financingHdr.getFapDate(), financingHdr.getFapStatus());
+  }
+
+  private record FapAuditData(LocalDateTime fapDate, String fapStatus) {
   }
 
 
@@ -400,8 +438,11 @@ public class CustomerService {
       toAuditData(saved)
     );
 
-    // Send mail
-    emailService.customerVerification(customer.getCustEmail().toLowerCase(), customer.getCustName(), customer.getCustIdNo(), CommonUtils.generateOtp());
+    if (ApprovalStatus.APPROVED.name().equals(approvalStatus)) {
+      emailService.sendNotificationActive(saved);
+    } else {
+      emailService.sendNotificationRejected(saved, request.getApprovalNote());
+    }
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
   }

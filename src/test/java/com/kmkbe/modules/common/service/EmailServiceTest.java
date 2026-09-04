@@ -4,6 +4,7 @@ import com.kmkbe.config.MailConfig;
 import com.kmkbe.core.domain.dto.MailRemoteDto;
 import com.kmkbe.core.domain.entity.EmailTemplate;
 import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
+import com.kmkbe.core.domain.model.AgreementContractEmailPayload;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.model.PencarianPayload;
@@ -129,6 +130,47 @@ class EmailServiceTest {
   }
 
   @Test
+  void sendNotificationRejectedUsesRejectedTemplateAndEscapesApprovalNote() throws Exception {
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_REJECTED", true))
+      .thenReturn(template("M_CUST_REJECTED", "{name}|{email}|{id_no}|{approval_note}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(false));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(false));
+
+    service.sendNotificationRejected(customer(), "NPWP <script>alert('x')</script>");
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(false));
+    assertThat(captor.getValue().getMailTo()).isEqualTo("customer@example.com");
+    assertThat(captor.getValue().getBodyMail())
+      .isEqualTo("Customer|customer@example.com|KTP001|NPWP &lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt;");
+  }
+
+  @Test
+  void sendNotificationCustomerVerificationUsesMajorAccountTemplateAndCustomerData() throws Exception {
+    Customer customer = customer();
+    customer.setCustExternalCode("V001");
+    customer.setCustTypeCode("Company");
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_VERIFY_MJR", true))
+      .thenReturn(template(
+        "M_CUST_VERIFY_MJR",
+        "{name}|{email}|{id_no}|{vendor_code}|{customer_type}"
+      ));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(false));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(false));
+
+    service.sendNotificationCustomerVerification(
+      "major1@csul.co.id;major2@csul.co.id",
+      customer
+    );
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(false));
+    assertThat(captor.getValue().getMailTo()).isEqualTo("major1@csul.co.id;major2@csul.co.id");
+    assertThat(captor.getValue().getBodyMail())
+      .isEqualTo("Customer|customer@example.com|KTP001|V001|Company");
+  }
+
+  @Test
   void notificationMethodsMapTemplatesRecipientsSubjectAndAdditionalArgs() throws Exception {
     Customer customer = customer();
     LoanDisburseEmailPayload loanPayload = loanPayload();
@@ -207,6 +249,38 @@ class EmailServiceTest {
     assertThat(sent.getSubjectMail()).isEqualTo("Payment V001");
     assertThat(sent.getMailTo()).isEqualTo("vendor@example.com");
     assertThat(sent.getBodyMail()).isEqualTo("Bouwheer|Vendor|V001|123|Account|Bank|BK|01/01/2026");
+  }
+
+  @Test
+  void sendNotificationContractUploadRequiredUsesBranchRecipientsAndMapsPayload() throws Exception {
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BRANCH_CONTRACT_UPLOAD", true))
+      .thenReturn(templateWithSubject(
+        "M_BRANCH_CONTRACT_UPLOAD",
+        "Upload {agreementCode}",
+        "{branchName}|{agreementCode}|{financingCode}|{vendorCode}|{vendorName}|{bouwheerName}|{bouwheerPicEmails}"
+      ));
+
+    service.sendNotificationContractUploadRequired(
+      "admin1@csul.co.id;admin2@csul.co.id",
+      AgreementContractEmailPayload.builder()
+        .branchName("JAKARTA 1")
+        .agreementCode("AGR001")
+        .financingCode("LEAD001")
+        .vendorCode("V001")
+        .vendorName("Vendor")
+        .bouwheerName("CKB")
+        .bouwheerPicEmails("pic1@ckb.co.id, pic2@ckb.co.id")
+        .build()
+    );
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    assertThat(captor.getValue().getMailTo()).isEqualTo("admin1@csul.co.id;admin2@csul.co.id");
+    assertThat(captor.getValue().getSubjectMail()).isEqualTo("Upload AGR001");
+    assertThat(captor.getValue().getBodyMail())
+      .isEqualTo("JAKARTA 1|AGR001|LEAD001|V001|Vendor|CKB|pic1@ckb.co.id, pic2@ckb.co.id");
   }
 
   @Test

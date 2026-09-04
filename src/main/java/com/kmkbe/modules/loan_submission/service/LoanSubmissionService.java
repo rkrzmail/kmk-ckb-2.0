@@ -89,6 +89,7 @@ public class LoanSubmissionService {
   private final ApiCsulAdapter apiCsulAdapter;
   private final AuditTrailService auditTrailService;
   private final FinancingDtlRepository financingDtlRepository;
+  private final BranchAssignmentResolver branchAssignmentResolver;
 
   public List<PostedInvoiceDto> fetchActiveInvoice(
     Customer customer,
@@ -623,62 +624,9 @@ public class LoanSubmissionService {
 
             final FinancingHdrDto createdFinancing = financingHdrService.dtoFromEntity(financing);
 
-            final List<InvoiceEmailPayload> invoices = createdFinancing.getDetails()
-              .stream()
-              .map((item) ->
-                InvoiceEmailPayload.builder()
-                  //.seq(item.getInvoiceSeqno())
-                  .invoiceNo(item.getInvoice().getCustInvNo())
-                  .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
-                  .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
-                  .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-                  .description("Invoice By "+createdFinancing.getBouwheer().getBouwheerName())
-                  .bouwheerName(createdFinancing.getBouwheer().getBouwheerName())
-                  .build()
-              ).toList();
-
-
-            final double totalFeeAmt =
-              createdFinancing.getAdminFeeAmt()
-                + createdFinancing.getLegalFeeAmtNett()
-                + createdFinancing.getInsuranceFeeAmt()
-                + createdFinancing.getOthersFeeAmt()
-                + createdFinancing.getProvisionFeeAmt()
-                + createdFinancing.getSurveyFeeAmtNett();
-
-            String phoneNumber = createdFinancing.getCustomer().getCustMobilePhone();
-            if (createdFinancing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
-              Optional<CustomerCompany> customerCompany = customerCompanyRepository.findByCustomer(createdFinancing.getCustomer());
-              if (customerCompany.isPresent()) {
-                if (customerCompany.get().getPhone() != null && !customerCompany.get().getPhone().equalsIgnoreCase("")) {
-                  phoneNumber = customerCompany.get().getPhone();
-                }
-              }
-            } else {
-              Optional<CustomerPersonal> customerPersonal = customerPersonalRepository.findByCustomer(createdFinancing.getCustomer());
-              if (customerPersonal.isPresent()) {
-                if (customerPersonal.get().getPhone() != null && !customerPersonal.get().getPhone().equalsIgnoreCase("")) {
-                  phoneNumber = customerPersonal.get().getPhone();
-                }
-              }
-            }
             emailService.sendPerubahanSimulasi(
               customer,
-              LoanDisburseEmailPayload.builder()
-                .financingCode(createdFinancing.getFinancingHdrCode().toString())
-                .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
-                .companyName(customer.getCustName())//createdFinancing.getBouwheer().getBouwheerName()
-                .phoneNumber(phoneNumber)
-                .tenor(createdFinancing.getTenor())
-                .financingCode(createdFinancing.getFinancingHdrCode().toString())
-                .financingDueDate(DateTimeUtils.formatToDate(createdFinancing.getFinancingDueDate()))
-                .retention(CommonFormattingUtils.formatAmount(createdFinancing.getRetention()))
-                .financingAmt(CommonFormattingUtils.formatAmount(createdFinancing.getFinancingAmt()))
-                .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-                .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getTotalInvoiceAmt()))
-                .disburseAmt(CommonFormattingUtils.formatAmount(createdFinancing.getDisburseAmt()))
-                .invoices(invoices)
-                .build()
+              buildSimulationAdjustmentEmailPayload(createdFinancing, customer)
             );
           } catch (Exception e) {
           }
@@ -1099,32 +1047,24 @@ public class LoanSubmissionService {
 
 
         try {
-          String city = "", kelurahan = "", kecamatan = "";
-          if (financing.getCustomer() != null) {
-            if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
-              if (financing.getCustomer().getCompany() != null) {
-                city = financing.getCustomer().getCompany().getCity();
-                kelurahan = financing.getCustomer().getCompany().getKelurahan();
-                kecamatan = financing.getCustomer().getCompany().getKecamatan();
-              }
-            } else {
-              if (financing.getCustomer().getPersonal() != null) {
-                city = financing.getCustomer().getPersonal().getCity();
-                kelurahan = financing.getCustomer().getPersonal().getKelurahan();
-                kecamatan = financing.getCustomer().getPersonal().getKecamatan();
-              }
-            }
-          }
-          Optional<MstBranch> mstBranch = mstBranchRepository.findTopLikeBranchNameRawQuery(city, kelurahan, kecamatan);
-          mstBranch.ifPresent(financing::setMstBranch);
-        } catch (Exception ignored) {
+          assignMappedBranch(financing);
+        } catch (Exception exception) {
+          log.warn(
+            "Failed resolving branch mapping for financingHdrCode={}: {}",
+            financing.getFinancingHdrCode(),
+            exception.getMessage()
+          );
         }
 
 
         boolean isAutoASSIGNMENT = false;
         //set auto ASSIGNMENT
         try {
-          List<FinancingHdr> financingHdrs = financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer);
+          List<FinancingHdr> financingHdrs = new ArrayList<>();
+          if (financing.getMstBranch() != null) {
+            financingHdrs.add(financing);
+          }
+          financingHdrs.addAll(financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer));
           for (int t = 0; t < financingHdrs.size(); t++) {
             MstBranch hdrBranch = financingHdrs.get(t).getMstBranch();
 
@@ -1393,6 +1333,81 @@ public class LoanSubmissionService {
       log.error("createLoanSubmission, error {}", e.getMessage());
       throw e;
     }
+  }
+
+  LoanDisburseEmailPayload buildSimulationAdjustmentEmailPayload(
+    FinancingHdrDto financing,
+    Customer customer
+  ) {
+    List<InvoiceEmailPayload> invoices = financing.getDetails().stream()
+      .map(item -> InvoiceEmailPayload.builder()
+        .invoiceNo(item.getInvoice().getCustInvNo())
+        .invoiceAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(item.getInvoice().getInvoiceAmt().doubleValue()))
+        .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+        .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
+        .description(item.getInvoice().getInvoiceDescription())
+        .bouwheerName(financing.getBouwheer().getBouwheerName())
+        .build())
+      .toList();
+
+    double totalFeeAmt = financing.getAdminFeeAmt()
+      + financing.getLegalFeeAmtNett()
+      + financing.getInsuranceFeeAmt()
+      + financing.getOthersFeeAmt()
+      + financing.getProvisionFeeAmt()
+      + financing.getSurveyFeeAmtNett();
+
+    return LoanDisburseEmailPayload.builder()
+      .financingCode(financing.getFinancingHdrCode().toString())
+      .applicationDate(DateTimeUtils.formatToDate(financing.getDisburseDate()))
+      .companyName(customer.getCustName())
+      .phoneNumber(resolveDebtorPhone(customer))
+      .tenor(financing.getTenor())
+      .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
+      .retention(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getRetention()))
+      .financingAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getFinancingAmt()))
+      .totalFeeAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(totalFeeAmt))
+      .invoiceAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getTotalInvoiceAmt()))
+      .disburseAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getDisburseAmt()))
+      .invoices(invoices)
+      .build();
+  }
+
+  String resolveDebtorPhone(Customer customer) {
+    String phone = null;
+    if ("Company".equalsIgnoreCase(customer.getCustTypeCode())) {
+      phone = customerCompanyRepository.findByCustomer(customer)
+        .map(CustomerCompany::getPhone)
+        .orElse(null);
+    } else {
+      phone = customerPersonalRepository.findByCustomer(customer)
+        .map(CustomerPersonal::getPhone)
+        .orElse(null);
+    }
+
+    if (phone == null || phone.isBlank()) {
+      phone = customer.getCustMobilePhone();
+    }
+    if (phone == null || phone.isBlank() || matchesCustomerIdentifier(phone, customer)) {
+      return "";
+    }
+    return phone.trim();
+  }
+
+  private boolean matchesCustomerIdentifier(String phone, Customer customer) {
+    String normalizedPhone = phone.replaceAll("\\D", "");
+    return matchesIdentifier(normalizedPhone, customer.getCustIdNo())
+      || matchesIdentifier(normalizedPhone, customer.getCustExternalCode());
+  }
+
+  private boolean matchesIdentifier(String normalizedPhone, String identifier) {
+    return identifier != null
+      && !identifier.isBlank()
+      && normalizedPhone.equals(identifier.replaceAll("\\D", ""));
+  }
+
+  void assignMappedBranch(FinancingHdr financing) {
+    branchAssignmentResolver.resolve(financing.getCustomer()).ifPresent(financing::setMstBranch);
   }
 
   public ExternalIntegrationLoanSimulationDto externalIntegrationSimulation(

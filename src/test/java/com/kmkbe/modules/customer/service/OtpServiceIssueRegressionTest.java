@@ -21,6 +21,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,6 +35,7 @@ class OtpServiceIssueRegressionTest {
   @Mock private CustomerService customerService;
   @Mock private BCryptPasswordEncoder bcryptEncoder;
   @Mock private OtpGenerator otpGenerator;
+  @Mock private MajorAccountRegistrationNotificationService majorAccountRegistrationNotificationService;
 
   private OtpService service;
 
@@ -46,7 +49,8 @@ class OtpServiceIssueRegressionTest {
       customerService,
       bcryptEncoder,
       clock,
-      otpGenerator
+      otpGenerator,
+      majorAccountRegistrationNotificationService
     );
   }
 
@@ -75,5 +79,33 @@ class OtpServiceIssueRegressionTest {
     assertThat(otpLog.getIsUsed()).isTrue();
     verify(customerService).verifyEmail(customer);
     verify(otpRepository).save(otpLog);
+    verify(majorAccountRegistrationNotificationService).notifyRegistrationCompleted(customer);
+  }
+
+  @Test
+  void expiredSignUpOtpDoesNotNotifyMajorAccount() {
+    Customer customer = Customer.builder()
+      .custCode(UUID.randomUUID())
+      .custName("Debitur")
+      .custEmail("user@example.com")
+      .build();
+    OtpLog otpLog = new OtpLog();
+    otpLog.setOtpCode("123456");
+    otpLog.setEmail("user@example.com");
+    otpLog.setIsUsed(false);
+    otpLog.setExpiredDate(LocalDateTime.ofInstant(
+      Instant.parse("2026-08-18T02:59:59Z"),
+      ZoneId.of("Asia/Jakarta")
+    ));
+    when(customerRepository.findByCustEmailOrderByCustIdDesc("user@example.com"))
+      .thenReturn(Optional.of(customer));
+    when(otpRepository.findTopByEmailAndOtpCodeOrderByDtmCrtDesc("user@example.com", "123456"))
+      .thenReturn(Optional.of(otpLog));
+
+    assertThatThrownBy(() -> service.verifySignUp(
+      new VerifyOtpRequest(null, "user@example.com", "123456", null)
+    )).isInstanceOf(IllegalStateException.class).hasMessage("Otp is Expired");
+
+    verify(majorAccountRegistrationNotificationService, never()).notifyRegistrationCompleted(customer);
   }
 }

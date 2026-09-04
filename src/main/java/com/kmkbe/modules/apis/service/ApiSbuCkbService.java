@@ -195,7 +195,7 @@ public class ApiSbuCkbService {
         .custExternalCode(request.getVendorCode())
         .custName("Customer - " + bouwheerOptional.get().getBouwheerName())
         .custIdNo(request.getVendorCode())
-        .custMobilePhone(request.getVendorCode())
+        .custMobilePhone("")
         .custEmail("tmp." + request.getVendorCode() + "danasakti.com")
         .isEmailValid(false)
         .approvalStatus("OPEN")
