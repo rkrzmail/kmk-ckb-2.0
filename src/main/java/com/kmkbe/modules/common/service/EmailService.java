@@ -202,12 +202,13 @@ public class EmailService {
   }
 
   @Async
-  public void sendNotificationActive(Customer customer) {
+  public void sendNotificationActive(Customer customer,String note) {
     try {
       Map<String, Object> obj = new HashMap<>();
       obj.put("name", customer.getCustName());
       obj.put("id_no", customer.getCustIdNo());
       obj.put("email", customer.getCustEmail());
+      obj.put("note",note);
 
       send(customer.getCustEmail(), obj, M_CUST_ACTIVE);
     } catch (Exception e) {

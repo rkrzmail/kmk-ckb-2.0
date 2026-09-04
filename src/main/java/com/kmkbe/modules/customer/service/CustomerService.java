@@ -439,7 +439,7 @@ public class CustomerService {
     );
 
     if (ApprovalStatus.APPROVED.name().equals(approvalStatus)) {
-      emailService.sendNotificationActive(saved);
+      emailService.sendNotificationActive(saved,request.getApprovalNote());
     } else {
       emailService.sendNotificationRejected(saved, request.getApprovalNote());
     }

@@ -219,6 +219,7 @@ class CustomerServiceIssueRegressionTest {
     ApprovalRequest request = ApprovalRequest.builder()
       .custCode(customer.getCustCode())
       .approvalStatus(ApprovalStatus.APPROVED.name())
+      .approvalNote("TEST")
       .build();
     when(customerRepository.findByCustCode(customer.getCustCode())).thenReturn(Optional.of(customer));
     when(customerRepository.save(customer)).thenReturn(customer);
@@ -227,7 +228,7 @@ class CustomerServiceIssueRegressionTest {
 
     assertThat(customer.isActive()).isTrue();
     assertThat(customer.getApprovalStatus()).isEqualTo(ApprovalStatus.APPROVED.name());
-    verify(emailService).sendNotificationActive(customer);
+    verify(emailService).sendNotificationActive(customer,"TEST");
     verify(emailService, never()).sendNotificationRejected(any(Customer.class), anyString());
     verify(emailService, never()).customerVerification(anyString(), anyString(), anyString(), anyString());
   }
@@ -248,7 +249,7 @@ class CustomerServiceIssueRegressionTest {
     assertThat(customer.isActive()).isFalse();
     assertThat(customer.getApprovalStatus()).isEqualTo(ApprovalStatus.REJECTED.name());
     verify(emailService).sendNotificationRejected(customer, "NPWP tidak sesuai");
-    verify(emailService, never()).sendNotificationActive(any(Customer.class));
+    verify(emailService, never()).sendNotificationActive(any(Customer.class),anyString());
     verify(emailService, never()).customerVerification(anyString(), anyString(), anyString(), anyString());
   }
 
