@@ -256,28 +256,29 @@ public class LoanSubmissionService {
     }
 
     return result;
-//    } catch (Exception e) {
-//      log.error("fetchActiveInvoice, error {}", e.getMessage());
-//      throw e;
-//    }
   }
 
-  public List<DisbursePercentageDto> fetchDisbursePercentage() {
-    try {
-      List<DisbursePercentageDto> result = new ArrayList<>();
-      for (double i = 50.0; i <= 95.0; i += 5.0) {
-        result.add(
-          DisbursePercentageDto.builder()
-            .disbursePercentage(i)
-            .build()
-        );
-      }
+  public List<DisbursePercentageDto> fetchDisbursePercentage(String bowheerCode) {
+    double retention = 95.0;
+    List<DisbursePercentageDto> result = new ArrayList<>();
+    UUID uuid = Optional.ofNullable(bowheerCode)
+      .filter(code -> !code.trim().isEmpty())
+      .map(String::trim)
+      .map(UUID::fromString)
+      .orElse(null);
 
-      return result;
-    } catch (Exception e) {
-      log.error("fetchDisbursePercentage, error {}", e.getMessage());
-      throw e;
+    Optional<Bouwheer> bowheerOptional = bouwheerRepository.findByBouwheerCode(uuid);
+    if (bowheerOptional.isPresent()) {
+      retention = 100 - Double.valueOf(bowheerOptional.get().getMinRetention());
     }
+    for (double i = 50.0; i <= retention; i += 5.0) {
+      result.add(
+              DisbursePercentageDto.builder()
+                      .disbursePercentage(i)
+                      .build()
+      );
+    }
+    return result;
   }
 
   public EstimatedDisburseDto calculateDisburse(
