@@ -192,7 +192,7 @@ class EmailServiceTest {
     when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BRANCH_ASSIGN_MJR", true))
         .thenReturn(templateWithSubject("M_BRANCH_ASSIGN_MJR", "Major {bouwheerName}", "{branchArea}|{companyName}"));
 
-    service.sendNotificationActive(customer);
+    service.sendNotificationActive(customer,"TEST");
     service.sendOtpChangePin(customer, "3333");
     service.sendNotificationLoanDisbursement(customer, loanPayload);
     service.sendNotificationLoanSubmited(customer, loanPayload);
@@ -367,7 +367,7 @@ class EmailServiceTest {
     service.sendOtp2("to@example.com", "1111");
     service.sendOtpChangePin2("to@example.com", "2222");
     service.sendOtpChangePin(customer, "3333");
-    service.sendNotificationActive(customer);
+    service.sendNotificationActive(customer,"TEST");
     service.sendNotificationLoanDisbursement(customer, loanPayload());
     service.sendNotificationLoanSubmited(customer, loanPayload());
     service.sendNotificationPencairan("to@example.com", "Bouwheer", "Jakarta", pencarianPayload());
