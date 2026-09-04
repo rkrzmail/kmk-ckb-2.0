@@ -41,6 +41,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -112,8 +113,25 @@ class LoanSubmissionServiceIssueRegressionTest {
   }
 
   @Test
+  void fetchDisbursePercentageIncludesMinRetention() {
+    when(bouwheerRepository.findByBouwheerCode(any())).thenReturn(Optional.of(
+      Bouwheer.builder().bouwheerName("PT Cipta Krida Bahari").minRetention(10.0F).build()
+    ));
+
+    List<Double> percentages = service.fetchDisbursePercentage(any()).stream()
+      .map(DisbursePercentageDto::getDisbursePercentage)
+      .toList();
+
+    assertThat(percentages).startsWith(50.0);
+    assertThat(percentages).endsWith(90.0);
+    assertThat(percentages).contains(90.0, 90.0);
+  }
+
+  @Test
   void fetchDisbursePercentageIncludesNinetyFivePercent() {
-    List<Double> percentages = service.fetchDisbursePercentage().stream()
+    when(bouwheerRepository.findByBouwheerCode(any())).thenReturn(Optional.empty());
+
+    List<Double> percentages = service.fetchDisbursePercentage(any()).stream()
       .map(DisbursePercentageDto::getDisbursePercentage)
       .toList();
 

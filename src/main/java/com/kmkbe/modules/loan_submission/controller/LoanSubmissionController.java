@@ -15,6 +15,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.repository.query.Param;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -88,9 +89,9 @@ public class LoanSubmissionController {
   }
 
   @GetMapping("/simulations/percentage")
-  public CommonResult<List<DisbursePercentageDto>> getPercentage() {
+  public CommonResult<List<DisbursePercentageDto>> getPercentage(@Param("bowheerCode") String bowheerCode) {
     return new CommonResult<List<DisbursePercentageDto>>().success(
-      loanSubmissionService.fetchDisbursePercentage()
+      loanSubmissionService.fetchDisbursePercentage(bowheerCode)
     );
   }
 
