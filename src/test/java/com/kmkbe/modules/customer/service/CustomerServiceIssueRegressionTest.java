@@ -177,7 +177,7 @@ class CustomerServiceIssueRegressionTest {
 
     assertThat(registered.getIsEmailValid()).isFalse();
     assertThat(registered.isActive()).isFalse();
-    assertThat(registered.getApprovalStatus()).isEqualTo(ApprovalStatus.REJECTED.name());
+    assertThat(registered.getApprovalStatus()).isEqualTo(ApprovalStatus.OPEN.name());
 
     service.verifyEmail(registered);
 

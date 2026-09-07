@@ -96,7 +96,7 @@ public class SignerService {
 
     List<CompletableFuture<DebtorDto>> futures = debtors.stream()
       .map(debtor -> processDebtorAsync(debtor, debtor.getFinancingHdrCode(), username))
-      .collect(Collectors.toList());
+      .toList();
 
     CompletableFuture<Void> allOf = CompletableFuture.allOf(
       futures.toArray(new CompletableFuture[0])
@@ -107,7 +107,7 @@ public class SignerService {
 
       return futures.stream()
         .map(CompletableFuture::join)
-        .collect(Collectors.toList());
+        .toList();
 
     } catch (Exception e) {
       throw new RuntimeException("Error processing debtors", e);
@@ -191,19 +191,12 @@ public class SignerService {
 
               if (vidaRegistration != null) {
                 String registrationStatus = vidaRegistration.get("registrationStatus").toString();
-                switch (registrationStatus) {
-                  case "0":
-                    finalSignhubStatus = "not register";
-                    break;
-                  case "1":
-                    finalSignhubStatus = "pending";
-                    break;
-                  case "2":
-                    finalSignhubStatus = "active";
-                    break;
-                  default:
-                    finalSignhubStatus = "not register";
-                }
+                finalSignhubStatus = switch (registrationStatus) {
+                  case "0" -> "not register";
+                  case "1" -> "pending";
+                  case "2" -> "active";
+                  default -> "not register";
+                };
               }
             }
           }
@@ -237,9 +230,6 @@ public class SignerService {
         Debtor savedDebtor = debtorRepository.save(debtor);
         auditTrailService.record("SIGNER", AuditAction.UPDATE, "Debtor", savedDebtor.getDebtorId(), before, toDebtorAuditData(savedDebtor));
       }
-
-      System.err.println("Error checking registration for NIK: " + identityNo);
-      e.printStackTrace();
     }
   }
 

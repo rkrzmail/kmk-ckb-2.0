@@ -131,7 +131,11 @@ public class CustomerService {
       before = toAuditData(customer);
       if (ApprovalStatus.REJECTED.name().equals(customer.getApprovalStatus())) {
         customer.setIsEmailValid(false);
+        customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
         customer.setActive(false);
+        customer.setApprovalNote(null);
+        customer.setApprovalBy(null);
+        customer.setApprovalAt(null);
       }
     } else {
       // CREATE

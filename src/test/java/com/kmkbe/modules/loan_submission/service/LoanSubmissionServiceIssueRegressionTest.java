@@ -1,10 +1,8 @@
 package com.kmkbe.modules.loan_submission.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.adapter.ApiCsulAdapter;
-import com.kmkbe.core.domain.dto.DisbursePercentageDto;
-import com.kmkbe.core.domain.dto.FinancingDtlDto;
-import com.kmkbe.core.domain.dto.FinancingHdrDto;
-import com.kmkbe.core.domain.dto.InvoiceDto;
+import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.CustomerCompany;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
@@ -19,6 +17,7 @@ import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.service.ExistingCustomerService;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
+import com.kmkbe.modules.product.model.entity.Product;
 import com.kmkbe.modules.product.repository.ProductRepository;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.remote.service.CurrencyRemoteService;
@@ -28,12 +27,15 @@ import com.kmkbe.modules.user.entity.MstBranch;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.math.BigDecimal;
+import java.security.SignatureException;
+import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -75,8 +77,10 @@ class LoanSubmissionServiceIssueRegressionTest {
   @Mock private AuditTrailService auditTrailService;
   @Mock private FinancingDtlRepository financingDtlRepository;
   @Mock private BranchAssignmentResolver branchAssignmentResolver;
-
+  @InjectMocks
   private LoanSubmissionService service;
+  @Mock
+  private Customer customer;
 
   @BeforeEach
   void setUp() {
