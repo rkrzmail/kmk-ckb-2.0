@@ -28,6 +28,8 @@ import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.SignUpRequest;
 import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.model.request.UpdateFapRequest;
+import com.kmkbe.modules.user.entity.MstEmployee;
+import com.kmkbe.modules.user.repository.MstEmployeeRepository;
 import jakarta.mail.MessagingException;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -37,7 +39,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -60,6 +61,7 @@ public class CustomerService {
   private final EmailService emailService;
   private final AuditTrailService auditTrailService;
   private final BouwheerRepository bouwheerRepository;
+  private final MstEmployeeRepository mstEmployeeRepository;
 
   public CustomerService(CustomerRepository customerRepository,
                          BCryptPasswordEncoder bcryptEncoder,
@@ -67,7 +69,7 @@ public class CustomerService {
                          FinancingHdrRepository financingHdrRepository,
                          EmailService emailService,
                          AuditTrailService auditTrailService,
-                         BouwheerRepository bouwheerRepository) {
+                         BouwheerRepository bouwheerRepository, MstEmployeeRepository mstEmployeeRepository) {
     this.customerRepository = customerRepository;
     this.bcryptEncoder = bcryptEncoder;
     this.jdbcTemplate = jdbcTemplate;
@@ -75,6 +77,7 @@ public class CustomerService {
     this.emailService = emailService;
     this.auditTrailService = auditTrailService;
     this.bouwheerRepository = bouwheerRepository;
+    this.mstEmployeeRepository = mstEmployeeRepository;
   }
 
   public Customer create(SignUpRequest request, CustomerType type) {
@@ -169,19 +172,21 @@ public class CustomerService {
     customer.setBouwheer(request.getBouwheerCode());
     customer.setUsrCrt(customer.getCustName());
     customer.setDtmCrt(DateTimeUtils.now());
-    Customer saved = customerRepository.save(customer);
+    Customer newCustomer = customerRepository.save(customer);
 
-    // Send email to AO
-    // To Do
+    // Send email to major account
+    List<MstEmployee>mstEmployees = mstEmployeeRepository.findListEmployeesByRoleCode("mjr_account");
+    mstEmployees.forEach(employee -> emailService.sendRegistrationUser(newCustomer,employee.getEmail()));
+
     auditTrailService.record(
       "CUSTOMER",
       before == null ? AuditAction.CREATE : AuditAction.UPDATE,
       "Customer",
-      saved.getCustCode(),
+      newCustomer.getCustCode(),
       before,
-      toAuditData(saved)
+      toAuditData(newCustomer)
     );
-    return saved;
+    return newCustomer;
   }
 
   public void verifyEmail(Customer customer) {

@@ -48,6 +48,7 @@ public class EmailService {
   private static final String M_CUST_PENCAIRAN = "M_CUST_PENCAIRAN";//(5)
   private static final String M_SIM_LOAN = "M_SIM_LOAN";//(1)
   private static final String M_INV_LINK = "M_INV_LINK";
+  private static final String M_NEW_REGISTER="M_NEW_REGISTER";
 
 
   private final EmailTemplateRepository emailTemplateRepository;
@@ -511,6 +512,25 @@ public class EmailService {
     }
   }
 
+  @Async
+  public void sendRegistrationUser(Customer customer, String mailTo) {
+    try {
+      Map<String, Object> obj = new HashMap<>();
+      obj.put("name", customer.getCustName());
+      obj.put("phoneNumber", customer.getCustMobilePhone());
+      obj.put("email",customer.getCustEmail());
+
+      EmailTemplate template = emailTemplateRepository
+        .findByEmailTemplateCodeAndIsActive(M_NEW_REGISTER, true);
+      template.setMailTo(mailTo);
+      template.setSubjectMail(template.getSubjectMail());
+
+      send(obj,template);
+      log.info("Send register to  {}", mailTo);
+    } catch (Exception e) {
+      log.error("Error send register to user {}", e.getMessage());
+    }
+  }
 
   private void send(
     final String email,
