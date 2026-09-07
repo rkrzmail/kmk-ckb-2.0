@@ -98,7 +98,7 @@ public class CustomerController {
       result.getCompany().setDirectorName("");
     }
 
-    result.setBouwheerName(bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null? UUID.fromString(customer.getBouwheer()) :null)
+    result.setBouwheerName(bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null)
       .map(Bouwheer::getBouwheerName)
       .orElse(null));
 

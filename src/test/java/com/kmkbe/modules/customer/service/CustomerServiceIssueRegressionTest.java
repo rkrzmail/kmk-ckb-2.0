@@ -14,6 +14,7 @@ import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.SignUpRequest;
 import com.kmkbe.modules.customer.model.request.UpdateFapRequest;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
+import com.kmkbe.modules.user.repository.MstEmployeeRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,7 +45,7 @@ class CustomerServiceIssueRegressionTest {
   @Mock private EmailService emailService;
   @Mock private AuditTrailService auditTrailService;
   @Mock private BouwheerRepository bouwheerRepository;
-
+  @Mock private MstEmployeeRepository mstEmployeeRepository;
   private CustomerService service;
 
   @BeforeEach
@@ -56,7 +57,8 @@ class CustomerServiceIssueRegressionTest {
       financingHdrRepository,
       emailService,
       auditTrailService,
-      bouwheerRepository
+      bouwheerRepository,
+      mstEmployeeRepository
     );
   }
 
