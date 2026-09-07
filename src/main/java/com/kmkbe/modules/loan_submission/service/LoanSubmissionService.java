@@ -1214,8 +1214,7 @@ public class LoanSubmissionService {
 
             String mjrEmail = ccEmailBuilder.toString();
             String toEmail = ccEmailBuilder.toString();
-//                        String ccEmail = ccEmailBuilder.toString();
-            log.info("email CMS: {}", ccEmailBuilder.toString());
+            log.info("email CMS: {}", ccEmailBuilder);
 
             String phone = financing.getCustomer().getCustMobilePhone();
             if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {

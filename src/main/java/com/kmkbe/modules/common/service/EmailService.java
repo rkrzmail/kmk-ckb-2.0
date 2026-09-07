@@ -319,30 +319,6 @@ public class EmailService {
     }
   }
 
-//    @Async
-//    public void sendNotificationLoanSubmited(
-//            final Customer customer,
-//            LoanDisburseEmailPayload payload
-//    ) {
-//        try {
-//            Map<String, Object> args = new HashMap<>();
-//            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
-//            if (payloadArgs != null) {
-//                payloadArgs.remove("invoices");
-//                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
-//            }
-//
-//            args.put("email", customer.getCustEmail());
-//            args.put("name", customer.getCustName());
-//            args.put("id_no", customer.getCustIdNo());
-//            args.put("additionalArgs", payloadArgs);
-//
-//            send(customer.getCustEmail(), args, M_CUST_LOAN_SUBMITED);
-//        } catch (Exception e) {
-//            log.error("Error sendNotificationLoanDisbursement {}", e.getMessage());
-//        }
-//    }
-
   @Async
   public void sendNotificationLoanSubmited(
     final Customer customer,
@@ -403,58 +379,6 @@ public class EmailService {
       log.error("Error sendNotificationPencairan {}", e.getMessage());
     }
   }
-
-//    @Async
-//    public void sendNotificationPencairan(
-//            String email,
-//            String bouwheerName,
-//            String branchArea,
-//            PencarianPayload payload
-//    ) {
-//        try {
-//            Map<String, Object> args = new HashMap<>();
-//            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
-//
-//            if (payloadArgs != null) {
-//                payloadArgs.remove("invoices");
-//                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
-//                payloadArgs.remove("invoice_rows");
-//                payloadArgs.put("invoice_rows", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
-//            }
-//
-//            args.put("additionalArgs", payloadArgs);
-//            args.put("bouwheerName", bouwheerName);
-//            args.put("branchArea", branchArea);
-//            args.put("email", email);
-//
-//            final EmailTemplate template = emailTemplateRepository
-//                    .findByEmailTemplateCodeAndIsActive(M_CUST_PENCAIRAN, true);
-//
-//            String subjectMail = template.getSubjectMail().replace("{bouwheerName}", bouwheerName);
-//            template.setSubjectMail(subjectMail);
-//
-//            String bodyEmail = template.getBodyMail();
-//            bodyEmail = bodyEmail.replace("{bouwheerName}", bouwheerName)
-//                    .replace("{companyName}", payloadArgs.get("companyName").toString())
-//                    .replace("{email}", email)
-//                    .replace("{invoices}", payloadArgs.get("invoices").toString())
-//                    .replace("{invoiceAmt}", payloadArgs.get("invoiceAmt").toString())
-//                    .replace("{retention}", payloadArgs.get("retention").toString())
-//                    .replace("{financingAmt}", payloadArgs.get("financingAmt").toString())
-//                    .replace("{totalFeeAmt}", payloadArgs.get("totalFeeAmt").toString())
-//                    .replace("{tenor}", payloadArgs.get("tenor").toString())
-//                    .replace("{financingDueDate}", payloadArgs.get("financingDueDate").toString())
-//                    .replace("{disburseAmt}", payloadArgs.get("disburseAmt").toString());
-//
-//            template.setBodyMail(bodyEmail);
-//
-//            template.setMailTo("tedyaditia047@gmail.com");
-//
-//            send(args, template);
-//        } catch (Exception e) {
-//            log.error("Error sendNotificationPencairan {}", e.getMessage());
-//        }
-//    }
 
   @Async
   public void sendNotificationBranchAssign(
@@ -586,6 +510,7 @@ public class EmailService {
       );
     }
   }
+
 
   private void send(
     final String email,

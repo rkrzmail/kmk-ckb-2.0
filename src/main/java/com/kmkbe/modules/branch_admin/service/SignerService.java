@@ -920,22 +920,6 @@ public class SignerService {
         if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
           Map<String, Object> responseBody = response.getBody();
           List<Map<String, Object>> statusSigning = (List<Map<String, Object>>) responseBody.get("statusSigning");
-
-//                    if (statusSigning != null) {
-//                        for (Map<String, Object> status : statusSigning) {
-//                            if (signing.getDocumentId().equals(status.get("documentId"))) {
-//                                List<Map<String, String>> signers = (List<Map<String, String>>) status.get("signer");
-//                                String newStatus = determineStatusFromSigners(signers);
-//                                if ("signed".equalsIgnoreCase(newStatus) && signing.getVerifDate() == null) {
-//                                    signing.setVerifDate(LocalDateTime.now());
-//                                }
-//                                signing.setStamp(newStatus);
-////                                signing.setDtmUpd(LocalDateTime.now());
-//                                updateFinancingStep(signing.getFinancingHdrCode(), newStatus);
-//                                break;
-//                            }
-//                        }
-//                    }
           if (statusSigning != null) {
             for (Map<String, Object> status : statusSigning) {
               if (signing.getDocumentId().equals(status.get("documentId"))) {
