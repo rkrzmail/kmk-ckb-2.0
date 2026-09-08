@@ -116,6 +116,11 @@ public class CustomerService {
      */
     if (customerByVendor.isPresent()) {
       Customer existingVendor = customerByVendor.get();
+      if (existingVendor.getApprovalStatus().equals("REJECTED")) {
+        log.info("Vendor ID udah digunakan oleh user lain {}  lain: {}", inputEmail,customerByVendor.get().getApprovalStatus());
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Vendor ID sudah terdaftar dengan vendor lain, dengan status "+customerByVendor.get().getApprovalStatus());
+      }
+
       if (!existingVendor.getCustEmail().equals(inputEmail) && Boolean.TRUE.equals(existingVendor.getIsEmailValid())) {
         log.info("Vendor {} gagal update email karena email lama sudah terverifikasi valid", inputVendorCode);
         throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Tidak bisa mengubah email yang sudah terverifikasi!");

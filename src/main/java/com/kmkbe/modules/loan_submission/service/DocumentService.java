@@ -13,6 +13,8 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.UriUtils;
+import com.kmkbe.exception.BusinessException;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
@@ -73,157 +75,18 @@ public class DocumentService {
     }
   }
 
-//    public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
-//            HttpServletRequest httpServletRequest,
-//            Authentication authentication,
-//            PaginationRequest request,
-//            Boolean isFirst
-//    ) throws SignatureException {
-//        try {
-//            if (isFirst != null && isFirst) {
-//                //fetchAndMappingDocVendor(authentication);
-//            }
-//
-//            int pageNo = 0, pageSize = 10;
-//
-//            if (request.getPageNo() != null) {
-//                pageNo = request.getPageNo();
-//            }
-//            if (request.getPageSize() != null) {
-//                pageSize = request.getPageSize();
-//            }
-//
-//            if (pageNo > 0) {
-//                pageNo = pageNo - 1;
-//            }
-//            List<String> fileAllocation = new ArrayList<>();
-//            if (String.valueOf(httpServletRequest.getParameter("owner")).equalsIgnoreCase("debitur")){
-//                fileAllocation = List.of(
-//                        "Legal",
-//                        "Financing"
-//                );
-//            }else{
-//                fileAllocation = List.of(
-//                        "internal",
-//                        "Legal",
-//                        "Financing"
-//                );
-//            }
-//
-//            Page<MstFileType> page = mstFileTypeRepository.findAllByFileAllocationInOrderByFileTypeIdDesc(
-//                    fileAllocation,
-//                    PageRequest.of(
-//                            pageNo,
-//                            pageSize,
-//                            Sort.by("fileTypeId").descending()
-//                    )
-//            );
-//
-//            List<MstFileTypeDto> result = page.map((file) -> {
-//                        MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
-//                        LegalFile legalFile = null;
-//
-//                        try {
-//                            legalFile = legalFileService.fetchByMstFileTypeAndCust(CustomerUtils.authenticateCustomer(authentication), file);
-//                        } catch (Exception e) {
-//                            log.error("fetchByCust, error {}", e.getMessage());
-//                        }
-//
-//                        if (legalFile != null) {
-//                            LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
-//                            legalFileDto.setUploadedDate(legalFile.getDtmUpd());
-//
-//                            // Jika fileTypeCode adalah DOC005 atau DOC006, jangan generate URL
-//                            if (!"DOC005".equals(file.getFileTypeCode()) && !"DOC006".equals(file.getFileTypeCode())) {
-//                                String generatedUrl = UriUtils.fileUlr(
-//                                        httpServletRequest,
-//                                        Math.toIntExact(legalFile.getFileId()),
-//                                        UriUtils.DocType.loan
-//                                );
-//
-//                                if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
-//                                    generatedUrl = legalFile.getFilePath();
-//                                }
-//
-//                                legalFileDto.setFileUrl(generatedUrl);
-//                            } else {
-//                                legalFileDto.setFileUrl(null); // Jangan buat URL
-//                            }
-//
-//                            dto.setLegalFile(legalFileDto);
-//
-
-  /// /                        if (legalFile != null) {
-  /// /                            LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
-  /// /                            legalFileDto.setUploadedDate(legalFile.getDtmUpd());
-  /// /
-  /// /                            String generatedUrl = UriUtils.fileUlr(
-  /// /                                    httpServletRequest,
-  /// /                                    Math.toIntExact(legalFile.getFileId()),
-  /// /                                    UriUtils.DocType.loan
-  /// /                            );
-  /// /
-  /// /                            if (legalFile.getFilePath() != null && legalFile.getFilePath().contains("http")) {
-  /// /                                try {
-  /// /                                    URI uri = new URI(legalFile.getFilePath());
-  /// /                                    uri = new URI("https", UriUtils.getDomainUrl(httpServletRequest), uri.getPath(), uri.getFragment());
-  /// /                                    //generatedUrl = uri.toString();//byapass
-  /// /                                    generatedUrl = legalFile.getFilePath();
-  /// /                                } catch (URISyntaxException e) {
-  /// /                                    generatedUrl = legalFile.getFilePath();
-  /// /                                }
-  /// /                            }
-  /// /
-  /// /                            legalFileDto.setFileUrl(generatedUrl);
-  /// /                            dto.setLegalFile(legalFileDto);
-//                        }
-//
-//                        return dto;
-//                    })
-//                    .toList();
-//
-//            List<MstFileTypeDto> resultSorted = new ArrayList<>();
-//            if (String.valueOf(httpServletRequest.getParameter("owner")).equalsIgnoreCase("debitur")) {
-//                //sorting
-//                for (MstFileTypeDto dto : result) {
-//                    if (dto.getLegalFile()!=null && dto.getLegalFile().getUploadedDate()!=null){
-//                        //siudah updaload
-//                    }else{
-//                        resultSorted.add(dto);
-//                    }
-//                }
-//                for (MstFileTypeDto dto : result) {
-//                    if (dto.getLegalFile()!=null && dto.getLegalFile().getUploadedDate()!=null){
-//                        resultSorted.add(dto);
-//                    }
-//                }
-//            }else{
-//                resultSorted = result;
-//            }
-//
-//            return PaginationResult.<MstFileTypeDto>builder()
-//                    .currentPage(pageNo + 1)
-//                    .totalData(page.getTotalElements())
-//                    .totalPage(page.getTotalPages())
-//                    .list(resultSorted)
-//                    .build();
-//        } catch (Exception e) {
-//            log.error("getAllLoanDocumentRequirement: {}", e.getMessage());
-//            throw e;
-//        }
-//    }
   public PaginationResult<MstFileTypeDto> fetchAllLoanDocumentRequirement(
     HttpServletRequest httpServletRequest,
     Customer customer,
     PaginationRequest request,
     Boolean isFirst
-  ) throws SignatureException {
+  ) {
     try {
       if (isFirst != null && isFirst) {
         //fetchAndMappingDocVendor(authentication);
       }
 
-      List<String> fileAllocation = new ArrayList<>();
+      List<String> fileAllocation;
       if ("debitur".equalsIgnoreCase(String.valueOf(httpServletRequest.getParameter("owner")))) {
         fileAllocation = List.of("Legal", "Financing");
       } else {
@@ -231,7 +94,7 @@ public class DocumentService {
       }
 
       // Fetch ALL data tanpa paging
-      List<MstFileType> allData = mstFileTypeRepository.findAllByFileAllocationInOrderByFileTypeIdDesc(fileAllocation);
+      List<MstFileType> allData = mstFileTypeRepository.findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(fileAllocation, UUID.fromString(customer.getBouwheer()));
 
       // Mapping ke DTO
       List<MstFileTypeDto> result = allData.stream().map((file) -> {
@@ -305,17 +168,11 @@ public class DocumentService {
   ) throws Exception {
     String code = null;
     try {
-      final MstFileType mstFileType = mstFileTypeRepository.findByFileTypeCode(fileTypeCode).orElseThrow(
+      final MstFileType mstFileType = mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode(fileTypeCode, UUID.fromString(customer.getBouwheer())).orElseThrow(
         () -> new IllegalStateException("File type not found")
       );
       final LegalFile existingFile = legalFileService.fetchByMstFileTypeAndCust(customer, mstFileType);
       code = customer.getCustName();
-
-           /* String requireExt = FileUtils.getFileNameExtension(mstFileType.getFileTypeName());
-            if (!StringUtil.isNullOrEmpty(requireExt)) {
-                requireExt = requireExt.toLowerCase();
-            }*/
-
       final String uploadDir = customer.getCustCode() + "/loan_submission";
       final String uploadName = file.getOriginalFilename();
       final String uploadedPath = fileStorageService.save(
@@ -481,7 +338,7 @@ public class DocumentService {
 
         final MstFileType m1;
         Optional<MstFileType> findMst =
-          mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Akta Pendirian");
+          mstFileTypeRepository.findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc("Akta Pendirian", UUID.fromString(customer.getBouwheer()));
         if (findMst.isEmpty()) {
           m1 = MstFileType.builder()
             .fileTypeCode("APN01")
@@ -518,7 +375,7 @@ public class DocumentService {
         }
 
         MstFileType m2;
-        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Akta Perubahan Terakhir Lainnya");
+        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc("Akta Perubahan Terakhir Lainnya",UUID.fromString(customer.getBouwheer()));
         if (findMst.isEmpty()) {
           m2 = MstFileType.builder()
             .fileTypeCode("APTL01")
@@ -557,7 +414,7 @@ public class DocumentService {
         }
 
         MstFileType m3;
-        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Sk Persetujuan Kemenkumham");
+        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc("Sk Persetujuan Kemenkumham",UUID.fromString(customer.getBouwheer()));
         if (findMst.isEmpty()) {
           m3 = MstFileType.builder()
             .fileTypeCode("SKPK01")
@@ -596,7 +453,7 @@ public class DocumentService {
         }
 
         MstFileType m4;
-        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("NPWP");
+        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc("NPWP",UUID.fromString(customer.getBouwheer()));
         if (findMst.isEmpty()) {
           m4 = MstFileType.builder()
             .fileTypeCode("NPWP01")
@@ -636,7 +493,7 @@ public class DocumentService {
         }
 
         MstFileType m5;
-        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("NIB");
+        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc("NIB",UUID.fromString(customer.getBouwheer()));
         if (findMst.isEmpty()) {
           m5 = MstFileType.builder()
             .fileTypeCode("NIB01")
@@ -676,7 +533,7 @@ public class DocumentService {
         }
 
         final MstFileType m6;
-        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("PKP");
+        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc("PKP",UUID.fromString(customer.getBouwheer()));
         if (findMst.isEmpty()) {
           m6 = MstFileType.builder()
             .fileTypeCode("PKP01")
@@ -715,11 +572,11 @@ public class DocumentService {
           legalFileRepository.deleteAll(exists);
         }
 
-        Optional<MstFileType> findMst1 = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("IPS");
+        Optional<MstFileType> findMst1 = mstFileTypeRepository.findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc("IPS",UUID.fromString(customer.getBouwheer()));
         findMst1.ifPresent(mstFileTypeRepository::delete);
 
         final MstFileType m7;
-        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Identitas Pengurus");
+        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc("Identitas Pengurus",UUID.fromString(customer.getBouwheer()));
         if (findMst.isEmpty()) {
           m7 = MstFileType.builder()
             .fileTypeCode("IPS01")
@@ -759,7 +616,7 @@ public class DocumentService {
         }
 
         final MstFileType m8;
-        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Laporan Keuangan");
+        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc("Laporan Keuangan",UUID.fromString(customer.getBouwheer()));
         if (findMst.isEmpty()) {
           m8 = MstFileType.builder()
             .fileTypeCode("LKN01")
@@ -799,7 +656,7 @@ public class DocumentService {
         }
 
         final MstFileType m9;
-        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Ktp Pengurus");
+        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc("Ktp Pengurus",UUID.fromString(customer.getBouwheer()));
         if (findMst.isEmpty()) {
           m9 = MstFileType.builder()
             .fileTypeCode("KPS01")
@@ -843,7 +700,7 @@ public class DocumentService {
         }
 
         final MstFileType m10;
-        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc("Bank Detail");
+        Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc("Bank Detail",UUID.fromString(customer.getBouwheer()));
         if (findMst.isEmpty()) {
           m10 = MstFileType.builder()
             .fileTypeCode("BDL01")
@@ -889,7 +746,7 @@ public class DocumentService {
           }
 
           final MstFileType m11;
-          Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameOrderByFileTypeIdDesc(doc.getDocumentName());
+          Optional<MstFileType> findMst = mstFileTypeRepository.findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc(doc.getDocumentName(),UUID.fromString(customer.getBouwheer()));
           if (findMst.isEmpty()) {
             m11 = MstFileType.builder()
               .fileTypeCode("DOCOTHER_0" + index)
@@ -1054,6 +911,11 @@ public class DocumentService {
     String financingHdrCode
   ) {
     try {
+      Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
+      if (financingHdr.isEmpty()){
+        log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", financingHdrCode);
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81 +" Financing Code");
+      }
       int pageNo = 0;
       int pageSize = 10;
 
@@ -1068,11 +930,12 @@ public class DocumentService {
         pageNo = pageNo - 1;
       }
 
-      Page<MstFileType> page = mstFileTypeRepository.findAllByFileAllocationInOrderByFileTypeIdDesc(
+      Page<MstFileType> page = mstFileTypeRepository.findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(
         List.of("Internal",
           "Legal",
           "Financing"
         ),
+        financingHdr.get().getBouwheer().getBouwheerCode(),
         PageRequest.of(
           pageNo,
           pageSize,
@@ -1082,18 +945,7 @@ public class DocumentService {
 
       List<MstFileTypeDto> result = page.map((file) -> {
           MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
-          LegalFile legalFile = null;
-
-          try {
-            Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
-            if (financingHdr.isPresent()) {
-              legalFile = legalFileService.fetchByMstFileTypeAndCust(financingHdr.get().getCustomer(), file);
-
-            }
-          } catch (Exception e) {
-            log.error("fetchByCust, error {}", e.getMessage());
-          }
-
+          LegalFile legalFile = legalFileService.fetchByMstFileTypeAndCust(financingHdr.get().getCustomer(), file);
 
           if (legalFile != null) {
             LegalFileDto legalFileDto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);

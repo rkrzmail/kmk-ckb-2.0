@@ -156,10 +156,11 @@ public class AgreementService {
   public void upload(
     MstUser user,
     MultipartFile multipartFile,
-    String agreementCode
+    String agreementCode,
+    String bouwheerCode
   ) throws Exception {
     try {
-      final MstFileType mstFileType = mstFileTypeRepository.findByFileTypeCode("AGGREMENT01")
+      final MstFileType mstFileType = mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(bouwheerCode))
         .orElseThrow(
           () -> new IllegalArgumentException("File type not found")
         );

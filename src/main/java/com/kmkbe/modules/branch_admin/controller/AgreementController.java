@@ -29,85 +29,86 @@ import java.security.SignatureException;
 @RestController
 @RequestMapping("/api/v1/cwr/agreement")
 @Tag(
-        name = "Persetujuan Kredit Endpoints",
-        description = "Berisi endpoints data persetujuan/kelayakan kredit debitur"
+  name = "Persetujuan Kredit Endpoints",
+  description = "Berisi endpoints data persetujuan/kelayakan kredit debitur"
 )
 @RequiredArgsConstructor
 public class AgreementController {
-    private final AgreementService agreementService;
-    private final FinancingRemoteService financingRemoteService;
-    private final FinancingHdrService financingHdrService;
-    private final FinancingHdrRepository financingHdrRepository;
-    private final CurrentUserService currentUserService;
+  private final AgreementService agreementService;
+  private final FinancingRemoteService financingRemoteService;
+  private final FinancingHdrService financingHdrService;
+  private final FinancingHdrRepository financingHdrRepository;
+  private final CurrentUserService currentUserService;
 
-    @GetMapping("/list/{cwrCode}/{financingHdrCode}")
-    public CommonResult<PaginationResult<AgreementDto>> getCwrDisbursement(
-            @PathVariable("cwrCode") String cwrCode,
-            @PathVariable("financingHdrCode") String financingHdrCode,
-            PaginationRequest request
-    ) throws JsonProcessingException, SignatureException {
+  @GetMapping("/list/{cwrCode}/{financingHdrCode}")
+  public CommonResult<PaginationResult<AgreementDto>> getCwrDisbursement(
+    @PathVariable("cwrCode") String cwrCode,
+    @PathVariable("financingHdrCode") String financingHdrCode,
+    PaginationRequest request
+  ) throws JsonProcessingException, SignatureException {
 
-        currentUserService.authenticatedInternalUser();
-        return new CommonResult<PaginationResult<AgreementDto>>().success(
-                agreementService.list(
-                        cwrCode,
-                        financingHdrCode,
-                        request
-                )
-        );
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<PaginationResult<AgreementDto>>().success(
+      agreementService.list(
+        cwrCode,
+        financingHdrCode,
+        request
+      )
+    );
+  }
+
+  @GetMapping("/inquiry")
+  public CommonResult<InquiryAgreementDto> getInquiryAgreement(
+    @RequestParam("agreementNo") String agreementNo,
+    String cwrCode
+  ) throws JsonProcessingException, SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<InquiryAgreementDto>().success(
+      agreementService.inquiryAgreementCwr(
+        cwrCode,
+        agreementNo
+      )
+    );
+  }
+
+  @PostMapping("/inquiry/create")
+  public CommonResult<Object> createInquiryAgreement(
+    @Valid @RequestBody CreateInquiryAgreementRequest request
+  ) throws Exception {
+    agreementService.createInquiryAgreement(currentUserService.internalUser(), request);
+    return new CommonResult<>().success(
+      null
+    );
+  }
+
+  @Transactional
+  @PostMapping(
+    value = "/upload/contract",
+    consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+  )
+  public CommonResult<Object> uploadContact(
+    @Valid @RequestParam("financingHdrCode") String financingHdrCode,
+    @Valid @RequestPart MultipartFile file
+
+  ) throws Exception {
+    FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+    Agreement agreement = agreementService.findByFinancingHdr(financingHdr);
+    if (agreement == null) {
+      throw new IllegalStateException("Agreement Not Found with given argument");
     }
 
-    @GetMapping("/inquiry")
-    public CommonResult<InquiryAgreementDto> getInquiryAgreement(
-            @RequestParam("agreementNo") String agreementNo,
-            String cwrCode
-    ) throws JsonProcessingException, SignatureException {
-        currentUserService.authenticatedInternalUser();
-        return new CommonResult<InquiryAgreementDto>().success(
-                agreementService.inquiryAgreementCwr(
-                        cwrCode,
-                        agreementNo
-                )
-        );
-    }
+    agreementService.upload(
+      currentUserService.internalUser(),
+      file,
+      agreement.getAgreementCode(),
+      String.valueOf(financingHdr.getBouwheer().getBouwheerCode())
+    );
 
-    @PostMapping("/inquiry/create")
-    public CommonResult<Object> createInquiryAgreement(
-            @Valid @RequestBody CreateInquiryAgreementRequest request
-    ) throws Exception {
-        agreementService.createInquiryAgreement(currentUserService.internalUser(), request);
-        return new CommonResult<>().success(
-                null
-        );
-    }
-
-    @Transactional
-    @PostMapping(
-            value = "/upload/contract",
-            consumes = MediaType.MULTIPART_FORM_DATA_VALUE
-    )
-    public CommonResult<Object> uploadContact(
-            @Valid @RequestParam("financingHdrCode") String financingHdrCode,
-            @Valid @RequestPart MultipartFile file
-
-    ) throws Exception {
-        FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
-        Agreement agreement = agreementService.findByFinancingHdr(financingHdr);
-        if (agreement == null) {
-            throw new IllegalStateException("Agreement Not Found with given argument");
-        }
-
-        agreementService.upload(
-                currentUserService.internalUser(),
-                file,
-                agreement.getAgreementCode()
-        );
-
-        final UpdateFinancingStatusRequest updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
-                .financingCode(financingHdrCode)
-                .status(UpdateFinancingStatusRequest.Status.Approved)
-                .vendorCode(financingHdr.getCustomer().getCustExternalCode())
-                .build();
+    final UpdateFinancingStatusRequest updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
+      .financingCode(financingHdrCode)
+      .status(UpdateFinancingStatusRequest.Status.Approved)
+      .vendorCode(financingHdr.getCustomer().getCustExternalCode())
+      .build();
 
        /* try {
             //akan dicobal teruis di  shcedule samap 200
@@ -115,27 +116,27 @@ public class AgreementController {
                     updateFinancingStatusRequest
             );
         } catch (Exception ignored) {  }*/
-        boolean bypass = true;
-        if (!bypass) {
-            //gagal kalo api bermsalah
-            financingRemoteService.updateFinancingStatus(
-                    updateFinancingStatusRequest
-            );
-        }
-
-
-        //Branch admin melakukan upload dokumen perjanjian kerjasama
-        financingHdr.setFinancingStatus("INPROCESS");
-        financingHdr.setFinancingStep("SIGNED");//SIGNING
-        financingHdrRepository.save(financingHdr);
-
-        // Notify Bouwheer/CKB only after the contract has been uploaded successfully.
-        agreementService.sendBouwheerPaymentNotification(financingHdr);
-        agreementService.sendDebtorDisbursementNotification(financingHdr);
-       //sebelunya auto assing
-
-        return new CommonResult<>().success(
-                null
-        );
+    boolean bypass = true;
+    if (!bypass) {
+      //gagal kalo api bermsalah
+      financingRemoteService.updateFinancingStatus(
+        updateFinancingStatusRequest
+      );
     }
+
+
+    //Branch admin melakukan upload dokumen perjanjian kerjasama
+    financingHdr.setFinancingStatus("INPROCESS");
+    financingHdr.setFinancingStep("SIGNED");//SIGNING
+    financingHdrRepository.save(financingHdr);
+
+    // Notify Bouwheer/CKB only after the contract has been uploaded successfully.
+    agreementService.sendBouwheerPaymentNotification(financingHdr);
+    agreementService.sendDebtorDisbursementNotification(financingHdr);
+    //sebelunya auto assing
+
+    return new CommonResult<>().success(
+      null
+    );
+  }
 }

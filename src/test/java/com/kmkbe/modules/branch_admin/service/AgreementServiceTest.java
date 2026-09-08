@@ -91,7 +91,7 @@ class AgreementServiceTest {
 
     private ObjectMapper objectMapper;
     private AgreementService service;
-
+    private String uuid = String.valueOf(UUID.randomUUID());
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();
@@ -216,13 +216,13 @@ class AgreementServiceTest {
         MultipartFile file = new MockMultipartFile("file", "agreement.pdf", "application/pdf", "pdf".getBytes());
         Agreement agreement = agreementWithFinancing();
         MstFileType fileType = MstFileType.builder().fileTypeCode("AGGREMENT01").build();
-        when(mstFileTypeRepository.findByFileTypeCode("AGGREMENT01")).thenReturn(Optional.of(fileType));
+        when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(uuid))).thenReturn(Optional.of(fileType));
         when(agreementRepository.findTopByAgreementCodeOrderByAgreementId("AGR001")).thenReturn(Optional.of(agreement));
         when(agreementFileRepository.findTopByAgreementOrderByAgreementFileId(agreement)).thenReturn(Optional.empty());
         when(fileStorageService.save(eq(file), eq(CUSTOMER_CODE + "/agreement"), eq("AGGREMENT01_agreement.pdf"), eq(null)))
                 .thenReturn("/root/uploads/customer/agreement/AGGREMENT01_agreement.pdf");
 
-        service.upload(user, file, "AGR001");
+        service.upload(user, file, "AGR001", uuid);
 
         ArgumentCaptor<AgreementFile> captor = ArgumentCaptor.forClass(AgreementFile.class);
         verify(agreementFileRepository).save(captor.capture());
@@ -240,13 +240,13 @@ class AgreementServiceTest {
         Agreement agreement = agreementWithFinancing();
         MstFileType fileType = MstFileType.builder().fileTypeCode("AGGREMENT01").build();
         AgreementFile existing = AgreementFile.builder().agreementFileId(1L).fileName("old.pdf").build();
-        when(mstFileTypeRepository.findByFileTypeCode("AGGREMENT01")).thenReturn(Optional.of(fileType));
+        when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(uuid))).thenReturn(Optional.of(fileType));
         when(agreementRepository.findTopByAgreementCodeOrderByAgreementId("AGR001")).thenReturn(Optional.of(agreement));
         when(agreementFileRepository.findTopByAgreementOrderByAgreementFileId(agreement)).thenReturn(Optional.of(existing));
         when(fileStorageService.save(eq(file), eq(CUSTOMER_CODE + "/agreement"), eq("AGGREMENT01_new.pdf"), eq(null)))
                 .thenReturn("/root/uploads/customer/agreement/AGGREMENT01_new.pdf");
 
-        service.upload(user, file, "AGR001");
+        service.upload(user, file, "AGR001", uuid);
 
         verify(agreementFileRepository).save(existing);
         assertThat(existing.getFileName()).isEqualTo("AGGREMENT01_new.pdf");
@@ -258,9 +258,9 @@ class AgreementServiceTest {
     void uploadThrowsForMissingFileTypeAgreementAndFinancing() {
         MultipartFile file = new MockMultipartFile("file", "agreement.pdf", "application/pdf", "pdf".getBytes());
         MstUser user = MstUser.builder().username("uploader").build();
-        when(mstFileTypeRepository.findByFileTypeCode("AGGREMENT01")).thenReturn(Optional.empty());
+        when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(uuid))).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.upload(user, file, "AGR001"))
+        assertThatThrownBy(() -> service.upload(user, file, "AGR001", uuid))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("File type not found");
     }
@@ -270,17 +270,17 @@ class AgreementServiceTest {
         MultipartFile file = new MockMultipartFile("file", "agreement.pdf", "application/pdf", "pdf".getBytes());
         MstUser user = MstUser.builder().username("uploader").build();
         MstFileType fileType = MstFileType.builder().fileTypeCode("AGGREMENT01").build();
-        when(mstFileTypeRepository.findByFileTypeCode("AGGREMENT01")).thenReturn(Optional.of(fileType));
+        when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(uuid))).thenReturn(Optional.of(fileType));
         when(agreementRepository.findTopByAgreementCodeOrderByAgreementId("AGR404")).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.upload(user, file, "AGR404"))
+        assertThatThrownBy(() -> service.upload(user, file, "AGR404", uuid))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Agreement not found");
 
         Agreement agreementWithoutFinancing = Agreement.builder().agreementCode("AGRNOFIN").build();
         when(agreementRepository.findTopByAgreementCodeOrderByAgreementId("AGRNOFIN")).thenReturn(Optional.of(agreementWithoutFinancing));
         when(agreementFileRepository.findTopByAgreementOrderByAgreementFileId(agreementWithoutFinancing)).thenReturn(Optional.empty());
-        assertThatThrownBy(() -> service.upload(user, file, "AGRNOFIN"))
+        assertThatThrownBy(() -> service.upload(user, file, "AGRNOFIN",uuid))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Agreement Financing not found");
     }
@@ -406,7 +406,7 @@ class AgreementServiceTest {
     }
 
     @Test
-    void contractUploadSendsBouwheerPaymentNotificationToConfiguredCkbPics() throws Exception {
+    void contractUploadSendsBouwheerPaymentNotificationToConfiguredCkbPics() {
         FinancingHdr financingHdr = financingHdr();
         financingHdr.setTenor(30L);
         financingHdr.setDisburseDate(LocalDateTime.of(2026, 8, 15, 10, 0));
@@ -505,7 +505,7 @@ class AgreementServiceTest {
     }
 
     @Test
-    void privateHelpersAreCovered() throws Exception {
+    void privateHelpersAreCovered(){
         stubBank();
         Object bank = ReflectionTestUtils.invokeMethod(service, "findCsulBank");
         assertThat(bank).isInstanceOf(Map.class);
