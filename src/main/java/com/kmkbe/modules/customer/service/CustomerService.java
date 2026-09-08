@@ -33,6 +33,7 @@ import com.kmkbe.modules.user.repository.MstEmployeeRepository;
 import jakarta.mail.MessagingException;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
+import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Root;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -115,6 +116,11 @@ public class CustomerService {
      */
     if (customerByVendor.isPresent()) {
       Customer existingVendor = customerByVendor.get();
+      if (existingVendor.getApprovalStatus().equals("REJECTED")) {
+        log.info("Vendor ID udah digunakan oleh user lain {}  lain: {}", inputEmail,customerByVendor.get().getApprovalStatus());
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Vendor ID sudah terdaftar dengan vendor lain, dengan status "+customerByVendor.get().getApprovalStatus());
+      }
+
       if (!existingVendor.getCustEmail().equals(inputEmail) && Boolean.TRUE.equals(existingVendor.getIsEmailValid())) {
         log.info("Vendor {} gagal update email karena email lama sudah terverifikasi valid", inputVendorCode);
         throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Tidak bisa mengubah email yang sudah terverifikasi!");
@@ -340,8 +346,13 @@ public class CustomerService {
     Pageable pageable = PageableUtil.createPageRequest(request, request.getPageSize(), request.getPageNo(),
       sortBy, request.getSortType());
 
-    Page<Customer> page = customerRepository.findAll((Root<Customer> root, CriteriaQuery<?> query, CriteriaBuilder builder) ->
-      builder.and(builder.like(root.get(request.getSearchBy()), '%' + request.getSearchValue() + '%')), pageable);
+    Page<Customer> page = customerRepository.findAll((Root<Customer> root, CriteriaQuery<?> query, CriteriaBuilder builder) -> {
+       Expression<String> lowerColumn = builder.lower(root.get(request.getSearchBy()));
+       String searchPattern = "%" + request.getSearchValue().toLowerCase() + "%";
+       return builder.and(
+        builder.like(lowerColumn, searchPattern)
+      );
+    }, pageable);
 
 
     List<CustomerResponse> responses = page.getContent().stream().map(item -> {

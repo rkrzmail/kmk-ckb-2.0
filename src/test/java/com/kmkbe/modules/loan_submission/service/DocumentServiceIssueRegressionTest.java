@@ -55,9 +55,11 @@ class DocumentServiceIssueRegressionTest {
 
   @Test
   void uploadLoanDocumentUsesOriginalFilenameForDisplayAndStorageRequest() throws Exception {
+    String uuid = String.valueOf(UUID.randomUUID());
     Customer customer = Customer.builder()
       .custCode(UUID.randomUUID())
       .custName("Debitur")
+      .bouwheer(uuid)
       .build();
     MstFileType fileType = MstFileType.builder()
       .fileTypeCode("DOC001")
@@ -73,7 +75,7 @@ class DocumentServiceIssueRegressionTest {
     dto.setFileId(99L);
     dto.setFileName("invoice asli.pdf");
 
-    when(mstFileTypeRepository.findByFileTypeCode("DOC001")).thenReturn(Optional.of(fileType));
+    when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("DOC001", UUID.fromString(uuid))).thenReturn(Optional.of(fileType));
     when(legalFileService.fetchByMstFileTypeAndCust(customer, fileType)).thenReturn(null);
     when(fileStorageService.save(eq(file), eq(customer.getCustCode() + "/loan_submission"), eq("invoice asli.pdf"), isNull()))
       .thenReturn(customer.getCustCode() + "/loan_submission");

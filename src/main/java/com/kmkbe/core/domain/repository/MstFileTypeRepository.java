@@ -9,9 +9,10 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface MstFileTypeRepository extends JpaRepository<MstFileType, String>, JpaSpecificationExecutor<MstFileType> {
-    Optional<MstFileType> findByFileTypeCode(String code);
+  Optional<MstFileType> findByFileTypeCodeAndBouwheerCode(String code,UUID bouwheerCode);
 
     Optional<List<MstFileType>> findAllByIsMandatory(Boolean isMandatory);
 
@@ -19,13 +20,14 @@ public interface MstFileTypeRepository extends JpaRepository<MstFileType, String
         return findAllByIsMandatory(true).orElse(new ArrayList<>());
     }
 
-    Optional<MstFileType> findTopByFileTypeNameOrderByFileTypeIdDesc(String fileTypeName);
+    Optional<MstFileType> findTopByFileTypeNameAndBouwheerCodeOrderByFileTypeIdDesc(String fileTypeName, UUID bouwheerCode);
 
-    Page<MstFileType> findAllByFileAllocationInOrderByFileTypeIdDesc(
+    Page<MstFileType> findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(
             List<String> fileAllocation,
+            UUID bouwheerCode,
             Pageable pageable
     );
 
-    List<MstFileType> findAllByFileAllocationInOrderByFileTypeIdDesc(List<String> fileAllocation);
+    List<MstFileType> findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(List<String> fileAllocation, UUID bouwheerCode);
 
 }

@@ -12,6 +12,7 @@ import java.util.UUID;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DetailCwrDto {
+    private String financingHdrCode;
     private String cwrCode;
     private Date cwrStartDate;
     private Date cwrEndDate;
@@ -26,5 +27,6 @@ public class DetailCwrDto {
     private String custName;
     private String custEmail;
     private BigDecimal financingAmt;
+    private String bowheerName;
 
 }

@@ -43,10 +43,4 @@ public class ProductController {
         return new CommonResult<List<ProductDto>>()
                 .success(productService.fetchAllActive());
     }
-
-//    @GetMapping("/send-email")
-//    public String debugEmail() {
-//        inquiryDisburseService.debugSendEmail();
-//        return "Debug email sent";
-//    }
 }
