@@ -129,6 +129,7 @@ public class CwrService {
         .orElseThrow(() -> new IllegalStateException("Financing not found or not valid"));
 
       return DetailCwrDto.builder()
+        .financingHdrCode(financingHdrCode)
         .cwrCode(cwr.getCwrCode())
         .cwrStartDate(Utils.fromInstant(cwr.getCwrStartDate()))
         .cwrEndDate(Utils.fromInstant(cwr.getCwrEndDate()))
@@ -143,6 +144,7 @@ public class CwrService {
         .custName(customer.getCustName())
         .custEmail(customer.getCustEmail())
         .financingAmt(BigDecimal.valueOf(financingHdr.getFinancingAmt()))
+        .bowheerName(financingHdr.getBouwheer().getBouwheerName())
         .build();
     } catch (Exception e) {
       log.error("detail: error {}", e.getMessage());
