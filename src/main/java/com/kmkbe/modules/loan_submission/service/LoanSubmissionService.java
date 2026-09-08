@@ -749,15 +749,18 @@ public class LoanSubmissionService {
     final EstimatedDisburseDto calculateDisburse = calculateDisburse(customer, simulation);
 
     if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
-      throw new IllegalStateException("Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", calculateDisburse.getEstimatedDisburseAmount());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81,"Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
         "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
     }
 
     // Ensure calculateDisburse and its nested value are not null before checking doubleValue()
     if (calculateDisburse.getFinancingAmount().doubleValue() < 50000000) {
-      throw new IllegalStateException("Untuk melanjutkan pengajuan silahkan tambahkan jumlah invoice yang ingin " +
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", calculateDisburse.getFinancingAmount());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81,"Untuk melanjutkan pengajuan silahkan tambahkan jumlah invoice yang ingin " +
         "diajukan hingga mencapai minimal Rp 50.000.000");
     }
+
     final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
       .financingAmount(calculateDisburse.getFinancingAmount())
       .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
