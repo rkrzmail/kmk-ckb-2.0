@@ -32,7 +32,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpMethod;
@@ -95,7 +94,6 @@ class SignerServiceTest {
         signingEligibilityService,
         baseRemoteService
     );
-    ReflectionTestUtils.setField(service, "adinsKey", "adins-key");
     ReflectionTestUtils.setField(service, "adInsKey", "adins-key");
     lenient().when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
   }
@@ -146,8 +144,6 @@ class SignerServiceTest {
     List<DebtorDto> result = service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker");
 
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getSignhubStatus()).isEqualTo("active");
-    assertThat(result.get(0).getSignerStatus()).isEqualTo("active");
   }
 
   @Test

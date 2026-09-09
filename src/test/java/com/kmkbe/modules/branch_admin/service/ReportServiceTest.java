@@ -310,13 +310,13 @@ class ReportServiceTest {
     when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
     when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class)))
         .thenReturn(PaginationResult.<PostedInvoiceDto>builder().list(List.of(postedInvoice())).build());
-    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
+    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report-dmp.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     byte[] result = service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM");
 
     assertThat(result).isEqualTo("pdf".getBytes());
     ArgumentCaptor<Map> paramsCaptor = ArgumentCaptor.forClass(Map.class);
-    verify(jasperReportRenderer).renderToPdf(eq("/Reports/main_report.jasper"), paramsCaptor.capture());
+    verify(jasperReportRenderer).renderToPdf(eq("/Reports/main_report-dmp.jasper"), paramsCaptor.capture());
     assertThat(paramsCaptor.getValue()).containsEntry("NamaBranchManager", "BM");
     assertThat(paramsCaptor.getValue()).containsEntry("AgrmntNo", "AGR-CODE");
     assertThat(paramsCaptor.getValue()).containsKey("tableDataSource");
@@ -372,7 +372,7 @@ class ReportServiceTest {
     when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
     when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class)))
         .thenReturn(PaginationResult.<PostedInvoiceDto>builder().list(List.of()).build());
-    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
+    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report-dmp.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     byte[] result = service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM");
 
@@ -462,7 +462,7 @@ class ReportServiceTest {
     when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
     when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class)))
         .thenReturn(PaginationResult.<PostedInvoiceDto>builder().list(List.of(postedInvoiceWithNullFields())).build());
-    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
+    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report-dmp.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     assertThat(service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM")).isEqualTo("pdf".getBytes());
   }
@@ -494,7 +494,7 @@ class ReportServiceTest {
     when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
     when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class)))
         .thenReturn(PaginationResult.<PostedInvoiceDto>builder().list(null).build());
-    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
+    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report-dmp.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     assertThat(service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM")).isEqualTo("pdf".getBytes());
   }
@@ -525,7 +525,7 @@ class ReportServiceTest {
     FinancingHdr financingHdr = financingHdr();
     when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
     when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class))).thenReturn(null);
-    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
+    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report-dmp.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     assertThat(service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM")).isEqualTo("pdf".getBytes());
   }

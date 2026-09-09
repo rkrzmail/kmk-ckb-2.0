@@ -58,12 +58,12 @@ public class SignerService {
   private final String downloadDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/downloadDocument";
   private final String checkDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/checkStatusSigning";
   private final BaseRemoteService baseRemoteService;
-  @Value("${csul.confins.adinskey}")
-  private String adinsKey;
-
 
   @Value("${csul.confins.adinskey}")
   private String adInsKey;
+
+  @Value("${csul.confins.mou.fwd}")
+  public String confinsMouFwd;
 
   public PaginationResult<AssignmentDto> assignmentListGroupByCustomer(
     HttpServletRequest httpServletRequest,
@@ -71,9 +71,6 @@ public class SignerService {
   ) throws SignatureException {
     PaginationResult<AssignmentDto> originalResult =
       assignmentSubmissionService.assignmentList(httpServletRequest, request);
-
-//        List<AssignmentDto> originalList = new ArrayList<>(originalResult.getList());
-
     Map<UUID, AssignmentDto> grouped = originalResult.getList().stream()
       .collect(Collectors.toMap(
         AssignmentDto::getCustCode,
@@ -245,13 +242,13 @@ public class SignerService {
       signerRequestBody.put("RequestDateTime", LocalDate.now().toString());
 
       HttpHeaders headers = new HttpHeaders();
-      headers.set("AdInsKey", adinsKey);
+      headers.set("AdInsKey", adInsKey);
       headers.setContentType(MediaType.APPLICATION_JSON);
 
       HttpEntity<Map<String, String>> signerEntity = new HttpEntity<>(signerRequestBody, headers);
 
       ResponseEntity<Map> signerResponse = restTemplate.exchange(
-        "http://172.21.10.149:8083/mou_getsigner.php",
+        baseRemoteService.Mou_GetSigner_forward(),
         HttpMethod.POST,
         signerEntity,
         Map.class
@@ -274,7 +271,6 @@ public class SignerService {
       }
     } catch (Exception e) {
       debtorDto.setSignerStatus("not active");
-      System.err.println("Error checking signer status for: " + debtorDto.getKaryawanName());
       e.printStackTrace();
     }
   }
@@ -719,9 +715,9 @@ public class SignerService {
       ExternalApiResponse response = callExternalApi(request);
 
       List<String> externalSigners = response.getReturnObject().stream()
-        .map(signer -> signer.getSignerName())
+        .map(ExternalApiResponse.SignerData::getSignerName)
         .filter(Objects::nonNull)
-        .collect(Collectors.toList());
+        .toList();
 
       signerCache.put(cacheKey, externalSigners);
 
@@ -1079,6 +1075,7 @@ public class SignerService {
   }
 
   private record FinancingSigningAuditData(UUID financingHdrCode, String financingStatus, String financingStep) {
+
   }
 
   public List<DebtorDto> checkSignerDanasakti(String financingHdrCode, String username) {
@@ -1106,7 +1103,7 @@ public class SignerService {
       allOf.join();
       return futures.stream()
         .map(CompletableFuture::join)
-        .collect(Collectors.toList());
+        .toList();
 
     } catch (Exception e) {
       throw new RuntimeException("Error processing debtors", e);
