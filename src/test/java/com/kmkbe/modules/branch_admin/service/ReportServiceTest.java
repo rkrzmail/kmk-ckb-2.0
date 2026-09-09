@@ -36,6 +36,7 @@ import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.VisitorRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.ExternalApiService;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
@@ -310,7 +311,7 @@ class ReportServiceTest {
     when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
     when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class)))
         .thenReturn(PaginationResult.<PostedInvoiceDto>builder().list(List.of(postedInvoice())).build());
-    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report-dmp.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
+    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     byte[] result = service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM");
 
@@ -372,7 +373,7 @@ class ReportServiceTest {
     when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
     when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class)))
         .thenReturn(PaginationResult.<PostedInvoiceDto>builder().list(List.of()).build());
-    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report-dmp.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
+    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     byte[] result = service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM");
 
@@ -462,7 +463,7 @@ class ReportServiceTest {
     when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
     when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class)))
         .thenReturn(PaginationResult.<PostedInvoiceDto>builder().list(List.of(postedInvoiceWithNullFields())).build());
-    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report-dmp.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
+    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     assertThat(service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM")).isEqualTo("pdf".getBytes());
   }
@@ -494,7 +495,7 @@ class ReportServiceTest {
     when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
     when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class)))
         .thenReturn(PaginationResult.<PostedInvoiceDto>builder().list(null).build());
-    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report-dmp.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
+    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     assertThat(service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM")).isEqualTo("pdf".getBytes());
   }
@@ -525,7 +526,7 @@ class ReportServiceTest {
     FinancingHdr financingHdr = financingHdr();
     when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
     when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class))).thenReturn(null);
-    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report-dmp.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
+    when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     assertThat(service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM")).isEqualTo("pdf".getBytes());
   }
@@ -759,6 +760,9 @@ class ReportServiceTest {
   private static Agreement agreement() {
     FinancingHdr financingHdr = new FinancingHdr();
     financingHdr.setFinancingHdrCode(FINANCING_HDR_CODE);
+    financingHdr.setBouwheer(Bouwheer.builder()
+        .picName("TEST")
+      .build());
     Cwr cwr = cwr("JKT");
     cwr.setCwrCode("CWR001");
     return Agreement.builder()

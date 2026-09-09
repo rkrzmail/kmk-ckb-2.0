@@ -1,12 +1,12 @@
 package com.kmkbe.modules.loan_submission.service;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.remote.request.InquiryAgreementRemoteRequest;
 import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
-import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.helpers.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
@@ -42,88 +42,59 @@ public class FinancingService {
   }
 
   public void recallApprovalStatus() {
-    //find all aggremmnet with flag false or null
-    List<Agreement> list = agreementRepository.viewApprovalStatusNoPending();//viewApprovalStatusPending();
+    log.info("Find all agreement from confins");
+    List<Agreement> list = agreementRepository.viewApprovalStatusNoPending();
     if (list != null && !list.isEmpty()) {
       for (Agreement agreement : list) {
-        UpdateFinancingStatusRequest updateFinancingStatusRequest = null;
         try {
-          updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
-            .vendorCode(agreement.getFinancingHdr().getCustomer().getCustExternalCode())
-            .financingCode(agreement.getFinancingHdr().getFinancingHdrCode().toString())
-            .status(UpdateFinancingStatusRequest.Status.Approved)
-            .build();
-        } catch (Exception ignored) {
-        }
-        try {
-          //stop bila sudah 200
-          //financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
-          //agreement.setApprovalFlag("true");
-        } catch (Exception ignored) {
-        }
-
-        try {
+          log.info("Process update agreement {} ",agreement);
           agreement = updateFromConfin(agreement);
-        } catch (Exception ignored) {
-        }
 
-        try {
+          log.info("Process update agreement Golive {} ",agreement);
           updateFinStatusLiveIfGoLive(agreement);
-        } catch (Exception ignored) {
-        }
 
-        try {
           //stop bila saudha disbur(di log disb ada)
+          log.info("Process update agreement {} ",agreement);
           List<DisbursementLog> disbursementLogs = disbursementLogRepository.findAllByAgreement(agreement);
           if (disbursementLogs.isEmpty()) {
+            log.info("Inquiry disbursement log agreement {} ",agreement);
             inquiryDisburseService.inquiryDisburseAuto(agreement);
-            //call api sbu inquiryDisburse
-
-
           }
-        } catch (Exception ignored) {
-        }
-
-
-        try {
+          log.info("Update agreement {} ",agreement);
           agreementRepository.save(agreement);
         } catch (Exception ignored) {
+          log.info("Error process updatebn to confins {} ",agreement);
           ignored.printStackTrace();
         }
       }
-      System.out.println("");
     }
   }
 
-  public Agreement updateFromConfin(Agreement agreement) {
+  public Agreement updateFromConfin(Agreement agreement) throws JsonProcessingException {
+    log.info("Process inquiry agreement to confins {} ", agreement);
     final List<InquiryAgreementCwrDto> data;
-    try {
-      BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreementByNoAgreement(
-        InquiryAgreementRemoteRequest.builder()
-          .agreementNo(agreement.getAgreementCode())
-          .build()
-      );
+    BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreementByNoAgreement(
+      InquiryAgreementRemoteRequest.builder()
+        .agreementNo(agreement.getAgreementCode())
+        .build()
+    );
 
-      data = response.getData();
+    data = response.getData();
+    log.info("Process inquiry agreement to confins response {} ", data);
 
-
-      for (InquiryAgreementCwrDto inquiryAgreement : data) {
-        String aggrCode = inquiryAgreement.getAgrmntNo();
-
-        agreement.setStatus(inquiryAgreement.getStatus());
-        agreement.setCurrency(inquiryAgreement.getCurrency());
-        agreement.setFinancingAmt(inquiryAgreement.getNtfAmt());
-        agreement.setProductOffering(inquiryAgreement.getProductOffering());
-        agreement.setFacility(inquiryAgreement.getFacility());
-        agreement.setDtmUpd(DateTimeUtils.now());
-      }
-    } catch (Exception e) {
+    for (InquiryAgreementCwrDto inquiryAgreement : data) {
+      agreement.setStatus(inquiryAgreement.getStatus());
+      agreement.setCurrency(inquiryAgreement.getCurrency());
+      agreement.setFinancingAmt(inquiryAgreement.getNtfAmt());
+      agreement.setProductOffering(inquiryAgreement.getProductOffering());
+      agreement.setFacility(inquiryAgreement.getFacility());
+      agreement.setDtmUpd(DateTimeUtils.now());
     }
-
     return agreement;
   }
 
   public void updateFinStatusLiveIfGoLive(Agreement agreement) {
+    log.info("Process update status if Golive agreement from confins {} ", agreement);
     if (agreement.getStatus().equalsIgnoreCase("Live")) {//Ready Golive
       Optional<FinancingHdr> financingHdrO = financingHdrRepository.findByFinancingHdrCode(agreement.getFinancingHdr().getFinancingHdrCode());
       if (financingHdrO.isPresent() && financingHdrO.get().getFinancingStatus().equalsIgnoreCase("INPROCESS")) {
@@ -131,22 +102,10 @@ public class FinancingService {
         financingHdr.setFinancingStatus("LIVE");
         financingHdr.setFinancingStep("GOLIVE");
         financingHdrRepository.save(financingHdr);
+
+        log.info("Process done status if Golive agreement from confins {} ", agreement);
       }
     }
-  }
-
-  public void updateFinStatusLiveIfGoLive() {
-    //cchek status fnance yang   financingHdr.setFinancingStatus("INPROCESS");
-    //        financingHdr.setFinancingStep("SIGNED");//SIGNING
-    List<FinancingHdr> financingHdrs = financingHdrRepository.findAllByFinancingStatusAndFinancingStep("INPROCESS", "SIGNING");
-    financingHdrs.forEach(financingHdr -> {
-
-
-    });
-
-
-    //lihat fi aggement statusnya (Ready Golive) bila iya, updat ejadio LIVE, GOLIVE
-    List<Agreement> list = agreementRepository.viewApprovalStatusNoPending();
   }
 
   public void recallCWRStatus() {

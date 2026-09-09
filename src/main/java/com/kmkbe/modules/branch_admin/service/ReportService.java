@@ -610,9 +610,9 @@ public class ReportService {
     Optional<Map<String, Object>> debtorData = agreementRepo.finddetailDebtor(UUID.fromString(financingHdrCode), agreementCode);
     Map<String, Object> data = debtorData.orElseGet(Collections::emptyMap);
 
-    String basePath = System.getProperty("user.dir") + java.io.File.separator + "Reports" + java.io.File.separator;
+   // String basePath = System.getProperty("user.dir") + java.io.File.separator + "Reports" + java.io.File.separator;
     Map<String, Object> params = new HashMap<>();
-    params.put("SUBREPORT_DIR",basePath ); // Objects.requireNonNull(getClass().getResource("/Reports/")).toString());
+    params.put("SUBREPORT_DIR",Objects.requireNonNull(getClass().getResource("/Reports/")).toString());
 
     params.put("NamaBranchManager", branchManagerData.getKaryawanName());
     params.put("JabatanBranchManager", branchManagerData.getJabatan());
@@ -849,7 +849,7 @@ public class ReportService {
 
     params.put("tableDataSource", new JRBeanCollectionDataSource(tableData));
 
-    return jasperReportRenderer.renderToPdf("/Reports/main_report-dmp.jasper", params);
+    return jasperReportRenderer.renderToPdf("/Reports/main_report.jasper", params);
 
   }
 

@@ -3,6 +3,7 @@ package com.kmkbe.modules.branch_admin.service;
 import com.kmkbe.core.domain.dto.BaseLdapRemoteResponseDto;
 import com.kmkbe.core.domain.dto.SitDto;
 import com.kmkbe.core.domain.entity.Agreement;
+import com.kmkbe.core.domain.entity.CustomerCompany;
 import com.kmkbe.core.domain.entity.Debtor;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.CommonResult;
@@ -93,7 +94,6 @@ class AgreementCodeServiceTest {
         assertThat(result.isSuccess()).isTrue();
         assertThat(result.getData().getAgreementCode()).isEqualTo("-");
         assertThat(result.getData().getCustName()).isEqualTo("Customer Name");
-        assertThat(result.getData().getDirectorName()).isEqualTo("-");
         assertThat(result.getData().getJabatan()).isEqualTo("-");
         assertThat(result.getData().getEmployeeName()).isEqualTo("N/A");
         assertThat(result.getData().getBouwheerName()).isEqualTo("PT BOUWHEER");
@@ -214,6 +214,9 @@ class AgreementCodeServiceTest {
     private static Customer customer(String name) {
         Customer customer = new Customer();
         customer.setCustName(name);
+        customer.setCompany(CustomerCompany.builder()
+            .directorName("DIR")
+          .build());
         return customer;
     }
 

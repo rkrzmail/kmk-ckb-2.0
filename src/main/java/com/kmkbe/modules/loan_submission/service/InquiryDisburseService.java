@@ -142,20 +142,9 @@ public class InquiryDisburseService {
             inquiryDisburseCriterion.setValue("IDR");
             inquiryDisburseCriterias.add(inquiryDisburseCriterion);
 
-
-
             inquiryDisburseRequest.setRequestDateTime(sToday);
             inquiryDisburseRequest.setCriteria(inquiryDisburseCriterias);
-
-
             InquiryDisburseResult inquiryDisburseResult = inquiryDisburse(inquiryDisburseRequest);//CALL API
-
-
-
-
-
-
-
             try {
                  if (inquiryDisburseResult.getStatusCode().equalsIgnoreCase("200")){
                      for (int i = 0; i < inquiryDisburseResult.getData().size(); i++) {
@@ -163,9 +152,6 @@ public class InquiryDisburseService {
                          if (inquiryDisburseDatum.agreementNo.equalsIgnoreCase(aggrNo)){
                             if (inquiryDisburseDatum.getAPStatCode().equalsIgnoreCase("P")){
                                 isDisbursP = true;
-                                //disUpdate Financing Status = Disburse
-                                //Optional<Agreement>  agreement = agreementRepository.findTopByAgreementCode(aggrNo);
-                                //if (agreement.isPresent()){
                                     FinancingHdr financingHdr = agreement.getFinancingHdr();
 
                                     if (financingHdr.getFinancingStatus().equalsIgnoreCase("INPROCESS")
@@ -175,8 +161,6 @@ public class InquiryDisburseService {
                                         financingHdr.setDtmUpd(DateTimeUtils.nowLocal());
                                         financingHdrRepository.save(financingHdr);
                                     }
-
-                               // }
                             }
                          }
                      }
