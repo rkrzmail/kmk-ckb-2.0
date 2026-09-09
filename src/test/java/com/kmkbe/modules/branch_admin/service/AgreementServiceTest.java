@@ -111,11 +111,7 @@ class AgreementServiceTest {
                 auditTrailService,
                 mstAppRoleFormUserRepository
         );
-        ReflectionTestUtils.setField(
-                service,
-                "bouwheerPicEmails",
-                "achmad.faqihuddin@ckb.co.id;ali.rohman@ckb.co.id"
-        );
+
         lenient().when(agreementFileRepository.save(any(AgreementFile.class))).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(mstAppRoleFormUserRepository.findActiveBranchAdminEmails("412"))
@@ -541,11 +537,6 @@ class AgreementServiceTest {
                 return bypass;
             }
         };
-        ReflectionTestUtils.setField(
-                postingService,
-                "bouwheerPicEmails",
-                "achmad.faqihuddin@ckb.co.id;ali.rohman@ckb.co.id"
-        );
         return postingService;
     }
 

@@ -68,9 +68,6 @@ public class AgreementService {
   private final AuditTrailService auditTrailService;
   private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
 
-  @Value("${notification.agreement.bouwheer-pic-emails:achmad.faqihuddin@ckb.co.id;ali.rohman@ckb.co.id}")
-  private String bouwheerPicEmails;
-
   public Agreement findByCode(String code) {
     try {
       return agreementRepository.findById(code).orElse(null);
@@ -414,7 +411,7 @@ public class AgreementService {
       Map<String, Object> bank = findCsulBank();
 
       emailService.sendNotificationBouwheerPayment(
-        bouwheerPicEmails,
+        financingHdr.getBouwheer().getPicEmail(),
         BouwheerPaymentEmailPayload.builder()
           .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
           .vendorCode(financingHdr.getCustomer().getCustExternalCode())
@@ -431,7 +428,7 @@ public class AgreementService {
       log.error(
         "sendBouwheerPaymentNotification failed. financingHdrCode={}, recipients={}",
         financingHdr == null ? null : financingHdr.getFinancingHdrCode(),
-        bouwheerPicEmails,
+        financingHdr.getBouwheer().getPicEmail(),
         e
       );
     }
@@ -520,7 +517,7 @@ public class AgreementService {
           .vendorCode(financingHdr.getCustomer().getCustExternalCode())
           .vendorName(financingHdr.getCustomer().getCustName())
           .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
-          .bouwheerPicEmails(bouwheerPicEmails.replace(";", ", "))
+          .bouwheerPicEmails(financingHdr.getBouwheer().getPicEmail())
           .branchName(financingHdr.getMstBranch().getBranchName())
           .build()
       );

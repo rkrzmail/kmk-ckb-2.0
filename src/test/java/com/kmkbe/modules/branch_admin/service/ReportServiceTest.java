@@ -36,6 +36,7 @@ import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.VisitorRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.ExternalApiService;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
@@ -316,7 +317,7 @@ class ReportServiceTest {
 
     assertThat(result).isEqualTo("pdf".getBytes());
     ArgumentCaptor<Map> paramsCaptor = ArgumentCaptor.forClass(Map.class);
-    verify(jasperReportRenderer).renderToPdf(eq("/Reports/main_report.jasper"), paramsCaptor.capture());
+    verify(jasperReportRenderer).renderToPdf(eq("/Reports/main_report-dmp.jasper"), paramsCaptor.capture());
     assertThat(paramsCaptor.getValue()).containsEntry("NamaBranchManager", "BM");
     assertThat(paramsCaptor.getValue()).containsEntry("AgrmntNo", "AGR-CODE");
     assertThat(paramsCaptor.getValue()).containsKey("tableDataSource");
@@ -759,6 +760,9 @@ class ReportServiceTest {
   private static Agreement agreement() {
     FinancingHdr financingHdr = new FinancingHdr();
     financingHdr.setFinancingHdrCode(FINANCING_HDR_CODE);
+    financingHdr.setBouwheer(Bouwheer.builder()
+        .picName("TEST")
+      .build());
     Cwr cwr = cwr("JKT");
     cwr.setCwrCode("CWR001");
     return Agreement.builder()

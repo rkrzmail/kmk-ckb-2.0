@@ -158,7 +158,7 @@ public class LoanSubmissionController {
   }
 
   @GetMapping("/simulations/history")
-  public CommonResult<SimulationHistDto> getSimulationHistory() throws Exception {
+  public CommonResult<SimulationHistDto> getSimulationHistory(){
     //loanSubmissionService.lastSimulationHistory(authentication)
     return new CommonResult<SimulationHistDto>().success(
       null

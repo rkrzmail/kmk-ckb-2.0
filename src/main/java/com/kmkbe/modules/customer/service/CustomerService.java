@@ -116,11 +116,6 @@ public class CustomerService {
      */
     if (customerByVendor.isPresent()) {
       Customer existingVendor = customerByVendor.get();
-      if (existingVendor.getApprovalStatus().equals("REJECTED")) {
-        log.info("Vendor ID udah digunakan oleh user lain {}  lain: {}", inputEmail,customerByVendor.get().getApprovalStatus());
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Vendor ID sudah terdaftar dengan vendor lain, dengan status "+customerByVendor.get().getApprovalStatus());
-      }
-
       if (!existingVendor.getCustEmail().equals(inputEmail) && Boolean.TRUE.equals(existingVendor.getIsEmailValid())) {
         log.info("Vendor {} gagal update email karena email lama sudah terverifikasi valid", inputVendorCode);
         throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Tidak bisa mengubah email yang sudah terverifikasi!");
@@ -138,14 +133,13 @@ public class CustomerService {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Update Customer ", request.getVendorCode());
       customer = customerByVendor.get();
       before = toAuditData(customer);
-      if (ApprovalStatus.REJECTED.name().equals(customer.getApprovalStatus())) {
-        customer.setIsEmailValid(false);
-        customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
-        customer.setActive(false);
-        customer.setApprovalNote(null);
-        customer.setApprovalBy(null);
-        customer.setApprovalAt(null);
-      }
+      customer.setIsEmailValid(false);
+      customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
+      customer.setActive(false);
+      customer.setApprovalNote(null);
+      customer.setApprovalBy(null);
+      customer.setApprovalAt(null);
+      customer.setCustEmail(Boolean.TRUE.equals(customer.getIsEmailValid())?customer.getCustEmail():request.getEmail().toLowerCase());
     } else {
       // CREATE
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Create Customer ", request.getVendorCode());
@@ -156,12 +150,12 @@ public class CustomerService {
       if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
         customer.setCustExternalCode(request.getVendorCode());
       }
+      customer.setCustEmail(request.getEmail().toLowerCase());
     }
     /**
      * Set update data
      */
     customer.setCustName(request.getName());
-    customer.setCustEmail(request.getEmail().toLowerCase());
     boolean isCompany = (type == CustomerType.Company);
     customer.setCustIdTypeCode(isCompany ? CustomerIdType.NPWP.name() : CustomerIdType.KTP.name());
 
@@ -342,16 +336,37 @@ public class CustomerService {
    */
   public BaseResponseBuilder<PageCustomerResponse> pages(
     BasePaginationRequest request) {
-    String sortBy = request.getSortBy() != null && !request.getSortBy().isEmpty() ? request.getSortBy() : "custName";
+    String searchValue = request.getSearchValue();
+    String searchBy = request.getSearchBy();
+
+    if ("bouwheerName".equals(request.getSearchBy())) {
+      Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findFirstByBouwheerName(request.getSearchValue());
+      if (bouwheerOptional.isEmpty()) {
+        log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getSearchValue());
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81 + "Bouwheer Name " + request.getSearchValue());
+      }
+      searchValue = String.valueOf(bouwheerOptional.get().getBouwheerCode());
+      searchBy = "bouwheer";
+    }
+
+    String sortBy = request.getSortBy();
+
+    if (sortBy == null || sortBy.isEmpty()) {
+      sortBy = "custName";
+    } else if ("bouwheerName".equals(sortBy)) {
+      sortBy = "bouwheer";
+    }
+
     Pageable pageable = PageableUtil.createPageRequest(request, request.getPageSize(), request.getPageNo(),
       sortBy, request.getSortType());
 
+    String finalSearchValue = searchValue;
+    String finalSearchBy = searchBy;
+
     Page<Customer> page = customerRepository.findAll((Root<Customer> root, CriteriaQuery<?> query, CriteriaBuilder builder) -> {
-       Expression<String> lowerColumn = builder.lower(root.get(request.getSearchBy()));
-       String searchPattern = "%" + request.getSearchValue().toLowerCase() + "%";
-       return builder.and(
-        builder.like(lowerColumn, searchPattern)
-      );
+      Expression<String> lowerColumn = builder.lower(root.get(finalSearchBy).as(String.class));
+      String searchPattern = "%" + finalSearchValue.toLowerCase() + "%";
+      return builder.and(builder.like(lowerColumn, searchPattern));
     }, pageable);
 
 

@@ -84,7 +84,7 @@ public class AgreementCodeService {
 
             SitDto sitDto = SitDto.builder()
                     .custName(customer.getCustName())
-                    .DirectorName(signerName)
+                    .DirectorName(customer.getCustomerCompany().getDirectorName())
                     .Jabatan(jabatan)
                     .BranchCode(branchCode)
                     .EmployeeName(employeeName)
