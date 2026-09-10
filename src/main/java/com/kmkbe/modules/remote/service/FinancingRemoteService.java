@@ -26,120 +26,116 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class FinancingRemoteService {
-    private final RestTemplate restTemplate;
-    private final BaseRemoteService baseRemoteService;
-    private final ObjectMapper objectMapper;
+  private final RestTemplate restTemplate;
+  private final BaseRemoteService baseRemoteService;
+  private final ObjectMapper objectMapper;
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public BaseSimpleRemoteResponseDto<Object> postedSubmission(
-            FinancingSubmissionRequest request
-    ) throws Exception {
-        String jsonStr = "";
-        String responseStr = null;
-        int statusCode = 200;
-        try {
-            jsonStr = com.kmkbe.core.utils.ObjectUtils.jsonToStr(request);
-            final HttpEntity<String> requestArgs = new HttpEntity<>(
-                    jsonStr,
-                    baseRemoteService.apiKeyHeaders()
-            );
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public BaseSimpleRemoteResponseDto<Object> postedSubmission(
+    FinancingSubmissionRequest request
+  ) throws Exception {
+    String jsonStr = "";
+    String responseStr = null;
+    int statusCode = 200;
+    try {
+      jsonStr = com.kmkbe.core.utils.ObjectUtils.jsonToStr(request);
+      final HttpEntity<String> requestArgs = new HttpEntity<>(
+        jsonStr,
+        baseRemoteService.apiKeyHeaders()
+      );
 
-            final ResponseEntity<BaseSimpleRemoteResponseDto<Object>> response = restTemplate.exchange(
-                    baseRemoteService.getBaseMst() + "/post/credit/submission",
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
-            );
-
-            statusCode = response.getStatusCode().value();
-            responseStr = com.kmkbe.core.utils.ObjectUtils.jsonToStr(response.getBody());
-            if(StringUtil.isNullOrEmpty(responseStr)){
-               responseStr = objectMapper.writeValueAsString(response.getBody());
-            }
-
-            return response.getBody();
-        } catch (HttpStatusCodeException httpStatusCodeException) {
-            String message = "Posted Submission Failed";
-            statusCode = httpStatusCodeException.getStatusCode().value();
-            responseStr = httpStatusCodeException.getResponseBodyAsString();
-
-            Map<String, Object> errorObj = com.kmkbe.core.utils.ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
-            if (errorObj != null) {
-                message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
-            }
-
-            throw new RuntimeException("Error while perform action to MST\nDetail:" + message);
-        /*} catch (Exception e) {
-            log.error("bypass postedSubmission, error {}", e.getMessage());
-            throw new RuntimeException("Posted Submission Failed");*/
-            //byPASS
-        } finally {
-            ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
-                    .endpointUrl(baseRemoteService.getBaseMst()+ "/post/credit/submission")
-                    .contentType("application/json")
-                    .requestPayload(jsonStr)
-                    .responseJson(responseStr)
-                    .responseStatus(String.valueOf(statusCode))
-                    .build();
+      final ResponseEntity<BaseSimpleRemoteResponseDto<Object>> response = restTemplate.exchange(
+        baseRemoteService.getBaseMst() + "/post/credit/submission",
+        HttpMethod.POST,
+        requestArgs,
+        new ParameterizedTypeReference<>() {
         }
+      );
+
+      statusCode = response.getStatusCode().value();
+      responseStr = com.kmkbe.core.utils.ObjectUtils.jsonToStr(response.getBody());
+      if (StringUtil.isNullOrEmpty(responseStr)) {
+        responseStr = objectMapper.writeValueAsString(response.getBody());
+      }
+
+      return response.getBody();
+    } catch (HttpStatusCodeException httpStatusCodeException) {
+      String message = "Posted Submission Failed";
+      statusCode = httpStatusCodeException.getStatusCode().value();
+      responseStr = httpStatusCodeException.getResponseBodyAsString();
+
+      Map<String, Object> errorObj = com.kmkbe.core.utils.ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
+      if (errorObj != null) {
+        message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
+      }
+
+      throw new RuntimeException("Error while perform action to MST\nDetail:" + message);
+    } finally {
+      ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
+        .endpointUrl(baseRemoteService.getBaseMst() + "/post/credit/submission")
+        .contentType("application/json")
+        .requestPayload(jsonStr)
+        .responseJson(responseStr)
+        .responseStatus(String.valueOf(statusCode))
+        .build();
     }
+  }
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public BaseSimpleRemoteResponseDto<Object> updateFinancingStatus(
-            UpdateFinancingStatusRequest request
-    ) throws JsonProcessingException {
-        String jsonStr = "";
-        String responseStr = null;
-        int statusCode = 200;
-        Exception ex;
-        try {
-            jsonStr = com.kmkbe.core.utils.ObjectUtils.jsonToStr(request);
-            final HttpEntity<String> requestArgs = new HttpEntity<>(
-                    jsonStr,
-                    baseRemoteService.apiKeyHeaders()
-            );
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public BaseSimpleRemoteResponseDto<Object> updateFinancingStatus(
+    UpdateFinancingStatusRequest request
+  ) throws JsonProcessingException {
+    String jsonStr = "";
+    String responseStr = null;
+    int statusCode = 200;
+    Exception ex;
+    try {
+      jsonStr = com.kmkbe.core.utils.ObjectUtils.jsonToStr(request);
+      final HttpEntity<String> requestArgs = new HttpEntity<>(
+        jsonStr,
+        baseRemoteService.apiKeyHeaders()
+      );
 
-            final ResponseEntity<BaseSimpleRemoteResponseDto<Object>> response = restTemplate.exchange(
-                    baseRemoteService.getBaseMst() + "/post/credit/approval",
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
-            );
-
-            statusCode = response.getStatusCode().value();
-            responseStr = com.kmkbe.core.utils.ObjectUtils.jsonToStr(response.getBody());
-            if(StringUtil.isNullOrEmpty(responseStr)){
-                responseStr = objectMapper.writeValueAsString(response.getBody());
-            }
-            if (statusCode >= 200 && statusCode < 300) {
-                return response.getBody();
-            }else{
-                throw new RuntimeException("Error while Call MST\n\nDetail:" + response.getBody());
-            }
-        } catch (HttpStatusCodeException httpStatusCodeException) {
-            String message = "Posted Submission Failed";
-            statusCode = httpStatusCodeException.getStatusCode().value();
-            responseStr = httpStatusCodeException.getResponseBodyAsString();
-
-            Map<String, Object> errorObj = com.kmkbe.core.utils.ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
-            if (errorObj != null) {
-                message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
-            }
-
-            throw new RuntimeException("Error while perform action to MST\n\nDetail:" + message);
-        } catch (Exception e) {
-            log.error("updateFinancingStatus, error {}", e.getMessage());
-            throw e;
-        } finally {
-            ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
-                    .endpointUrl(baseRemoteService.getBaseMst() + "/post/credit/approval")
-                    .contentType("application/json")
-                    .requestPayload(jsonStr)
-                    .responseJson(responseStr)
-                    .responseStatus(String.valueOf(statusCode))
-                    .build();
+      final ResponseEntity<BaseSimpleRemoteResponseDto<Object>> response = restTemplate.exchange(
+        baseRemoteService.getBaseMst() + "/post/credit/approval",
+        HttpMethod.POST,
+        requestArgs,
+        new ParameterizedTypeReference<>() {
         }
+      );
+
+      statusCode = response.getStatusCode().value();
+      responseStr = com.kmkbe.core.utils.ObjectUtils.jsonToStr(response.getBody());
+      if (StringUtil.isNullOrEmpty(responseStr)) {
+        responseStr = objectMapper.writeValueAsString(response.getBody());
+      }
+      if (statusCode >= 200 && statusCode < 300) {
+        return response.getBody();
+      } else {
+        throw new RuntimeException("Error while Call MST\n\nDetail:" + response.getBody());
+      }
+    } catch (HttpStatusCodeException httpStatusCodeException) {
+      String message = "Posted Submission Failed";
+      statusCode = httpStatusCodeException.getStatusCode().value();
+      responseStr = httpStatusCodeException.getResponseBodyAsString();
+
+      Map<String, Object> errorObj = com.kmkbe.core.utils.ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
+      if (errorObj != null) {
+        message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
+      }
+
+      throw new RuntimeException("Error while perform action to MST\n\nDetail:" + message);
+    } catch (Exception e) {
+      log.error("updateFinancingStatus, error {}", e.getMessage());
+      throw e;
+    } finally {
+      ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
+        .endpointUrl(baseRemoteService.getBaseMst() + "/post/credit/approval")
+        .contentType("application/json")
+        .requestPayload(jsonStr)
+        .responseJson(responseStr)
+        .responseStatus(String.valueOf(statusCode))
+        .build();
     }
+  }
 }

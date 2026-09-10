@@ -8,7 +8,9 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import jakarta.persistence.EntityNotFoundException;
@@ -49,6 +51,7 @@ public class SignerService {
   private final NotifDebtorRepository notifDebtorRepository;
   private final AuditTrailService auditTrailService;
   private final SigningEligibilityService signingEligibilityService;
+  private final CurrentUserService currentUserService;
 
   private final Map<String, List<String>> signerCache = new ConcurrentHashMap<>();
 
@@ -976,13 +979,15 @@ public class SignerService {
     financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
       .ifPresent(finHdr -> {
         FinancingSigningAuditData before = toFinancingSigningAuditData(finHdr);
-        if ("Signing in Process".equalsIgnoreCase(stampStatus)) {
+        if ("Signing in Process".equalsIgnoreCase(stampStatus) && !Objects.equals(finHdr.getFinancingStep(), "GOLIVE")) {
           finHdr.setFinancingStep("SIGNING");
-        } else if ("Menunggu TTD".equalsIgnoreCase(stampStatus)) {
+        } else if ("Menunggu TTD".equalsIgnoreCase(stampStatus) && !Objects.equals(finHdr.getFinancingStep(), "GOLIVE")) {
           finHdr.setFinancingStep("SIGNING");
-        } else if ("signed".equalsIgnoreCase(stampStatus)) {
+        } else if ("signed".equalsIgnoreCase(stampStatus) && !Objects.equals(finHdr.getFinancingStep(), "GOLIVE")) {
           finHdr.setFinancingStep("SIGNED");
         }
+        finHdr.setDtmUpd(LocalDateTime.now());
+        finHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
         FinancingHdr saved = financingHdrRepository.save(finHdr);
         auditTrailService.record("SIGNING_STATUS", AuditAction.UPDATE, "FinancingHdr", saved.getFinancingHdrCode(), before, toFinancingSigningAuditData(saved));
       });

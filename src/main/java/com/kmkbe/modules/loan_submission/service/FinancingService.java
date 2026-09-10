@@ -4,7 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.repository.*;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.utils.DateTimeUtils;
+import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.remote.request.InquiryAgreementRemoteRequest;
 import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
@@ -13,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -26,19 +29,21 @@ public class FinancingService {
   private final DisbursementLogRepository disbursementLogRepository;
   private final CwrRemoteService cwrRemoteService;
   private final CwrRepository cwrRepository;
+  private final CurrentUserService currentUserService;
 
   public FinancingService(AgreementRepository agreementRepository,
                           FinancingHdrRepository financingHdrRepository,
                           InquiryDisburseService inquiryDisburseService,
                           DisbursementLogRepository disbursementLogRepository,
                           CwrRemoteService cwrRemoteService,
-                          CwrRepository cwrRepository) {
+                          CwrRepository cwrRepository, CurrentUserService currentUserService) {
     this.agreementRepository = agreementRepository;
     this.financingHdrRepository = financingHdrRepository;
     this.inquiryDisburseService = inquiryDisburseService;
     this.disbursementLogRepository = disbursementLogRepository;
     this.cwrRemoteService = cwrRemoteService;
     this.cwrRepository = cwrRepository;
+    this.currentUserService = currentUserService;
   }
 
   public void recallApprovalStatus() {
@@ -47,23 +52,23 @@ public class FinancingService {
     if (list != null && !list.isEmpty()) {
       for (Agreement agreement : list) {
         try {
-          log.info("Process update agreement {} ",agreement);
+          log.info("Process update agreement {} ", agreement);
           agreement = updateFromConfin(agreement);
 
-          log.info("Process update agreement Golive {} ",agreement);
+          log.info("Process update agreement Golive {} ", agreement);
           updateFinStatusLiveIfGoLive(agreement);
 
           //stop bila saudha disbur(di log disb ada)
-          log.info("Process update agreement {} ",agreement);
+          log.info("Process update agreement {} ", agreement);
           List<DisbursementLog> disbursementLogs = disbursementLogRepository.findAllByAgreement(agreement);
           if (disbursementLogs.isEmpty()) {
-            log.info("Inquiry disbursement log agreement {} ",agreement);
+            log.info("Inquiry disbursement log agreement {} ", agreement);
             inquiryDisburseService.inquiryDisburseAuto(agreement);
           }
-          log.info("Update agreement {} ",agreement);
+          log.info("Update agreement {} ", agreement);
           agreementRepository.save(agreement);
         } catch (Exception ignored) {
-          log.info("Error process updatebn to confins {} ",agreement);
+          log.info("Error process updatebn to confins {} ", agreement);
           ignored.printStackTrace();
         }
       }
@@ -89,18 +94,21 @@ public class FinancingService {
       agreement.setProductOffering(inquiryAgreement.getProductOffering());
       agreement.setFacility(inquiryAgreement.getFacility());
       agreement.setDtmUpd(DateTimeUtils.now());
+      agreement.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR_CONFINS));
     }
     return agreement;
   }
 
   public void updateFinStatusLiveIfGoLive(Agreement agreement) {
     log.info("Process update status if Golive agreement from confins {} ", agreement);
-    if (agreement.getStatus().equalsIgnoreCase("Live")) {//Ready Golive
+    if (agreement.getStatus().equalsIgnoreCase("Live")) {
       Optional<FinancingHdr> financingHdrO = financingHdrRepository.findByFinancingHdrCode(agreement.getFinancingHdr().getFinancingHdrCode());
-      if (financingHdrO.isPresent() && financingHdrO.get().getFinancingStatus().equalsIgnoreCase("INPROCESS")) {
+      if (financingHdrO.isPresent() && financingHdrO.get().getFinancingStatus().equalsIgnoreCase("INPROCESS") || financingHdrO.isPresent() && financingHdrO.get().getFinancingStatus().equalsIgnoreCase("LIVE")) {
         FinancingHdr financingHdr = financingHdrO.get();
         financingHdr.setFinancingStatus("LIVE");
         financingHdr.setFinancingStep("GOLIVE");
+        financingHdr.setDtmUpd(LocalDateTime.now());
+        financingHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR_CONFINS));
         financingHdrRepository.save(financingHdr);
 
         log.info("Process done status if Golive agreement from confins {} ", agreement);
@@ -145,6 +153,8 @@ public class FinancingService {
 
             cwr.setRealisationAmt(cwrNo.getRealisationAmt().doubleValue());
             cwr.setStatus(cwrNo.getStatus());
+            cwr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR_CONFINS));
+            cwr.setDtmUpd(LocalDateTime.now());
             cwrRepository.save(cwr);
           }
         } catch (Exception ignored) {

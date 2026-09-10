@@ -25,5 +25,4 @@ public class CustomerCompanyDto {
   private Double stayLength;
   private String directorName;
   private String directorPhone;
-
 }

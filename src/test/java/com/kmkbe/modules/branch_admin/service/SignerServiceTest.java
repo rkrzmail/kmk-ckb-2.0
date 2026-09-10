@@ -14,6 +14,7 @@ import com.kmkbe.core.domain.entity.AgreementFileSigning;
 import com.kmkbe.core.domain.entity.Cwr;
 import com.kmkbe.core.domain.entity.Debtor;
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.mapper.DebtorMapper;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.AgreementFileSigningRepository;
@@ -22,6 +23,7 @@ import com.kmkbe.core.domain.repository.DebtorRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.NotifDebtorRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.common.service.AuditTrailService;
@@ -54,9 +56,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.lenient;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SignerServiceTest {
@@ -76,8 +76,9 @@ class SignerServiceTest {
   @Mock private BaseRemoteService baseRemoteService;
   @Mock private SigningEligibilityService signingEligibilityService;
   @Mock private HttpServletRequest httpServletRequest;
-
+  @Mock private CurrentUserService currentUserService;
   private SignerService service;
+
 
   @BeforeEach
   void setUp() {
@@ -92,7 +93,7 @@ class SignerServiceTest {
         notifDebtorRepository,
         auditTrailService,
         signingEligibilityService,
-        baseRemoteService
+        currentUserService,baseRemoteService
     );
     ReflectionTestUtils.setField(service, "adInsKey", "adins-key");
     lenient().when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));

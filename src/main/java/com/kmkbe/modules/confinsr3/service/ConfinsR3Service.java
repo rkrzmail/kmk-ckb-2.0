@@ -135,6 +135,7 @@ public class ConfinsR3Service {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81);
     }
 
+    log.info("Get by Zipcode from Confins {} ",response.getData().stream().toList());
     List<GetZipCodeResponse> recordResponseList = response.getData().stream().map(item -> {
       GetZipCodeResponse cwrRecordResponse = new GetZipCodeResponse();
       BeanUtils.copyProperties(item, cwrRecordResponse);

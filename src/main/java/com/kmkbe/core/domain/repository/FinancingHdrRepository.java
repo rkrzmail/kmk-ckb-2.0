@@ -4,7 +4,6 @@ import com.kmkbe.core.domain.dto.ProyeksiReportDto;
 import com.kmkbe.core.domain.dto.SummaryByBranchDto;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
-import com.kmkbe.modules.user.entity.MstBranch;
 import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.validation.constraints.NotNull;
 import lombok.NonNull;
@@ -23,34 +22,9 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
   Optional<FinancingHdr> findFirstByCustomerOrderByFinancingHdrIdDesc(Customer customer);
 
 
-  List<FinancingHdr> findAllByCustomer(@NotNull Customer customer);
-
   List<FinancingHdr> findAllByCustomerOrderByDtmCrtDesc(@NotNull Customer customer);
 
   Long countByCustomerAndFinancingStatus(Customer customer, String status);
-
-
-  Page<FinancingHdr> findByOrderByFinancingHdrIdDesc(
-    Pageable pageable
-  );
-
-  Page<FinancingHdr> findByFinancingStatusOrderByFinancingHdrIdDesc(
-    String financingStatus,
-    Pageable pageable
-  );
-
-  Page<FinancingHdr> findByFinancingStatusAndFinancingStepAndMstBranchOrderByFinancingHdrIdDesc(
-    String financingStatus,
-    String financingStepStatus,
-    MstBranch mstBranch,
-    Pageable pageable
-  );
-
-
-  Page<FinancingHdr> findByMstBranchOrderByFinancingHdrIdDesc(
-    MstBranch mstBranch,
-    Pageable pageable
-  );
 
   @Query(
     value = """
