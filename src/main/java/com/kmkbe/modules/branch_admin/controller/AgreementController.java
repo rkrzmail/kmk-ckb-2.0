@@ -9,6 +9,9 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.exception.BusinessException;
+import com.kmkbe.helpers.constant.AppConstants;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
 import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
@@ -18,12 +21,14 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SignatureException;
+import java.time.LocalDateTime;
 
 @Validated
 @RestController
@@ -92,6 +97,11 @@ public class AgreementController {
 
   ) throws Exception {
     FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+
+    if (financingHdr.getFinancingStep().equals("GOLIVE")) {
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Status sudah GOLIVE");
+    }
+
     Agreement agreement = agreementService.findByFinancingHdr(financingHdr);
     if (agreement == null) {
       throw new IllegalStateException("Agreement Not Found with given argument");
@@ -110,31 +120,27 @@ public class AgreementController {
       .vendorCode(financingHdr.getCustomer().getCustExternalCode())
       .build();
 
-       /* try {
-            //akan dicobal teruis di  shcedule samap 200
-            financingRemoteService.updateFinancingStatus(
-                    updateFinancingStatusRequest
-            );
-        } catch (Exception ignored) {  }*/
     boolean bypass = true;
     if (!bypass) {
-      //gagal kalo api bermsalah
       financingRemoteService.updateFinancingStatus(
         updateFinancingStatusRequest
       );
     }
 
-
-    //Branch admin melakukan upload dokumen perjanjian kerjasama
-    financingHdr.setFinancingStatus("INPROCESS");
-    financingHdr.setFinancingStep("SIGNED");//SIGNING
+    financingHdr.setFinancingStatus(financingHdr.getFinancingStatus().equalsIgnoreCase("LIVE")?financingHdr.getFinancingStatus():"INPROCESS");
+    financingHdr.setFinancingStep(financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")?financingHdr.getFinancingStep():"SIGNED");
+    financingHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
+    financingHdr.setDtmUpd(LocalDateTime.now());
     financingHdrRepository.save(financingHdr);
 
-    // Notify Bouwheer/CKB only after the contract has been uploaded successfully.
+    /**
+     * Send email to bouhweer
+     */
     agreementService.sendBouwheerPaymentNotification(financingHdr);
+    /**
+     * Send email to debtor
+     */
     agreementService.sendDebtorDisbursementNotification(financingHdr);
-    //sebelunya auto assing
-
     return new CommonResult<>().success(
       null
     );

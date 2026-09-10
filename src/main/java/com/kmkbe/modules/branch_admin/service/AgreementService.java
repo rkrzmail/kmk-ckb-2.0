@@ -34,7 +34,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -245,11 +244,6 @@ public class AgreementService {
 
       if (data != null && !data.isEmpty()) {
         Map<String, Object> obj = findCsulBank();
-
-                /*if (!data.getFirst().getCwrNo().equalsIgnoreCase("")) {
-                    throw new IllegalStateException("Nomor CWR tidak sesuai dengan Nomor Pencairan, pastikan Nomor Pencairan benar");
-                }*/
-
         return InquiryAgreementDto.builder()
           .bankName(obj.get("bankName").toString())
           .rekeningNo(obj.get("accountNo").toString())
@@ -346,8 +340,8 @@ public class AgreementService {
       );
 
       // Branch admin melakukan singkron agreement
-      financingHdr.setFinancingStatus("INPROCESS");
-      financingHdr.setFinancingStep("INPROCESS");
+      financingHdr.setFinancingStatus(financingHdr.getFinancingStatus().equalsIgnoreCase("LIVE")?financingHdr.getFinancingStatus():"INPROCESS");
+      financingHdr.setFinancingStep(financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")?financingHdr.getFinancingStep():"INPROCESS");
       FinancingHdr savedFinancing = financingHdrRepository.save(financingHdr);
       auditTrailService.record("AGREEMENT", AuditAction.UPDATE, "FinancingHdr", savedFinancing.getFinancingHdrCode(), before, toFinancingAgreementAuditData(savedFinancing));
       sendContractUploadRequiredNotification(savedFinancing, request.getAgreementNo());
@@ -355,12 +349,6 @@ public class AgreementService {
       log.error("createAgreement: error {}", e.getMessage());
       throw e;
     }
-  }
-
-  private InquiryAgreementCwrDto sampleResponse() throws JsonProcessingException {
-    String sample = "{\"AppId\":19,\"Cmo\":\"RIZKIAALDAZABRINA\",\"Office\":\"JAKARTA3\",\"DebtorNo\":\"41400001208\",\"DebtorName\":\"JOMONPERSADANUSANTARA\",\"DebtorType\":\"COMPANY\",\"CWRNo\":\"41450CWR2024626\",\"AppNo\":\"41450APP20241627\",\"ProductOffering\":\"ANJAKPIUTANGIDR-PMKFC\",\"CurrStep\":\"Live\",\"LastStep\":\"PreGoLive\",\"AgrmntNo\":\"41450241613\",\"Status\":\"Expired\",\"Facility\":\"MODALKERJA\",\"Currency\":\"IDR\",\"NtfAmt\":703296000.00,\"LastApprover\":\"-\"}";
-    return objectMapper.readValue(sample, new TypeReference<>() {
-    });
   }
 
   private void proceedFinancing(

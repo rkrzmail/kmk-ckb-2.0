@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.thymeleaf.util.StringUtils;
+
 import java.util.Map;
 
 @Aspect
@@ -29,161 +30,144 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class HttpRequestAspect {
-    private final ApiIntegrationLogRepository apiIntegrationLogRepository;
-    private final ObjectMapper objectMapper;
+  private final ApiIntegrationLogRepository apiIntegrationLogRepository;
+  private final ObjectMapper objectMapper;
 
-    @Around("execution(* org.springframework.web.client.RestTemplate.exchange(..))")
-    //@Around("execution(* com.kmkbe.modules.loan_submission.controller.FinancingController.invoicePaid(..))")
-    //@Around("execution(* org.springframework.web.client.RestTemplate.exchange(..))||execution(* com.kmkbe.modules.loan_submission.controller.FinancingController.invoicePaid(..))")
+  @Around("execution(* org.springframework.web.client.RestTemplate.exchange(..))")
+  //@Around("execution(* com.kmkbe.modules.loan_submission.controller.FinancingController.invoicePaid(..))")
+  //@Around("execution(* org.springframework.web.client.RestTemplate.exchange(..))||execution(* com.kmkbe.modules.loan_submission.controller.FinancingController.invoicePaid(..))")
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public Object logRestTemplateCalls(ProceedingJoinPoint joinPoint) throws Throwable {
-        long startTime = System.currentTimeMillis();
-        Object[] args = joinPoint.getArgs();
-        Object response;
-        String requestStr = "empty", requestHeader = "", responseStr = "";
-        String url = "";
-        int statusCode = 200;
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public Object logRestTemplateCalls(ProceedingJoinPoint joinPoint) throws Throwable {
+    long startTime = System.currentTimeMillis();
+    Object[] args = joinPoint.getArgs();
+    Object response;
+    String requestStr = "empty", requestHeader = "", responseStr = "";
+    String url = "";
+    int statusCode = 200;
 
 
-        try {
-            response = joinPoint.proceed();
-            if (response instanceof ResponseEntity<?> responseEntity) {
-                statusCode = responseEntity.getStatusCode().value();
-                responseStr = objectMapper.writeValueAsString(responseEntity.getBody());
-                if (StringUtil.isNullOrEmpty(responseStr)) {
-                    responseStr = objectMapper.writeValueAsString(responseEntity.getBody());
-                }
-            }
-        } catch (HttpStatusCodeException httpStatusCodeException) {
-            String message = "Unknown error";
-
-            statusCode = httpStatusCodeException.getStatusCode().value();
-            responseStr = httpStatusCodeException.getResponseBodyAsString();
-            Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
-            if (errorObj != null) {
-                message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
-            }
-
-            response = new ResponseEntity<String>(responseStr, HttpStatusCode.valueOf(statusCode));
-            //throw new RuntimeException("Error while perform action. Detail:" + message);
-        } catch (Exception e) {
-            log.error("Error while executing RestTemplate call {}", e.getMessage());
-            response = null;
-            //throw e;
-        } finally {
-            long executionTime = System.currentTimeMillis() - startTime;
-
-            for (Object arg : args) {
-                if (arg instanceof String argUrl && argUrl.toLowerCase().contains("http")) {
-                    url = argUrl;
-                }
-                if (arg instanceof HttpEntity<?> requestEntity) {
-                    requestHeader = objectMapper.writeValueAsString(requestEntity.getHeaders());
-
-                    if (requestEntity.getBody() != null) {
-                        requestStr = objectMapper.writeValueAsString(requestEntity.getBody());
-                    }
-                }
-            }
-
-            ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
-                    .endpointUrl(url)
-                    .contentType("application/json;"+executionTime + "ms")
-                    .requestPayload(StringUtils.isEmpty(requestStr) ? "empty" : requestStr)
-                    .responseJson(responseStr)
-                    .responseStatus(String.valueOf(statusCode))
-                    .dtmUpd(DateTimeUtils.now())
-                    .build();
-
-            apiIntegrationLogRepository.save(apiIntegrationLog);
+    try {
+      response = joinPoint.proceed();
+      if (response instanceof ResponseEntity<?> responseEntity) {
+        statusCode = responseEntity.getStatusCode().value();
+        responseStr = objectMapper.writeValueAsString(responseEntity.getBody());
+        if (StringUtil.isNullOrEmpty(responseStr)) {
+          responseStr = objectMapper.writeValueAsString(responseEntity.getBody());
         }
+      }
+    } catch (HttpStatusCodeException httpStatusCodeException) {
+      String message = "Unknown error";
 
+      statusCode = httpStatusCodeException.getStatusCode().value();
+      responseStr = httpStatusCodeException.getResponseBodyAsString();
+      Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
+      if (errorObj != null) {
+        message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
+      }
 
+      response = new ResponseEntity<String>(responseStr, HttpStatusCode.valueOf(statusCode));
+      //throw new RuntimeException("Error while perform action. Detail:" + message);
+    } catch (Exception e) {
+      log.error("Error while executing RestTemplate call {}", e.getMessage());
+      response = null;
+      //throw e;
+    } finally {
+      long executionTime = System.currentTimeMillis() - startTime;
 
-        return response;
+      for (Object arg : args) {
+        if (arg instanceof String argUrl && argUrl.toLowerCase().contains("http")) {
+          url = argUrl;
+        }
+        if (arg instanceof HttpEntity<?> requestEntity) {
+          requestHeader = objectMapper.writeValueAsString(requestEntity.getHeaders());
+
+          if (requestEntity.getBody() != null) {
+            requestStr = objectMapper.writeValueAsString(requestEntity.getBody());
+          }
+        }
+      }
+
+      ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
+        .endpointUrl(url)
+        .contentType("application/json;" + executionTime + "ms")
+        .requestPayload(StringUtils.isEmpty(requestStr) ? "empty" : requestStr)
+        .responseJson(responseStr)
+        .responseStatus(String.valueOf(statusCode))
+        .dtmUpd(DateTimeUtils.now())
+        .build();
+
+      apiIntegrationLogRepository.save(apiIntegrationLog);
     }
 
 
-    @Around("execution(* com.kmkbe.modules.loan_submission.controller.FinancingController.invoicePaid(..))")
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public Object logApiCallback(ProceedingJoinPoint joinPoint) throws Throwable {
-        long startTime = System.currentTimeMillis();
-        Object[] args = joinPoint.getArgs();
-        Object response;
-        String requestStr = "empty", requestHeader = "", responseStr = "";
-        String url = "";
-        int statusCode = 200;
+    return response;
+  }
 
 
-        try {
-            response = joinPoint.proceed();
-
-            url = "callback://api/v1/financing/invoice-paid";
-
-            if (response !=null ) {
-                statusCode = 0;
-                responseStr = objectMapper.writeValueAsString(response);
-            }
-
-        } catch (Exception e) {
-            statusCode = -1;
-            log.error("Error while executing RestTemplate call {}", e.getMessage());
-            response = e.getMessage();
-        } finally {
-            long executionTime = System.currentTimeMillis() - startTime;
-
-            for (Object arg : args) {
-                if (arg instanceof HttpServletRequestCopier) {
-                    HttpServletRequestCopier request = (HttpServletRequestCopier)arg;
-                    requestStr = new String(request.getContentAsByteArray());
-                    url = request.getRequestURL().toString();
-                }
-                if (arg instanceof FinancingInvoicePaidRequest) {
-                    FinancingInvoicePaidRequest request = (FinancingInvoicePaidRequest) arg;
-
-                    requestHeader = objectMapper.writeValueAsString(request);
+  @Around("execution(* com.kmkbe.modules.loan_submission.controller.FinancingController.invoicePaid(..))")
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public Object logApiCallback(ProceedingJoinPoint joinPoint) throws Throwable {
+    long startTime = System.currentTimeMillis();
+    Object[] args = joinPoint.getArgs();
+    Object response;
+    String requestStr = "empty", requestHeader = "", responseStr = "";
+    String url = "";
+    int statusCode = 200;
 
 
-                }
-            }
+    try {
+      response = joinPoint.proceed();
 
-            ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
-                    .endpointUrl(url)
-                    .contentType("application/json;"+executionTime + "ms")
-                    .requestPayload(StringUtils.isEmpty(requestStr) ? "empty" : requestStr)
-                    .responseJson(responseStr)
-                    .responseStatus(String.valueOf(statusCode))
-                    .dtmUpd(DateTimeUtils.now())
-                    .build();
+      url = "callback://api/v1/financing/invoice-paid";
 
-            apiIntegrationLogRepository.save(apiIntegrationLog);
+      if (response != null) {
+        statusCode = 0;
+        responseStr = objectMapper.writeValueAsString(response);
+      }
+
+    } catch (Exception e) {
+      statusCode = -1;
+      log.error("Error while executing RestTemplate call {}", e.getMessage());
+      response = e.getMessage();
+    } finally {
+      long executionTime = System.currentTimeMillis() - startTime;
+
+      for (Object arg : args) {
+        if (arg instanceof HttpServletRequestCopier) {
+          HttpServletRequestCopier request = (HttpServletRequestCopier) arg;
+          requestStr = new String(request.getContentAsByteArray());
+          url = request.getRequestURL().toString();
         }
+        if (arg instanceof FinancingInvoicePaidRequest) {
+          FinancingInvoicePaidRequest request = (FinancingInvoicePaidRequest) arg;
+
+          requestHeader = objectMapper.writeValueAsString(request);
 
 
+        }
+      }
 
-        return response;
+      ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
+        .endpointUrl(url)
+        .contentType("application/json;" + executionTime + "ms")
+        .requestPayload(StringUtils.isEmpty(requestStr) ? "empty" : requestStr)
+        .responseJson(responseStr)
+        .responseStatus(String.valueOf(statusCode))
+        .dtmUpd(DateTimeUtils.now())
+        .build();
+
+      apiIntegrationLogRepository.save(apiIntegrationLog);
     }
 
 
-
-    @Around("execution(* com.kmkbe.modules.customer.service.AuthService.signIn(..))")
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public Object logAttack(ProceedingJoinPoint joinPoint) throws Throwable {
-        Object response;
-
-        try {
-            //log awal = joinPoint.getArgs();
-            //LoginRequest
-            response = joinPoint.proceed();
+    return response;
+  }
 
 
-        } finally {
-            //wa
-        }
-
-
-
-        return response;
-    }
+  @Around("execution(* com.kmkbe.modules.customer.service.AuthService.signIn(..))")
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public Object logAttack(ProceedingJoinPoint joinPoint) throws Throwable {
+    return joinPoint.proceed();
+  }
 }

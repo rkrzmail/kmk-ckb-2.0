@@ -231,7 +231,6 @@ public class CustomerService {
       }
 
       customer.setCustName(request.getCustName());
-      //customer.setCustTypeCode(request.getCustTypeCode());
       customer.setCustIdNo(request.getCustIdNo());
       customer.setNpwp(request.getNpwp());
       try {
@@ -437,13 +436,18 @@ public class CustomerService {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(request.getCustCode());
     if (customerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getCustCode());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Customer not found");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Customer tidak ditemukan");
     }
 
     Customer customer = customerOptional.get();
     if (!customer.getApprovalStatus().equals("OPEN")) {
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", request.getApprovalStatus());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer has been process with status is ");
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", customer.getCustName());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer ini sudah pernh diproses " + customer.getApprovalStatus());
+    }
+
+    if (!customer.getIsEmailValid()) {
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", customer.getCustName());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer ini belum melakukan verifikasi email ");
     }
 
     CustomerAuditData before = toAuditData(customer);

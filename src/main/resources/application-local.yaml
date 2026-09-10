@@ -122,26 +122,26 @@ csul:
     adinskey: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
     fou:
       v1: http://uat-confinsr3.csulfinance.com/api/fou/v1
-      getzipcode: http://172.21.10.149:8083/fou_getzipcode.php
-      getcalculate: http://172.21.10.149:8083/fou_getcalculate.php
+      getzipcode: http://localhost/confins/fou_getzipcode.php
+      getcalculate: http://localhost/confins/fou_getcalculate.php
     mou:
       v1: http://uat-confinsr3.csulfinance.com/api/mou/v1
-      getcwrbwhr: http://172.21.10.149:8083/mou_getcwrbouwheer.php
-      getlistcwrbwhr: http://172.21.10.149:8083/mou_getlistcwrbwhr.php
-      getpagingSQL: http://172.21.10.149:8083/mou_getpagingsql.php
-      fwd: http://172.21.10.149:8083/mou_getsigner.php
+      getcwrbwhr: http://localhost/confins/mou_getcwrbouwheer.php
+      getlistcwrbwhr: http://localhost/confins/mou_getlistcwrbwhr.php
+      getpagingSQL: http://localhost/confins/mou_getpagingsql.php
+      fwd: http://localhost/confins/mou_getsigner.php
     #LOS
     los:
       v1: http://uat-confinsr3.csulfinance.com/api/los/v1
-      fwd: http://172.21.10.149:8083/los_getagr.php
-      getRekening: http://172.21.10.149:8083/los_getrekening.php
-      getAppNo: http://172.21.10.149:8083/los_getappno.php
-      getpagingSQL: http://172.21.10.149:8083/los_getpagingsql.php
+      fwd: http://localhost/confins/los_getagr.php
+      getRekening: http://localhost/confins/los_getrekening.php
+      getAppNo: http://localhost/confins/los_getappno.php
+      getpagingSQL: http://localhost/confins/los_getpagingsql.php
     #CORELOS
     corelos:
       v1: http://uat-confinsr3.csulfinance.com/api/corelos/v1
-      getFinData: http://172.21.10.149:8083/corelos_getfindata.php
-      getFactoring: http://172.21.10.149:8083/corelos_getfactoring.php
+      getFinData: http://localhost/confins/corelos_getfindata.php
+      getFactoring: http://localhost/confins/corelos_getfactoring.php
 
     ar:
       v1: http://uat-confinsr3.csulfinance.com/api/ar/v1

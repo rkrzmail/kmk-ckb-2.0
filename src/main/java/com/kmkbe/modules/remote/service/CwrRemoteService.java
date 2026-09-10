@@ -33,212 +33,211 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class CwrRemoteService {
-    private final RestTemplate restTemplate;
-    private final BaseRemoteService baseRemoteService;
-    private final ObjectMapper objectMapper;
+  private final RestTemplate restTemplate;
+  private final BaseRemoteService baseRemoteService;
+  private final ObjectMapper objectMapper;
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>>  inquiryCwr(
-            InquiryCwrRemoteRequest request
-    ) throws JsonProcessingException {
-        String jsonStr = "";
-        String responseStr = null;
-        int statusCode = 200;
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> inquiryCwr(
+    InquiryCwrRemoteRequest request
+  ) throws JsonProcessingException {
+    String jsonStr = "";
+    String responseStr = null;
+    int statusCode = 200;
 //        final String url = baseRemoteService.Mou_Generic_GetPagingObjectBySQL();
-        final String url = baseRemoteService.confinsMouGetPagingSQL;
-        try {
-            PropCriteriaGenericTypeRequest propCriteria = PropCriteriaGenericTypeRequest.builder()
-                    .propName(request.getName())
-                    .value(
-                            !StringUtil.isNullOrEmpty(request.getCwrNo())
-                                    ? request.getCwrNo()
-                                    : request.getCustNo()
-                    )
-                    .build();
+    final String url = baseRemoteService.confinsMouGetPagingSQL;
+    try {
+      PropCriteriaGenericTypeRequest propCriteria = PropCriteriaGenericTypeRequest.builder()
+        .propName(request.getName())
+        .value(
+          !StringUtil.isNullOrEmpty(request.getCwrNo())
+            ? request.getCwrNo()
+            : request.getCustNo()
+        )
+        .build();
 
-            InquiryCwrCriteriaRemoteRequest criteriaRequest = InquiryCwrCriteriaRemoteRequest.builder()
-                    .queryString(CriteriaGenericTypeRemoteRequest.QueryString.inquiryCwr())
-                    .criteria(List.of(propCriteria))
-                    .build();
+      InquiryCwrCriteriaRemoteRequest criteriaRequest = InquiryCwrCriteriaRemoteRequest.builder()
+        .queryString(CriteriaGenericTypeRemoteRequest.QueryString.inquiryCwr())
+        .criteria(List.of(propCriteria))
+        .build();
 
-            jsonStr = ObjectUtils.jsonToStr(criteriaRequest);
-            final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
-            final HttpEntity<String> requestArgs = new HttpEntity<>(
-                    jsonStr,
-                    headers
-            );
+      jsonStr = ObjectUtils.jsonToStr(criteriaRequest);
+      final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
+      final HttpEntity<String> requestArgs = new HttpEntity<>(
+        jsonStr,
+        headers
+      );
 
-            final ResponseEntity<BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
-            );
-
-            statusCode = response.getStatusCode().value();
-            responseStr = ObjectUtils.jsonToStr(response.getBody());
-            if (StringUtil.isNullOrEmpty(responseStr)) {
-                responseStr = objectMapper.writeValueAsString(response.getBody());
-            }
-
-            return response.getBody();
-        } catch (HttpStatusCodeException httpStatusCodeException) {
-            String message = "Failed to inquiry CWR";
-            statusCode = httpStatusCodeException.getStatusCode().value();
-            responseStr = httpStatusCodeException.getResponseBodyAsString();
-
-            Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
-            if (errorObj != null) {
-                message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
-            }
-
-            if (request.getName() == PropCriteriaGenericTypeRequest.CwrPropName.custNo) {
-                message += " By CWR No";
-            } else {
-                message += " By Cust No";
-            }
-
-            throw new RuntimeException("Error while perform action to Confins. Detail:" + message);
-        } catch (Exception e) {
-            log.error("mstGenericInput: {}", e.getMessage());
-            throw e;
-        } finally {
-            ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
-                    .endpointUrl(url)
-                    .contentType("application/json")
-                    .requestPayload(jsonStr)
-                    .responseJson(responseStr)
-                    .responseStatus(String.valueOf(statusCode))
-                    .build();
+      final ResponseEntity<BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>>> response = restTemplate.exchange(
+        url,
+        HttpMethod.POST,
+        requestArgs,
+        new ParameterizedTypeReference<>() {
         }
+      );
+
+      statusCode = response.getStatusCode().value();
+      responseStr = ObjectUtils.jsonToStr(response.getBody());
+      if (StringUtil.isNullOrEmpty(responseStr)) {
+        responseStr = objectMapper.writeValueAsString(response.getBody());
+      }
+
+      return response.getBody();
+    } catch (HttpStatusCodeException httpStatusCodeException) {
+      String message = "Failed to inquiry CWR";
+      statusCode = httpStatusCodeException.getStatusCode().value();
+      responseStr = httpStatusCodeException.getResponseBodyAsString();
+
+      Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
+      if (errorObj != null) {
+        message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
+      }
+
+      if (request.getName() == PropCriteriaGenericTypeRequest.CwrPropName.custNo) {
+        message += " By CWR No";
+      } else {
+        message += " By Cust No";
+      }
+
+      throw new RuntimeException("Error while perform action to Confins. Detail:" + message);
+    } catch (Exception e) {
+      log.error("mstGenericInput: {}", e.getMessage());
+      throw e;
+    } finally {
+      ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
+        .endpointUrl(url)
+        .contentType("application/json")
+        .requestPayload(jsonStr)
+        .responseJson(responseStr)
+        .responseStatus(String.valueOf(statusCode))
+        .build();
     }
+  }
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> inquiryAgreementByNoAgreement(
-            InquiryAgreementRemoteRequest request
-    ) throws JsonProcessingException {
-        String jsonStr = "";
-        String responseStr = null;
-        int statusCode = 200;
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> inquiryAgreementByNoAgreement(
+    InquiryAgreementRemoteRequest request
+  ) throws JsonProcessingException {
+    String jsonStr = "";
+    String responseStr = null;
+    int statusCode = 200;
 
-//        final String url = baseRemoteService.Los_Generic_GetPagingObjectBySQL();
-        final String url = baseRemoteService.confinsLosGetPagingSQL;
-        try {
-            PropCriteriaGenericTypeRequest propCriteria = PropCriteriaGenericTypeRequest.builder()
-                    .propName(request.getName())
-                    .value(request.getAgreementNo())
-                    .build();
+    final String url = baseRemoteService.confinsLosGetPagingSQL;
+    try {
+      PropCriteriaGenericTypeRequest propCriteria = PropCriteriaGenericTypeRequest.builder()
+        .propName(request.getName())
+        .value(request.getAgreementNo())
+        .build();
 
-            InquiryAgreementCriteriaRemoteRequest criteriaRequest = InquiryAgreementCriteriaRemoteRequest.builder()
-                    .queryString(CriteriaGenericTypeRemoteRequest.QueryString.inquiryAgreement())
-                    .criteria(List.of(propCriteria))
-                    .build();
+      InquiryAgreementCriteriaRemoteRequest criteriaRequest = InquiryAgreementCriteriaRemoteRequest.builder()
+        .queryString(CriteriaGenericTypeRemoteRequest.QueryString.inquiryAgreement())
+        .criteria(List.of(propCriteria))
+        .build();
 
-            jsonStr = ObjectUtils.jsonToStr(criteriaRequest);
-            final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
-            final HttpEntity<String> requestArgs = new HttpEntity<>(
-                    jsonStr,
-                    headers
-            );
+      jsonStr = ObjectUtils.jsonToStr(criteriaRequest);
+      final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
+      final HttpEntity<String> requestArgs = new HttpEntity<>(
+        jsonStr,
+        headers
+      );
 
-            final ResponseEntity<BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
-            );
-
-            statusCode = response.getStatusCode().value();
-            responseStr = ObjectUtils.jsonToStr(response.getBody());
-            if (StringUtil.isNullOrEmpty(responseStr)) {
-                responseStr = objectMapper.writeValueAsString(response.getBody());
-            }
-
-            return response.getBody();
-        } catch (HttpStatusCodeException httpStatusCodeException) {
-            String message = "Failed to inquiry Agreement";
-            statusCode = httpStatusCodeException.getStatusCode().value();
-            responseStr = httpStatusCodeException.getResponseBodyAsString();
-
-            Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
-            if (errorObj != null) {
-                message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
-            }
-
-            throw new RuntimeException("Error while perform action to Confins. Detail:" + message);
-        } catch (Exception e) {
-            log.error("inquiryAgreement: {}", e.getMessage());
-            throw e;
-        } finally {
-            ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
-                    .endpointUrl(url)
-                    .contentType("application/json")
-                    .requestPayload(jsonStr)
-                    .responseJson(responseStr)
-                    .responseStatus(String.valueOf(statusCode))
-                    .build();
+      final ResponseEntity<BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>>> response = restTemplate.exchange(
+        url,
+        HttpMethod.POST,
+        requestArgs,
+        new ParameterizedTypeReference<>() {
         }
+      );
+
+      statusCode = response.getStatusCode().value();
+      responseStr = ObjectUtils.jsonToStr(response.getBody());
+      if (StringUtil.isNullOrEmpty(responseStr)) {
+        responseStr = objectMapper.writeValueAsString(response.getBody());
+      }
+
+      return response.getBody();
+    } catch (HttpStatusCodeException httpStatusCodeException) {
+      String message = "Failed to inquiry Agreement";
+      statusCode = httpStatusCodeException.getStatusCode().value();
+      responseStr = httpStatusCodeException.getResponseBodyAsString();
+
+      Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
+      if (errorObj != null) {
+        message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
+      }
+
+      throw new RuntimeException("Error while perform action to Confins. Detail:" + message);
+    } catch (Exception e) {
+      log.error("inquiryAgreement: {}", e.getMessage());
+      throw e;
+    } finally {
+      ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
+        .endpointUrl(url)
+        .contentType("application/json")
+        .requestPayload(jsonStr)
+        .responseJson(responseStr)
+        .responseStatus(String.valueOf(statusCode))
+        .build();
     }
+  }
 
-    @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public BaseMstRemoteResponseDto<List<InquiryAgreementByNoCwrRemoteDto>> inquiryAgreementByNoCwr(
-            String cwrNo
-    ) throws JsonProcessingException {
-        String jsonStr = "";
-        String responseStr = null;
-        int statusCode = 200;
-       final String url = baseRemoteService.Los_Agreement_GetListAgreementDetailForCwrByCwrNo();
-       // final String url = baseRemoteService.Los_Agreement_GetListAgreementDetailForCwrNo_forward();
-        try {
-            Map<String, Object> request = new HashMap<>();
-            request.put("trxNo", cwrNo);
-            request.put("RequestDateTime", Utils.NowDate());
-            jsonStr = ObjectUtils.jsonToStr(request);
-            final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
-            final HttpEntity<String> requestArgs = new HttpEntity<>(
-                    jsonStr,
-                    headers
-            );
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public BaseMstRemoteResponseDto<List<InquiryAgreementByNoCwrRemoteDto>> inquiryAgreementByNoCwr(
+    String cwrNo
+  ) throws JsonProcessingException {
+    String jsonStr = "";
+    String responseStr = null;
+    int statusCode = 200;
+    final String url = baseRemoteService.Los_Agreement_GetListAgreementDetailForCwrByCwrNo();
+    // final String url = baseRemoteService.Los_Agreement_GetListAgreementDetailForCwrNo_forward();
+    try {
+      Map<String, Object> request = new HashMap<>();
+      request.put("trxNo", cwrNo);
+      request.put("RequestDateTime", Utils.NowDate());
+      jsonStr = ObjectUtils.jsonToStr(request);
+      final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
+      final HttpEntity<String> requestArgs = new HttpEntity<>(
+        jsonStr,
+        headers
+      );
 
-            final ResponseEntity<BaseMstRemoteResponseDto<List<InquiryAgreementByNoCwrRemoteDto>>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
-            );
-
-            statusCode = response.getStatusCode().value();
-            responseStr = ObjectUtils.jsonToStr(response.getBody());
-            if (StringUtil.isNullOrEmpty(responseStr)) {
-                responseStr = objectMapper.writeValueAsString(response.getBody());
-            }
-
-            return response.getBody();
-        } catch (HttpStatusCodeException httpStatusCodeException) {
-            String message = "Failed to inquiry Agreement By No. CWR";
-            statusCode = httpStatusCodeException.getStatusCode().value();
-            responseStr = httpStatusCodeException.getResponseBodyAsString();
-
-            Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
-            if (errorObj != null) {
-                message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
-            }
-
-            throw new RuntimeException("Error while perform action to Confins. Detail: " + message);
-        } catch (Exception e) {
-            log.error("inquiryAgreementByNoCwr: {}", e.getMessage());
-            throw e;
-        } finally {
-            ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
-                    .endpointUrl(url)
-                    .contentType("application/json")
-                    .requestPayload(jsonStr)
-                    .responseJson(responseStr)
-                    .responseStatus(String.valueOf(statusCode))
-                    .build();
+      final ResponseEntity<BaseMstRemoteResponseDto<List<InquiryAgreementByNoCwrRemoteDto>>> response = restTemplate.exchange(
+        url,
+        HttpMethod.POST,
+        requestArgs,
+        new ParameterizedTypeReference<>() {
         }
+      );
+
+      statusCode = response.getStatusCode().value();
+      responseStr = ObjectUtils.jsonToStr(response.getBody());
+      if (StringUtil.isNullOrEmpty(responseStr)) {
+        responseStr = objectMapper.writeValueAsString(response.getBody());
+      }
+
+      return response.getBody();
+    } catch (HttpStatusCodeException httpStatusCodeException) {
+      String message = "Failed to inquiry Agreement By No. CWR";
+      statusCode = httpStatusCodeException.getStatusCode().value();
+      responseStr = httpStatusCodeException.getResponseBodyAsString();
+
+      Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
+      if (errorObj != null) {
+        message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
+      }
+
+      throw new RuntimeException("Error while perform action to Confins. Detail: " + message);
+    } catch (Exception e) {
+      log.error("inquiryAgreementByNoCwr: {}", e.getMessage());
+      throw e;
+    } finally {
+      ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
+        .endpointUrl(url)
+        .contentType("application/json")
+        .requestPayload(jsonStr)
+        .responseJson(responseStr)
+        .responseStatus(String.valueOf(statusCode))
+        .build();
     }
+  }
 }

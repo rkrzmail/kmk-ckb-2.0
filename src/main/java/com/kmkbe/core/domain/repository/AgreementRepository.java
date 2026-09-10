@@ -132,7 +132,7 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         c.cust_email,
         cc.cust_company_type,
         cc.company_address,
-        cc.phone
+        COALESCE(cc.phone, '-') AS phone
     FROM agreement a
     JOIN cwr w ON a.cwr_code = w.cwr_code
     JOIN customer c ON w.cust_code = c.cust_code
