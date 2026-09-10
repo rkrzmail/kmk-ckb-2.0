@@ -682,18 +682,12 @@ public class SignerService {
 
     List<String> externalApiSigners = getSignersFromExternalApi2(financingHdrCode, agreementNo);
 
-    SignerCheckResultDto result = createComparisonResult(dbSigners, externalApiSigners);
-
-    return result;
+    return createComparisonResult(dbSigners, externalApiSigners);
   }
 
   private List<String> getSignersFromDatabase(String financingHdrCode) {
-    try {
       String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
       return debtorRepository.findKaryawanNamesByDebtorName(debtorName);
-    } catch (Exception e) {
-      throw new RuntimeException("Failed to get signers from database", e);
-    }
   }
 
   public List<String> getSignersFromExternalApi2(String financingHdrCode, String agreementNo) {

@@ -34,7 +34,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -245,11 +244,6 @@ public class AgreementService {
 
       if (data != null && !data.isEmpty()) {
         Map<String, Object> obj = findCsulBank();
-
-                /*if (!data.getFirst().getCwrNo().equalsIgnoreCase("")) {
-                    throw new IllegalStateException("Nomor CWR tidak sesuai dengan Nomor Pencairan, pastikan Nomor Pencairan benar");
-                }*/
-
         return InquiryAgreementDto.builder()
           .bankName(obj.get("bankName").toString())
           .rekeningNo(obj.get("accountNo").toString())
