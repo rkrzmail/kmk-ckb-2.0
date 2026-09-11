@@ -757,7 +757,7 @@ public class LoanSubmissionService {
     // Ensure calculateDisburse and its nested value are not null before checking doubleValue()
     if (calculateDisburse.getFinancingAmount().doubleValue() < 50000000) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", calculateDisburse.getFinancingAmount());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81,"Untuk melanjutkan pengajuan silahkan tambahkan jumlah invoice yang ingin " +
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81,"Untuk melanjutkan pengajuan silahkan tambahkan Jumlah Pembiayaan yang ingin " +
         "diajukan hingga mencapai minimal Rp 50.000.000");
     }
 

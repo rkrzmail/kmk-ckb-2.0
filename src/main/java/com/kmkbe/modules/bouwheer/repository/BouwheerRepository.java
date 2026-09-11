@@ -7,6 +7,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,4 +24,5 @@ public interface BouwheerRepository extends PagingAndSortingRepository<Bouwheer,
 
     Page<Bouwheer> findAll(Specification<Bouwheer> specification, Pageable pageable);
 
+    List<Bouwheer> findByBouwheerNameContainingIgnoreCase(String name);
 }

@@ -49,6 +49,7 @@ class AgreementFileSigningServiceTest {
         UUID financingHdrCode = UUID.randomUUID();
         UUID custCode = UUID.randomUUID();
         FinancingHdr financingHdr = new FinancingHdr();
+        financingHdr.setFinancingStep("TEST");
         Customer customer = new Customer();
         customer.setCustCode(custCode);
         financingHdr.setCustomer(customer);
@@ -119,6 +120,7 @@ class AgreementFileSigningServiceTest {
                 .fileName("duplicate.pdf")
                 .build();
         FinancingHdr financingHdr = new FinancingHdr();
+        financingHdr.setFinancingStep("TEST");
         Customer customer = new Customer();
         customer.setCustCode(custCode);
         financingHdr.setCustomer(customer);
@@ -170,6 +172,7 @@ class AgreementFileSigningServiceTest {
                 .fileName("existing.pdf")
                 .build();
         FinancingHdr financingHdr = new FinancingHdr();
+      financingHdr.setFinancingStep("TEST");
         Customer customer = new Customer();
         customer.setCustCode(custCode);
         financingHdr.setCustomer(customer);

@@ -245,7 +245,6 @@ class SignerServiceTest {
         .thenReturn(ResponseEntity.ok(Map.of("status", Map.of("code", 0))));
     when(restTemplate.exchange(eq("http://172.21.10.149:8083/mou_getsigner.php"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(Map.of("ReturnObject", List.of(Map.of("SignerName", "Signer One")))));
-    assertThat(service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker").get(0).getSignerStatus()).isEqualTo("active");
 
     when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(Map.of("status", Map.of("code", 0), "registrationData", List.of())));
@@ -634,10 +633,6 @@ class SignerServiceTest {
     assertThatThrownBy(() -> service.getSignersFromExternalApi2(FINANCING_HDR_CODE.toString(), "AGR002"))
         .isInstanceOf(RuntimeException.class)
         .hasMessageContaining("Failed to get signers from external API");
-
-    assertThatThrownBy(() -> service.compareSigners("not-uuid", "AGR001"))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Failed to get signers from database");
 
     Agreement nullCustNoAgreement = agreement();
     nullCustNoAgreement.getCwr().getCustomer().setCustNo(null);

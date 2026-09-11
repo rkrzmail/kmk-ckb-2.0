@@ -730,17 +730,19 @@ public class SignerService {
   public SignerCheckResultDto createComparisonResult(List<String> dbSigners, List<String> externalApiSigners) {
     SignerCheckResultDto result = new SignerCheckResultDto();
     result.setConfinsSigners(externalApiSigners);
+    result.setDBSigners(dbSigners);
 
-    Set<String> externalSet = new HashSet<>(externalApiSigners);
-    boolean hasMatch = dbSigners.stream().anyMatch(externalSet::contains);
+    Set<String> externalSet = new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+    externalSet.addAll(externalApiSigners);
 
-    if (hasMatch) {
-      result.setUnmatchedSigners(Collections.emptyList());
-    } else {
-      result.setUnmatchedSigners(new ArrayList<>(dbSigners));
-    }
+    List<String> unmatchedSigners = dbSigners.stream()
+      .filter(dbSigner -> !externalSet.contains(dbSigner))
+      .toList();
+
+    result.setUnmatchedSigners(unmatchedSigners);
 
     return result;
+
   }
 
   public ResponseEntity<ApiResponse<?>> downloadDocument(String documentId, String username) {

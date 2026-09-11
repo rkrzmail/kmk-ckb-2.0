@@ -64,45 +64,7 @@ public class CustomerController {
   public CommonResult<CustomerDto> profile(
     HttpServletRequest request
   ) throws SignatureException, BadCredentialsException, IllegalStateException, IllegalAccessException {
-    Customer customer;
-    String custCode = String.valueOf(request.getParameter("custCode"));
-    if (custCode.equalsIgnoreCase("null") || custCode.equalsIgnoreCase("")) {
-      customer = currentUserService.customer();
-    } else {
-      Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString(custCode));
-      if (customerOptional.isPresent()) {
-        customer = customerOptional.get();
-      } else {
-        throw new SignatureException("You are not authorized to access this resource");
-      }
-    }
-
-
-    CustomerDto result = CustomerMapper.INSTANCE.custDtoFromEntity(customer);
-    result.setNpwp(customer.getNpwp());
-
-    if (customer.getCompany() != null) {
-      result.setAddress(CustomerMapper.addressDtoFromCompany(customer.getCompany()));
-      result.setCompany(CustomerMapper.INSTANCE.companyDtoFromEntity(customer.getCompany()));
-      result.getAddress().setArea(customer.getCompany().getArea());
-    } else if (customer.getPersonal() != null) {
-      result.setAddress(CustomerMapper.addressDtoFromPersonal(customer.getPersonal()));
-      result.setPersonal(CustomerMapper.INSTANCE.personalDtoFromEntity(customer.getPersonal()));
-    }
-
-    if (result.getAddress() != null && result.getAddress().getArea() == null) {
-      result.getAddress().setArea("");
-    }
-
-    if (result.getCompany() != null && result.getCompany().getDirectorName() == null) {
-      result.getCompany().setDirectorName("");
-    }
-
-    result.setBouwheerName(bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null)
-      .map(Bouwheer::getBouwheerName)
-      .orElse(null));
-
-    return new CommonResult<CustomerDto>().success(result);
+      return customerService.profile(request);
   }
 
 
@@ -123,7 +85,6 @@ public class CustomerController {
       if (request.getCompany() == null) {
         throw new IllegalArgumentException("Company cannot be null");
       }
-
 
       //mandaroty
       setMessageIfError(request.getCompany().getIdentityNo(), "Identity No field  cannot be null");

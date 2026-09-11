@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.enums.ApprovalStatus;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.AuditTrailService;
@@ -20,7 +21,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.time.LocalDateTime;
@@ -40,25 +40,26 @@ class CustomerServiceIssueRegressionTest {
 
   @Mock private CustomerRepository customerRepository;
   @Mock private BCryptPasswordEncoder bcryptEncoder;
-  @Mock private JdbcTemplate jdbcTemplate;
   @Mock private FinancingHdrRepository financingHdrRepository;
   @Mock private EmailService emailService;
   @Mock private AuditTrailService auditTrailService;
   @Mock private BouwheerRepository bouwheerRepository;
   @Mock private MstEmployeeRepository mstEmployeeRepository;
   private CustomerService service;
+  @Mock private CurrentUserService currentUserService;
+  @Mock private BCryptPasswordEncoder bCryptPasswordEncoder;
 
   @BeforeEach
   void setUp() {
     service = new CustomerService(
       customerRepository,
-      bcryptEncoder,
-      jdbcTemplate,
       financingHdrRepository,
       emailService,
       auditTrailService,
       bouwheerRepository,
-      mstEmployeeRepository
+      currentUserService,
+      mstEmployeeRepository,
+      bCryptPasswordEncoder
     );
   }
 
@@ -76,7 +77,7 @@ class CustomerServiceIssueRegressionTest {
 
     when(customerRepository.findFirstByCustExternalCode("VENDOR-001")).thenReturn(Optional.of(existing));
     when(customerRepository.findByCustEmail("new@example.com")).thenReturn(Optional.empty());
-    when(bcryptEncoder.encode("123456")).thenReturn("encoded-pin");
+//    when(bcryptEncoder.encode("123456")).thenReturn("encoded-pin");
     when(customerRepository.save(any(Customer.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     Customer saved = service.create(request, CustomerType.Company);
@@ -172,7 +173,7 @@ class CustomerServiceIssueRegressionTest {
 
     when(customerRepository.findFirstByCustExternalCode("VENDOR-001")).thenReturn(Optional.of(rejected));
     when(customerRepository.findByCustEmail("user@example.com")).thenReturn(Optional.of(rejected));
-    when(bcryptEncoder.encode("123456")).thenReturn("encoded-pin");
+//    when(bcryptEncoder.encode("123456")).thenReturn("encoded-pin");
     when(customerRepository.save(any(Customer.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     Customer registered = service.create(signUpRequest("VENDOR-001", "user@example.com"), CustomerType.Company);

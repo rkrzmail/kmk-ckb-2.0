@@ -4,6 +4,10 @@ import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.constant.CustomerIdType;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.core.domain.mapper.CustomerMapper;
+import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
@@ -12,20 +16,20 @@ import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.helpers.utils.PageableUtil;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
+import com.kmkbe.modules.customer.model.dto.CustomerDto;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.modules.customer.model.request.SignUpRequest;
 import com.kmkbe.modules.customer.model.response.CustomerResponse;
 import com.kmkbe.modules.customer.model.response.PageCustomerResponse;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.core.utils.FormatingUtils;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.customer.model.request.ApprovalRequest;
-import com.kmkbe.modules.customer.model.request.SignUpRequest;
 import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.model.request.UpdateFapRequest;
 import com.kmkbe.modules.user.entity.MstEmployee;
@@ -38,16 +42,17 @@ import jakarta.persistence.criteria.Root;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SignatureException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -56,31 +61,87 @@ import java.util.UUID;
 @Slf4j
 public class CustomerService {
   private final CustomerRepository customerRepository;
-  private final BCryptPasswordEncoder bcryptEncoder;
-  private final JdbcTemplate jdbcTemplate;
   private final FinancingHdrRepository financingHdrRepository;
   private final EmailService emailService;
   private final AuditTrailService auditTrailService;
   private final BouwheerRepository bouwheerRepository;
+  private final CurrentUserService currentUserService;
   private final MstEmployeeRepository mstEmployeeRepository;
+  private final BCryptPasswordEncoder bCryptPasswordEncoderl;
 
   public CustomerService(CustomerRepository customerRepository,
-                         BCryptPasswordEncoder bcryptEncoder,
-                         JdbcTemplate jdbcTemplate,
                          FinancingHdrRepository financingHdrRepository,
                          EmailService emailService,
                          AuditTrailService auditTrailService,
-                         BouwheerRepository bouwheerRepository, MstEmployeeRepository mstEmployeeRepository) {
+                         BouwheerRepository bouwheerRepository,
+                         CurrentUserService currentUserService,
+                         MstEmployeeRepository mstEmployeeRepository,
+                         BCryptPasswordEncoder bCryptPasswordEncoderl) {
     this.customerRepository = customerRepository;
-    this.bcryptEncoder = bcryptEncoder;
-    this.jdbcTemplate = jdbcTemplate;
     this.financingHdrRepository = financingHdrRepository;
     this.emailService = emailService;
     this.auditTrailService = auditTrailService;
     this.bouwheerRepository = bouwheerRepository;
+    this.currentUserService = currentUserService;
     this.mstEmployeeRepository = mstEmployeeRepository;
+    this.bCryptPasswordEncoderl = bCryptPasswordEncoderl;
   }
 
+  /**
+   * Get Customer detail
+   *
+   * @param request
+   * @return
+   * @throws SignatureException
+   * @throws BadCredentialsException
+   * @throws IllegalStateException
+   * @throws IllegalAccessException
+   */
+  public CommonResult<CustomerDto> profile(
+    HttpServletRequest request
+  ) throws SignatureException, BadCredentialsException, IllegalStateException, IllegalAccessException {
+    Customer customer;
+    String custCode = String.valueOf(request.getParameter("custCode"));
+    if (custCode.equalsIgnoreCase("null") || custCode.equalsIgnoreCase("")) {
+      customer = currentUserService.customer();
+    } else {
+      Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString(custCode));
+      if (customerOptional.isPresent()) {
+        customer = customerOptional.get();
+      } else {
+        throw new SignatureException("You are not authorized to access this resource");
+      }
+    }
+
+
+    CustomerDto result = CustomerMapper.INSTANCE.custDtoFromEntity(customer);
+    result.setNpwp(customer.getNpwp());
+
+    if (customer.getCompany() != null) {
+      result.setAddress(CustomerMapper.addressDtoFromCompany(customer.getCompany()));
+      result.setCompany(CustomerMapper.INSTANCE.companyDtoFromEntity(customer.getCompany()));
+      result.getAddress().setArea(customer.getCompany().getArea());
+    } else if (customer.getPersonal() != null) {
+      result.setAddress(CustomerMapper.addressDtoFromPersonal(customer.getPersonal()));
+      result.setPersonal(CustomerMapper.INSTANCE.personalDtoFromEntity(customer.getPersonal()));
+    }
+
+    if (result.getAddress() != null && result.getAddress().getArea() == null) {
+      result.getAddress().setArea("");
+    }
+
+    if (result.getCompany() != null && result.getCompany().getDirectorName() == null) {
+      result.getCompany().setDirectorName("");
+    }
+
+    result.setBouwheerName(bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null)
+      .map(Bouwheer::getBouwheerName)
+      .orElse(null));
+
+    return new CommonResult<CustomerDto>().success(result);
+  }
+
+  @Transactional
   public Customer create(SignUpRequest request, CustomerType type) {
 
     /**
@@ -125,7 +186,7 @@ public class CustomerService {
     /**
      * Update Customer
      */
-    final String encodePin = bcryptEncoder.encode(request.getPin());
+    final String encodePin = bCryptPasswordEncoderl.encode(request.getPin());
     Customer customer = new Customer();
     CustomerAuditData before = null;
 
@@ -139,7 +200,7 @@ public class CustomerService {
       customer.setApprovalNote(null);
       customer.setApprovalBy(null);
       customer.setApprovalAt(null);
-      customer.setCustEmail(Boolean.TRUE.equals(customer.getIsEmailValid())?customer.getCustEmail():request.getEmail().toLowerCase());
+      customer.setCustEmail(Boolean.TRUE.equals(customer.getIsEmailValid()) ? customer.getCustEmail() : request.getEmail().toLowerCase());
     } else {
       // CREATE
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Create Customer ", request.getVendorCode());
@@ -175,8 +236,8 @@ public class CustomerService {
     Customer newCustomer = customerRepository.save(customer);
 
     // Send email to major account
-    List<MstEmployee>mstEmployees = mstEmployeeRepository.findListEmployeesByRoleCode("mjr_account");
-    mstEmployees.forEach(employee -> emailService.sendRegistrationUser(newCustomer,employee.getEmail()));
+    List<MstEmployee> mstEmployees = mstEmployeeRepository.findListEmployeesByRoleCode("mjr_account");
+    mstEmployees.forEach(employee -> emailService.sendRegistrationUser(newCustomer, employee.getEmail()));
 
     auditTrailService.record(
       "CUSTOMER",
@@ -208,50 +269,47 @@ public class CustomerService {
     auditTrailService.record("CUSTOMER", AuditAction.UPDATE, "Customer", saved.getCustCode(), before, toAuditData(saved));
   }
 
-  public Customer update(
-    Customer customer,
-    UpdateCustomerRequest request
-  ) throws SignatureException {
-    try {
-      boolean emailChanged = false;
-      CustomerAuditData before = toAuditData(customer);
+  @Transactional
+  public Customer update(Customer customer, UpdateCustomerRequest request) {
+    boolean emailChanged = false;
+    CustomerAuditData before = toAuditData(customer);
 
-      String oldEmail = customer.getCustEmail();
-      String newEmail = request.getCustEmail();
+    String oldEmail = customer.getCustEmail();
+    String newEmail = request.getCustEmail();
 
-      if (newEmail != null && !oldEmail.equalsIgnoreCase(newEmail)) {
-        boolean emailExists = customerRepository.existsByCustEmailIgnoreCaseAndCustIdNoNot(
-          newEmail, customer.getCustIdNo()
-        );
-        if (emailExists) {
-          throw new IllegalArgumentException("Email already exists, please use another one");
-        }
-        customer.setCustEmail(newEmail);
-        emailChanged = true;
-      }
-
-      customer.setCustName(request.getCustName());
-      customer.setCustIdNo(request.getCustIdNo());
-      customer.setNpwp(request.getNpwp());
-      try {
-        customer = customerRepository.save(customer);
-        auditTrailService.record("CUSTOMER", AuditAction.UPDATE, "Customer", customer.getCustCode(), before, toAuditData(customer));
-      } catch (DataIntegrityViolationException e) {
+    if (newEmail != null && !oldEmail.equalsIgnoreCase(newEmail)) {
+      boolean emailExists = customerRepository.existsByCustEmailIgnoreCaseAndCustIdNoNot(
+        newEmail, customer.getCustIdNo()
+      );
+      if (emailExists) {
         throw new IllegalArgumentException("Email already exists, please use another one");
       }
-      customer.setForceLogout(emailChanged);
-
-      return customer;
-    } catch (Exception e) {
-      log.error("update, error {}", e.getMessage());
-      throw e;
+      customer.setCustEmail(newEmail);
+      emailChanged = true;
     }
+
+    customer.setCustName(request.getCustName());
+    customer.setCustIdNo(request.getCustIdNo());
+    customer.setNpwp(request.getNpwp());
+    customer.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
+    customer.setDtmUpd(LocalDateTime.now());
+    customer = customerRepository.save(customer);
+
+    /**
+     * Insert Audit trail
+     */
+    auditTrailService.record("CUSTOMER", AuditAction.UPDATE, "Customer", customer.getCustCode(), before, toAuditData(customer));
+
+    /**
+     * Force logout
+     */
+    customer.setForceLogout(emailChanged);
+
+    return customer;
   }
 
   public ProfileFapDto prolifeFAP(HttpServletRequest request) {
     String financingHdrCode = request.getParameter("financingHdrCode");
-
-
     return null;
   }
 
@@ -274,6 +332,8 @@ public class CustomerService {
       .build();
   }
 
+
+  @Transactional
   public void updateFapData(Customer customer, UpdateFapRequest request) {
     if (customer == null) {
       throw new IllegalArgumentException("Authenticated customer is required");
@@ -338,14 +398,22 @@ public class CustomerService {
     String searchValue = request.getSearchValue();
     String searchBy = request.getSearchBy();
 
-    if ("bouwheerName".equals(request.getSearchBy())) {
-      Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findFirstByBouwheerName(request.getSearchValue());
-      if (bouwheerOptional.isEmpty()) {
+    List<String> bouwheerCodes = new ArrayList<>();
+
+    if ("bouwheerName".equals(request.getSearchBy()) && request.getSearchValue() != null) {
+      List<Bouwheer> bouwheerList = bouwheerRepository.findByBouwheerNameContainingIgnoreCase(request.getSearchValue());
+
+      if (bouwheerList.isEmpty()) {
         log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getSearchValue());
         throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81 + "Bouwheer Name " + request.getSearchValue());
       }
-      searchValue = String.valueOf(bouwheerOptional.get().getBouwheerCode());
+
+      bouwheerCodes = bouwheerList.stream()
+        .map(b -> String.valueOf(b.getBouwheerCode()))
+        .toList();
       searchBy = "bouwheer";
+    } else {
+      searchValue = request.getSearchValue();
     }
 
     String sortBy = request.getSortBy();
@@ -361,13 +429,25 @@ public class CustomerService {
 
     String finalSearchValue = searchValue;
     String finalSearchBy = searchBy;
+    List<String> finalBouwheerCodes = bouwheerCodes;
 
     Page<Customer> page = customerRepository.findAll((Root<Customer> root, CriteriaQuery<?> query, CriteriaBuilder builder) -> {
-      Expression<String> lowerColumn = builder.lower(root.get(finalSearchBy).as(String.class));
-      String searchPattern = "%" + finalSearchValue.toLowerCase() + "%";
-      return builder.and(builder.like(lowerColumn, searchPattern));
-    }, pageable);
+      if ("bouwheer".equals(finalSearchBy)) {
+        CriteriaBuilder.In<String> inClause = builder.in(root.get("bouwheer").as(String.class));
 
+        for (String code : finalBouwheerCodes) {
+          inClause.value(code);
+        }
+        return builder.and(inClause);
+      }
+
+      if (finalSearchBy != null && finalSearchValue != null) {
+        Expression<String> lowerColumn = builder.lower(root.get(finalSearchBy).as(String.class));
+        String searchPattern = "%" + finalSearchValue.toLowerCase() + "%";
+        return builder.and(builder.like(lowerColumn, searchPattern));
+      }
+      return builder.conjunction();
+    }, pageable);
 
     List<CustomerResponse> responses = page.getContent().stream().map(item -> {
       CustomerResponse response = new CustomerResponse();
@@ -432,6 +512,7 @@ public class CustomerService {
    * @return
    * @throws MessagingException
    */
+  @Transactional
   public BaseResponse approval(ApprovalRequest request, String username) {
     Optional<Customer> customerOptional = customerRepository.findByCustCode(request.getCustCode());
     if (customerOptional.isEmpty()) {
@@ -468,7 +549,7 @@ public class CustomerService {
     );
 
     if (ApprovalStatus.APPROVED.name().equals(approvalStatus)) {
-      emailService.sendNotificationActive(saved,request.getApprovalNote());
+      emailService.sendNotificationActive(saved, request.getApprovalNote());
     } else {
       emailService.sendNotificationRejected(saved, request.getApprovalNote());
     }
