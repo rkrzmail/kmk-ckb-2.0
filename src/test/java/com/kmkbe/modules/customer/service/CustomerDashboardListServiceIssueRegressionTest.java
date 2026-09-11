@@ -1,5 +1,6 @@
 package com.kmkbe.modules.customer.service;
 
+import com.kmkbe.core.domain.dto.CustomerCreditFacilityDueDateDto;
 import com.kmkbe.core.domain.dto.CustomerCreditFacilityNewDto;
 import com.kmkbe.core.domain.entity.FinancingDtl;
 import com.kmkbe.core.domain.entity.FinancingHdr;
@@ -22,6 +23,7 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Set;
 import java.util.UUID;
 
@@ -93,6 +95,45 @@ class CustomerDashboardListServiceIssueRegressionTest {
   void activeCreditFacilityUsesEmptyInvoiceNumberWhenDetailsAreUnavailable() {
     assertThat(service.invoiceNumbers(java.util.List.of())).isEmpty();
     assertThat(service.invoiceNumbers(null)).isEmpty();
+  }
+
+  @Test
+  void invoiceDueDateContainsCustomerInvoiceNumber() throws Exception {
+    Customer customer = Customer.builder()
+      .custCode(UUID.randomUUID())
+      .custName("Debitur")
+      .custTypeCode("Company")
+      .build();
+    FinancingHdr financing = new FinancingHdr();
+    financing.setFinancingHdrCode(UUID.randomUUID());
+    financing.setCustomer(customer);
+    financing.setBouwheer(Bouwheer.builder().bouwheerName("CKB").build());
+    financing.setFinancingStatus("NEW");
+    financing.setFinancingStep("NEW");
+    financing.setFinancingDueDate(LocalDateTime.of(2026, 10, 1, 0, 0));
+    financing.setFinancingAmt(1_000_000D);
+    financing.setAgreement(Set.of());
+
+    FinancingDtl financingDtl = FinancingDtl.builder()
+      .financingHdr(financing)
+      .invoice(Invoice.builder()
+        .custInvNo("INV-DUE-001")
+        .poNumber("PO-001")
+        .postingDate(new Date())
+        .build())
+      .build();
+    when(financingDtlRepository.findByCustomer(eq(customer.getCustCode().toString()), any(Pageable.class)))
+      .thenReturn(new PageImpl<>(java.util.List.of(financingDtl)));
+    when(financingHdrRepository.countByCustomerAndFinancingStatus(customer, "PAID")).thenReturn(0L);
+
+    PaginationResult<CustomerCreditFacilityDueDateDto> result = service.listinvoicesduedate(
+      customer,
+      new PaginationRequest()
+    );
+
+    assertThat(result.getList()).singleElement()
+      .extracting(CustomerCreditFacilityDueDateDto::getInvoiceNo)
+      .isEqualTo("INV-DUE-001");
   }
 
   private FinancingDtl financingDetail(String invoiceNo) {

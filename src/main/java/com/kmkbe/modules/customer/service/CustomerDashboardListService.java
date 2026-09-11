@@ -306,6 +306,7 @@ public class CustomerDashboardListService {
             .financingHdrCode(hdr.getFinancingHdrCode().toString())
 
             .agreementCode(hdr.getAgreement().isEmpty() ? "" : hdr.getAgreement().stream().toList().getLast().getAgreementCode())
+            .invoiceNo(e.getInvoice().getCustInvNo())
             .poNumber(e.getInvoice().getPoNumber())
             .postingDate(e.getInvoice().getPostingDate())
 
