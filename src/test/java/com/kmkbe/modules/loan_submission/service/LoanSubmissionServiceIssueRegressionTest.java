@@ -183,6 +183,44 @@ class LoanSubmissionServiceIssueRegressionTest {
   }
 
   @Test
+  void firstSubmissionUsesDtmCrtAsSubmitTimeAndPreservesFinancingDate() {
+    LocalDateTime draftCreatedAt = LocalDateTime.of(2026, 8, 27, 9, 0);
+    LocalDateTime submittedAt = LocalDateTime.of(2026, 9, 10, 14, 30);
+    FinancingHdr financing = new FinancingHdr();
+    financing.setFinancingDate(draftCreatedAt);
+    financing.setDtmCrt(draftCreatedAt);
+    financing.setFinancingStatus("");
+    financing.setFinancingStep("");
+
+    LoanSubmissionService.applySubmissionMetadata(financing, "debtor", submittedAt);
+
+    assertThat(financing.getFinancingDate()).isEqualTo(draftCreatedAt);
+    assertThat(financing.getDtmCrt()).isEqualTo(submittedAt);
+    assertThat(financing.getDtmUpd()).isEqualTo(submittedAt);
+    assertThat(financing.getFinancingStatus()).isEqualTo("NEW");
+    assertThat(financing.getFinancingStep()).isEqualTo("NEW");
+    assertThat(financing.getUsrUpd()).isEqualTo("debtor");
+  }
+
+  @Test
+  void repeatedSubmissionDoesNotMoveOriginalSubmitTime() {
+    LocalDateTime financingDate = LocalDateTime.of(2026, 8, 27, 9, 0);
+    LocalDateTime firstSubmittedAt = LocalDateTime.of(2026, 9, 10, 14, 30);
+    LocalDateTime repeatedAt = LocalDateTime.of(2026, 9, 12, 10, 0);
+    FinancingHdr financing = new FinancingHdr();
+    financing.setFinancingDate(financingDate);
+    financing.setDtmCrt(firstSubmittedAt);
+    financing.setFinancingStatus("INPROCESS");
+    financing.setFinancingStep("ASSIGNMENT");
+
+    LoanSubmissionService.applySubmissionMetadata(financing, "debtor", repeatedAt);
+
+    assertThat(financing.getFinancingDate()).isEqualTo(financingDate);
+    assertThat(financing.getDtmCrt()).isEqualTo(firstSubmittedAt);
+    assertThat(financing.getDtmUpd()).isEqualTo(repeatedAt);
+  }
+
+  @Test
   void simulationAdjustmentEmailUsesInvoiceDataDebtorPhoneAndTwoDecimalAmounts() {
     Customer customer = Customer.builder()
       .custCode(UUID.randomUUID())

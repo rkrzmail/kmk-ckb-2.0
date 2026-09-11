@@ -55,6 +55,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
@@ -1044,10 +1045,7 @@ public class LoanSubmissionService {
       final FinancingHdr financing = financingHdrService.getByCode(request.getFinancingHdrCode());
       FinancingAuditData before = toFinancingAuditData(financing);
       {
-        financing.setFinancingStatus(FinancingStatus.NEW.name());
-        financing.setFinancingStep(FinancingStatus.NEW.name());
-        financing.setDtmUpd(DateTimeUtils.now());
-        financing.setUsrUpd(customer.getCustName());
+        applySubmissionMetadata(financing, customer.getCustName(), DateTimeUtils.now());
 
 
         try {
@@ -1336,6 +1334,24 @@ public class LoanSubmissionService {
       log.error("createLoanSubmission, error {}", e.getMessage());
       throw e;
     }
+  }
+
+  static void applySubmissionMetadata(
+    FinancingHdr financing,
+    String username,
+    LocalDateTime submittedAt
+  ) {
+    String currentStatus = financing.getFinancingStatus();
+    boolean firstSubmission = currentStatus == null || currentStatus.isBlank();
+
+    if (firstSubmission) {
+      financing.setDtmCrt(submittedAt);
+    }
+
+    financing.setFinancingStatus(FinancingStatus.NEW.name());
+    financing.setFinancingStep(FinancingStatus.NEW.name());
+    financing.setDtmUpd(submittedAt);
+    financing.setUsrUpd(username);
   }
 
   LoanDisburseEmailPayload buildSimulationAdjustmentEmailPayload(
