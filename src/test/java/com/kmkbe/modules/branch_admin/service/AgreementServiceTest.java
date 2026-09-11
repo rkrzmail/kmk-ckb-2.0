@@ -420,7 +420,7 @@ class AgreementServiceTest {
 
     @Test
     void contractUploadNotificationSkipsEmailWhenSiscaReturnsNoData() {
-        when(configRemoteService.getEmailByPosition("", "412", "ADM"))
+        when(configRemoteService.getEmailByPosition("", "412", "BRANCH ADMIN"))
                 .thenReturn(MailPositionDto.builder().data(new ArrayList<>()).build());
 
         ReflectionTestUtils.invokeMethod(
