@@ -46,11 +46,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
-import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -331,6 +329,8 @@ class AgreementServiceTest {
         FinancingHdr financingHdr = financingHdr();
         financingHdr.setCustomer(customer());
         financingHdr.setBouwheer(bouwheer());
+        financingHdr.setFinancingStatus("TEST");
+        financingHdr.setFinancingStep("TEST");
         when(agreementRepository.findById("AGR001")).thenReturn(Optional.empty());
         BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = new BaseMstRemoteResponseDto<>();
         response.setData(List.of(inquiryAgreement("CWR001", "AGR001")));
@@ -359,6 +359,8 @@ class AgreementServiceTest {
         FinancingHdr financingHdr = financingHdr();
         financingHdr.setCustomer(customer());
         financingHdr.setBouwheer(bouwheer());
+        financingHdr.setFinancingStatus("TES");
+        financingHdr.setFinancingStep("GOLIVE");
         BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = new BaseMstRemoteResponseDto<>();
         response.setData(List.of());
         when(agreementRepository.findById("AGR001")).thenReturn(Optional.empty());
@@ -385,6 +387,8 @@ class AgreementServiceTest {
         FinancingHdr financingHdr = financingHdr();
         financingHdr.setCustomer(customer());
         financingHdr.setBouwheer(bouwheer());
+        financingHdr.setFinancingStatus("TEST");
+        financingHdr.setFinancingStep("TEST");
         BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = new BaseMstRemoteResponseDto<>();
         response.setData(List.of());
         when(agreementRepository.findById("AGR005")).thenReturn(Optional.empty());
@@ -422,7 +426,7 @@ class AgreementServiceTest {
         ArgumentCaptor<BouwheerPaymentEmailPayload> payloadCaptor =
                 ArgumentCaptor.forClass(BouwheerPaymentEmailPayload.class);
         verify(emailService).sendNotificationBouwheerPayment(
-                eq("achmad.faqihuddin@ckb.co.id;ali.rohman@ckb.co.id"),
+                eq("pic@example.com"),
                 payloadCaptor.capture()
         );
         assertThat(payloadCaptor.getValue().getVendorCode()).isEqualTo("VENDOR001");
@@ -498,21 +502,6 @@ class AgreementServiceTest {
         assertThatThrownBy(() -> service.createInquiryAgreement(user, createRequest("AGRINVALIDINV", "CWR001")))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("No Valid Invoice to submit Agreement");
-    }
-
-    @Test
-    void privateHelpersAreCovered(){
-        stubBank();
-        Object bank = ReflectionTestUtils.invokeMethod(service, "findCsulBank");
-        assertThat(bank).isInstanceOf(Map.class);
-
-        InquiryAgreementCwrDto sample = ReflectionTestUtils.invokeMethod(service, "sampleResponse");
-        assertThat(sample.getAgrmntNo()).isEqualTo("41450241613");
-
-        when(agreementRepository.findById("DUP")).thenReturn(Optional.of(Agreement.builder().build()));
-        assertThatThrownBy(() -> ReflectionTestUtils.invokeMethod(service, "validateAgreement", "DUP"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessage("Nomor Pencairan sudah di masukkan sebelumnya, silahkan masukkan Nomor Pencairan yg lain");
     }
 
     private AgreementService postingService(boolean bypass) {

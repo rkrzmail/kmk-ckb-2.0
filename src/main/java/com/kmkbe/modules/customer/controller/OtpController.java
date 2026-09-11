@@ -96,7 +96,7 @@ public class OtpController {
   @PutMapping("/verify/forgot-pin")
   public CommonResult<String> verifyForgotPin(
     @Valid @RequestBody VerifyOtpRequest request
-  ) throws Exception {
+  ) {
 
     //validate dan bruce attack
     String key = "verifyforgot:" + request.email();

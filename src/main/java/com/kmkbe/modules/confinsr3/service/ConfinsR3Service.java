@@ -105,7 +105,7 @@ public class ConfinsR3Service {
         type.setHigh(0);
         type.setDataType("");
         type.setIsCriteriaDataTable(false);
-        type.setRestriction("Eq");
+        type.setRestriction("Like");
         type.setPropName(item.getPropName());
         type.setValue(item.getValue());
 

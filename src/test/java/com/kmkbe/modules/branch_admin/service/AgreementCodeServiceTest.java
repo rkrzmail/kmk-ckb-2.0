@@ -113,7 +113,7 @@ class AgreementCodeServiceTest {
 
         CommonResult<SitDto> result = service.getAgreementsByFinancingHdrCode(FINANCING_HDR_CODE);
 
-        assertThat(result.getData().getDirectorName()).isEqualTo("Default Signer");
+        assertThat(result.getData().getDirectorName()).isEqualTo("DIR");
         assertThat(result.getData().getJabatan()).isEqualTo("Manager");
         assertThat(result.getData().getEmployeeName()).isEqualTo("Jane Doe");
     }

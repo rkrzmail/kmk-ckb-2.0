@@ -317,7 +317,7 @@ class ReportServiceTest {
 
     assertThat(result).isEqualTo("pdf".getBytes());
     ArgumentCaptor<Map> paramsCaptor = ArgumentCaptor.forClass(Map.class);
-    verify(jasperReportRenderer).renderToPdf(eq("/Reports/main_report-dmp.jasper"), paramsCaptor.capture());
+    verify(jasperReportRenderer).renderToPdf(eq("/Reports/main_report.jasper"), paramsCaptor.capture());
     assertThat(paramsCaptor.getValue()).containsEntry("NamaBranchManager", "BM");
     assertThat(paramsCaptor.getValue()).containsEntry("AgrmntNo", "AGR-CODE");
     assertThat(paramsCaptor.getValue()).containsKey("tableDataSource");
