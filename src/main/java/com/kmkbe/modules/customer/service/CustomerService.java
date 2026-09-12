@@ -32,8 +32,6 @@ import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.model.request.UpdateFapRequest;
-import com.kmkbe.modules.user.entity.MstEmployee;
-import com.kmkbe.modules.user.repository.MstEmployeeRepository;
 import jakarta.mail.MessagingException;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.CriteriaQuery;
@@ -66,7 +64,6 @@ public class CustomerService {
   private final AuditTrailService auditTrailService;
   private final BouwheerRepository bouwheerRepository;
   private final CurrentUserService currentUserService;
-  private final MstEmployeeRepository mstEmployeeRepository;
   private final BCryptPasswordEncoder bCryptPasswordEncoderl;
 
   public CustomerService(CustomerRepository customerRepository,
@@ -75,7 +72,6 @@ public class CustomerService {
                          AuditTrailService auditTrailService,
                          BouwheerRepository bouwheerRepository,
                          CurrentUserService currentUserService,
-                         MstEmployeeRepository mstEmployeeRepository,
                          BCryptPasswordEncoder bCryptPasswordEncoderl) {
     this.customerRepository = customerRepository;
     this.financingHdrRepository = financingHdrRepository;
@@ -83,7 +79,6 @@ public class CustomerService {
     this.auditTrailService = auditTrailService;
     this.bouwheerRepository = bouwheerRepository;
     this.currentUserService = currentUserService;
-    this.mstEmployeeRepository = mstEmployeeRepository;
     this.bCryptPasswordEncoderl = bCryptPasswordEncoderl;
   }
 
@@ -234,10 +229,6 @@ public class CustomerService {
     customer.setUsrCrt(customer.getCustName());
     customer.setDtmCrt(DateTimeUtils.now());
     Customer newCustomer = customerRepository.save(customer);
-
-    // Send email to major account
-    List<MstEmployee> mstEmployees = mstEmployeeRepository.findListEmployeesByRoleCode("mjr_account");
-    mstEmployees.forEach(employee -> emailService.sendRegistrationUser(newCustomer, employee.getEmail()));
 
     auditTrailService.record(
       "CUSTOMER",

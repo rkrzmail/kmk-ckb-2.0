@@ -31,6 +31,8 @@ public class EmailService {
   private static final int MAX_SENT_FAIL_ATTEMPTS = 2;
   private static final String EMAIL_FROM = "CSUL.Finance@csul.co.id";
   private static final int EMAIL_PRIORITY = 2;
+  private static final String OTP_DELIVERY_FAILURE_MESSAGE =
+    "Kode OTP gagal dikirim ke email Anda. Silakan coba kembali beberapa saat lagi.";
 
   private static final String M_CUST_NEW_OTP = "M_CUST_NEW_OTP";
   private static final String M_CUST_VERIFY = "M_CUST_VERIFY";
@@ -143,18 +145,31 @@ public class EmailService {
     this.environment = environment;
   }
 
-  @Async
   public void sendOtp(Customer customer, String otpCode) {
-    try {
-      Map<String, Object> obj = new HashMap<>();
-      obj.put("name", customer.getCustName());
-      obj.put("otp_code", otpCode);
-      obj.put("id_no", customer.getCustIdNo());
-      obj.put("email", customer.getCustEmail());
+    Map<String, Object> obj = new HashMap<>();
+    obj.put("name", customer.getCustName());
+    obj.put("otp_code", otpCode);
+    obj.put("id_no", customer.getCustIdNo());
+    obj.put("email", customer.getCustEmail());
 
-      send(customer.getCustEmail(), obj, M_CUST_NEW_OTP);
-    } catch (Exception e) {
-      log.error("Error sendOtp {}", e.getMessage());
+    final boolean delivered;
+    try {
+      delivered = send(customer.getCustEmail(), obj, M_CUST_NEW_OTP);
+    } catch (Exception exception) {
+      log.error(
+        "sendOtp failed. reasonCode=OTP_PREPARATION_FAILED, recipient={}",
+        customer.getCustEmail(),
+        exception
+      );
+      throw new IllegalStateException(OTP_DELIVERY_FAILURE_MESSAGE, exception);
+    }
+
+    if (!delivered) {
+      log.error(
+        "sendOtp failed. reasonCode=OTP_DELIVERY_FAILED, recipient={}",
+        customer.getCustEmail()
+      );
+      throw new IllegalStateException(OTP_DELIVERY_FAILURE_MESSAGE);
     }
   }
 
@@ -532,7 +547,7 @@ public class EmailService {
     }
   }
 
-  private void send(
+  private boolean send(
     final String email,
     final Map<String, Object> args,
     final String templateCode
@@ -544,7 +559,7 @@ public class EmailService {
       template.setBodyMail(mappingBody(template.getBodyMail(), args));
     }
 
-    sendMailMessage(
+    return sendMailMessage(
       template,
       email
     );
