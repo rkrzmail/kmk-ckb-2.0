@@ -411,7 +411,7 @@ public class LoanSubmissionService {
   public FinancingHdrDto viewCulateDisburse(
     String financeCode,
     String histCode
-  ) throws SignatureException, JsonProcessingException, ParseException {
+  ) {
     try {
 
       Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financeCode));
@@ -803,7 +803,6 @@ public class LoanSubmissionService {
       finalFinancingHdr = financingHdrService.create(
         customer,
         bouwheer,
-        calculateDisburse.getProduct(),
         request,
         simulationDisburseResult
       );
@@ -859,143 +858,6 @@ public class LoanSubmissionService {
       )
     );
     return result;
-  }
-
-
-  @Transactional
-  public CreatedSimulationDto createSimulation_TU(
-    Customer customer,
-    CreateSimulationRequest request
-  ) throws Exception {
-    try {
-      final String bouwheerCode = request.getInvoices().getFirst().getBouwheerCode();
-      if (customer == null) {
-        throw CommonInvalidException.cannotAccessResource();
-      }
-
-      final Product product = findProductByIdAndBouwheer(request.getProductId(), bouwheerCode);
-      final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(bouwheerCode))
-        .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
-
-      final double totalInvoiceAmount = request.getInvoices()
-        .stream()
-        .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
-        .sum();
-
-      final Date maxInvoiceDueDate = request.getInvoices()
-        .stream()
-        .map(PostedInvoicePayload::getInvoiceDueDate)
-        .max(Date::compareTo)
-        .get();
-
-      final CalculateSimulationRequest simulation = new CalculateSimulationRequest();
-      {
-        simulation.setDisbursePercentage(request.getDisbursePercentage());
-        simulation.setTotalInvoiceAmount(BigDecimal.valueOf(totalInvoiceAmount).setScale(2, RoundingMode.CEILING));
-        simulation.setBouwheerCode(request.getInvoices().getFirst().getBouwheerCode());
-        simulation.setInvoiceDueDate(
-          DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
-        );
-      }
-
-      final EstimatedDisburseDto calculateDisburse = calculateDisburse(customer, simulation);
-      if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
-        throw new IllegalStateException("Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
-          "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
-      }
-
-
-      if (calculateDisburse.getTotalInvoiceAmount().doubleValue() < 50000000) {
-        throw new IllegalStateException("Untuk melanjukan pengajuan silahkan tambahkan jumlah invoice yang ingin" + " " +
-          "diajukan hingga mencapai minimal   Rp 50.000.000");
-      }
-
-      final SimulationDisburseResult simulationDisburseResult = SimulationDisburseResult.builder()
-        .financingAmount(calculateDisburse.getFinancingAmount())
-        .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
-        .maxInvoiceDate(maxInvoiceDueDate)
-        .totalInvoiceAmount(totalInvoiceAmount)
-        .interestFeeAmount(calculateDisburse.getInterestFeeAmount())
-        .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
-        .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
-        .othersFeeAmount(calculateDisburse.getOthersFeeAmount())
-        .legalFeeAmount(calculateDisburse.getLegalFeeAmount())
-        .surveyFeeAmount(calculateDisburse.getSurveyFeeAmount())
-        .adminRate(calculateDisburse.getAdminRate())
-        .effectiveRate(calculateDisburse.getEffectiveRate())
-        .provisionRate(calculateDisburse.getProvisionRate())
-        .build();
-
-      final FinancingHdr createdFinancingHdr = financingHdrService.create(
-        customer,
-        bouwheer,
-        product,
-        request,
-        simulationDisburseResult
-      );
-
-           /* final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(authentication, null);
-            final InquiryInvoiceRemoteDto inquiryInvoiceRemote;
-
-            try {
-                inquiryInvoiceRemote = invoiceRemoteDto.inquiryInvoice(vendorTokenExtractor.getVendorCode()).getData();
-                List<InquiryInvoiceRemoteDto.InvoiceRemoteDto> invoiceRemoteDto = inquiryInvoiceRemote.getRow();
-                List<PostedInvoiceDto> postedInvoices = new ArrayList<>();
-                for (InquiryInvoiceRemoteDto.InvoiceRemoteDto invoice : invoiceRemoteDto) {
-                    for (PostedInvoicePayload postedInvoicePayload : request.getInvoices()) {
-                        if (invoice.getReference().equals(postedInvoicePayload.getInvoiceCode())) {
-                            postedInvoices.add(postedInvoicePayload.toPostedInvoiceDto());
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                //throw new IllegalStateException("Terjdi kesalahan saat mengambil data invoice dari pihak PT. Trakindo Utama.");
-            }*/
-
-      final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, CreateSubmissionRequest.builder()
-        .vendorCode(request.getVendorCode())
-        .bouwheerCode(request.getBouwheerCode())
-        .productId(request.getProductId())
-        .disbursePercentage(request.getDisbursePercentage())
-        .totalInvoiceAmount(request.getTotalInvoiceAmount())
-        .invoices(request.getInvoices())
-        .build());
-
-      financingDtlService.createBulk(
-        customer,
-        bouwheer,
-        createdFinancingHdr,
-        request.getInvoices(),
-        createdInvoices
-      );
-
-      CreatedSimulationDto result = CreatedSimulationDto.builder()
-        .productId(request.getProductId())
-        .financingHdrCode(createdFinancingHdr.getFinancingHdrCode())
-        .invoices(createdInvoices)
-        .build();
-      auditTrailService.record(
-        "LOAN_SUBMISSION_SIMULATION",
-        AuditAction.CREATE,
-        "FinancingHdr",
-        createdFinancingHdr.getFinancingHdrCode(),
-        null,
-        new CreatedSimulationAuditData(
-          createdFinancingHdr.getFinancingHdrCode(),
-          customer.getCustCode(),
-          bouwheer.getBouwheerCode(),
-          request.getProductId(),
-          createdInvoices.size(),
-          totalInvoiceAmount,
-          createdFinancingHdr.getFinancingAmt(),
-          createdFinancingHdr.getDisburseAmt()
-        )
-      );
-      return result;
-    } catch (Exception e) {
-      log.error("createSimulation, error {}", e.getMessage());
-      throw e;
-    }
   }
 
   public void createLoanSubmission(

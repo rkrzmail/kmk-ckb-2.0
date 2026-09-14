@@ -19,11 +19,11 @@ import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.helpers.utils.Utils;
-import com.kmkbe.modules.product.model.entity.Product;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.persistence.criteria.JoinType;
 import jakarta.persistence.criteria.Predicate;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -32,7 +32,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
-import java.security.SignatureException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
@@ -59,96 +58,84 @@ public class FinancingHdrService {
     this.financingDtlRepository = financingDtlRepository;
   }
 
+  @Transactional
   public FinancingHdr create(
     Customer customer,
     Bouwheer bouwheer,
-    Product product,
     CreateSimulationRequest request,
     SimulationDisburseResult simulationResult
   ) {
-    try {
-      final PostedInvoicePayload firstInvoice = request.getInvoices().getFirst();
-      FinancingHdr header = new FinancingHdr();
-      {
-        final double disburseAmount = simulationResult.getEstimatedDisburseAmount().doubleValue();
-        final double totalInvoiceAmount = simulationResult.getTotalInvoiceAmount();
-        final double financingAmount = simulationResult.getFinancingAmount().doubleValue();
+    final PostedInvoicePayload firstInvoice = request.getInvoices().getFirst();
+    FinancingHdr header = new FinancingHdr();
+    {
+      final double disburseAmount = simulationResult.getEstimatedDisburseAmount().doubleValue();
+      final double totalInvoiceAmount = simulationResult.getTotalInvoiceAmount();
+      final double financingAmount = simulationResult.getFinancingAmount().doubleValue();
 
-        // ((tanggal due date invoice) 10 - hari berjalan) + 7 (bouwheer grace period)
-        Long top = (long) DateTimeUtils.dateDiffInDay(new Date(), request.getInvoices().getFirst().getInvoiceDueDate());
+      Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer);
+      // ((tanggal due date invoice) 10 - hari berjalan) + 7 (bouwheer grace period)
+      Long top = (long) DateTimeUtils.dateDiffInDay(new Date(), request.getInvoices().getFirst().getInvoiceDueDate());
 
-        header.setFinancingHdrCode(UUID.randomUUID());
-        header.setCustomer(customer);
-        header.setBouwheer(bouwheer);
-        header.setTenor(top + bouwheer.getGracePeriod());
-        header.setFinancingDate(DateTimeUtils.now());
-        header.setCurrencyCode(firstInvoice.getCurrencyCode());
-        header.setInvoiceQty((long) request.getInvoices().size());
-        header.setInterestType("COF"); // not clear
-        header.setTermOfPayment(top); // not clear
-        header.setGracePeriod(bouwheer.getGracePeriod()); // get from bouwheer grace_period
-        header.setRetention(100 - request.getDisbursePercentage()); // not clear
-        header.setTotalInvoiceAmt(totalInvoiceAmount);
-        header.setFinancingAmt(financingAmount);
-        header.setDisburseAmt(disburseAmount);
-        header.setInterestAmt(simulationResult.getInterestFeeAmount().doubleValue()); // not clear
-        header.setFinancingDueDate(Utils.toInstant(simulationResult.getMaxInvoiceDate())); // not clear
-        header.setProvisionFeeAmt(simulationResult.getProvisionFeeAmount().doubleValue()); // not clear
-        header.setProvisionFeePercentage(simulationResult.getProvisionRate());
-        header.setAdminFeePercentage(simulationResult.getAdminRate());
-        header.setEffectiveRate(simulationResult.getEffectiveRate());
-        header.setSurveyFeeAmt(simulationResult.getSurveyFeeAmount().doubleValue());
-        header.setLegalFeeAmt(simulationResult.getLegalFeeAmount().doubleValue());
-        header.setOthersFeeAmt(simulationResult.getOthersFeeAmount().doubleValue());
-        header.setAdminFeeAmt(simulationResult.getAdminFeeAmount().doubleValue());
+      header.setFinancingHdrCode(UUID.randomUUID());
+      header.setCustomer(customer);
+      header.setBouwheer(bouwheer);
+      header.setTenor(top + bouwheer.getGracePeriod());
+      header.setFinancingDate(DateTimeUtils.now());
+      header.setCurrencyCode(firstInvoice.getCurrencyCode());
+      header.setInvoiceQty((long) request.getInvoices().size());
+      header.setInterestType("COF"); // not clear
+      header.setTermOfPayment(top); // not clear
+      header.setGracePeriod(bouwheer.getGracePeriod()); // get from bouwheer grace_period
+      header.setRetention(100 - request.getDisbursePercentage()); // not clear
+      header.setTotalInvoiceAmt(totalInvoiceAmount);
+      header.setFinancingAmt(financingAmount);
+      header.setDisburseAmt(disburseAmount);
+      header.setInterestAmt(simulationResult.getInterestFeeAmount().doubleValue()); // not clear
+      header.setFinancingDueDate(Utils.toInstant(simulationResult.getMaxInvoiceDate())); // not clear
+      header.setProvisionFeeAmt(simulationResult.getProvisionFeeAmount().doubleValue()); // not clear
+      header.setProvisionFeePercentage(simulationResult.getProvisionRate());
+      header.setAdminFeePercentage(simulationResult.getAdminRate());
+      header.setEffectiveRate(simulationResult.getEffectiveRate());
+      header.setSurveyFeeAmt(simulationResult.getSurveyFeeAmount().doubleValue());
+      header.setLegalFeeAmt(simulationResult.getLegalFeeAmount().doubleValue());
+      header.setOthersFeeAmt(simulationResult.getOthersFeeAmount().doubleValue());
+      header.setAdminFeeAmt(simulationResult.getAdminFeeAmount().doubleValue());
 
-        header.setSurveyFeeAmtNett(simulationResult.getSurveyFeeAmount().doubleValue());
-        header.setLegalFeeAmtNett(simulationResult.getLegalFeeAmount().doubleValue());
-        header.setInsuranceFeeAmt(0.0);
-        header.setInsuranceFeePercentage(0.0);
-        header.setAdminLimitAmt(0.0);
+      header.setSurveyFeeAmtNett(simulationResult.getSurveyFeeAmount().doubleValue());
+      header.setLegalFeeAmtNett(simulationResult.getLegalFeeAmount().doubleValue());
+      header.setInsuranceFeeAmt(0.0);
+      header.setInsuranceFeePercentage(0.0);
+      header.setAdminLimitAmt(0.0);
 
-        header.setDisburseDate(DateTimeUtils.now());
-        header.setFinancingStatus(""); // fresh input will store as NEW
-        header.setFinancingStep("");
-        header.setUsrCrt(customer.getCustName());
-        header.setDtmCrt(DateTimeUtils.now());
-
-
-        header = financingHdrRepository.save(header);
-      }
-
-      return header;
-    } catch (Exception e) {
-      log.error("create, error {}", e.getMessage());
-      throw e;
-    }
-  }
-
-  public FinancingHdr getByCode(UUID code) throws Exception {
-    try {
-      return financingHdrRepository.findByFinancingHdrCode(code).orElseThrow(
-        () -> CommonInvalidException.builder()
-          .title("Tidak ada data financing")
-          .message("Tidak ada data financing")
-          .build()
+      header.setMstBranch(financingHdrOptional
+        .map(FinancingHdr::getMstBranch)
+        .orElse(null)
       );
-    } catch (Exception e) {
-      log.error("getByCode, error {}", e.getMessage());
-      throw e;
+      header.setDisburseDate(DateTimeUtils.now());
+      header.setFinancingStatus("");
+      header.setFinancingStep("");
+      header.setUsrCrt(customer.getCustName());
+      header.setDtmCrt(DateTimeUtils.now());
+      header = financingHdrRepository.save(header);
     }
+
+    return header;
   }
 
-  public FinancingHdrDto dtoFromEntity(FinancingHdr entity) throws Exception {
-    try {
-      FinancingHdrDto dto = FinancingMapper.INSTANCE.hdrDtoFromEntity(entity);
-      dto.setCustomer(entity.getCustomer());
-      dto.setBouwheer(entity.getBouwheer());
-      return dto;
-    } catch (Exception e) {
-      log.error("dtoFromEntity, error {}", e.getMessage());
-      throw e;
-    }
+  public FinancingHdr getByCode(UUID code) {
+    return financingHdrRepository.findByFinancingHdrCode(code).orElseThrow(
+      () -> CommonInvalidException.builder()
+        .title("Tidak ada data financing")
+        .message("Tidak ada data financing")
+        .build()
+    );
+  }
+
+  public FinancingHdrDto dtoFromEntity(FinancingHdr entity) {
+    FinancingHdrDto dto = FinancingMapper.INSTANCE.hdrDtoFromEntity(entity);
+    dto.setCustomer(entity.getCustomer());
+    dto.setBouwheer(entity.getBouwheer());
+    return dto;
   }
 
   public void delete(FinancingHdr financingHdr) {
@@ -180,7 +167,6 @@ public class FinancingHdrService {
 
       final Page<FinancingHdr> financingHdrs = financingHdrRepository.findAllByRawOrder(
         PageRequest.of(pageNo, pageSize)
-        //FinancingHdrSpec.bySearchBy(request.getSearchBy(), request.getSearchValue())
       );
 
 
@@ -360,12 +346,6 @@ public class FinancingHdrService {
           return null;
         }
 
-                    /*DisbursementLog disbursementLog = disbursementLogRepository.findByAgreement_AgreementCode(agreement.getAgreementCode());
-                    if (disbursementLog == null) {
-                        return null;
-                    }*/
-
-
         FinancingDtl financingDtl = null;
         try {
           financingDtl = e.getFinancingDtls()
@@ -442,74 +422,6 @@ public class FinancingHdrService {
     return color;
   }
 
-  //    public PaginationResult<DisburseInvoiceDto> listdisburseAggrement(PaginationRequest request){
-//        try {
-//            request.setPageSize(1000);
-//            List<Agreement> agreements = agreementRepository.findAll();
-//            return SpecPagination.paginationData(new SpecPagination<Agreement, DisburseInvoiceDto>(agreements, request){
-//                @Override
-//                public DisburseInvoiceDto eval(Agreement e) {
-//                    FinancingHdr financingHdr = e.getFinancingHdr();
-//
-//
-//
-//
-//
-//                    Date paidDate =Utils.fromInstant(financingHdr.getDisburseDate());
-//
-//                    String color = getColor(financingHdr);
-//                    Customer customer = financingHdr.getCustomer();
-//                    String customerName = customer.getCustName();
-//                    MappedFinancingStatus mappedFinancingStatus = new MappedFinancingStatus(
-//                            financingHdr,
-//                            MappedFinancingStatus.Type.Disbursement
-//                    );
-//
-//                    BigDecimal retentionRefund = BigDecimal.ZERO;;
-//                    BigDecimal paidAmount = BigDecimal.ZERO;
-//                    BigDecimal disburseAmount = BigDecimal.valueOf(financingHdr.getDisburseAmt());;
-//
-//                    List<DisbursementLog> disbursementLog = disbursementLogRepository.findAllByAgreement(e);
-//                    if (disbursementLog!= null && !disbursementLog.isEmpty()) {
-//
-//                        paidAmount = BigDecimal.valueOf(disbursementLog.getFirst().getApPaidAmt());
-//
-//                    }
-//
-//
-//                    if (mappedFinancingStatus.getStatus() == null || mappedFinancingStatus.getStatus().equalsIgnoreCase("")) {
-//                        return null;
-//                    }
-//
-//                    return DisburseInvoiceDto.builder()
-//                            .agreementNo(e.getAgreementCode())
-//                            .custName(customerName)
-//                            .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
-//                            .disburseDate(Utils.fromInstant(financingHdr.getDisburseDate()))
-//                            .paidDate(paidDate)
-//
-//                            .retentionRefund(retentionRefund)
-//                            .paidAmount( paidAmount)
-//                            .disburseAmount(disburseAmount)
-//
-//                            .retentionRefundDate(DateTimeUtils.nowDate()). // disbursementLog.getApDueDate()
-//                                    status(StatusLabelDto.builder()
-//                                    .status(mappedFinancingStatus.getStatus())
-//                                    .statusLabel(mappedFinancingStatus.getLabel())
-//                                    .color(color)
-//                                    .build())
-//                            .build();
-//                }
-//            });
-//
-//
-//
-//        } catch (Exception e) {
-//            log.error("paidInvoice, error {}", e.getMessage());
-//            throw e;
-//        }
-//
-//    }
   public PaginationResult<DisburseInvoiceDto> listdisburseAggrement(PaginationRequest request) {
     List<String> errorLogs = new ArrayList<>();
 
@@ -882,15 +794,13 @@ public class FinancingHdrService {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Invalid given financingCode");
     }
 
-    final String user = "POST";
-
     FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(request.getFinancingCode()))
       .orElseThrow(() -> new IllegalStateException("Financing Not Found with given financingCode"));
 
     financingHdr.setFinancingStatus("LIVE");
     financingHdr.setFinancingStep("PAID");
 
-    financingHdr.setUsrUpd(user);
+    financingHdr.setUsrUpd(financingHdr.getBouwheer().getBouwheerName());
     financingHdr.setDtmUpd(DateTimeUtils.now());
     return financingHdrRepository.save(financingHdr);
   }

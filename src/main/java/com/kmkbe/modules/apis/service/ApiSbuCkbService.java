@@ -29,6 +29,7 @@ import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSubmissionRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.loan_submission.service.*;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -186,6 +187,7 @@ public class ApiSbuCkbService {
     Optional<Customer> customerOptional = customerRepository.findByBouwheerAndCustExternalCode(request.getBouwheerCode(), request.getVendorCode());
     if (customerOptional.isPresent()) {
       customer = customerOptional.get();
+      customer.setExistingCust(AppConstants.EXISTING_CUSTOMER);
     } else {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "Create new {}", request.getBouwheerCode());
 
@@ -207,6 +209,7 @@ public class ApiSbuCkbService {
         .usrCrt(AppConstants.CREATOR)
         .custIdTypeCode("NPWP")
         .custTypeCode("Company")
+        .existingCust(AppConstants.EXISTING_CUSTOMER)
         .dtmCrt(LocalDateTime.now())
         .build());
       /**
@@ -286,6 +289,7 @@ public class ApiSbuCkbService {
    * @return
    * @throws Exception
    */
+  @Transactional
   public CommonResult<Object> invoicePaid(String apiKey, FinancingInvoicePaidRequest request) throws Exception {
     /**
      * Check Bouwheer Code
@@ -300,9 +304,10 @@ public class ApiSbuCkbService {
       request
     );
 
-    log.info("Financing Financing Header Code {} ,  Step {} , Status {}, ", request.getFinancingCode(), financingHdr.getFinancingStep(), financingHdr.getFinancingStatus());
+    log.info("Paid Financing Financing Header Code {} ,  Step {} , Status {}, ", request.getFinancingCode(), financingHdr.getFinancingStep(), financingHdr.getFinancingStatus());
     financingDtlService.updatePaid(request, financingHdr);
 
+    log.info("Payment Financing Financing Header Code {} ,  Step {} , Status {}, ", request.getFinancingCode(), financingHdr.getFinancingStep(), financingHdr.getFinancingStatus());
     financingDtlService.paymentReceive(request, financingHdr);
     return new CommonResult<>().success(null);
   }

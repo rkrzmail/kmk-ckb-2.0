@@ -20,4 +20,5 @@ public class GetZipCodeResponse extends BaseResponse {
   private String provDistrictName;
   private String subZipcode;
   private String phoneArea;
+  private String province;
 }

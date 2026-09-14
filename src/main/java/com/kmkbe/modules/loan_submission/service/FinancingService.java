@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 @Service
@@ -106,7 +107,7 @@ public class FinancingService {
       if (financingHdrO.isPresent() && financingHdrO.get().getFinancingStatus().equalsIgnoreCase("INPROCESS") || financingHdrO.isPresent() && financingHdrO.get().getFinancingStatus().equalsIgnoreCase("LIVE")) {
         FinancingHdr financingHdr = financingHdrO.get();
         financingHdr.setFinancingStatus("LIVE");
-        financingHdr.setFinancingStep("GOLIVE");
+        financingHdr.setFinancingStep(!Objects.equals(financingHdr.getFinancingStep(), "PAID") ?"GOLIVE":financingHdr.getFinancingStep());
         financingHdr.setDtmUpd(LocalDateTime.now());
         financingHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR_CONFINS));
         financingHdrRepository.save(financingHdr);

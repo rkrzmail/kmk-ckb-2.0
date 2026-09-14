@@ -19,12 +19,14 @@ import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.helpers.utils.Utils;
 import jakarta.annotation.Nullable;
+import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -192,8 +194,9 @@ public class FinancingDtlService {
    * @param request
    * @param financingHdr
    */
+  @Transactional
   public void updatePaid(FinancingInvoicePaidRequest request, FinancingHdr financingHdr) {
-    try {
+
       List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
         .orElse(Collections.emptyList());
 
@@ -205,7 +208,6 @@ public class FinancingDtlService {
         .map(dtl -> String.format("%s(Rp%,d)", dtl.getInvoice().getCustInvNo(), dtl.getInvoice().getInvoiceAmt().longValue()))
         .collect(Collectors.joining(", "));
 
-      // 2. Petakan data sistem & request ke dalam Map berdasarkan Invoice Number untuk pencarian cepat (O(1))
       Map<String, FinancingDtl> systemInvoices = financingDtls.stream()
         .collect(Collectors.toMap(dtl -> dtl.getInvoice().getCustInvNo(), dtl -> dtl));
 
@@ -215,31 +217,27 @@ public class FinancingDtlService {
       log.info("Financing Detail: Header Code {}, Step {}, Status {}, Invoices  {}",
         request.getFinancingCode(), financingHdr.getFinancingStep(), financingHdr.getFinancingStatus(), invoiceDetails);
 
-      // 3. Validasi Kehadiran Data (Apakah ada invoice yang kurang atau kelebihan?)
       validateInvoicePresence(systemInvoices, requestInvoices, request.getFinancingCode());
 
-      // 4. Validasi Nominal Uang & Update Data ke Database
       String updater = financingHdr.getUsrUpd();
 
       for (FinancingDtl financingDtl : financingDtls) {
         String invoiceNo = financingDtl.getInvoice().getCustInvNo();
         FinancingInvoicePaidRequest.InvoicePaid reqInvoice = requestInvoices.get(invoiceNo);
 
-        // Validasi kecocokan nominal uang
-        long systemAmount = financingDtl.getInvoice().getInvoiceAmt().longValue();
-        long reqAmount = reqInvoice.getInvoiceAmount();
+        BigDecimal systemAmount = BigDecimal.valueOf(financingDtl.getInvoice().getInvoiceAmt());
+        BigDecimal reqAmount = reqInvoice.getInvoiceAmount();
 
-        // Cek jika nominal uang yang dibayar kurang dari tagihan sistem
-        if (reqAmount < systemAmount) {
-          long selisih = systemAmount - reqAmount;
+        if (reqAmount.compareTo(systemAmount) < 0) {
+          BigDecimal selisih = systemAmount.subtract(reqAmount);
           log.warn("Kurang Bayar (Nominal) pada Invoice {}: Tagihan {}, Dibayar {}, Kurang {}",
             invoiceNo, systemAmount, reqAmount, selisih);
 
           throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,
-            "Invoice " + invoiceNo + " kurang bayar sebesar Rp " + String.format("%,d", selisih));
+            "Invoice " + invoiceNo + " kurang bayar sebesar Rp " + String.format("%,.0f", selisih));
         }
-        // Cek jika nominal uang kelebihan (opsional, tetap dianggap tidak sesuai)
-        else if (reqAmount > systemAmount) {
+
+        else if (reqAmount.compareTo(systemAmount) > 0) {
           log.warn("Kelebihan Bayar pada Invoice {}: Tagihan {}, Dibayar {}", invoiceNo, systemAmount, reqAmount);
           throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Nominal Invoice tidak sesuai (Kelebihan Bayar)");
         }
@@ -252,15 +250,8 @@ public class FinancingDtlService {
         financingDtl.setBouwheerPaidDate(Utils.toInstant(reqInvoice.getPostingDate()));
         financingDtl.setUsrUpd(updater);
         financingDtl.setDtmUpd(LocalDateTime.now());
-
-        // Simpan perubahan
         financingDtlRepository.save(financingDtl);
       }
-
-    } catch (Exception e) {
-      log.error("updatePaid error: {}", e.getMessage());
-      throw e;
-    }
   }
 
   // Fungsi pembantu untuk memisahkan logika pengecekan list invoice
@@ -282,6 +273,7 @@ public class FinancingDtlService {
     }
   }
 
+  @Transactional
   public void paymentReceive(FinancingInvoicePaidRequest request, FinancingHdr financingHdr) throws Exception {
 
     String noAggrNo = financingHdr.getAgreement().isEmpty() ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();

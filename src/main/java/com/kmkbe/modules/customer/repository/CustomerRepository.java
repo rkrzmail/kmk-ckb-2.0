@@ -31,5 +31,7 @@ public interface CustomerRepository extends JpaRepository<Customer, Long>, Pagin
 
   Optional<Customer> findFirstByCustExternalCode(String vendorCode);
 
+  Page<Customer> findAllByIsEmailValidTrue(Pageable pageable);
+
 
 }
