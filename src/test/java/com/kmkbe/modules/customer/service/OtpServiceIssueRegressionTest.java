@@ -55,6 +55,23 @@ class OtpServiceIssueRegressionTest {
   }
 
   @Test
+  void createSignUpOtpSendsOtpOnlyToCustomer() throws Exception {
+    Customer customer = Customer.builder()
+      .custCode(UUID.randomUUID())
+      .custName("Debitur")
+      .custEmail("user@example.com")
+      .build();
+    when(otpGenerator.generate()).thenReturn("123456");
+
+    OtpLog otpLog = service.create(customer, OtpService.OtpType.SIGNUP);
+
+    assertThat(otpLog.getOtpCode()).isEqualTo("123456");
+    verify(otpRepository).save(otpLog);
+    verify(emailService).sendOtp(customer, "123456");
+    verify(emailService, never()).sendRegistrationUser(customer, "user@example.com");
+  }
+
+  @Test
   void verifySignUpDelegatesToVerifyEmailInsteadOfActivatingCustomer() throws Exception {
     Customer customer = Customer.builder()
       .custCode(UUID.randomUUID())
@@ -106,6 +123,7 @@ class OtpServiceIssueRegressionTest {
       new VerifyOtpRequest(null, "user@example.com", "123456", null)
     )).isInstanceOf(IllegalStateException.class).hasMessage("Otp is Expired");
 
+    verify(customerService, never()).verifyEmail(customer);
     verify(majorAccountRegistrationNotificationService, never()).notifyRegistrationCompleted(customer);
   }
 }

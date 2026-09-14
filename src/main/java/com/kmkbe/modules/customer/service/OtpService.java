@@ -70,12 +70,12 @@ public class OtpService {
     );
 
     final Customer customer = findCustomerOtp.getCustomer();
-    customerService.verifyEmail(customer);
-
     final OtpLog otp = findCustomerOtp.getOtpLog();
     if (now().isAfter(otp.getExpiredDate())) {
       throw new IllegalStateException("Otp is Expired");
     }
+
+    customerService.verifyEmail(customer);
 
     otp.setIsUsed(true);
     otp.setUsrUpd(customer.getCustName());

@@ -115,6 +115,11 @@ csul:
         password: CSUljkt#2024
       white-list: http://10.30.15.160:8185/SISCAConnect/api/v1
       internal: http://10.30.15.160:8185/SISCAConnect/api/v1
+    mail-position:
+      branch-admin: "ADM"
+      account-officer: "AO/AM"
+      branch-manager: "BM/BOH"
+      area-sales-manager: "RM"
   mst:
     v1: https://16.78.161.115/v1
 security:

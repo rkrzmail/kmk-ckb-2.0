@@ -5,6 +5,8 @@ import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
 import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementCwrDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementDto;
+import com.kmkbe.core.domain.dto.email.MailDataDto;
+import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.AgreementFile;
 import com.kmkbe.core.domain.entity.Cwr;
@@ -32,11 +34,11 @@ import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
+import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.entity.MstBranch;
-import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,10 +48,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -85,7 +89,7 @@ class AgreementServiceTest {
     @Mock private FileStorageService fileStorageService;
     @Mock private EmailService emailService;
     @Mock private AuditTrailService auditTrailService;
-    @Mock private MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
+    @Mock private ConfigRemoteService configRemoteService;
 
     private ObjectMapper objectMapper;
     private AgreementService service;
@@ -107,13 +111,22 @@ class AgreementServiceTest {
                 objectMapper,
                 emailService,
                 auditTrailService,
-                mstAppRoleFormUserRepository
+                configRemoteService
         );
+        ReflectionTestUtils.setField(service, "siscaBranchAdminPosition", "BRANCH ADMIN");
 
         lenient().when(agreementFileRepository.save(any(AgreementFile.class))).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        lenient().when(mstAppRoleFormUserRepository.findActiveBranchAdminEmails("412"))
-                .thenReturn(List.of("branch.admin@csul.co.id"));
+        MailPositionDto branchAdminResponse = MailPositionDto.builder()
+                .data(new ArrayList<>(List.of(
+                        MailDataDto.builder()
+                                .branchCode("412")
+                                .email("branch.admin@csul.co.id")
+                                .build()
+                )))
+                .build();
+        lenient().when(configRemoteService.getEmailByPosition("", "412", "BRANCH ADMIN"))
+                .thenReturn(branchAdminResponse);
     }
 
     @Test
@@ -406,6 +419,36 @@ class AgreementServiceTest {
     }
 
     @Test
+    void contractUploadNotificationSkipsEmailWhenSiscaReturnsNoData() {
+        when(configRemoteService.getEmailByPosition("", "412", "BRANCH ADMIN"))
+                .thenReturn(MailPositionDto.builder().data(new ArrayList<>()).build());
+
+        ReflectionTestUtils.invokeMethod(
+                service,
+                "sendContractUploadRequiredNotification",
+                financingHdr(),
+                "AGR-NO-RECIPIENT"
+        );
+
+        verify(emailService, never()).sendNotificationContractUploadRequired(any(), any());
+    }
+
+    @Test
+    void contractUploadNotificationSkipsEmailWhenSiscaRequestFails() {
+        when(configRemoteService.getEmailByPosition("", "412", "BRANCH ADMIN"))
+                .thenThrow(new IllegalStateException("SISCA unavailable"));
+
+        ReflectionTestUtils.invokeMethod(
+                service,
+                "sendContractUploadRequiredNotification",
+                financingHdr(),
+                "AGR-SISCA-ERROR"
+        );
+
+        verify(emailService, never()).sendNotificationContractUploadRequired(any(), any());
+    }
+
+    @Test
     void contractUploadSendsBouwheerPaymentNotificationToConfiguredCkbPics() {
         FinancingHdr financingHdr = financingHdr();
         financingHdr.setTenor(30L);
@@ -519,13 +562,14 @@ class AgreementServiceTest {
                 objectMapper,
                 emailService,
                 auditTrailService,
-                mstAppRoleFormUserRepository
+                configRemoteService
         ) {
             @Override
             boolean bypassRemotePosting() {
                 return bypass;
             }
         };
+        ReflectionTestUtils.setField(postingService, "siscaBranchAdminPosition", "BRANCH ADMIN");
         return postingService;
     }
 

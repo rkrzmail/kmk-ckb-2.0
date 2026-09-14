@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
@@ -442,16 +443,38 @@ class EmailServiceTest {
   }
 
   @Test
-  void sendMethodsSwallowTemplateAndMailErrors() throws Exception {
+  void sendOtpReturnsSafeMessageForTemplateErrorWhileAsyncEmailStillSwallowsMailError() throws Exception {
     Customer customer = customer();
     when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_NEW_OTP", true)).thenThrow(new RuntimeException("template down"));
-    service.sendOtp(customer, "1234");
+    assertThatThrownBy(() -> service.sendOtp(customer, "1234"))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Kode OTP gagal dikirim ke email Anda. Silakan coba kembali beberapa saat lagi.")
+      .hasCauseInstanceOf(RuntimeException.class);
     verify(configRemoteService, never()).fetchEmailInfo();
 
     when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_INV_LINK", true))
         .thenReturn(template("M_INV_LINK", "${name}:${invitationLink}"));
     when(configRemoteService.fetchEmailInfo()).thenThrow(new RuntimeException("mail config down"));
     service.sendInvitationLinkEmail("to@example.com", "https://invite", "Signer");
+  }
+
+  @Test
+  void sendOtpFailsWhenPrimaryAndFallbackMailDeliveryFail() throws Exception {
+    Customer customer = customer();
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_NEW_OTP", true))
+      .thenReturn(template("M_CUST_NEW_OTP", "{otp_code}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doThrow(new RuntimeException("primary smtp down"))
+      .when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    when(mailConfig.javaMailSender("smtp.test", 2525, "test-user", "test-pass", false))
+      .thenThrow(new RuntimeException("fallback smtp down"));
+
+    assertThatThrownBy(() -> service.sendOtp(customer, "1234"))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Kode OTP gagal dikirim ke email Anda. Silakan coba kembali beberapa saat lagi.");
+
+    verify(mailConfig, org.mockito.Mockito.times(2))
+      .sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
   }
 
   @Test

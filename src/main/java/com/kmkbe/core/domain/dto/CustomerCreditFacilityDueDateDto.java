@@ -14,6 +14,7 @@ import java.util.Date;
 public class CustomerCreditFacilityDueDateDto {
 
     private String agreementCode;
+    private String invoiceNo;
     private String poNumber;
     private Date postingDate;
 

@@ -1,8 +1,11 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.kmkbe.core.domain.dto.LegalFileDto;
+import com.kmkbe.core.domain.dto.MstFileTypeDto;
 import com.kmkbe.core.domain.entity.MstFileType;
+import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
+import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
@@ -16,9 +19,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -86,5 +91,50 @@ class DocumentServiceIssueRegressionTest {
 
     verify(fileStorageService).save(eq(file), eq(customer.getCustCode() + "/loan_submission"), eq("invoice asli.pdf"), isNull());
     verify(legalFileService).create(any(), eq(customer), eq(fileType), eq(file), anyString(), eq("invoice asli.pdf"));
+  }
+
+  @Test
+  void documentRequirementFiltersByDocumentTypeDescription() {
+    UUID bouwheerCode = UUID.randomUUID();
+    Customer customer = Customer.builder()
+      .custCode(UUID.randomUUID())
+      .bouwheer(bouwheerCode.toString())
+      .build();
+    MstFileType ktp = MstFileType.builder()
+      .fileTypeCode("KTP01")
+      .fileTypeName("KTP.pdf")
+      .fileTypeDesc("KTP / Identitas Pengurus")
+      .build();
+    MstFileType npwp = MstFileType.builder()
+      .fileTypeCode("NPWP01")
+      .fileTypeName("NPWP.pdf")
+      .fileTypeDesc("NPWP Perusahaan")
+      .build();
+    PaginationRequest request = new PaginationRequest();
+    request.setPageNo(1);
+    request.setPageSize(10);
+    request.setSearchBy("fileTypeDesc");
+    request.setSearchValue("KTP");
+    MockHttpServletRequest httpRequest = new MockHttpServletRequest();
+    httpRequest.setParameter("owner", "debitur");
+
+    when(mstFileTypeRepository.findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(
+      List.of("Legal", "Financing"),
+      bouwheerCode
+    )).thenReturn(List.of(ktp, npwp));
+    when(legalFileService.fetchByMstFileTypeAndCust(eq(customer), any(MstFileType.class))).thenReturn(null);
+
+    PaginationResult<MstFileTypeDto> result = service.fetchAllLoanDocumentRequirement(
+      httpRequest,
+      customer,
+      request,
+      false
+    );
+
+    assertThat(result.getTotalData()).isEqualTo(1);
+    assertThat(result.getList())
+      .singleElement()
+      .extracting(MstFileTypeDto::getFileTypeCode)
+      .isEqualTo("KTP01");
   }
 }

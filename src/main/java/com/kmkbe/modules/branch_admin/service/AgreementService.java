@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.core.domain.dto.email.MailDataDto;
+import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
 import com.kmkbe.core.domain.model.AgreementContractEmailPayload;
@@ -25,13 +27,14 @@ import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
 import com.kmkbe.modules.remote.request.InquiryAgreementRemoteRequest;
+import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
-import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -65,7 +68,10 @@ public class AgreementService {
   private final ObjectMapper objectMapper;
   private final EmailService emailService;
   private final AuditTrailService auditTrailService;
-  private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
+  private final ConfigRemoteService configRemoteService;
+
+  @Value("${csul.sisca.mail-position.branch-admin:ADM}")
+  private String siscaBranchAdminPosition;
 
   public Agreement findByCode(String code) {
     try {
@@ -486,16 +492,47 @@ public class AgreementService {
         return;
       }
 
-      List<String> recipients = mstAppRoleFormUserRepository.findActiveBranchAdminEmails(
-        financingHdr.getMstBranch().getBranchCode()
+      String branchCode = financingHdr.getMstBranch().getBranchCode();
+      log.info(
+        "Fetching Branch Admin emails from SISCA. financingHdrCode={}, agreementCode={}, branchCode={}, positionType={}",
+        financingHdr.getFinancingHdrCode(), agreementCode, branchCode, siscaBranchAdminPosition
       );
-      if (recipients.isEmpty()) {
-        log.warn(
-          "Contract upload notification skipped: no active Branch Admin email for branchCode={}",
-          financingHdr.getMstBranch().getBranchCode()
+
+      MailPositionDto response = configRemoteService.getEmailByPosition("", branchCode, siscaBranchAdminPosition);
+      if (response == null) {
+        log.error(
+          "Contract upload notification skipped: SISCA returned a null response. financingHdrCode={}, agreementCode={}, branchCode={}, positionType={}",
+          financingHdr.getFinancingHdrCode(), agreementCode, branchCode, siscaBranchAdminPosition
         );
         return;
       }
+
+      if (response.getData() == null || response.getData().isEmpty()) {
+        log.warn(
+          "Contract upload notification skipped: SISCA returned no Branch Admin data. financingHdrCode={}, agreementCode={}, branchCode={}, positionType={}",
+          financingHdr.getFinancingHdrCode(), agreementCode, branchCode, siscaBranchAdminPosition
+        );
+        return;
+      }
+
+      List<String> recipients = response.getData().stream()
+        .map(MailDataDto::getEmail)
+        .filter(email -> email != null && !email.isBlank())
+        .map(String::trim)
+        .distinct()
+        .toList();
+      if (recipients.isEmpty()) {
+        log.error(
+          "Contract upload notification skipped: SISCA Branch Admin data contains no valid email. financingHdrCode={}, agreementCode={}, branchCode={}, positionType={}, recordCount={}",
+          financingHdr.getFinancingHdrCode(), agreementCode, branchCode, siscaBranchAdminPosition, response.getData().size()
+        );
+        return;
+      }
+
+      log.info(
+        "Branch Admin emails resolved from SISCA. financingHdrCode={}, agreementCode={}, branchCode={}, recipientCount={}",
+        financingHdr.getFinancingHdrCode(), agreementCode, branchCode, recipients.size()
+      );
 
       emailService.sendNotificationContractUploadRequired(
         String.join(";", recipients),
@@ -511,9 +548,11 @@ public class AgreementService {
       );
     } catch (Exception e) {
       log.error(
-        "sendContractUploadRequiredNotification failed. financingHdrCode={}, agreementCode={}",
+        "Contract upload notification failed while resolving Branch Admin emails from SISCA. financingHdrCode={}, agreementCode={}, branchCode={}, positionType={}",
         financingHdr == null ? null : financingHdr.getFinancingHdrCode(),
         agreementCode,
+        financingHdr == null || financingHdr.getMstBranch() == null ? null : financingHdr.getMstBranch().getBranchCode(),
+        siscaBranchAdminPosition,
         e
       );
     }
