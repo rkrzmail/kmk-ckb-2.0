@@ -8,6 +8,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
@@ -74,7 +75,7 @@ public class FinancingInvoicePaidRequest {
     @NotNull(message = "InvoiceAmount in InvoicePaid is required")
     @JsonProperty("invoiceAmount")
     @JsonAlias("InvoiceAmount")
-    private Integer invoiceAmount;
+    private BigDecimal invoiceAmount;
   }
 
 }

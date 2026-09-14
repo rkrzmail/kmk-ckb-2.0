@@ -23,6 +23,8 @@ public class ConfinsR3GetZipCodeDto extends BaseResponse {
   private Integer refProvDistrictId;
   @JsonProperty("ProvDistrictName")
   private String provDistrictName;
+  @JsonProperty("Province")
+  private String province;
   @JsonProperty("SubZipcode")
   private String subZipcode;
   @JsonProperty("PhnArea")

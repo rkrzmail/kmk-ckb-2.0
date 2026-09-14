@@ -1,6 +1,5 @@
 package com.kmkbe.modules.customer.service;
 
-import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.CustomerPersonal;
@@ -12,7 +11,6 @@ import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.helpers.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -25,24 +23,26 @@ public class CustomerPersonalService {
   private final CustomerPersonalRepository customerPersonalRepository;
 
   public void create(Customer cust, SignUpRequest.Personal personalReq) {
-    final boolean userExists = customerPersonalRepository
-      .findByCustomer(cust)
-      .isPresent();
+    Optional<CustomerPersonal> customerPersonal= customerPersonalRepository.findByCustomer(cust);
 
-    if (userExists) {
+    CustomerPersonal personal;
+    if (customerPersonal.isPresent()) {
       log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", cust.getCustName());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84);
+      personal=customerPersonal.get();
+      personal.setCustomer(cust);
+      personal.setUsrUpd(cust.getCustName());
+      personal.setDtmUpd(DateTimeUtils.now());
+    }else{
+      personal = new CustomerPersonal();
+      personal.setCustPersonalCode(UUID.randomUUID());
+      personal.setCustomer(cust);
+      personal.setIdentityType(personalReq.getIdentityType());
+      personal.setIdentityNo(personalReq.getIdentityNo());
+      personal.setCustModel(personalReq.getCustomerModel().name());
+      personal.setPhone(personalReq.getPhone());
+      personal.setUsrCrt(cust.getCustName());
+      personal.setDtmCrt(DateTimeUtils.now());
     }
-
-    final CustomerPersonal personal = new CustomerPersonal();
-    personal.setCustPersonalCode(UUID.randomUUID());
-    personal.setCustomer(cust);
-    personal.setIdentityType(personalReq.getIdentityType());
-    personal.setIdentityNo(personalReq.getIdentityNo());
-    personal.setCustModel(personalReq.getCustomerModel().name());
-    personal.setPhone(personalReq.getPhone());
-    personal.setUsrCrt(cust.getCustName());
-    personal.setDtmCrt(DateTimeUtils.now());
     customerPersonalRepository.save(personal);
   }
 

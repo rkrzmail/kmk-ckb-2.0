@@ -13,7 +13,6 @@ import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.helpers.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -36,39 +35,40 @@ public class CustomerCompanyService {
 
   @Transactional
   public void create(Customer customer, SignUpRequest.Company companyReq) {
-    final boolean userExists = customerCompanyRepository
-      .findByCustomer(customer)
-      .isPresent();
-
-    if (userExists) {
+    Optional<CustomerCompany>  customerOptional= customerCompanyRepository.findByCustomer(customer);
+    CustomerCompany company;
+    if (customerOptional.isPresent()) {
       log.info(ErrorConstant.ERROR_MESSAGE_84 + "{}", customer.getCustName());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, ErrorConstant.ERROR_MESSAGE_84);
+      company =customerOptional.get();
+      company.setCustomer(customer);
+      company.setUsrCrt(customer.getCustName());
+      company.setDtmCrt(DateTimeUtils.now());
+    }else{
+      company = new CustomerCompany();
+      company.setCustCompanyCode(UUID.randomUUID());
+      company.setCustomer(customer);
+      company.setCustCompanyType(companyReq.getCompanyType());
+      company.setCompanyModel(companyReq.getCompanyModel());
+      company.setIdentityType(companyReq.getIdentityType());
+      company.setIdentityNo(companyReq.getIdentityNo());
+      company.setIdentityIssuedDate(companyReq.getIdentityIssuedDate());
+      company.setIdentityExpiredDate(companyReq.getIdentityExpiredDate());
+      company.setCompanyAddress(companyReq.getCompanyAddress());
+      company.setRt(companyReq.getRt());
+      company.setRw(companyReq.getRw());
+      company.setKelurahan(companyReq.getKelurahan());
+      company.setKecamatan(companyReq.getKecamatan());
+      company.setCity(companyReq.getCity());
+      company.setProvince(companyReq.getProvince());
+      company.setZipCode(companyReq.getZipCode());
+      company.setArea(companyReq.getArea());
+      company.setPhone(companyReq.getPhone());
+      company.setOwnershipStatus(companyReq.getOwnershipStatus());
+      company.setStaySince(companyReq.getStaySince());
+      company.setStayLength(CustomerUtils.calculateStayLength(companyReq.getStaySince()));
+      company.setUsrCrt(customer.getCustName());
+      company.setDtmCrt(DateTimeUtils.now());
     }
-
-    CustomerCompany company = new CustomerCompany();
-    company.setCustCompanyCode(UUID.randomUUID());
-    company.setCustomer(customer);
-    company.setCustCompanyType(companyReq.getCompanyType());
-    company.setCompanyModel(companyReq.getCompanyModel());
-    company.setIdentityType(companyReq.getIdentityType());
-    company.setIdentityNo(companyReq.getIdentityNo());
-    company.setIdentityIssuedDate(companyReq.getIdentityIssuedDate());
-    company.setIdentityExpiredDate(companyReq.getIdentityExpiredDate());
-    company.setCompanyAddress(companyReq.getCompanyAddress());
-    company.setRt(companyReq.getRt());
-    company.setRw(companyReq.getRw());
-    company.setKelurahan(companyReq.getKelurahan());
-    company.setKecamatan(companyReq.getKecamatan());
-    company.setCity(companyReq.getCity());
-    company.setProvince(companyReq.getProvince());
-    company.setZipCode(companyReq.getZipCode());
-    company.setArea(companyReq.getArea());
-    company.setPhone(companyReq.getPhone());
-    company.setOwnershipStatus(companyReq.getOwnershipStatus());
-    company.setStaySince(companyReq.getStaySince());
-    company.setStayLength(CustomerUtils.calculateStayLength(companyReq.getStaySince()));
-    company.setUsrCrt(currentUserService.usernameOrDefault(AppConstants.CREATOR));
-    company.setDtmCrt(DateTimeUtils.now());
     customerCompanyRepository.save(company);
   }
 

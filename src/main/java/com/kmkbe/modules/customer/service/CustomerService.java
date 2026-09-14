@@ -33,15 +33,13 @@ import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.model.request.UpdateFapRequest;
 import jakarta.mail.MessagingException;
-import jakarta.persistence.criteria.CriteriaBuilder;
-import jakarta.persistence.criteria.CriteriaQuery;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -195,7 +193,9 @@ public class CustomerService {
       customer.setApprovalNote(null);
       customer.setApprovalBy(null);
       customer.setApprovalAt(null);
+      customer.setAgreeTc(false);
       customer.setCustEmail(Boolean.TRUE.equals(customer.getIsEmailValid()) ? customer.getCustEmail() : request.getEmail().toLowerCase());
+      customer.setExistingCust(AppConstants.EXISTING_CUSTOMER);
     } else {
       // CREATE
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Create Customer ", request.getVendorCode());
@@ -203,6 +203,7 @@ public class CustomerService {
       customer.setIsEmailValid(false);
       customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
       customer.setActive(false);
+      customer.setExistingCust(AppConstants.EXISTING_CUSTOMER);
       if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
         customer.setCustExternalCode(request.getVendorCode());
       }
@@ -422,23 +423,21 @@ public class CustomerService {
     String finalSearchBy = searchBy;
     List<String> finalBouwheerCodes = bouwheerCodes;
 
-    Page<Customer> page = customerRepository.findAll((Root<Customer> root, CriteriaQuery<?> query, CriteriaBuilder builder) -> {
-      if ("bouwheer".equals(finalSearchBy)) {
-        CriteriaBuilder.In<String> inClause = builder.in(root.get("bouwheer").as(String.class));
-
-        for (String code : finalBouwheerCodes) {
-          inClause.value(code);
-        }
-        return builder.and(inClause);
+    Specification<Customer> spec = (root, query, builder) -> {
+      List<Predicate> predicates = new ArrayList<>();
+      predicates.add(builder.isTrue(root.get("isEmailValid")));
+      if ("bouwheer".equals(finalSearchBy) && finalBouwheerCodes != null && !finalBouwheerCodes.isEmpty()) {
+        predicates.add(root.get("bouwheer").in(finalBouwheerCodes));
       }
-
-      if (finalSearchBy != null && finalSearchValue != null) {
+      else if (finalSearchBy != null && finalSearchValue != null && !finalSearchValue.trim().isEmpty()) {
         Expression<String> lowerColumn = builder.lower(root.get(finalSearchBy).as(String.class));
         String searchPattern = "%" + finalSearchValue.toLowerCase() + "%";
-        return builder.and(builder.like(lowerColumn, searchPattern));
+        predicates.add(builder.like(lowerColumn, searchPattern));
       }
-      return builder.conjunction();
-    }, pageable);
+      return builder.and(predicates.toArray(new Predicate[0]));
+    };
+
+    Page<Customer> page = customerRepository.findAll(spec, pageable);
 
     List<CustomerResponse> responses = page.getContent().stream().map(item -> {
       CustomerResponse response = new CustomerResponse();
@@ -517,7 +516,7 @@ public class CustomerService {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer ini sudah pernh diproses " + customer.getApprovalStatus());
     }
 
-    if (!customer.getIsEmailValid()) {
+    if (Boolean.FALSE.equals(customer.getIsEmailValid())) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", customer.getCustName());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Customer ini belum melakukan verifikasi email ");
     }
@@ -526,6 +525,13 @@ public class CustomerService {
     String approvalStatus = request.getApprovalStatus().toUpperCase().trim();
     customer.setApprovalStatus(approvalStatus);
     customer.setActive("APPROVED".equals(approvalStatus));
+    if(!"APPROVED".equals(approvalStatus)){
+      customer.setActive(false);
+      customer.setIsEmailValid(false);
+      customer.setAgreeTc(false);
+      customer.setAgreeLegalShare(false);
+      customer.setIsWaActive(false);
+    }
     customer.setApprovalNote(request.getApprovalNote());
     customer.setApprovalBy(username);
     customer.setApprovalAt(DateTimeUtils.now());

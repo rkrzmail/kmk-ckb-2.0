@@ -94,13 +94,11 @@ public class DistributionSubmissionService {
             }
           }
 
-          boolean isNewCust = financingHdrRepository.countByCustomerAndFinancingStatus(e.getCustomer(), "PAID") == 0;
-
-          String color,
-            currentBranch = null,
-            currentBranchCode = null,
-            branchRecommended = null,
-            branchRecommendedCode = null;
+          String color;
+          String currentBranch = null;
+          String currentBranchCode = null;
+          String branchRecommended = null;
+          String branchRecommendedCode = null;
           if (e.getFinancingStatus().equalsIgnoreCase("new")) {
             color = "#808080";
           } else if (
@@ -147,7 +145,7 @@ public class DistributionSubmissionService {
             .branchRecommended(branchRecommended)
             .currentBranchCode(currentBranchCode)
             .currentBranch(currentBranch)
-            .custStatus(isNewCust ? "New Customer" : "Existing Customer")
+            .custStatus(e.getCustomer().getExistingCust())
             .status(StatusLabelDto.builder()
               .status(mappedFinancingStatus.getStatus())
               .statusLabel(mappedFinancingStatus.getLabel())

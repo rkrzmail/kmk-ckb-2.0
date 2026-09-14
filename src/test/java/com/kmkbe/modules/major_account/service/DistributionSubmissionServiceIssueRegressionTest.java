@@ -86,7 +86,6 @@ class DistributionSubmissionServiceIssueRegressionTest {
     financingHdr.setDtmCrt(LocalDateTime.now());
 
     when(financingHdrRepository.findAllByRaw()).thenReturn(List.of(financingHdr));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(customer, "PAID")).thenReturn(0L);
 
     PaginationResult<DistributionSubmissionDto> result = service.submissionDistribution(new PaginationRequest());
 
