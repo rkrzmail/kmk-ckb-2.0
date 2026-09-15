@@ -973,10 +973,11 @@ public class ReportService {
   private static String fmtAmount(Object val) {
     if (val == null) return "IDR 0.00";
     try {
-      java.math.BigDecimal bd = (val instanceof java.math.BigDecimal)
-        ? (java.math.BigDecimal) val
-        : new java.math.BigDecimal(val.toString().replace(",", ""));
-      return "IDR " + bd.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString();
+      BigDecimal value = new BigDecimal(val.toString());
+      NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.US);
+      numberFormat.setMinimumFractionDigits(2);
+      numberFormat.setMaximumFractionDigits(2);
+      return "IDR " + numberFormat.format(value);
     } catch (Exception e) {
       return "IDR 0.00";
     }
