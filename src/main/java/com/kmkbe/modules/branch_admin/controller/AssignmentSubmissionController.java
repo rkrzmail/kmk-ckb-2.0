@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.dto.SimulationHistDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.modules.branch_admin.service.AssignmentSubmissionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
@@ -33,7 +34,7 @@ public class AssignmentSubmissionController {
   @GetMapping("/list")
   public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
     HttpServletRequest httpServletRequest,
-    PaginationRequest request
+    BasePaginationRequest request
   ) throws SignatureException {
     return new CommonResult<PaginationResult<AssignmentDto>>()
       .success(

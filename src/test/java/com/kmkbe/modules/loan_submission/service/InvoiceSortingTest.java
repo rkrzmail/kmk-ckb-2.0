@@ -36,7 +36,9 @@ class InvoiceSortingTest {
     } else {
       when(repository.findByFinancingHdr(eq(header), any(Pageable.class))).thenReturn(Page.empty());
     }
-    service.invoiceSubmissionByFinancingHdr(header, request);
+    var baseRequest = new com.kmkbe.helpers.base.BasePaginationRequest(5, 2, "customerInvoiceNo", "desc",
+      request.getSearchBy(), request.getSearchValue());
+    service.invoiceSubmissionByFinancingHdr(header, baseRequest);
     var captor = ArgumentCaptor.forClass(Pageable.class);
     if (filtered) verify(repository).findAll(any(Specification.class), captor.capture());
     else verify(repository).findByFinancingHdr(eq(header), captor.capture());

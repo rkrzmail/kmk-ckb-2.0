@@ -28,6 +28,8 @@ import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.helpers.utils.SpecPagination;
 import com.kmkbe.helpers.utils.PaginationSort;
+import com.kmkbe.helpers.utils.PaginationRequests;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -190,6 +192,11 @@ public class DistributionSubmissionService {
       log.error("submissionDistribution: error {}", e.getMessage());
       throw e;
     }
+  }
+
+  public PaginationResult<DistributionSubmissionDto> submissionDistribution(
+    BasePaginationRequest request) {
+    return submissionDistribution(PaginationRequests.from(request));
   }
 
   /**

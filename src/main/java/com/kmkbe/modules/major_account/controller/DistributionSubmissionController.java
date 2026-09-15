@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.helpers.base.BaseResponse;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.request.AssignInvoiceToBranchRequest;
@@ -36,7 +37,7 @@ public class DistributionSubmissionController {
 
   @GetMapping("/list")
   public CommonResult<PaginationResult<DistributionSubmissionDto>> getDistributionList(
-    PaginationRequest request
+    BasePaginationRequest request
   ) throws SignatureException {
     currentUserService.authenticatedInternalUser();
     return new CommonResult<PaginationResult<DistributionSubmissionDto>>().success(

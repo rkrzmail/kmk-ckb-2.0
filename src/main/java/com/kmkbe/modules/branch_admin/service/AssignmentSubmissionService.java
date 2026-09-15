@@ -18,6 +18,8 @@ import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.helpers.utils.SpecPagination;
 import com.kmkbe.helpers.utils.PaginationSort;
+import com.kmkbe.helpers.utils.PaginationRequests;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -58,25 +60,16 @@ public class AssignmentSubmissionService {
   }
 
   public PaginationResult<AssignmentDto>  assignmentList(
+    HttpServletRequest httpServletRequest, BasePaginationRequest request
+  ) throws SignatureException {
+    return assignmentList(httpServletRequest, PaginationRequests.from(request));
+  }
+
+  public PaginationResult<AssignmentDto>  assignmentList(
     HttpServletRequest httpServletRequest,
     PaginationRequest request
   ) throws SignatureException {
     try {
-      int pageNo = 0, pageSize = 10;
-
-      if (request.getPageNo() != null) {
-        pageNo = request.getPageNo();
-      }
-
-      if (request.getPageSize() != null) {
-        pageSize = request.getPageSize();
-      }
-
-      if (pageNo > 0) {
-        pageNo = pageNo - 1;
-      }
-
-
       MstUser authenticateUser = currentUserService.internalUser();
       MstUser user = mstUserRepository.findById(authenticateUser.getUserCode()).orElseThrow();
 
@@ -103,12 +96,13 @@ public class AssignmentSubmissionService {
       ) {
         switch (request.getSearchBy().toLowerCase()) {
           case "status":
-            financingStatusFilter = request.getSearchValue();
             break;
           case "namadebitur":
+          case "custname":
             custNameFilter = request.getSearchValue();
             break;
           case "pemberikerja":
+          case "bouwheername":
             bouwheerNameFilter = request.getSearchValue();
             break;
           case "cabang":
@@ -116,24 +110,29 @@ public class AssignmentSubmissionService {
         }
       }
 
+      // Role-specific statuses are mapped below, so pagination must happen after that filter.
       Page<FinancingHdr> financingHdrPage = financingHdrRepository.findAllAssignmentFinancingRaw(
         user.getEmployee().getBranch().getBranchCode(),
         financingStatusFilter,
         custNameFilter,
         bouwheerNameFilter,
-        PageRequest.of(pageNo, pageSize, PaginationSort.assignments(request))
+        org.springframework.data.domain.Pageable.unpaged(PaginationSort.assignments(request))
       );
 
 
       return SpecPagination.paginationData(new SpecPagination<FinancingHdr, AssignmentDto>(financingHdrPage.stream().toList(), request) {
         @Override
-        public FinancingHdr search(FinancingHdr data) {
+        public AssignmentDto filter(AssignmentDto data) {
 
           if (isSearchBy("financingHdrCode") && equal(data.getFinancingHdrCode().toString())) {
             return data;
-          } else if (isSearchBy("custName") && like(data.getCustomer().getCustName())) {
+          } else if ((isSearchBy("custName") || isSearchBy("NamaDebitur")) && like(data.getCustName())) {
             return data;
-          } else if (isSearchBy("bouwheerName") && like(data.getBouwheer().getBouwheerName())) {
+          } else if ((isSearchBy("bouwheerName") || isSearchBy("PemberiKerja")) && like(data.getBouwheerName())) {
+            return data;
+          } else if (isSearchBy("status") && like(data.getStatus())) {
+            return data;
+          } else if (isSearchBy("Cabang") && like(user.getEmployee().getBranch().getBranchName())) {
             return data;
           }
 

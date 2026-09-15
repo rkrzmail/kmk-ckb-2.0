@@ -14,6 +14,16 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class NativePaginationSortTest {
   @Test
+  void filteredAgreementKeepsSearchAndCountRestrictionsWithSorting() throws Exception {
+    String sql = enhance(AgreementRepository.class, "findAllListByCwrAndFinancingSearch", sort("agreementNo", true));
+    assertThat(sql.toLowerCase()).contains("order by ag.agreement_code asc, ag.agreement_id asc")
+      .contains("case :searchby").contains("lower(:searchvalue)");
+    Method method = Arrays.stream(AgreementRepository.class.getMethods())
+      .filter(m -> m.getName().equals("findAllListByCwrAndFinancingSearch")).findFirst().orElseThrow();
+    assertThat(method.getAnnotation(Query.class).countQuery()).contains(AgreementRepository.SEARCH_FROM);
+  }
+
+  @Test
   void nativeAgreementSortUsesJoinedAliasAndPreservesWhere() throws Exception {
     String sql = enhance(AgreementRepository.class, "findAllListByCwrAndFinancingRaw", sort("agreementNo", true));
     assertThat(sql.toLowerCase()).contains("order by ag.agreement_code asc, ag.agreement_id asc")

@@ -6,6 +6,7 @@ import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryCwrRequest;
 import com.kmkbe.modules.branch_admin.service.CwrService;
@@ -38,7 +39,7 @@ public class CwrController {
   @GetMapping("/list/{custCode}")
   public CommonResult<PaginationResult<CwrListDto>> getCwrList(
     @PathVariable("custCode") String custCode,
-    PaginationRequest request
+    BasePaginationRequest request
   ) throws SignatureException {
 
     currentUserService.authenticatedInternalUser();
@@ -95,7 +96,7 @@ public class CwrController {
   @GetMapping("/invoices/{financingHdrCode}")
   public CommonResult<PaginationResult<PostedInvoiceDto>> getCwrInvoices(
     @PathVariable("financingHdrCode") String financingHdrCode,
-    PaginationRequest request
+    BasePaginationRequest request
   ) throws SignatureException {
     currentUserService.authenticatedInternalUser();
     PaginationResult<PostedInvoiceDto> result = PaginationResult.empty(
