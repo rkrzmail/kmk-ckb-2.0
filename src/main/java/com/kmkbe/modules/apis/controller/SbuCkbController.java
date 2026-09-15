@@ -4,6 +4,8 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
+import com.kmkbe.helpers.base.BaseResponse;
+import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.modules.apis.service.ApiSbuCkbService;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
@@ -110,7 +112,7 @@ public class SbuCkbController {
   }
 
   @PostMapping(value = "/invoice-paid/{jwtToken}")
-  public CommonResult<Object>
+  public BaseResponse
   invoicePaid(
     @PathVariable("jwtToken") String jwtToken,
     @RequestHeader("ApiKey") String apiKey,
@@ -126,7 +128,7 @@ public class SbuCkbController {
   }
 
   @PostMapping(value = "/inquiry/disburse/{jwtToken}")
-  public CommonResult<Object>
+  public BaseResponse
   inquiryDisburse(
     @PathVariable("jwtToken") String jwtToken,
     @RequestHeader("ApiKey") String apiKey,

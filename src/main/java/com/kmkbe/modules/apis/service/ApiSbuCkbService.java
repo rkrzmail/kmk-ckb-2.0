@@ -8,6 +8,8 @@ import com.kmkbe.core.domain.dto.StatusLabelDto;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.service.JwtGeneratorService;
+import com.kmkbe.helpers.base.BaseResponse;
+import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.core.domain.model.CommonResult;
@@ -265,7 +267,7 @@ public class ApiSbuCkbService {
    * @param apiKey
    * @return
    */
-  public CommonResult<Object> approval(String apiKey) {
+  public BaseResponse approval(String apiKey) {
 /**
  * Check Bouwheer Code
  */
@@ -278,7 +280,7 @@ public class ApiSbuCkbService {
 
     financingService.recallApprovalStatus();
 
-    return new CommonResult<>().success(null);
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, "Success Submitted");
   }
 
   /**
@@ -290,7 +292,7 @@ public class ApiSbuCkbService {
    * @throws Exception
    */
   @Transactional
-  public CommonResult<Object> invoicePaid(String apiKey, FinancingInvoicePaidRequest request) throws Exception {
+  public BaseResponse invoicePaid(String apiKey, FinancingInvoicePaidRequest request) throws Exception {
     /**
      * Check Bouwheer Code
      */
@@ -309,7 +311,7 @@ public class ApiSbuCkbService {
 
     log.info("Payment Financing Financing Header Code {} ,  Step {} , Status {}, ", request.getFinancingCode(), financingHdr.getFinancingStep(), financingHdr.getFinancingStatus());
     financingDtlService.paymentReceive(request, financingHdr);
-    return new CommonResult<>().success(null);
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, "Success Submitted");
   }
 
   /**
@@ -319,7 +321,7 @@ public class ApiSbuCkbService {
    * @param request
    * @return
    */
-  public CommonResult<Object> inquiryDisburse(String apiKey, FinancingInvoicePaidRequest request) {
+  public BaseResponse inquiryDisburse(String apiKey, FinancingInvoicePaidRequest request) {
     /**
      * Check Bouwheer Code
      */
@@ -332,7 +334,7 @@ public class ApiSbuCkbService {
       request
     );
 
-    return new CommonResult<>().success(null);
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, "Success Submitted");
   }
 
   /**
