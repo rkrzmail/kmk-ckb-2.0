@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.modules.branch_admin.service.AssignmentSubmissionService;
 import com.kmkbe.modules.branch_admin.service.SignerService;
+import com.kmkbe.modules.branch_admin.service.SigningEligibilityService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -35,6 +36,7 @@ public class SignerController {
   private final SignerService signerService;
   private final AssignmentSubmissionService assignmentSubmissionService;
   private final CurrentUserService currentUserService;
+  private final SigningEligibilityService signingEligibilityService;
 
   @GetMapping("/list")
   public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
@@ -190,26 +192,33 @@ public class SignerController {
     @PathVariable String agreementCode
   ) throws SignatureException {
 
-    List<DebtorDto> signerPersonList = signerService.checkSignerDanasakti(
-      financingHdrCode,
-      currentUserService.internalUsername()
-    );
-
+    currentUserService.authenticatedInternalUser();
     Map<String, Object> responseData = new HashMap<>();
-
-    if (signerPersonList == null || signerPersonList.isEmpty()) {
-      responseData.put("signerName", null);
+    responseData.put("signerName", null);
+    try {
+      signingEligibilityService.validateDebtorSigner(financingHdrCode);
+      List<DebtorDto> signerPersonList = signerService.checkSignerDanasakti(
+        financingHdrCode, currentUserService.internalUsername());
+      signingEligibilityService.validateDebtorSigner(financingHdrCode);
+      if (signerPersonList == null || signerPersonList.isEmpty()) {
+        return new CommonResult<Map<String, Object>>()
+          .fail(404, "Signer tidak tersedia", responseData);
+      }
+      responseData.put("signerName", signerPersonList.stream()
+        .map(DebtorDto::getKaryawanName).collect(Collectors.toList()));
+      return new CommonResult<Map<String, Object>>().success(responseData);
+    } catch (SignatureException exception) {
+      throw exception;
+    } catch (IllegalArgumentException | IllegalStateException exception) {
+      log.warn("E-Signer validation failed. financingHdrCode={}, agreementCode={}, message={}",
+        financingHdrCode, agreementCode, exception.getMessage());
+      return new CommonResult<Map<String, Object>>().fail(400, exception.getMessage(), responseData);
+    } catch (Exception exception) {
+      log.error("E-Signer status check failed. financingHdrCode={}, agreementCode={}",
+        financingHdrCode, agreementCode, exception);
       return new CommonResult<Map<String, Object>>()
-        .fail(404, "Signer tidak tersedia", responseData);
+        .fail(500, "Gagal memeriksa status E-Signer. Silakan coba kembali.", responseData);
     }
-    List<String> signerNames = signerPersonList.stream()
-      .map(DebtorDto::getKaryawanName)
-      .collect(Collectors.toList());
-
-    responseData.put("signerName", signerNames);
-
-    return new CommonResult<Map<String, Object>>()
-      .success(responseData);
   }
 
   @GetMapping("/check-send-document/{financingHdrCode}/{agreementCode}")

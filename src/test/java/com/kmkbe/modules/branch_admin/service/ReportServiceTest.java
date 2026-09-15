@@ -710,7 +710,8 @@ class ReportServiceTest {
 
     assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtAmount", (Object) null)).isEqualTo("IDR 0.00");
     assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtAmount", BigDecimal.ONE)).isEqualTo("IDR 1.00");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtAmount", "12,345")).isEqualTo("IDR 12345.00");
+    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtAmount", "12345")).isEqualTo("IDR 12,345.00");
+    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtAmount", "12,345")).isEqualTo("IDR 0.00");
     assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtAmount", "x")).isEqualTo("IDR 0.00");
     assertThat((String) ReflectionTestUtils.invokeMethod(service, "fmtRupiah", (Object) null)).isEqualTo("-");
     assertThat((String) ReflectionTestUtils.invokeMethod(service, "fmtRupiah", "1234")).isEqualTo("IDR 1,234.00");

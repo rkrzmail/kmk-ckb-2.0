@@ -23,4 +23,10 @@ public class PaginationRequest {
   private String searchValue;
   private Integer pageNo;
   private Integer pageSize;
+
+  @Schema(description = "Field used to sort results; supported fields depend on the endpoint", example = "dtmCrt")
+  private String sortBy;
+
+  @Schema(description = "Sort direction; optional", allowableValues = {"asc", "desc"}, example = "desc")
+  private String sortType;
 }

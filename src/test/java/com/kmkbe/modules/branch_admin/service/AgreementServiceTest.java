@@ -164,6 +164,20 @@ class AgreementServiceTest {
     }
 
     @Test
+    void listForwardsRequestedSortToRepository() throws Exception {
+        stubBank();
+        when(agreementRepository.findAllListByCwrAndFinancingRaw(eq("CWR001"), eq(FINANCING_HDR_CODE.toString()), any()))
+                .thenReturn(new PageImpl<>(List.of()));
+        PaginationRequest request = new PaginationRequest();
+        request.setSortBy("agreementNo");
+        request.setSortType("desc");
+        service.list("CWR001", FINANCING_HDR_CODE.toString(), request);
+        var captor = ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(agreementRepository).findAllListByCwrAndFinancingRaw(eq("CWR001"), eq(FINANCING_HDR_CODE.toString()), captor.capture());
+        assertThat(captor.getValue().getSort().getOrderFor("agreement_code").isDescending()).isTrue();
+    }
+
+    @Test
     void listMapsRawAgreementRowsWithDefaultsForNullValues() throws Exception {
         stubBank();
         Map<String, Object> fullRow = new java.util.HashMap<>();

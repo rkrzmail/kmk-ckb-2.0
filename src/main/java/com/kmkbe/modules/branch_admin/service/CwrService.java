@@ -21,6 +21,7 @@ import com.kmkbe.modules.remote.request.InquiryCwrRemoteRequest;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.helpers.utils.SpecPagination;
+import com.kmkbe.helpers.utils.PaginationSort;
 import com.kmkbe.helpers.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +62,7 @@ public class CwrService {
         pageNo = pageNo - 1;
       }
 
+      var comparator = PaginationSort.cwrComparator(request);
       Customer customer = customerRepository.findByCustCode(UUID.fromString(custCode))
         .orElseThrow(() -> new IllegalStateException("Customer not found or not valid"));
       List<Cwr> cwrs = cwrRepository.findAllByCustomerOrderByDtmUpdDesc(customer);
@@ -79,6 +81,11 @@ public class CwrService {
         })
         .toList();
       return SpecPagination.paginationData(new SpecPagination<CwrListDto, CwrListDto>(result, request) {
+        @Override
+        public void sort(List<CwrListDto> data) {
+          if (comparator != null) data.sort(comparator);
+        }
+
         @Override
         public CwrListDto search(CwrListDto data) {
 

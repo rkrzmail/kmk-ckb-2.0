@@ -43,8 +43,6 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
           and (TRUE = :#{#financingStatus == null} or fh.financing_status = :financingStatus)
           and (TRUE = :#{#custName == null} or c.cust_name like '%' || :custName || '%')
           and (TRUE = :#{#bouwheerName == null} or bw.bouwheer_name like '%' || :bouwheerName || '%')
-      order by
-          fh.dtm_crt desc
       """,
     countQuery = """
       select count(*)

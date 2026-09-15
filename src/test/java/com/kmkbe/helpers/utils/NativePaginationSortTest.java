@@ -1,0 +1,47 @@
+package com.kmkbe.helpers.utils;
+
+import com.kmkbe.core.domain.repository.AgreementRepository;
+import com.kmkbe.core.domain.repository.FinancingHdrRepository;
+import com.kmkbe.core.domain.request.PaginationRequest;
+import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.query.QueryEnhancer;
+import org.springframework.data.jpa.repository.query.QueryEnhancerFactory;
+import java.lang.reflect.Method;
+import java.util.Arrays;
+import static org.assertj.core.api.Assertions.assertThat;
+
+class NativePaginationSortTest {
+  @Test
+  void nativeAgreementSortUsesJoinedAliasAndPreservesWhere() throws Exception {
+    String sql = enhance(AgreementRepository.class, "findAllListByCwrAndFinancingRaw", sort("agreementNo", true));
+    assertThat(sql.toLowerCase()).contains("order by ag.agreement_code asc, ag.agreement_id asc")
+      .contains("ag.cwr_code = :cwrCode".toLowerCase());
+  }
+
+  @Test
+  void nativeAssignmentSortUsesJoinedAliasAndPreservesBranchRestriction() throws Exception {
+    String sql = enhance(FinancingHdrRepository.class, "findAllAssignmentFinancingRaw", sort("custName", false));
+    assertThat(sql.toLowerCase()).contains("order by c.cust_name asc, fh.financing_hdr_id asc")
+      .contains("fh.branch_code = :branchcode");
+  }
+
+  private Sort sort(String field, boolean agreement) {
+    var request = new PaginationRequest();
+    request.setSortBy(field);
+    request.setSortType("asc");
+    return agreement ? PaginationSort.agreements(request) : PaginationSort.assignments(request);
+  }
+
+  private String enhance(Class<?> repository, String methodName, Sort sort) throws Exception {
+    Method method = Arrays.stream(repository.getMethods()).filter(m -> m.getName().equals(methodName)).findFirst().orElseThrow();
+    String sql = method.getAnnotation(Query.class).value();
+    Class<?> declaredQuery = Class.forName("org.springframework.data.jpa.repository.query.DeclaredQuery");
+    Method of = declaredQuery.getDeclaredMethod("of", String.class, boolean.class);
+    of.setAccessible(true);
+    QueryEnhancer enhancer = (QueryEnhancer) QueryEnhancerFactory.class.getMethod("forQuery", declaredQuery)
+      .invoke(null, of.invoke(null, sql, true));
+    return enhancer.applySorting(sort);
+  }
+}

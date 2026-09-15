@@ -60,8 +60,7 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
       "JOIN public.financing_hdr fh ON ag.financing_hdr_code = fh.financing_hdr_code " +
       "JOIN public.bouwheer bw ON fh.bouwheer_code = bw.bouwheer_code " +
       "JOIN public.customer ct ON cwr.cust_code = ct.cust_code " +
-      "WHERE ag.cwr_code = :cwrCode AND ag.financing_hdr_code = :financingHdrCode " +
-      "ORDER BY fh.disburse_date DESC",
+      "WHERE ag.cwr_code = :cwrCode AND ag.financing_hdr_code = :financingHdrCode ",
     countQuery = "SELECT COUNT(*) FROM public.agreement ag " +
       "JOIN public.cwr ON ag.cwr_code = cwr.cwr_code " +
       "JOIN public.financing_hdr fh ON ag.financing_hdr_code = fh.financing_hdr_code " +

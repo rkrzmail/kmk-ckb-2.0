@@ -27,6 +27,7 @@ import com.kmkbe.modules.user.entity.MstEmployee;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.helpers.utils.SpecPagination;
+import com.kmkbe.helpers.utils.PaginationSort;
 import com.kmkbe.helpers.utils.Utils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -73,9 +74,14 @@ public class DistributionSubmissionService {
 
   public PaginationResult<DistributionSubmissionDto> submissionDistribution(PaginationRequest request) {
     try {
-
+      var comparator = PaginationSort.distributionComparator(request);
       List<FinancingHdr> finHdrAll = financingHdrRepository.findAllByRaw();
       return SpecPagination.paginationData(new SpecPagination<FinancingHdr, DistributionSubmissionDto>(finHdrAll, request) {
+        @Override
+        public void sort(List<DistributionSubmissionDto> data) {
+          if (comparator != null) data.sort(comparator);
+        }
+
         @Override
         public DistributionSubmissionDto eval(FinancingHdr e) {
           String city = "";

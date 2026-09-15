@@ -17,6 +17,7 @@ import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.helpers.utils.SpecPagination;
+import com.kmkbe.helpers.utils.PaginationSort;
 import com.kmkbe.helpers.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -120,7 +121,7 @@ public class AssignmentSubmissionService {
         financingStatusFilter,
         custNameFilter,
         bouwheerNameFilter,
-        PageRequest.of(pageNo, pageSize)
+        PageRequest.of(pageNo, pageSize, PaginationSort.assignments(request))
       );
 
 
