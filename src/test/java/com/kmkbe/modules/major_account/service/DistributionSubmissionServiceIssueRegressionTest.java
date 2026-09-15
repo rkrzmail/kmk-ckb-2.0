@@ -71,7 +71,8 @@ class DistributionSubmissionServiceIssueRegressionTest {
     request.setPageSize(1);
     request.setSearchBy("NamaDebitur");
     request.setSearchValue("Vendor");
-    var result = service.submissionDistribution(request);
+    var baseRequest = new com.kmkbe.helpers.base.BasePaginationRequest(1, 2, "financingAmount", "asc", "NamaDebitur", "Vendor");
+    var result = service.submissionDistribution(baseRequest);
     assertThat(result.getList()).extracting(DistributionSubmissionDto::getCustName).containsExactly("Vendor A");
     assertThat(result.getTotalData()).isEqualTo(2);
     request.setSortType("desc");

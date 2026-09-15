@@ -16,6 +16,8 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.helpers.utils.PaginationSort;
+import com.kmkbe.helpers.utils.PaginationRequests;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
@@ -94,6 +96,12 @@ public class AgreementService {
   }
 
   public PaginationResult<AgreementDto> list(
+    String cwrCode, String financingHdrCode, BasePaginationRequest request
+  ) throws JsonProcessingException {
+    return list(cwrCode, financingHdrCode, PaginationRequests.from(request));
+  }
+
+  public PaginationResult<AgreementDto> list(
     String cwrCode,
     String financingHdrCode,
     PaginationRequest request
@@ -112,7 +120,13 @@ public class AgreementService {
         pageNo = pageNo - 1;
       }
 
-      Page<Map<String, Object>> page = agreementRepository.findAllListByCwrAndFinancingRaw(
+      boolean searching = request.getSearchBy() != null && request.getSearchValue() != null
+        && !request.getSearchValue().isBlank();
+      Page<Map<String, Object>> page = searching
+        ? agreementRepository.findAllListByCwrAndFinancingSearch(
+          cwrCode, financingHdrCode, request.getSearchBy().toLowerCase(java.util.Locale.ROOT),
+          request.getSearchValue().trim(), PageRequest.of(pageNo, pageSize, PaginationSort.agreements(request)))
+        : agreementRepository.findAllListByCwrAndFinancingRaw(
         cwrCode,
         financingHdrCode,
         PageRequest.of(pageNo, pageSize, PaginationSort.agreements(request))

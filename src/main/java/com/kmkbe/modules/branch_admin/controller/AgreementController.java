@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.constant.AppConstants;
@@ -49,7 +50,7 @@ public class AgreementController {
   public CommonResult<PaginationResult<AgreementDto>> getCwrDisbursement(
     @PathVariable("cwrCode") String cwrCode,
     @PathVariable("financingHdrCode") String financingHdrCode,
-    PaginationRequest request
+    BasePaginationRequest request
   ) throws JsonProcessingException, SignatureException {
 
     currentUserService.authenticatedInternalUser();
