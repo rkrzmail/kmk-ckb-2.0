@@ -71,6 +71,22 @@ class CwrServiceTest {
   }
 
   @Test
+  void listSortsBeforeSelectingPage() {
+    Customer customer = customer();
+    when(customerRepository.findByCustCode(CUSTOMER_CODE)).thenReturn(Optional.of(customer));
+    when(cwrRepository.findAllByCustomerOrderByDtmUpdDesc(customer)).thenReturn(List.of(
+        cwr("CWR003", customer, bouwheer()), cwr("CWR001", customer, bouwheer()),
+        cwr("CWR002", customer, bouwheer())));
+    PaginationRequest request = new PaginationRequest();
+    request.setPageNo(2);
+    request.setPageSize(1);
+    request.setSortBy("cwrNo");
+    request.setSortType("asc");
+    assertThat(service.list(CUSTOMER_CODE.toString(), request).getList())
+        .extracting(CwrListDto::getCwrCode).containsExactly("CWR002");
+  }
+
+  @Test
   void listReturnsCwrRowsWithAgreementFinancingAmountAndDefaultPagination() {
     Customer customer = customer();
     Cwr cwr = cwr("CWR001", customer, bouwheer());

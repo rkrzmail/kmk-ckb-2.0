@@ -18,6 +18,7 @@ import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.helpers.utils.Utils;
+import com.kmkbe.helpers.utils.PaginationSort;
 import com.kmkbe.modules.loan_submission.request.CreateSubmissionRequest;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
@@ -151,7 +152,7 @@ public class InvoiceService {
       int pageNo = (request.getPageNo() != null && request.getPageNo() > 0) ? request.getPageNo() - 1 : 0;
       int pageSize = (request.getPageSize() != null) ? request.getPageSize() : 10;
 
-      Pageable pageable = PageRequest.of(pageNo, pageSize);
+      Pageable pageable = PageRequest.of(pageNo, pageSize, PaginationSort.invoices(request));
       Page<FinancingDtl> financingDtls;
 
       if (request.getSearchBy() != null && !request.getSearchValue().trim().isEmpty()) {

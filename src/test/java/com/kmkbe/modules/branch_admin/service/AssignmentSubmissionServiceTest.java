@@ -85,6 +85,21 @@ class AssignmentSubmissionServiceTest {
   }
 
   @Test
+  void assignmentListForwardsRequestedSortToRepository() throws Exception {
+    stubUserAndRole("account_officer");
+    when(financingHdrRepository.findAllAssignmentFinancingRaw(eq("JKT"), eq(null), eq(null), eq(null), any()))
+        .thenReturn(new PageImpl<>(List.of()));
+    PaginationRequest request = new PaginationRequest();
+    request.setSortBy("custName");
+    request.setSortType("asc");
+    service.assignmentList(httpServletRequest, request);
+    var captor = org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+    org.mockito.Mockito.verify(financingHdrRepository).findAllAssignmentFinancingRaw(
+        eq("JKT"), eq(null), eq(null), eq(null), captor.capture());
+    assertThat(captor.getValue().getSort().getOrderFor("c.cust_name").isAscending()).isTrue();
+  }
+
+  @Test
   void assignmentListReturnsAccountOfficerAssignmentsWithAgreementDocument() throws Exception {
     FinancingHdr financingHdr = financingHdr("INPROCESS", "ASSIGNMENT");
     stubUserAndRole("account_officer");

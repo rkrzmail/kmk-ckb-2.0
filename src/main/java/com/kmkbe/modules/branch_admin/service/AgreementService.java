@@ -15,6 +15,7 @@ import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.helpers.utils.PaginationSort;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
@@ -114,7 +115,7 @@ public class AgreementService {
       Page<Map<String, Object>> page = agreementRepository.findAllListByCwrAndFinancingRaw(
         cwrCode,
         financingHdrCode,
-        PageRequest.of(pageNo, pageSize)
+        PageRequest.of(pageNo, pageSize, PaginationSort.agreements(request))
       );
 
       Map<String, Object> obj = findCsulBank();
