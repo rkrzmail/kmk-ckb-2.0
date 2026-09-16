@@ -28,6 +28,8 @@ import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.modules.common.service.EmailService;
+import com.kmkbe.modules.common.service.EmailDeliveryService;
+import com.kmkbe.core.domain.entity.EmailDeliveryLog;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
@@ -59,6 +61,7 @@ public class CustomerService {
   private final CustomerRepository customerRepository;
   private final FinancingHdrRepository financingHdrRepository;
   private final EmailService emailService;
+  private final EmailDeliveryService emailDeliveryService;
   private final AuditTrailService auditTrailService;
   private final BouwheerRepository bouwheerRepository;
   private final CurrentUserService currentUserService;
@@ -67,6 +70,7 @@ public class CustomerService {
   public CustomerService(CustomerRepository customerRepository,
                          FinancingHdrRepository financingHdrRepository,
                          EmailService emailService,
+                         EmailDeliveryService emailDeliveryService,
                          AuditTrailService auditTrailService,
                          BouwheerRepository bouwheerRepository,
                          CurrentUserService currentUserService,
@@ -74,6 +78,7 @@ public class CustomerService {
     this.customerRepository = customerRepository;
     this.financingHdrRepository = financingHdrRepository;
     this.emailService = emailService;
+    this.emailDeliveryService = emailDeliveryService;
     this.auditTrailService = auditTrailService;
     this.bouwheerRepository = bouwheerRepository;
     this.currentUserService = currentUserService;
@@ -545,14 +550,15 @@ public class CustomerService {
       toAuditData(saved)
     );
 
-    if (ApprovalStatus.APPROVED.name().equals(approvalStatus)) {
-      emailService.sendNotificationActive(saved, request.getApprovalNote());
-    } else {
-      emailService.sendNotificationRejected(saved, request.getApprovalNote());
-    }
-
-    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
+    EmailDeliveryLog delivery = emailDeliveryService.sendApproval(saved, approvalStatus, request.getApprovalNote());
+    boolean emailAccepted = delivery.getStatus() == EmailDeliveryLog.Status.SENT;
+    String message = emailAccepted ? AppConstants.PROCESS_SUCCESSFULLY
+      : "Akun berhasil diproses, tetapi email notifikasi gagal dikirim. Silakan hubungi administrator untuk mengirim ulang.";
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, message,
+      new ApprovalEmailResult(approvalStatus, delivery.getEmailDeliveryId(), emailAccepted));
   }
+
+  public record ApprovalEmailResult(String approvalStatus, Long emailDeliveryId, boolean emailAccepted) {}
 
   private CustomerAuditData toAuditData(Customer customer) {
     if (customer == null) {

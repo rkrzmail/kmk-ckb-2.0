@@ -3,6 +3,7 @@ package com.kmkbe.modules.customer.service;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.EmailDeliveryLog;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.core.security.CurrentUserService;
@@ -10,6 +11,7 @@ import com.kmkbe.exception.BusinessException;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
+import com.kmkbe.modules.common.service.EmailDeliveryService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.SignUpRequest;
@@ -41,6 +43,7 @@ class CustomerServiceIssueRegressionTest {
   @Mock private BCryptPasswordEncoder bcryptEncoder;
   @Mock private FinancingHdrRepository financingHdrRepository;
   @Mock private EmailService emailService;
+  @Mock private EmailDeliveryService emailDeliveryService;
   @Mock private AuditTrailService auditTrailService;
   @Mock private BouwheerRepository bouwheerRepository;
   private CustomerService service;
@@ -53,6 +56,7 @@ class CustomerServiceIssueRegressionTest {
       customerRepository,
       financingHdrRepository,
       emailService,
+      emailDeliveryService,
       auditTrailService,
       bouwheerRepository,
       currentUserService,
@@ -224,13 +228,15 @@ class CustomerServiceIssueRegressionTest {
       .build();
     when(customerRepository.findByCustCode(customer.getCustCode())).thenReturn(Optional.of(customer));
     when(customerRepository.save(customer)).thenReturn(customer);
+    when(emailDeliveryService.sendApproval(customer, "APPROVED", "TEST"))
+      .thenReturn(delivery(EmailDeliveryLog.Status.SENT));
 
-    service.approval(request, "major.user");
+    var response = (com.kmkbe.helpers.base.BaseResponseBuilder<?>) service.approval(request, "major.user");
 
     assertThat(customer.isActive()).isTrue();
     assertThat(customer.getApprovalStatus()).isEqualTo(ApprovalStatus.APPROVED.name());
-    verify(emailService).sendNotificationActive(customer,"TEST");
-    verify(emailService, never()).sendNotificationRejected(any(Customer.class), anyString());
+    verify(emailDeliveryService).sendApproval(customer, "APPROVED", "TEST");
+    assertThat(response.getMessage()).isEqualTo(com.kmkbe.helpers.constant.AppConstants.PROCESS_SUCCESSFULLY);
     verify(emailService, never()).customerVerification(anyString(), anyString(), anyString(), anyString());
   }
 
@@ -244,14 +250,43 @@ class CustomerServiceIssueRegressionTest {
       .build();
     when(customerRepository.findByCustCode(customer.getCustCode())).thenReturn(Optional.of(customer));
     when(customerRepository.save(customer)).thenReturn(customer);
+    when(emailDeliveryService.sendApproval(customer, "REJECTED", "NPWP tidak sesuai"))
+      .thenReturn(delivery(EmailDeliveryLog.Status.SENT));
 
     service.approval(request, "major.user");
 
     assertThat(customer.isActive()).isFalse();
     assertThat(customer.getApprovalStatus()).isEqualTo(ApprovalStatus.REJECTED.name());
-    verify(emailService).sendNotificationRejected(customer, "NPWP tidak sesuai");
-    verify(emailService, never()).sendNotificationActive(any(Customer.class),anyString());
+    verify(emailDeliveryService).sendApproval(customer, "REJECTED", "NPWP tidak sesuai");
     verify(emailService, never()).customerVerification(anyString(), anyString(), anyString(), anyString());
+  }
+
+  @Test
+  void approvalReturnsWarningWhenEmailIsNotAcceptedBySmtp() throws Exception {
+    Customer customer = openCustomer();
+    ApprovalRequest request = ApprovalRequest.builder().custCode(customer.getCustCode())
+      .approvalStatus("APPROVED").approvalNote("TEST").build();
+    when(customerRepository.findByCustCode(customer.getCustCode())).thenReturn(Optional.of(customer));
+    when(customerRepository.save(customer)).thenReturn(customer);
+    when(emailDeliveryService.sendApproval(customer, "APPROVED", "TEST"))
+      .thenReturn(delivery(EmailDeliveryLog.Status.FAILED));
+
+    var response = (com.kmkbe.helpers.base.BaseResponseBuilder<?>) service.approval(request, "major.user");
+
+    assertThat(customer.getApprovalStatus()).isEqualTo("APPROVED");
+    assertThat(response.isSuccess()).isTrue();
+    assertThat(response.getMessage()).contains("email notifikasi gagal dikirim");
+    assertThat((CustomerService.ApprovalEmailResult) response.getData())
+      .extracting(CustomerService.ApprovalEmailResult::emailAccepted).isEqualTo(false);
+    assertThat(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(response))
+      .contains("\"emailAccepted\":false");
+  }
+
+  private static EmailDeliveryLog delivery(EmailDeliveryLog.Status status) {
+    var delivery = new EmailDeliveryLog();
+    delivery.setEmailDeliveryId(42L);
+    delivery.setStatus(status);
+    return delivery;
   }
 
   @Test

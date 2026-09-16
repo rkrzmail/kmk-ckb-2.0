@@ -232,6 +232,38 @@ public class EmailService {
     }
   }
 
+  public record DeliveryResult(boolean acceptedBySmtp, String errorMessage) {}
+
+  public DeliveryResult sendCustomerApprovalNotification(Customer customer, String approvalStatus, String note) {
+    String recipient = customer.getCustEmail();
+    String templateCode = "APPROVED".equals(approvalStatus) ? M_CUST_ACTIVE : M_CUST_REJECTED;
+    try {
+      EmailTemplate source = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(templateCode, true);
+      if (source == null) {
+        return new DeliveryResult(false, "Active email template not found: " + templateCode);
+      }
+      EmailTemplate template = new EmailTemplate();
+      template.setEmailTemplateCode(source.getEmailTemplateCode());
+      template.setSubjectMail(source.getSubjectMail());
+      template.setBodyMail(source.getBodyMail());
+      template.setMailCc(source.getMailCc());
+      template.setMailBcc(source.getMailBcc());
+      Map<String, Object> args = new HashMap<>();
+      args.put("name", customer.getCustName());
+      args.put("id_no", customer.getCustIdNo());
+      args.put("email", recipient);
+      args.put("additionalArgs", Map.of("approval_note",
+        HtmlUtils.htmlEscape(note == null || note.isBlank() ? "-" : note)));
+      template.setMailTo(recipient);
+      template.setBodyMail(mappingBody(template.getBodyMail(), args));
+      return sendMailMessageWithResult(template, recipient);
+    } catch (Exception exception) {
+      log.error("Customer approval email preparation failed. customerCode={}, templateCode={}",
+        customer.getCustCode(), templateCode, exception);
+      return new DeliveryResult(false, exception.getClass().getSimpleName() + ": " + exception.getMessage());
+    }
+  }
+
   @Async
   public void sendNotificationRejected(Customer customer, String approvalNote) {
     try {
@@ -710,6 +742,10 @@ public class EmailService {
     EmailTemplate template,
     String email
   ) {
+    return sendMailMessageWithResult(template, email).acceptedBySmtp();
+  }
+
+  private DeliveryResult sendMailMessageWithResult(EmailTemplate template, String email) {
     try {
       //CsulMailSender csulMailSender = new CsulMailSender(mailConfig, configRemoteService);
       int attempts = 0;
@@ -743,10 +779,10 @@ public class EmailService {
         mailSender.send(mimeMessage);
       }
 
-      return true;
+      return new DeliveryResult(true, null);
     } catch (Exception e) {
       log.error("sendMailMessage failed for {}", email, e);
-      return false;
+      return new DeliveryResult(false, e.getClass().getSimpleName() + ": " + e.getMessage());
     }
   }
 
