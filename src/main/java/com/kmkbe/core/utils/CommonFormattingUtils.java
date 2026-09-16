@@ -6,7 +6,7 @@ import java.util.Locale;
 
 public class CommonFormattingUtils {
     public static final String REGEX_EMAIL = "^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,6}$";
-    public static final DecimalFormat DEFAULT_NUMBER_FORMATTER = new DecimalFormat("###,###,###.0#");
+    public static final DecimalFormat DEFAULT_NUMBER_FORMATTER = new DecimalFormat("###,###,###.00");
 
     public static String cleanBase64(String value) {
         if (value == null) {

@@ -331,6 +331,7 @@ public class DistributionSubmissionService {
           .applicationDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
           .companyName(financingHdr.getCustomer().getCustName())
           .email(financingHdr.getCustomer().getCustEmail())
+          .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
           .phoneNumber(phone)
           .tenor(financingHdr.getTenor())
           .toEmail(toEmail)

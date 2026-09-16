@@ -115,7 +115,7 @@ public class LoanSubmissionService {
 
     Log.info("Customer code {} " + customer.getCustExternalCode());
 
-    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(customer.getBouwheer()!=null?UUID.fromString(customer.getBouwheer()):null);
+    Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null);
     if (bouwheerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Bouwheer code not found " + customer.getBouwheer());
@@ -220,7 +220,7 @@ public class LoanSubmissionService {
       }
 
       if (StringUtil.isNullOrEmpty(description)) {
-        description = "Invoice By "+bouwheerOptional.get().getBouwheerName();
+        description = "Invoice By " + bouwheerOptional.get().getBouwheerName();
       }
 
       Date postingDate = null;
@@ -274,9 +274,9 @@ public class LoanSubmissionService {
     }
     for (double i = 50.0; i <= retention; i += 5.0) {
       result.add(
-              DisbursePercentageDto.builder()
-                      .disbursePercentage(i)
-                      .build()
+        DisbursePercentageDto.builder()
+          .disbursePercentage(i)
+          .build()
       );
     }
     return result;
@@ -482,101 +482,101 @@ public class LoanSubmissionService {
   public EstimatedDisburseDto recalculateDisburse(
     HttpServletRequest request
   ) {
-      int schemaRate = Utils.getInt(request.getParameter("schemaRate"));
-      int intestRate = Utils.getInt(request.getParameter("intestRate"));
+    int schemaRate = Utils.getInt(request.getParameter("schemaRate"));
+    int intestRate = Utils.getInt(request.getParameter("intestRate"));
 
-      double adminFee = Utils.getInt(request.getParameter("adminFee"));
-      String financingHdrCode = request.getParameter("financingHdrCode");
-      Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
-      if (financingHdr.isEmpty()) {
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_409, "FinancingHdr not found");
-      }
-      FinancingHdr finHdr = financingHdr.get();
+    double adminFee = Utils.getInt(request.getParameter("adminFee"));
+    String financingHdrCode = request.getParameter("financingHdrCode");
+    Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
+    if (financingHdr.isEmpty()) {
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_409, "FinancingHdr not found");
+    }
+    FinancingHdr finHdr = financingHdr.get();
 
-      final BigDecimal ntfResult = BigDecimal.valueOf(finHdr.getTotalInvoiceAmt())
-        .multiply(BigDecimal.valueOf(schemaRate / 100.0));
-      //.setScale(0, RoundingMode.UP);
+    final BigDecimal ntfResult = BigDecimal.valueOf(finHdr.getTotalInvoiceAmt())
+      .multiply(BigDecimal.valueOf(schemaRate / 100.0));
+    //.setScale(0, RoundingMode.UP);
 
-      UUID bouwheerCode = finHdr.getBouwheer() != null ? finHdr.getBouwheer().getBouwheerCode() : null;
-      Optional<Product> findProduct = findProductByNtfRangeAndBouwheer(ntfResult.doubleValue(), bouwheerCode);
-      if (findProduct.isEmpty()) {
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_409, "Product not found");
-      }
+    UUID bouwheerCode = finHdr.getBouwheer() != null ? finHdr.getBouwheer().getBouwheerCode() : null;
+    Optional<Product> findProduct = findProductByNtfRangeAndBouwheer(ntfResult.doubleValue(), bouwheerCode);
+    if (findProduct.isEmpty()) {
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_409, "Product not found");
+    }
 
-      final Product product = findProduct.get();
-      Double provisionRate = findProduct.get().getProvisionRate();
-      Double effectiveRate = findProduct.get().getEffectiveRate();
-      Double adminRate = findProduct.get().getAdminRate();
+    final Product product = findProduct.get();
+    Double provisionRate = findProduct.get().getProvisionRate();
+    Double effectiveRate = findProduct.get().getEffectiveRate();
+    Double adminRate = findProduct.get().getAdminRate();
 
-      BigDecimal
-        provisionFeeAmount,
-        adminFeeAmount,
-        othersFeeAmount,
-        surveyFeeAmount,
-        legalFeeAmount;
-
-
-      int tenor = finHdr.getTenor().intValue();
+    BigDecimal
+      provisionFeeAmount,
+      adminFeeAmount,
+      othersFeeAmount,
+      surveyFeeAmount,
+      legalFeeAmount;
 
 
-      double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
-      double effective_Rate = product.getEffectiveRate();
-      effective_Rate = intestRate;//kiriman dari client
-
-      if (effective_Rate < 1) {
-        effective_Rate = effective_Rate * 100;
-      } else if (effective_Rate > 100) {
-        effective_Rate = Math.floor(effective_Rate / 100);
-      }
-
-      double interestAmount = nilaiPembiayaan * effective_Rate / 100;
-      //double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
-      double jumlahBiaya = 0;
-      double provisionRateFee = finHdr.getProvisionFeeAmt();//  product.getProvisionRate() * plafonLimit / 100;
+    int tenor = finHdr.getTenor().intValue();
 
 
-      boolean isCustomerExisting = finHdr.getSurveyFeeAmt().intValue() != 0;
-      if (!isCustomerExisting) {
-        //newCustomer
-        jumlahBiaya = provisionRateFee
-          + product.getSurveyFee()
-          + product.getLegalFee()
-          + adminFee
-          + product.getOthersFee();
-        provisionFeeAmount = BigDecimal.valueOf(provisionRateFee).setScale(0, RoundingMode.HALF_UP);
-        surveyFeeAmount = BigDecimal.valueOf(product.getSurveyFee()).setScale(0, RoundingMode.HALF_UP);
-        legalFeeAmount = BigDecimal.valueOf(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
-        adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
-        othersFeeAmount = BigDecimal.valueOf(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
-      } else {
-        provisionFeeAmount = new BigDecimal(0);
-        surveyFeeAmount = new BigDecimal(0);
-        legalFeeAmount = new BigDecimal(0);
-        adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
-        othersFeeAmount = new BigDecimal(0);
-        jumlahBiaya = adminFee + product.getOthersFee();
-      }
+    double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
+    double effective_Rate = product.getEffectiveRate();
+    effective_Rate = intestRate;//kiriman dari client
 
-      double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
-      final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
-      final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
+    if (effective_Rate < 1) {
+      effective_Rate = effective_Rate * 100;
+    } else if (effective_Rate > 100) {
+      effective_Rate = Math.floor(effective_Rate / 100);
+    }
 
-      return EstimatedDisburseDto.builder()
-        .productId(product.getProductId())
-        .financingAmount(ntfResult.setScale(0, RoundingMode.HALF_UP)) //yng diajukan
-        .serviceFeeAmount(serviceFee)
-        .estimatedDisburseAmount(estimated)
-        .interestFeeAmount(BigDecimal.valueOf(interestAmount).setScale(0, RoundingMode.HALF_UP))//interest
-        .provisionFeeAmount(provisionFeeAmount)
-        .adminFeeAmount(adminFeeAmount)
-        .othersFeeAmount(othersFeeAmount)
-        .legalFeeAmount(legalFeeAmount)
-        .surveyFeeAmount(surveyFeeAmount)
-        .adminRate(adminRate)
-        .effectiveRate(effectiveRate)
-        .provisionRate(provisionRate)
-        .product(findProduct.get())
-        .build();
+    double interestAmount = nilaiPembiayaan * effective_Rate / 100;
+    //double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
+    double jumlahBiaya = 0;
+    double provisionRateFee = finHdr.getProvisionFeeAmt();//  product.getProvisionRate() * plafonLimit / 100;
+
+
+    boolean isCustomerExisting = finHdr.getSurveyFeeAmt().intValue() != 0;
+    if (!isCustomerExisting) {
+      //newCustomer
+      jumlahBiaya = provisionRateFee
+        + product.getSurveyFee()
+        + product.getLegalFee()
+        + adminFee
+        + product.getOthersFee();
+      provisionFeeAmount = BigDecimal.valueOf(provisionRateFee).setScale(0, RoundingMode.HALF_UP);
+      surveyFeeAmount = BigDecimal.valueOf(product.getSurveyFee()).setScale(0, RoundingMode.HALF_UP);
+      legalFeeAmount = BigDecimal.valueOf(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
+      adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
+      othersFeeAmount = BigDecimal.valueOf(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
+    } else {
+      provisionFeeAmount = new BigDecimal(0);
+      surveyFeeAmount = new BigDecimal(0);
+      legalFeeAmount = new BigDecimal(0);
+      adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
+      othersFeeAmount = new BigDecimal(0);
+      jumlahBiaya = adminFee + product.getOthersFee();
+    }
+
+    double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
+    final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
+    final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
+
+    return EstimatedDisburseDto.builder()
+      .productId(product.getProductId())
+      .financingAmount(ntfResult.setScale(0, RoundingMode.HALF_UP)) //yng diajukan
+      .serviceFeeAmount(serviceFee)
+      .estimatedDisburseAmount(estimated)
+      .interestFeeAmount(BigDecimal.valueOf(interestAmount).setScale(0, RoundingMode.HALF_UP))//interest
+      .provisionFeeAmount(provisionFeeAmount)
+      .adminFeeAmount(adminFeeAmount)
+      .othersFeeAmount(othersFeeAmount)
+      .legalFeeAmount(legalFeeAmount)
+      .surveyFeeAmount(surveyFeeAmount)
+      .adminRate(adminRate)
+      .effectiveRate(effectiveRate)
+      .provisionRate(provisionRate)
+      .product(findProduct.get())
+      .build();
   }
 
   @Transactional
@@ -722,7 +722,7 @@ public class LoanSubmissionService {
     CreateSimulationRequest request
   ) throws SignatureException, ParseException, JsonProcessingException {
 
-    final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(customer.getBouwheer()!=null?UUID.fromString(customer.getBouwheer()):null)
+    final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null)
       .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
 
     final double totalInvoiceAmount = request.getInvoices()
@@ -751,14 +751,14 @@ public class LoanSubmissionService {
 
     if (calculateDisburse.getEstimatedDisburseAmount().doubleValue() < 0) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", calculateDisburse.getEstimatedDisburseAmount());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81,"Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
         "Saat ini pengajuan Anda negatif, silakan tambahkan invoice untuk melanjutkan pengajuan");
     }
 
     // Ensure calculateDisburse and its nested value are not null before checking doubleValue()
     if (calculateDisburse.getFinancingAmount().doubleValue() < 50000000) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", calculateDisburse.getFinancingAmount());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81,"Untuk melanjutkan pengajuan silahkan tambahkan Jumlah Pembiayaan yang ingin " +
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Untuk melanjutkan pengajuan silahkan tambahkan Jumlah Pembiayaan yang ingin " +
         "diajukan hingga mencapai minimal Rp 50.000.000");
     }
 
@@ -929,8 +929,8 @@ public class LoanSubmissionService {
             financingHdrs.add(financing);
           }
           financingHdrs.addAll(financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer));
-          for (int t = 0; t < financingHdrs.size(); t++) {
-            MstBranch hdrBranch = financingHdrs.get(t).getMstBranch();
+          for (FinancingHdr financingHdr : financingHdrs) {
+            MstBranch hdrBranch = financingHdr.getMstBranch();
 
             if (hdrBranch != null) {
 
@@ -1008,6 +1008,7 @@ public class LoanSubmissionService {
                   LoanDisburseEmailPayload.builder()
                     .financingCode(financing.getFinancingHdrCode().toString())
                     .applicationDate(DateTimeUtils.formatToDate(financing.getFinancingDate()))
+                    .bouwheerName(financing.getBouwheer().getBouwheerName())
                     .companyName(financing.getCustomer().getCustName())
                     .email(financing.getCustomer().getCustEmail())
                     .phoneNumber(phone)
@@ -1095,6 +1096,7 @@ public class LoanSubmissionService {
                 .applicationDate(DateTimeUtils.formatToDate(financing.getFinancingDate()))
                 .companyName(financing.getCustomer().getCustName())
                 .email(financing.getCustomer().getCustEmail())
+                .bouwheerName(financing.getBouwheer().getBouwheerName())
                 .phoneNumber(phone)
                 .tenor(financing.getTenor())
                 .toEmail(toEmail)
@@ -1176,7 +1178,7 @@ public class LoanSubmissionService {
           .financingCode(createdFinancing.getFinancingHdrCode().toString())
           .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
           .companyName(customer.getCustName())//createdFinancing.getBouwheer().getBouwheerName()
-          .phoneNumber(phoneNumber ==null?createdFinancing.getCustomer().getCustMobilePhone():phoneNumber)
+          .phoneNumber(phoneNumber == null ? createdFinancing.getCustomer().getCustMobilePhone() : phoneNumber)
           .tenor(createdFinancing.getTenor())
           .financingCode(createdFinancing.getFinancingHdrCode().toString())
           .financingDueDate(DateTimeUtils.formatToDate(createdFinancing.getFinancingDueDate()))
@@ -1396,8 +1398,8 @@ public class LoanSubmissionService {
 
     final String identityType = customer.getCustIdTypeCode();
     final String identityNo = customer.getCompany() != null
-        ? customer.getCompany().getIdentityNo()
-        : (customer.getPersonal() != null ? customer.getPersonal().getIdentityNo() : customer.getCustIdNo());
+      ? customer.getCompany().getIdentityNo()
+      : (customer.getPersonal() != null ? customer.getPersonal().getIdentityNo() : customer.getCustIdNo());
 
     Cwr cwr = validateCwrForCustomerExisting(
       identityType,
