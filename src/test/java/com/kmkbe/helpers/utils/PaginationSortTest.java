@@ -1,6 +1,7 @@
 package com.kmkbe.helpers.utils;
 
 import com.kmkbe.core.domain.dto.CwrListDto;
+import com.kmkbe.core.domain.dto.SimulationHistDto;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.exception.BusinessException;
 import org.junit.jupiter.api.Test;
@@ -84,6 +85,22 @@ class PaginationSortTest {
     assertThat(PaginationSort.assignments(request(field, "asc")).getOrderFor(property).isAscending()).isTrue();
   }
 
+  @ParameterizedTest
+  @CsvSource({"simulationHistCode,simulationHistCode", "financingAmt,financingAmt", "schema,schema", "effectiveRate,effetiveRate",
+    "effetiveRate,effetiveRate", "adminFee,adminFee", "disbursementAmt,dibursmentAmt",
+    "dibursmentAmt,dibursmentAmt"})
+  void tocFieldsSortBothDirections(String field, String ignoredProperty) {
+    var low = SimulationHistDto.builder().simulationHistCode(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"))
+      .financingAmt(10D).schema(80D).effetiveRate(1D).adminFee(2D).dibursmentAmt(3D).build();
+    var high = SimulationHistDto.builder().simulationHistCode(java.util.UUID.fromString("00000000-0000-0000-0000-000000000002"))
+      .financingAmt(20D).schema(90D).effetiveRate(4D).adminFee(5D).dibursmentAmt(6D).build();
+    var rows = new ArrayList<>(List.of(high, low));
+    rows.sort(PaginationSort.tocComparator(request(field, "asc")));
+    assertThat(rows).containsExactly(low, high);
+    rows.sort(PaginationSort.tocComparator(request(field, "desc")));
+    assertThat(rows).containsExactly(high, low);
+  }
+
   @Test
   void defaultsAndTieBreakers() {
     assertThat(PaginationSort.cwrComparator(request(null, null))).isNull();
@@ -112,7 +129,7 @@ class PaginationSortTest {
   void rejectsInvalidFieldsAndDirections() {
     for (var resolver : List.<java.util.function.Function<PaginationRequest, ?>>of(
       PaginationSort::invoices, PaginationSort::agreements, PaginationSort::assignments,
-      PaginationSort::cwrComparator, PaginationSort::distributionComparator)) {
+      PaginationSort::cwrComparator, PaginationSort::distributionComparator, PaginationSort::tocComparator)) {
       assertThatThrownBy(() -> resolver.apply(request("x; DROP TABLE customer", "asc")))
         .isInstanceOf(BusinessException.class).hasMessageContaining("sortBy tidak didukung");
       assertThatThrownBy(() -> resolver.apply(request("status", "sideways")))

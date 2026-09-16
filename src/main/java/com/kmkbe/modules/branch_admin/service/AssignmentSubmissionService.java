@@ -216,6 +216,13 @@ public class AssignmentSubmissionService {
 
   public PaginationResult<SimulationHistDto> tocList(
     String financingHdrCode,
+    BasePaginationRequest request
+  ) {
+    return tocList(financingHdrCode, PaginationRequests.from(request));
+  }
+
+  public PaginationResult<SimulationHistDto> tocList(
+    String financingHdrCode,
     PaginationRequest request
   ) {
     try {
@@ -254,6 +261,10 @@ public class AssignmentSubmissionService {
 
         @Override
         public void sort(List<SimulationHistDto> data) {
+          Comparator<SimulationHistDto> comparator = PaginationSort.tocComparator(request);
+          if (comparator != null) {
+            data.sort(comparator);
+          }
           for (int i = 0; i < data.size(); i++) {
             data.get(i).setNo(i + 1);
           }

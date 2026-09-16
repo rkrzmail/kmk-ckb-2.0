@@ -265,6 +265,42 @@ class AssignmentSubmissionServiceTest {
   }
 
   @Test
+  void tocListConvertsBaseRequestAndSortsBeforePagination() {
+    FinancingHdr financingHdr = financingHdr("INPROCESS", "INPROCESS");
+    SimulationHist low = simulationHist(1_000D, 10D);
+    SimulationHist high = simulationHist(2_000D, 20D);
+    when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
+    when(simulationHistRepository.findAllByFinancingHdr(financingHdr)).thenReturn(Optional.of(List.of(low, high)));
+
+    var request = new com.kmkbe.helpers.base.BasePaginationRequest(
+      1, 1, "financingAmt", "desc", "financingAmt", "2000");
+    PaginationResult<SimulationHistDto> result = service.tocList(FINANCING_HDR_CODE.toString(), request);
+
+    assertThat(result.getTotalData()).isEqualTo(1);
+    assertThat(result.getList()).extracting(SimulationHistDto::getFinancingAmt).containsExactly(2_000D);
+    assertThat(result.getList().get(0).getNo()).isEqualTo(1);
+  }
+
+  @Test
+  void tocListSortsAscendingAndDescending() {
+    FinancingHdr financingHdr = financingHdr("INPROCESS", "INPROCESS");
+    SimulationHist low = simulationHist(1_000D, 10D);
+    SimulationHist high = simulationHist(2_000D, 20D);
+    when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
+    when(simulationHistRepository.findAllByFinancingHdr(financingHdr)).thenReturn(Optional.of(List.of(high, low)));
+
+    PaginationRequest ascending = pagination(null, null, 1, 10);
+    ascending.setSortBy("financingAmt");
+    ascending.setSortType("asc");
+    assertThat(service.tocList(FINANCING_HDR_CODE.toString(), ascending).getList())
+      .extracting(SimulationHistDto::getFinancingAmt).containsExactly(1_000D, 2_000D);
+
+    ascending.setSortType("desc");
+    assertThat(service.tocList(FINANCING_HDR_CODE.toString(), ascending).getList())
+      .extracting(SimulationHistDto::getFinancingAmt).containsExactly(2_000D, 1_000D);
+  }
+
+  @Test
   void tocListRethrowsWhenFinancingHdrMissing() {
     when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.empty());
 

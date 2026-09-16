@@ -4,7 +4,6 @@ import com.kmkbe.core.domain.dto.AssignmentDto;
 import com.kmkbe.core.domain.dto.SimulationHistDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.modules.branch_admin.service.AssignmentSubmissionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -48,7 +47,7 @@ public class AssignmentSubmissionController {
   @GetMapping("/toc/list/{financingHdrCode}")
   public CommonResult<PaginationResult<SimulationHistDto>> getTocList(
     @PathVariable String financingHdrCode,
-    PaginationRequest request
+    BasePaginationRequest request
   ) {
     return new CommonResult<PaginationResult<SimulationHistDto>>()
       .success(

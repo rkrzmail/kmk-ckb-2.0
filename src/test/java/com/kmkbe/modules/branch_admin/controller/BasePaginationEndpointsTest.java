@@ -23,7 +23,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class BasePaginationEndpointsTest {
   @ParameterizedTest
-  @ValueSource(strings = {"distribution", "cwr", "invoice", "agreement", "assignment"})
+  @ValueSource(strings = {"distribution", "cwr", "invoice", "agreement", "assignment", "toc"})
   void bindsBasePaginationRequestAtEveryEndpoint(String endpoint) throws Exception {
     var auth = mock(CurrentUserService.class);
     var invoices = mock(InvoiceService.class);
@@ -51,6 +51,11 @@ class BasePaginationEndpointsTest {
         path = "/api/v1/assignment-submission/list";
         when(assignment.assignmentList(any(), any(BasePaginationRequest.class))).thenReturn(PaginationResult.empty(1));
       }
+      case "toc" -> {
+        controller = new AssignmentSubmissionController(assignment);
+        path = "/api/v1/assignment-submission/toc/list/HEADER";
+        when(assignment.tocList(eq("HEADER"), any(BasePaginationRequest.class))).thenReturn(PaginationResult.empty(1));
+      }
       default -> {
         controller = new CwrController(cwr, invoices, financing, auth);
         path = endpoint.equals("cwr") ? "/api/v1/cwr/list/CUSTOMER" : "/api/v1/cwr/invoices/HEADER";
@@ -71,6 +76,7 @@ class BasePaginationEndpointsTest {
       case "distribution" -> verify(distribution).submissionDistribution(captor.capture());
       case "agreement" -> verify(agreement).list(eq("CWR"), eq("HEADER"), captor.capture());
       case "assignment" -> verify(assignment).assignmentList(any(), captor.capture());
+      case "toc" -> verify(assignment).tocList(eq("HEADER"), captor.capture());
       case "cwr" -> verify(cwr).list(eq("CUSTOMER"), captor.capture());
       default -> verify(invoices).invoiceSubmissionByFinancingHdr(any(), captor.capture());
     }
