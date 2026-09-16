@@ -164,6 +164,22 @@ class AgreementServiceTest {
     }
 
     @Test
+    void listSearchForwardsBaseRequestToFilteredRepository() throws Exception {
+        stubBank();
+        when(agreementRepository.findAllListByCwrAndFinancingSearch(
+          eq("CWR001"), eq(FINANCING_HDR_CODE.toString()), eq("agreementno"), eq("AGR"), any()))
+          .thenReturn(new PageImpl<>(List.of()));
+        var request = new com.kmkbe.helpers.base.BasePaginationRequest(5, 2, "agreementNo", "desc", "agreementNo", "AGR");
+        assertThat(service.list("CWR001", FINANCING_HDR_CODE.toString(), request).getList()).isEmpty();
+        var captor = ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(agreementRepository).findAllListByCwrAndFinancingSearch(eq("CWR001"), eq(FINANCING_HDR_CODE.toString()),
+          eq("agreementno"), eq("AGR"), captor.capture());
+        assertThat(captor.getValue().getPageNumber()).isEqualTo(1);
+        assertThat(captor.getValue().getSort().getOrderFor("agreement_code").isDescending()).isTrue();
+        verify(agreementRepository, never()).findAllListByCwrAndFinancingRaw(any(), any(), any());
+    }
+
+    @Test
     void listForwardsRequestedSortToRepository() throws Exception {
         stubBank();
         when(agreementRepository.findAllListByCwrAndFinancingRaw(eq("CWR001"), eq(FINANCING_HDR_CODE.toString()), any()))

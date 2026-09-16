@@ -41,8 +41,8 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
       where
           fh.branch_code = :branchCode
           and (TRUE = :#{#financingStatus == null} or fh.financing_status = :financingStatus)
-          and (TRUE = :#{#custName == null} or c.cust_name like '%' || :custName || '%')
-          and (TRUE = :#{#bouwheerName == null} or bw.bouwheer_name like '%' || :bouwheerName || '%')
+          and (TRUE = :#{#custName == null} or LOWER(c.cust_name) like '%' || LOWER(:custName) || '%')
+          and (TRUE = :#{#bouwheerName == null} or LOWER(bw.bouwheer_name) like '%' || LOWER(:bouwheerName) || '%')
       """,
     countQuery = """
       select count(*)
@@ -53,8 +53,8 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
       where
           fh.branch_code = :branchCode
           and (TRUE = :#{#financingStatus == null} or fh.financing_status = :financingStatus)
-          and (TRUE = :#{#custName == null} or c.cust_name like '%' || :custName || '%')
-          and (TRUE = :#{#bouwheerName == null} or bw.bouwheer_name like '%' || :bouwheerName || '%')
+          and (TRUE = :#{#custName == null} or LOWER(c.cust_name) like '%' || LOWER(:custName) || '%')
+          and (TRUE = :#{#bouwheerName == null} or LOWER(bw.bouwheer_name) like '%' || LOWER(:bouwheerName) || '%')
       """,
     nativeQuery = true
   )

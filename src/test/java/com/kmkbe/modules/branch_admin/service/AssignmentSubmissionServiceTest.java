@@ -85,6 +85,37 @@ class AssignmentSubmissionServiceTest {
   }
 
   @Test
+  void baseSearchSupportsLegacyAndDtoFieldNamesIncludingBranch() throws Exception {
+    stubUserAndRole("account_officer");
+    when(financingHdrRepository.findAllAssignmentFinancingRaw(any(), any(), any(), any(), any()))
+      .thenReturn(pageOf(financingHdr("INPROCESS", "ASSIGNMENT")));
+    for (String field : List.of("NamaDebitur", "custName", "PemberiKerja", "bouwheerName", "Cabang")) {
+      String value = field.equals("Cabang") ? "jakarta"
+        : (field.equals("NamaDebitur") || field.equals("custName") ? "cust" : "bouwheer");
+      var request = new com.kmkbe.helpers.base.BasePaginationRequest(5, 1, null, null, field, value);
+      assertThat(service.assignmentList(httpServletRequest, request).getList()).hasSize(1);
+    }
+  }
+
+  @Test
+  void baseSearchUsesDisplayedStatusAndPaginatesOnlyOnce() throws Exception {
+    stubUserAndRole("account_officer");
+    var first = financingHdr("INPROCESS", "ASSIGNMENT");
+    var second = financingHdr("INPROCESS", "ASSIGNMENT");
+    second.setFinancingHdrCode(UUID.fromString("44444444-4444-4444-4444-444444444444"));
+    when(financingHdrRepository.findAllAssignmentFinancingRaw(eq("JKT"), eq(null), eq(null), eq(null), any()))
+      .thenReturn(new PageImpl<>(List.of(first, second)));
+    var request = new com.kmkbe.helpers.base.BasePaginationRequest(1, 2, "dtmCrt", "desc", "status", "NEW");
+    var result = service.assignmentList(httpServletRequest, request);
+    assertThat(result.getTotalData()).isEqualTo(2);
+    assertThat(result.getTotalPage()).isEqualTo(2);
+    assertThat(result.getList()).extracting(AssignmentDto::getFinancingHdrCode).containsExactly(second.getFinancingHdrCode());
+    var captor = org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+    org.mockito.Mockito.verify(financingHdrRepository).findAllAssignmentFinancingRaw(eq("JKT"), eq(null), eq(null), eq(null), captor.capture());
+    assertThat(captor.getValue().isUnpaged()).isTrue();
+  }
+
+  @Test
   void assignmentListForwardsRequestedSortToRepository() throws Exception {
     stubUserAndRole("account_officer");
     when(financingHdrRepository.findAllAssignmentFinancingRaw(eq("JKT"), eq(null), eq(null), eq(null), any()))
@@ -250,7 +281,7 @@ class AssignmentSubmissionServiceTest {
   }
 
   private static MstUser user(String roleCode) {
-    MstBranch branch = MstBranch.builder().branchCode("JKT").build();
+    MstBranch branch = MstBranch.builder().branchCode("JKT").branchName("Jakarta").build();
     MstEmployee employee = MstEmployee.builder().branch(branch).build();
     return MstUser.builder()
         .userCode(USER_CODE)

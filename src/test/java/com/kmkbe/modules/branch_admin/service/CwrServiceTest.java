@@ -71,6 +71,18 @@ class CwrServiceTest {
   }
 
   @Test
+  void baseRequestSearchFindsCwrBeforePagination() {
+    var customer = customer();
+    when(customerRepository.findByCustCode(CUSTOMER_CODE)).thenReturn(Optional.of(customer));
+    when(cwrRepository.findAllByCustomerOrderByDtmUpdDesc(customer)).thenReturn(List.of(
+      cwr("CWR003", customer, bouwheer()), cwr("CWR001", customer, bouwheer())));
+    var request = new com.kmkbe.helpers.base.BasePaginationRequest(1, 1, "cwrNo", "asc", "cwrNo", "001");
+    var result = service.list(CUSTOMER_CODE.toString(), request);
+    assertThat(result.getTotalData()).isEqualTo(1);
+    assertThat(result.getList()).extracting(CwrListDto::getCwrCode).containsExactly("CWR001");
+  }
+
+  @Test
   void listSortsBeforeSelectingPage() {
     Customer customer = customer();
     when(customerRepository.findByCustCode(CUSTOMER_CODE)).thenReturn(Optional.of(customer));

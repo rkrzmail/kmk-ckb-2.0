@@ -19,6 +19,8 @@ import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.helpers.utils.Utils;
 import com.kmkbe.helpers.utils.PaginationSort;
+import com.kmkbe.helpers.utils.PaginationRequests;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.modules.loan_submission.request.CreateSubmissionRequest;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
@@ -145,6 +147,11 @@ public class InvoiceService {
   }
 
   public PaginationResult<PostedInvoiceDto> invoiceSubmissionByFinancingHdr(
+    FinancingHdr financingHdr, BasePaginationRequest request) {
+    return invoiceSubmissionByFinancingHdr(financingHdr, PaginationRequests.from(request));
+  }
+
+  public PaginationResult<PostedInvoiceDto> invoiceSubmissionByFinancingHdr(
     FinancingHdr financingHdr,
     PaginationRequest request
   ) {
@@ -155,7 +162,7 @@ public class InvoiceService {
       Pageable pageable = PageRequest.of(pageNo, pageSize, PaginationSort.invoices(request));
       Page<FinancingDtl> financingDtls;
 
-      if (request.getSearchBy() != null && !request.getSearchValue().trim().isEmpty()) {
+      if (request.getSearchBy() != null && request.getSearchValue() != null && !request.getSearchValue().trim().isEmpty()) {
         financingDtls = financingDtlRepository.findAll(
           Specification.where(
             FinancingDtlSpec.custInvoiceFilterBy(

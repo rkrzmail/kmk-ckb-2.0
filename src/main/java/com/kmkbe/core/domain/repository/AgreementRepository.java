@@ -15,6 +15,37 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.*;
 
 public interface AgreementRepository extends JpaRepository<Agreement, String>, JpaSpecificationExecutor<Agreement> {
+  String SEARCH_FROM = """
+    FROM public.agreement ag
+    JOIN public.cwr ON ag.cwr_code = cwr.cwr_code
+    JOIN public.financing_hdr fh ON ag.financing_hdr_code = fh.financing_hdr_code
+    JOIN public.bouwheer bw ON fh.bouwheer_code = bw.bouwheer_code
+    JOIN public.customer ct ON cwr.cust_code = ct.cust_code
+    WHERE ag.cwr_code = :cwrCode AND ag.financing_hdr_code = :financingHdrCode
+    AND LOWER(CASE :searchBy
+      WHEN 'agreementno' THEN ag.agreement_code
+      WHEN 'agreementcode' THEN ag.agreement_code
+      WHEN 'custname' THEN ct.cust_name
+      WHEN 'namadebitur' THEN ct.cust_name
+      WHEN 'bouwheername' THEN bw.bouwheer_name
+      WHEN 'pemberikerja' THEN bw.bouwheer_name
+      WHEN 'currency' THEN ag.currency
+      WHEN 'financingamt' THEN CAST(ag.financing_amt AS TEXT)
+      WHEN 'disburseamt' THEN CAST(fh.disburse_amt AS TEXT)
+      WHEN 'disbursedate' THEN TO_CHAR(fh.disburse_date, 'DD/MM/YYYY')
+      ELSE NULL END) LIKE '%' || LOWER(:searchValue) || '%'
+    """;
+
+  @Query(value = """
+    SELECT cwr.cwr_code, ag.agreement_code, fh.financing_hdr_code,
+      bw.bouwheer_code, bw.bouwheer_name, ag.financing_amt,
+      fh.disburse_date, ag.currency, fh.disburse_amt, ct.cust_name, ct.cust_code,
+      ROW_NUMBER() OVER (ORDER BY fh.disburse_date DESC) as no
+    """ + SEARCH_FROM, countQuery = "SELECT COUNT(*) " + SEARCH_FROM, nativeQuery = true)
+  Page<Map<String, Object>> findAllListByCwrAndFinancingSearch(
+    @Param("cwrCode") String cwrCode, @Param("financingHdrCode") String financingHdrCode,
+    @Param("searchBy") String searchBy, @Param("searchValue") String searchValue, Pageable pageable);
+
   Optional<Agreement> findTopByAgreementCode(String agreementCode);
 
   List<Agreement> findAllByStatus(@Size(max = 20) @NotNull(message = "Status cannot be null") String status);

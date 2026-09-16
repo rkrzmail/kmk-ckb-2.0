@@ -39,7 +39,8 @@ public final class PaginationSort {
     Map.entry("agreementNo", "agreement_code"), Map.entry("agreementCode", "agreement_code"),
     Map.entry("custName", "ct.cust_name"), Map.entry("bouwheerName", "bw.bouwheer_name"),
     Map.entry("financingAmt", "financing_amt"), Map.entry("disburseDate", "fh.disburse_date"),
-    Map.entry("disburseAmt", "fh.disburse_amt"), Map.entry("currency", "currency")
+    Map.entry("disburseAmt", "fh.disburse_amt"), Map.entry("currency", "currency"),
+    Map.entry("bankName", "agreement_id"), Map.entry("rekeningNo", "agreement_id")
   );
 
   private static final Map<String, String> ASSIGNMENT = Map.ofEntries(
@@ -80,6 +81,12 @@ public final class PaginationSort {
   }
 
   public static Sort agreements(PaginationRequest request) {
+    if (!isBlank(request.getSortBy())
+        && (request.getSortBy().trim().equals("bankName") || request.getSortBy().trim().equals("rekeningNo"))) {
+      direction(request);
+      // Both displayed values come from one CSUL bank setting, so all rows tie.
+      return Sort.by("agreement_id");
+    }
     return resolve(request, AGREEMENT, Sort.by(Sort.Direction.DESC, "fh.disburse_date"), "agreement_id");
   }
 

@@ -1,129 +1,70 @@
 package com.kmkbe.exception;
 
-import com.kmkbe.core.domain.model.CommonResult;
-import com.kmkbe.core.domain.repository.ErrorLogRepository;
 import com.kmkbe.core.exception.LoanDocMandatoryException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.dao.DataIntegrityViolationException;
-import java.lang.reflect.Method;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RestController;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-@SpringBootTest
-@AutoConfigureMockMvc
 class GlobalExceptionHandlerTest {
+  private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
-  @Autowired
-  private MockMvc mockMvc;
-
-  @Autowired
-  private ObjectMapper objectMapper;
-
-  @Autowired
-  private GlobalExceptionHandler globalExceptionHandler;
-
-  @MockBean
-  ErrorLogRepository errorLogRepository;
-
-  // ========================================================================
-  // 1. Test LoanDocMandatoryException Handling
-  // ========================================================================
   @Test
-  void testHandleLoanDocMandatoryException() throws Exception {
-    // Arrange: Mock the exception to be thrown
-    LoanDocMandatoryException mockException = new LoanDocMandatoryException("Missing mandatory document XYZ.");
-
-    // To properly test this, you'd normally need a controller calling it.
-    // Here, we simulate calling the handler method directly for isolated testing.
-    Method handlerMethod = GlobalExceptionHandler.class.getDeclaredMethod(
-      "handleLoanDocMandatoryException", LoanDocMandatoryException.class);
-    handlerMethod.setAccessible(true);
-    ResponseEntity<CommonResult<LoanDocMandatoryException>> responseEntity =
-      (ResponseEntity<CommonResult<LoanDocMandatoryException>>) handlerMethod.invoke(globalExceptionHandler, mockException);
-
-    // Assert
-    assertEquals(HttpStatus.BAD_REQUEST, responseEntity.getStatusCode());
-    assertTrue(responseEntity.getBody() != null);
-    CommonResult<LoanDocMandatoryException> body = (CommonResult<LoanDocMandatoryException>) responseEntity.getBody();
-    assertFalse(body.isSuccess());
-    assertEquals(HttpStatus.BAD_REQUEST.value(), body.getCode());
-    assertEquals("Missing mandatory document XYZ.", body.getMessage());
+  void testHandleLoanDocMandatoryException() {
+    var response = handler.handleLoanDocMandatoryException(new LoanDocMandatoryException("Missing mandatory document XYZ."));
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().isSuccess()).isFalse();
+    assertThat(response.getBody().getCode()).isEqualTo(400);
+    assertThat(response.getBody().getMessage()).isEqualTo("Missing mandatory document XYZ.");
   }
 
-
-  // ========================================================================
-  // 2. Test BusinessException Handling
-  // ========================================================================
   @Test
-  void testHandleBusinessException() throws Exception {
-    // Arrange: Create a mock exception instance
-    BusinessException mockException = new BusinessException(HttpStatus.FORBIDDEN, 5001, "Access Denied");
-
-    // Act: Invoke the handler method
-    Method handlerMethod = GlobalExceptionHandler.class.getDeclaredMethod(
-      "handleBusinessException", BusinessException.class);
-    handlerMethod.setAccessible(true);
-    ResponseEntity<ErrorResponse> responseEntity =
-      (ResponseEntity<ErrorResponse>) handlerMethod.invoke(globalExceptionHandler, mockException);
-
-    // Assert
-    assertEquals(HttpStatus.FORBIDDEN, responseEntity.getStatusCode());
-    ErrorResponse errorResponse = responseEntity.getBody();
-    assertNotNull(errorResponse);
-    assertEquals("Error Business Exception", errorResponse.getTitle());
-    assertEquals(5001, errorResponse.getCode());
-    assertEquals("Access Denied", errorResponse.getMessage());
+  void testHandleBusinessException() {
+    var response = handler.handleBusinessException(new BusinessException(HttpStatus.FORBIDDEN, 5001, "Access Denied"));
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getTitle()).isEqualTo("Error Business Exception");
+    assertThat(response.getBody().getCode()).isEqualTo(5001);
+    assertThat(response.getBody().getMessage()).isEqualTo("Access Denied");
   }
 
-  // ========================================================================
-  // 4. Test Framework Validation Exceptions
-  // ========================================================================
   @Test
   void testHandleMethodArgumentNotValidException() throws Exception {
-    // Arrange: Mock the exception structure (Requires simulating BindingResult)
-    MockMvc mockMvcInstance = mockMvc; // Use this if testing via @WebMvcTest context
-
-    // Since mocking MethodArgumentNotValidException and its internal state (BindingResult)
-    // is extremely difficult without a full MVC environment, we test the expected outcome structure.
-
-    // In a real test setup using MockMvc:
-    mockMvcInstance.perform(get("/api/public/v1/bouwheers")
-        .param("fieldA", "invalid value")) // Simulating failure on fieldA validation
-      .andExpect(status().isOk());
-
-    // For direct method testing, you would need to mock the BindingResult object entirely.
+    MockMvcBuilders.standaloneSetup(new ValidationController()).setControllerAdvice(handler).build()
+      .perform(post("/validation-test").contentType(MediaType.APPLICATION_JSON)
+        .accept(MediaType.APPLICATION_JSON).content("{\"fieldA\":\"\"}"))
+      .andExpect(status().isBadRequest())
+      .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_JSON))
+      .andExpect(jsonPath("code").value(400))
+      .andExpect(jsonPath("validations[0].propertyName").value("fieldA"))
+      .andExpect(jsonPath("validations[0].errorMessage").value("fieldA is required"));
   }
-
 
   @Test
-  void testHandleDataIntegrityViolationException() throws Exception {
-    // Arrange: Mock exception
-    DataIntegrityViolationException mockException = new DataIntegrityViolationException("Duplicate key constraint");
-
-    // Act: Invoke handler method (Requires accessing private/protected methods via reflection or making them package-private for testing)
-    Method handlerMethod = GlobalExceptionHandler.class.getDeclaredMethod(
-      "handleDataIntegrityViolationException", DataIntegrityViolationException.class);
-    handlerMethod.setAccessible(true);
-    ResponseEntity<ErrorResponse> responseEntity =
-      (ResponseEntity<ErrorResponse>) handlerMethod.invoke(globalExceptionHandler, mockException);
-
-    // Assert
-    assertEquals(HttpStatus.CONFLICT, responseEntity.getStatusCode());
-    ErrorResponse errorResponse = responseEntity.getBody();
-    assertNull(errorResponse.getValidations()); // Should not contain validations in this specific handler
-    assertEquals("Violates foreign key constraint", errorResponse.getMessage());
+  void testHandleDataIntegrityViolationException() {
+    var response = handler.handleDataIntegrityViolationException(new DataIntegrityViolationException("Duplicate key constraint"));
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getValidations()).isNull();
+    assertThat(response.getBody().getMessage()).isEqualTo("Violates foreign key constraint");
   }
 
-  // Note: Testing TimeoutException and HttpServerErrorException follows the same pattern as above,
-  // invoking the respective private/protected handler methods via reflection for isolation.
+  @RestController
+  static class ValidationController {
+    @PostMapping("/validation-test")
+    public void validate(@Valid @RequestBody ValidationRequest request) {}
+  }
+
+  record ValidationRequest(@NotBlank(message = "fieldA is required") String fieldA) {}
 }

@@ -22,6 +22,8 @@ import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.helpers.utils.SpecPagination;
 import com.kmkbe.helpers.utils.PaginationSort;
+import com.kmkbe.helpers.utils.PaginationRequests;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.utils.Utils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +45,11 @@ public class CwrService {
   private final FinancingHdrRepository financingHdrRepository;
   private final ObjectMapper objectMapper;
   private final AgreementRepository agreementRepository;
+
+  public PaginationResult<CwrListDto> list(
+    String custCode, BasePaginationRequest request) {
+    return list(custCode, PaginationRequests.from(request));
+  }
 
   public PaginationResult<CwrListDto> list(
     String custCode,
