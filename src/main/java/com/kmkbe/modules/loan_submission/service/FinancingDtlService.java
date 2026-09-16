@@ -303,9 +303,21 @@ public class FinancingDtlService {
       .valueDt(DateTimeUtils.SDF_STANDARD_DATE.format(Utils.fromInstant(settlementDate)))
       .build());
 
-    log.info("Save payment history, Financing HDR code {} ", request.getFinancingCode());
-    PaymentReceiveHistory paymentReceiveHistory = PaymentReceiveHistory.builder().build();
-    paymentReceiveHistory.setAgreementCode(noAggrNo);
+
+    Optional<PaymentReceiveHistory>optionalPaymentReceiveHistory = paymentReceiveHistoryRepository.findTopByAgreementCode(noAggrNo);
+    PaymentReceiveHistory paymentReceiveHistory = new PaymentReceiveHistory();
+    if(optionalPaymentReceiveHistory.isEmpty()){
+      log.info("Save payment history, Financing HDR code {} ", request.getFinancingCode());
+      paymentReceiveHistory.setAgreementCode(noAggrNo);
+      paymentReceiveHistory.setUsrCrt(financingHdr.getUsrCrt());
+      paymentReceiveHistory.setDtmCrt(DateTimeUtils.now());
+
+    }else{
+      log.info("Update payment history, Financing HDR code {} ", request.getFinancingCode());
+      paymentReceiveHistory = optionalPaymentReceiveHistory.get();
+      paymentReceiveHistory.setUsrUpd(financingHdr.getUsrCrt());
+      paymentReceiveHistory.setDtmUpd(DateTimeUtils.now());
+    }
     paymentReceiveHistory.setBouwheer(financingHdr.getBouwheer());
     paymentReceiveHistory.setCurrency(inquiryDataAgreementDto.getAgrmntObj().currCode);
     paymentReceiveHistory.setGoliveDate(inquiryDataAgreementDto.getAgrmntObj().goLiveDt);
@@ -330,13 +342,13 @@ public class FinancingDtlService {
     paymentReceiveHistory.setSettlementAmt(getBillingAmount(inquiryOutstandingBillDetailtDto.getListBillingDetail(), "Amount To Be Paid"));//BillDetailName = Amount To Be Paid
     paymentReceiveHistory.setRefundAmt(paymentReceiveHistory.getTotalInvAmt() - paymentReceiveHistory.getSettlementAmt());//Nilai pada kolom total_inv_amt - settlement_amt
     //paymentReceiveHistory.setPaymentReceiveNo(null);
-    paymentReceiveHistory.setUsrCrt(financingHdr.getUsrCrt());
-    paymentReceiveHistory.setDtmCrt(DateTimeUtils.now());
+
     paymentReceiveHistoryRepository.save(paymentReceiveHistory);
 
     paymentReceiveSubmitUpdate(financingHdr, settlementDate);
   }
 
+  @Transactional
   public void paymentReceiveSubmitUpdate(FinancingHdr financingHdr, LocalDateTime settelmanetDate) throws Exception {
 
     String noAggrNo = financingHdr.getAgreement().isEmpty() ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();

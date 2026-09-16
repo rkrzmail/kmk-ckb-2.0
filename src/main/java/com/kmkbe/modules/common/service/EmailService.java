@@ -420,10 +420,11 @@ public class EmailService {
       final EmailTemplate template = emailTemplateRepository
         .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN, true);
       template.setSubjectMail(template.getSubjectMail().replace("{bouwheerName}", bouwheerName));
-      template.setMailTo(payload.getToEmail());
-      template.setMailCc(payload.getCcEmail());
+      template.setMailTo("hyvercode@gmail.com");
+   //   template.setMailCc(payload.getCcEmail());
 
       send(args, template);
+      log.info("sendNotificationBranchAssign args: {}", args);
     } catch (Exception e) {
       log.error("Error sendNotificationBranchAssign {}", e.getMessage());
     }
