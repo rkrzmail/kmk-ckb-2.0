@@ -2,6 +2,7 @@ package com.kmkbe.helpers.utils;
 
 import com.kmkbe.core.domain.dto.CwrListDto;
 import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
+import com.kmkbe.core.domain.dto.SimulationHistDto;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.exception.BusinessException;
 import org.springframework.beans.BeanWrapperImpl;
@@ -50,6 +51,14 @@ public final class PaginationSort {
     Map.entry("dtmCrt", "dtm_crt"), Map.entry("financingDate", "financing_date")
   );
 
+  private static final Map<String, String> TOC = Map.ofEntries(
+    Map.entry("simulationHistCode", "simulationHistCode"),
+    Map.entry("financingAmt", "financingAmt"), Map.entry("schema", "schema"),
+    Map.entry("effectiveRate", "effetiveRate"), Map.entry("effetiveRate", "effetiveRate"),
+    Map.entry("adminFee", "adminFee"),
+    Map.entry("disbursementAmt", "dibursmentAmt"), Map.entry("dibursmentAmt", "dibursmentAmt")
+  );
+
   public static Sort invoices(PaginationRequest request) {
     return resolve(request, INVOICE, Sort.by("financingDtlCode"), "financingDtlCode");
   }
@@ -94,6 +103,10 @@ public final class PaginationSort {
     return resolve(request, ASSIGNMENT, Sort.by(Sort.Direction.DESC, "dtm_crt"), "financing_hdr_id");
   }
 
+  public static Comparator<SimulationHistDto> tocComparator(PaginationRequest request) {
+    return dtoComparator(request, TOC, SimulationHistDto::getSimulationHistCode);
+  }
+
   @SuppressWarnings("unchecked")
   public static Comparator<CwrListDto> cwrComparator(PaginationRequest request) {
     Sort.Direction direction = direction(request);
@@ -110,6 +123,27 @@ public final class PaginationSort {
     Sort.Direction direction = direction(request);
     Sort sort = isBlank(request.getSortBy()) ? defaultSort : Sort.by(direction, property(request, fields));
     return sort.getOrderFor(tieBreaker) == null ? sort.and(Sort.by(tieBreaker)) : sort;
+  }
+
+  @SuppressWarnings("unchecked")
+  private static <T> Comparator<T> dtoComparator(
+    PaginationRequest request, Map<String, String> fields,
+    java.util.function.Function<T, ? extends Comparable<?>> tieBreaker
+  ) {
+    Sort.Direction direction = direction(request);
+    if (isBlank(request.getSortBy())) return null;
+    String property = property(request, fields);
+    Comparator<Object> values = (left, right) -> ((Comparable<Object>) left).compareTo(right);
+    if (direction == Sort.Direction.DESC) values = values.reversed();
+    Comparator<T> comparator = Comparator.comparing(
+      dto -> new BeanWrapperImpl(dto).getPropertyValue(property), Comparator.nullsLast(values));
+    Comparator<T> ties = (left, right) -> {
+      Comparable<Object> leftValue = (Comparable<Object>) tieBreaker.apply(left);
+      Object rightValue = tieBreaker.apply(right);
+      if (leftValue == null) return rightValue == null ? 0 : 1;
+      return rightValue == null ? -1 : leftValue.compareTo(rightValue);
+    };
+    return comparator.thenComparing(ties);
   }
 
   private static String property(PaginationRequest request, Map<String, String> fields) {
