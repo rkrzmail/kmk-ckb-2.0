@@ -511,7 +511,8 @@ class AgreementServiceTest {
                 debtorPayloadCaptor.capture()
         );
         assertThat(debtorPayloadCaptor.getValue().getPhoneNumber()).isEqualTo("08123456789");
-        assertThat(debtorPayloadCaptor.getValue().getTotalFeeAmt()).isEqualTo(".0");
+        assertThat(debtorPayloadCaptor.getValue().getTotalFeeAmt())
+                .isEqualTo(com.kmkbe.core.utils.CommonFormattingUtils.formatAmount(0D));
     }
 
     @Test

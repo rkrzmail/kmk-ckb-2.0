@@ -57,4 +57,16 @@ public interface MstAppRoleFormUserRepository extends JpaRepository<MstAppRoleFo
         ORDER BY LOWER(TRIM(employee.email))
         """, nativeQuery = true)
     List<String> findActiveMajorAccountEmails();
+
+    @Query("""
+        SELECT COUNT(p) > 0 FROM MstAppRoleFormUser p
+        WHERE p.user.userCode = :userCode
+          AND p.isActive = true
+          AND p.user.isActive = true
+          AND p.appRoleForm.isActive = true
+          AND p.appRoleForm.applicationRole.isActive = true
+          AND p.appRoleForm.applicationRole.roleCode.isActive = true
+          AND p.appRoleForm.applicationRole.roleCode.roleCode = 'mjr_account'
+        """)
+    boolean hasActiveMajorAccountRole(@Param("userCode") UUID userCode);
 }

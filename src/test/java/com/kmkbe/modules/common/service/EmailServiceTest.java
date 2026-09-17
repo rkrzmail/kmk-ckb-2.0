@@ -81,6 +81,42 @@ class EmailServiceTest {
   }
 
   @Test
+  void approvalMailReturnsFailureWhenTemplateIsMissing() {
+    var result = service.sendCustomerApprovalNotification(customer(), "APPROVED", "ok");
+    assertThat(result.acceptedBySmtp()).isFalse();
+    assertThat(result.errorMessage()).contains("M_CUST_ACTIVE");
+    verify(configRemoteService, never()).fetchEmailInfo();
+  }
+
+  @Test
+  void approvalMailUsesDetachedTemplateAndReportsSmtpAcceptance() throws Exception {
+    EmailTemplate source = template("M_CUST_ACTIVE", "Hello {name} {approval_note}");
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_ACTIVE", true)).thenReturn(source);
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+
+    var result = service.sendCustomerApprovalNotification(customer(), "APPROVED", "NPWP <ok>");
+
+    assertThat(result.acceptedBySmtp()).isTrue();
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    assertThat(captor.getValue()).isNotSameAs(source);
+    assertThat(captor.getValue().getBodyMail()).contains("NPWP &lt;ok&gt;");
+    assertThat(source.getBodyMail()).isEqualTo("Hello {name} {approval_note}");
+  }
+
+  @Test
+  void approvalMailReportsRemoteConfigFailureReason() {
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_REJECTED", true))
+      .thenReturn(template("M_CUST_REJECTED", "Rejected: {approval_note}"));
+    when(configRemoteService.fetchEmailInfo()).thenThrow(new IllegalStateException("SMTP config unavailable"));
+
+    var result = service.sendCustomerApprovalNotification(customer(), "REJECTED", "NPWP blur");
+
+    assertThat(result.acceptedBySmtp()).isFalse();
+    assertThat(result.errorMessage()).contains("SMTP config unavailable");
+  }
+
+  @Test
   void sendOtpUsesYamlMailConfigForNonProductionEnvironment() throws Exception {
     EmailService localService = new EmailService(
       emailTemplateRepository,
