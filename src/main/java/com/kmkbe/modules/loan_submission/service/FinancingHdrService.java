@@ -468,6 +468,15 @@ public class FinancingHdrService {
     }
   }
 
+  public PaginationResult<DisburseInvoiceDto> listdisburseAggrement(
+    com.kmkbe.modules.loan_submission.request.FinancingInvoicePaginationRequest request
+  ) {
+    PaginationRequest converted = com.kmkbe.helpers.utils.PaginationRequests.from(request);
+    converted.setStartDate(request.getStartDate());
+    converted.setEndDate(request.getEndDate());
+    return listdisburseAggrement(converted);
+  }
+
 
   private PaidInvoiceDto toPaidInvoiceDto(Invoice invoice) {
     try {
