@@ -16,28 +16,38 @@ import static org.mockito.Mockito.mock;
 
 class LombokQualifierWiringTest {
   @Test
-  void documentControllerAcceptsDistinctUserDetailsServicesByConstructor() throws NoSuchFieldException {
+  void documentControllerSelectsDistinctUserDetailsServices() {
     var internalUsers = mock(UserDetailsService.class);
     var customerUsers = mock(UserDetailsService.class);
-    var controller = new DocumentController(mock(JwtService.class), internalUsers,
-        customerUsers, mock(DocumentService.class));
-    assertThat(DocumentController.class.getDeclaredField("internalUserDetails")
-        .getAnnotation(Qualifier.class).value()).isEqualTo("internalUserDetailService");
-    assertThat(DocumentController.class.getDeclaredField("customerUserDetails")
-        .getAnnotation(Qualifier.class).value()).isEqualTo("userDetailsService");
-    assertThat(ReflectionTestUtils.getField(controller, "internalUserDetails")).isSameAs(internalUsers);
-    assertThat(ReflectionTestUtils.getField(controller, "customerUserDetails")).isSameAs(customerUsers);
+    var parameters = DocumentController.class.getConstructors()[0].getParameters();
+    assertThat(parameters[1].getAnnotation(Qualifier.class).value()).isEqualTo("internalUserDetailService");
+    assertThat(parameters[2].getAnnotation(Qualifier.class).value()).isEqualTo("userDetailsService");
+    try (var context = new AnnotationConfigApplicationContext()) {
+      context.getBeanFactory().registerSingleton("internalUserDetailService", internalUsers);
+      context.getBeanFactory().registerSingleton("userDetailsService", customerUsers);
+      context.getBeanFactory().registerSingleton("jwtService", mock(JwtService.class));
+      context.getBeanFactory().registerSingleton("documentService", mock(DocumentService.class));
+      context.register(DocumentController.class);
+      context.refresh();
+      var controller = context.getBean(DocumentController.class);
+      assertThat(ReflectionTestUtils.getField(controller, "internalUserDetails")).isSameAs(internalUsers);
+      assertThat(ReflectionTestUtils.getField(controller, "customerUserDetails")).isSameAs(customerUsers);
+    }
   }
 
   @Test
-  void authInternalServicesInjectsDatabaseRefreshTokensWhenItIsTheOnlyCandidate() {
+  void authInternalServicesSelectsDatabaseRefreshTokensWhenCacheBeanAlsoExists() {
     var databaseTokens = mock(IRefreshTokenServices.class);
+    var cacheTokens = mock(IRefreshTokenServices.class);
     try (var context = new AnnotationConfigApplicationContext()) {
       var parameters = AuthInternalServices.class.getDeclaredConstructors()[0].getParameterTypes();
+      assertThat(AuthInternalServices.class.getDeclaredConstructors()[0].getParameters()[parameters.length - 1]
+          .getAnnotation(Qualifier.class).value()).isEqualTo("DbRefreshTokenServices");
       for (int index = 0; index < parameters.length - 1; index++) {
         context.getBeanFactory().registerSingleton("dependency" + index, mock(parameters[index]));
       }
       context.getBeanFactory().registerSingleton("DbRefreshTokenServices", databaseTokens);
+      context.getBeanFactory().registerSingleton("CacheRefreshTokenServices", cacheTokens);
       context.register(AuthInternalServices.class);
       context.refresh();
 
