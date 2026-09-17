@@ -18,6 +18,16 @@ import java.util.UUID;
 public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID>, JpaSpecificationExecutor<FinancingDtl> {
   Optional<List<FinancingDtl>> findAllByFinancingHdr(FinancingHdr financingHdr);
 
+  @Query(value = """
+    SELECT COUNT(*) FROM public.financing_dtl fd
+    LEFT JOIN public.invoice i ON i.invoice_code = fd.invoice_code
+    WHERE fd.financing_hdr_code = :financingHdrCode
+      AND i.invoice_code IS NULL
+    """, nativeQuery = true)
+  long countMissingInvoicesByFinancingHdrCode(
+    @org.springframework.data.repository.query.Param("financingHdrCode") UUID financingHdrCode
+  );
+
   List<FinancingDtl> findAllByFinancingHdrOrderByDtmCrtDesc(FinancingHdr financingHdr);
 
   @Query(

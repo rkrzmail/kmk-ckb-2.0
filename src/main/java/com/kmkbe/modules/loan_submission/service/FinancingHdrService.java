@@ -188,7 +188,7 @@ public class FinancingHdrService {
       int pageSize = getPageSize(request);
       Page<Invoice> invoices = invoiceRepository.findAll(
         buildPaidInvoiceSpecification(request),
-        PageRequest.of(pageNo, pageSize)
+        PageRequest.of(pageNo, pageSize, com.kmkbe.helpers.utils.PaginationSort.paidInvoices(request))
       );
       List<PaidInvoiceDto> invoiceDtos = invoices
         .stream()
@@ -207,6 +207,15 @@ public class FinancingHdrService {
       log.error("paidInvoice, error {}", e.getMessage());
       throw e;
     }
+  }
+
+  public PaginationResult<PaidInvoiceDto> listPaidUnpaidInvoice(
+    com.kmkbe.modules.loan_submission.request.FinancingInvoicePaginationRequest request
+  ) {
+    PaginationRequest converted = com.kmkbe.helpers.utils.PaginationRequests.from(request);
+    converted.setStartDate(request.getStartDate());
+    converted.setEndDate(request.getEndDate());
+    return listPaidUnpaidInvoice(converted);
   }
 
   public PaginationResult<PaidInvoiceDto> paidInvoice(
@@ -430,7 +439,7 @@ public class FinancingHdrService {
       int pageSize = getPageSize(request);
       Page<Agreement> agreements = agreementRepository.findAll(
         buildDisbursementSpecification(request),
-        PageRequest.of(pageNo, pageSize)
+        PageRequest.of(pageNo, pageSize, com.kmkbe.helpers.utils.PaginationSort.disbursements(request))
       );
       List<DisburseInvoiceDto> disburseInvoiceDtos = agreements
         .stream()

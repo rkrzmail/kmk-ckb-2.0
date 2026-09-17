@@ -1,6 +1,7 @@
 package com.kmkbe.helpers.utils;
 
 import com.kmkbe.core.domain.dto.CwrListDto;
+import com.kmkbe.core.domain.dto.AssignmentDto;
 import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.SimulationHistDto;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -63,6 +64,29 @@ public final class PaginationSort {
     return resolve(request, INVOICE, Sort.by("financingDtlCode"), "financingDtlCode");
   }
 
+  private static final Map<String, String> PAID_INVOICE = Map.ofEntries(
+    Map.entry("invoiceNo", "custInvNo"), Map.entry("custName", "customer.custName"),
+    Map.entry("bouwheerName", "bouwheer.bouwheerName"), Map.entry("paidDate", "invoiceDate"),
+    Map.entry("dueDate", "invoiceDueDate"), Map.entry("paidAmount", "invoiceAmt")
+  );
+
+  private static final Map<String, String> DISBURSEMENT = Map.ofEntries(
+    Map.entry("agreementNo", "agreementCode"),
+    Map.entry("custName", "financingHdr.customer.custName"),
+    Map.entry("bouwheerName", "financingHdr.bouwheer.bouwheerName"),
+    Map.entry("disburseDate", "financingHdr.disburseDate"),
+    Map.entry("paidDate", "financingHdr.disburseDate"),
+    Map.entry("disburseAmount", "financingHdr.disburseAmt")
+  );
+
+  public static Sort paidInvoices(PaginationRequest request) {
+    return resolve(request, PAID_INVOICE, Sort.by("invoiceCode"), "invoiceCode");
+  }
+
+  public static Sort disbursements(PaginationRequest request) {
+    return resolve(request, DISBURSEMENT, Sort.by("agreementCode"), "agreementCode");
+  }
+
   private static final Map<String, String> DISTRIBUTION = Map.ofEntries(
     Map.entry("financingHdrCode", "financingHdrCode"), Map.entry("custName", "custName"),
     Map.entry("NamaDebitur", "custName"), Map.entry("bouwheerName", "bouwheerName"),
@@ -100,7 +124,20 @@ public final class PaginationSort {
   }
 
   public static Sort assignments(PaginationRequest request) {
+    if (!isBlank(request.getSortBy()) && request.getSortBy().trim().equals("verifDate")) {
+      direction(request);
+      return Sort.by("financing_hdr_id");
+    }
     return resolve(request, ASSIGNMENT, Sort.by(Sort.Direction.DESC, "dtm_crt"), "financing_hdr_id");
+  }
+
+  public static Comparator<AssignmentDto> assignmentVerifDateComparator(PaginationRequest request) {
+    if (isBlank(request.getSortBy()) || !request.getSortBy().trim().equals("verifDate")) return null;
+    Sort.Direction direction = direction(request);
+    Comparator<java.util.Date> dates = direction == Sort.Direction.DESC
+      ? Comparator.reverseOrder() : Comparator.naturalOrder();
+    return Comparator.comparing(AssignmentDto::getVerifDate, Comparator.nullsLast(dates))
+      .thenComparing(AssignmentDto::getFinancingHdrCode, Comparator.nullsLast(Comparator.naturalOrder()));
   }
 
   public static Comparator<SimulationHistDto> tocComparator(PaginationRequest request) {

@@ -109,6 +109,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final HandlerExceptionResolver handlerExceptionResolver;
   private final JwtService jwtService;
   private final JwtLoanSubmissionService jwtLoanSubmissionService;
+  @Qualifier("userDetailsService")
   private final UserDetailsService userDetailsService;
   private final RedisRepository redisRepository;
 

@@ -108,10 +108,51 @@ class SignerServiceTest {
 
     PaginationResult<AssignmentDto> result = service.assignmentListGroupByCustomer(httpServletRequest, new PaginationRequest());
 
-    assertThat(result.getCurrentPage()).isEqualTo(2);
+    assertThat(result.getCurrentPage()).isEqualTo(1);
     assertThat(result.getTotalPage()).isEqualTo(1);
     assertThat(result.getTotalData()).isEqualTo(1);
     assertThat(result.getList()).containsExactly(first);
+  }
+
+  @Test
+  void assignmentListGroupByCustomerPaginatesAfterGrouping() throws Exception {
+    AssignmentDto first = AssignmentDto.builder().custCode(CUSTOMER_CODE).financingHdrCode(FINANCING_HDR_CODE).build();
+    AssignmentDto duplicate = AssignmentDto.builder().custCode(CUSTOMER_CODE).financingHdrCode(UUID.randomUUID()).build();
+    AssignmentDto second = AssignmentDto.builder()
+      .custCode(UUID.fromString("33333333-3333-3333-3333-333333333333"))
+      .financingHdrCode(UUID.fromString("44444444-4444-4444-4444-444444444444")).build();
+    when(assignmentSubmissionService.assignmentList(eq(httpServletRequest), any(PaginationRequest.class)))
+      .thenReturn(PaginationResult.<AssignmentDto>builder().list(List.of(first, duplicate, second)).build());
+    PaginationRequest request = new PaginationRequest();
+    request.setPageNo(2);
+    request.setPageSize(1);
+
+    PaginationResult<AssignmentDto> result = service.assignmentListGroupByCustomer(httpServletRequest, request);
+
+    assertThat(result.getCurrentPage()).isEqualTo(2);
+    assertThat(result.getTotalPage()).isEqualTo(2);
+    assertThat(result.getTotalData()).isEqualTo(2);
+    assertThat(result.getList()).containsExactly(second);
+  }
+
+  @Test
+  void assignmentListGroupByCustomerSearchesDisplayedRows() throws Exception {
+    AssignmentDto first = AssignmentDto.builder().custCode(CUSTOMER_CODE)
+      .financingHdrCode(FINANCING_HDR_CODE).custStatus("New Customer").build();
+    AssignmentDto second = AssignmentDto.builder()
+      .custCode(UUID.fromString("33333333-3333-3333-3333-333333333333"))
+      .financingHdrCode(UUID.fromString("44444444-4444-4444-4444-444444444444"))
+      .custStatus("Existing Customer").build();
+    when(assignmentSubmissionService.assignmentList(eq(httpServletRequest), any(PaginationRequest.class)))
+      .thenReturn(PaginationResult.<AssignmentDto>builder().list(List.of(first, second)).build());
+    PaginationRequest request = new PaginationRequest();
+    request.setSearchBy("custStatus");
+    request.setSearchValue("existing");
+
+    PaginationResult<AssignmentDto> result = service.assignmentListGroupByCustomer(httpServletRequest, request);
+
+    assertThat(result.getTotalData()).isEqualTo(1);
+    assertThat(result.getList()).containsExactly(second);
   }
 
   @Test

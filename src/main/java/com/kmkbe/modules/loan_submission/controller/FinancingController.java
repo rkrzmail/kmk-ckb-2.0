@@ -9,6 +9,7 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
+import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaginationRequest;
 import com.kmkbe.modules.loan_submission.service.FinancingDtlService;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.FinancingService;
@@ -66,7 +67,7 @@ public class FinancingController {
 
   @GetMapping("/invoices/paid")
   public CommonResult<PaginationResult<PaidInvoiceDto>> getInvoicePaid2(
-    PaginationRequest request
+    FinancingInvoicePaginationRequest request
   ) throws SignatureException {
     currentUserService.authenticatedInternalUser();
     return new CommonResult<PaginationResult<PaidInvoiceDto>>().success(
@@ -86,7 +87,7 @@ public class FinancingController {
 
   @GetMapping("/invoices/disbursement")
   public CommonResult<PaginationResult<DisburseInvoiceDto>> getDisbursement(
-    PaginationRequest request
+    FinancingInvoicePaginationRequest request
   ) throws SignatureException {
     currentUserService.authenticatedInternalUser();
     return new CommonResult<PaginationResult<DisburseInvoiceDto>>().success(

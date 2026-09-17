@@ -4,6 +4,7 @@ import com.kmkbe.core.domain.repository.RedisRepository;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.service.JwtService;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.test.context.support.TestPropertySourceUtils;
@@ -14,6 +15,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
 class JwtAuthenticationFilterWiringTest {
+  @Test
+  void generatedConstructorKeepsUserDetailsQualifiers() {
+    var constructor = JwtAuthenticationFilter.class.getConstructors()[0];
+    var parameters = constructor.getParameters();
+    assertThat(parameters[3].getAnnotation(Qualifier.class).value()).isEqualTo("userDetailsService");
+    assertThat(parameters[5].getAnnotation(Qualifier.class).value()).isEqualTo("internalUserDetailService");
+  }
+
   @Test
   void selectsCorrectNamedDependenciesWhenMultipleCandidatesExist() {
     var customerUsers = mock(UserDetailsService.class);

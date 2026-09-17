@@ -28,6 +28,7 @@ import com.kmkbe.core.domain.repository.MstFileTypeRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.service.FileStorageService;
+import com.kmkbe.exception.BusinessException;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
 import com.kmkbe.modules.common.service.AuditTrailService;
@@ -94,6 +95,23 @@ class AgreementServiceTest {
     private ObjectMapper objectMapper;
     private AgreementService service;
     private String uuid = String.valueOf(UUID.randomUUID());
+
+    @Test
+    void contractUploadValidationRejectsMissingInvoiceReference() {
+        when(financingDtlRepository.countMissingInvoicesByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.validateInvoicesForContractUpload(FINANCING_HDR_CODE))
+            .isInstanceOf(BusinessException.class)
+            .hasMessageContaining("Data invoice pengajuan tidak lengkap");
+    }
+
+    @Test
+    void contractUploadValidationAcceptsCompleteInvoiceReferences() {
+        service.validateInvoicesForContractUpload(FINANCING_HDR_CODE);
+
+        verify(financingDtlRepository).countMissingInvoicesByFinancingHdrCode(FINANCING_HDR_CODE);
+    }
+
     @BeforeEach
     void setUp() {
         objectMapper = new ObjectMapper();

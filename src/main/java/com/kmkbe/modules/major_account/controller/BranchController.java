@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.dto.BranchDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.modules.major_account.service.BranchAreaMappingService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -41,7 +42,7 @@ public class BranchController {
     }
 
     @GetMapping("/list")
-    public CommonResult<PaginationResult<BranchAreaMappingDto>> getList(PaginationRequest request) throws SignatureException {
+    public CommonResult<PaginationResult<BranchAreaMappingDto>> getList(BasePaginationRequest request) throws SignatureException {
         currentUserService.authenticatedInternalUser();
         return new CommonResult<PaginationResult<BranchAreaMappingDto>>().success(
                 branchAreaMappingService.listBranch(request)
