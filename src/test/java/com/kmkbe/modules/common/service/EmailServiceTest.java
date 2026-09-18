@@ -81,6 +81,33 @@ class EmailServiceTest {
   }
 
   @Test
+  void sendOtpDoesNotOverwriteTemplateForTheNextRecipient() throws Exception {
+    EmailTemplate source = template("M_CUST_NEW_OTP", "Hi {name} {email} {id_no} {otp_code}");
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_NEW_OTP", true))
+        .thenReturn(source);
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+
+    Customer first = customer();
+    Customer second = customer();
+    second.setCustName("Second");
+    second.setCustEmail("second@example.com");
+    second.setCustIdNo("KTP002");
+
+    service.sendOtp(first, "1234");
+    service.sendOtp(second, "5678");
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig, org.mockito.Mockito.times(2))
+        .sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    assertThat(captor.getAllValues()).extracting(EmailTemplate::getBodyMail)
+        .containsExactly("Hi Customer customer@example.com KTP001 1234",
+            "Hi Second second@example.com KTP002 5678");
+    assertThat(captor.getAllValues()).noneMatch(sent -> sent == source);
+    assertThat(source.getBodyMail()).isEqualTo("Hi {name} {email} {id_no} {otp_code}");
+    assertThat(source.getMailTo()).isNull();
+  }
+
+  @Test
   void approvalMailReturnsFailureWhenTemplateIsMissing() {
     var result = service.sendCustomerApprovalNotification(customer(), "APPROVED", "ok");
     assertThat(result.acceptedBySmtp()).isFalse();
@@ -425,15 +452,21 @@ class EmailServiceTest {
   }
 
   @Test
-  void bouwheerPaymentRetriesWhenSendMappingFailsInsideLoop() {
-    EmailTemplate template = org.mockito.Mockito.spy(templateWithSubject("M_BOUWHEER_PAYMENT", "Payment {vendorCode}", "{bouwheerName}"));
-    org.mockito.Mockito.doReturn("{bouwheerName}").doReturn(null).when(template).getBodyMail();
+  void bouwheerPaymentDoesNotOverwriteStoredTemplate() throws Exception {
+    EmailTemplate template = templateWithSubject("M_BOUWHEER_PAYMENT", "Payment {vendorCode}", "{bouwheerName}");
     when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BOUWHEER_PAYMENT", true))
         .thenReturn(template);
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
 
     service.sendNotificationBouwheerPayment("vendor@example.com", bouwheerPaymentPayload());
 
-    verify(configRemoteService, never()).fetchEmailInfo();
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    assertThat(captor.getValue()).isNotSameAs(template);
+    assertThat(captor.getValue().getSubjectMail()).isEqualTo("Payment V001");
+    assertThat(template.getSubjectMail()).isEqualTo("Payment {vendorCode}");
+    assertThat(template.getBodyMail()).isEqualTo("{bouwheerName}");
+    assertThat(template.getMailTo()).isNull();
   }
 
   @Test

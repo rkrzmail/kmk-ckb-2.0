@@ -93,7 +93,7 @@ public class EmailService {
     LoanDisburseEmailPayload payload
   ) {
     try {
-      EmailTemplate template = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(M_SIM_LOAN, true);
+      EmailTemplate template = loadTemplate(M_SIM_LOAN);
 
       Map<String, Object> args = new HashMap<>();
       Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
@@ -385,8 +385,7 @@ public class EmailService {
       args.put("id_no", customer.getCustIdNo());
       args.put("additionalArgs", payloadArgs);
 
-      EmailTemplate template = emailTemplateRepository
-        .findByEmailTemplateCodeAndIsActive(M_CUST_LOAN_SUBMITED, true);
+      EmailTemplate template = loadTemplate(M_CUST_LOAN_SUBMITED);
       template.setMailTo(customer.getCustEmail());
 
 //            sendMailMessage(template, customer.getCustEmail());
@@ -417,8 +416,7 @@ public class EmailService {
       args.put("branchArea", branchArea);
       args.put("email", email);
 
-      final EmailTemplate template = emailTemplateRepository
-        .findByEmailTemplateCodeAndIsActive(M_CUST_PENCAIRAN, true);
+      final EmailTemplate template = loadTemplate(M_CUST_PENCAIRAN);
       template.setMailTo(email);
       template.setMailCc(email);
 
@@ -449,8 +447,7 @@ public class EmailService {
       args.put("branchArea", branchArea);
       args.put("email", payload.getEmail());
 
-      final EmailTemplate template = emailTemplateRepository
-        .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN, true);
+      final EmailTemplate template = loadTemplate(M_BRANCH_ASSIGN);
       template.setSubjectMail(template.getSubjectMail().replace("{bouwheerName}", bouwheerName));
       template.setMailTo(payload.getToEmail());
       template.setMailCc(payload.getCcEmail());
@@ -483,8 +480,7 @@ public class EmailService {
       args.put("branchArea", branchArea);
       args.put("email", payload.getEmail());
 
-      final EmailTemplate template = emailTemplateRepository
-        .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN_MJR, true);
+      final EmailTemplate template = loadTemplate(M_BRANCH_ASSIGN_MJR);
       template.setSubjectMail(template.getSubjectMail().replace("{bouwheerName}", bouwheerName));
       template.setMailTo(payload.getToEmail());
       template.setMailCc(payload.getCcEmail());
@@ -511,8 +507,7 @@ public class EmailService {
 
       args.put("additionalArgs", payloadArgs);
 
-      final EmailTemplate template = emailTemplateRepository
-        .findByEmailTemplateCodeAndIsActive(M_BOUWHEER_PAYMENT, true);
+      final EmailTemplate template = loadTemplate(M_BOUWHEER_PAYMENT);
       template.setSubjectMail(template.getSubjectMail().replace("{vendorCode}", payload.getVendorCode()));
       template.setMailTo(email);
       template.setBodyMail(payload.bodyMail(template));
@@ -544,8 +539,7 @@ public class EmailService {
       Map<String, Object> args = new HashMap<>();
       args.put("additionalArgs", ObjectUtils.objectToJson(payload));
 
-      EmailTemplate template = emailTemplateRepository
-        .findByEmailTemplateCodeAndIsActive(M_BRANCH_CONTRACT_UPLOAD, true);
+      EmailTemplate template = loadTemplate(M_BRANCH_CONTRACT_UPLOAD);
       template.setMailTo(branchAdminEmails);
       template.setSubjectMail(template.getSubjectMail().replace("{agreementCode}", payload.getAgreementCode()));
 
@@ -568,8 +562,7 @@ public class EmailService {
       obj.put("phoneNumber", customer.getCustMobilePhone());
       obj.put("email",customer.getCustEmail());
 
-      EmailTemplate template = emailTemplateRepository
-        .findByEmailTemplateCodeAndIsActive(M_NEW_REGISTER, true);
+      EmailTemplate template = loadTemplate(M_NEW_REGISTER);
       template.setMailTo(mailTo);
       template.setSubjectMail(template.getSubjectMail());
 
@@ -585,8 +578,7 @@ public class EmailService {
     final Map<String, Object> args,
     final String templateCode
   ) {
-    final EmailTemplate template = emailTemplateRepository
-      .findByEmailTemplateCodeAndIsActive(templateCode, true);
+    final EmailTemplate template = loadTemplate(templateCode);
     {
       template.setMailTo(email);
       template.setBodyMail(mappingBody(template.getBodyMail(), args));
@@ -607,6 +599,23 @@ public class EmailService {
       template,
       template.getMailTo()
     );
+  }
+
+  private EmailTemplate loadTemplate(String templateCode) {
+    EmailTemplate source = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(templateCode, true);
+    if (source == null) {
+      throw new IllegalStateException("Active email template not found: " + templateCode);
+    }
+
+    EmailTemplate template = new EmailTemplate();
+    template.setEmailTemplateCode(source.getEmailTemplateCode());
+    template.setSubjectMail(source.getSubjectMail());
+    template.setBodyMail(source.getBodyMail());
+    template.setMailTo(source.getMailTo());
+    template.setMailCc(source.getMailCc());
+    template.setMailBcc(source.getMailBcc());
+    template.setIsActive(source.getIsActive());
+    return template;
   }
 
   private String mappingBody(
@@ -793,7 +802,7 @@ public class EmailService {
         throw new IllegalArgumentException("Invitation link cannot be null");
       }
 
-      EmailTemplate template = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(M_INV_LINK, true);
+      EmailTemplate template = loadTemplate(M_INV_LINK);
 
       Map<String, Object> args = new HashMap<>();
       args.put("invitationLink", invitationLink);
