@@ -12,10 +12,9 @@ import static org.mockito.Mockito.verifyNoInteractions;
 
 class AuthServiceWiringTest {
   @Test
-  void generatedConstructorKeepsDatabaseRefreshTokenQualifier() {
-    var parameter = java.util.Arrays.stream(AuthService.class.getConstructors()[0].getParameters())
-        .filter(p -> p.getType().equals(IRefreshTokenServices.class)).findFirst().orElseThrow();
-    assertThat(parameter.getAnnotation(Qualifier.class).value()).isEqualTo("DbRefreshTokenServices");
+  void refreshTokenFieldKeepsDatabaseQualifier() throws NoSuchFieldException {
+    assertThat(AuthService.class.getDeclaredField("refreshTokenServices")
+      .getAnnotation(Qualifier.class).value()).isEqualTo("DbRefreshTokenServices");
   }
 
   @Test
@@ -27,9 +26,7 @@ class AuthServiceWiringTest {
       context.getBeanFactory().registerSingleton("CacheRefreshTokenServices", cacheTokens);
       int index = 0;
       for (Class<?> type : AuthService.class.getConstructors()[0].getParameterTypes()) {
-        if (!type.equals(IRefreshTokenServices.class)) {
-          context.getBeanFactory().registerSingleton("dependency" + index++, mock(type));
-        }
+        context.getBeanFactory().registerSingleton("dependency" + index++, mock(type));
       }
       context.register(AuthService.class);
       context.refresh();

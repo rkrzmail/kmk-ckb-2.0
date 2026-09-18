@@ -41,8 +41,9 @@ import com.kmkbe.helpers.utils.Utils;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -60,7 +61,7 @@ import java.util.UUID;
 
 @Service
 @Slf4j
-@AllArgsConstructor
+@RequiredArgsConstructor
 public class AuthService {
   private final CustomerRepository customerRepository;
   private final OtpService otpService;
@@ -80,9 +81,10 @@ public class AuthService {
   private final CustomerPersonalService customerPersonalService;
   private final DocumentService documentService;
 
+  @Autowired
   @Qualifier("DbRefreshTokenServices")
   //@Qualifier("CacheRefreshTokenServices")
-  private final IRefreshTokenServices refreshTokenServices;
+  private IRefreshTokenServices refreshTokenServices;
 
   @Transactional
   public CommonResult<RequestOtpDto> signUp(SignUpRequest request
