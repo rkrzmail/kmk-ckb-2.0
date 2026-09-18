@@ -105,9 +105,9 @@ public class AuthService {
 
     // Validate if approved
     Optional<Customer>customerOptional = customerRepository.findFirstByCustExternalCode(request.getVendorCode());
-    if(customerOptional.isPresent() && !customerOptional.get().getApprovalStatus().equals(ApprovalStatus.APPROVED)){
+    if(customerOptional.isPresent() && customerOptional.get().getApprovalStatus().equals("APPROVED")){
         log.info("Email {} sudah digunakan oleh vendor lain: {}", customerOptional.get().getCustEmail(), customerOptional.get().getCustName());
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Vendor sudah terdaftar dengan email lain! " +customerOptional.get().getCustEmail());
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Vendor sudah terdaftar dengan email lain!");
     }
 
     final CustomerType type;
