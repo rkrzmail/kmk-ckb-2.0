@@ -18,6 +18,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -109,13 +110,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private final HandlerExceptionResolver handlerExceptionResolver;
   private final JwtService jwtService;
   private final JwtLoanSubmissionService jwtLoanSubmissionService;
+
+  @Autowired
   @Qualifier("userDetailsService")
-  private final UserDetailsService userDetailsService;
+  private UserDetailsService userDetailsService;
+
   private final RedisRepository redisRepository;
 
-
+  @Autowired
   @Qualifier("internalUserDetailService")
-  private final UserDetailsService internalUserDetailsService;
+  private UserDetailsService internalUserDetailsService;
 
   /**
    * <h5>In order to validate an request required:</h5>

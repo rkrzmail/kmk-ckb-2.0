@@ -104,10 +104,10 @@ class PaginationSortTest {
   void assignmentVerificationDateSortsBeforePaginationWithNullsLast() {
     var early = com.kmkbe.core.domain.dto.AssignmentDto.builder()
       .financingHdrCode(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"))
-      .verifDate(new java.util.Date(1)).build();
+      .verifDate(java.time.LocalDateTime.of(2026, 9, 17, 1, 0)).build();
     var late = com.kmkbe.core.domain.dto.AssignmentDto.builder()
       .financingHdrCode(java.util.UUID.fromString("00000000-0000-0000-0000-000000000002"))
-      .verifDate(new java.util.Date(2)).build();
+      .verifDate(java.time.LocalDateTime.of(2026, 9, 17, 2, 0)).build();
     var missing = com.kmkbe.core.domain.dto.AssignmentDto.builder()
       .financingHdrCode(java.util.UUID.fromString("00000000-0000-0000-0000-000000000003")).build();
     var rows = new ArrayList<>(List.of(missing, late, early));
