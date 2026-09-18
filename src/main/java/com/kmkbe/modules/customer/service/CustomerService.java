@@ -200,7 +200,6 @@ public class CustomerService {
       customer.setApprovalAt(null);
       customer.setAgreeTc(false);
       customer.setCustEmail(Boolean.TRUE.equals(customer.getIsEmailValid()) ? customer.getCustEmail() : request.getEmail().toLowerCase());
-      customer.setExistingCust(AppConstants.EXISTING_CUSTOMER);
     } else {
       // CREATE
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{} Create Customer ", request.getVendorCode());
@@ -208,7 +207,7 @@ public class CustomerService {
       customer.setIsEmailValid(false);
       customer.setApprovalStatus(String.valueOf(ApprovalStatus.OPEN));
       customer.setActive(false);
-      customer.setExistingCust(AppConstants.EXISTING_CUSTOMER);
+      customer.setExistingCust(AppConstants.NEW_CUSTOMER);
       if (request.getVendorCode() != null && !request.getVendorCode().isEmpty()) {
         customer.setCustExternalCode(request.getVendorCode());
       }
