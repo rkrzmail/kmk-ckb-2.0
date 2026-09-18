@@ -149,6 +149,14 @@ public class CustomerDashboardService {
         .validityLimitData(String.valueOf(vaidateLimit))
         .jumlahInvoice(BigDecimal.valueOf(jumlahivoice))
         .build())
+      .branch(Optional.of(financingHdr)
+        .map(FinancingHdr::getMstBranch)
+        .map(branch -> BranchDto.builder()
+          .branchCode(branch.getBranchCode())
+          .branchName(branch.getBranchName())
+          .build())
+        .orElse(null))
+
       .build());
   }
 

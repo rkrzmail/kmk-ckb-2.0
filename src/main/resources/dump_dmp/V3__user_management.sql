@@ -635,6 +635,189 @@ from
     test.branch_area_mapping bam
         join users.mst_branch mb on bam."Kode Cabang"::text = mb.branch_code;
 
+delete
+from
+    public.email_template
+where
+    email_template_code = 'M_BRANCH_ASSIGN';
+
+INSERT INTO
+    email_template
+(email_template_code, subject_mail, body_mail, is_active, usr_crt, dtm_crt)
+VALUES
+    ('M_BRANCH_ASSIGN', 'Prospect Factoring {bouwheerName}', '<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <style>
+        .tbl {
+            border-collapse: collapse;
+        }
+
+        .tbl th {
+            background-color: #083B82;
+            color: #fff;
+            padding: 0.5rem 0.7rem;
+            font-weight: 700;
+            font-size: 0.8em;
+        }
+
+        .tbl td {
+            padding: 0.5rem 0.7rem;
+            font-weight: 400;
+        }
+
+        .tbl-center td {
+            text-align: center;
+        }
+
+        .br {
+            border: 0.5px solid #000;
+        }
+
+        .primary {
+            font-weight: bold;
+            background-color: #083B82;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+    <p style="line-height: 5px;">
+        Berikut adalah daftar penempatan utilisasi kontrak factoring Truckindo Utama pada cabang {branchArea}.
+        Dengan detail pengajuan :
+    </p>
+    <br>
+    <table>
+        <tr>
+            <td>
+                Nama Perusahaan
+            </td>
+            <td>:</td>
+            <td>
+                {companyName}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Email
+            </td>
+            <td>:</td>
+            <td>
+                {email}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                No. Hp
+            </td>
+            <td>:</td>
+            <td>
+                {phoneNumber}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Tanggal Pengajuan
+            </td>
+            <td>:</td>
+            <td>
+                {applicationDate}
+            </td>
+        </tr>
+    </table>
+    <br>
+    <table class="tbl tbl-center">
+        <thead>
+            <tr>
+                <th>No. Invoice</th>
+                <th>Deskripsi</th>
+                <th>Pemberi Kerja</th>
+
+                <th>Tanggal Invoice</th>
+                <th>Tanggal Jatuh Tempo</th>
+                <th>Nilai Tagihan</th>
+            </tr>
+        </thead>
+        <tbody>
+            {invoices}
+        </tbody>
+    </table>
+    <br>
+    <p>Adapun rincian dari pengajuan ini sebagai berikut:</p>
+    <table class="tbl br text-left">
+        <tr>
+            <td>
+                Nilai Transaksi
+            </td>
+            <td>
+                {invoiceAmt}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Retensi
+            </td>
+            <td>
+                {retention}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Nilai Pembiayaan
+            </td>
+            <td>
+                {financingAmt}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Nilai Layaan
+            </td>
+            <td>
+                {totalFeeAmt}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Tenor
+            </td>
+            <td>
+                {tenor}
+            </td>
+        </tr>
+        <tr>
+            <td>
+                Jatuh Tempo
+            </td>
+            <td>
+                {financingDueDate}
+            </td>
+        </tr>
+        <tr class="primary">
+            <td>
+                Total Pencairan
+            </td>
+            <td>
+                {disburseAmt}
+            </td>
+        </tr>
+    </table>
+    <p>
+        Demikian informasi ini disampaikan terima kasih atas kepercayaan Anda.
+    </p>
+    <br />
+    <p>Hormat Kami,</p>
+    <p style="color: rgb(14, 193, 14); font-weight: bold">PT. Candra Sakti Utama Leasing</p>
+    <img src="https://www.csulfinance.com/cfind/source/images/logo.png" />
+</body>
+
+</html>', true, 'SYSTEM', NOW());
+
 alter table public.mst_file_type
     add column if not exists cust_type_code varchar(50) null;
 
@@ -712,6 +895,179 @@ values
      'system',
      now(),
      true);
+
+delete
+from
+    public.email_template
+where
+    email_template_code = 'M_BOUWHEER_PAYMENT';
+INSERT INTO
+    email_template
+(email_template_code, subject_mail, body_mail, is_active, usr_crt, dtm_crt)
+VALUES
+    ('M_BOUWHEER_PAYMENT', 'Pembiayaan Invoice Vendor {vendorCode} menggunakan CSUL Finance', '<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            margin: 20px;
+        }
+
+        .header,
+        .footer {
+            margin-bottom: 20px;
+        }
+
+        .header {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .table-container {
+            margin-top: 20px;
+            border-collapse: collapse;
+            width: 100%;
+        }
+
+        .table-container th,
+        .table-container td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
+
+        .table-container th {
+            background-color: #002060;
+            color: white;
+        }
+
+        .table-container tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .table-container tr:nth-child(odd) {
+            background-color: #ffffff;
+        }
+
+        .footer {
+            margin-top: 30px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div>
+            Yth. {bouwheerName},<br>
+            Terdapat transaksi yang akan dibiayai oleh CSUL Finance, sehingga perlu adanya perubahan bank account
+            menggunakan bank account CSUL.
+            Dengan detail vendor:
+        </div>
+        <br/>
+        <table>
+            <tr>
+                <td>
+                    Nama Vendor
+                </td>
+                <td>:</td>
+                <td>
+                    {vendorName}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Vendor Code
+                </td>
+                <td>:</td>
+                <td>
+                    {vendorCode}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Account No.
+                </td>
+                <td>:</td>
+                <td>
+                    {accountNo}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Bank Account
+                </td>
+                <td>:</td>
+                <td>
+                    {bankAccount}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Bank Name
+                </td>
+                <td>:</td>
+                <td>
+                    {bankName}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Bank Key
+                </td>
+                <td>:</td>
+                <td>
+                    {bankKey}
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    Tanggal Pengajuan
+                </td>
+                <td>:</td>
+                <td>
+                    {tglPengajuan}
+                </td>
+            </tr>
+        </table>
+        <br>
+        <p>
+            Dengan detail pengajuan:
+        </p>
+        <table class="table-container">
+            <thead>
+                <tr>
+                    <th>No. Invoice</th>
+                    <th>Deskripsi</th>
+                    <th>Pemberi Kerja</th>
+                    <th>Tanggal Invoice</th>
+                    <th>Tanggal Jatuh Tempo</th>
+                    <th>Nilai Tagihan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {invoices}
+            </tbody>
+        </table>
+
+        <div class="footer">
+            Demikian informasi ini disampaikan, terima kasih atas kepercayaannya.<br><br>
+            Hormat Kami,
+        </div>
+        <p style="color: rgb(14, 193, 14); font-weight: bold">PT. Candra Sakti Utama Leasing</p>
+        <img src="https://www.csulfinance.com/cfind/source/images/logo.png" />
+    </div>
+</body>
+
+</html>', true, 'SYSTEM', NOW());
 
 alter table public.agreement
     add column if not exists approval_flag varchar(150) null;

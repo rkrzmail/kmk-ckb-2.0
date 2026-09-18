@@ -7,10 +7,7 @@ import com.kmkbe.core.domain.entity.AgreementFile;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.entity.SimulationHist;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.repository.AgreementFileRepository;
-import com.kmkbe.core.domain.repository.AgreementRepository;
-import com.kmkbe.core.domain.repository.FinancingHdrRepository;
-import com.kmkbe.core.domain.repository.SimulationHistRepository;
+import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
@@ -61,6 +58,7 @@ class AssignmentSubmissionServiceTest {
   @Mock private MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
   @Mock private SimulationHistRepository simulationHistRepository;
   @Mock private CurrentUserService currentUserService;
+  @Mock private AgreementFileSigningRepository agreementFileSigningRepository;
 
   private AssignmentSubmissionService service;
   private HttpServletRequest httpServletRequest;
@@ -74,7 +72,8 @@ class AssignmentSubmissionServiceTest {
         agreementFileRepository,
         mstAppRoleFormUserRepository,
         simulationHistRepository,
-        currentUserService
+        currentUserService,
+        agreementFileSigningRepository
     );
     MockHttpServletRequest request = new MockHttpServletRequest();
     request.setScheme("http");

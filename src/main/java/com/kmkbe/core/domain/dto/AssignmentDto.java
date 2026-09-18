@@ -19,7 +19,7 @@ public class AssignmentDto {
     private String custName;
     private UUID bouwheerCode;
     private String bouwheerName;
-    private Date verifDate;
+    private LocalDateTime verifDate;
     private Date dueDate;
     private BigDecimal financingAmount;
     private String custStatus;
