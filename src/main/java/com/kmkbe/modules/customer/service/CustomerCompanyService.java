@@ -101,7 +101,7 @@ public class CustomerCompanyService {
     company.setCompanyAddress(request.getCompanyAddress());
     company.setKelurahan(addressRequest.getKelurahan());
     company.setKecamatan(addressRequest.getKecamatan());
-    company.setProvince(addressRequest.getProvince());//ketinggalan
+    company.setProvince(addressRequest.getProvince());
     company.setCity(addressRequest.getCity());
     company.setZipCode(addressRequest.getZipCode());
     company.setArea(addressRequest.getArea());

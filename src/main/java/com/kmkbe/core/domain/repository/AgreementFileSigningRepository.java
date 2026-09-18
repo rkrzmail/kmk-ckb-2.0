@@ -1,11 +1,7 @@
 package com.kmkbe.core.domain.repository;
 
-import com.kmkbe.core.domain.entity.Agreement;
-import com.kmkbe.core.domain.entity.AgreementFile;
 import com.kmkbe.core.domain.entity.AgreementFileSigning;
-import com.kmkbe.core.domain.entity.Debtor;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -80,4 +76,6 @@ public interface AgreementFileSigningRepository extends JpaRepository<AgreementF
     long countCompletedUploadedAgreementsByCustomer(
       @Param("financingHdrCode") UUID financingHdrCode
     );
+
+  Optional<AgreementFileSigning> findFirstByAgreementCode(String agreementCode);
 }

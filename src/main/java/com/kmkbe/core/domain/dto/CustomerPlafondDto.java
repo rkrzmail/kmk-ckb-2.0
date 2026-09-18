@@ -25,6 +25,7 @@ public class CustomerPlafondDto {
     private String address;
     private String phoneNo;
     private PlafondDto plafond;
+    private BranchDto branch;
 
     @Getter
     @Setter

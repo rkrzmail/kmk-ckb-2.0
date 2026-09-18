@@ -13,6 +13,7 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.OtpRepository;
 import com.kmkbe.core.domain.repository.RedisAttackRepository;
 import com.kmkbe.core.domain.repository.RedisRepository;
+import com.kmkbe.core.enums.ApprovalStatus;
 import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.service.JwtService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
@@ -40,9 +41,7 @@ import com.kmkbe.helpers.utils.Utils;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
-import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.HttpStatus;
@@ -52,10 +51,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
-import java.security.SignatureException;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -106,6 +101,13 @@ public class AuthService {
     Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
     if (bouwheerOptional.isEmpty()) {
       throw new IllegalArgumentException("Invalid Bouwheer Code " + request.getBouwheerCode());
+    }
+
+    // Validate if approved
+    Optional<Customer>customerOptional = customerRepository.findFirstByCustExternalCode(request.getVendorCode());
+    if(customerOptional.isPresent() && !customerOptional.get().getApprovalStatus().equals(ApprovalStatus.APPROVED)){
+        log.info("Email {} sudah digunakan oleh vendor lain: {}", customerOptional.get().getCustEmail(), customerOptional.get().getCustName());
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Vendor sudah terdaftar dengan email lain! " +customerOptional.get().getCustEmail());
     }
 
     final CustomerType type;

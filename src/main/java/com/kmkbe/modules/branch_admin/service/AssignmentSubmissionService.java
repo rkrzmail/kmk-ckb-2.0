@@ -4,10 +4,7 @@ import com.kmkbe.core.domain.dto.AssignmentDto;
 import com.kmkbe.core.domain.dto.SimulationHistDto;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.MappedFinancingStatus;
-import com.kmkbe.core.domain.repository.AgreementFileRepository;
-import com.kmkbe.core.domain.repository.AgreementRepository;
-import com.kmkbe.core.domain.repository.FinancingHdrRepository;
-import com.kmkbe.core.domain.repository.SimulationHistRepository;
+import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.security.CurrentUserService;
@@ -25,7 +22,6 @@ import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -42,6 +38,7 @@ public class AssignmentSubmissionService {
   private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
   private final SimulationHistRepository simulationHistRepository;
   private final CurrentUserService currentUserService;
+  private final AgreementFileSigningRepository agreementFileSigningRepository;
 
   public AssignmentSubmissionService(FinancingHdrRepository financingHdrRepository,
                                      MstUserRepository mstUserRepository,
@@ -49,7 +46,7 @@ public class AssignmentSubmissionService {
                                      AgreementFileRepository agreementFileRepository,
                                      MstAppRoleFormUserRepository mstAppRoleFormUserRepository,
                                      SimulationHistRepository simulationHistRepository,
-                                     CurrentUserService currentUserService) {
+                                     CurrentUserService currentUserService, AgreementFileSigningRepository agreementFileSigningRepository) {
     this.financingHdrRepository = financingHdrRepository;
     this.mstUserRepository = mstUserRepository;
     this.agreementRepository = agreementRepository;
@@ -57,6 +54,7 @@ public class AssignmentSubmissionService {
     this.mstAppRoleFormUserRepository = mstAppRoleFormUserRepository;
     this.simulationHistRepository = simulationHistRepository;
     this.currentUserService = currentUserService;
+    this.agreementFileSigningRepository = agreementFileSigningRepository;
   }
 
   public PaginationResult<AssignmentDto>  assignmentList(
@@ -195,6 +193,8 @@ public class AssignmentSubmissionService {
             );
           }
 
+          // Check verify date
+          Optional<AgreementFileSigning>agreementFileSigning = agreementFileSigningRepository.findFirstByAgreementCode(agreementCode);
           return AssignmentDto.builder()
             .financingHdrCode(e.getFinancingHdrCode())
             .agreementCode(agreementCode)
@@ -202,7 +202,9 @@ public class AssignmentSubmissionService {
             .custName(e.getCustomer().getCustName())
             .bouwheerCode(e.getBouwheer().getBouwheerCode())
             .bouwheerName(e.getBouwheer().getBouwheerName())
-            .verifDate(null)
+            .verifDate(agreementFileSigning
+              .map(AgreementFileSigning::getVerifDate)
+              .orElse(null))
             .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
             .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
             .custStatus(isNewCust ? "New Customer" : "Existing Customer")
@@ -210,7 +212,6 @@ public class AssignmentSubmissionService {
             .statusLabel(financingStatus.getLabel())
             .agreementDoc(agreementDoc)
             .build();
-
         }
       });
 
