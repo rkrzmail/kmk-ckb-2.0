@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.modules.branch_admin.service.AssignmentSubmissionService;
 import com.kmkbe.modules.branch_admin.service.SignerService;
 import com.kmkbe.modules.branch_admin.service.SigningEligibilityService;
@@ -41,7 +42,7 @@ public class SignerController {
   @GetMapping("/list")
   public CommonResult<PaginationResult<AssignmentDto>> getAssignmentList(
     HttpServletRequest httpServletRequest,
-    PaginationRequest request
+    BasePaginationRequest request
   ) throws SignatureException {
     return new CommonResult<PaginationResult<AssignmentDto>>()
       .success(
@@ -53,14 +54,15 @@ public class SignerController {
   }
 
   @GetMapping("/person/list/{financingHdrCode}")
-  public CommonResult<List<DebtorDto>> getSignerPersonList(
-    @PathVariable String financingHdrCode
+  public CommonResult<PaginationResult<DebtorDto>> getSignerPersonList(
+    @PathVariable String financingHdrCode,
+    BasePaginationRequest request
   ) throws SignatureException {
-    List<DebtorDto> signerPersonList = signerService.signerPersonList(
+    PaginationResult<DebtorDto> signerPersonList = signerService.signerPersonListPage(
       financingHdrCode,
-      currentUserService.internalUsername()
+      currentUserService.internalUsername(), request
     );
-    return new CommonResult<List<DebtorDto>>().success(signerPersonList);
+    return new CommonResult<PaginationResult<DebtorDto>>().success(signerPersonList);
   }
 
   @GetMapping("/person/{id}")
@@ -136,14 +138,15 @@ public class SignerController {
   }
 
   @GetMapping("/signer-doc/list/{financingHdrCode}")
-  public CommonResult<List<SignerDocDto>> getSignerDocList(
-    @PathVariable String financingHdrCode
+  public CommonResult<PaginationResult<SignerDocDto>> getSignerDocList(
+    @PathVariable String financingHdrCode,
+    BasePaginationRequest request
   ) throws SignatureException {
-    List<SignerDocDto> signerDocList = signerService.signerDocList(
+    PaginationResult<SignerDocDto> signerDocList = signerService.signerDocListPage(
       financingHdrCode,
-      currentUserService.internalUsername()
+      currentUserService.internalUsername(), request
     );
-    return new CommonResult<List<SignerDocDto>>().success(signerDocList);
+    return new CommonResult<PaginationResult<SignerDocDto>>().success(signerDocList);
   }
 
   // cek confins

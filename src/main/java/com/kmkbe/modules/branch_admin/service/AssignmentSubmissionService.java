@@ -120,6 +120,12 @@ public class AssignmentSubmissionService {
 
       return SpecPagination.paginationData(new SpecPagination<FinancingHdr, AssignmentDto>(financingHdrPage.stream().toList(), request) {
         @Override
+        public void sort(List<AssignmentDto> data) {
+          Comparator<AssignmentDto> comparator = PaginationSort.assignmentVerifDateComparator(request);
+          if (comparator != null) data.sort(comparator);
+        }
+
+        @Override
         public AssignmentDto filter(AssignmentDto data) {
 
           if (isSearchBy("financingHdrCode") && equal(data.getFinancingHdrCode().toString())) {

@@ -67,6 +67,21 @@ class PaginationSortTest {
   }
 
   @ParameterizedTest
+  @CsvSource({"invoiceNo,custInvNo", "custName,customer.custName", "bouwheerName,bouwheer.bouwheerName",
+    "paidDate,invoiceDate", "dueDate,invoiceDueDate", "paidAmount,invoiceAmt"})
+  void paidInvoiceFields(String field, String property) {
+    assertThat(PaginationSort.paidInvoices(request(field, "desc")).getOrderFor(property).isDescending()).isTrue();
+  }
+
+  @ParameterizedTest
+  @CsvSource({"agreementNo,agreementCode", "custName,financingHdr.customer.custName",
+    "bouwheerName,financingHdr.bouwheer.bouwheerName", "disburseDate,financingHdr.disburseDate",
+    "paidDate,financingHdr.disburseDate", "disburseAmount,financingHdr.disburseAmt"})
+  void disbursementFields(String field, String property) {
+    assertThat(PaginationSort.disbursements(request(field, "asc")).getOrderFor(property).isAscending()).isTrue();
+  }
+
+  @ParameterizedTest
   @CsvSource({"agreementNo,agreement_code", "agreementCode,agreement_code",
     "custName,ct.cust_name", "bouwheerName,bw.bouwheer_name", "financingAmt,financing_amt",
     "disburseDate,fh.disburse_date", "disburseAmt,fh.disburse_amt", "currency,currency"})
@@ -83,6 +98,26 @@ class PaginationSortTest {
   void assignmentFields(String field, String property) {
     assertThat(PaginationSort.assignments(request(field, "desc")).getOrderFor(property).isDescending()).isTrue();
     assertThat(PaginationSort.assignments(request(field, "asc")).getOrderFor(property).isAscending()).isTrue();
+  }
+
+  @Test
+  void assignmentVerificationDateSortsBeforePaginationWithNullsLast() {
+    var early = com.kmkbe.core.domain.dto.AssignmentDto.builder()
+      .financingHdrCode(java.util.UUID.fromString("00000000-0000-0000-0000-000000000001"))
+      .verifDate(new java.util.Date(1)).build();
+    var late = com.kmkbe.core.domain.dto.AssignmentDto.builder()
+      .financingHdrCode(java.util.UUID.fromString("00000000-0000-0000-0000-000000000002"))
+      .verifDate(new java.util.Date(2)).build();
+    var missing = com.kmkbe.core.domain.dto.AssignmentDto.builder()
+      .financingHdrCode(java.util.UUID.fromString("00000000-0000-0000-0000-000000000003")).build();
+    var rows = new ArrayList<>(List.of(missing, late, early));
+
+    assertThat(PaginationSort.assignments(request("verifDate", "asc")).getOrderFor("financing_hdr_id"))
+      .isNotNull();
+    rows.sort(PaginationSort.assignmentVerifDateComparator(request("verifDate", "asc")));
+    assertThat(rows).containsExactly(early, late, missing);
+    rows.sort(PaginationSort.assignmentVerifDateComparator(request("verifDate", "desc")));
+    assertThat(rows).containsExactly(late, early, missing);
   }
 
   @ParameterizedTest
@@ -128,7 +163,8 @@ class PaginationSortTest {
   @Test
   void rejectsInvalidFieldsAndDirections() {
     for (var resolver : List.<java.util.function.Function<PaginationRequest, ?>>of(
-      PaginationSort::invoices, PaginationSort::agreements, PaginationSort::assignments,
+      PaginationSort::invoices, PaginationSort::paidInvoices, PaginationSort::disbursements,
+      PaginationSort::agreements, PaginationSort::assignments,
       PaginationSort::cwrComparator, PaginationSort::distributionComparator, PaginationSort::tocComparator)) {
       assertThatThrownBy(() -> resolver.apply(request("x; DROP TABLE customer", "asc")))
         .isInstanceOf(BusinessException.class).hasMessageContaining("sortBy tidak didukung");

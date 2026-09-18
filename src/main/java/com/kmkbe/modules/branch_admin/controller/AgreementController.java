@@ -103,6 +103,8 @@ public class AgreementController {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Status sudah GOLIVE");
     }
 
+    agreementService.validateInvoicesForContractUpload(financingHdr.getFinancingHdrCode());
+
     Agreement agreement = agreementService.findByFinancingHdr(financingHdr);
     if (agreement == null) {
       throw new IllegalStateException("Agreement Not Found with given argument");

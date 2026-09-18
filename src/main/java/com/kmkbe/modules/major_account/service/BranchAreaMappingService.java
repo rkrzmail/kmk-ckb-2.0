@@ -6,6 +6,10 @@ import com.kmkbe.core.domain.entity.BranchAreaMapping;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.BranchAreaMappingRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.helpers.base.BasePaginationRequest;
+import com.kmkbe.helpers.utils.PaginationRequests;
+import com.kmkbe.exception.BusinessException;
+import jakarta.persistence.criteria.JoinType;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.user.entity.MstBranch;
@@ -17,6 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -133,26 +139,47 @@ public class BranchAreaMappingService {
     public PaginationResult<BranchAreaMappingDto> listBranch(
             PaginationRequest request
     ) {
+        String sortBy = request.getSortBy() == null || request.getSortBy().isBlank()
+                ? "province" : request.getSortBy().trim();
+        String sortProperty = Map.of(
+                "branchAreaMappingId", "branchAreaMappingId", "area", "area",
+                "province", "province", "city", "city", "branch", "mstBranch.branchName"
+        ).get(sortBy);
+        if (sortProperty == null) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, 400,
+                    "sortBy tidak didukung: " + sortBy + ". Pilihan: branchAreaMappingId, area, province, city, branch");
+        }
+        Sort.Direction direction;
         try {
-            int pageNo = 0, pageSize = 10;
-
-            if (request.getPageNo() != null) {
-                pageNo = request.getPageNo();
-            }
-            if (request.getPageSize() != null) {
-                pageSize = request.getPageSize();
-            }
-
-            if (pageNo > 0) {
-                pageNo = pageNo - 1;
-            }
-
-            pageSize = 1000;
-            Page<BranchAreaMapping> pagination = branchAreaMappingRepository.findAll(
-                    PageRequest.of(pageNo, pageSize, Sort.by("province"))
-            );
-
-            List<BranchAreaMappingDto> result = pagination.stream()
+            direction = request.getSortType() == null || request.getSortType().isBlank()
+                    ? Sort.Direction.ASC : Sort.Direction.fromString(request.getSortType().trim());
+        } catch (IllegalArgumentException ex) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "sortType harus asc atau desc.");
+        }
+        int pageNo = request.getPageNo() == null ? 1 : request.getPageNo();
+        int pageSize = request.getPageSize() == null ? 10 : request.getPageSize();
+        if (pageNo < 1 || pageSize < 1) {
+            throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "pageNo dan pageSize harus minimal 1.");
+        }
+        Specification<BranchAreaMapping> filter = (root, query, cb) -> {
+            if (request.getSearchValue() == null || request.getSearchValue().isBlank()) return cb.conjunction();
+            String by = request.getSearchBy();
+            String value = request.getSearchValue().trim().toLowerCase(Locale.ROOT);
+            if (by == null) throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "searchBy wajib diisi jika searchValue digunakan.");
+            return switch (by.trim()) {
+                case "branchAreaMappingId" -> {
+                    try { yield cb.equal(root.get("branchAreaMappingId"), Long.valueOf(value)); }
+                    catch (NumberFormatException ex) { yield cb.disjunction(); }
+                }
+                case "area", "province", "city" -> cb.like(cb.lower(root.get(by.trim())), "%" + value + "%");
+                case "branch" -> cb.like(cb.lower(root.join("mstBranch", JoinType.LEFT).get("branchName")), "%" + value + "%");
+                default -> throw new BusinessException(HttpStatus.BAD_REQUEST, 400,
+                        "searchBy tidak didukung: " + by + ". Pilihan: branchAreaMappingId, area, province, city, branch");
+            };
+        };
+        Page<BranchAreaMapping> pagination = branchAreaMappingRepository.findAll(filter,
+                PageRequest.of(pageNo - 1, pageSize, Sort.by(direction, sortProperty).and(Sort.by("branchAreaMappingId"))));
+        List<BranchAreaMappingDto> result = pagination.stream()
                     .map((e) -> BranchAreaMappingDto.builder()
                             .branchAreaMappingId(e.getBranchAreaMappingId())
                             .area(e.getArea())
@@ -161,17 +188,13 @@ public class BranchAreaMappingService {
                             .branch(e.getMstBranch().getBranchName())
                             .build())
                     .toList();
+        return PaginationResult.<BranchAreaMappingDto>builder()
+                .currentPage(pageNo).totalData(pagination.getTotalElements())
+                .totalPage(pagination.getTotalPages()).list(result).build();
+    }
 
-            return PaginationResult.<BranchAreaMappingDto>builder()
-                    .currentPage(pageNo + 1)
-                    .totalData(pagination.getTotalElements())
-                    .totalPage(pagination.getTotalPages())
-                    .list(result)
-                    .build();
-        } catch (Exception e) {
-            log.error("placementBranch: error {}", e.getMessage());
-            throw e;
-        }
+    public PaginationResult<BranchAreaMappingDto> listBranch(BasePaginationRequest request) {
+        return listBranch(PaginationRequests.from(request));
     }
 
     /*public CommonResult<Object> updateBranch(

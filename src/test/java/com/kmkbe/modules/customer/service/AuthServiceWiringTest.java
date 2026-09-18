@@ -7,14 +7,14 @@ import org.springframework.context.annotation.AnnotationConfigApplicationContext
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 class AuthServiceWiringTest {
   @Test
-  void explicitlyQualifiesDatabaseRefreshTokenConstructorParameter() {
+  void generatedConstructorKeepsDatabaseRefreshTokenQualifier() {
     var parameter = java.util.Arrays.stream(AuthService.class.getConstructors()[0].getParameters())
-      .filter(p -> p.getType().equals(IRefreshTokenServices.class)).findFirst().orElseThrow();
-    assertThat(parameter.getAnnotation(Qualifier.class)).isNotNull();
+        .filter(p -> p.getType().equals(IRefreshTokenServices.class)).findFirst().orElseThrow();
     assertThat(parameter.getAnnotation(Qualifier.class).value()).isEqualTo("DbRefreshTokenServices");
   }
 

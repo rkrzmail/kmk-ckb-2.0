@@ -2,6 +2,8 @@ package com.kmkbe.modules.branch_admin.controller;
 
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.modules.branch_admin.service.CsulSignerService;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -27,11 +29,13 @@ public class CsulSignerController {
   private final CurrentUserService currentUserService;
 
   @GetMapping("/list")
-  public CommonResult<List<SignerCsulDto>> getSignerCsulList() throws SignatureException {
-    List<SignerCsulDto> signerCsulList = csulSignerService.signerCsulList(
-      currentUserService.internalUsername()
+  public CommonResult<PaginationResult<SignerCsulDto>> getSignerCsulList(
+    BasePaginationRequest request
+  ) throws SignatureException {
+    PaginationResult<SignerCsulDto> signerCsulList = csulSignerService.signerCsulListPage(
+      currentUserService.internalUsername(), request
     );
-    return new CommonResult<List<SignerCsulDto>>().success(signerCsulList);
+    return new CommonResult<PaginationResult<SignerCsulDto>>().success(signerCsulList);
   }
 
   @GetMapping("/list/{id}")

@@ -48,7 +48,7 @@ public class DistributionSubmissionController {
   @GetMapping("/detail/{financingHdrCode}/invoices")
   public CommonResult<PaginationResult<PostedInvoiceDto>> getDetailInvoiceDistributionList(
     @PathVariable String financingHdrCode,
-    PaginationRequest request
+    BasePaginationRequest request
   ) throws SignatureException {
     currentUserService.authenticatedInternalUser();
     return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(

@@ -5,6 +5,10 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.CsulSigner;
 import com.kmkbe.core.domain.mapper.CsulSignerMapper;
 import com.kmkbe.core.domain.repository.CsulSignerRepository;
+import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.helpers.base.BasePaginationRequest;
+import com.kmkbe.helpers.utils.ListPagination;
+import com.kmkbe.helpers.utils.PaginationRequests;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
@@ -59,6 +63,19 @@ public class CsulSignerService {
         .build()
       )
       .toList();
+  }
+
+  public PaginationResult<SignerCsulDto> signerCsulListPage(String username, BasePaginationRequest request) {
+    return ListPagination.of(signerCsulList(username), PaginationRequests.from(request), Map.of(
+      "signerId", SignerCsulDto::getSignerId,
+      "karyawanName", SignerCsulDto::getKaryawanName,
+      "jabatan", SignerCsulDto::getJabatan,
+      "identityNo", SignerCsulDto::getIdentityNo,
+      "email", SignerCsulDto::getEmail,
+      "noTelp", SignerCsulDto::getNoTelp,
+      "isActive", SignerCsulDto::getIsActive,
+      "signhubStatus", SignerCsulDto::getSignhubStatus
+    ), "signerId");
   }
 
   public SignerCsulDto detailSigner(Long id) {

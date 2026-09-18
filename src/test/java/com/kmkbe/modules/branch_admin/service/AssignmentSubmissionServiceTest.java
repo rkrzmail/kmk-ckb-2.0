@@ -130,6 +130,27 @@ class AssignmentSubmissionServiceTest {
   }
 
   @Test
+  void assignmentListAcceptsVerificationDateSortWithCurrentlyMissingDates() throws Exception {
+    stubUserAndRole("account_officer");
+    var first = financingHdr("INPROCESS", "ASSIGNMENT");
+    var second = financingHdr("INPROCESS", "ASSIGNMENT");
+    second.setFinancingHdrCode(UUID.fromString("44444444-4444-4444-4444-444444444444"));
+    when(financingHdrRepository.findAllAssignmentFinancingRaw(eq("JKT"), eq(null), eq(null), eq(null), any()))
+      .thenReturn(new PageImpl<>(List.of(second, first)));
+    var request = new PaginationRequest();
+    request.setSortBy("verifDate");
+    request.setSortType("desc");
+    request.setPageNo(1);
+    request.setPageSize(1);
+
+    var result = service.assignmentList(httpServletRequest, request);
+
+    assertThat(result.getTotalData()).isEqualTo(2);
+    assertThat(result.getList()).extracting(AssignmentDto::getFinancingHdrCode)
+      .containsExactly(FINANCING_HDR_CODE);
+  }
+
+  @Test
   void assignmentListReturnsAccountOfficerAssignmentsWithAgreementDocument() throws Exception {
     FinancingHdr financingHdr = financingHdr("INPROCESS", "ASSIGNMENT");
     stubUserAndRole("account_officer");

@@ -24,6 +24,7 @@ import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.FileUtils;
 import com.kmkbe.core.utils.ObjectUtils;
+import com.kmkbe.exception.BusinessException;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
@@ -40,6 +41,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -99,6 +101,18 @@ public class AgreementService {
     String cwrCode, String financingHdrCode, BasePaginationRequest request
   ) throws JsonProcessingException {
     return list(cwrCode, financingHdrCode, PaginationRequests.from(request));
+  }
+
+  public void validateInvoicesForContractUpload(UUID financingHdrCode) {
+    long missingInvoices = financingDtlRepository.countMissingInvoicesByFinancingHdrCode(financingHdrCode);
+    if (missingInvoices > 0) {
+      log.warn("Contract upload blocked: {} missing invoice(s) for financingHdrCode={}", missingInvoices, financingHdrCode);
+      throw new BusinessException(
+        HttpStatus.CONFLICT,
+        HttpStatus.CONFLICT.value(),
+        "Data invoice pengajuan tidak lengkap. Kontrak belum dapat diunggah. Hubungi administrator."
+      );
+    }
   }
 
   public PaginationResult<AgreementDto> list(

@@ -9,6 +9,9 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.helpers.base.BasePaginationRequest;
+import com.kmkbe.helpers.utils.ListPagination;
+import com.kmkbe.helpers.utils.PaginationRequests;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.common.service.AuditTrailService;
@@ -72,8 +75,11 @@ public class SignerService {
     HttpServletRequest httpServletRequest,
     PaginationRequest request
   ) throws SignatureException {
+    PaginationRequest allRows = new PaginationRequest();
+    allRows.setPageNo(1);
+    allRows.setPageSize(Integer.MAX_VALUE);
     PaginationResult<AssignmentDto> originalResult =
-      assignmentSubmissionService.assignmentList(httpServletRequest, request);
+      assignmentSubmissionService.assignmentList(httpServletRequest, allRows);
     Map<UUID, AssignmentDto> grouped = originalResult.getList().stream()
       .collect(Collectors.toMap(
         AssignmentDto::getCustCode,
@@ -81,12 +87,58 @@ public class SignerService {
         (existing, replacement) -> existing
       ));
 
-    return PaginationResult.<AssignmentDto>builder()
-      .currentPage(originalResult.getCurrentPage())
-      .totalPage(1)
-      .totalData((long) grouped.size())
-      .list(new ArrayList<>(grouped.values()))
-      .build();
+    return ListPagination.of(new ArrayList<>(grouped.values()), request, Map.ofEntries(
+      Map.entry("financingHdrCode", AssignmentDto::getFinancingHdrCode),
+      Map.entry("agreementCode", AssignmentDto::getAgreementCode),
+      Map.entry("custName", AssignmentDto::getCustName),
+      Map.entry("bouwheerName", AssignmentDto::getBouwheerName),
+      Map.entry("verifDate", AssignmentDto::getVerifDate),
+      Map.entry("dueDate", AssignmentDto::getDueDate),
+      Map.entry("financingAmount", AssignmentDto::getFinancingAmount),
+      Map.entry("custStatus", AssignmentDto::getCustStatus),
+      Map.entry("status", AssignmentDto::getStatus),
+      Map.entry("dtmCrt", AssignmentDto::getDtmCrt)
+    ), "financingHdrCode");
+  }
+
+  public PaginationResult<AssignmentDto> assignmentListGroupByCustomer(
+    HttpServletRequest httpServletRequest, BasePaginationRequest request
+  ) throws SignatureException {
+    return assignmentListGroupByCustomer(httpServletRequest, PaginationRequests.from(request));
+  }
+
+  public PaginationResult<DebtorDto> signerPersonListPage(
+    String financingHdrCode, String username, BasePaginationRequest request
+  ) {
+    return ListPagination.of(signerPersonList(financingHdrCode, username), PaginationRequests.from(request),
+      Map.ofEntries(
+        Map.entry("debtorId", DebtorDto::getDebtorId),
+        Map.entry("debtorName", DebtorDto::getDebtorName),
+        Map.entry("karyawanName", DebtorDto::getKaryawanName),
+        Map.entry("jabatan", DebtorDto::getJabatan),
+        Map.entry("identityNo", DebtorDto::getIdentityNo),
+        Map.entry("email", DebtorDto::getEmail),
+        Map.entry("noTelp", DebtorDto::getNoTelp),
+        Map.entry("signhubStatus", DebtorDto::getSignhubStatus),
+        Map.entry("isActive", DebtorDto::getIsActive)
+      ), "debtorId");
+  }
+
+  public PaginationResult<SignerDocDto> signerDocListPage(
+    String financingHdrCode, String username, BasePaginationRequest request
+  ) {
+    return ListPagination.of(signerDocList(financingHdrCode, username), PaginationRequests.from(request),
+      Map.of(
+        "agreementFileId", SignerDocDto::getAgreementFileId,
+        "agreementCode", SignerDocDto::getAgreementCode,
+        "cwrCode", SignerDocDto::getCwrCode,
+        "bowheerName", SignerDocDto::getBowheerName,
+        "verifDate", dto -> dto.getVerifDate() == null ? null :
+          LocalDate.parse(dto.getVerifDate(), DateTimeFormatter.ofPattern("dd-MM-yyyy")),
+        "signProgress", SignerDocDto::getSignProgress,
+        "status", SignerDocDto::getStatus,
+        "documentId", SignerDocDto::getDocumentId
+      ), "agreementFileId");
   }
 
   public List<DebtorDto> signerPersonList(String financingHdrCode, String username) {

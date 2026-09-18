@@ -3,6 +3,7 @@ package com.kmkbe.core.utils;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.exception.LoanDocMandatoryException;
 import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.exception.BusinessException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityNotFoundException;
@@ -32,6 +33,11 @@ public class ExceptionUtils {
             WebRequest request
     ) {
         ProblemDetail detail = null;
+
+        if (exception instanceof BusinessException businessException) {
+            detail = ProblemDetail.forStatusAndDetail(
+                    businessException.getHttpStatus(), businessException.getMessage());
+        }
 
         if (exception instanceof LoanDocMandatoryException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, exception.getMessage());
