@@ -11,6 +11,7 @@ import com.kmkbe.core.domain.dto.ExternalSigningResponse;
 import com.kmkbe.core.domain.dto.FinancialDataResponse;
 import com.kmkbe.core.domain.dto.PostedInvoiceDto;
 import com.kmkbe.core.domain.dto.ProyeksiReportDto;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.core.domain.dto.RekDebiturResponse;
 import com.kmkbe.core.domain.dto.ReportDueDateDto;
 import com.kmkbe.core.domain.dto.SigningResponse;
@@ -139,6 +140,72 @@ class ReportServiceTest {
     PaginationResult<ProyeksiReportDto> result = service.getProyeksiReport(reportRequest());
 
     assertThat(result.getList()).extracting(ProyeksiReportDto::getInvoiceNo).containsExactly("INV001");
+  }
+
+  private static ProyeksiReportDto proyeksiRow(String debtorName, String invoiceNo, double amountFinancing) {
+    return ProyeksiReportDto.builder()
+        .debtorName(debtorName)
+        .debtorStatus("ACTIVE")
+        .bouwheerName("Bouwheer")
+        .invoiceNo(invoiceNo)
+        .amountInvoice(100D)
+        .amountFinancing(amountFinancing)
+        .invoiceDueDate(LocalDateTime.of(2026, 2, 1, 0, 0))
+        .effectiveDate(LocalDateTime.of(2026, 1, 1, 0, 0))
+        .build();
+  }
+
+  @Test
+  void getProyeksiReportSortsByAmountFinancingDescending() {
+    when(financingHdrRepository.findActiveCustomersWithInvoiceDetails(any(), eq("2026-01-01"), eq("2026-01-31")))
+        .thenReturn(new PageImpl<>(List.of(
+            proyeksiRow("Alpha", "INV001", 50D),
+            proyeksiRow("Bravo", "INV002", 300D),
+            proyeksiRow("Charlie", "INV003", 150D))));
+
+    PaginationRequest request = reportRequest();
+    request.setSortBy("amountFinancing");
+    request.setSortType("desc");
+
+    PaginationResult<ProyeksiReportDto> result = service.getProyeksiReport(request);
+
+    assertThat(result.getList()).extracting(ProyeksiReportDto::getInvoiceNo)
+        .containsExactly("INV002", "INV003", "INV001");
+  }
+
+  @Test
+  void getProyeksiReportFiltersBySearchValue() {
+    when(financingHdrRepository.findActiveCustomersWithInvoiceDetails(any(), eq("2026-01-01"), eq("2026-01-31")))
+        .thenReturn(new PageImpl<>(List.of(
+            proyeksiRow("PT Maju Jaya", "INV001", 50D),
+            proyeksiRow("PT Sinar Abadi", "INV002", 300D),
+            proyeksiRow("CV Jaya Makmur", "INV003", 150D))));
+
+    PaginationRequest request = reportRequest();
+    request.setSearchBy("debtorName");
+    request.setSearchValue("jaya");
+
+    PaginationResult<ProyeksiReportDto> result = service.getProyeksiReport(request);
+
+    assertThat(result.getList()).extracting(ProyeksiReportDto::getDebtorName)
+        .containsExactlyInAnyOrder("PT Maju Jaya", "CV Jaya Makmur");
+    assertThat(result.getTotalData()).isEqualTo(2L);
+  }
+
+  @Test
+  void getProyeksiReportAcceptsBasePaginationRequestAndCarriesDates() {
+    when(financingHdrRepository.findActiveCustomersWithInvoiceDetails(any(), eq("2026-01-01"), eq("2026-01-31")))
+        .thenReturn(new PageImpl<>(List.of(proyeksiRow("Alpha", "INV001", 50D))));
+
+    BasePaginationRequest request = new BasePaginationRequest();
+    request.setPageNo(1);
+    request.setPageSize(10);
+
+    PaginationResult<ProyeksiReportDto> result = service.getProyeksiReport(
+        request, java.sql.Date.valueOf("2026-01-01"), java.sql.Date.valueOf("2026-01-31"));
+
+    assertThat(result.getList()).extracting(ProyeksiReportDto::getInvoiceNo).containsExactly("INV001");
+    verify(financingHdrRepository).findActiveCustomersWithInvoiceDetails(any(), eq("2026-01-01"), eq("2026-01-31"));
   }
 
   @Test

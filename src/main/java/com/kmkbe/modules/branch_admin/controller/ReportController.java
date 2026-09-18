@@ -5,6 +5,8 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.helpers.base.BasePaginationRequest;
+import com.kmkbe.exception.BusinessException;
 import com.kmkbe.modules.branch_admin.service.ReportService;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
@@ -13,6 +15,9 @@ import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.NoSuchElementException;
 
 @RestController
@@ -40,11 +45,39 @@ public class ReportController {
 
   @GetMapping("/proyeksi")
   public CommonResult<PaginationResult<ProyeksiReportDto>> getlistProyeksi(
-    PaginationRequest request
+    BasePaginationRequest request,
+    @RequestParam(value = "startDate", required = false) String startDate,
+    @RequestParam(value = "endDate", required = false) String endDate
   ) throws SignatureException {
     currentUserService.authenticatedInternalUser();
     return new CommonResult<PaginationResult<ProyeksiReportDto>>().success(
-      reportService.getProyeksiReport(request)
+      reportService.getProyeksiReport(
+        request,
+        parseReportDate(startDate, "startDate"),
+        parseReportDate(endDate, "endDate")
+      )
+    );
+  }
+
+  // Accepts both "dd/MM/yyyy" (e.g. 01/01/2025) and "ddMMyyyy" (e.g. 01012025).
+  private static Date parseReportDate(String value, String fieldName) {
+    if (value == null || value.trim().isEmpty()) {
+      return null;
+    }
+    String raw = value.trim();
+    for (String pattern : new String[]{"dd/MM/yyyy", "ddMMyyyy"}) {
+      SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+      sdf.setLenient(false);
+      try {
+        return sdf.parse(raw);
+      } catch (ParseException ignored) {
+        // try next pattern
+      }
+    }
+    throw new BusinessException(
+      HttpStatus.BAD_REQUEST,
+      400,
+      "Format " + fieldName + " tidak valid: '" + value + "'. Gunakan dd/MM/yyyy atau ddMMyyyy."
     );
   }
 

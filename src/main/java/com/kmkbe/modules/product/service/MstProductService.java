@@ -54,13 +54,16 @@ public class MstProductService {
   }
 
   public BaseResponseBuilder<PaginationResult<ProductDto>> pages(BasePaginationRequest request) {
-    String sortBy = request.getSortBy() != null && !request.getSortBy().isEmpty() ? request.getSortBy() : "productId";
+    int pageSize = request.getPageSize() != null ? request.getPageSize() : 10;
+    int pageNo = request.getPageNo() != null ? request.getPageNo() : 1;
+    String sortBy = request.getSortBy() != null && !request.getSortBy().isBlank() ? request.getSortBy() : "productId";
+    String sortType = request.getSortType() != null && !request.getSortType().isBlank() ? request.getSortType() : "ASC";
     Pageable pageable = PageableUtil.createPageRequest(
       request,
-      request.getPageSize(),
-      request.getPageNo(),
+      pageSize,
+      pageNo,
       sortBy,
-      request.getSortType()
+      sortType
     );
 
     Page<Product> page = productRepository.findAll((root, query, builder) -> {

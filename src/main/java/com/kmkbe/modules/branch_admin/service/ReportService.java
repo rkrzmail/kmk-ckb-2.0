@@ -7,6 +7,10 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.helpers.utils.PaginationRequests;
+import com.kmkbe.helpers.utils.PaginationSort;
+import com.kmkbe.helpers.utils.SpecPagination;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.core.service.ExternalApiService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ExecutionTimer;
@@ -20,6 +24,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -150,43 +155,51 @@ public class ReportService {
     }
   }
 
+  public PaginationResult<ProyeksiReportDto> getProyeksiReport(
+    BasePaginationRequest request, java.util.Date startDate, java.util.Date endDate) {
+    PaginationRequest converted = PaginationRequests.from(request);
+    converted.setStartDate(startDate);
+    converted.setEndDate(endDate);
+    return getProyeksiReport(converted);
+  }
+
   public PaginationResult<ProyeksiReportDto> getProyeksiReport(PaginationRequest request) {
     try {
-      int pageNo = 0, pageSize = Integer.MAX_VALUE;
+      Page<ProyeksiReportDto> pagination = financingHdrRepository.findActiveCustomersWithInvoiceDetails(
+        Pageable.unpaged(),
+        DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()),
+        DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate())
+      );
 
-      if (request.getPageNo() != null) {
-        pageNo = request.getPageNo();
-      }
-      if (request.getPageSize() != null) {
-        pageSize = request.getPageSize();
-      }
+      List<ProyeksiReportDto> allData = pagination.getContent();
+      Comparator<ProyeksiReportDto> comparator = PaginationSort.proyeksiComparator(request);
 
-      if (pageNo > 0) {
-        pageNo = pageNo - 1;
-      }
+      return SpecPagination.paginationData(
+        new SpecPagination<ProyeksiReportDto, ProyeksiReportDto>(allData, request) {
+          @Override
+          public void sort(List<ProyeksiReportDto> data) {
+            if (comparator != null) data.sort(comparator);
+          }
 
-      Page<ProyeksiReportDto> pagination = financingHdrRepository.findActiveCustomersWithInvoiceDetails(PageRequest.of(pageNo, pageSize), DateTimeUtils.SDF_STANDARD_DATE.format(request.getStartDate()), DateTimeUtils.SDF_STANDARD_DATE.format(request.getEndDate()));
+          @Override
+          public ProyeksiReportDto eval(ProyeksiReportDto e) {
+            return e;
+          }
 
-      List<ProyeksiReportDto> result = pagination.stream()
-        .map(e -> new ProyeksiReportDto(
-          e.getDebtorName(),
-          e.getDebtorStatus(),
-          e.getBouwheerName(),
-          e.getInvoiceNo(),
-          e.getAmountInvoice(),
-          e.getAmountFinancing(),
-          e.getInvoiceDueDate(),
-          e.getEffectiveDate()
-        ))
-        .collect(Collectors.toList());
-
-      return PaginationResult.<ProyeksiReportDto>builder()
-        .currentPage(pageNo + 1)
-        .totalData(pagination.getTotalElements())
-        .totalPage(pagination.getTotalPages())
-        .list(result)
-        .build();
-
+          @Override
+          public ProyeksiReportDto filter(ProyeksiReportDto data) {
+            if (isSearchBy("debtorName") && like(data.getDebtorName())) return data;
+            if (isSearchBy("debtorStatus") && like(data.getDebtorStatus())) return data;
+            if (isSearchBy("bouwheerName") && like(data.getBouwheerName())) return data;
+            if (isSearchBy("invoiceNo") && like(data.getInvoiceNo())) return data;
+            if (isSearchBy("amountInvoice")
+              && equalNumber(data.getAmountInvoice() != null ? data.getAmountInvoice() : 0)) return data;
+            if (isSearchBy("amountFinancing")
+              && equalNumber(data.getAmountFinancing() != null ? data.getAmountFinancing() : 0)) return data;
+            return null;
+          }
+        }
+      );
     } catch (Exception e) {
       throw e;
     }
