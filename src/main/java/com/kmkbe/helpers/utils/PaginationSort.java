@@ -10,7 +10,6 @@ import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 
-import java.time.LocalDateTime;
 import java.util.Comparator;
 import java.util.Map;
 
@@ -135,7 +134,7 @@ public final class PaginationSort {
   public static Comparator<AssignmentDto> assignmentVerifDateComparator(PaginationRequest request) {
     if (isBlank(request.getSortBy()) || !request.getSortBy().trim().equals("verifDate")) return null;
     Sort.Direction direction = direction(request);
-    Comparator<LocalDateTime> dates = direction == Sort.Direction.DESC
+    Comparator<java.util.Date> dates = direction == Sort.Direction.DESC
       ? Comparator.reverseOrder() : Comparator.naturalOrder();
     return Comparator.comparing(AssignmentDto::getVerifDate, Comparator.nullsLast(dates))
       .thenComparing(AssignmentDto::getFinancingHdrCode, Comparator.nullsLast(Comparator.naturalOrder()));
