@@ -29,6 +29,7 @@ import com.kmkbe.helpers.utils.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -55,9 +56,10 @@ public class AuthInternalServices {
     private final AuditTrailService auditTrailService;
 
 
+    @Autowired
     @Qualifier("DbRefreshTokenServices")
     //@Qualifier("CacheRefreshTokenServices")
-    private final IRefreshTokenServices refreshTokenServices;
+    private IRefreshTokenServices refreshTokenServices;
 
 
     public LoginDto signIn(LoginInternalRequest request) throws JsonProcessingException {

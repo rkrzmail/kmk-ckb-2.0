@@ -11,6 +11,7 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import jakarta.servlet.DispatcherType;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -61,6 +62,7 @@ public class SecurityConfig {
     AuthenticationProvider authenticationProvider,
     JwtAuthenticationFilter jwtAuthenticationFilter,
     RsaKeyConfigProperties rsaKeyConfigProperties,
+    @Qualifier("userDetailsService")
     UserDetailsService userDetailsService,
     UnauthorizedEntryPoint unauthorizedEntryPoint
   ) {

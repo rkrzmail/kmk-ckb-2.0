@@ -3,6 +3,7 @@ package com.kmkbe.helpers.utils;
 import com.kmkbe.core.domain.dto.CwrListDto;
 import com.kmkbe.core.domain.dto.AssignmentDto;
 import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
+import com.kmkbe.core.domain.dto.ProyeksiReportDto;
 import com.kmkbe.core.domain.dto.SimulationHistDto;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.exception.BusinessException;
@@ -112,6 +113,21 @@ public final class PaginationSort {
         : new BeanWrapperImpl(dto).getPropertyValue(property), Comparator.nullsLast(values));
     return comparator.thenComparing(DistributionSubmissionDto::getFinancingHdrCode,
       Comparator.nullsLast(Comparator.naturalOrder()));
+  }
+
+  private static final Map<String, String> PROYEKSI = Map.ofEntries(
+    Map.entry("debtorName", "debtorName"), Map.entry("NamaDebitur", "debtorName"),
+    Map.entry("debtorStatus", "debtorStatus"), Map.entry("StatusDebitur", "debtorStatus"),
+    Map.entry("bouwheerName", "bouwheerName"), Map.entry("PemberiKerja", "bouwheerName"),
+    Map.entry("invoiceNo", "invoiceNo"), Map.entry("NoInvoice", "invoiceNo"),
+    Map.entry("amountInvoice", "amountInvoice"), Map.entry("NilaiInvoice", "amountInvoice"),
+    Map.entry("amountFinancing", "amountFinancing"), Map.entry("NilaiPembiayaan", "amountFinancing"),
+    Map.entry("invoiceDueDate", "invoiceDueDate"), Map.entry("JatuhTempo", "invoiceDueDate"),
+    Map.entry("effectiveDate", "effectiveDate"), Map.entry("TanggalEfektif", "effectiveDate")
+  );
+
+  public static Comparator<ProyeksiReportDto> proyeksiComparator(PaginationRequest request) {
+    return dtoComparator(request, PROYEKSI, ProyeksiReportDto::getInvoiceNo);
   }
 
   public static Sort agreements(PaginationRequest request) {

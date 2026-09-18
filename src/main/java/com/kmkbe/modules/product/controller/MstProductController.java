@@ -47,7 +47,7 @@ public class MstProductController {
   }
 
   @GetMapping("/pages")
-  public BaseResponse getPageProduct(@Valid @ParameterObject BasePaginationRequest request) throws SignatureException {
+  public BaseResponse getPageProduct(@ParameterObject BasePaginationRequest request) throws SignatureException {
     currentUserService.authenticatedInternalUser();
     return productService.pages(request);
   }

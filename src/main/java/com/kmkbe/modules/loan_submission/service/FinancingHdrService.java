@@ -581,10 +581,6 @@ public class FinancingHdrService {
 
   private Specification<Invoice> buildPaidInvoiceSpecification(PaginationRequest request) {
     return (root, query, criteriaBuilder) -> {
-      if (query != null) {
-        query.distinct(true);
-      }
-
       List<Predicate> predicates = new ArrayList<>();
       var financingDtlJoin = root.join("financingDtl", JoinType.INNER);
       var financingHdrJoin = financingDtlJoin.join("financingHdr", JoinType.INNER);
@@ -627,10 +623,6 @@ public class FinancingHdrService {
 
   private Specification<Agreement> buildDisbursementSpecification(PaginationRequest request) {
     return (root, query, criteriaBuilder) -> {
-      if (query != null) {
-        query.distinct(true);
-      }
-
       List<Predicate> predicates = new ArrayList<>();
       var financingHdrJoin = root.join("financingHdr", JoinType.LEFT);
       addDateRangePredicate(predicates, criteriaBuilder, financingHdrJoin.get("disburseDate"), request);
