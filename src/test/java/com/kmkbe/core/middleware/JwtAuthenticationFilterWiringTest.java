@@ -16,10 +16,11 @@ import static org.mockito.Mockito.mock;
 
 class JwtAuthenticationFilterWiringTest {
   @Test
-  void generatedConstructorKeepsUserDetailsQualifiers() {
-    var parameters = JwtAuthenticationFilter.class.getConstructors()[0].getParameters();
-    assertThat(parameters[3].getAnnotation(Qualifier.class).value()).isEqualTo("userDetailsService");
-    assertThat(parameters[5].getAnnotation(Qualifier.class).value()).isEqualTo("internalUserDetailService");
+  void userDetailsFieldsKeepExplicitQualifiers() throws NoSuchFieldException {
+    assertThat(JwtAuthenticationFilter.class.getDeclaredField("userDetailsService")
+      .getAnnotation(Qualifier.class).value()).isEqualTo("userDetailsService");
+    assertThat(JwtAuthenticationFilter.class.getDeclaredField("internalUserDetailsService")
+      .getAnnotation(Qualifier.class).value()).isEqualTo("internalUserDetailService");
   }
 
   @Test
