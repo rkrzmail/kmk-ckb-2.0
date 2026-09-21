@@ -624,7 +624,8 @@ public class FinancingHdrService {
   private Specification<Agreement> buildDisbursementSpecification(PaginationRequest request) {
     return (root, query, criteriaBuilder) -> {
       List<Predicate> predicates = new ArrayList<>();
-      var financingHdrJoin = root.join("financingHdr", JoinType.LEFT);
+      var financingHdrJoin = root.join("financingHdr", JoinType.INNER);
+      predicates.add(buildDisbursementStatusPredicate(criteriaBuilder, financingHdrJoin));
       addDateRangePredicate(predicates, criteriaBuilder, financingHdrJoin.get("disburseDate"), request);
 
       String searchValue = normalizeSearchValue(request);
@@ -655,6 +656,33 @@ public class FinancingHdrService {
 
       return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
     };
+  }
+
+  private Predicate buildDisbursementStatusPredicate(
+    jakarta.persistence.criteria.CriteriaBuilder criteriaBuilder,
+    jakarta.persistence.criteria.From<?, ?> financingHdrJoin
+  ) {
+    var financingStatus = criteriaBuilder.lower(financingHdrJoin.get("financingStatus"));
+    var financingStep = criteriaBuilder.lower(financingHdrJoin.get("financingStep"));
+
+    return criteriaBuilder.and(
+      criteriaBuilder.isNotNull(financingHdrJoin.get("financingStatus")),
+      criteriaBuilder.or(
+        criteriaBuilder.and(
+          criteriaBuilder.equal(financingStatus, "inprocess"),
+          criteriaBuilder.equal(financingStep, "signed")
+        ),
+        criteriaBuilder.and(
+          criteriaBuilder.equal(financingStatus, "live"),
+          financingStep.in("golive", "paid")
+        ),
+        criteriaBuilder.and(
+          criteriaBuilder.equal(financingStatus, "completed"),
+          criteriaBuilder.equal(financingStep, "refund")
+        ),
+        criteriaBuilder.not(financingStatus.in("inprocess", "live", "completed"))
+      )
+    );
   }
 
   private Predicate buildRepaymentStatusPredicate(
