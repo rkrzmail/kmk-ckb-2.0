@@ -56,8 +56,9 @@ public class MstProductService {
   public BaseResponseBuilder<PaginationResult<ProductDto>> pages(BasePaginationRequest request) {
     int pageSize = request.getPageSize() != null ? request.getPageSize() : 10;
     int pageNo = request.getPageNo() != null ? request.getPageNo() : 1;
-    String sortBy = request.getSortBy() != null && !request.getSortBy().isBlank() ? request.getSortBy() : "productId";
+    String sortBy = request.getSortBy() != null && !request.getSortBy().isBlank() ? resolveProductSortBy(request.getSortBy()) : "productId";
     String sortType = request.getSortType() != null && !request.getSortType().isBlank() ? request.getSortType() : "ASC";
+    request.setSortBy(sortBy);
     Pageable pageable = PageableUtil.createPageRequest(
       request,
       pageSize,
@@ -108,6 +109,13 @@ public class MstProductService {
         .list(page.getContent().stream().map(this::toDto).toList())
         .build()
     );
+  }
+
+  private String resolveProductSortBy(String sortBy) {
+    if ("bouwheerName".equalsIgnoreCase(sortBy)) {
+      return "bouwheer.bouwheerName";
+    }
+    return sortBy;
   }
 
   @Transactional
