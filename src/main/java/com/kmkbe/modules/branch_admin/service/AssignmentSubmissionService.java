@@ -211,6 +211,7 @@ public class AssignmentSubmissionService {
             .status(financingStatus.getStatus())
             .statusLabel(financingStatus.getLabel())
             .agreementDoc(agreementDoc)
+            .dtmCrt(e.getDtmCrt())
             .build();
         }
       });
