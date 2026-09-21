@@ -1,5 +1,7 @@
 package com.kmkbe.modules.customer.service;
 
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
@@ -8,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -16,6 +19,7 @@ public class MajorAccountRegistrationNotificationService {
 
   private final MstAppRoleFormUserRepository appRoleFormUserRepository;
   private final EmailService emailService;
+  private final BouwheerRepository bouwheerRepository;
 
   public void notifyRegistrationCompleted(Customer customer) {
     try {
@@ -34,7 +38,10 @@ public class MajorAccountRegistrationNotificationService {
         return;
       }
 
-      emailService.sendNotificationCustomerVerification(String.join(";", recipients), customer);
+      emailService.sendNotificationCustomerVerification(String.join(";", recipients), customer, bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null)
+        .map(Bouwheer::getBouwheerName)
+        .orElse(null)
+      );
     } catch (Exception exception) {
       log.error(
         "Major Account registration notification failed. customerCode={}",

@@ -1,5 +1,6 @@
 package com.kmkbe.modules.customer.service;
 
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -22,12 +24,13 @@ class MajorAccountRegistrationNotificationServiceTest {
 
   @Mock private MstAppRoleFormUserRepository appRoleFormUserRepository;
   @Mock private EmailService emailService;
+  @Mock private BouwheerRepository bouwheerRepository;
 
   private MajorAccountRegistrationNotificationService service;
 
   @BeforeEach
   void setUp() {
-    service = new MajorAccountRegistrationNotificationService(appRoleFormUserRepository, emailService);
+    service = new MajorAccountRegistrationNotificationService(appRoleFormUserRepository, emailService,bouwheerRepository);
   }
 
   @Test
@@ -43,7 +46,7 @@ class MajorAccountRegistrationNotificationServiceTest {
 
     verify(emailService).sendNotificationCustomerVerification(
       "major1@csul.co.id;major2@csul.co.id",
-      customer
+      customer,"TEST"
     );
   }
 
@@ -55,7 +58,7 @@ class MajorAccountRegistrationNotificationServiceTest {
 
     verify(emailService, never()).sendNotificationCustomerVerification(
       org.mockito.ArgumentMatchers.anyString(),
-      org.mockito.ArgumentMatchers.any(Customer.class)
+      org.mockito.ArgumentMatchers.any(Customer.class),anyString()
     );
   }
 
@@ -68,7 +71,7 @@ class MajorAccountRegistrationNotificationServiceTest {
 
     verify(emailService, never()).sendNotificationCustomerVerification(
       org.mockito.ArgumentMatchers.anyString(),
-      org.mockito.ArgumentMatchers.any(Customer.class)
+      org.mockito.ArgumentMatchers.any(Customer.class),anyString()
     );
   }
 

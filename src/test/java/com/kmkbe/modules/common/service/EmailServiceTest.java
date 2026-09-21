@@ -224,7 +224,7 @@ class EmailServiceTest {
 
     service.sendNotificationCustomerVerification(
       "major1@csul.co.id;major2@csul.co.id",
-      customer
+      customer,"TEST"
     );
 
     ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
