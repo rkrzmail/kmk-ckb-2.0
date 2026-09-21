@@ -41,7 +41,7 @@ public class Product {
   private String productCode;
 
   @JsonIgnore
-  @OneToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.LAZY)
   @JoinColumn(name = "bouwheer_code")
   private Bouwheer bouwheer;
 

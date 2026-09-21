@@ -535,19 +535,14 @@ public class FinancingHdrService {
         return null;
       }
 
-      BigDecimal paidAmount = BigDecimal.ZERO;
-      List<DisbursementLog> disbursementLog = disbursementLogRepository.findAllByAgreement(agreement);
-      if (disbursementLog != null && !disbursementLog.isEmpty() && disbursementLog.get(0).getApPaidAmt() != null) {
-        paidAmount = BigDecimal.valueOf(disbursementLog.get(0).getApPaidAmt());
-      }
-
-      Customer customer = financingHdr.getCustomer();
-      Bouwheer bouwheer = financingHdr.getBouwheer();
+      BigDecimal paidAmount = resolveDisbursementPaidAmount(agreement, errorLogs);
+      String custName = resolveDisbursementCustomerName(agreement, financingHdr, errorLogs);
+      String bouwheerName = resolveDisbursementBouwheerName(agreement, financingHdr, errorLogs);
 
       return DisburseInvoiceDto.builder()
         .agreementNo(agreement.getAgreementCode())
-        .custName(customer != null ? customer.getCustName() : "-")
-        .bouwheerName(bouwheer != null ? bouwheer.getBouwheerName() : "-")
+        .custName(custName)
+        .bouwheerName(bouwheerName)
         .disburseDate(financingHdr.getDisburseDate() != null ? Utils.fromInstant(financingHdr.getDisburseDate()) : null)
         .paidDate(financingHdr.getDisburseDate() != null ? Utils.fromInstant(financingHdr.getDisburseDate()) : null)
         .retentionRefund(BigDecimal.ZERO)
@@ -568,6 +563,53 @@ public class FinancingHdrService {
       errorLogs.add("Agreement " + agreement.getAgreementCode() + " error umum: " + ex.getMessage());
       return null;
     }
+  }
+
+  private BigDecimal resolveDisbursementPaidAmount(Agreement agreement, List<String> errorLogs) {
+    try {
+      List<DisbursementLog> disbursementLog = disbursementLogRepository.findAllByAgreement(agreement);
+      if (disbursementLog != null && !disbursementLog.isEmpty() && disbursementLog.get(0).getApPaidAmt() != null) {
+        return BigDecimal.valueOf(disbursementLog.get(0).getApPaidAmt());
+      }
+    } catch (Exception ex) {
+      errorLogs.add("Agreement " + agreement.getAgreementCode() + " gagal ambil disbursement log: " + ex.getMessage());
+    }
+
+    return BigDecimal.ZERO;
+  }
+
+  private String resolveDisbursementCustomerName(
+    Agreement agreement,
+    FinancingHdr financingHdr,
+    List<String> errorLogs
+  ) {
+    try {
+      Customer customer = financingHdr.getCustomer();
+      if (customer != null && !StringUtil.isNullOrEmpty(customer.getCustName())) {
+        return customer.getCustName();
+      }
+    } catch (EntityNotFoundException ex) {
+      errorLogs.add("Agreement " + agreement.getAgreementCode() + " customer tidak ditemukan: " + ex.getMessage());
+    }
+
+    return "-";
+  }
+
+  private String resolveDisbursementBouwheerName(
+    Agreement agreement,
+    FinancingHdr financingHdr,
+    List<String> errorLogs
+  ) {
+    try {
+      Bouwheer bouwheer = financingHdr.getBouwheer();
+      if (bouwheer != null && !StringUtil.isNullOrEmpty(bouwheer.getBouwheerName())) {
+        return bouwheer.getBouwheerName();
+      }
+    } catch (EntityNotFoundException ex) {
+      errorLogs.add("Agreement " + agreement.getAgreementCode() + " bouwheer tidak ditemukan: " + ex.getMessage());
+    }
+
+    return "-";
   }
 
   private int getZeroBasedPageNo(PaginationRequest request) {

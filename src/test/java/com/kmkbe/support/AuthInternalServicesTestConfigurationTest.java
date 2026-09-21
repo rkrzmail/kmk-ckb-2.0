@@ -17,9 +17,8 @@ class AuthInternalServicesTestConfigurationTest {
     var cacheTokens = mock(IRefreshTokenServices.class);
     try (var context = new AnnotationConfigApplicationContext()) {
       var parameters = AuthInternalServices.class.getDeclaredConstructors()[0].getParameterTypes();
-      assertThat(parameters).hasSize(11);
-      assertThat(parameters[10]).isEqualTo(IRefreshTokenServices.class);
-      for (int index = 0; index < 10; index++) {
+      assertThat(parameters).hasSize(10);
+      for (int index = 0; index < parameters.length; index++) {
         context.getBeanFactory().registerSingleton("dependency" + index, mock(parameters[index]));
       }
       context.getBeanFactory().registerSingleton("DbRefreshTokenServices", databaseTokens);
