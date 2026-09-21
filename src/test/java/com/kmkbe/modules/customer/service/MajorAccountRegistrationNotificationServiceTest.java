@@ -46,7 +46,7 @@ class MajorAccountRegistrationNotificationServiceTest {
 
     verify(emailService).sendNotificationCustomerVerification(
       "major1@csul.co.id;major2@csul.co.id",
-      customer,"TEST"
+      customer, null
     );
   }
 
