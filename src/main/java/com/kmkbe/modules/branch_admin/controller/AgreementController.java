@@ -140,6 +140,7 @@ public class AgreementController {
      * Send email to bouhweer
      */
     agreementService.sendBouwheerPaymentNotification(financingHdr);
+
     /**
      * Send email to debtor
      */

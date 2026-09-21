@@ -3,6 +3,7 @@ package com.kmkbe.modules.common.service;
 import com.kmkbe.core.annotation.LogMethod;
 import com.kmkbe.config.MailConfig;
 import com.kmkbe.core.domain.dto.MailRemoteDto;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.EmailTemplate;
 import com.kmkbe.core.domain.model.*;
@@ -283,7 +284,7 @@ public class EmailService {
   }
 
   @Async
-  public void sendNotificationCustomerVerification(String recipients, Customer customer) {
+  public void sendNotificationCustomerVerification(String recipients, Customer customer,String bouwheerName) {
     try {
       Map<String, Object> args = new HashMap<>();
       args.put("name", customer.getCustName());
@@ -291,7 +292,9 @@ public class EmailService {
       args.put("id_no", customer.getCustIdNo());
       args.put("additionalArgs", Map.of(
         "vendor_code", customer.getCustExternalCode() == null ? "-" : customer.getCustExternalCode(),
-        "customer_type", customer.getCustTypeCode() == null ? "-" : customer.getCustTypeCode()
+        "vendor_name", bouwheerName == null ? "-" : bouwheerName,
+        "customer_type", customer.getCustTypeCode() == null ? "-" : customer.getCustTypeCode(),
+        "phone", customer.getCustMobilePhone() == null ? "-" : customer.getCustMobilePhone()
       ));
 
       send(recipients, args, M_CUST_VERIFY_MJR);
