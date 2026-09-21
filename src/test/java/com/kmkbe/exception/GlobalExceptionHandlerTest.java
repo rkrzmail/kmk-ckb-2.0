@@ -34,7 +34,7 @@ class GlobalExceptionHandlerTest {
     var response = handler.handleBusinessException(new BusinessException(HttpStatus.FORBIDDEN, 5001, "Access Denied"));
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
     assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getTitle()).isEqualTo("Error Business Exception");
+    assertThat(response.getBody().getTitle()).isEqualTo("Business Error");
     assertThat(response.getBody().getCode()).isEqualTo(5001);
     assertThat(response.getBody().getMessage()).isEqualTo("Access Denied");
   }
@@ -57,7 +57,7 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getValidations()).isNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("Violates foreign key constraint");
+    assertThat(response.getBody().getMessage()).isEqualTo("Something went wrong. Please try again later.");
   }
 
   @RestController
