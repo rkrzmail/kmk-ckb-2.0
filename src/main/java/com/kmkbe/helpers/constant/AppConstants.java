@@ -9,7 +9,6 @@ public class AppConstants {
   public static final String LANG_EN = "en-ID";
   public static final String CREATOR_CONFINS = "confins";
   public static final String NEW_CUSTOMER = "new";
-  public static final String EXISTING_CUSTOMER = "exist";
 
   public static final Integer CODE_OK = 200;
   public static final Integer CODE_FAILED = 500;
