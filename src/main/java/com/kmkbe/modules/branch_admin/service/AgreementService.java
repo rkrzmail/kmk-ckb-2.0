@@ -485,7 +485,7 @@ public class AgreementService {
         customer,
         LoanDisburseEmailPayload.builder()
           .financingCode(financingHdr.getFinancingHdrCode().toString())
-          .applicationDate(DateTimeUtils.formatToDate(financingHdr.getDisburseDate()))
+          .applicationDate(DateTimeUtils.formatToDate(financingHdr.getDtmCrt()))
           .companyName(customer.getCustName())
           .phoneNumber(phoneNumber)
           .tenor(financingHdr.getTenor())

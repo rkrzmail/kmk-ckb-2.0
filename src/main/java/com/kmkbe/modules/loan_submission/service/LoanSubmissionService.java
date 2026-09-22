@@ -1007,7 +1007,7 @@ public class LoanSubmissionService {
                   financing.getMstBranch().getBranchName(),
                   LoanDisburseEmailPayload.builder()
                     .financingCode(financing.getFinancingHdrCode().toString())
-                    .applicationDate(DateTimeUtils.formatToDate(financing.getFinancingDate()))
+                    .applicationDate(DateTimeUtils.formatToDate(financing.getDtmCrt()))
                     .bouwheerName(financing.getBouwheer().getBouwheerName())
                     .companyName(financing.getCustomer().getCustName())
                     .email(financing.getCustomer().getCustEmail())
@@ -1093,7 +1093,7 @@ public class LoanSubmissionService {
               financing.getMstBranch().getBranchName(),
               LoanDisburseEmailPayload.builder()
                 .financingCode(financing.getFinancingHdrCode().toString())
-                .applicationDate(DateTimeUtils.formatToDate(financing.getFinancingDate()))
+                .applicationDate(DateTimeUtils.formatToDate(financing.getDtmCrt()))
                 .companyName(financing.getCustomer().getCustName())
                 .email(financing.getCustomer().getCustEmail())
                 .bouwheerName(financing.getBouwheer().getBouwheerName())

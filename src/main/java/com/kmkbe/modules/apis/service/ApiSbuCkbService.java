@@ -189,7 +189,6 @@ public class ApiSbuCkbService {
     Optional<Customer> customerOptional = customerRepository.findByBouwheerAndCustExternalCode(request.getBouwheerCode(), request.getVendorCode());
     if (customerOptional.isPresent()) {
       customer = customerOptional.get();
-      customer.setExistingCust(AppConstants.EXISTING_CUSTOMER);
     } else {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "Create new {}", request.getBouwheerCode());
 
@@ -211,7 +210,6 @@ public class ApiSbuCkbService {
         .usrCrt(AppConstants.CREATOR)
         .custIdTypeCode("NPWP")
         .custTypeCode("Company")
-        .existingCust(AppConstants.EXISTING_CUSTOMER)
         .dtmCrt(LocalDateTime.now())
         .build());
       /**

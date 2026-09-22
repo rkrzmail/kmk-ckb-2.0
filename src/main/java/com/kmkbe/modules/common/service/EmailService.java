@@ -391,7 +391,6 @@ public class EmailService {
       EmailTemplate template = loadTemplate(M_CUST_LOAN_SUBMITED);
       template.setMailTo(customer.getCustEmail());
 
-//            sendMailMessage(template, customer.getCustEmail());
       send(args, template);
     } catch (Exception e) {
       log.error("Error sendNotificationLoanSubmited {}", e.getMessage());
