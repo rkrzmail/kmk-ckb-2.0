@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.modules.loan_submission.request.*;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
@@ -80,11 +81,12 @@ public class LoanSubmissionController {
   }
 
   @GetMapping("/invoices")
-  public CommonResult<List<PostedInvoiceDto>> getActiveInvoices(
-    String token
+  public CommonResult<PaginationResult<PostedInvoiceDto>> getActiveInvoices(
+    String token,
+    BasePaginationRequest request
   ) throws Exception {
-    return new CommonResult<List<PostedInvoiceDto>>().success(
-      loanSubmissionService.fetchActiveInvoice(currentUserService.customer(), token)
+    return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
+      loanSubmissionService.fetchActiveInvoice(currentUserService.customer(), token, request)
     );
   }
 

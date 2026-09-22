@@ -16,8 +16,10 @@ import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
+import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
+import com.kmkbe.helpers.utils.PaginationRequests;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import com.kmkbe.modules.common.service.AuditTrailService;
@@ -57,6 +59,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 
 @Service
 @RequiredArgsConstructor
@@ -257,6 +260,84 @@ public class LoanSubmissionService {
     }
 
     return result;
+  }
+
+  public PaginationResult<PostedInvoiceDto> fetchActiveInvoice(
+    Customer customer,
+    String token,
+    BasePaginationRequest request
+  ) throws Exception {
+    var paginationRequest = PaginationRequests.from(request);
+    List<PostedInvoiceDto> invoices = fetchActiveInvoice(customer, token);
+
+    if (paginationRequest.getSearchBy() != null && paginationRequest.getSearchValue() != null) {
+      String searchBy = paginationRequest.getSearchBy();
+      String searchValue = paginationRequest.getSearchValue().toLowerCase();
+      invoices = invoices.stream()
+        .filter(invoice -> invoiceValue(invoice, searchBy).toLowerCase().contains(searchValue))
+        .toList();
+    }
+
+    Comparator<PostedInvoiceDto> comparator = invoiceComparator(paginationRequest.getSortBy());
+    if (comparator != null) {
+      if ("desc".equalsIgnoreCase(paginationRequest.getSortType())) {
+        comparator = comparator.reversed();
+      }
+      invoices = invoices.stream().sorted(comparator).toList();
+    }
+
+    int pageNo = paginationRequest.getPageNo() != null && paginationRequest.getPageNo() > 0 ? paginationRequest.getPageNo() : 1;
+    int pageSize = paginationRequest.getPageSize() != null ? paginationRequest.getPageSize() : 10;
+    int totalData = invoices.size();
+    int totalPage = (int) Math.ceil((double) totalData / pageSize);
+    int fromIndex = Math.min((pageNo - 1) * pageSize, totalData);
+    int toIndex = Math.min(fromIndex + pageSize, totalData);
+
+    return PaginationResult.<PostedInvoiceDto>builder()
+      .currentPage(pageNo)
+      .totalData((long) totalData)
+      .totalPage(totalPage)
+      .list(invoices.subList(fromIndex, toIndex))
+      .build();
+  }
+
+  private Comparator<PostedInvoiceDto> invoiceComparator(String sortBy) {
+    if (StringUtil.isNullOrEmpty(sortBy)) {
+      return null;
+    }
+
+    return switch (sortBy) {
+      case "customerInvoiceNo", "custInvNo" -> stringComparator(PostedInvoiceDto::getCustomerInvoiceNo);
+      case "bouwheerInvoiceNo" -> stringComparator(PostedInvoiceDto::getBouwheerInvoiceNo);
+      case "poNumber" -> stringComparator(PostedInvoiceDto::getPoNumber);
+      case "invoiceDescription" -> stringComparator(PostedInvoiceDto::getInvoiceDescription);
+      case "bouwheerName" -> stringComparator(PostedInvoiceDto::getBouwheerName);
+      case "invoiceDate" -> Comparator.comparing(PostedInvoiceDto::getInvoiceDate, Comparator.nullsLast(Date::compareTo));
+      case "invoiceDueDate" -> Comparator.comparing(PostedInvoiceDto::getInvoiceDueDate, Comparator.nullsLast(Date::compareTo));
+      case "postingDate" -> Comparator.comparing(PostedInvoiceDto::getPostingDate, Comparator.nullsLast(Date::compareTo));
+      case "invoiceAmount" -> Comparator.comparing(PostedInvoiceDto::getInvoiceAmount, Comparator.nullsLast(BigDecimal::compareTo));
+      default -> null;
+    };
+  }
+
+  private Comparator<PostedInvoiceDto> stringComparator(Function<PostedInvoiceDto, String> extractor) {
+    return Comparator.comparing(extractor, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+  }
+
+  private String invoiceValue(PostedInvoiceDto invoice, String searchBy) {
+    Object value = switch (searchBy) {
+      case "customerInvoiceNo", "custInvNo" -> invoice.getCustomerInvoiceNo();
+      case "bouwheerInvoiceNo" -> invoice.getBouwheerInvoiceNo();
+      case "poNumber" -> invoice.getPoNumber();
+      case "invoiceDescription" -> invoice.getInvoiceDescription();
+      case "bouwheerName" -> invoice.getBouwheerName();
+      case "invoiceDate" -> invoice.getInvoiceDate();
+      case "invoiceDueDate" -> invoice.getInvoiceDueDate();
+      case "postingDate" -> invoice.getPostingDate();
+      case "invoiceAmount" -> invoice.getInvoiceAmount();
+      default -> null;
+    };
+    return value == null ? "" : value.toString();
   }
 
   public List<DisbursePercentageDto> fetchDisbursePercentage(String bowheerCode) {
