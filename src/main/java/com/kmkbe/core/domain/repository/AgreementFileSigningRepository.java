@@ -17,7 +17,7 @@ public interface AgreementFileSigningRepository extends JpaRepository<AgreementF
 
   List<AgreementFileSigning> findByAgreementCode(String agreementCode);
 
-  @Query("SELECT a FROM AgreementFileSigning a WHERE a.signer = :signer AND a.file_type_code='E_SIGN_DOC'")
+  @Query("SELECT a FROM AgreementFileSigning a WHERE a.signer = :signer AND a.fileTypeCode='E_SIGN_DOC'")
   List<AgreementFileSigning> findByKaryawan(@Param("signer") String signerName);
 
   long countBySigner(String signerName);
