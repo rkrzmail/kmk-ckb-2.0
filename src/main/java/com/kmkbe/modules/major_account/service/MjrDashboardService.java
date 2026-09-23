@@ -41,7 +41,18 @@ public class MjrDashboardService {
                                               WHEN lower(financing_status) = 'inprocess'
                                                   and (lower(financing_step) = 'signing' or lower(financing_step) = 'signed')
                                                   THEN 1 END)                                    AS total_signing,
-                                    COUNT(CASE WHEN lower(financing_status) = 'live' THEN 1 END) AS total_live
+                                    COUNT(CASE
+                                              WHEN lower(financing_status) = 'live'
+                                                  and lower(financing_step) = 'golive'
+                                                  THEN 1 END)                                    AS total_live,
+                                    COUNT(CASE
+                                              WHEN lower(financing_status) = 'live'
+                                                  and lower(financing_step) = 'paid'
+                                                  THEN 1 END)                                    AS total_paid,
+                                    COUNT(CASE
+                                              WHEN lower(financing_status) = 'completed'
+                                                  and lower(financing_step) = 'refund'
+                                                  THEN 1 END)                                    AS total_completed
                                 FROM
                                     public.financing_hdr
                                 WHERE
@@ -56,36 +67,22 @@ public class MjrDashboardService {
                 coalesce(counting.total_inprocess, 0) as total_inprocess,
                 coalesce(counting.total_signing, 0) as total_signing,
                 coalesce(counting.total_live, 0) as total_live,
+                coalesce(counting.total_paid, 0) as total_paid,
+                coalesce(counting.total_completed, 0) as total_completed,
                 (
                     coalesce(counting.total_new, 0)
                         + coalesce(counting.total_assignment, 0)
                         + coalesce(counting.total_inprocess, 0)
                         + coalesce(counting.total_signing, 0)
                         + coalesce(counting.total_live, 0)
+                        + coalesce(counting.total_paid, 0)
+                        + coalesce(counting.total_completed, 0)
                     ) as total_all
             from
                 users.branch bch
                     left join counting on bch.branch_code::text = counting.branch_code::text
                     WHERE bch.business_unit = 'CBU'
                     ;
-            """;
-
-    private static final String DASHBOARD_TOTAL_SQL = """
-            SELECT COUNT(*) as count_total
-
-
-            from
-                financing_hdr fh
-            where
-                fh.financing_status is not null and
-                fh.financing_step is not null and
-                fh.financing_status != '' and
-                fh.financing_step  != ''
-
-                and
-
-                dtm_crt::date BETWEEN :startDate AND :endDate ;
-
             """;
 
     private final EntityManager entityManager;
@@ -97,9 +94,8 @@ public class MjrDashboardService {
         try {
             DateRange dateRange = resolveDateRange(request);
             List<MjrAccDashboardDto.Chart> charts = fetchChartData(dateRange);
-            Long totalAll = fetchTotalAll(dateRange);
 
-            return buildDashboard(dateRange, charts, totalAll);
+            return buildDashboard(dateRange, charts);
         } catch (Exception e) {
             log.error("calculateBranchProgress, error {}", e.getMessage());
             throw e;
@@ -108,8 +104,7 @@ public class MjrDashboardService {
 
     MjrAccDashboardDto buildDashboard(
             DateRange dateRange,
-            List<MjrAccDashboardDto.Chart> charts,
-            Long totalAll
+            List<MjrAccDashboardDto.Chart> charts
     ) {
         List<String> chartLabel = new ArrayList<>();
         List<Long> chartNew = new ArrayList<>();
@@ -117,6 +112,8 @@ public class MjrDashboardService {
         List<Long> chartInProcess = new ArrayList<>();
         List<Long> chartSigning = new ArrayList<>();
         List<Long> chartLive = new ArrayList<>();
+        List<Long> chartPaid = new ArrayList<>();
+        List<Long> chartCompleted = new ArrayList<>();
 
         for (MjrAccDashboardDto.Chart chart : charts) {
             chartLabel.add(chart.getBranchName());
@@ -125,10 +122,12 @@ public class MjrDashboardService {
             chartInProcess.add(chart.getTotalInProcess());
             chartSigning.add(chart.getTotalSigning());
             chartLive.add(chart.getTotalLive());
+            chartPaid.add(chart.getTotalPaid());
+            chartCompleted.add(chart.getTotalCompleted());
         }
 
         MjrAccDashboardDto result = new MjrAccDashboardDto();
-        result.setTotalAll(totalAll);
+        result.setTotalAll(charts.stream().mapToLong(this::totalChart).sum());
         result.setStartDate(dateRange.startDate());
         result.setEndDate(dateRange.endDate());
         result.setChartLabel(chartLabel);
@@ -137,6 +136,8 @@ public class MjrDashboardService {
         result.setChartInProcess(chartInProcess);
         result.setChartSigning(chartSigning);
         result.setChartLive(chartLive);
+        result.setChartPaid(chartPaid);
+        result.setChartCompleted(chartCompleted);
         return result;
     }
 
@@ -166,18 +167,6 @@ public class MjrDashboardService {
                 .toList();
     }
 
-    private Long fetchTotalAll(DateRange dateRange) {
-        Query query = entityManager.createNativeQuery(DASHBOARD_TOTAL_SQL);
-        setDateRangeParameters(query, dateRange);
-
-        List<?> rows = query.getResultList();
-        return rows
-                .stream()
-                .findFirst()
-                .map(value -> toLong(value))
-                .orElse(0L);
-    }
-
     private void setDateRangeParameters(Query query, DateRange dateRange) {
         query.setParameter("startDate", DateTimeUtils.SDF_STANDARD_DATE.format(dateRange.startDate()));
         query.setParameter("endDate", DateTimeUtils.SDF_STANDARD_DATE.format(dateRange.endDate()));
@@ -192,7 +181,19 @@ public class MjrDashboardService {
         chart.setTotalInProcess(toLong(objects[4]));
         chart.setTotalSigning(toLong(objects[5]));
         chart.setTotalLive(toLong(objects[6]));
+        chart.setTotalPaid(toLong(objects[7]));
+        chart.setTotalCompleted(toLong(objects[8]));
         return chart;
+    }
+
+    private long totalChart(MjrAccDashboardDto.Chart chart) {
+        return chart.getTotalNew()
+                + chart.getTotalAssignment()
+                + chart.getTotalInProcess()
+                + chart.getTotalSigning()
+                + chart.getTotalLive()
+                + chart.getTotalPaid()
+                + chart.getTotalCompleted();
     }
 
     private Long toLong(Object value) {

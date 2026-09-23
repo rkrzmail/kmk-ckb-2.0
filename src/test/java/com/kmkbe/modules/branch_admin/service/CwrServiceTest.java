@@ -41,8 +41,7 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class CwrServiceTest {
@@ -181,7 +180,7 @@ class CwrServiceTest {
   }
 
   @Test
-  void inquiryCwrReturnsRemoteDataAndWrapsEmptyOrRemoteErrorAsCommonInvalidException() throws Exception {
+  void inquiryCwrReturnsRemoteDataWrapsEmptyAndPropagatesRemoteError() throws Exception {
     when(cwrRepository.findTopByCwrCode("CWR001")).thenReturn(Optional.empty());
     when(cwrRemoteService.inquiryCwr(any(InquiryCwrRemoteRequest.class))).thenReturn(remoteCwrResponse(List.of(remoteCwr("CWR001"))));
 
@@ -199,12 +198,12 @@ class CwrServiceTest {
 
     when(cwrRemoteService.inquiryCwr(any(InquiryCwrRemoteRequest.class))).thenThrow(new RuntimeException("remote down"));
     assertThatThrownBy(() -> service.inquiryCwr("ERROR"))
-        .isInstanceOf(CommonInvalidException.class)
-        .hasMessage("Harap input CWR aktif di Confins terlebih dahulu");
+        .isInstanceOf(RuntimeException.class)
+        .hasMessage("remote down");
   }
 
   @Test
-  void createInquiryCwrPersistsRemoteRowsAndThrowsInvalidReferences() throws Exception {
+  void createInquiryCwrPersistsRemoteRowsAndSwallowsRemoteFailures() throws Exception {
     Customer customer = customer();
     Bouwheer bouwheer = bouwheer();
     FinancingHdr financingHdr = financingHdr(customer, bouwheer);
@@ -223,35 +222,35 @@ class CwrServiceTest {
     assertThat(cwrCaptor.getValue().getCustomer()).isSameAs(customer);
 
     when(cwrRemoteService.inquiryCwr(any(InquiryCwrRemoteRequest.class))).thenThrow(new RuntimeException("remote down"));
-    assertThatThrownBy(() -> service.createInquiryCwr(MstUser.builder().username("maker").build(), createRequest("REMOTE")))
-        .isInstanceOf(CommonInvalidException.class)
-        .hasMessage("Harap input CWR aktif di Confins terlebih dahulu");
+    service.createInquiryCwr(MstUser.builder().username("maker").build(), createRequest("REMOTE"));
+    verify(cwrRepository, times(1)).save(any(Cwr.class));
   }
 
   @Test
-  void createInquiryCwrThrowsForMissingFinancingBouwheerCustomerAndDoesNothingWhenRemoteEmpty() throws Exception {
+  void createInquiryCwrSwallowsInvalidReferencesAndDoesNothingWhenRemoteEmpty() throws Exception {
     when(cwrRepository.findTopByCwrCode(any())).thenReturn(Optional.empty());
-    when(cwrRemoteService.inquiryCwr(any(InquiryCwrRemoteRequest.class))).thenReturn(remoteCwrResponse(List.of()));
+
+    when(cwrRemoteService.inquiryCwr(any(InquiryCwrRemoteRequest.class))).thenReturn(remoteCwrResponse(List.of(remoteCwr("CWR001"))));
     when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.empty());
+    service.createInquiryCwr(MstUser.builder().username("maker").build(), createRequest("CWR001"));
+    verify(cwrRepository, never()).save(any(Cwr.class));
 
-    assertThatThrownBy(() -> service.createInquiryCwr(MstUser.builder().username("maker").build(), createRequest("CWR001")))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Financing not found or not valid");
-
+    clearInvocations(cwrRepository);
     FinancingHdr noBouwheer = financingHdr(customer(), null);
     when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(noBouwheer));
-    assertThatThrownBy(() -> service.createInquiryCwr(MstUser.builder().username("maker").build(), createRequest("CWR002")))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Bouwheer not found or not valid");
+    service.createInquiryCwr(MstUser.builder().username("maker").build(), createRequest("CWR002"));
+    verify(cwrRepository, never()).save(any(Cwr.class));
 
+    clearInvocations(cwrRepository);
     FinancingHdr noCustomer = financingHdr(null, bouwheer());
     when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(noCustomer));
-    assertThatThrownBy(() -> service.createInquiryCwr(MstUser.builder().username("maker").build(), createRequest("CWR003")))
-        .isInstanceOf(IllegalStateException.class)
-        .hasMessage("Customer not found or not valid");
+    service.createInquiryCwr(MstUser.builder().username("maker").build(), createRequest("CWR003"));
+    verify(cwrRepository, never()).save(any(Cwr.class));
 
-    when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr(customer(), bouwheer())));
+    clearInvocations(cwrRepository);
+    when(cwrRemoteService.inquiryCwr(any(InquiryCwrRemoteRequest.class))).thenReturn(remoteCwrResponse(List.of()));
     service.createInquiryCwr(MstUser.builder().username("maker").build(), createRequest("EMPTY"));
+    verify(cwrRepository, never()).save(any(Cwr.class));
   }
 
   @Test

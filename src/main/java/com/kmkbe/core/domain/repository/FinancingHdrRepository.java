@@ -153,6 +153,60 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
   )
   List<FinancingHdr> findAllByRaw();
 
+  @Query(
+    value = """
+      select fh.*
+      from public.financing_hdr fh
+      where nullif(fh.financing_status, '') is not null
+        and nullif(fh.financing_step, '') is not null
+      order by fh.dtm_crt desc
+      """,
+    nativeQuery = true
+  )
+  List<FinancingHdr> findAllForDistribution();
+
+  @Query(
+    value = """
+      select
+        fh.financing_hdr_code::text as financingHdrCode,
+        fh.cust_code::text as custCode,
+        fh.bouwheer_code::text as bouwheerCode,
+        fh.branch_code as branchCode,
+        (c.cust_code is null) as customerMissing,
+        (bw.bouwheer_code is null) as bouwheerMissing,
+        (mb.branch_code is null) as branchMissing
+      from public.financing_hdr fh
+      left join public.customer c on c.cust_code = fh.cust_code
+      left join public.bouwheer bw on bw.bouwheer_code = fh.bouwheer_code
+      left join users.mst_branch mb on mb.branch_code = fh.branch_code
+      where nullif(fh.financing_status, '') is not null
+        and nullif(fh.financing_step, '') is not null
+        and (cast(:startDate as date) is null or fh.dtm_crt::date >= cast(:startDate as date))
+        and (cast(:endDate as date) is null or fh.dtm_crt::date <= cast(:endDate as date))
+        and (
+          c.cust_code is null
+          or bw.bouwheer_code is null
+          or mb.branch_code is null
+        )
+      order by fh.dtm_crt desc
+      """,
+    nativeQuery = true
+  )
+  List<DistributionReferenceIssue> findDistributionReferenceIssues(
+    @Param("startDate") String startDate,
+    @Param("endDate") String endDate
+  );
+
+  interface DistributionReferenceIssue {
+    String getFinancingHdrCode();
+    String getCustCode();
+    String getBouwheerCode();
+    String getBranchCode();
+    Boolean getCustomerMissing();
+    Boolean getBouwheerMissing();
+    Boolean getBranchMissing();
+  }
+
 
   @Query(
     value = """
