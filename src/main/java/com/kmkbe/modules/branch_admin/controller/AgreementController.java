@@ -7,13 +7,13 @@ import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
-import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.branch_admin.request.CreateInquiryAgreementRequest;
+import com.kmkbe.modules.branch_admin.service.AgreementFileSigningService;
 import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.remote.request.UpdateFinancingStatusRequest;
@@ -45,6 +45,7 @@ public class AgreementController {
   private final FinancingHdrService financingHdrService;
   private final FinancingHdrRepository financingHdrRepository;
   private final CurrentUserService currentUserService;
+  private final AgreementFileSigningService agreementFileSigningService;
 
   @GetMapping("/list/{cwrCode}/{financingHdrCode}")
   public CommonResult<PaginationResult<AgreementDto>> getCwrDisbursement(
@@ -123,18 +124,28 @@ public class AgreementController {
       .vendorCode(financingHdr.getCustomer().getCustExternalCode())
       .build();
 
-    boolean bypass = true;
-    if (!bypass) {
-      financingRemoteService.updateFinancingStatus(
-        updateFinancingStatusRequest
-      );
-    }
+    // Update financing status
+    financingRemoteService.updateFinancingStatus(
+      updateFinancingStatusRequest
+    );
 
     financingHdr.setFinancingStatus(financingHdr.getFinancingStatus().equalsIgnoreCase("LIVE")?financingHdr.getFinancingStatus():"INPROCESS");
     financingHdr.setFinancingStep(financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")?financingHdr.getFinancingStep():"SIGNED");
     financingHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
     financingHdr.setDtmUpd(LocalDateTime.now());
     financingHdrRepository.save(financingHdr);
+
+    /**
+     * Save Agreement Signing Manual
+     */
+
+    agreementFileSigningService.saveSigningResult(
+      agreement.getAgreementCode(),
+      "-",
+      currentUserService.internalUsername(),
+      financingHdrCode,
+      "SIGN_DOC"
+    );
 
     /**
      * Send email to bouhweer

@@ -1,7 +1,6 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.constant.AuditAction;
-import com.kmkbe.core.domain.dto.AgreementFileSigningDto;
 import com.kmkbe.core.domain.entity.AgreementFileSigning;
 import com.kmkbe.core.domain.entity.Debtor;
 import com.kmkbe.core.domain.entity.FinancingHdr;
@@ -14,9 +13,9 @@ import com.kmkbe.core.domain.repository.NotifDebtorRepository;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.constant.AppConstants;
-import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -24,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class AgreementFileSigningService {
@@ -36,32 +36,33 @@ public class AgreementFileSigningService {
   private final CurrentUserService currentUserService;
   private final AgreementFileSigningMapper agreementFileSigningMapper = AgreementFileSigningMapper.INSTANCE;
 
-  public AgreementFileSigningDto saveSigningResult(
+  public void saveSigningResult(
     String agreementCode,
     String documentId,
     String username,
-    String financingHdrCode
+    String financingHdrCode,
+    String fileTypeCode
   ) {
     String debtorName = financingHdrRepository.findDebtorNameByFinancingHdrCode(UUID.fromString(financingHdrCode));
     List<Debtor> signerList = debtorRepository.findActiveSignerByDebtorName(debtorName);
 
-    Debtor debtor;
     if (signerList.isEmpty()) {
-      throw new RuntimeException("Tidak ada data signer active dari financingHdr = " + financingHdrCode);
-    } else {
-      debtor = signerList.get(0);
+      log.error("Signer list is Empty");
+      throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND,"Tidak ada data signer active dari financingHdr = " + financingHdrCode);
     }
 
+    Debtor debtor = signerList.getFirst();
     List<AgreementFileSigning> existingList = agreementFileSigningRepository.findByAgreementCode(agreementCode);
-
     AgreementFileSigning entity;
     if (!existingList.isEmpty()) {
-      entity = existingList.get(0);
+      log.info("Get Signer List");
+      entity = existingList.getFirst();
       AgreementFileSigningAuditData before = toAuditData(entity);
-
       if (existingList.size() > 1) {
+        log.info("Delete Signer list");
         agreementFileSigningRepository.deleteAll(existingList.subList(1, existingList.size()));
       }
+
       entity.setStamp("Not Signed");
       entity.setSigner(debtor.getKaryawanName());
       entity.setEmailSigner(debtor.getEmail());
@@ -70,24 +71,30 @@ public class AgreementFileSigningService {
       entity.setFinancingHdrCode(financingHdrCode);
       entity.setUsrUpd(username);
       entity.setDtmUpd(LocalDateTime.now());
-
       AgreementFileSigning saveDoc = agreementFileSigningRepository.save(entity);
+
+      log.info("Save Audit Trail !");
       auditTrailService.record("AGREEMENT_SIGNING", AuditAction.UPDATE, "AgreementFileSigning", saveDoc.getAgreementFileId(), before, toAuditData(saveDoc));
 
+      log.info("Update financing Step");
       updateFinancingStep(financingHdrCode);
+
+      log.info("Create signing notification !");
       createSigningNotification(financingHdrCode, username, debtor);
-      return agreementFileSigningMapper.entityToDto(saveDoc);
+      agreementFileSigningMapper.entityToDto(saveDoc);
+      return;
     } else {
       entity = AgreementFileSigning.builder()
         .agreementCode(agreementCode)
-        .fileTypeCode("E_SIGN_DOC")
+        .fileTypeCode(fileTypeCode)
         .fileName("PERJANJIAN_1A_" + agreementCode + ".pdf")
         .usrCrt(username)
         .dtmCrt(LocalDateTime.now())
         .build();
     }
 
-    entity.setStamp("Not Signed");
+    entity.setStamp(fileTypeCode.equals("E_SIGN_DOC") ? "Not Signed" : "Signed");
+    entity.setVerifDate(fileTypeCode.equals("E_SIGN_DOC") ? null : LocalDateTime.now());
     entity.setSigner(debtor.getKaryawanName());
     entity.setEmailSigner(debtor.getEmail());
     entity.setIdentityNo(debtor.getIdentityNo());
@@ -95,14 +102,17 @@ public class AgreementFileSigningService {
     entity.setFinancingHdrCode(financingHdrCode);
     entity.setUsrUpd(username);
     entity.setDtmUpd(LocalDateTime.now());
-
     AgreementFileSigning saveDoc = agreementFileSigningRepository.save(entity);
+
+    log.info("Save Audit Trail !");
     auditTrailService.record("AGREEMENT_SIGNING", AuditAction.CREATE, "AgreementFileSigning", saveDoc.getAgreementFileId(), null, toAuditData(saveDoc));
 
+    log.info("Update financing Step");
     updateFinancingStep(financingHdrCode);
+    log.info("Create signing notification !");
     createSigningNotification(financingHdrCode, username, debtor);
 
-    return agreementFileSigningMapper.entityToDto(saveDoc);
+    agreementFileSigningMapper.entityToDto(saveDoc);
   }
 
   private void updateFinancingStep(String financingHdrCode) {
@@ -113,6 +123,8 @@ public class AgreementFileSigningService {
         finHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
         finHdr.setDtmUpd(LocalDateTime.now());
         FinancingHdr saved = financingHdrRepository.save(finHdr);
+
+        log.info("Save Audit Trail !");
         auditTrailService.record("AGREEMENT_SIGNING", AuditAction.UPDATE, "FinancingHdr", saved.getFinancingHdrCode(), before, toFinancingStepAuditData(saved));
       });
   }

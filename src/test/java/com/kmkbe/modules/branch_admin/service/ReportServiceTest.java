@@ -646,7 +646,7 @@ class ReportServiceTest {
 
     assertThat(result.isSuccess()).isTrue();
     assertThat(result.getDocumentId()).isEqualTo("DOC001");
-    verify(agreementFileSigningService).saveSigningResult("AGR001", "DOC001", "maker", FINANCING_HDR_CODE.toString());
+    verify(agreementFileSigningService).saveSigningResult("AGR001", "DOC001", "maker", FINANCING_HDR_CODE.toString(),"E_SIGN_DOC");
     ArgumentCaptor<ExternalSigningRequest> captor = ArgumentCaptor.forClass(ExternalSigningRequest.class);
     verify(signingClient).sendDocumentSigning(captor.capture());
     assertThat(captor.getValue().getAudit().getCallerId()).isEqualTo("maker");

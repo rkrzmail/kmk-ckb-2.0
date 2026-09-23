@@ -1066,14 +1066,15 @@ public class ReportService {
       if (esignResponse.getStatus().getCode() == 0) {
         agreementFileSigningService.saveSigningResult(
           agreementCode,
-          esignResponse.getDocuments().get(0).getDocumentId(),
+          esignResponse.getDocuments().getFirst().getDocumentId(),
           username,
-          financingHdrCode
+          financingHdrCode,
+          "E_SIGN_DOC"
         );
 
         return SigningResponse.builder()
           .success(true)
-          .documentId(esignResponse.getDocuments().get(0).getDocumentId())
+          .documentId(esignResponse.getDocuments().getFirst().getDocumentId())
           .message("Document sent for signing successfully")
           .build();
       } else {

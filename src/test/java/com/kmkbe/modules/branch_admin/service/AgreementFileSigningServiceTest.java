@@ -66,7 +66,7 @@ class AgreementFileSigningServiceTest {
         when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(financingHdrRepository.findByFinancingHdrCode(financingHdrCode)).thenReturn(Optional.of(financingHdr));
 
-        service.saveSigningResult(agreementCode, documentId, username, financingHdrCode.toString());
+        service.saveSigningResult(agreementCode, documentId, username, financingHdrCode.toString(),"E_SIGN_DOC");
 
         ArgumentCaptor<AgreementFileSigning> signingCaptor = ArgumentCaptor.forClass(AgreementFileSigning.class);
         verify(signingRepository).save(signingCaptor.capture());
@@ -137,7 +137,7 @@ class AgreementFileSigningServiceTest {
         when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(financingHdrRepository.findByFinancingHdrCode(financingHdrCode)).thenReturn(Optional.of(financingHdr));
 
-        service.saveSigningResult(agreementCode, documentId, username, financingHdrCode.toString());
+        service.saveSigningResult(agreementCode, documentId, username, financingHdrCode.toString(),"E_SIGN_DOC");
 
         verify(signingRepository).deleteAll(List.of(duplicate));
         verify(signingRepository).save(existing);
@@ -189,7 +189,7 @@ class AgreementFileSigningServiceTest {
         when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(financingHdrRepository.findByFinancingHdrCode(financingHdrCode)).thenReturn(Optional.of(financingHdr));
 
-        service.saveSigningResult(agreementCode, documentId, username, financingHdrCode.toString());
+        service.saveSigningResult(agreementCode, documentId, username, financingHdrCode.toString(),"E_SIGN_DOC");
 
         verify(signingRepository, never()).deleteAll(any());
         assertThat(existing.getDocumentId()).isEqualTo(documentId);
@@ -214,7 +214,7 @@ class AgreementFileSigningServiceTest {
         when(financingHdrRepository.findDebtorNameByFinancingHdrCode(financingHdrCode)).thenReturn("Debtor Name");
         when(debtorRepository.findActiveSignerByDebtorName("Debtor Name")).thenReturn(List.of());
 
-        assertThatThrownBy(() -> service.saveSigningResult("AGR003", "DOC003", "maker", financingHdrCode.toString()))
+        assertThatThrownBy(() -> service.saveSigningResult("AGR003", "DOC003", "maker", financingHdrCode.toString(),"E_SIGN_DOC"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("Tidak ada data signer active dari financingHdr = " + financingHdrCode);
         verify(signingRepository, never()).save(any(AgreementFileSigning.class));
@@ -247,7 +247,7 @@ class AgreementFileSigningServiceTest {
         when(signingRepository.save(any(AgreementFileSigning.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(financingHdrRepository.findByFinancingHdrCode(financingHdrCode)).thenReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.saveSigningResult("AGR004", "DOC004", "maker", financingHdrCode.toString()))
+        assertThatThrownBy(() -> service.saveSigningResult("AGR004", "DOC004", "maker", financingHdrCode.toString(),"E_SIGN_DOC"))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessage("FinancingHdr dengan code " + financingHdrCode + " tidak ditemukan");
         verify(notifDebtorRepository, never()).save(any(NotifDebtor.class));
