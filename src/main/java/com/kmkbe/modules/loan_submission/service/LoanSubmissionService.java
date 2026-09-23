@@ -446,6 +446,16 @@ public class LoanSubmissionService {
       final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
       final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
 
+      // Update custoemr existing
+      Optional<Customer>customerOptional = customerRepository.findByCustCode(customer.getCustCode());
+      if(customerOptional.isPresent()){
+        log.info("Update customer existing customer {} ",isCustomerExisting);
+
+        customer.setExistingCust(isCustomerExisting?AppConstants.NEW_CUSTOMER:AppConstants.EXIT_CUSTOMER);
+        customer.setDtmUpd(LocalDateTime.now());
+        customerRepository.save(customer);
+      }
+
       return EstimatedDisburseDto.builder()
         .productId(product.getProductId())
         .financingAmount(ntfResult.setScale(0, RoundingMode.HALF_UP)) //yng diajukan
