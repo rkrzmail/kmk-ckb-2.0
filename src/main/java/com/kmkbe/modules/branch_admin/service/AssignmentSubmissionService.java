@@ -149,13 +149,6 @@ public class AssignmentSubmissionService {
             return null;
           }
 
-          boolean isNewCust = financingHdrRepository
-            .countByCustomerAndFinancingStatus(
-              e.getCustomer(),
-              "PAID"
-            ) == 0;
-
-
           MappedFinancingStatus financingStatus;
           if (roleCode.equalsIgnoreCase("account_officer")) {
             financingStatus = new MappedFinancingStatus(
@@ -207,7 +200,7 @@ public class AssignmentSubmissionService {
               .orElse(null))
             .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
             .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
-            .custStatus(isNewCust ? "New Customer" : "Existing Customer")
+            .custStatus(e.getCustomer().getExistingCust())
             .status(financingStatus.getStatus())
             .statusLabel(financingStatus.getLabel())
             .agreementDoc(agreementDoc)

@@ -429,7 +429,6 @@ public class CustomerService {
 
     Specification<Customer> spec = (root, query, builder) -> {
       List<Predicate> predicates = new ArrayList<>();
-      predicates.add(builder.isTrue(root.get("isEmailValid")));
       if ("bouwheer".equals(finalSearchBy) && finalBouwheerCodes != null && !finalBouwheerCodes.isEmpty()) {
         predicates.add(root.get("bouwheer").in(finalBouwheerCodes));
       }
