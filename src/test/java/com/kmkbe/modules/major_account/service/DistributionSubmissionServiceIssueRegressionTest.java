@@ -13,6 +13,7 @@ import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
+import com.kmkbe.modules.major_account.request.DistributionSubmissionListRequest;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,13 +23,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.verifyNoInteractions;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class DistributionSubmissionServiceIssueRegressionTest {
@@ -56,6 +57,7 @@ class DistributionSubmissionServiceIssueRegressionTest {
       currentUserService,
       auditTrailService
     );
+    lenient().when(financingHdrRepository.findDistributionReferenceIssues(null, null)).thenReturn(List.of());
   }
 
   @Test
@@ -63,7 +65,7 @@ class DistributionSubmissionServiceIssueRegressionTest {
     var a = row("A", "Vendor A", 10D, LocalDateTime.of(2026, 9, 10, 8, 0));
     var b = row("B", "Vendor B", 2D, LocalDateTime.of(2026, 9, 11, 8, 0));
     var c = row("C", "Other", 100D, LocalDateTime.of(2026, 9, 12, 8, 0));
-    when(financingHdrRepository.findAllByRaw()).thenReturn(List.of(c, a, b));
+    when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(c, a, b));
     var request = new PaginationRequest();
     request.setSortBy("financingAmount");
     request.setSortType("asc");
@@ -89,10 +91,55 @@ class DistributionSubmissionServiceIssueRegressionTest {
 
   @Test
   void noSortingKeepsRepositoryOrder() {
-    when(financingHdrRepository.findAllByRaw()).thenReturn(List.of(
+    when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(
       row("B", "Second", 2D, null), row("A", "First", 1D, null)));
     assertThat(service.submissionDistribution(new PaginationRequest()).getList())
       .extracting(DistributionSubmissionDto::getCustName).containsExactly("Second", "First");
+  }
+
+  @Test
+  void filtersSubmissionsUsingDashboardDateRangeBeforePagination() {
+    when(financingHdrRepository.findDistributionReferenceIssues("2026-08-01", "2026-08-31"))
+      .thenReturn(List.of());
+    when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(
+      row("before", "Before", 1D, LocalDateTime.of(2026, 7, 31, 23, 59)),
+      row("inside", "Inside", 2D, LocalDateTime.of(2026, 8, 15, 8, 0)),
+      row("after", "After", 3D, LocalDateTime.of(2026, 9, 1, 0, 0))
+    ));
+    var request = new DistributionSubmissionListRequest();
+    request.setPageNo(1);
+    request.setPageSize(10);
+    request.setStartDate(LocalDate.of(2026, 8, 1));
+    request.setEndDate(LocalDate.of(2026, 8, 31));
+
+    var result = service.submissionDistribution(request);
+
+    assertThat(result.getList())
+      .extracting(DistributionSubmissionDto::getCustName)
+      .containsExactly("Inside");
+    assertThat(result.getTotalData()).isEqualTo(1);
+  }
+
+  @Test
+  void failsWithClearMessageWhenDistributionReferenceDataIsIncomplete() {
+    var issue = mock(FinancingHdrRepository.DistributionReferenceIssue.class);
+    when(issue.getFinancingHdrCode()).thenReturn("lead-001");
+    when(issue.getCustomerMissing()).thenReturn(true);
+    when(issue.getBouwheerMissing()).thenReturn(false);
+    when(issue.getBranchMissing()).thenReturn(true);
+    when(financingHdrRepository.findDistributionReferenceIssues("2026-08-01", "2026-08-31"))
+      .thenReturn(List.of(issue));
+
+    var request = new DistributionSubmissionListRequest();
+    request.setStartDate(LocalDate.of(2026, 8, 1));
+    request.setEndDate(LocalDate.of(2026, 8, 31));
+
+    assertThatThrownBy(() -> service.submissionDistribution(request))
+      .isInstanceOf(com.kmkbe.exception.BusinessException.class)
+      .hasMessageContaining("Data pengajuan tidak lengkap")
+      .hasMessageContaining("customer, branch")
+      .hasMessageContaining("lead-001");
+    verify(financingHdrRepository, never()).findAllForDistribution();
   }
 
   @Test
@@ -147,7 +194,7 @@ class DistributionSubmissionServiceIssueRegressionTest {
     financingHdr.setFinancingAmt(1_000_000D);
     financingHdr.setDtmCrt(LocalDateTime.now());
 
-    when(financingHdrRepository.findAllByRaw()).thenReturn(List.of(financingHdr));
+    when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(financingHdr));
 
     PaginationResult<DistributionSubmissionDto> result = service.submissionDistribution(new PaginationRequest());
 

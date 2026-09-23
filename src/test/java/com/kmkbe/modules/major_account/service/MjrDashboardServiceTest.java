@@ -31,22 +31,25 @@ class MjrDashboardServiceTest {
                 .totalInProcess(3L)
                 .totalSigning(4L)
                 .totalLive(5L)
+                .totalPaid(6L)
+                .totalCompleted(7L)
                 .build();
 
         MjrAccDashboardDto result = service.buildDashboard(
                 new MjrDashboardService.DateRange(startDate, endDate),
-                List.of(chart),
-                15L
+                List.of(chart)
         );
 
         assertThat(result.getStartDate()).isEqualTo(startDate);
         assertThat(result.getEndDate()).isEqualTo(endDate);
-        assertThat(result.getTotalAll()).isEqualTo(15L);
+        assertThat(result.getTotalAll()).isEqualTo(28L);
         assertThat(result.getChartLabel()).containsExactly("Jakarta");
         assertThat(result.getChartNew()).containsExactly(1L);
         assertThat(result.getChartAssignment()).containsExactly(2L);
         assertThat(result.getChartInProcess()).containsExactly(3L);
         assertThat(result.getChartSigning()).containsExactly(4L);
         assertThat(result.getChartLive()).containsExactly(5L);
+        assertThat(result.getChartPaid()).containsExactly(6L);
+        assertThat(result.getChartCompleted()).containsExactly(7L);
     }
 }

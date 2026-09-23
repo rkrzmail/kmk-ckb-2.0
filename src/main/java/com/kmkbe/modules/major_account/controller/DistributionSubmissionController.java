@@ -11,6 +11,7 @@ import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.request.AssignInvoiceToBranchRequest;
+import com.kmkbe.modules.major_account.request.DistributionSubmissionListRequest;
 import com.kmkbe.modules.major_account.service.DistributionSubmissionService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -37,7 +38,7 @@ public class DistributionSubmissionController {
 
   @GetMapping("/list")
   public CommonResult<PaginationResult<DistributionSubmissionDto>> getDistributionList(
-    BasePaginationRequest request
+    DistributionSubmissionListRequest request
   ) throws SignatureException {
     currentUserService.authenticatedInternalUser();
     return new CommonResult<PaginationResult<DistributionSubmissionDto>>().success(

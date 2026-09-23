@@ -20,6 +20,8 @@ public class MjrAccDashboardDto {
     private List<Long> chartInProcess;
     private List<Long> chartSigning;
     private List<Long> chartLive;
+    private List<Long> chartPaid;
+    private List<Long> chartCompleted;
 
     @Builder
     @AllArgsConstructor
@@ -34,6 +36,8 @@ public class MjrAccDashboardDto {
         private Long totalInProcess;
         private Long totalSigning;
         private Long totalLive;
+        private Long totalPaid;
+        private Long totalCompleted;
     }
 
     @Builder

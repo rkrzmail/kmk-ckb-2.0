@@ -21,6 +21,7 @@ import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.major_account.request.AssignInvoiceToBranchRequest;
+import com.kmkbe.modules.major_account.request.DistributionSubmissionListRequest;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.entity.MstEmployee;
@@ -41,6 +42,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 
 @Slf4j
@@ -75,9 +77,20 @@ public class DistributionSubmissionService {
   }
 
   public PaginationResult<DistributionSubmissionDto> submissionDistribution(PaginationRequest request) {
+    return submissionDistribution(request, null, null);
+  }
+
+  private PaginationResult<DistributionSubmissionDto> submissionDistribution(
+    PaginationRequest request,
+    java.time.LocalDate startDate,
+    java.time.LocalDate endDate
+  ) {
     try {
       var comparator = PaginationSort.distributionComparator(request);
-      List<FinancingHdr> finHdrAll = financingHdrRepository.findAllByRaw();
+      validateDistributionReferenceData(startDate, endDate);
+      List<FinancingHdr> finHdrAll = financingHdrRepository.findAllForDistribution().stream()
+        .filter(financingHdr -> isWithinDateRange(financingHdr, startDate, endDate))
+        .toList();
       return SpecPagination.paginationData(new SpecPagination<FinancingHdr, DistributionSubmissionDto>(finHdrAll, request) {
         @Override
         public void sort(List<DistributionSubmissionDto> data) {
@@ -194,9 +207,59 @@ public class DistributionSubmissionService {
     }
   }
 
+  private void validateDistributionReferenceData(
+    java.time.LocalDate startDate,
+    java.time.LocalDate endDate
+  ) {
+    var issues = financingHdrRepository.findDistributionReferenceIssues(
+      startDate != null ? startDate.toString() : null,
+      endDate != null ? endDate.toString() : null
+    );
+    if (issues.isEmpty()) {
+      return;
+    }
+
+    var issue = issues.getFirst();
+    String missingReferences = String.join(", ", Stream.of(
+        Boolean.TRUE.equals(issue.getCustomerMissing()) ? "customer" : null,
+        Boolean.TRUE.equals(issue.getBouwheerMissing()) ? "bouwheer" : null,
+        Boolean.TRUE.equals(issue.getBranchMissing()) ? "branch" : null
+      )
+      .filter(java.util.Objects::nonNull)
+      .toList());
+
+    throw new BusinessException(
+      HttpStatus.CONFLICT,
+      ErrorConstant.ERROR_CODE_80,
+      "Data pengajuan tidak lengkap. Referensi " + missingReferences
+        + " belum tersedia untuk Leads ID " + issue.getFinancingHdrCode()
+        + ". Silakan lengkapi data master terkait terlebih dahulu."
+    );
+  }
+
   public PaginationResult<DistributionSubmissionDto> submissionDistribution(
     BasePaginationRequest request) {
-    return submissionDistribution(PaginationRequests.from(request));
+    if (request instanceof DistributionSubmissionListRequest datedRequest) {
+      return submissionDistribution(
+        PaginationRequests.from(request),
+        datedRequest.getStartDate(),
+        datedRequest.getEndDate()
+      );
+    }
+    return submissionDistribution(PaginationRequests.from(request), null, null);
+  }
+
+  private boolean isWithinDateRange(
+    FinancingHdr financingHdr,
+    java.time.LocalDate startDate,
+    java.time.LocalDate endDate
+  ) {
+    if (startDate == null && endDate == null) return true;
+    if (financingHdr.getDtmCrt() == null) return false;
+
+    java.time.LocalDate submissionDate = financingHdr.getDtmCrt().toLocalDate();
+    return (startDate == null || !submissionDate.isBefore(startDate))
+      && (endDate == null || !submissionDate.isAfter(endDate));
   }
 
   /**
