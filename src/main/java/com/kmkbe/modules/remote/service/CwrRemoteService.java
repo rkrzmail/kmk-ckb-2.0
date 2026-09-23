@@ -44,7 +44,6 @@ public class CwrRemoteService {
     String jsonStr = "";
     String responseStr = null;
     int statusCode = 200;
-//        final String url = baseRemoteService.Mou_Generic_GetPagingObjectBySQL();
     final String url = baseRemoteService.confinsMouGetPagingSQL;
     try {
       PropCriteriaGenericTypeRequest propCriteria = PropCriteriaGenericTypeRequest.builder()

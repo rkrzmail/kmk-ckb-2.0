@@ -110,8 +110,6 @@ public class CwrService {
             return data;
           } else if (isSearchBy("submissionValue") && equalNumber(data.getRealisationAmt())) {
             return data;
-
-
           }
 
           return null;
@@ -167,7 +165,7 @@ public class CwrService {
   }
 
 
-  public InquiryCwrDto inquiryCwr(String cwrNo) throws JsonProcessingException, ParseException {
+  public InquiryCwrDto inquiryCwr(String cwrNo) throws JsonProcessingException {
     try {
       validateCwr(cwrNo);
       CommonInvalidException ex = CommonInvalidException.builder()
@@ -175,19 +173,17 @@ public class CwrService {
         .message("Harap input CWR aktif di Confins terlebih dahulu")
         .build();
       final List<InquiryCwrRemoteDto> data;
-      try {
-        BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> response = cwrRemoteService.inquiryCwr(
-          InquiryCwrRemoteRequest.builder()
-            .cwrNo(cwrNo)
-            .build()
-        );
-        data = response.getData();
-        // Convert the list directly to a JSON string
-        String jsonResponse = objectMapper.writeValueAsString(data.stream().toList());
-        log.info("CWR Response {} ", jsonResponse);
-      } catch (Exception e) {
-        throw ex;
-      }
+
+      BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> response = cwrRemoteService.inquiryCwr(
+        InquiryCwrRemoteRequest.builder()
+          .cwrNo(cwrNo)
+          .build()
+      );
+      data = response.getData();
+      // Convert the list directly to a JSON string
+      String jsonResponse = objectMapper.writeValueAsString(data.stream().toList());
+      log.info("CWR Response {} ", jsonResponse);
+
       if (!data.isEmpty()) {
         return InquiryCwrDto.builder()
           .cwrStartDate(DateTimeUtils.cSharpTimeStampToDate(data.getFirst().getStartDt()))
@@ -211,11 +207,10 @@ public class CwrService {
   public void createInquiryCwr(
     MstUser user,
     CreateInquiryCwrRequest request
-  ) throws JsonProcessingException, SignatureException, ParseException {
+  ) {
     try {
       validateCwr(request.getCwrNo());
       final List<InquiryCwrRemoteDto> data;
-      try {
         BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> response = cwrRemoteService.inquiryCwr(
           InquiryCwrRemoteRequest.builder()
             .cwrNo(request.getCwrNo())
@@ -223,11 +218,9 @@ public class CwrService {
         );
 
         data = response.getData();
-      } catch (Exception e) {
-        throw CommonInvalidException.builder()
-          .title("Peringatan")
-          .message("Harap input CWR aktif di Confins terlebih dahulu")
-          .build();
+
+      if(data.isEmpty()){
+        throw new IllegalStateException("CWR not found");
       }
 
       final FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(request.getFinancingHdrCode()))
@@ -268,10 +261,10 @@ public class CwrService {
           cwrRepository.save(cwr);
 
           // Update Customer no
-
-            Optional<Customer>customerOptional = customerRepository.findByCustCode(customer.getCustCode());
-            if(customerOptional.isPresent()){Customer customerUpdate = customerOptional.get();
-            log.info("Save customer no for CWR {} , cust no {} ",inquiryCwr.getCwrNo(),inquiryCwr.getCustNo());
+          Optional<Customer> customerOptional = customerRepository.findByCustCode(customer.getCustCode());
+          if (customerOptional.isPresent()) {
+            Customer customerUpdate = customerOptional.get();
+            log.info("Save customer no for CWR {} , cust no {} ", inquiryCwr.getCwrNo(), inquiryCwr.getCustNo());
             customerUpdate.setCustNo(inquiryCwr.getCustNo());
             customerRepository.save(customerUpdate);
           }
@@ -279,7 +272,6 @@ public class CwrService {
       }
     } catch (Exception e) {
       log.error("agreementCredit: error {}", e.getMessage());
-      throw e;
     }
   }
 
@@ -297,22 +289,9 @@ public class CwrService {
       final BaseMstRemoteResponseDto<List<InquiryAgreementByNoCwrRemoteDto>> agreementResponse =
         cwrRemoteService
           .inquiryAgreementByNoCwr(cwrCode);
-
-//                if (  agreementResponse.getData() != null ) {
-//                    for (int i = 0; i < agreementResponse.getData().size(); i++) {
-//                        InquiryAgreementByNoCwrRemoteDto agreement = agreementResponse.getData().get(i);
-//                        if (String.valueOf(agreement.agrmntStat).equalsIgnoreCase("prospect")||
-//                                String.valueOf(agreement.agrmntStat).trim().isEmpty()||
-//                                String.valueOf(agreement.agrmntStat).equalsIgnoreCase("Go Live")||
-//                                String.valueOf(agreement.agrmntStat).equalsIgnoreCase("Live")){
-//                            list.add(agreement.agrmntNo);
-//                        }
-//                    }
-//                }
       if (agreementResponse.getData() != null) {
         for (InquiryAgreementByNoCwrRemoteDto agreement : agreementResponse.getData()) {
-          String status = agreement.agrmntStat; // bisa null
-
+          String status = agreement.agrmntStat;
           if (status == null
             || status.trim().isEmpty()
             || status.equalsIgnoreCase("prospect")
@@ -323,41 +302,9 @@ public class CwrService {
           }
         }
       }
-
-
     } catch (Exception e) {
       e.printStackTrace();
     }
-    for (int i = 0; i < 10; i++) {
-
-      // list.add("11111111112");
-    }
-
-    //[
-    //  "11111111112",
-    //  "41350240356",
-    //  "41350240346",
-    //  "41450241703",
-    //  "41350240368",
-    //  "41450241700",
-    //  "41350240403",
-    //  "41350240304",
-    //  "41350240371",
-    //  "41450241710",
-    //  "41350240359",
-    //  "41350240363",
-    //  "41250241657",
-    //  "41350240397",
-    //  "41350240405",
-    //  "41350240364",
-    //  "41350240372",
-    //  "41350241713",
-    //  "41350240370",
-    //  "41350240347",
-    //  "41450241666",
-    //  "41950241610",
-    //]
-
     return list;
   }
 
