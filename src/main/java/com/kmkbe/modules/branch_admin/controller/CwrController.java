@@ -75,7 +75,7 @@ public class CwrController {
   @GetMapping("/inquiry")
   public CommonResult<InquiryCwrDto> getInquiryCwr(
     @RequestParam("cwrNo") String cwrNo
-  ) throws JsonProcessingException, ParseException, SignatureException {
+  ) throws JsonProcessingException, SignatureException {
     currentUserService.authenticatedInternalUser();
     return new CommonResult<InquiryCwrDto>().success(
       cwrService.inquiryCwr(cwrNo)
@@ -85,7 +85,7 @@ public class CwrController {
   @PostMapping("/inquiry/create")
   public CommonResult<Object> createInquiryCwr(
     @Valid @RequestBody CreateInquiryCwrRequest request
-  ) throws SignatureException, ParseException, JsonProcessingException {
+  ) throws SignatureException {
 
     cwrService.createInquiryCwr(currentUserService.internalUser(), request);
     return new CommonResult<>().success(
