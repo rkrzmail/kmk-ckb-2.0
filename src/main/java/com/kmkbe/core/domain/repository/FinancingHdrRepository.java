@@ -186,7 +186,6 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
         and (
           c.cust_code is null
           or bw.bouwheer_code is null
-          or mb.branch_code is null
         )
       order by fh.dtm_crt desc
       """,

@@ -19,6 +19,8 @@ import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.major_account.request.AssignInvoiceToBranchRequest;
 import com.kmkbe.modules.major_account.request.DistributionSubmissionListRequest;
@@ -32,6 +34,7 @@ import com.kmkbe.helpers.utils.PaginationSort;
 import com.kmkbe.helpers.utils.PaginationRequests;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.utils.Utils;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -42,7 +45,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 
 @Slf4j
@@ -87,7 +89,6 @@ public class DistributionSubmissionService {
   ) {
     try {
       var comparator = PaginationSort.distributionComparator(request);
-      validateDistributionReferenceData(startDate, endDate);
       List<FinancingHdr> finHdrAll = financingHdrRepository.findAllForDistribution().stream()
         .filter(financingHdr -> isWithinDateRange(financingHdr, startDate, endDate))
         .toList();
@@ -99,18 +100,21 @@ public class DistributionSubmissionService {
 
         @Override
         public DistributionSubmissionDto eval(FinancingHdr e) {
+          Customer customer = safeCustomer(e);
+          Bouwheer bouwheer = safeBouwheer(e);
+
           String city = "";
           String address = "";
-          if (e.getCustomer() != null) {
-            if (e.getCustomer().getCustTypeCode().equalsIgnoreCase("company")) {
-              if (e.getCustomer().getCompany() != null) {
-                city = e.getCustomer().getCompany().getCity();
-                address = e.getCustomer().getCompany().getCompanyAddress();
+          if (customer != null && customer.getCustTypeCode() != null) {
+            if (customer.getCustTypeCode().equalsIgnoreCase("company")) {
+              if (customer.getCompany() != null) {
+                city = customer.getCompany().getCity();
+                address = customer.getCompany().getCompanyAddress();
               }
             } else {
-              if (e.getCustomer().getPersonal() != null) {
-                city = e.getCustomer().getPersonal().getCity();
-                address = e.getCustomer().getPersonal().getLegalAddress();
+              if (customer.getPersonal() != null) {
+                city = customer.getPersonal().getCity();
+                address = customer.getPersonal().getLegalAddress();
               }
             }
           }
@@ -135,11 +139,12 @@ public class DistributionSubmissionService {
             color = "#FF5C5C";
           }
 
-          if (e.getMstBranch() != null) {
-            branchRecommendedCode = e.getMstBranch().getBranchCode();
-            branchRecommended = e.getMstBranch().getBranchName();
-            currentBranchCode = e.getMstBranch().getBranchCode();
-            currentBranch = e.getMstBranch().getBranchName();
+          MstBranch mstBranch = safeMstBranch(e);
+          if (mstBranch != null) {
+            branchRecommendedCode = mstBranch.getBranchCode();
+            branchRecommended = mstBranch.getBranchName();
+            currentBranchCode = mstBranch.getBranchCode();
+            currentBranch = mstBranch.getBranchName();
 
           }
           if (branchRecommendedCode == null) {
@@ -157,8 +162,8 @@ public class DistributionSubmissionService {
 
           return DistributionSubmissionDto.builder()
             .financingHdrCode(e.getFinancingHdrCode().toString())
-            .custName(e.getCustomer().getCustName())
-            .bouwheerName(e.getBouwheer().getBouwheerName())
+            .custName(customer != null ? customer.getCustName() : null)
+            .bouwheerName(bouwheer != null ? bouwheer.getBouwheerName() : null)
             .city(city)
             .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
             .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
@@ -166,15 +171,15 @@ public class DistributionSubmissionService {
             .branchRecommended(branchRecommended)
             .currentBranchCode(currentBranchCode)
             .currentBranch(currentBranch)
-            .custStatus(e.getCustomer().getExistingCust())
             .status(StatusLabelDto.builder()
               .status(mappedFinancingStatus.getStatus())
               .statusLabel(mappedFinancingStatus.getLabel())
               .color(color)
               .build())
-            .npwp(e.getCustomer().getNpwp())
+            .custStatus(customer != null ? customer.getExistingCust() : null)
+            .npwp(customer != null ? customer.getNpwp() : null)
             .address(address)
-            .ao(Optional.ofNullable(e.getMstBranch())
+            .ao(Optional.ofNullable(mstBranch)
               .map(MstBranch::getEmployees)
               .map(Collection::stream)
               .flatMap(stream -> stream.map(MstEmployee::getEmployeeName).findFirst())
@@ -207,34 +212,52 @@ public class DistributionSubmissionService {
     }
   }
 
-  private void validateDistributionReferenceData(
-    java.time.LocalDate startDate,
-    java.time.LocalDate endDate
-  ) {
-    var issues = financingHdrRepository.findDistributionReferenceIssues(
-      startDate != null ? startDate.toString() : null,
-      endDate != null ? endDate.toString() : null
-    );
-    if (issues.isEmpty()) {
-      return;
+  private Customer safeCustomer(FinancingHdr financingHdr) {
+    try {
+      Customer customer = financingHdr.getCustomer();
+      if (customer != null) {
+        customer.getCustName();
+      }
+      return customer;
+    } catch (EntityNotFoundException e) {
+      log.warn(
+        "submissionDistribution: customer reference not found for financingHdrCode {}",
+        financingHdr.getFinancingHdrCode()
+      );
+      return null;
     }
+  }
 
-    var issue = issues.getFirst();
-    String missingReferences = String.join(", ", Stream.of(
-        Boolean.TRUE.equals(issue.getCustomerMissing()) ? "customer" : null,
-        Boolean.TRUE.equals(issue.getBouwheerMissing()) ? "bouwheer" : null,
-        Boolean.TRUE.equals(issue.getBranchMissing()) ? "branch" : null
-      )
-      .filter(java.util.Objects::nonNull)
-      .toList());
+  private Bouwheer safeBouwheer(FinancingHdr financingHdr) {
+    try {
+      Bouwheer bouwheer = financingHdr.getBouwheer();
+      if (bouwheer != null) {
+        bouwheer.getBouwheerName();
+      }
+      return bouwheer;
+    } catch (EntityNotFoundException e) {
+      log.warn(
+        "submissionDistribution: bouwheer reference not found for financingHdrCode {}",
+        financingHdr.getFinancingHdrCode()
+      );
+      return null;
+    }
+  }
 
-    throw new BusinessException(
-      HttpStatus.CONFLICT,
-      ErrorConstant.ERROR_CODE_80,
-      "Data pengajuan tidak lengkap. Referensi " + missingReferences
-        + " belum tersedia untuk Leads ID " + issue.getFinancingHdrCode()
-        + ". Silakan lengkapi data master terkait terlebih dahulu."
-    );
+  private MstBranch safeMstBranch(FinancingHdr financingHdr) {
+    try {
+      MstBranch mstBranch = financingHdr.getMstBranch();
+      if (mstBranch != null) {
+        mstBranch.getBranchCode();
+      }
+      return mstBranch;
+    } catch (EntityNotFoundException e) {
+      log.warn(
+        "submissionDistribution: branch reference not found for financingHdrCode {}",
+        financingHdr.getFinancingHdrCode()
+      );
+      return null;
+    }
   }
 
   public PaginationResult<DistributionSubmissionDto> submissionDistribution(

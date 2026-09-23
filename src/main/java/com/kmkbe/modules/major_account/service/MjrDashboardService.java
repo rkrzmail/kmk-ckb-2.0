@@ -26,42 +26,61 @@ public class MjrDashboardService {
     private static final String DASHBOARD_CHART_SQL = """
             with
                 counting as (
-                                SELECT
-                                    branch_code,
-                                    COUNT(CASE WHEN lower(financing_status) = 'new' THEN 1 END)  AS total_new,
-                                    COUNT(CASE
-                                              WHEN lower(financing_status) = 'inprocess'
-                                                  and lower(financing_step) = 'assignment'
-                                                  THEN 1 END)                                    AS total_assignment,
-                                    COUNT(CASE
-                                              WHEN lower(financing_status) = 'inprocess'
-                                                  and lower(financing_step) = 'inprocess'
-                                                  THEN 1 END)                                    AS total_inprocess,
-                                    COUNT(CASE
-                                              WHEN lower(financing_status) = 'inprocess'
-                                                  and (lower(financing_step) = 'signing' or lower(financing_step) = 'signed')
-                                                  THEN 1 END)                                    AS total_signing,
-                                    COUNT(CASE
-                                              WHEN lower(financing_status) = 'live'
-                                                  and lower(financing_step) = 'golive'
-                                                  THEN 1 END)                                    AS total_live,
-                                    COUNT(CASE
-                                              WHEN lower(financing_status) = 'live'
-                                                  and lower(financing_step) = 'paid'
-                                                  THEN 1 END)                                    AS total_paid,
-                                    COUNT(CASE
-                                              WHEN lower(financing_status) = 'completed'
-                                                  and lower(financing_step) = 'refund'
-                                                  THEN 1 END)                                    AS total_completed
-                                FROM
-                                    public.financing_hdr
-                                WHERE
-                                     Date(dtm_crt::date) BETWEEN :startDate AND :endDate
-                                GROUP BY branch_code
-                            )
+                    SELECT
+                        coalesce(nullif(branch_code, ''), '-') as branch_code,
+                        COUNT(CASE WHEN lower(financing_status) = 'new' THEN 1 END)  AS total_new,
+                        COUNT(CASE
+                                  WHEN lower(financing_status) = 'inprocess'
+                                      and lower(financing_step) = 'assignment'
+                                      THEN 1 END)                                    AS total_assignment,
+                        COUNT(CASE
+                                  WHEN lower(financing_status) = 'inprocess'
+                                      and lower(financing_step) = 'inprocess'
+                                      THEN 1 END)                                    AS total_inprocess,
+                        COUNT(CASE
+                                  WHEN lower(financing_status) = 'inprocess'
+                                      and (lower(financing_step) = 'signing' or lower(financing_step) = 'signed')
+                                      THEN 1 END)                                    AS total_signing,
+                        COUNT(CASE
+                                  WHEN lower(financing_status) = 'live'
+                                      and lower(financing_step) = 'golive'
+                                      THEN 1 END)                                    AS total_live,
+                        COUNT(CASE
+                                  WHEN lower(financing_status) = 'live'
+                                      and lower(financing_step) = 'paid'
+                                      THEN 1 END)                                    AS total_paid,
+                        COUNT(CASE
+                                  WHEN lower(financing_status) = 'completed'
+                                      and lower(financing_step) = 'refund'
+                                      THEN 1 END)                                    AS total_completed
+                    FROM
+                        public.financing_hdr
+                    WHERE
+                         Date(dtm_crt::date) BETWEEN :startDate AND :endDate
+                    GROUP BY coalesce(nullif(branch_code, ''), '-')
+                ),
+                branch_axis as (
+                    select
+                        bch.branch_code::text as branch_code,
+                        bch.branch_name as branch_name
+                    from users.branch bch
+                    where bch.business_unit = 'CBU'
+                    union
+                    select
+                        counting.branch_code::text as branch_code,
+                        case
+                            when counting.branch_code = '-' then '-'
+                            else counting.branch_code::text
+                        end as branch_name
+                    from counting
+                    left join users.branch bch
+                        on bch.branch_code::text = counting.branch_code::text
+                        and bch.business_unit = 'CBU'
+                    where bch.branch_code is null
+                )
             select
-                bch.branch_code,
-                bch.branch_name,
+                branch_axis.branch_code,
+                branch_axis.branch_name,
                 coalesce(counting.total_new, 0) as total_new,
                 coalesce(counting.total_assignment, 0) as total_assignment,
                 coalesce(counting.total_inprocess, 0) as total_inprocess,
@@ -79,10 +98,10 @@ public class MjrDashboardService {
                         + coalesce(counting.total_completed, 0)
                     ) as total_all
             from
-                users.branch bch
-                    left join counting on bch.branch_code::text = counting.branch_code::text
-                    WHERE bch.business_unit = 'CBU'
-                    ;
+                branch_axis
+                    left join counting on branch_axis.branch_code::text = counting.branch_code::text
+            order by branch_axis.branch_name
+            ;
             """;
 
     private final EntityManager entityManager;
