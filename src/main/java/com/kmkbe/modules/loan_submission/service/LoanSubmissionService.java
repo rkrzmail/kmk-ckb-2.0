@@ -388,33 +388,14 @@ public class LoanSubmissionService {
       Double provisionRate = findProduct.get().getProvisionRate();
       Double effectiveRate = findProduct.get().getEffectiveRate();
       Double adminRate = findProduct.get().getAdminRate();
-      boolean byPass = false;
+
       boolean isCustomerExisting = false;
       Cwr validateCwr = null;
-      if (byPass) {
-        isCustomerExisting = true;
-        validateCwr = null;
-
-        try {
-          if (customer != null) {
-            if (customer.getExistingCust() == null) {
-              isCustomerExisting = false;
-            } else {
-              if (customer.getExistingCust().equalsIgnoreCase("")) {
-                isCustomerExisting = false;
-              }
-            }
-            isCustomerExisting = true;
-          } else {
-            isCustomerExisting = false;
-          }
-        } catch (Exception ignored) {
-
-        }
-      } else if (customer != null || !StringUtil.isNullOrEmpty(request.getToken())) {
+      if (customer != null || !StringUtil.isNullOrEmpty(request.getToken())) {
         validateCwr = isCustomerExistingByCwr(customer, request.getToken());
         isCustomerExisting = validateCwr != null;
       }
+
       BigDecimal
         provisionFeeAmount,
         adminFeeAmount,

@@ -158,11 +158,6 @@ public class SignerController {
       SignerCheckResultDto result = signerService.compareSigners(financingHdrCode, agreementNo);
 
       log.info("E-Signer check agreement {} response {} ",agreementNo,result.toString());
-//      if(result.getDBSigners() ==null){
-//        return new CommonResult<SignerCheckResultDto>()
-//          .fail(400, "E-Signer belum terdaftar pada sistem E-Sign. Silakan lakukan registrasi dan pastikan status E-Signer telah aktif sebelum mengunggah dokumen persetujuan", result);
-//      }
-
       if (result.getUnmatchedSigners().isEmpty()) {
         return new CommonResult<SignerCheckResultDto>()
           .success(result);

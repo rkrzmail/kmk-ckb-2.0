@@ -9,6 +9,7 @@ import com.kmkbe.core.callback.ExceptionAdvice;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.exception.GlobalExceptionHandler;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.branch_admin.service.AgreementFileSigningService;
 import com.kmkbe.modules.branch_admin.service.AgreementService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
@@ -40,11 +41,12 @@ class AgreementContractUploadTest {
   private final FinancingRemoteService financingRemoteService = mock(FinancingRemoteService.class);
   private MockMvc mockMvc;
   private FinancingHdr financingHdr;
+  private final AgreementFileSigningService agreementFileSigningService = mock(AgreementFileSigningService.class);
 
   @BeforeEach
   void setUp() {
     var controller = new AgreementController(agreementService, financingRemoteService,
-      financingHdrService, financingHdrRepository, currentUserService);
+      financingHdrService, financingHdrRepository, currentUserService,agreementFileSigningService);
     mockMvc = MockMvcBuilders.standaloneSetup(controller)
       .setControllerAdvice(new ExceptionAdvice(mock(ErrorLogRepository.class)), new GlobalExceptionHandler())
       .setMessageConverters(new MappingJackson2HttpMessageConverter())

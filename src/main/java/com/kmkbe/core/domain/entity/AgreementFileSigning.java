@@ -1,13 +1,10 @@
 package com.kmkbe.core.domain.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
-
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Builder
 @NoArgsConstructor

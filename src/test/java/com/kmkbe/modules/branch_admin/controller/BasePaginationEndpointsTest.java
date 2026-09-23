@@ -16,7 +16,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import static org.mockito.Mockito.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -42,7 +41,7 @@ class BasePaginationEndpointsTest {
       }
       case "agreement" -> {
         controller = new AgreementController(agreement, mock(FinancingRemoteService.class), financing,
-          mock(FinancingHdrRepository.class), auth);
+          mock(FinancingHdrRepository.class), auth,mock(AgreementFileSigningService.class));
         path = "/api/v1/cwr/agreement/list/CWR/HEADER";
         when(agreement.list(eq("CWR"), eq("HEADER"), any(BasePaginationRequest.class))).thenReturn(PaginationResult.empty(1));
       }

@@ -905,7 +905,6 @@ public class SignerService {
 
       checkExternalSigningStatus(fileSignings, username);
 
-//            fileSignings = agreementFileSigningRepository.findByKaryawan(signerName);
       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
       List<String> agreementCodes = fileSignings.stream()
@@ -935,8 +934,7 @@ public class SignerService {
           .status(signing.stamp())
           .documentId(signing.getDocumentId())
           .build())
-        .collect(Collectors.toList());
-
+        .toList();
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid financingHdrCode format: " + financingHdrCode);
     }
