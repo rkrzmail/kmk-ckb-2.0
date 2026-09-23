@@ -57,7 +57,6 @@ class DistributionSubmissionServiceIssueRegressionTest {
       currentUserService,
       auditTrailService
     );
-    lenient().when(financingHdrRepository.findDistributionReferenceIssues(null, null)).thenReturn(List.of());
   }
 
   @Test
@@ -99,8 +98,6 @@ class DistributionSubmissionServiceIssueRegressionTest {
 
   @Test
   void filtersSubmissionsUsingDashboardDateRangeBeforePagination() {
-    when(financingHdrRepository.findDistributionReferenceIssues("2026-08-01", "2026-08-31"))
-      .thenReturn(List.of());
     when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(
       row("before", "Before", 1D, LocalDateTime.of(2026, 7, 31, 23, 59)),
       row("inside", "Inside", 2D, LocalDateTime.of(2026, 8, 15, 8, 0)),
@@ -121,25 +118,48 @@ class DistributionSubmissionServiceIssueRegressionTest {
   }
 
   @Test
-  void failsWithClearMessageWhenDistributionReferenceDataIsIncomplete() {
-    var issue = mock(FinancingHdrRepository.DistributionReferenceIssue.class);
-    when(issue.getFinancingHdrCode()).thenReturn("lead-001");
-    when(issue.getCustomerMissing()).thenReturn(true);
-    when(issue.getBouwheerMissing()).thenReturn(false);
-    when(issue.getBranchMissing()).thenReturn(true);
-    when(financingHdrRepository.findDistributionReferenceIssues("2026-08-01", "2026-08-31"))
-      .thenReturn(List.of(issue));
-
+  void keepsIncompleteReferenceRowsWithBlankFieldsAndStillReturnsValidDistributionList() {
+    FinancingHdr missingCustomer = row("missing-customer", "Missing", 1D, LocalDateTime.of(2026, 8, 10, 8, 0));
+    missingCustomer.setCustomer(null);
+    FinancingHdr missingBouwheer = row("missing-bouwheer", "Missing Bouwheer", 1D, LocalDateTime.of(2026, 8, 11, 8, 0));
+    missingBouwheer.setBouwheer(null);
+    when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(
+      missingCustomer,
+      row("valid", "Valid Vendor", 2D, LocalDateTime.of(2026, 8, 12, 8, 0)),
+      missingBouwheer
+    ));
     var request = new DistributionSubmissionListRequest();
+    request.setPageNo(1);
+    request.setPageSize(10);
     request.setStartDate(LocalDate.of(2026, 8, 1));
     request.setEndDate(LocalDate.of(2026, 8, 31));
 
-    assertThatThrownBy(() -> service.submissionDistribution(request))
-      .isInstanceOf(com.kmkbe.exception.BusinessException.class)
-      .hasMessageContaining("Data pengajuan tidak lengkap")
-      .hasMessageContaining("customer, branch")
-      .hasMessageContaining("lead-001");
-    verify(financingHdrRepository, never()).findAllForDistribution();
+    var result = service.submissionDistribution(request);
+
+    assertThat(result.getList())
+      .extracting(DistributionSubmissionDto::getCustName)
+      .containsExactly(null, "Valid Vendor", "Missing Bouwheer");
+    assertThat(result.getList())
+      .extracting(DistributionSubmissionDto::getBouwheerName)
+      .containsExactly("Bouwheer", "Bouwheer", null);
+    assertThat(result.getTotalData()).isEqualTo(3);
+  }
+
+  @Test
+  void branchReferenceIssueDoesNotBlockDistributionList() {
+    when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(
+      row("inside", "Inside", 2D, LocalDateTime.of(2026, 8, 15, 8, 0))
+    ));
+    var request = new DistributionSubmissionListRequest();
+    request.setPageNo(1);
+    request.setPageSize(10);
+    request.setStartDate(LocalDate.of(2026, 8, 1));
+    request.setEndDate(LocalDate.of(2026, 8, 31));
+
+    var result = service.submissionDistribution(request);
+
+    assertThat(result.getList()).hasSize(1);
+    assertThat(result.getList().getFirst().getBranchRecommended()).isNull();
   }
 
   @Test
