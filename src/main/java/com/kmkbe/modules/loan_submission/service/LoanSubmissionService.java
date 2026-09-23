@@ -1045,32 +1045,45 @@ public class LoanSubmissionService {
                 //getAPI AO,BH
                 MailPositionDto to = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "BM/BOH");
                 MailPositionDto ccRM = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "RM");
-                MailPositionDto ccAO = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "AO/AM");
+                MailPositionDto toAO = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "AO/AM");
 
-                String toEmail = hdrBranch.getEmployees().stream().toList().getFirst().getEmail();  //"radema.panjaitan@csul.co.id",
+                String toEmail = null;
                 String ccEmail = null;
-                if (to != null && to.getData() != null && to.getData().size() > 0) {
+                if (to != null && to.getData() != null && !to.getData().isEmpty()) {
                   StringBuilder stringBuilder = new StringBuilder();
                   for (int i = 0; i < to.getData().size(); i++) {
                     stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
                     stringBuilder.append(to.getData().get(i).getEmail());
                   }
                   toEmail = stringBuilder.toString();
+
+                  log.info("To Email  {} ",toEmail);
                 }
-                StringBuilder stringBuilder = new StringBuilder();
-                if (ccRM != null && ccRM.getData() != null && ccRM.getData().size() > 0) {
+
+                if (ccRM != null && ccRM.getData() != null && !ccRM.getData().isEmpty()) {
+                  StringBuilder stringBuilder = new StringBuilder();
                   for (int i = 0; i < ccRM.getData().size(); i++) {
                     stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
                     stringBuilder.append(ccRM.getData().get(i).getEmail());
                   }
                   ccEmail = stringBuilder.toString();
+                  log.info("Cc Email  {} ",toEmail);
                 }
-                if (ccAO != null && ccAO.getData() != null && ccAO.getData().size() > 0) {
-                  for (int i = 0; i < ccAO.getData().size(); i++) {
+
+                // Ensure toEmail is not overwritten by toAO emails
+                if (toAO != null && toAO.getData() != null && !toAO.getData().isEmpty()) {
+                  StringBuilder stringBuilder = new StringBuilder();
+                  for (int i = 0; i < toAO.getData().size(); i++) {
                     stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
-                    stringBuilder.append(ccAO.getData().get(i).getEmail());
+                    stringBuilder.append(toAO.getData().get(i).getEmail());
                   }
-                  ccEmail = stringBuilder.toString();
+                  // Append toAO emails to toEmail, not overwrite
+                  if (toEmail != null) {
+                    toEmail += ";" + stringBuilder;
+                  } else {
+                    toEmail = stringBuilder.toString();
+                  }
+                  log.info("To Email AO  {} ",toEmail);
                 }
 
                 String phone = financing.getCustomer().getCustMobilePhone();
@@ -1081,7 +1094,7 @@ public class LoanSubmissionService {
                 }
 
                 isAutoASSIGNMENT = true;
-                //kirim email assign dan re assign
+
                 emailService.sendNotificationBranchAssign(
                   toEmail,
                   financing.getBouwheer().getBouwheerName(),
@@ -1125,7 +1138,7 @@ public class LoanSubmissionService {
               .map((item) ->
                 InvoiceEmailPayload.builder()
                   .invoiceNo(item.getInvoice().getCustInvNo())
-                  .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
+                  .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
                   .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
                   .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
                   .description(item.getInvoice().getInvoiceDescription())
@@ -1142,12 +1155,9 @@ public class LoanSubmissionService {
             //getAPI CMS
             String branchCode = mstBranchRepository.findByBranchName("HEAD OFFICE")
               .map(MstBranch::getBranchCode)
-              .orElseThrow(() -> {
-                return new RuntimeException("BranchCode tidak ditemukan");
-              });
-            MailPositionDto ccBM = configRemoteService.getEmailByPosition("", branchCode, "CMS");
+              .orElseThrow(() -> new RuntimeException("BranchCode tidak ditemukan"));
 
-//                        String toEmail =  "radema.panjaitan@csul.co.id";
+            MailPositionDto ccBM = configRemoteService.getEmailByPosition("", branchCode, "CMS");
             StringBuilder ccEmailBuilder = new StringBuilder();
 
             if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
@@ -1192,8 +1202,8 @@ public class LoanSubmissionService {
                 .invoices(invoices)
                 .build()
             );
-          } catch (Exception ignored) {
-            log.error(ignored.getMessage());
+          } catch (Exception e) {
+            log.error(e.getMessage());
           }
         }
 
