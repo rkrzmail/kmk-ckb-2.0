@@ -643,6 +643,7 @@ class AgreementServiceTest {
         financingHdr.setMstBranch(MstBranch.builder().branchCode("412").branchName("JAKARTA 1").build());
         financingHdr.setFinancingAmt(1000D);
         financingHdr.setFinancingDate(LocalDateTime.of(2026, 8, 12, 10, 0));
+        financingHdr.setDtmCrt(LocalDateTime.of(2026, 8, 12, 9, 0));
         return financingHdr;
     }
 

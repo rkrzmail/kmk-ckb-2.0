@@ -156,7 +156,7 @@ public class CustomerController {
 
   @GetMapping("/invoices/due-date")
   public CommonResult<PaginationResult<CustomerCreditFacilityDueDateDto>> getPostedInvoicesDue(
-    PaginationRequest request
+    BasePaginationRequest request
   ) throws SignatureException {
     return new CommonResult<PaginationResult<CustomerCreditFacilityDueDateDto>>().success(
       customerDashboardListService.listinvoicesduedate(currentUserService.customer(), request)
@@ -166,7 +166,7 @@ public class CustomerController {
 
   @GetMapping("/credit-facilities")
   public CommonResult<PaginationResult<CustomerCreditFacilityNewDto>> getActiveCreditFacilities(
-    PaginationRequest request
+    BasePaginationRequest request
   ) throws SignatureException {
     //invoiceService.customerCreditFacilities(authentication, request)
 
