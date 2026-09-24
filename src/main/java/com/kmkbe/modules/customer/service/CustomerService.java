@@ -50,17 +50,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.security.SignatureException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @Slf4j
 public class CustomerService {
   private final CustomerRepository customerRepository;
   private final FinancingHdrRepository financingHdrRepository;
-  private final EmailService emailService;
   private final EmailDeliveryService emailDeliveryService;
   private final AuditTrailService auditTrailService;
   private final BouwheerRepository bouwheerRepository;
@@ -77,7 +73,6 @@ public class CustomerService {
                          BCryptPasswordEncoder bCryptPasswordEncoderl) {
     this.customerRepository = customerRepository;
     this.financingHdrRepository = financingHdrRepository;
-    this.emailService = emailService;
     this.emailDeliveryService = emailDeliveryService;
     this.auditTrailService = auditTrailService;
     this.bouwheerRepository = bouwheerRepository;
@@ -167,17 +162,6 @@ public class CustomerService {
       if (!existingEmailOwner.getCustExternalCode().equals(inputVendorCode)) {
         log.info("Email {} sudah digunakan oleh vendor lain: {}", inputEmail, existingEmailOwner.getCustExternalCode());
         throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Email sudah terdaftar dengan vendor lain!");
-      }
-    }
-
-    /**
-     * Validate Email active
-     */
-    if (customerByVendor.isPresent()) {
-      Customer existingVendor = customerByVendor.get();
-      if (!existingVendor.getCustEmail().equals(inputEmail) && Boolean.TRUE.equals(existingVendor.getIsEmailValid())) {
-        log.info("Vendor {} gagal update email karena email lama sudah terverifikasi valid", inputVendorCode);
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_84, "Tidak bisa mengubah email yang sudah terverifikasi!");
       }
     }
 
@@ -429,6 +413,7 @@ public class CustomerService {
 
     Specification<Customer> spec = (root, query, builder) -> {
       List<Predicate> predicates = new ArrayList<>();
+      predicates.add(builder.isTrue(root.get("isEmailValid")));
       if ("bouwheer".equals(finalSearchBy) && finalBouwheerCodes != null && !finalBouwheerCodes.isEmpty()) {
         predicates.add(root.get("bouwheer").in(finalBouwheerCodes));
       }
@@ -530,7 +515,6 @@ public class CustomerService {
     customer.setActive("APPROVED".equals(approvalStatus));
     if(!"APPROVED".equals(approvalStatus)){
       customer.setActive(false);
-      customer.setIsEmailValid(false);
       customer.setAgreeTc(false);
       customer.setAgreeLegalShare(false);
       customer.setIsWaActive(false);

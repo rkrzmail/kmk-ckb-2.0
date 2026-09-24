@@ -152,7 +152,6 @@ public class InquiryDisburseService {
         ignored.printStackTrace();
       }
 
-
       if (inquiryDisburseResult.getStatusCode().equalsIgnoreCase("200") && isDisbursP) {
         List<DisbursementLog> l = disbursementLogRepository.findAllByAgreement(agreement);
         if (l.isEmpty()) {
@@ -166,10 +165,14 @@ public class InquiryDisburseService {
               .build();
           } catch (Exception ignored) {
           }
-          try {
-            financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
-          } catch (Exception ignored) {
-          }
+
+          /**
+           * For TU
+           */
+//          try {
+//            financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
+//          } catch (Exception ignored) {
+//          }
 
           //send email sendNotification Pencairan
           try {

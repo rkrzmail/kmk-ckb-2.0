@@ -935,7 +935,7 @@ public class LoanSubmissionService {
   public void createLoanSubmission(
     Customer custCOde,
     CreateLoanApplicationRequest request
-  ) throws Exception {
+  ) {
     try {
       if (custCOde == null) {
         throw CommonInvalidException.cannotAccessResource();
@@ -1058,7 +1058,7 @@ public class LoanSubmissionService {
                     stringBuilder.append(ccRM.getData().get(i).getEmail());
                   }
                   ccEmail = stringBuilder.toString();
-                  log.info("Cc Email  {} ",toEmail);
+                  log.info("Cc Email  {} ",ccEmail);
                 }
 
                 // Ensure toEmail is not overwritten by toAO emails
