@@ -51,7 +51,7 @@ spring:
       time-to-live: 60000
 
   mail:
-    host: srv150.niagahoster.com
+    host: smtp.hostinger.com
     port: 465
     protocol: smtp
     username: csul@nikita.co.id
@@ -64,7 +64,7 @@ spring:
 # region testing mail env
 testing:
     mail:
-      host: srv150.niagahoster.com
+      host: smtp.hostinger.com
       port: 465
       protocol: smtp
       username: csul@nikita.co.id

@@ -5,6 +5,7 @@ import com.kmkbe.adapter.ApiCsulAdapter;
 import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.core.domain.dto.email.MailDataDto;
 import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.*;
@@ -1038,44 +1039,41 @@ public class LoanSubmissionService {
                 MailPositionDto ccRM = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "RM");
                 MailPositionDto toAO = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "AO/AM");
 
-                String toEmail = null;
-                String ccEmail = null;
-                if (to != null && to.getData() != null && !to.getData().isEmpty()) {
-                  StringBuilder stringBuilder = new StringBuilder();
-                  for (int i = 0; i < to.getData().size(); i++) {
-                    stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
-                    stringBuilder.append(to.getData().get(i).getEmail());
-                  }
-                  toEmail = stringBuilder.toString();
+                java.util.Set<String> toEmailSet = new java.util.LinkedHashSet<>();
+                java.util.Set<String> ccEmailSet = new java.util.LinkedHashSet<>();
 
-                  log.info("To Email  {} ",toEmail);
+                if (to != null && to.getData() != null) {
+                  to.getData().stream()
+                    .map(MailDataDto::getEmail)
+                    .filter(email -> email != null && !email.trim().isEmpty())
+                    .forEach(toEmailSet::add);
                 }
 
-                if (ccRM != null && ccRM.getData() != null && !ccRM.getData().isEmpty()) {
-                  StringBuilder stringBuilder = new StringBuilder();
-                  for (int i = 0; i < ccRM.getData().size(); i++) {
-                    stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
-                    stringBuilder.append(ccRM.getData().get(i).getEmail());
-                  }
-                  ccEmail = stringBuilder.toString();
-                  log.info("Cc Email  {} ",ccEmail);
+                if (toAO != null && toAO.getData() != null) {
+                  toAO.getData().stream()
+                    .map(MailDataDto::getEmail)
+                    .filter(email -> email != null && !email.trim().isEmpty())
+                    .forEach(toEmailSet::add);
                 }
 
-                // Ensure toEmail is not overwritten by toAO emails
-                if (toAO != null && toAO.getData() != null && !toAO.getData().isEmpty()) {
-                  StringBuilder stringBuilder = new StringBuilder();
-                  for (int i = 0; i < toAO.getData().size(); i++) {
-                    stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
-                    stringBuilder.append(toAO.getData().get(i).getEmail());
-                  }
-                  // Append toAO emails to toEmail, not overwrite
-                  if (toEmail != null) {
-                    toEmail += ";" + stringBuilder;
-                  } else {
-                    toEmail = stringBuilder.toString();
-                  }
-                  log.info("To Email AO  {} ",toEmail);
+
+                if (ccRM != null && ccRM.getData() != null) {
+                  ccRM.getData().stream()
+                    .map(MailDataDto::getEmail)
+                    .filter(email -> email != null && !email.trim().isEmpty())
+                    .forEach(ccEmailSet::add);
                 }
+
+                String toEmail = toEmailSet.isEmpty() ? null : String.join(",", toEmailSet);
+                String ccEmail = ccEmailSet.isEmpty() ? null : String.join(",", ccEmailSet);
+
+                if (ccEmail != null && toEmailSet.contains(ccEmail)) {
+                  ccEmailSet.remove(ccEmail);
+                  ccEmail = ccEmailSet.isEmpty() ? null : String.join(",", ccEmailSet);
+                }
+
+                log.info("Final To Emails : {}", toEmail);
+                log.info("Final Cc Emails : {}", ccEmail);
 
                 String phone = financing.getCustomer().getCustMobilePhone();
                 if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
