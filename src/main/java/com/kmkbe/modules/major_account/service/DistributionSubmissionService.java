@@ -3,7 +3,6 @@ package com.kmkbe.modules.major_account.service;
 import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.StatusLabelDto;
-import com.kmkbe.core.domain.dto.email.MailDataDto;
 import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import com.kmkbe.core.domain.entity.BranchAreaMapping;
 import com.kmkbe.core.domain.entity.FinancingHdr;
