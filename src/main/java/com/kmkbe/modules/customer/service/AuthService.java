@@ -231,7 +231,6 @@ public class AuthService {
     );
   }
 
-  //@Transactional
   public BaseResponseBuilder<LoginDto> signIn(LoginRequest request) {
     try {
 

@@ -118,16 +118,20 @@ public class AgreementController {
       String.valueOf(financingHdr.getBouwheer().getBouwheerCode())
     );
 
-    final UpdateFinancingStatusRequest updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
-      .financingCode(financingHdrCode)
-      .status(UpdateFinancingStatusRequest.Status.Approved)
-      .vendorCode(financingHdr.getCustomer().getCustExternalCode())
-      .build();
 
     // Update financing status
-    financingRemoteService.updateFinancingStatus(
-      updateFinancingStatusRequest
-    );
+    /**
+     * For TU
+     */
+//    final UpdateFinancingStatusRequest updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
+//      .financingCode(financingHdrCode)
+//      .status(UpdateFinancingStatusRequest.Status.Approved)
+//      .vendorCode(financingHdr.getCustomer().getCustExternalCode())
+//      .build();
+
+//    financingRemoteService.updateFinancingStatus(
+//      updateFinancingStatusRequest
+//    );
 
     financingHdr.setFinancingStatus(financingHdr.getFinancingStatus().equalsIgnoreCase("LIVE")?financingHdr.getFinancingStatus():"INPROCESS");
     financingHdr.setFinancingStep(financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")?financingHdr.getFinancingStep():"SIGNED");

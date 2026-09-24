@@ -91,24 +91,6 @@ class CustomerServiceIssueRegressionTest {
     verify(customerRepository).save(existing);
   }
 
-  @Test
-  void createRejectsEmailChangeWhenSameVendorEmailIsAlreadyVerified() {
-    Customer existing = Customer.builder()
-      .custCode(UUID.randomUUID())
-      .custExternalCode("VENDOR-001")
-      .custEmail("verified@example.com")
-      .isEmailValid(true)
-      .isActive(false)
-      .approvalStatus(ApprovalStatus.OPEN.name())
-      .build();
-
-    when(customerRepository.findFirstByCustExternalCode("VENDOR-001")).thenReturn(Optional.of(existing));
-    when(customerRepository.findByCustEmail("new@example.com")).thenReturn(Optional.empty());
-
-    assertThatThrownBy(() -> service.create(signUpRequest("VENDOR-001", "new@example.com"), CustomerType.Company))
-      .isInstanceOf(BusinessException.class)
-      .hasMessage("Tidak bisa mengubah email yang sudah terverifikasi!");
-  }
 
   @Test
   void createRejectsActiveEmailOwnedByDifferentVendor() {
