@@ -55,7 +55,6 @@ public class DistributionSubmissionService {
   private final MstBranchRepository mstBranchRepository;
   private final BranchAreaMappingRepository branchAreaMappingRepository;
   private final ConfigRemoteService configRemoteService;
-  private final CustomerRepository customerRepository;
   private final CurrentUserService currentUserService;
   private final AuditTrailService auditTrailService;
 
@@ -73,7 +72,6 @@ public class DistributionSubmissionService {
     this.mstBranchRepository = mstBranchRepository;
     this.branchAreaMappingRepository = branchAreaMappingRepository;
     this.configRemoteService = configRemoteService;
-    this.customerRepository = customerRepository;
     this.currentUserService = currentUserService;
     this.auditTrailService = auditTrailService;
   }
@@ -370,32 +368,45 @@ public class DistributionSubmissionService {
       //getAPI AO,BH
       MailPositionDto to = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "BM/BOH");
       MailPositionDto ccRM = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "RM");
-      MailPositionDto ccAO = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "AO/AM");
+      MailPositionDto toAO = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "AO/AM");
 
-      String toEmail = mstBranch.getEmployees().stream().toList().getFirst().getEmail();  //"radema.panjaitan@csul.co.id",
+      String toEmail = null;
       String ccEmail = null;
-      if (to != null && to.getData() != null && to.getData().size() > 0) {
+      if (to != null && to.getData() != null && !to.getData().isEmpty()) {
         StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < to.getData().size(); i++) {
           stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
           stringBuilder.append(to.getData().get(i).getEmail());
         }
         toEmail = stringBuilder.toString();
+
+        log.info("To Email  {} ", toEmail);
       }
-      StringBuilder stringBuilder = new StringBuilder();
-      if (ccRM != null && ccRM.getData() != null && ccRM.getData().size() > 0) {
+
+      if (ccRM != null && ccRM.getData() != null && !ccRM.getData().isEmpty()) {
+        StringBuilder stringBuilder = new StringBuilder();
         for (int i = 0; i < ccRM.getData().size(); i++) {
           stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
           stringBuilder.append(ccRM.getData().get(i).getEmail());
         }
         ccEmail = stringBuilder.toString();
+        log.info("Cc Email  {} ", ccEmail);
       }
-      if (ccAO != null && ccAO.getData() != null && ccAO.getData().size() > 0) {
-        for (int i = 0; i < ccAO.getData().size(); i++) {
+
+      // Ensure toEmail is not overwritten by toAO emails
+      if (toAO != null && toAO.getData() != null && !toAO.getData().isEmpty()) {
+        StringBuilder stringBuilder = new StringBuilder();
+        for (int i = 0; i < toAO.getData().size(); i++) {
           stringBuilder.append(!stringBuilder.isEmpty() ? ";" : "");
-          stringBuilder.append(ccAO.getData().get(i).getEmail());
+          stringBuilder.append(toAO.getData().get(i).getEmail());
         }
-        ccEmail = stringBuilder.toString();
+        // Append toAO emails to toEmail, not overwrite
+        if (toEmail != null) {
+          toEmail += ";" + stringBuilder;
+        } else {
+          toEmail = stringBuilder.toString();
+        }
+        log.info("To Email AO  {} ", toEmail);
       }
 
       String phone = financingHdr.getCustomer().getCustMobilePhone();
