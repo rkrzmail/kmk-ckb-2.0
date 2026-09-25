@@ -149,20 +149,15 @@ public class MailConfig {
     }
 
     String cc = template.getMailCc();
-    if (cc != null && cc.contains(";")) {
-      List<String> addTO = Utils.splitList(cc, ";");
-      InternetAddress[] internetAddresses = new InternetAddress[addTO.size()];
-      for (int i = 0; i < addTO.size(); i++) {
-        internetAddresses[i] = new InternetAddress(addTO.get(i));
-      }
+
+    if (cc != null && !cc.trim().isEmpty()) {
+      String formattedCc = cc.replace(";", ",");
+      InternetAddress[] internetAddresses = InternetAddress.parse(formattedCc);
       msg.addRecipients(Message.RecipientType.CC, internetAddresses);
     }
 
-
     msg.setSubject(template.getSubjectMail());
     msg.setSentDate(new Date());
-    //msg.setFrom("noreply_danasakti@csul.co.id");
-
 
     MimeBodyPart mimeBodyPart = new MimeBodyPart();
     mimeBodyPart.setContent(template.getBodyMail(), "text/html");
