@@ -1064,12 +1064,12 @@ public class LoanSubmissionService {
                     .forEach(ccEmailSet::add);
                 }
 
-                String toEmail = toEmailSet.isEmpty() ? null : String.join(",", toEmailSet);
-                String ccEmail = ccEmailSet.isEmpty() ? null : String.join(",", ccEmailSet);
+                String toEmail = toEmailSet.isEmpty() ? null : String.join(";", toEmailSet);
+                String ccEmail = ccEmailSet.isEmpty() ? null : String.join(";", ccEmailSet);
 
                 if (ccEmail != null && toEmailSet.contains(ccEmail)) {
                   ccEmailSet.remove(ccEmail);
-                  ccEmail = ccEmailSet.isEmpty() ? null : String.join(",", ccEmailSet);
+                  ccEmail = ccEmailSet.isEmpty() ? null : String.join(";", ccEmailSet);
                 }
 
                 log.info("Final To Emails : {}", toEmail);
