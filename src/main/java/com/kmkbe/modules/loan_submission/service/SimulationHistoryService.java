@@ -1,6 +1,6 @@
 package com.kmkbe.modules.loan_submission.service;
 
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.dto.SimulationHistDto;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.entity.SimulationHist;
@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 

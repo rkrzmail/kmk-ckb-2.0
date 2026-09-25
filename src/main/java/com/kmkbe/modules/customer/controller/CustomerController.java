@@ -6,22 +6,23 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.constant.CustomerType;
 import com.kmkbe.core.domain.mapper.CustomerMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.repository.CustomerRepository;
-import com.kmkbe.core.domain.repository.FinancingHdrRepository;
+import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.helpers.base.BasePaginationRequest;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
+import com.kmkbe.modules.customer.model.dto.CustomerDto;
+import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
-import com.kmkbe.modules.branch_admin.service.AgreementService;
-import com.kmkbe.modules.customer.request.ApprovalRequest;
-import com.kmkbe.modules.customer.request.UpdateCustomerRequest;
-import com.kmkbe.modules.customer.request.UpdateFapRequest;
+import com.kmkbe.modules.customer.model.entity.Customer;
+import com.kmkbe.modules.customer.model.request.ApprovalRequest;
+import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
+import com.kmkbe.modules.customer.model.request.UpdateFapRequest;
 import com.kmkbe.modules.customer.service.*;
-import com.kmkbe.modules.customer.utils.CustomerUtils;
 import com.kmkbe.modules.loan_submission.service.DocumentService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import com.kmkbe.modules.user.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import jakarta.mail.MessagingException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
@@ -31,8 +32,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.core.Authentication;
-import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
@@ -56,55 +55,16 @@ public class CustomerController {
   private final InvoiceService invoiceService;
   private final CustomerDashboardListService customerDashboardListService;
   private final DocumentService documentService;
-  private final AgreementService agreementService;
-  private final FinancingHdrRepository financingHdrRepository;
   private final CustomerRepository customerRepository;
+  private final CurrentUserService currentUserService;
+  private final BouwheerRepository bouwheerRepository;
 
 
   @GetMapping
   public CommonResult<CustomerDto> profile(
-    Authentication authentication,
     HttpServletRequest request
   ) throws SignatureException, BadCredentialsException, IllegalStateException, IllegalAccessException {
-    Customer customer;
-    String custCode = String.valueOf(request.getParameter("custCode"));
-    if (custCode.equalsIgnoreCase("null") || custCode.equalsIgnoreCase("")) {
-      customer = CustomerUtils.authenticateCustomer(authentication);
-    } else {
-      Optional<Customer> customerOptional = customerRepository.findByCustCode(UUID.fromString(custCode));
-      if (customerOptional.isPresent()) {
-        customer = customerOptional.get();
-      } else {
-        throw new SignatureException("You are not authorized to access this resource");
-      }
-    }
-
-
-    CustomerDto result = CustomerMapper.INSTANCE.custDtoFromEntity(customer);
-    result.setNpwp(customer.getNpwp());
-
-    if (customer.getCompany() != null) {
-      result.setAddress(CustomerMapper.addressDtoFromCompany(customer.getCompany()));
-      result.setCompany(CustomerMapper.INSTANCE.companyDtoFromEntity(customer.getCompany()));
-      result.getAddress().setArea(customer.getCompany().getArea());
-    } else if (customer.getPersonal() != null) {
-      result.setAddress(CustomerMapper.addressDtoFromPersonal(customer.getPersonal()));
-      result.setPersonal(CustomerMapper.INSTANCE.personalDtoFromEntity(customer.getPersonal()));
-    }
-    try {
-      if (result.getAddress() != null) {
-        if (result.getAddress().getArea() == null) {
-          result.getAddress().setArea("");
-        }
-      }
-      if (result.getCompany() != null) {
-        if (result.getCompany().getDirectorName() == null) {
-          result.getCompany().setDirectorName("");
-        }
-      }
-    } catch (Exception ignored) {
-    }
-    return new CommonResult<CustomerDto>().success(result);
+      return customerService.profile(request);
   }
 
 
@@ -117,26 +77,23 @@ public class CustomerController {
   @PutMapping
   @Transactional
   public CommonResult<CustomerDto> updateCustomer(
-    Authentication authentication,
     @Valid @RequestBody UpdateCustomerRequest request
   ) throws Exception {
-    Customer customer = customerService.update(authentication, request);
+    Customer customer = customerService.update(currentUserService.customer(), request);
     CustomerDto result = CustomerMapper.INSTANCE.custDtoFromEntity(customer);
     if (customer.getCustTypeCode().equals(CustomerType.Company.name())) {
       if (request.getCompany() == null) {
         throw new IllegalArgumentException("Company cannot be null");
       }
 
-
       //mandaroty
-      setMessageIfError(request.getCompany().getIdentityNo(), "All field  cannot be null");
-      setMessageIfError(request.getCompany().getCompanyAddress(), "All field cannot be null");
-      setMessageIfError(request.getAddress().getZipCode(), "All field cannot be null");
-      setMessageIfError(String.valueOf(request.getCompany().getIdentityIssuedDate()), "All field cannot be null");
-      setMessageIfError(String.valueOf(request.getCompany().getStaySince()), "All field cannot be null");
-      setMessageIfError(String.valueOf(request.getCompany().getOwnershipStatus()), "All field cannot be null");
-      setMessageIfError(String.valueOf(request.getCompany().getCompanyModel()), "All field cannot be null");
-      setMessageIfError(String.valueOf(request.getCompany().getCustCompanyType()), "All field cannot be null");
+      setMessageIfError(request.getCompany().getIdentityNo(), "Identity No field  cannot be null");
+      setMessageIfError(request.getCompany().getCompanyAddress(), "Company Andress field cannot be null");
+      setMessageIfError(request.getAddress().getZipCode(), "Zipcode field cannot be null");
+      setMessageIfError(String.valueOf(request.getCompany().getIdentityIssuedDate()), "Company Identity Issued Date field cannot be null");
+      setMessageIfError(String.valueOf(request.getCompany().getStaySince()), "StaySince field cannot be null");
+      setMessageIfError(String.valueOf(request.getCompany().getOwnershipStatus()), "Ownership Status field cannot be null");
+      setMessageIfError(String.valueOf(request.getCompany().getCustCompanyType()), "Customer Company Type field cannot be null");
       //tanggal seejak
       if (request.getCompany().getStaySince().getTime() > Utils.NowDate().getTime()) {
         setMessageIfError(String.valueOf(request.getCompany().getCustCompanyType()), "Tanggal Sejak tidak boleh lebih dari hari ini");
@@ -167,85 +124,66 @@ public class CustomerController {
       result.setPersonal(CustomerMapper.INSTANCE.personalDtoFromEntity(personal));
       result.setForceLogout(customer.getForceLogout());
     }
-
-//        ObjectMapper mapper = new ObjectMapper();
-//        System.out.println("Returning DTO: " + mapper.writeValueAsString(result));
-
     return new CommonResult<CustomerDto>().success(result);
   }
 
   @GetMapping("/profilefap")
   public CommonResult<ProfileFapDto> getProfileFap(
-    Authentication authentication,
     HttpServletRequest request
-  ) throws SignatureException {
+  ) {
     return new CommonResult<ProfileFapDto>().success(
-      customerService.prolifeFAP(authentication, request)
+      customerService.prolifeFAP(request)
     );
   }
 
   @GetMapping("/profile/sip")
   public CommonResult<ProfileSITDto> getProfileSit(
-    Authentication authentication,
     HttpServletRequest request
-  ) throws SignatureException {
+  ) {
     return new CommonResult<ProfileSITDto>().success(
-      customerService.prolifeSIT(authentication, request)
+      customerService.prolifeSIT(request)
     );
   }
 
   @GetMapping("/invoices")
   public CommonResult<PaginationResult<PostedInvoiceDto>> getPostedInvoices(
-    Authentication authentication,
     PaginationRequest request
-  ) throws SignatureException {
+  ) {
     return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
-      invoiceService.customerActiveInvoices(authentication, request)
+      invoiceService.customerActiveInvoices(request)
     );
   }
 
   @GetMapping("/invoices/due-date")
   public CommonResult<PaginationResult<CustomerCreditFacilityDueDateDto>> getPostedInvoicesDue(
-    Authentication authentication,
-    PaginationRequest request
+    BasePaginationRequest request
   ) throws SignatureException {
     return new CommonResult<PaginationResult<CustomerCreditFacilityDueDateDto>>().success(
-      customerDashboardListService.listinvoicesduedate(authentication, request)
+      customerDashboardListService.listinvoicesduedate(currentUserService.customer(), request)
     );
 
   }
 
   @GetMapping("/credit-facilities")
   public CommonResult<PaginationResult<CustomerCreditFacilityNewDto>> getActiveCreditFacilities(
-    Authentication authentication,
-    PaginationRequest request
+    BasePaginationRequest request
   ) throws SignatureException {
     //invoiceService.customerCreditFacilities(authentication, request)
 
     return new CommonResult<PaginationResult<CustomerCreditFacilityNewDto>>().success(
-      customerDashboardListService.listcreditfacilities(authentication, request)
+      customerDashboardListService.listcreditfacilities(currentUserService.customer(), request)
     );
   }
 
   @GetMapping("/plafond/{financingHdrCode}")
-  public CommonResult<CustomerPlafondDto> getPlafond(
-    @PathVariable String financingHdrCode, Authentication authentication
-
-  ) throws SignatureException {
-    UserInternalUtils.authenticated(authentication);
-    return new CommonResult<CustomerPlafondDto>().success(
-      customerDashboardService.plafond(financingHdrCode)
-    );
+  public BaseResponse getPlafond(
+    @PathVariable String financingHdrCode) {
+    return customerDashboardService.plafondByFinancingHdrCode(financingHdrCode);
   }
 
   @GetMapping("/plafondcustomer")
-  public CommonResult<CustomerPlafondDto> getPlafondCustomer(
-    Authentication authentication
-  ) throws SignatureException {
-    //UserInternalUtils.authenticated(authentication);
-    return new CommonResult<CustomerPlafondDto>().success(
-      customerDashboardService.plafond(authentication)
-    );
+  public BaseResponse getPlafondCustomer() throws SignatureException {
+    return customerDashboardService.plafond();
   }
 
   @GetMapping("/documents/{custCode}")
@@ -253,7 +191,7 @@ public class CustomerController {
     @PathVariable String custCode,
     PaginationRequest request,
     HttpServletRequest httpServletRequest
-  ) throws SignatureException {
+  ) {
     return new CommonResult<PaginationResult<LegalFileDto>>().success(
       documentService.uploadedCustomerDoc(
         custCode,
@@ -264,18 +202,14 @@ public class CustomerController {
   }
 
   @GetMapping("/dashboard")
-  public CommonResult<CustomerDashboardDto> getDashboard(
-    Authentication authentication
-  ) throws SignatureException {
-    return new CommonResult<CustomerDashboardDto>().success(
-      customerDashboardService.mainDashboard(authentication)
-    );
+  public BaseResponse getDashboard() throws SignatureException {
+    return customerDashboardService.mainDashboard();
   }
 
   @PutMapping("/updateFapData")
-  public ResponseEntity<String> updateFapData(@RequestBody UpdateFapRequest request) {
+  public ResponseEntity<String> updateFapData(@Valid @RequestBody UpdateFapRequest request) {
     try {
-      customerService.updateFapData(request);
+      customerService.updateFapData(currentUserService.customer(), request);
       return ResponseEntity.ok("Fap data updated successfully");
     } catch (Exception e) {
       return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -284,10 +218,10 @@ public class CustomerController {
 
   @GetMapping("/perjanjian/{financingHdrCode}")
   public CommonResult<CustomerPerjanjianDto> getPerjanjian(
-    @PathVariable String financingHdrCode, Authentication authentication
+    @PathVariable String financingHdrCode
 
   ) throws SignatureException {
-    UserInternalUtils.authenticated(authentication);
+    currentUserService.authenticatedInternalUser();
     return new CommonResult<CustomerPerjanjianDto>().success(
       customerDashboardService.perjanjian(financingHdrCode)
     );
@@ -311,18 +245,18 @@ public class CustomerController {
 
 
   @GetMapping(value = "/pages", produces = MediaType.APPLICATION_JSON_VALUE)
-  public PaginationResult<CustomerDto> getAllCustomers(PaginationRequest request) {
+  public BaseResponse getAllCustomers(@Valid BasePaginationRequest request) {
     return customerService.pages(request);
   }
 
   @GetMapping(value = "/{custCode}", produces = MediaType.APPLICATION_JSON_VALUE)
-  public CustomerDto getCustCode(@PathVariable String custCode) {
-    return customerService.findByCustCode(custCode);
+  public BaseResponse getCustomerCode(@PathVariable String custCode) {
+    return customerService.findByCustomerCode(custCode);
   }
 
   @PutMapping(value = "/approval")
-  public BaseResponse approvalCustomer(@RequestBody @Validated ApprovalRequest request,Authentication authentication) throws MessagingException {
-    return customerService.approval(request,authentication);
+  public BaseResponse approvalCustomer(@RequestBody @Valid ApprovalRequest request) throws SignatureException {
+    return customerService.approval(request, currentUserService.internalUsername());
   }
 }
 

@@ -8,6 +8,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ResponseEntity;
@@ -30,11 +31,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class DocumentController {
     private final JwtService jwtService;
 
+    @Autowired
     @Qualifier("internalUserDetailService")
-    private final UserDetailsService internalUserDetails;
+    private UserDetailsService internalUserDetails;
 
+    @Autowired
     @Qualifier("userDetailsService")
-    private final UserDetailsService customerUserDetails;
+    private UserDetailsService customerUserDetails;
 
     private final DocumentService documentService;
 

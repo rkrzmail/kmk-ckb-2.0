@@ -1,15 +1,17 @@
 package com.kmkbe.feign.config;
 
-import com.kmkbe.feign.model.request.PostLoginRequest;
-import com.kmkbe.feign.model.response.PostLoginResponse;
+import com.kmkbe.exception.BusinessException;
+import com.kmkbe.feign.model.request.CsulPostLoginRequest;
+import com.kmkbe.feign.model.dto.CsulPostLoginDto;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import java.util.concurrent.atomic.AtomicReference;
 
 @Slf4j
@@ -19,16 +21,25 @@ public class CsulTokenManager {
   @Value("${feign.csul.ckb.url}")
   private String apiBaseCKB;
 
-  private final RestTemplate restTemplate = new RestTemplate();
+  @Value("${feign.csul.ckb.username}")
+  private String username;
+
+  @Value("${feign.csul.ckb.password}")
+  private String password;
+
+  @Value("${feign.csul.ckb.client-secret}")
+  private String clientSecret;
+
+  private final RestTemplate restTemplate;
   private final AtomicReference<String> cachedToken = new AtomicReference<>();
 
+  public CsulTokenManager(@Qualifier("restTemplate") RestTemplate restTemplate) {
+    this.restTemplate = restTemplate;
+  }
+
   public String getToken() {
-    if (cachedToken.get() == null) {
       synchronized (this) {
-        if (cachedToken.get() == null) {
           executeLogin();
-        }
-      }
     }
     return cachedToken.get();
   }
@@ -43,20 +54,38 @@ public class CsulTokenManager {
   private void executeLogin() {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
-    PostLoginRequest credentials = new PostLoginRequest("ramco", "RamcoVDC2026!", "SecretRamco2026!");
-    HttpEntity<PostLoginRequest> requestEntity = new HttpEntity<>(credentials, headers);
+    CsulPostLoginRequest credentials = new CsulPostLoginRequest(username, password, clientSecret);
+    HttpEntity<CsulPostLoginRequest> requestEntity = new HttpEntity<>(credentials, headers);
 
     try {
-      ResponseEntity<PostLoginResponse> responseEntity = restTemplate.postForEntity(apiBaseCKB.concat("/api/v1/webhook/token"), requestEntity, PostLoginResponse.class);
-      PostLoginResponse response = responseEntity.getBody();
-      log.info("RAMCO {} ",response);
-      if (response != null && response.getData().getToken()!= null) {
+      String fullUrl = UriComponentsBuilder.fromHttpUrl(apiBaseCKB)
+        .path("/api/v1/webhook/token")
+        .toUriString();
+
+      ResponseEntity<CsulPostLoginDto> responseEntity = restTemplate.postForEntity(fullUrl, requestEntity, CsulPostLoginDto.class);
+      CsulPostLoginDto response = responseEntity.getBody();
+
+      log.info("CKB {} ", response);
+
+      if (response != null && response.getData() != null && response.getData().getToken() != null) {
         cachedToken.set("Bearer " + response.getData().getToken());
       } else {
-        throw new RuntimeException("Authentication failed: Token string payload was null");
+        log.info("{} {}", ErrorConstant.ERROR_MESSAGE_80, response);
+        throw new BusinessException(
+          HttpStatus.CONFLICT,
+          ErrorConstant.ERROR_CODE_80,
+          "Authentication failed: Token string payload was null or response data was empty"
+        );
       }
+    } catch (BusinessException be) {
+      throw be;
     } catch (Exception e) {
-      throw new RuntimeException("Failed to fetch auth token via standard RestTemplate", e);
+      log.error("Login failed due to system error: {} ", e.getMessage());
+      throw new BusinessException(
+        HttpStatus.CONFLICT,
+        ErrorConstant.ERROR_CODE_80,
+        "Authentication failed response data was empty"
+      );
     }
   }
 }

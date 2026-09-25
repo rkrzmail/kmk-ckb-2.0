@@ -1,6 +1,7 @@
 package com.kmkbe.modules.user.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.kmkbe.core.domain.constant.AuditActorType;
 import com.kmkbe.core.domain.entity.RedisAttack;
 import com.kmkbe.core.domain.entity.RedisLog;
 import com.kmkbe.core.domain.repository.RedisAttackRepository;
@@ -11,6 +12,7 @@ import com.kmkbe.core.domain.dto.LoginDto;
 import com.kmkbe.core.domain.model.RefreshToken;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.service.refresh_token.IRefreshTokenServices;
+import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.request.RefreshTokenRequest;
 import com.kmkbe.core.domain.dto.BaseLdapRemoteResponseDto;
 import com.kmkbe.core.domain.dto.UserInternalRemoteDto;
@@ -23,13 +25,13 @@ import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstEmployeeRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import com.kmkbe.modules.user.request.LoginInternalRequest;
-import com.kmkbe.nikita.utils.Utils;
+import com.kmkbe.helpers.utils.Utils;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -51,11 +53,13 @@ public class AuthInternalServices {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
+    private final AuditTrailService auditTrailService;
 
 
+    @Autowired
     @Qualifier("DbRefreshTokenServices")
     //@Qualifier("CacheRefreshTokenServices")
-    private final IRefreshTokenServices refreshTokenServices;
+    private IRefreshTokenServices refreshTokenServices;
 
 
     public LoginDto signIn(LoginInternalRequest request) throws JsonProcessingException {
@@ -212,9 +216,25 @@ public class AuthInternalServices {
                     .build();
             redisRepository.save(redis);
 
+            auditTrailService.recordAuthentication(
+                    "INTERNAL_AUTH",
+                    AuditActorType.INTERNAL,
+                    user.getUsername(),
+                    user.getUserCode(),
+                    true,
+                    null
+            );
 
             return loginDto;
         } catch (Exception e) {
+            auditTrailService.recordAuthentication(
+                    "INTERNAL_AUTH",
+                    AuditActorType.INTERNAL,
+                    request.getUsername(),
+                    null,
+                    false,
+                    e.getMessage()
+            );
             log.error("signIn, error {}", e.getMessage());
             throw e;
         }

@@ -1,10 +1,10 @@
 package com.kmkbe.modules.user.repository;
 
 import com.kmkbe.modules.user.entity.MstBranch;
-import io.lettuce.core.dynamic.annotation.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 import java.util.Optional;
@@ -20,9 +20,9 @@ public interface MstBranchRepository extends JpaRepository<MstBranch, String>, J
                     where
                         business_unit = 'CBU' and 
                         ( 
-                         city like '%' || :city || '%'
-                      or kelurahan like '%' || :kelurahan || '%'
-                      or kecamatan like '%' || :kecamatan || '%'
+                         (:city <> '' and city ilike '%' || :city || '%')
+                      or (:kelurahan <> '' and kelurahan ilike '%' || :kelurahan || '%')
+                      or (:kecamatan <> '' and kecamatan ilike '%' || :kecamatan || '%')
                       )
                     order by
                         branch_id desc

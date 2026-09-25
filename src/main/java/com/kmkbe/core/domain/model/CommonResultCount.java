@@ -11,7 +11,7 @@ import lombok.Setter;
 @NoArgsConstructor
 public class CommonResultCount<T> extends CommonResult<T>{
     protected Boolean isSuccess;
-    protected Integer code;
+    protected int code;
     protected Integer count;
     protected String message;
     protected T data;

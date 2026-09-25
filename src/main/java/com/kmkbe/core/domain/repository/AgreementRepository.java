@@ -2,7 +2,6 @@ package com.kmkbe.core.domain.repository;
 
 import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.Cwr;
-import com.kmkbe.core.domain.entity.Debtor;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.validation.constraints.NotNull;
@@ -16,144 +15,186 @@ import org.springframework.data.jpa.repository.Query;
 import java.util.*;
 
 public interface AgreementRepository extends JpaRepository<Agreement, String>, JpaSpecificationExecutor<Agreement> {
-    Optional<Agreement> findTopByAgreementCode(String agreementCode);
+  String SEARCH_FROM = """
+    FROM public.agreement ag
+    JOIN public.cwr ON ag.cwr_code = cwr.cwr_code
+    JOIN public.financing_hdr fh ON ag.financing_hdr_code = fh.financing_hdr_code
+    JOIN public.bouwheer bw ON fh.bouwheer_code = bw.bouwheer_code
+    JOIN public.customer ct ON cwr.cust_code = ct.cust_code
+    WHERE ag.cwr_code = :cwrCode AND ag.financing_hdr_code = :financingHdrCode
+    AND LOWER(CASE :searchBy
+      WHEN 'agreementno' THEN ag.agreement_code
+      WHEN 'agreementcode' THEN ag.agreement_code
+      WHEN 'custname' THEN ct.cust_name
+      WHEN 'namadebitur' THEN ct.cust_name
+      WHEN 'bouwheername' THEN bw.bouwheer_name
+      WHEN 'pemberikerja' THEN bw.bouwheer_name
+      WHEN 'currency' THEN ag.currency
+      WHEN 'financingamt' THEN CAST(ag.financing_amt AS TEXT)
+      WHEN 'disburseamt' THEN CAST(fh.disburse_amt AS TEXT)
+      WHEN 'disbursedate' THEN TO_CHAR(fh.disburse_date, 'DD/MM/YYYY')
+      ELSE NULL END) LIKE '%' || LOWER(:searchValue) || '%'
+    """;
 
-    List<Agreement> findAllByStatus(@Size(max = 20) @NotNull(message = "Status cannot be null") String status);
+  @Query(value = """
+    SELECT cwr.cwr_code, ag.agreement_code, fh.financing_hdr_code,
+      bw.bouwheer_code, bw.bouwheer_name, ag.financing_amt,
+      fh.disburse_date, ag.currency, fh.disburse_amt, ct.cust_name, ct.cust_code,
+      ROW_NUMBER() OVER (ORDER BY fh.disburse_date DESC) as no
+    """ + SEARCH_FROM, countQuery = "SELECT COUNT(*) " + SEARCH_FROM, nativeQuery = true)
+  Page<Map<String, Object>> findAllListByCwrAndFinancingSearch(
+    @Param("cwrCode") String cwrCode, @Param("financingHdrCode") String financingHdrCode,
+    @Param("searchBy") String searchBy, @Param("searchValue") String searchValue, Pageable pageable);
 
-    Optional<Agreement> findTopByAgreementCodeOrderByAgreementId(String agreementCode);
+  Optional<Agreement> findTopByAgreementCode(String agreementCode);
 
-    @Query(
-            value = """
-                    select
-                        ag.*
-                    from
-                        public.agreement ag
-                            join public.agreement_file agf on ag.agreement_code = agf.agreement_code
-                    
-                    """,
-            nativeQuery = true
-    )
-    List<Agreement> viewApprovalStatusNoPending();
+  List<Agreement> findAllByStatus(@Size(max = 20) @NotNull(message = "Status cannot be null") String status);
 
-    @Query(
-            value = """
-                    select
-                        ag.*
-                    from
-                        public.agreement ag
-                            join public.agreement_file agf on ag.agreement_code = agf.agreement_code
-                    where
-                         ag.approval_flag is null
-                      OR ag.approval_flag in ('', 'false');
-                    """,
-            nativeQuery = true
-    )
-    List<Agreement> viewApprovalStatusPending();
+  Optional<Agreement> findTopByAgreementCodeOrderByAgreementId(String agreementCode);
 
-    @Query(
-            value = "SELECT cwr.cwr_code, ag.agreement_code, fh.financing_hdr_code, " +
-                    "bw.bouwheer_code, bw.bouwheer_name, ag.financing_amt, " +
-                    "fh.disburse_date as disburse_date, ag.currency, fh.disburse_amt, " +
-                    "ct.cust_name, ct.cust_code," +
-                    "ROW_NUMBER() OVER (ORDER BY fh.disburse_date DESC) as no " +
-                    "FROM public.agreement ag " +
-                    "JOIN public.cwr ON ag.cwr_code = cwr.cwr_code " +
-                    "JOIN public.financing_hdr fh ON ag.financing_hdr_code = fh.financing_hdr_code " +
-                    "JOIN public.bouwheer bw ON fh.bouwheer_code = bw.bouwheer_code " +
-                    "JOIN public.customer ct ON cwr.cust_code = ct.cust_code " +
-                    "WHERE ag.cwr_code = :cwrCode AND ag.financing_hdr_code = :financingHdrCode " +
-                    "ORDER BY fh.disburse_date DESC",
-            countQuery = "SELECT COUNT(*) FROM public.agreement ag " +
-                    "JOIN public.cwr ON ag.cwr_code = cwr.cwr_code " +
-                    "JOIN public.financing_hdr fh ON ag.financing_hdr_code = fh.financing_hdr_code " +
-                    "JOIN public.bouwheer bw ON fh.bouwheer_code = bw.bouwheer_code " +
-                    "WHERE ag.cwr_code = :cwrCode AND ag.financing_hdr_code = :financingHdrCode",
-            nativeQuery = true
-    )
-    Page<Map<String, Object>> findAllListByCwrAndFinancingRaw(
-            @Param("cwrCode") String cwrCode,
-            @Param("financingHdrCode") String financingHdrCode,
-            Pageable pageable
-    );
+  @Query(
+    value = """
+      select
+          ag.*
+      from
+          public.agreement ag
+              join public.agreement_file agf on ag.agreement_code = agf.agreement_code
+      
+      """,
+    nativeQuery = true
+  )
+  List<Agreement> viewApprovalStatusNoPending();
 
-    List<Agreement> findAllByCwr(@NotNull(message = "Cwr cannot be null") Cwr cwr);
+  @Query(
+    value = """
+      select
+          ag.*
+      from
+          public.agreement ag
+              join public.agreement_file agf on ag.agreement_code = agf.agreement_code
+      where
+           ag.approval_flag is null
+        OR ag.approval_flag in ('', 'false');
+      """,
+    nativeQuery = true
+  )
+  List<Agreement> viewApprovalStatusPending();
 
-    Optional<Agreement> findTopByFinancingHdr(FinancingHdr financingHdr);
-    List<Agreement> findByFinancingHdr_FinancingHdrCode(UUID financinghdrCode);
+  @Query(
+    value = "SELECT cwr.cwr_code, ag.agreement_code, fh.financing_hdr_code, " +
+      "bw.bouwheer_code, bw.bouwheer_name, ag.financing_amt, " +
+      "fh.disburse_date as disburse_date, ag.currency, fh.disburse_amt, " +
+      "ct.cust_name, ct.cust_code," +
+      "ROW_NUMBER() OVER (ORDER BY fh.disburse_date DESC) as no " +
+      "FROM public.agreement ag " +
+      "JOIN public.cwr ON ag.cwr_code = cwr.cwr_code " +
+      "JOIN public.financing_hdr fh ON ag.financing_hdr_code = fh.financing_hdr_code " +
+      "JOIN public.bouwheer bw ON fh.bouwheer_code = bw.bouwheer_code " +
+      "JOIN public.customer ct ON cwr.cust_code = ct.cust_code " +
+      "WHERE ag.cwr_code = :cwrCode AND ag.financing_hdr_code = :financingHdrCode ",
+    countQuery = "SELECT COUNT(*) FROM public.agreement ag " +
+      "JOIN public.cwr ON ag.cwr_code = cwr.cwr_code " +
+      "JOIN public.financing_hdr fh ON ag.financing_hdr_code = fh.financing_hdr_code " +
+      "JOIN public.bouwheer bw ON fh.bouwheer_code = bw.bouwheer_code " +
+      "WHERE ag.cwr_code = :cwrCode AND ag.financing_hdr_code = :financingHdrCode",
+    nativeQuery = true
+  )
+  Page<Map<String, Object>> findAllListByCwrAndFinancingRaw(
+    @Param("cwrCode") String cwrCode,
+    @Param("financingHdrCode") String financingHdrCode,
+    Pageable pageable
+  );
 
-    @Query("SELECT a FROM Agreement a " +
-            "JOIN FETCH a.cwr " +
-            "JOIN FETCH a.cwr.customer " +
-            "JOIN FETCH a.financingHdr " +
-            "WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementNo")
-    Optional<Agreement> findByFinancingHdr_FinancingHdrCode2(@Param("financingHdrCode") UUID financingHdrCode, String agreementNo);
+  List<Agreement> findAllByCwr(@NotNull(message = "Cwr cannot be null") Cwr cwr);
 
-    @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
-    Optional<Agreement> findAgreement(@Param("financingHdrCode") UUID financingHdrCode);
+  Optional<Agreement> findTopByFinancingHdr(FinancingHdr financingHdr);
+
+  List<Agreement> findByFinancingHdr_FinancingHdrCode(UUID financinghdrCode);
+
+  @Query("SELECT a FROM Agreement a " +
+    "JOIN FETCH a.cwr " +
+    "JOIN FETCH a.cwr.customer " +
+    "JOIN FETCH a.financingHdr " +
+    "WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementNo")
+  Optional<Agreement> findByFinancingHdr_FinancingHdrCode2(@Param("financingHdrCode") UUID financingHdrCode, String agreementNo);
+
+  @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
+  Optional<Agreement> findAgreement(@Param("financingHdrCode") UUID financingHdrCode);
 
 
-    @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
-    Optional<Agreement> findByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
+  @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
+  Optional<Agreement> findByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
-    Optional<Agreement> findByAgreementCode(String agreementCode);
+  Optional<Agreement> findByAgreementCode(String agreementCode);
 
-    @Query("SELECT a.agreementCode FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
-    Optional<String> findAgreementCodeByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
+  @Query("SELECT a.agreementCode FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
+  Optional<String> findAgreementCodeByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
-    @Query("SELECT a.cwr.cwrCode FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
-    Optional<String> findCwrCodeByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
+  @Query("SELECT a.cwr.cwrCode FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
+  Optional<String> findCwrCodeByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
-    @Query("""
+  @Query("""
         SELECT cu.custName
         FROM Agreement a
         JOIN Cwr c ON a.cwr.cwrCode = c.cwrCode
         JOIN Customer cu ON c.customer.custCode = cu.custCode
         WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode
     """)
-    Optional<String> findCustNameByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
+  Optional<String> findCustNameByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
-    @Query(value = """
-        SELECT 
-            w.cwr_code,
-            w.cwr_start_date
-        FROM agreement a
-        JOIN cwr w ON a.cwr_code = w.cwr_code
-        WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
-        """, nativeQuery = true)
-    Optional<Map<String, Object>> findCwrCodeAndDate(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
+  @Query(value = """
+    SELECT 
+        w.cwr_code,
+        w.cwr_start_date
+    FROM agreement a
+    JOIN cwr w ON a.cwr_code = w.cwr_code
+    WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
+    """, nativeQuery = true)
+  Optional<Map<String, Object>> findCwrCodeAndDate(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
-    @Query("SELECT a.facility FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
-    String findFaciltyByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
+  @Query("SELECT a.facility FROM Agreement a WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementCode")
+  String findFaciltyByFinancingHdrCode(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
-    @Query(value = """
-        SELECT 
-            c.cust_id_no,
-            c.cust_email,
-            cc.cust_company_type,
-            cc.company_address,
-            cc.phone
-        FROM agreement a
-        JOIN cwr w ON a.cwr_code = w.cwr_code
-        JOIN customer c ON w.cust_code = c.cust_code
-        JOIN customer_company cc ON w.cust_code = cc.cust_code
-        WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
-        """, nativeQuery = true)
-    Optional<Map<String, Object>> finddetailDebtor(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
+  @Query(value = """
+    SELECT 
+        c.cust_id_no,
+        c.cust_email,
+        cc.cust_company_type,
+        cc.company_address,
+        COALESCE(cc.phone, '-') AS phone
+    FROM agreement a
+    JOIN cwr w ON a.cwr_code = w.cwr_code
+    JOIN customer c ON w.cust_code = c.cust_code
+    JOIN customer_company cc ON w.cust_code = cc.cust_code
+    WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
+    """, nativeQuery = true)
+  Optional<Map<String, Object>> finddetailDebtor(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);
 
-    @Query("SELECT a FROM Agreement a " +
-            "JOIN FETCH a.cwr " +
-            "JOIN FETCH a.cwr.customer " +
-            "JOIN FETCH a.financingHdr " +
-            "WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
-    Optional<Agreement> findCwr(@Param("financingHdrCode") UUID financingHdrCode);
+  @Query("SELECT a FROM Agreement a " +
+    "JOIN FETCH a.cwr " +
+    "JOIN FETCH a.cwr.customer " +
+    "JOIN FETCH a.financingHdr " +
+    "WHERE a.financingHdr.financingHdrCode = :financingHdrCode")
+  Optional<Agreement> findCwr(@Param("financingHdrCode") UUID financingHdrCode);
 
-    @Query("SELECT a.agreementCode, a.cwr.cwrCode FROM Agreement a WHERE a.agreementCode IN :agreementCodes")
-    List<Object[]> findCwrCodesByAgreementCodes(@Param("agreementCodes") List<String> agreementCodes);
+  @Query("SELECT a.agreementCode, a.cwr.cwrCode FROM Agreement a WHERE a.agreementCode IN :agreementCodes")
+  List<Object[]> findCwrCodesByAgreementCodes(@Param("agreementCodes") List<String> agreementCodes);
 
-    List<Agreement> findByCwr_CwrCode(String cwrCode);
+  List<Agreement> findByCwr_CwrCode(String cwrCode);
 
-    @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode IN :codes")
-    List<Agreement> findAllByFinancingHdrCodes(@Param("codes") List<UUID> codes);
+  @Query("SELECT a FROM Agreement a WHERE a.financingHdr.financingHdrCode IN :codes")
+  List<Agreement> findAllByFinancingHdrCodes(@Param("codes") List<UUID> codes);
+
+  @Query(value = """
+    SELECT COUNT(*) 
+    FROM agreement amt
+    JOIN cwr ON amt.cwr_code = cwr.cwr_code
+    JOIN financing_hdr fhdr ON amt.financing_hdr_code = fhdr.financing_hdr_code
+    JOIN financing_dtl fdtl ON fhdr.financing_hdr_code = fdtl.financing_hdr_code
+    JOIN invoice ice ON fdtl.invoice_code = ice.invoice_code
+    WHERE cwr.cust_code = :custCode
+    """, nativeQuery = true)
+  Long countInvoiceFundedByCustCode(@Param("custCode") UUID custCode);
 
 }
 

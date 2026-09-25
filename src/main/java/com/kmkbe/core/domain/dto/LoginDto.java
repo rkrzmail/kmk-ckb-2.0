@@ -1,11 +1,17 @@
 package com.kmkbe.core.domain.dto;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.kmkbe.helpers.base.BaseResponse;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
-@JsonAutoDetect(fieldVisibility = JsonAutoDetect.Visibility.ANY)
-public record LoginDto(
-        String token,
-        String refreshToken,
-        Long expiresIn
-) {
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class LoginDto extends BaseResponse{
+  String token;
+  String refreshToken;
+  Long expiresIn;
 }

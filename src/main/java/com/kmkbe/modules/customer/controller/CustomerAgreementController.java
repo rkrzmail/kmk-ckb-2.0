@@ -4,10 +4,10 @@ import com.kmkbe.core.domain.dto.CustomerDashboardDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.modules.customer.service.CustomerDashboardService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
@@ -21,13 +21,13 @@ import java.security.SignatureException;
 @RequiredArgsConstructor
 public class CustomerAgreementController {
     private final CustomerDashboardService customerDashboardService;
+    private final CurrentUserService currentUserService;
 
     @GetMapping("/dashboard")
-    public CommonResult<CustomerDashboardDto.Agreement> getAgreementDashboard(
-            Authentication authentication
-    ) throws SignatureException {
+    public CommonResult<CustomerDashboardDto.Agreement> getAgreementDashboard() throws SignatureException {
+        currentUserService.customer();
         return new CommonResult<CustomerDashboardDto.Agreement>().success(
-                customerDashboardService.agreementDashboard(authentication)
+                customerDashboardService.agreementDashboard()
         );
     }
 

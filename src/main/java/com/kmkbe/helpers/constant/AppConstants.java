@@ -7,6 +7,9 @@ public class AppConstants {
   public static final String CREATOR = "system";
   public static final String LANG_ID = "id-ID";
   public static final String LANG_EN = "en-ID";
+  public static final String CREATOR_CONFINS = "confins";
+  public static final String NEW_CUSTOMER = "new";
+  public static final String EXIT_CUSTOMER = "exist";
 
   public static final Integer CODE_OK = 200;
   public static final Integer CODE_FAILED = 500;
@@ -15,7 +18,7 @@ public class AppConstants {
   public static final Integer CODE_CREATED =201;
 
   public static final String PROCESS_SUCCESSFULLY = "Success";
-  public static final String  PROCESS_CREATED="Created";
+  public static final String PROCESS_CREATED="Created";
   public static final String PROCESS_FAILED = "Failed";
   public static final String PROCESS_CONFLICT = "Failed";
   public static final String PROCESS_NOT_FOUND = "Not Found";

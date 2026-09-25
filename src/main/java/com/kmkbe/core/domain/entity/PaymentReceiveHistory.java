@@ -17,142 +17,125 @@ import java.util.UUID;
 @Entity
 @Table(name = "payment_receive_history", schema = "public")
 public class PaymentReceiveHistory {
-    @Builder.Default
-    @Id
-    @Column(name = "payment_receive_hist_code", nullable = false)
-    private UUID paymentReceiveHistCode = UUID.randomUUID();
+  @Builder.Default
+  @Id
+  @Column(name = "payment_receive_hist_code", nullable = false)
+  private UUID paymentReceiveHistCode = UUID.randomUUID();
 
-    @Column(
-            name = "payment_receive_hist_id",
-            columnDefinition = "serial",
-            insertable = false,
-            updatable = false
-    )
-    private Long paymentReceiveHistId;
+  @Column(
+    name = "payment_receive_hist_id",
+    columnDefinition = "serial",
+    insertable = false,
+    updatable = false
+  )
+  private Long paymentReceiveHistId;
 
-
-    /*@NotNull(message = "agreement_code cannot be null")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "agreement_code",
-            referencedColumnName = "agreement_code",
-            nullable = false,
-            updatable = false
-    )
-    private Agreement agreement;*/
-    @Size(max = 50)
-    @NotNull
-    @Column(name = "agreement_code", nullable = false, length = 50)
-    private String agreementCode;
+  @Size(max = 50)
+  @NotNull
+  @Column(name = "agreement_code", nullable = false, length = 50)
+  private String agreementCode;
 
 
-    @NotNull(message = "bouwheerCode cannot be null")
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(
-            name = "bouwheer_code",
-            referencedColumnName = "bouwheer_code",
-            nullable = false,
-            updatable = false
-    )
-    private Bouwheer bouwheer;
+  @NotNull(message = "bouwheerCode cannot be null")
+  @ManyToOne(fetch = FetchType.LAZY, optional = false)
+  @JoinColumn(
+    name = "bouwheer_code",
+    referencedColumnName = "bouwheer_code",
+    nullable = false,
+    updatable = false
+  )
+  private Bouwheer bouwheer;
 
 
-
-    @Size(max = 50)
-    @NotNull
-    @Column(name = "currency", nullable = false, length = 50)
-    private String currency;
-
-
-    @Column(name = "golive_date", nullable = false)
-    private LocalDateTime goliveDate;
-
-    @NotNull
-    @Column(name = "effective_date", nullable = false)
-    private LocalDateTime effectiveDate;
-
-    @NotNull
-    @Column(name = "due_date", nullable = false)
-    private LocalDateTime dueDate;
+  @Size(max = 50)
+  @NotNull
+  @Column(name = "currency", nullable = false, length = 50)
+  private String currency;
 
 
-    @Column(name = "settlement_date", nullable = false)
-    private LocalDateTime settlementDte;
+  @Column(name = "golive_date", nullable = false)
+  private LocalDateTime goliveDate;
 
-    @NotNull
-    @Column(name = "settlement_amt", nullable = false)
-    private double settlementAmt;
+  @NotNull
+  @Column(name = "effective_date", nullable = false)
+  private LocalDateTime effectiveDate;
 
-
-    @Column(name = "refund_amt", nullable = false)
-    private double refundAmt;
-
-
-    @Column(name = "real_tenor")
-    private int realTenor;
+  @NotNull
+  @Column(name = "due_date", nullable = false)
+  private LocalDateTime dueDate;
 
 
-    @NotNull
-    @Column(name = "ntf_amt") // , nullable = false, length = 50
-    private double ntfAmt;
+  @Column(name = "settlement_date", nullable = false)
+  private LocalDateTime settlementDte;
+
+  @NotNull
+  @Column(name = "settlement_amt", nullable = false)
+  private double settlementAmt;
 
 
-    @NotNull
-    @Column(name = "total_inv_amt", nullable = false)
-    private double totalInvAmt  ;
+  @Column(name = "refund_amt", nullable = false)
+  private double refundAmt;
 
 
-
-    @NotNull
-    @Column(name = "lc_rate", nullable = false)
-    private double lcRate  ;
-
-    @NotNull
-    @Column(name = "lc_days", nullable = false)
-    private int lcDays;
+  @Column(name = "real_tenor")
+  private int realTenor;
 
 
-    @NotNull
-    @Column(name = "lc_amt", nullable = false)
-    private double lcAmt  ;
-
-    @NotNull
-    @Column(name = "interest_amt", nullable = false)
-    private double interestAmt  ;
+  @NotNull
+  @Column(name = "ntf_amt") // , nullable = false, length = 50
+  private double ntfAmt;
 
 
-
-    @Column(name = "payment_receive_no" )
-    private String paymentReceiveNo  ;
-
-    @NotNull
-    @Column(name = "retention", nullable = false)
-    private double retention  ;
-
-    @NotNull
-    @Column(name = "retention_amt", nullable = false)
-    private double retentionAmt  ;
+  @NotNull
+  @Column(name = "total_inv_amt", nullable = false)
+  private double totalInvAmt;
 
 
+  @NotNull
+  @Column(name = "lc_rate", nullable = false)
+  private double lcRate;
 
-    @Size(max = 50)
-    @NotNull
-    @Column(name = "usr_crt", nullable = false, length = 50)
-    private String usrCrt;
-
-    @NotNull
-    @Column(name = "dtm_crt", nullable = false)
-    private LocalDateTime dtmCrt;
-
-    @Size(max = 50)
-    @Column(name = "usr_upd", length = 50)
-    private String usrUpd;
-
-    @Column(name = "dtm_upd")
-    private LocalDateTime dtmUpd;
+  @NotNull
+  @Column(name = "lc_days", nullable = false)
+  private int lcDays;
 
 
+  @NotNull
+  @Column(name = "lc_amt", nullable = false)
+  private double lcAmt;
 
+  @NotNull
+  @Column(name = "interest_amt", nullable = false)
+  private double interestAmt;
+
+
+  @Column(name = "payment_receive_no")
+  private String paymentReceiveNo;
+
+  @NotNull
+  @Column(name = "retention", nullable = false)
+  private double retention;
+
+  @NotNull
+  @Column(name = "retention_amt", nullable = false)
+  private double retentionAmt;
+
+
+  @Size(max = 50)
+  @NotNull
+  @Column(name = "usr_crt", nullable = false, length = 50)
+  private String usrCrt;
+
+  @NotNull
+  @Column(name = "dtm_crt", nullable = false)
+  private LocalDateTime dtmCrt;
+
+  @Size(max = 50)
+  @Column(name = "usr_upd", length = 50)
+  private String usrUpd;
+
+  @Column(name = "dtm_upd")
+  private LocalDateTime dtmUpd;
 
 
 }

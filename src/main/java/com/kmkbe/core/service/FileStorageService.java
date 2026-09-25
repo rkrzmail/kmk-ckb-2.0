@@ -5,8 +5,8 @@ import com.kmkbe.modules.user.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -25,11 +25,17 @@ import java.nio.file.StandardCopyOption;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class FileStorageService {
     private final ServletContext context;
+    private final Path root;
 
-    private final Path root = Paths.get("uploads");
+    public FileStorageService(
+            ServletContext context,
+            @Value("${kmk.file-storage.root:uploads}") String root
+    ) {
+        this.context = context;
+        this.root = Paths.get(root);
+    }
 
     public String save(MultipartFile file, String uploadDir, String name) throws Exception {
         return save(file, uploadDir, name, null);
@@ -83,7 +89,7 @@ public class FileStorageService {
             if (!uploadPath.toFile().exists()) {
                 Files.createDirectories(uploadPath);
             }
-            name = Utils.UUID();//Paths.get(name)
+            name = Utils.UUID() + "." + ext;//Paths.get(name)
 
             Path fileDestination = uploadPath.resolve(name)
                     .normalize()

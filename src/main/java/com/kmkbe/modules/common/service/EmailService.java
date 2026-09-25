@@ -3,7 +3,8 @@ package com.kmkbe.modules.common.service;
 import com.kmkbe.core.annotation.LogMethod;
 import com.kmkbe.config.MailConfig;
 import com.kmkbe.core.domain.dto.MailRemoteDto;
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.EmailTemplate;
 import com.kmkbe.core.domain.model.*;
 import com.kmkbe.core.domain.repository.EmailTemplateRepository;
@@ -12,14 +13,16 @@ import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.env.Environment;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.web.util.HtmlUtils;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -29,26 +32,48 @@ public class EmailService {
   private static final int MAX_SENT_FAIL_ATTEMPTS = 2;
   private static final String EMAIL_FROM = "CSUL.Finance@csul.co.id";
   private static final int EMAIL_PRIORITY = 2;
+  private static final String OTP_DELIVERY_FAILURE_MESSAGE =
+    "Kode OTP gagal dikirim ke email Anda. Silakan coba kembali beberapa saat lagi.";
 
   private static final String M_CUST_NEW_OTP = "M_CUST_NEW_OTP";
   private static final String M_CUST_VERIFY = "M_CUST_VERIFY";
   private static final String M_CUST_CHANGE_OTP = "M_CUST_CHANGE_OTP";
   private static final String M_CUST_ACTIVE = "M_CUST_ACTIVE";
+  private static final String M_CUST_REJECTED = "M_CUST_REJECTED";
+  private static final String M_CUST_VERIFY_MJR = "M_CUST_VERIFY_MJR";
   private static final String M_CUST_LOAN = "M_CUST_LOAN";//(3)
   private static final String M_CUST_LOAN_SUBMITED = "M_CUST_LOAN_SUBMITED";//(4)
   private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";//(2)
   private static final String M_BRANCH_ASSIGN_MJR = "M_BRANCH_ASSIGN_MJR";
   private static final String M_BOUWHEER_PAYMENT = "M_BOUWHEER_PAYMENT";
+  private static final String M_BRANCH_CONTRACT_UPLOAD = "M_BRANCH_CONTRACT_UPLOAD";
   private static final String M_CUST_LOAD_CHANGE = "M_CUST_LOAD_CHANGE";
   private static final String M_CUST_PENCAIRAN = "M_CUST_PENCAIRAN";//(5)
   private static final String M_SIM_LOAN = "M_SIM_LOAN";//(1)
   private static final String M_INV_LINK = "M_INV_LINK";
+  private static final String M_NEW_REGISTER="M_NEW_REGISTER";
 
 
   private final EmailTemplateRepository emailTemplateRepository;
   private final ConfigRemoteService configRemoteService;
   private final MailConfig mailConfig;
   private final ErrorLogRepository errorLogRepository;
+  private final Environment environment;
+
+  @Value("${spring.mail.host:}")
+  private String mailHost;
+
+  @Value("${spring.mail.port:0}")
+  private Integer mailPort;
+
+  @Value("${spring.mail.username:}")
+  private String mailUsername;
+
+  @Value("${spring.mail.password:}")
+  private String mailPassword;
+
+  @Value("${spring.mail.properties.mail.smtp.starttls.enable:true}")
+  private Boolean mailEnableSSL;
 
   @Value("${testing.mail.host}")
   private String testingMailHost;
@@ -69,7 +94,7 @@ public class EmailService {
     LoanDisburseEmailPayload payload
   ) {
     try {
-      EmailTemplate template = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(M_SIM_LOAN, true);
+      EmailTemplate template = loadTemplate(M_SIM_LOAN);
 
       Map<String, Object> args = new HashMap<>();
       Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
@@ -111,26 +136,41 @@ public class EmailService {
     EmailTemplateRepository emailTemplateRepository,
     ConfigRemoteService configRemoteService,
     MailConfig mailConfig,
-    ErrorLogRepository errorLogRepository
+    ErrorLogRepository errorLogRepository,
+    Environment environment
   ) {
     this.emailTemplateRepository = emailTemplateRepository;
     this.configRemoteService = configRemoteService;
     this.mailConfig = mailConfig;
     this.errorLogRepository = errorLogRepository;
+    this.environment = environment;
   }
 
-  @Async
   public void sendOtp(Customer customer, String otpCode) {
-    try {
-      Map<String, Object> obj = new HashMap<>();
-      obj.put("name", customer.getCustName());
-      obj.put("otp_code", otpCode);
-      obj.put("id_no", customer.getCustIdNo());
-      obj.put("email", customer.getCustEmail());
+    Map<String, Object> obj = new HashMap<>();
+    obj.put("name", customer.getCustName());
+    obj.put("otp_code", otpCode);
+    obj.put("id_no", customer.getCustIdNo());
+    obj.put("email", customer.getCustEmail());
 
-      send(customer.getCustEmail(), obj, M_CUST_NEW_OTP);
-    } catch (Exception e) {
-      log.error("Error sendOtp {}", e.getMessage());
+    final boolean delivered;
+    try {
+      delivered = send(customer.getCustEmail(), obj, M_CUST_NEW_OTP);
+    } catch (Exception exception) {
+      log.error(
+        "sendOtp failed. reasonCode=OTP_PREPARATION_FAILED, recipient={}",
+        customer.getCustEmail(),
+        exception
+      );
+      throw new IllegalStateException(OTP_DELIVERY_FAILURE_MESSAGE, exception);
+    }
+
+    if (!delivered) {
+      log.error(
+        "sendOtp failed. reasonCode=OTP_DELIVERY_FAILED, recipient={}",
+        customer.getCustEmail()
+      );
+      throw new IllegalStateException(OTP_DELIVERY_FAILURE_MESSAGE);
     }
   }
 
@@ -179,16 +219,92 @@ public class EmailService {
   }
 
   @Async
-  public void sendNotificationActive(Customer customer) {
+  public void sendNotificationActive(Customer customer,String note) {
     try {
       Map<String, Object> obj = new HashMap<>();
       obj.put("name", customer.getCustName());
       obj.put("id_no", customer.getCustIdNo());
       obj.put("email", customer.getCustEmail());
+      obj.put("note",note);
 
       send(customer.getCustEmail(), obj, M_CUST_ACTIVE);
     } catch (Exception e) {
       log.error("Error sendNotificationActive {}", e.getMessage());
+    }
+  }
+
+  public record DeliveryResult(boolean acceptedBySmtp, String errorMessage) {}
+
+  public DeliveryResult sendCustomerApprovalNotification(Customer customer, String approvalStatus, String note) {
+    String recipient = customer.getCustEmail();
+    String templateCode = "APPROVED".equals(approvalStatus) ? M_CUST_ACTIVE : M_CUST_REJECTED;
+    try {
+      EmailTemplate source = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(templateCode, true);
+      if (source == null) {
+        return new DeliveryResult(false, "Active email template not found: " + templateCode);
+      }
+      EmailTemplate template = new EmailTemplate();
+      template.setEmailTemplateCode(source.getEmailTemplateCode());
+      template.setSubjectMail(source.getSubjectMail());
+      template.setBodyMail(source.getBodyMail());
+      template.setMailCc(source.getMailCc());
+      template.setMailBcc(source.getMailBcc());
+      Map<String, Object> args = new HashMap<>();
+      args.put("name", customer.getCustName());
+      args.put("id_no", customer.getCustIdNo());
+      args.put("email", recipient);
+      args.put("additionalArgs", Map.of("approval_note",
+        HtmlUtils.htmlEscape(note == null || note.isBlank() ? "-" : note)));
+      template.setMailTo(recipient);
+      template.setBodyMail(mappingBody(template.getBodyMail(), args));
+      return sendMailMessageWithResult(template, recipient);
+    } catch (Exception exception) {
+      log.error("Customer approval email preparation failed. customerCode={}, templateCode={}",
+        customer.getCustCode(), templateCode, exception);
+      return new DeliveryResult(false, exception.getClass().getSimpleName() + ": " + exception.getMessage());
+    }
+  }
+
+  @Async
+  public void sendNotificationRejected(Customer customer, String approvalNote) {
+    try {
+      Map<String, Object> obj = new HashMap<>();
+      obj.put("name", customer.getCustName());
+      obj.put("id_no", customer.getCustIdNo());
+      obj.put("email", customer.getCustEmail());
+      obj.put("additionalArgs", Map.of(
+        "approval_note",
+        HtmlUtils.htmlEscape(approvalNote == null || approvalNote.isBlank() ? "-" : approvalNote)
+      ));
+
+      send(customer.getCustEmail(), obj, M_CUST_REJECTED);
+    } catch (Exception e) {
+      log.error("Error sendNotificationRejected for {}", customer.getCustEmail(), e);
+    }
+  }
+
+  @Async
+  public void sendNotificationCustomerVerification(String recipients, Customer customer,String bouwheerName) {
+    try {
+      Map<String, Object> args = new HashMap<>();
+      args.put("name", customer.getCustName());
+      args.put("email", customer.getCustEmail());
+      args.put("id_no", customer.getCustIdNo());
+      args.put("additionalArgs", Map.of(
+        "vendor_code", customer.getCustExternalCode() == null ? "-" : customer.getCustExternalCode(),
+        "vendor_name", bouwheerName == null ? "-" : bouwheerName,
+        "customer_type", customer.getCustTypeCode() == null ? "-" : customer.getCustTypeCode(),
+        "phone", customer.getCustMobilePhone() == null ? "-" : customer.getCustMobilePhone()
+      ));
+
+      send(recipients, args, M_CUST_VERIFY_MJR);
+    } catch (Exception e) {
+      log.error(
+        "sendNotificationCustomerVerification failed. customerCode={}, recipients={}",
+        customer == null ? null : customer.getCustCode(),
+        recipients,
+        e
+      );
     }
   }
 
@@ -254,30 +370,6 @@ public class EmailService {
     }
   }
 
-//    @Async
-//    public void sendNotificationLoanSubmited(
-//            final Customer customer,
-//            LoanDisburseEmailPayload payload
-//    ) {
-//        try {
-//            Map<String, Object> args = new HashMap<>();
-//            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
-//            if (payloadArgs != null) {
-//                payloadArgs.remove("invoices");
-//                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
-//            }
-//
-//            args.put("email", customer.getCustEmail());
-//            args.put("name", customer.getCustName());
-//            args.put("id_no", customer.getCustIdNo());
-//            args.put("additionalArgs", payloadArgs);
-//
-//            send(customer.getCustEmail(), args, M_CUST_LOAN_SUBMITED);
-//        } catch (Exception e) {
-//            log.error("Error sendNotificationLoanDisbursement {}", e.getMessage());
-//        }
-//    }
-
   @Async
   public void sendNotificationLoanSubmited(
     final Customer customer,
@@ -296,11 +388,9 @@ public class EmailService {
       args.put("id_no", customer.getCustIdNo());
       args.put("additionalArgs", payloadArgs);
 
-      EmailTemplate template = emailTemplateRepository
-        .findByEmailTemplateCodeAndIsActive(M_CUST_LOAN_SUBMITED, true);
+      EmailTemplate template = loadTemplate(M_CUST_LOAN_SUBMITED);
       template.setMailTo(customer.getCustEmail());
 
-//            sendMailMessage(template, customer.getCustEmail());
       send(args, template);
     } catch (Exception e) {
       log.error("Error sendNotificationLoanSubmited {}", e.getMessage());
@@ -328,8 +418,7 @@ public class EmailService {
       args.put("branchArea", branchArea);
       args.put("email", email);
 
-      final EmailTemplate template = emailTemplateRepository
-        .findByEmailTemplateCodeAndIsActive(M_CUST_PENCAIRAN, true);
+      final EmailTemplate template = loadTemplate(M_CUST_PENCAIRAN);
       template.setMailTo(email);
       template.setMailCc(email);
 
@@ -338,58 +427,6 @@ public class EmailService {
       log.error("Error sendNotificationPencairan {}", e.getMessage());
     }
   }
-
-//    @Async
-//    public void sendNotificationPencairan(
-//            String email,
-//            String bouwheerName,
-//            String branchArea,
-//            PencarianPayload payload
-//    ) {
-//        try {
-//            Map<String, Object> args = new HashMap<>();
-//            Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
-//
-//            if (payloadArgs != null) {
-//                payloadArgs.remove("invoices");
-//                payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
-//                payloadArgs.remove("invoice_rows");
-//                payloadArgs.put("invoice_rows", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
-//            }
-//
-//            args.put("additionalArgs", payloadArgs);
-//            args.put("bouwheerName", bouwheerName);
-//            args.put("branchArea", branchArea);
-//            args.put("email", email);
-//
-//            final EmailTemplate template = emailTemplateRepository
-//                    .findByEmailTemplateCodeAndIsActive(M_CUST_PENCAIRAN, true);
-//
-//            String subjectMail = template.getSubjectMail().replace("{bouwheerName}", bouwheerName);
-//            template.setSubjectMail(subjectMail);
-//
-//            String bodyEmail = template.getBodyMail();
-//            bodyEmail = bodyEmail.replace("{bouwheerName}", bouwheerName)
-//                    .replace("{companyName}", payloadArgs.get("companyName").toString())
-//                    .replace("{email}", email)
-//                    .replace("{invoices}", payloadArgs.get("invoices").toString())
-//                    .replace("{invoiceAmt}", payloadArgs.get("invoiceAmt").toString())
-//                    .replace("{retention}", payloadArgs.get("retention").toString())
-//                    .replace("{financingAmt}", payloadArgs.get("financingAmt").toString())
-//                    .replace("{totalFeeAmt}", payloadArgs.get("totalFeeAmt").toString())
-//                    .replace("{tenor}", payloadArgs.get("tenor").toString())
-//                    .replace("{financingDueDate}", payloadArgs.get("financingDueDate").toString())
-//                    .replace("{disburseAmt}", payloadArgs.get("disburseAmt").toString());
-//
-//            template.setBodyMail(bodyEmail);
-//
-//            template.setMailTo("tedyaditia047@gmail.com");
-//
-//            send(args, template);
-//        } catch (Exception e) {
-//            log.error("Error sendNotificationPencairan {}", e.getMessage());
-//        }
-//    }
 
   @Async
   public void sendNotificationBranchAssign(
@@ -412,13 +449,13 @@ public class EmailService {
       args.put("branchArea", branchArea);
       args.put("email", payload.getEmail());
 
-      final EmailTemplate template = emailTemplateRepository
-        .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN, true);
+      final EmailTemplate template = loadTemplate(M_BRANCH_ASSIGN);
       template.setSubjectMail(template.getSubjectMail().replace("{bouwheerName}", bouwheerName));
       template.setMailTo(payload.getToEmail());
       template.setMailCc(payload.getCcEmail());
 
       send(args, template);
+      log.info("sendNotificationBranchAssign args: {}", args);
     } catch (Exception e) {
       log.error("Error sendNotificationBranchAssign {}", e.getMessage());
     }
@@ -445,8 +482,7 @@ public class EmailService {
       args.put("branchArea", branchArea);
       args.put("email", payload.getEmail());
 
-      final EmailTemplate template = emailTemplateRepository
-        .findByEmailTemplateCodeAndIsActive(M_BRANCH_ASSIGN_MJR, true);
+      final EmailTemplate template = loadTemplate(M_BRANCH_ASSIGN_MJR);
       template.setSubjectMail(template.getSubjectMail().replace("{bouwheerName}", bouwheerName));
       template.setMailTo(payload.getToEmail());
       template.setMailCc(payload.getCcEmail());
@@ -473,8 +509,7 @@ public class EmailService {
 
       args.put("additionalArgs", payloadArgs);
 
-      final EmailTemplate template = emailTemplateRepository
-        .findByEmailTemplateCodeAndIsActive(M_BOUWHEER_PAYMENT, true);
+      final EmailTemplate template = loadTemplate(M_BOUWHEER_PAYMENT);
       template.setSubjectMail(template.getSubjectMail().replace("{vendorCode}", payload.getVendorCode()));
       template.setMailTo(email);
       template.setBodyMail(payload.bodyMail(template));
@@ -497,19 +532,61 @@ public class EmailService {
     }
   }
 
-  private void send(
+  @Async
+  public void sendNotificationContractUploadRequired(
+    String branchAdminEmails,
+    AgreementContractEmailPayload payload
+  ) {
+    try {
+      Map<String, Object> args = new HashMap<>();
+      args.put("additionalArgs", ObjectUtils.objectToJson(payload));
+
+      EmailTemplate template = loadTemplate(M_BRANCH_CONTRACT_UPLOAD);
+      template.setMailTo(branchAdminEmails);
+      template.setSubjectMail(template.getSubjectMail().replace("{agreementCode}", payload.getAgreementCode()));
+
+      send(args, template);
+    } catch (Exception e) {
+      log.error(
+        "sendNotificationContractUploadRequired failed. agreementCode={}, recipients={}",
+        payload == null ? null : payload.getAgreementCode(),
+        branchAdminEmails,
+        e
+      );
+    }
+  }
+
+  @Async
+  public void sendRegistrationUser(Customer customer, String mailTo) {
+    try {
+      Map<String, Object> obj = new HashMap<>();
+      obj.put("name", customer.getCustName());
+      obj.put("phoneNumber", customer.getCustMobilePhone());
+      obj.put("email",customer.getCustEmail());
+
+      EmailTemplate template = loadTemplate(M_NEW_REGISTER);
+      template.setMailTo(mailTo);
+      template.setSubjectMail(template.getSubjectMail());
+
+      send(obj,template);
+      log.info("Send register to  {}", mailTo);
+    } catch (Exception e) {
+      log.error("Error send register to user {}", e.getMessage());
+    }
+  }
+
+  private boolean send(
     final String email,
     final Map<String, Object> args,
     final String templateCode
   ) {
-    final EmailTemplate template = emailTemplateRepository
-      .findByEmailTemplateCodeAndIsActive(templateCode, true);
+    final EmailTemplate template = loadTemplate(templateCode);
     {
       template.setMailTo(email);
       template.setBodyMail(mappingBody(template.getBodyMail(), args));
     }
 
-    sendMailMessage(
+    return sendMailMessage(
       template,
       email
     );
@@ -524,6 +601,23 @@ public class EmailService {
       template,
       template.getMailTo()
     );
+  }
+
+  private EmailTemplate loadTemplate(String templateCode) {
+    EmailTemplate source = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(templateCode, true);
+    if (source == null) {
+      throw new IllegalStateException("Active email template not found: " + templateCode);
+    }
+
+    EmailTemplate template = new EmailTemplate();
+    template.setEmailTemplateCode(source.getEmailTemplateCode());
+    template.setSubjectMail(source.getSubjectMail());
+    template.setBodyMail(source.getBodyMail());
+    template.setMailTo(source.getMailTo());
+    template.setMailCc(source.getMailCc());
+    template.setMailBcc(source.getMailBcc());
+    template.setIsActive(source.getIsActive());
+    return template;
   }
 
   private String mappingBody(
@@ -598,7 +692,7 @@ public class EmailService {
     final boolean isHtml = template.getBodyMail().contains("html");
 
     helper.setFrom(EMAIL_FROM);
-    helper.setTo(template.getMailTo());
+    helper.setTo(template.getMailTo().split(";"));
     helper.setSubject(template.getSubjectMail());
     helper.setText(template.getBodyMail(), isHtml);
 
@@ -614,16 +708,59 @@ public class EmailService {
     return helper;
   }
 
+  private MailRemoteDto resolveMailConfig() {
+    if (isProductionEnvironment() || isDevelopmentEnvironment()) {
+      MailRemoteDto remoteMail = configRemoteService.fetchEmailInfo();
+      log.info(
+        "EmailService using remote mail config host={} port={} username={}",
+        remoteMail.getServerUrl(),
+        remoteMail.getPort(),
+        remoteMail.getUsername()
+      );
+      return remoteMail;
+    }
+
+    log.info("EmailService using yaml mail config host={} port={} username={}", mailHost, mailPort, mailUsername);
+    return MailRemoteDto.builder()
+      .serverUrl(mailHost)
+      .port(mailPort)
+      .username(mailUsername)
+      .password(mailPassword)
+      .enableSSL(Boolean.TRUE.equals(mailEnableSSL))
+      .build();
+  }
+
+  private boolean isProductionEnvironment() {
+    String env = environment.getProperty("env", "");
+    return isProductionValue(env) || Arrays.stream(environment.getActiveProfiles()).anyMatch(this::isProductionValue);
+  }
+
+  private boolean isDevelopmentEnvironment() {
+    String env = environment.getProperty("env", "");
+    return isDevelopmentValue(env) || Arrays.stream(environment.getActiveProfiles()).anyMatch(this::isDevelopmentValue);
+  }
+
+  private boolean isProductionValue(String value) {
+    return "prod".equalsIgnoreCase(value) || "production".equalsIgnoreCase(value);
+  }
+
+  private boolean isDevelopmentValue(String value) {
+    return "dev".equalsIgnoreCase(value) || "development".equalsIgnoreCase(value);
+  }
+
   @LogMethod
   private boolean sendMailMessage(
     EmailTemplate template,
     String email
   ) {
+    return sendMailMessageWithResult(template, email).acceptedBySmtp();
+  }
+
+  private DeliveryResult sendMailMessageWithResult(EmailTemplate template, String email) {
     try {
-      //CsulMailSender csulMailSender = new CsulMailSender(mailConfig, configRemoteService);
       int attempts = 0;
       boolean success = false;
-      MailRemoteDto internalMail = configRemoteService.fetchEmailInfo();
+      MailRemoteDto internalMail = resolveMailConfig();
       for (int i = 0; i < MAX_SENT_FAIL_ATTEMPTS; i++) {
         try {
           mailConfig.sendHtmlEmail(
@@ -634,7 +771,7 @@ public class EmailService {
           success = true;
         } catch (Exception e) {
           attempts++;
-          log.error("EmailService Failed to send email to {} due to {}", email, e.getMessage());
+          log.error("EmailService failed to send email to {} on attempt {}", email, attempts, e);
           log.error("EmailService try attempts: {}", attempts);
 
         }
@@ -652,32 +789,10 @@ public class EmailService {
         mailSender.send(mimeMessage);
       }
 
-      return true;
+      return new DeliveryResult(true, null);
     } catch (Exception e) {
-      log.error("sendMailMessage, error {}", e.getMessage());
-      return false;
-    }
-  }
-
-
-  @Getter
-  private static class CsulMailSender {
-    private MailRemoteDto internalMail;
-    private final JavaMailSender mailSender;
-
-
-    private CsulMailSender(
-      MailConfig mailConfig,
-      ConfigRemoteService configRemoteService
-    ) throws MessagingException {
-      internalMail = configRemoteService.fetchEmailInfo();
-      mailSender = mailConfig.javaMailSender(
-        internalMail.getServerUrl(),
-        internalMail.getPort(),
-        internalMail.getUsername(),
-        internalMail.getPassword(),
-        internalMail.getEnableSSL() != null && internalMail.getEnableSSL()
-      );
+      log.error("sendMailMessage failed for {}", email, e);
+      return new DeliveryResult(false, e.getClass().getSimpleName() + ": " + e.getMessage());
     }
   }
 
@@ -688,7 +803,7 @@ public class EmailService {
         throw new IllegalArgumentException("Invitation link cannot be null");
       }
 
-      EmailTemplate template = emailTemplateRepository.findByEmailTemplateCodeAndIsActive(M_INV_LINK, true);
+      EmailTemplate template = loadTemplate(M_INV_LINK);
 
       Map<String, Object> args = new HashMap<>();
       args.put("invitationLink", invitationLink);

@@ -1,49 +1,12 @@
 #ENV
 env: dev
-csul:
-  confins:
-    mou:
-      fwd: http://172.21.10.149:8083/mou_getsigner.php
-      getcwrbwhr: http://172.21.10.149:8083/mou_getcwrbouwheer.php
-      getlistcwrbwhr: http://172.21.10.149:8083/mou_getlistcwrbwhr.php
-      v1: http://confins.csulfinance.com/api/mou/v1
-      getpagingSQL: http://172.21.10.149:8083/mou_getpagingsql.php
-    los:
-      getAppNo: http://172.21.10.149:8083/los_getappno.php
-      getpagingSQL: http://172.21.10.149:8083/los_getpagingsql.php
-      fwd: http://172.21.10.149:8083/los_getagr.php
-      getRekening: http://172.21.10.149:8083/los_getrekening.php
-      v1: http://confins.csulfinance.com/api/los/v1
-    corelos:
-      v1: https://confins.csulfinance.com/api/corelos/v1
-      getFinData: http://172.21.10.149:8083/corelos_getfindata.php
-      getFactoring: http://172.21.10.149:8083/corelos_getfactoring.php
-    ap:
-      v1: https://confins.csulfinance.com/api/ap/v1
-    fou:
-      v1: https://confins.csulfinance.com/api/fou/v1
-      getcalculate: http://172.21.10.149:8083/fou_getcalculate.php
-      getzipcode: http://172.21.10.149:8083/fou_getzipcode.php
-    payment:
-      v1: https://confins.csulfinance.com/api/payment/v1
-    adinskey: MWxHZ1ZmZEpubHkrNy9YdmFNZ3ZSVXlHRzV1emozM0hrN1AxYTRjRFg1a1NZUz0=
-    ar:
-      v1: https://confins.csulfinance.com/api/ar/v1
-  sisca:
-    v1:
-      auth:
-        username: KMKDigital
-        password: CSUljkt#2024
-      white-list: http://10.30.15.146:8185/SISCAConnect/api/v1
-      internal: http://10.30.15.146:8185/SISCAConnect/api/v1
-  mst:
-    v1: https://goakcwwrshxfwkgm6bwnegpeti0ajaus.lambda-url.ap-southeast-1.on.aws/v1
 spring:
   flyway:
     enabled: 'true'
     schemas: public
     locations: classpath:db/migration/dev/{vendor}
     baseline-on-migrate: 'true'
+    out-of-order: true
   data:
     redis:
       database: '6'
@@ -65,6 +28,7 @@ spring:
     hibernate:
       ddl-auto: none
     show-sql: 'true'
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
   cache:
     type: redis
   boot:
@@ -79,6 +43,17 @@ spring:
     password: Csultmt10
     url: jdbc:postgresql://aurora-kmk.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified
     username: postgres
+  mail:
+    host: srv150.niagahoster.com
+    port: 465
+    protocol: smtp
+    username: csul@nikita.co.id
+    password: DArS!OP#csul6?6Uu
+    properties:
+      mail.smtp.ssl.trust: '*'
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
 logging:
   level:
     org:
@@ -88,6 +63,9 @@ logging:
             bind: trace
         stat: debug
         type: trace
+    feign: DEBUG                             # Enables basic Feign engine debug logs
+    org.springframework.cloud.openfeign: DEBUG # Enables Spring integration logs
+
   logback:
     rollingpolicy:
       clean-history-on-start: 'true'
@@ -126,12 +104,59 @@ custom:
   mongodb:
     collection: event
 
-# Feign configuration
+# API
+csul:
+  confins:
+    mou:
+      fwd: http://172.21.10.149:8083/mou_getsigner.php
+      getcwrbwhr: http://172.21.10.149:8083/mou_getcwrbouwheer.php
+      getlistcwrbwhr: http://172.21.10.149:8083/mou_getlistcwrbwhr.php
+      v1: https://uat-confinsr3.csulfinance.com/api/mou/v1
+      getpagingSQL: http://172.21.10.149:8083/mou_getpagingsql.php
+    los:
+      getAppNo: http://172.21.10.149:8083/los_getappno.php
+      getpagingSQL: http://172.21.10.149:8083/los_getpagingsql.php
+      fwd: http://172.21.10.149:8083/los_getagr.php
+      getRekening: http://172.21.10.149:8083/los_getrekening.php
+      v1: https://uat-confinsr3.csulfinance.com/api/los/v1
+    corelos:
+      v1: https://uat-confinsr3.csulfinance.com/api/corelos/v1
+      getFinData: http://172.21.10.149:8083/corelos_getfindata.php
+      getFactoring: http://172.21.10.149:8083/corelos_getfactoring.php
+    ap:
+      v1: https://uat-confinsr3.csulfinance.com/api/ap/v1
+    fou:
+      v1: https://uat-confinsr3.csulfinance.com/api/fou/v1
+      getcalculate: http://172.21.10.149:8083/fou_getcalculate.php
+      getzipcode: http://172.21.10.149:8083/fou_getzipcode.php
+    payment:
+      v1: https://uat-confinsr3.csulfinance.com/api/payment/v1
+    adinskey: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
+    ar:
+      v1: https://uat-confinsr3.csulfinance.com/api/ar/v1
+  sisca:
+    v1:
+      auth:
+        username: KMKDigital
+        password: CSUljkt#2024
+      white-list: http://10.30.15.146:8185/SISCAConnect/api/v1
+      internal: http://10.30.15.146:8185/SISCAConnect/api/v1
+    mail-position:
+      branch-admin: "ADM"
+      account-officer: "AO/AM"
+      branch-manager: "BM/BOH"
+      area-sales-manager: "RM"
+  mst:
+    v1: https://goakcwwrshxfwkgm6bwnegpeti0ajaus.lambda-url.ap-southeast-1.on.aws/v1
+
+# Feign Configuration
 feign:
   csul:
     ckb:
-      url: https://api-ckbvendorportal.dipstrategy.co.id
-      api-key:
+      url: "http://10.144.250.13:5000"
+      username: ramco
+      password: RamcoVDC2026!
+      client-secret: SecretRamco2026!
 
   confins:
     url: https://uat-confinsr3.csulfinance.com

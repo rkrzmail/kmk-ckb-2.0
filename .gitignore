@@ -36,3 +36,4 @@ build/
 /uploads
 
 src/main/resources/application-prod-old.properties
+.continue

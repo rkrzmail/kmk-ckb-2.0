@@ -1,9 +1,7 @@
 package com.kmkbe.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.kmkbe.core.converter.ObjectToUrlEncodedConverter;
 import com.kmkbe.core.factory.CustomClientHttpRequestFactory;
-import com.kmkbe.core.domain.repository.CustomerRepository;
+import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +17,7 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.client.RestTemplate;
 
+import java.time.Clock;
 import java.util.TimeZone;
 
 @Configuration
@@ -78,5 +77,10 @@ public class AppConfig {
     @Bean
     public BCryptPasswordEncoder bCryptEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public Clock clock() {
+        return Clock.systemDefaultZone();
     }
 }

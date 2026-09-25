@@ -1,0 +1,1 @@
+ALTER TABLE payment_receive_history ADD COLUMN IF NOT EXISTS bouwheer_code uuid NULL;

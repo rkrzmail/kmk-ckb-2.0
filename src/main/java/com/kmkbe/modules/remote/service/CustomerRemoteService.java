@@ -4,13 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
 import com.kmkbe.core.domain.dto.CustomerRemoteDto;
-import com.kmkbe.core.domain.dto.ExternalIntegrationLoanSimulationDto;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.entity.ApiIntegrationLog;
-import com.kmkbe.core.domain.model.ApiSbu;
-import com.kmkbe.core.domain.repository.ApiSbuRepository;
 import com.kmkbe.core.service.BaseRemoteService;
-import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
@@ -30,7 +26,6 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.Map;
-import java.util.Optional;
 
 @Service
 @Slf4j

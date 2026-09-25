@@ -4,159 +4,189 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.helpers.base.BasePaginationRequest;
+import com.kmkbe.exception.BusinessException;
 import com.kmkbe.modules.branch_admin.service.ReportService;
-import com.kmkbe.modules.user.utils.UserInternalUtils;
 import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.http.HttpServletResponse;
-import net.sf.jasperreports.engine.JRException;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.ByteArrayResource;
-import org.springframework.core.io.Resource;
 import org.springframework.http.*;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
-import java.util.Map;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.NoSuchElementException;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/v1/report")
 public class ReportController {
 
-    @Autowired
-    private ReportService reportService;
+  private final ReportService reportService;
+  private final CurrentUserService currentUserService;
 
-    @GetMapping("/visitor")
-    public CommonResult<PaginationResult<VisitorDto>> getlistVisitor(
-            Authentication authentication, PaginationRequest request
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-        return new CommonResult<PaginationResult<VisitorDto>>().success(
-                reportService.getVisitorReport(request)
-        );
+  public ReportController(ReportService reportService,
+                          CurrentUserService currentUserService) {
+    this.reportService = reportService;
+    this.currentUserService = currentUserService;
+  }
+
+  @GetMapping("/visitor")
+  public CommonResult<PaginationResult<VisitorDto>> getlistVisitor(
+    PaginationRequest request
+  ) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<PaginationResult<VisitorDto>>().success(
+      reportService.getVisitorReport(request)
+    );
+  }
+
+  @GetMapping("/proyeksi")
+  public CommonResult<PaginationResult<ProyeksiReportDto>> getlistProyeksi(
+    BasePaginationRequest request,
+    @RequestParam(value = "startDate", required = false) String startDate,
+    @RequestParam(value = "endDate", required = false) String endDate
+  ) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<PaginationResult<ProyeksiReportDto>>().success(
+      reportService.getProyeksiReport(
+        request,
+        parseReportDate(startDate, "startDate"),
+        parseReportDate(endDate, "endDate")
+      )
+    );
+  }
+
+  // Accepts both "dd/MM/yyyy" (e.g. 01/01/2025) and "ddMMyyyy" (e.g. 01012025).
+  private static Date parseReportDate(String value, String fieldName) {
+    if (value == null || value.trim().isEmpty()) {
+      return null;
     }
-
-    @GetMapping("/proyeksi")
-    public CommonResult<PaginationResult<ProyeksiReportDto>> getlistProyeksi(
-            Authentication authentication, PaginationRequest request
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-        return new CommonResult<PaginationResult<ProyeksiReportDto>>().success(
-                reportService.getProyeksiReport(request)
-        );
+    String raw = value.trim();
+    for (String pattern : new String[]{"dd/MM/yyyy", "ddMMyyyy"}) {
+      SimpleDateFormat sdf = new SimpleDateFormat(pattern);
+      sdf.setLenient(false);
+      try {
+        return sdf.parse(raw);
+      } catch (ParseException ignored) {
+        // try next pattern
+      }
     }
+    throw new BusinessException(
+      HttpStatus.BAD_REQUEST,
+      400,
+      "Format " + fieldName + " tidak valid: '" + value + "'. Gunakan dd/MM/yyyy atau ddMMyyyy."
+    );
+  }
 
-    @GetMapping("/summary/branch")
-    public CommonResult<PaginationResult<SummaryByBranchDto>> getlistSummaryByBranch(
-            Authentication authentication, PaginationRequest request
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-        return new CommonResult<PaginationResult<SummaryByBranchDto>>().success(
-                reportService.getSummaryByBranch(request)
-        );
+  @GetMapping("/summary/branch")
+  public CommonResult<PaginationResult<SummaryByBranchDto>> getlistSummaryByBranch(
+    PaginationRequest request
+  ) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<PaginationResult<SummaryByBranchDto>>().success(
+      reportService.getSummaryByBranch(request)
+    );
+  }
+
+  @GetMapping("/summary/ao")
+  public CommonResult<PaginationResult<SummaryByAODto>> getAllReportBranchByAO(
+    PaginationRequest request
+  ) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<PaginationResult<SummaryByAODto>>().success(
+      reportService.getAllReportBranchByAO(request)
+    );
+  }
+
+  @GetMapping("/summary/detail")
+  public CommonResult<PaginationResult<SummaryDetailDto>> getAllReportSummaryDetail(
+    PaginationRequest request
+  ) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<PaginationResult<SummaryDetailDto>>().success(
+      reportService.getSummaryDetail(request)
+    );
+  }
+
+  @GetMapping("/duedate")
+  public CommonResult<PaginationResult<ReportDueDateDto>> getAllContractDueDate(
+    PaginationRequest request
+  ) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    return new CommonResult<PaginationResult<ReportDueDateDto>>().success(
+      reportService.getDueDateDetail(request)
+    );
+  }
+
+  @GetMapping("/preview/{financingHdrCode}/{agreementCode}/{branchManager}/{areaSalesManager}")
+  public ResponseEntity<byte[]> previewReport(
+    @PathVariable String financingHdrCode,
+    @PathVariable String agreementCode,
+    @PathVariable String branchManager,
+    @PathVariable String areaSalesManager
+  ) {
+
+    try {
+      byte[] pdfBytes = reportService.generateReport(financingHdrCode, agreementCode, branchManager, areaSalesManager);
+      return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
+        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=preview.pdf")
+        .body(pdfBytes);
+    } catch (NoSuchElementException e) {
+      return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        .body((e.getMessage()).getBytes());
+    } catch (IllegalArgumentException e) {
+      return ResponseEntity.badRequest()
+        .body(e.getMessage().getBytes());
+    } catch (Exception e) {
+      e.printStackTrace();
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .body(("Error generating report: " + e.getMessage()).getBytes(StandardCharsets.UTF_8));
     }
+  }
 
-    @GetMapping("/summary/ao")
-    public CommonResult<PaginationResult<SummaryByAODto>> getAllReportBranchByAO(
-            Authentication authentication, PaginationRequest request
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-        return new CommonResult<PaginationResult<SummaryByAODto>>().success(
-                reportService.getAllReportBranchByAO(request)
-        );
+  @GetMapping("/download-pdf/{financingHdrCode}/{agreementCode}/{branchManager}/{areaSalesManager}")
+  public void downloadPdf(HttpServletResponse response,
+                          @PathVariable String financingHdrCode,
+                          @PathVariable String agreementCode,
+                          @PathVariable String branchManager,
+                          @PathVariable String areaSalesManager) {
+    try {
+      byte[] pdfBytes = reportService.generateReport(financingHdrCode, agreementCode, branchManager, areaSalesManager);
+      response.setContentType("application/pdf");
+      response.setHeader("Content-Disposition", "attachment; filename=\"report.pdf\"");
+      response.setContentLength(pdfBytes.length);
+
+      ServletOutputStream outputStream = response.getOutputStream();
+      outputStream.write(pdfBytes);
+      outputStream.flush();
+      outputStream.close();
+    } catch (Exception e) {
+      e.printStackTrace();
+      response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
+  }
 
-    @GetMapping("/summary/detail")
-    public CommonResult<PaginationResult<SummaryDetailDto>> getAllReportSummaryDetail(
-            Authentication authentication, PaginationRequest request
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-        return new CommonResult<PaginationResult<SummaryDetailDto>>().success(
-                reportService.getSummaryDetail(request)
-        );
-    }
+  @PostMapping("/send-doc/{financingHdrCode}/{agreementCode}/{branchManager}/{areaSalesManager}")
+  public ResponseEntity<SigningResponse> sendForSigning(
+    @PathVariable String financingHdrCode,
+    @PathVariable String agreementCode,
+    @PathVariable String branchManager,
+    @PathVariable String areaSalesManager
+  ) throws SignatureException {
 
-    @GetMapping("/duedate")
-    public CommonResult<PaginationResult<ReportDueDateDto>> getAllContractDueDate(
-            Authentication authentication, PaginationRequest request
-    ) throws SignatureException {
-        UserInternalUtils.authenticated(authentication);
-        return new CommonResult<PaginationResult<ReportDueDateDto>>().success(
-                reportService.getDueDateDetail(request)
-        );
-    }
+    SigningResponse response = reportService.sendDocumentForSigning(
+      financingHdrCode,
+      agreementCode,
+      branchManager,
+      areaSalesManager,
+      currentUserService.internalUsername()
+    );
 
-    @GetMapping("/preview/{financingHdrCode}/{agreementCode}/{branchManager}/{areaSalesManager}")
-    public ResponseEntity<byte[]> previewReport(
-            @PathVariable String financingHdrCode,
-            @PathVariable String agreementCode,
-            @PathVariable String branchManager,
-            @PathVariable String areaSalesManager
-    ) {
-
-        try {
-            byte[] pdfBytes = reportService.generateReport(financingHdrCode, agreementCode, branchManager, areaSalesManager);
-            return ResponseEntity.ok()
-                    .header(HttpHeaders.CONTENT_TYPE, "application/pdf")
-                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=preview.pdf")
-                    .body(pdfBytes);
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body((e.getMessage()).getBytes());
-        } catch (IllegalArgumentException e) {
-            return ResponseEntity.badRequest()
-                    .body(e.getMessage().getBytes());
-        } catch (Exception e) {
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(("Error generating report: " + e.getMessage()).getBytes(StandardCharsets.UTF_8));
-        }
-    }
-
-    @GetMapping("/download-pdf/{financingHdrCode}/{agreementCode}/{branchManager}/{areaSalesManager}")
-    public void downloadPdf(HttpServletResponse response,
-                            @PathVariable String financingHdrCode,
-                            @PathVariable String agreementCode,
-                            @PathVariable String branchManager,
-                            @PathVariable String areaSalesManager) {
-        try {
-            byte[] pdfBytes = reportService.generateReport(financingHdrCode, agreementCode, branchManager, areaSalesManager);
-            response.setContentType("application/pdf");
-            response.setHeader("Content-Disposition", "attachment; filename=\"report.pdf\"");
-            response.setContentLength(pdfBytes.length);
-
-            ServletOutputStream outputStream = response.getOutputStream();
-            outputStream.write(pdfBytes);
-            outputStream.flush();
-            outputStream.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-            response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @PostMapping("/send-doc/{financingHdrCode}/{agreementCode}/{branchManager}/{areaSalesManager}")
-    public ResponseEntity<SigningResponse> sendForSigning(
-            @PathVariable String financingHdrCode,
-            @PathVariable String agreementCode,
-            @PathVariable String branchManager,
-            @PathVariable String areaSalesManager,
-            Authentication authentication
-    ) {
-
-        SigningResponse response = reportService.sendDocumentForSigning(
-                financingHdrCode,
-                agreementCode,
-                branchManager,
-                areaSalesManager,
-                authentication
-        );
-
-        return ResponseEntity.ok(response);
-    }
+    return ResponseEntity.ok(response);
+  }
 
 }

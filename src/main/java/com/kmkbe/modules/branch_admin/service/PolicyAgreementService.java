@@ -1,30 +1,27 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.PolicyAgreementDto;
-import com.kmkbe.core.domain.entity.Customer;
 import com.kmkbe.core.domain.entity.PolicyAgreement;
 import com.kmkbe.core.domain.entity.PolicyAgreementHistory;
 import com.kmkbe.core.domain.model.CommonResult;
-import com.kmkbe.core.domain.repository.CustomerRepository;
 import com.kmkbe.core.domain.repository.PolicyAgreementHistoryRepository;
 import com.kmkbe.core.domain.repository.PolicyAgreementRepository;
+import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.helpers.constant.AppConstants;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class PolicyAgreementService {
 
-    @Autowired
-    private PolicyAgreementRepository policyAgreementRepository;
-
-    @Autowired
-    private PolicyAgreementHistoryRepository policyAgreementHistoryRepository;
+    private final PolicyAgreementRepository policyAgreementRepository;
+    private final PolicyAgreementHistoryRepository policyAgreementHistoryRepository;
+    private final CurrentUserService currentUserService;
 
     @Transactional
     public CommonResult<PolicyAgreementDto> createPolicyAgreement(PolicyAgreementDto policyAgreementDto) {
@@ -36,8 +33,7 @@ public class PolicyAgreementService {
         policyAgreement.setIsActive(policyAgreementDto.getIsActive());
 //        policyAgreement.setUsrCrt("SYSTEM");
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = (authentication != null) ? authentication.getName() : "UNKNOWN";  // Jika tidak ada user, beri default "UNKNOWN"
+        String currentUsername = currentUserService.usernameOrDefault(AppConstants.CREATOR);
 
         policyAgreement.setUsrCrt(currentUsername);
         policyAgreement.setDtmCrt(LocalDateTime.now());
@@ -223,8 +219,7 @@ public class PolicyAgreementService {
         history.setDtmCrt(policy.getDtmCrt());
         policyAgreementHistoryRepository.save(history);
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String currentUsername = (authentication != null) ? authentication.getName() : "UNKNOWN";
+        String currentUsername = currentUserService.usernameOrDefault(AppConstants.CREATOR);
         policy.setPolicyName(policyAgreementDto.getPolicyName());
         policy.setPolicyDescription(policyAgreementDto.getPolicyDescription());
         policy.setPolicyContent(policyAgreementDto.getPolicyContent());

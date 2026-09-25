@@ -4,8 +4,8 @@ import com.kmkbe.core.utils.FileUtils;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.ServletContext;
 import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
@@ -24,11 +24,17 @@ import java.nio.file.StandardCopyOption;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
 public class FileStorageService_ {
     private final ServletContext context;
+    private final Path root;
 
-    private final Path root = Paths.get("uploads");
+    public FileStorageService_(
+            ServletContext context,
+            @Value("${kmk.file-storage.root:uploads}") String root
+    ) {
+        this.context = context;
+        this.root = Paths.get(root);
+    }
 
     public String save(MultipartFile file, String uploadDir, String name) throws Exception {
         return save(file, uploadDir, name, null);
@@ -148,7 +154,7 @@ public class FileStorageService_ {
         }
 
         try {
-            Path paths = Paths.get("uploads", filePathStr);
+            Path paths = root.resolve(filePathStr);
             Resource resource = new UrlResource(paths.toUri());
             String contentType = httpServletRequest
                     .getServletContext()

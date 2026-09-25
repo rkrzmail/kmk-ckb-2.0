@@ -1,0 +1,24 @@
+package com.kmkbe.feign.model.dto;
+
+import lombok.*;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+public class CsulPostLoginDto {
+  private boolean success;
+  private int statusCode;
+  private AuthData data; // Maps the "data" object wrapper
+  private Object error;
+  private String timestamp;
+
+  @Data
+  @Getter
+  @Setter
+  public static class AuthData {
+    private String token;
+    private String tokenType;
+    private long expiresIn;
+  }
+}

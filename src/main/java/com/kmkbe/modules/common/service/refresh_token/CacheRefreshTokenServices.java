@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.time.Clock;
 import java.util.Date;
 import java.util.Map;
 import java.util.UUID;
@@ -16,11 +17,12 @@ import java.util.concurrent.TimeUnit;
 @Slf4j
 public class CacheRefreshTokenServices implements IRefreshTokenServices {
     private final RedisUtils<RefreshToken> redisUtil;
+    private final Clock clock;
 
     @Override
     public RefreshToken create(IRefreshTokenServices.User user) {
         try {
-            final RefreshToken payload = defaultPayload(user);
+            final RefreshToken payload = defaultPayload(user, clock);
             redisUtil.putValue(payload.getRefreshToken().toString(), payload, TimeUnit.DAYS.toMillis(2));
             return payload;
         } catch (Exception e) {
@@ -53,7 +55,7 @@ public class CacheRefreshTokenServices implements IRefreshTokenServices {
                 token.setExpiredDate(new Date((Long) obj.get("expiredDate")));
                 token.setIssuedDate(new Date((Long) obj.get("issuedDate")));
 
-                if (token.getExpiredDate().before(new Date())) {
+                if (token.getExpiredDate().before(Date.from(clock.instant()))) {
                     throw new IllegalStateException("Refresh token are expired or invalid, try to login again");
                 }
 

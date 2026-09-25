@@ -1,6 +1,6 @@
 package com.kmkbe.core.domain.repository;
 
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.LegalFile;
 import com.kmkbe.core.domain.entity.MstFileType;
 import io.lettuce.core.dynamic.annotation.Param;

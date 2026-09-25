@@ -1,30 +1,26 @@
 package com.kmkbe.adapter;
 
-import com.kmkbe.feign.client.CsulAuthFeignClient;
 import com.kmkbe.feign.client.CsulVendorFeignClient;
-import com.kmkbe.feign.model.response.GetVendorResponse;
-import com.kmkbe.feign.model.request.PostLoginRequest;
-import com.kmkbe.feign.model.response.PostLoginResponse;
-import com.kmkbe.feign.utils.CsulApiResponseWrapper;
+import com.kmkbe.feign.model.dto.CsulGetVendorDto;
+import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
+import com.kmkbe.feign.model.response.CsulApiResponseWrapper;
 import org.springframework.stereotype.Component;
 
 @Component
 public class ApiCsulAdapter {
   private final CsulVendorFeignClient csulVendorFeignClient;
-  private final CsulAuthFeignClient csulAuthFeignClient;
 
-  public ApiCsulAdapter(CsulVendorFeignClient csulVendorFeignClient, CsulAuthFeignClient csulAuthFeignClient) {
+  public ApiCsulAdapter(CsulVendorFeignClient csulVendorFeignClient) {
     this.csulVendorFeignClient = csulVendorFeignClient;
-    this.csulAuthFeignClient = csulAuthFeignClient;
   }
 
   /**
-   * Login Confins
-   * @param request
+   *
+   * @param vendorCode
    * @return
    */
-  public PostLoginResponse login(PostLoginRequest request) {
-    CsulApiResponseWrapper<PostLoginResponse> responseWrapper = csulAuthFeignClient.login(request);
+  public CsulGetVendorDto findByCode(String vendorCode) {
+    CsulApiResponseWrapper<CsulGetVendorDto> responseWrapper = csulVendorFeignClient.getVendorData(vendorCode);
 
     if (responseWrapper == null || responseWrapper.getData() == null) {
       return null;
@@ -33,9 +29,13 @@ public class ApiCsulAdapter {
     return responseWrapper.getData();
   }
 
-  public GetVendorResponse findByCode(String vendorCode) {
-    CsulApiResponseWrapper<GetVendorResponse> responseWrapper = csulVendorFeignClient.getVendorData(vendorCode);
-
+  /**
+   *
+   * @param vendorCode
+   * @return
+   */
+  public CsulInquiryInvoiceRemoteDto findListPostedInvoice(String vendorCode) {
+    CsulApiResponseWrapper<CsulInquiryInvoiceRemoteDto> responseWrapper = csulVendorFeignClient.getListPostedInvoice(vendorCode);
     if (responseWrapper == null || responseWrapper.getData() == null) {
       return null;
     }

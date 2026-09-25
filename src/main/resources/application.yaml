@@ -24,7 +24,24 @@ spring:
       enabled: 'true'
       max-request-size: 100MB
   profiles:
-    active: local
+    active: dev
+
+  # Feign Configuration
+  cloud:
+    openfeign:
+      client:
+        config:
+          default:
+            connectTimeout: 10000
+            readTimeout: 60000
+            loggerLevel: FULL
+            errorDecoder: com.kmkbe.feign.config.FeignErrorDecoder
+            decodeSlash: false
+      httpclient:
+        hc5:
+          enabled: true
+        follow-redirects: false
+
 security:
   jwt:
     secret-key: 84b6e04f3268b78e7fee1883733e47aff50b88d1184b3512f2b5bffadb99d7eb
@@ -46,3 +63,16 @@ server:
   port: '8443'
 jwt:
   refreshExpirationDateInMs: '9000000'
+
+audit:
+  executor:
+    core-pool-size: 2
+    max-pool-size: 5
+    queue-capacity: 1000
+  retry:
+    max-attempts: 3
+    initial-delay-ms: 200
+
+notification:
+  agreement:
+    bouwheer-pic-emails: ${AGREEMENT_BOUWHEER_PIC_EMAILS:achmad.faqihuddin@ckb.co.id;ali.rohman@ckb.co.id}

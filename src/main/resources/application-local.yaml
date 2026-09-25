@@ -37,11 +37,13 @@ spring:
     show-sql: true
     hibernate:
       ddl-auto: none
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
   flyway:
     locations: classpath:db/migration/dev/{vendor}
     schemas: public
     enabled: true
     baseline-on-migrate: true
+    out-of-order: true
 
   cache:
     type: redis
@@ -49,11 +51,11 @@ spring:
       time-to-live: 60000
 
   mail:
-    host: smtp.gmail.com
-    port: 587
+    host: smtp.hostinger.com
+    port: 465
     protocol: smtp
-    username: khesa.oto@gmail.com
-    password: tfru zmuk gtfb mrsz
+    username: csul@nikita.co.id
+    password: DArS!OP#csul6?6Uu
     properties:
       mail.smtp.ssl.trust: '*'
       mail.smtp.auth: true
@@ -62,10 +64,11 @@ spring:
 # region testing mail env
 testing:
     mail:
-      host: smtp.gmail.com
-      port: 587
-      username: khesa.oto@gmail.com
-      password: tfru zmuk gtfb mrsz
+      host: smtp.hostinger.com
+      port: 465
+      protocol: smtp
+      username: csul@nikita.co.id
+      password: DArS!OP#csul6?6Uu
 
 # Keep your custom collection property anywhere you like
 custom:
@@ -86,18 +89,20 @@ spring-doc:
   swagger-ui:
     path: /swagger-ui.html
 
+logging:
+  file: ./logs/log-file.log
+  level:
+    org.hibernate: ERROR
+    org.springframework.web: ERROR
+    root: INFO
+    feign: DEBUG                             # Enables basic Feign engine debug logs
+    org.springframework.cloud.openfeign: DEBUG # Enables Spring integration logs
 
-    logging:
-      file: ./logs/log-file.log
-      level:
-        org.hibernate: ERROR
-        org.springframework.web: ERROR
-        root: INFO
 server:
   error:
     whitelabel:
       enabled: false
-
+  port: 8080
 rsa:
   private-key: classpath:certs/pkcs8.pem
   public-key: classpath:certs/public-key.pem
@@ -111,39 +116,44 @@ csul:
       auth:
         username: KMKDigital
         password: CSUljkt#2024
+    mail-position:
+      branch-admin: "ADM"
+      account-officer: "AO/AM"
+      branch-manager: "BM/BOH"
+      area-sales-manager: "RM"
   mst:
-    v1: https://goakcwwrshxfwkgm6bwnegpeti0ajaus.lambda-url.ap-southeast-1.on.aws/v1
+    v1: http://goakcwwrshxfwkgm6bwnegpeti0ajaus.lambda-url.ap-southeast-1.on.aws/v1
   confins:
     adinskey: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
     fou:
-      v1: https://confins.csulfinance.com/api/fou/v1
-      getzipcode: http://172.21.10.149:8083/fou_getzipcode.php
-      getcalculate: http://172.21.10.149:8083/fou_getcalculate.php
+      v1: http://uat-confinsr3.csulfinance.com/api/fou/v1
+      getzipcode: http://localhost/confins/fou_getzipcode.php
+      getcalculate: http://localhost/confins/fou_getcalculate.php
     mou:
-      v1: http://confins.csulfinance.com/api/mou/v1
-      getcwrbwhr: http://172.21.10.149:8083/mou_getcwrbouwheer.php
-      getlistcwrbwhr: http://172.21.10.149:8083/mou_getlistcwrbwhr.php
-      getpagingSQL: http://172.21.10.149:8083/mou_getpagingsql.php
-      fwd: http://172.21.10.149:8083/mou_getsigner.php
+      v1: http://uat-confinsr3.csulfinance.com/api/mou/v1
+      getcwrbwhr: http://localhost/confins/mou_getcwrbouwheer.php
+      getlistcwrbwhr: http://localhost/confins/mou_getlistcwrbwhr.php
+      getpagingSQL: http://localhost/confins/mou_getpagingsql.php
+      fwd: http://localhost/confins/mou_getsigner.php
     #LOS
     los:
-      v1: http://confins.csulfinance.com/api/los/v1
-      fwd: http://172.21.10.149:8083/los_getagr.php
-      getRekening: http://172.21.10.149:8083/los_getrekening.php
-      getAppNo: http://172.21.10.149:8083/los_getappno.php
-      getpagingSQL: http://172.21.10.149:8083/los_getpagingsql.php
+      v1: http://uat-confinsr3.csulfinance.com/api/los/v1
+      fwd: http://localhost/confins/los_getagr.php
+      getRekening: http://localhost/confins/los_getrekening.php
+      getAppNo: http://localhost/confins/los_getappno.php
+      getpagingSQL: http://localhost/confins/los_getpagingsql.php
     #CORELOS
     corelos:
-      v1: https://confins.csulfinance.com/api/corelos/v1
-      getFinData: http://172.21.10.149:8083/corelos_getfindata.php
-      getFactoring: http://172.21.10.149:8083/corelos_getfactoring.php
+      v1: http://uat-confinsr3.csulfinance.com/api/corelos/v1
+      getFinData: http://localhost/confins/corelos_getfindata.php
+      getFactoring: http://localhost/confins/corelos_getfactoring.php
 
     ar:
-      v1: https://confins.csulfinance.com/api/ar/v1
+      v1: http://uat-confinsr3.csulfinance.com/api/ar/v1
     payment:
-      v1: https://confins.csulfinance.com/api/payment/v1
+      v1: http://uat-confinsr3.csulfinance.com/api/payment/v1
     ap:
-      v1: https://confins.csulfinance.com/api/ap/v1
+      v1: http://uat-confinsr3.csulfinance.com/api/ap/v1
   ckb :
     url:
     api-key:
@@ -159,7 +169,9 @@ feign:
   csul:
     ckb:
       url: https://api-ckbvendorportal.dipstrategy.co.id
-      api-key:
+      username: ramco
+      password: RamcoVDC2026!
+      client-secret: SecretRamco2026!
 
   confins:
     url: https://uat-confinsr3.csulfinance.com

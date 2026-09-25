@@ -1,7 +1,7 @@
 package com.kmkbe.modules.common.service;
 
 import com.kmkbe.core.domain.constant.LoginRole;
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.LoginLog;
 import com.kmkbe.core.domain.repository.LoginLogRepository;
 import com.kmkbe.core.utils.DateTimeUtils;
@@ -10,7 +10,6 @@ import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.UUID;
 

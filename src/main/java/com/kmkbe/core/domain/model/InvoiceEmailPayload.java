@@ -2,7 +2,6 @@ package com.kmkbe.core.domain.model;
 
 import lombok.Builder;
 import lombok.Getter;
-import org.apache.commons.lang3.StringEscapeUtils;
 import org.springframework.web.util.HtmlUtils;
 
 import java.util.List;
@@ -29,9 +28,6 @@ public class InvoiceEmailPayload {
      */
     private String invoiceAmt;
 
-//    public static String esc(String s){
-//        return StringEscapeUtils.escapeEcmaScript(s);
-//    }
     public static String esc(String s){
         if (s == null) return "";
         return HtmlUtils.htmlEscape(s);

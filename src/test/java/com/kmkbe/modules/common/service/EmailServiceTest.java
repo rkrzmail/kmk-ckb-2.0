@@ -1,0 +1,657 @@
+package com.kmkbe.modules.common.service;
+
+import com.kmkbe.config.MailConfig;
+import com.kmkbe.core.domain.dto.MailRemoteDto;
+import com.kmkbe.core.domain.entity.EmailTemplate;
+import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
+import com.kmkbe.core.domain.model.AgreementContractEmailPayload;
+import com.kmkbe.core.domain.model.InvoiceEmailPayload;
+import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
+import com.kmkbe.core.domain.model.PencarianPayload;
+import com.kmkbe.core.domain.repository.EmailTemplateRepository;
+import com.kmkbe.core.domain.repository.ErrorLogRepository;
+import com.kmkbe.modules.customer.model.entity.Customer;
+import com.kmkbe.modules.remote.service.ConfigRemoteService;
+import jakarta.mail.Session;
+import jakarta.mail.internet.MimeMessage;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.env.MockEnvironment;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.List;
+import java.util.Properties;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class EmailServiceTest {
+
+  @Mock private EmailTemplateRepository emailTemplateRepository;
+  @Mock private ConfigRemoteService configRemoteService;
+  @Mock private MailConfig mailConfig;
+  @Mock private ErrorLogRepository errorLogRepository;
+  @Mock private JavaMailSender testingMailSender;
+
+  private EmailService service;
+
+  @BeforeEach
+  void setUp() {
+    service = new EmailService(
+      emailTemplateRepository,
+      configRemoteService,
+      mailConfig,
+      errorLogRepository,
+      new MockEnvironment().withProperty("env", "prod")
+    );
+    ReflectionTestUtils.setField(service, "testingMailHost", "smtp.test");
+    ReflectionTestUtils.setField(service, "testingMailPort", 2525);
+    ReflectionTestUtils.setField(service, "testingMailUsername", "test-user");
+    ReflectionTestUtils.setField(service, "testingMailPassword", "test-pass");
+  }
+
+  @Test
+  void sendOtpMapsTemplateAndSendsInternalMail() throws Exception {
+    Customer customer = customer();
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_NEW_OTP", true))
+        .thenReturn(template("M_CUST_NEW_OTP", "Hi {name} {email} {id_no} {otp_code}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+
+    service.sendOtp(customer, "1234");
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    EmailTemplate sent = captor.getValue();
+    assertThat(sent.getMailTo()).isEqualTo("customer@example.com");
+    assertThat(sent.getBodyMail()).isEqualTo("Hi Customer customer@example.com KTP001 1234");
+  }
+
+  @Test
+  void sendOtpDoesNotOverwriteTemplateForTheNextRecipient() throws Exception {
+    EmailTemplate source = template("M_CUST_NEW_OTP", "Hi {name} {email} {id_no} {otp_code}");
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_NEW_OTP", true))
+        .thenReturn(source);
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+
+    Customer first = customer();
+    Customer second = customer();
+    second.setCustName("Second");
+    second.setCustEmail("second@example.com");
+    second.setCustIdNo("KTP002");
+
+    service.sendOtp(first, "1234");
+    service.sendOtp(second, "5678");
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig, org.mockito.Mockito.times(2))
+        .sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    assertThat(captor.getAllValues()).extracting(EmailTemplate::getBodyMail)
+        .containsExactly("Hi Customer customer@example.com KTP001 1234",
+            "Hi Second second@example.com KTP002 5678");
+    assertThat(captor.getAllValues()).noneMatch(sent -> sent == source);
+    assertThat(source.getBodyMail()).isEqualTo("Hi {name} {email} {id_no} {otp_code}");
+    assertThat(source.getMailTo()).isNull();
+  }
+
+  @Test
+  void approvalMailReturnsFailureWhenTemplateIsMissing() {
+    var result = service.sendCustomerApprovalNotification(customer(), "APPROVED", "ok");
+    assertThat(result.acceptedBySmtp()).isFalse();
+    assertThat(result.errorMessage()).contains("M_CUST_ACTIVE");
+    verify(configRemoteService, never()).fetchEmailInfo();
+  }
+
+  @Test
+  void approvalMailUsesDetachedTemplateAndReportsSmtpAcceptance() throws Exception {
+    EmailTemplate source = template("M_CUST_ACTIVE", "Hello {name} {approval_note}");
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_ACTIVE", true)).thenReturn(source);
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+
+    var result = service.sendCustomerApprovalNotification(customer(), "APPROVED", "NPWP <ok>");
+
+    assertThat(result.acceptedBySmtp()).isTrue();
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    assertThat(captor.getValue()).isNotSameAs(source);
+    assertThat(captor.getValue().getBodyMail()).contains("NPWP &lt;ok&gt;");
+    assertThat(source.getBodyMail()).isEqualTo("Hello {name} {approval_note}");
+  }
+
+  @Test
+  void approvalMailReportsRemoteConfigFailureReason() {
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_REJECTED", true))
+      .thenReturn(template("M_CUST_REJECTED", "Rejected: {approval_note}"));
+    when(configRemoteService.fetchEmailInfo()).thenThrow(new IllegalStateException("SMTP config unavailable"));
+
+    var result = service.sendCustomerApprovalNotification(customer(), "REJECTED", "NPWP blur");
+
+    assertThat(result.acceptedBySmtp()).isFalse();
+    assertThat(result.errorMessage()).contains("SMTP config unavailable");
+  }
+
+  @Test
+  void sendOtpUsesYamlMailConfigForNonProductionEnvironment() throws Exception {
+    EmailService localService = new EmailService(
+      emailTemplateRepository,
+      configRemoteService,
+      mailConfig,
+      errorLogRepository,
+      new MockEnvironment().withProperty("env", "local")
+    );
+    ReflectionTestUtils.setField(localService, "mailHost", "smtp.local");
+    ReflectionTestUtils.setField(localService, "mailPort", 587);
+    ReflectionTestUtils.setField(localService, "mailUsername", "local-user");
+    ReflectionTestUtils.setField(localService, "mailPassword", "local-pass");
+    ReflectionTestUtils.setField(localService, "mailEnableSSL", true);
+
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_VERIFY", true))
+      .thenReturn(template("M_CUST_VERIFY", "{email}:{otp_code}"));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+
+    localService.sendOtp2("user@example.com", "1111");
+
+    ArgumentCaptor<MailRemoteDto> mailCaptor = ArgumentCaptor.forClass(MailRemoteDto.class);
+    verify(mailConfig).sendHtmlEmail(mailCaptor.capture(), any(EmailTemplate.class), eq(true));
+    verify(configRemoteService, never()).fetchEmailInfo();
+
+    MailRemoteDto mail = mailCaptor.getValue();
+    assertThat(mail.getServerUrl()).isEqualTo("smtp.local");
+    assertThat(mail.getPort()).isEqualTo(587);
+    assertThat(mail.getUsername()).isEqualTo("local-user");
+    assertThat(mail.getPassword()).isEqualTo("local-pass");
+    assertThat(mail.getEnableSSL()).isTrue();
+  }
+
+  @Test
+  void sendOtp2AndChangePin2UseVerificationTemplate() throws Exception {
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_VERIFY", true))
+        .thenReturn(template("M_CUST_VERIFY", "{email}:{otp_code}"))
+        .thenReturn(template("M_CUST_VERIFY", "{email}:{otp_code}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(false));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(false));
+
+    service.sendOtp2("user@example.com", "1111");
+    service.sendOtpChangePin2("user@example.com", "2222");
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig, org.mockito.Mockito.times(2)).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(false));
+    assertThat(captor.getAllValues()).extracting(EmailTemplate::getBodyMail)
+        .containsExactly("user@example.com:1111", "user@example.com:2222");
+  }
+
+  @Test
+  void sendNotificationRejectedUsesRejectedTemplateAndEscapesApprovalNote() throws Exception {
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_REJECTED", true))
+      .thenReturn(template("M_CUST_REJECTED", "{name}|{email}|{id_no}|{approval_note}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(false));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(false));
+
+    service.sendNotificationRejected(customer(), "NPWP <script>alert('x')</script>");
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(false));
+    assertThat(captor.getValue().getMailTo()).isEqualTo("customer@example.com");
+    assertThat(captor.getValue().getBodyMail())
+      .isEqualTo("Customer|customer@example.com|KTP001|NPWP &lt;script&gt;alert(&#39;x&#39;)&lt;/script&gt;");
+  }
+
+  @Test
+  void sendNotificationCustomerVerificationUsesMajorAccountTemplateAndCustomerData() throws Exception {
+    Customer customer = customer();
+    customer.setCustExternalCode("V001");
+    customer.setCustTypeCode("Company");
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_VERIFY_MJR", true))
+      .thenReturn(template(
+        "M_CUST_VERIFY_MJR",
+        "{name}|{email}|{id_no}|{vendor_code}|{customer_type}"
+      ));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(false));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(false));
+
+    service.sendNotificationCustomerVerification(
+      "major1@csul.co.id;major2@csul.co.id",
+      customer,"TEST"
+    );
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(false));
+    assertThat(captor.getValue().getMailTo()).isEqualTo("major1@csul.co.id;major2@csul.co.id");
+    assertThat(captor.getValue().getBodyMail())
+      .isEqualTo("Customer|customer@example.com|KTP001|V001|Company");
+  }
+
+  @Test
+  void notificationMethodsMapTemplatesRecipientsSubjectAndAdditionalArgs() throws Exception {
+    Customer customer = customer();
+    LoanDisburseEmailPayload loanPayload = loanPayload();
+    PencarianPayload pencarianPayload = pencarianPayload();
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_ACTIVE", true))
+        .thenReturn(template("M_CUST_ACTIVE", "{name}|{email}|{id_no}"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_CHANGE_OTP", true))
+        .thenReturn(template("M_CUST_CHANGE_OTP", "{otp_code}"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_LOAN", true))
+        .thenReturn(template("M_CUST_LOAN", "{companyName}|{invoices}"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_LOAN_SUBMITED", true))
+        .thenReturn(template("M_CUST_LOAN_SUBMITED", "{companyName}|{invoices}"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_PENCAIRAN", true))
+        .thenReturn(template("M_CUST_PENCAIRAN", "{branchArea}|{companyName}|{invoices}"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BRANCH_ASSIGN", true))
+        .thenReturn(templateWithSubject("M_BRANCH_ASSIGN", "Assign {bouwheerName}", "{branchArea}|{companyName}"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BRANCH_ASSIGN_MJR", true))
+        .thenReturn(templateWithSubject("M_BRANCH_ASSIGN_MJR", "Major {bouwheerName}", "{branchArea}|{companyName}"));
+
+    service.sendNotificationActive(customer,"TEST");
+    service.sendOtpChangePin(customer, "3333");
+    service.sendNotificationLoanDisbursement(customer, loanPayload);
+    service.sendNotificationLoanSubmited(customer, loanPayload);
+    service.sendNotificationPencairan("pencairan@example.com", "Bouwheer", "Jakarta", pencarianPayload);
+    service.sendNotificationBranchAssign("ignored@example.com", "Bouwheer", "Jakarta", loanPayload);
+    service.sendNotificationMajorAccount("ignored@example.com", "Bouwheer", "Jakarta", loanPayload);
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig, org.mockito.Mockito.times(7)).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    List<EmailTemplate> sent = captor.getAllValues();
+    assertThat(sent.get(0).getBodyMail()).isEqualTo("Customer|customer@example.com|KTP001");
+    assertThat(sent.get(1).getBodyMail()).isEqualTo("3333");
+    assertThat(sent.get(2).getBodyMail()).contains("Company").contains("INV001");
+    assertThat(sent.get(4).getMailTo()).isEqualTo("pencairan@example.com");
+    assertThat(sent.get(4).getMailCc()).isEqualTo("pencairan@example.com");
+    assertThat(sent.get(5).getSubjectMail()).isEqualTo("Assign Bouwheer");
+    assertThat(sent.get(5).getMailTo()).isEqualTo("to@example.com");
+    assertThat(sent.get(5).getMailCc()).isEqualTo("cc@example.com");
+    assertThat(sent.get(6).getSubjectMail()).isEqualTo("Major Bouwheer");
+  }
+
+  @Test
+  void sendPerubahanSimulasiAndLoanChangeLimitUseExpectedTemplates() throws Exception {
+    Customer customer = customer();
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_SIM_LOAN", true))
+        .thenReturn(template("M_SIM_LOAN", "{companyName}|{invoiceAmt}|{invoices}"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_LOAD_CHANGE", true))
+        .thenReturn(template("M_CUST_LOAD_CHANGE", "{name}|{additionalArgs}|{invoices}"));
+
+    service.sendPerubahanSimulasi(customer, loanPayload());
+    service.sendNotificationLoanChangeLimit(customer, loanPayload());
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig, org.mockito.Mockito.times(2)).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    assertThat(captor.getAllValues().get(0).getMailTo()).isEqualTo("customer@example.com");
+    assertThat(captor.getAllValues().get(0).getBodyMail()).contains("Company").contains("1000").contains("INV001");
+    assertThat(captor.getAllValues().get(1).getBodyMail()).contains("Customer");
+  }
+
+  @Test
+  void sendNotificationBouwheerPaymentBuildsBodyAndStopsAfterSuccess() throws Exception {
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BOUWHEER_PAYMENT", true))
+        .thenReturn(templateWithSubject("M_BOUWHEER_PAYMENT", "Payment {vendorCode}", "{bouwheerName}|{vendorName}|{vendorCode}|{accountNo}|{bankAccount}|{bankName}|{bankKey}|{tglPengajuan}"));
+
+    service.sendNotificationBouwheerPayment("vendor@example.com", bouwheerPaymentPayload());
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    EmailTemplate sent = captor.getValue();
+    assertThat(sent.getSubjectMail()).isEqualTo("Payment V001");
+    assertThat(sent.getMailTo()).isEqualTo("vendor@example.com");
+    assertThat(sent.getBodyMail()).isEqualTo("Bouwheer|Vendor|V001|123|Account|Bank|BK|01/01/2026");
+  }
+
+  @Test
+  void sendNotificationContractUploadRequiredUsesBranchRecipientsAndMapsPayload() throws Exception {
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BRANCH_CONTRACT_UPLOAD", true))
+      .thenReturn(templateWithSubject(
+        "M_BRANCH_CONTRACT_UPLOAD",
+        "Upload {agreementCode}",
+        "{branchName}|{agreementCode}|{financingCode}|{vendorCode}|{vendorName}|{bouwheerName}|{bouwheerPicEmails}"
+      ));
+
+    service.sendNotificationContractUploadRequired(
+      "admin1@csul.co.id;admin2@csul.co.id",
+      AgreementContractEmailPayload.builder()
+        .branchName("JAKARTA 1")
+        .agreementCode("AGR001")
+        .financingCode("LEAD001")
+        .vendorCode("V001")
+        .vendorName("Vendor")
+        .bouwheerName("CKB")
+        .bouwheerPicEmails("pic1@ckb.co.id, pic2@ckb.co.id")
+        .build()
+    );
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    assertThat(captor.getValue().getMailTo()).isEqualTo("admin1@csul.co.id;admin2@csul.co.id");
+    assertThat(captor.getValue().getSubjectMail()).isEqualTo("Upload AGR001");
+    assertThat(captor.getValue().getBodyMail())
+      .isEqualTo("JAKARTA 1|AGR001|LEAD001|V001|Vendor|CKB|pic1@ckb.co.id, pic2@ckb.co.id");
+  }
+
+  @Test
+  void sendMailMessageFallsBackToTestingMailSenderWhenInternalMailFails() throws Exception {
+    Customer customer = customer();
+    EmailTemplate fallbackTemplate = template("M_CUST_NEW_OTP", "<html>{email}</html>");
+    fallbackTemplate.setMailCc("cc1@example.com;cc2@example.com");
+    fallbackTemplate.setMailBcc("bcc1@example.com;bcc2@example.com");
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_NEW_OTP", true))
+        .thenReturn(fallbackTemplate);
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doThrow(new RuntimeException("internal down"))
+        .when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    when(mailConfig.javaMailSender("smtp.test", 2525, "test-user", "test-pass", false)).thenReturn(testingMailSender);
+    MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
+    when(testingMailSender.createMimeMessage()).thenReturn(mimeMessage);
+    doNothing().when(testingMailSender).send(any(MimeMessage.class));
+
+    service.sendOtp(customer, "1234");
+
+    verify(mailConfig, org.mockito.Mockito.times(2)).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    verify(testingMailSender).send(mimeMessage);
+  }
+
+  @Test
+  void publicMethodsSwallowNullPayloadAndTemplateErrors() throws Exception {
+    Customer customer = customer();
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_SIM_LOAN", true))
+        .thenReturn(template("M_SIM_LOAN", "{companyName}"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_LOAD_CHANGE", true))
+        .thenReturn(template("M_CUST_LOAD_CHANGE", "{name}"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_LOAN", true))
+        .thenReturn(template("M_CUST_LOAN", "{email}"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_LOAN_SUBMITED", true))
+        .thenReturn(template("M_CUST_LOAN_SUBMITED", "{email}"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_PENCAIRAN", true))
+        .thenReturn(template("M_CUST_PENCAIRAN", "{email}"));
+
+    service.sendPerubahanSimulasi(customer, null);
+    service.sendNotificationLoanChangeLimit(customer, null);
+    service.sendNotificationLoanDisbursement(customer, null);
+    service.sendNotificationLoanSubmited(customer, null);
+    service.sendNotificationPencairan("to@example.com", "Bouwheer", "Jakarta", null);
+    service.sendNotificationBranchAssign("to@example.com", "Bouwheer", "Jakarta", null);
+    service.sendNotificationMajorAccount("to@example.com", "Bouwheer", "Jakarta", null);
+    service.sendNotificationBouwheerPayment("to@example.com", null);
+
+    verify(mailConfig, org.mockito.Mockito.times(4)).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+  }
+
+  @Test
+  void loanChangeLimitSwallowsTemplateFailure() {
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_LOAD_CHANGE", true))
+        .thenThrow(new RuntimeException("change limit template down"));
+
+    service.sendNotificationLoanChangeLimit(customer(), loanPayload());
+  }
+
+  @Test
+  void simpleNotificationMethodsSwallowRepositoryFailures() {
+    Customer customer = customer();
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_VERIFY", true))
+        .thenThrow(new RuntimeException("verify template down"))
+        .thenThrow(new RuntimeException("change template down"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_CHANGE_OTP", true))
+        .thenThrow(new RuntimeException("otp change template down"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_ACTIVE", true))
+        .thenThrow(new RuntimeException("active template down"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_LOAN", true))
+        .thenThrow(new RuntimeException("loan template down"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_LOAN_SUBMITED", true))
+        .thenThrow(new RuntimeException("submitted template down"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_PENCAIRAN", true))
+        .thenThrow(new RuntimeException("pencairan template down"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BRANCH_ASSIGN", true))
+        .thenThrow(new RuntimeException("branch template down"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BRANCH_ASSIGN_MJR", true))
+        .thenThrow(new RuntimeException("major template down"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BOUWHEER_PAYMENT", true))
+        .thenThrow(new RuntimeException("payment template down"));
+
+    service.sendOtp2("to@example.com", "1111");
+    service.sendOtpChangePin2("to@example.com", "2222");
+    service.sendOtpChangePin(customer, "3333");
+    service.sendNotificationActive(customer,"TEST");
+    service.sendNotificationLoanDisbursement(customer, loanPayload());
+    service.sendNotificationLoanSubmited(customer, loanPayload());
+    service.sendNotificationPencairan("to@example.com", "Bouwheer", "Jakarta", pencarianPayload());
+    service.sendNotificationBranchAssign("to@example.com", "Bouwheer", "Jakarta", loanPayload());
+    service.sendNotificationMajorAccount("to@example.com", "Bouwheer", "Jakarta", loanPayload());
+    service.sendNotificationBouwheerPayment("to@example.com", bouwheerPaymentPayload());
+  }
+
+  @Test
+  void bouwheerPaymentRetriesWhenTemplateBodyMappingFails() {
+    EmailTemplate brokenTemplate = templateWithSubject("M_BOUWHEER_PAYMENT", "Payment {vendorCode}", null);
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BOUWHEER_PAYMENT", true))
+        .thenReturn(brokenTemplate);
+
+    service.sendNotificationBouwheerPayment("vendor@example.com", bouwheerPaymentPayload());
+
+    verify(configRemoteService, never()).fetchEmailInfo();
+  }
+
+  @Test
+  void bouwheerPaymentDoesNotOverwriteStoredTemplate() throws Exception {
+    EmailTemplate template = templateWithSubject("M_BOUWHEER_PAYMENT", "Payment {vendorCode}", "{bouwheerName}");
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BOUWHEER_PAYMENT", true))
+        .thenReturn(template);
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+
+    service.sendNotificationBouwheerPayment("vendor@example.com", bouwheerPaymentPayload());
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    assertThat(captor.getValue()).isNotSameAs(template);
+    assertThat(captor.getValue().getSubjectMail()).isEqualTo("Payment V001");
+    assertThat(template.getSubjectMail()).isEqualTo("Payment {vendorCode}");
+    assertThat(template.getBodyMail()).isEqualTo("{bouwheerName}");
+    assertThat(template.getMailTo()).isNull();
+  }
+
+  @Test
+  void fallbackMailSenderHandlesEmptyCcAndBcc() throws Exception {
+    Customer customer = customer();
+    EmailTemplate fallbackTemplate = template("M_CUST_NEW_OTP", "<html>{email}</html>");
+    fallbackTemplate.setMailCc("");
+    fallbackTemplate.setMailBcc("");
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_NEW_OTP", true))
+        .thenReturn(fallbackTemplate);
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doThrow(new RuntimeException("internal down"))
+        .when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    when(mailConfig.javaMailSender("smtp.test", 2525, "test-user", "test-pass", false)).thenReturn(testingMailSender);
+    MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
+    when(testingMailSender.createMimeMessage()).thenReturn(mimeMessage);
+    doNothing().when(testingMailSender).send(any(MimeMessage.class));
+
+    service.sendOtp(customer, "1234");
+
+    verify(testingMailSender).send(mimeMessage);
+  }
+
+  @Test
+  void fallbackMailSenderHandlesNullCcAndBcc() throws Exception {
+    Customer customer = customer();
+    EmailTemplate fallbackTemplate = template("M_CUST_NEW_OTP", "<html>{email}</html>");
+    fallbackTemplate.setMailCc(null);
+    fallbackTemplate.setMailBcc(null);
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_NEW_OTP", true))
+        .thenReturn(fallbackTemplate);
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doThrow(new RuntimeException("internal down"))
+        .when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    when(mailConfig.javaMailSender("smtp.test", 2525, "test-user", "test-pass", false)).thenReturn(testingMailSender);
+    MimeMessage mimeMessage = new MimeMessage(Session.getDefaultInstance(new Properties()));
+    when(testingMailSender.createMimeMessage()).thenReturn(mimeMessage);
+    doNothing().when(testingMailSender).send(any(MimeMessage.class));
+
+    service.sendOtp(customer, "1234");
+
+    verify(testingMailSender).send(mimeMessage);
+  }
+
+  @Test
+  void sendOtpReturnsSafeMessageForTemplateErrorWhileAsyncEmailStillSwallowsMailError() throws Exception {
+    Customer customer = customer();
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_NEW_OTP", true)).thenThrow(new RuntimeException("template down"));
+    assertThatThrownBy(() -> service.sendOtp(customer, "1234"))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Kode OTP gagal dikirim ke email Anda. Silakan coba kembali beberapa saat lagi.")
+      .hasCauseInstanceOf(RuntimeException.class);
+    verify(configRemoteService, never()).fetchEmailInfo();
+
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_INV_LINK", true))
+        .thenReturn(template("M_INV_LINK", "${name}:${invitationLink}"));
+    when(configRemoteService.fetchEmailInfo()).thenThrow(new RuntimeException("mail config down"));
+    service.sendInvitationLinkEmail("to@example.com", "https://invite", "Signer");
+  }
+
+  @Test
+  void sendOtpFailsWhenPrimaryAndFallbackMailDeliveryFail() throws Exception {
+    Customer customer = customer();
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_NEW_OTP", true))
+      .thenReturn(template("M_CUST_NEW_OTP", "{otp_code}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doThrow(new RuntimeException("primary smtp down"))
+      .when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    when(mailConfig.javaMailSender("smtp.test", 2525, "test-user", "test-pass", false))
+      .thenThrow(new RuntimeException("fallback smtp down"));
+
+    assertThatThrownBy(() -> service.sendOtp(customer, "1234"))
+      .isInstanceOf(IllegalStateException.class)
+      .hasMessage("Kode OTP gagal dikirim ke email Anda. Silakan coba kembali beberapa saat lagi.");
+
+    verify(mailConfig, org.mockito.Mockito.times(2))
+      .sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+  }
+
+  @Test
+  void sendInvitationLinkEmailRejectsNullLinkAndCustomerVerificationSendsInlineTemplate() throws Exception {
+    service.sendInvitationLinkEmail("to@example.com", null, "Signer");
+    verify(emailTemplateRepository, never()).findByEmailTemplateCodeAndIsActive("M_INV_LINK", true);
+
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(false));
+    doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(false));
+
+    service.customerVerification("mail@example.com", "Company", "KTP001", "9999");
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(false));
+    assertThat(captor.getValue().getSubjectMail()).isEqualTo("Verifikasi Akun Dana Sakti");
+    assertThat(captor.getValue().getBodyMail()).contains("Company").contains("KTP001").contains("9999");
+  }
+
+  private static EmailTemplate template(String code, String body) {
+    return templateWithSubject(code, "Subject", body);
+  }
+
+  private static EmailTemplate templateWithSubject(String code, String subject, String body) {
+    EmailTemplate template = new EmailTemplate();
+    template.setEmailTemplateCode(code);
+    template.setSubjectMail(subject);
+    template.setBodyMail(body);
+    template.setIsActive(true);
+    return template;
+  }
+
+  private static MailRemoteDto mailRemote(boolean ssl) {
+    return MailRemoteDto.builder()
+        .serverUrl("smtp.internal")
+        .port(25)
+        .username("internal")
+        .password("secret")
+        .enableSSL(ssl)
+        .build();
+  }
+
+  private static Customer customer() {
+    Customer customer = new Customer();
+    customer.setCustName("Customer");
+    customer.setCustEmail("customer@example.com");
+    customer.setCustIdNo("KTP001");
+    return customer;
+  }
+
+  private static LoanDisburseEmailPayload loanPayload() {
+    return LoanDisburseEmailPayload.builder()
+        .financingCode("FIN001")
+        .companyName("Company")
+        .phoneNumber("08123")
+        .email("payload@example.com")
+        .toEmail("to@example.com")
+        .ccEmail("cc@example.com")
+        .applicationDate("01/01/2026")
+        .invoiceAmt("1000")
+        .retention("100")
+        .financingAmt("900")
+        .totalFeeAmt("10")
+        .disburseAmt("890")
+        .tenor(30L)
+        .financingDueDate("31/01/2026")
+        .invoices(List.of(invoice()))
+        .build();
+  }
+
+  private static PencarianPayload pencarianPayload() {
+    return PencarianPayload.builder()
+        .financingCode("FIN001")
+        .companyName("Company")
+        .phoneNumber("08123")
+        .applicationDate("01/01/2026")
+        .invoiceAmt("1000")
+        .retention("100")
+        .financingAmt("900")
+        .totalFeeAmt("10")
+        .disburseAmt("890")
+        .tenor(30L)
+        .financingDueDate("31/01/2026")
+        .invoices(List.of(invoice()))
+        .build();
+  }
+
+  private static BouwheerPaymentEmailPayload bouwheerPaymentPayload() {
+    return BouwheerPaymentEmailPayload.builder()
+        .bouwheerName("Bouwheer")
+        .vendorName("Vendor")
+        .vendorCode("V001")
+        .accountNo("123")
+        .bankAccount("Account")
+        .bankName("Bank")
+        .bankKey("BK")
+        .tglPengajuan("01/01/2026")
+        .invoices(List.of(invoice()))
+        .build();
+  }
+
+  private static InvoiceEmailPayload invoice() {
+    return InvoiceEmailPayload.builder()
+        .invoiceNo("INV001")
+        .description("Desc")
+        .bouwheerName("Bouwheer")
+        .invoiceDate("01/01/2026")
+        .invoiceDueDate("31/01/2026")
+        .invoiceAmt("1000")
+        .build();
+  }
+}

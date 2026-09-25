@@ -3,7 +3,7 @@ package com.kmkbe.modules.loan_submission.controller;
 
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
-import com.kmkbe.core.domain.dto.ProductDto;
+import com.kmkbe.modules.product.model.dto.ProductDto;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.modules.loan_submission.service.InquiryDisburseService;
 import com.kmkbe.modules.loan_submission.service.ProductService;
@@ -43,10 +43,4 @@ public class ProductController {
         return new CommonResult<List<ProductDto>>()
                 .success(productService.fetchAllActive());
     }
-
-//    @GetMapping("/send-email")
-//    public String debugEmail() {
-//        inquiryDisburseService.debugSendEmail();
-//        return "Debug email sent";
-//    }
 }

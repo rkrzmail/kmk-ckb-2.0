@@ -1,6 +1,6 @@
 package com.kmkbe.core.domain.dto;
 
-import com.kmkbe.core.domain.entity.Customer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import lombok.AllArgsConstructor;

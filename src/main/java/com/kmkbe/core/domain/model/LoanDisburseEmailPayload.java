@@ -8,6 +8,7 @@ import java.util.List;
 @Getter
 @Builder
 public class LoanDisburseEmailPayload {
+    private String bouwheerName;
     private String financingCode;
     private String companyName;
     private String phoneNumber;

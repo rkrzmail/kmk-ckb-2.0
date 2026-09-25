@@ -2,6 +2,7 @@ package com.kmkbe.core.domain.spec;
 
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import jakarta.persistence.criteria.Expression;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
@@ -176,7 +177,7 @@ public static Specification<FinancingDtl> custInvoiceFilterBy(UUID financeHdrCod
 
         if (StringUtils.isNotEmpty(searchBy) && StringUtils.isNotEmpty(searchValue)) {
             // Normalize search value
-            String normalizedSearchValue = normalizeString(searchValue);
+            String normalizedSearchValue = searchValue.toLowerCase(java.util.Locale.ROOT).trim();
 
             switch (searchBy.toLowerCase()) {
                 case "customerinvoiceno":
@@ -204,7 +205,7 @@ public static Specification<FinancingDtl> custInvoiceFilterBy(UUID financeHdrCod
                                     cb.literal("(\\.|,|pt|cv|tbk|\\s)+"), cb.literal(""), cb.literal("g"))
                     );
                     predicate = cb.and(predicate,
-                            cb.like(cleanedBouwheerName, "%" + normalizedSearchValue.replaceAll("(\\.|,|\\s)+", "") + "%"));
+                            cb.like(cleanedBouwheerName, "%" + normalizeString(searchValue) + "%"));
                     break;
                 case "invoicedate":
                     Expression<String> invoiceDateStr = cb.function("TO_CHAR", String.class,
@@ -230,7 +231,7 @@ public static Specification<FinancingDtl> custInvoiceFilterBy(UUID financeHdrCod
                     break;
 
                 case "status":
-                    switch (normalizedSearchValue) {
+                    switch (normalizedSearchValue.replaceAll("\\s+", "")) {
                         case "new":
                             predicate = cb.and(predicate,
                                     cb.equal(joinFinancingHdr.get("financingStatus"), "NEW"),

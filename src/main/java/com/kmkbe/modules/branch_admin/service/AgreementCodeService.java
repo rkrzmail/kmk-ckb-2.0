@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.DebtorRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -83,22 +84,22 @@ public class AgreementCodeService {
 
             SitDto sitDto = SitDto.builder()
                     .custName(customer.getCustName())
-                    .DirectorName(signerName)
+                    .DirectorName(customer.getCustomerCompany().getDirectorName())
                     .Jabatan(jabatan)
                     .BranchCode(branchCode)
                     .EmployeeName(employeeName)
                     .agreementCode("-")
-                    .bouwheerName("PT. TRAKINDO UTAMA")
-                    .legalAddress("Jl. Raya Cilandak Kko No.1")
-                    .rt("13")
-                    .rw("5")
-                    .kelurahan("Ragunan")
-                    .kecamatan("Pasar Minggu")
-                    .city("Jakarta Selatan")
-                    .province("DKI Jakarta")
-                    .zipcode("12550")
-                    .area("JKT")
-                    .picName("PT. TRAKINDO UTAMA")
+                    .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+                    .legalAddress(financingHdr.getBouwheer().getLegalAddress())
+                    .rt(financingHdr.getBouwheer().getRt())
+                    .rw(financingHdr.getBouwheer().getRw())
+                    .kelurahan(financingHdr.getBouwheer().getKelurahan())
+                    .kecamatan(financingHdr.getBouwheer().getKecamatan())
+                    .city(financingHdr.getBouwheer().getCity())
+                    .province(financingHdr.getBouwheer().getProvince())
+                    .zipcode(financingHdr.getBouwheer().getZipcode())
+                    .area(financingHdr.getBouwheer().getArea())
+                    .picName(financingHdr.getBouwheer().getPicName())
                     .bankName("Bank Mandiri")
                     .accountName("CHANDRA SAKTI UTAMA")
                     .accountNo("1270098142159")
@@ -115,7 +116,7 @@ public class AgreementCodeService {
             String branchCode = financingHdrRepository.findBranchCodeByFinancingHdrCode(financingHdrCode);
 
             List<Map<String, String>> employeeList = emailAo.getEmailByPosition(branchCode, "RM", jwtToken);
-            String employeeName = employeeList.isEmpty() ? "N/A" : toCamelCase(employeeList.get(0).get("employeeName"));
+            String employeeName = employeeList.isEmpty() ? "N/A" : toCamelCase(employeeList.getFirst().get("employeeName"));
 
 //            String directorOrCustomerName = "Company".equals(customer.getCustTypeCode())
 //                    ? customer.getCustomerCompany().getDirectorName()
@@ -125,7 +126,7 @@ public class AgreementCodeService {
 
             List<Debtor> signerList = debtorRepository.findActiveSignerByDebtorName(debtorName);
 
-            String signerName = signerList.isEmpty() ? "-" : signerList.get(0).getKaryawanName();
+            String signerName = signerList.isEmpty() ? "-" : signerList.getFirst().getKaryawanName();
             String jabatan = signerList.isEmpty() ? "-" : signerList.get(0).getJabatan();
 
 //            String signerName = debtorRepository

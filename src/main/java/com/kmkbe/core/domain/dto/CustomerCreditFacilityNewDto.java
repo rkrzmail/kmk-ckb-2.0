@@ -14,6 +14,7 @@ import java.util.Date;
 public class CustomerCreditFacilityNewDto {
 
     private String agreementCode;
+    private String invoiceNo;
     private String financingHdrCode;
     private String custName;
     private String bouwheerCode;
