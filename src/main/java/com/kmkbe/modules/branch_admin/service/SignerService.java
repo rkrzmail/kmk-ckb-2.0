@@ -12,7 +12,7 @@ import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.utils.ListPagination;
 import com.kmkbe.helpers.utils.PaginationRequests;
-import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.feign.client.ConfinsR3FeignClient;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
@@ -63,13 +63,7 @@ public class SignerService {
   private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
   private final String downloadDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/downloadDocument";
   private final String checkDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/checkStatusSigning";
-  private final BaseRemoteService baseRemoteService;
-
-  @Value("${csul.confins.adinskey}")
-  private String adInsKey;
-
-  @Value("${csul.confins.mou.fwd}")
-  public String confinsMouFwd;
+  private final ConfinsR3FeignClient confinsR3FeignClient;
 
   public PaginationResult<AssignmentDto> assignmentListGroupByCustomer(
     HttpServletRequest httpServletRequest,
@@ -291,39 +285,15 @@ public class SignerService {
       Agreement agreement = agreementRepository.findCwr(UUID.fromString(financingHdrCode))
         .orElseThrow(() -> new RuntimeException("Agreement not found"));
 
-      Map<String, String> signerRequestBody = new HashMap<>();
-      signerRequestBody.put("custNo", agreement.getCwr().getCustomer().getCustNo());
-      signerRequestBody.put("cwrNo", agreement.getCwr().getCwrCode());
-      signerRequestBody.put("RequestDateTime", LocalDate.now().toString());
-
-      HttpHeaders headers = new HttpHeaders();
-      headers.set("AdInsKey", adInsKey);
-      headers.setContentType(MediaType.APPLICATION_JSON);
-
-      HttpEntity<Map<String, String>> signerEntity = new HttpEntity<>(signerRequestBody, headers);
-
-      ResponseEntity<Map> signerResponse = restTemplate.exchange(
-        baseRemoteService.Mou_GetSigner_forward(),
-        HttpMethod.POST,
-        signerEntity,
-        Map.class
-      );
-
-      if (signerResponse.getStatusCode() == HttpStatus.OK) {
-        Map<String, Object> signerResponseBody = signerResponse.getBody();
-        if (signerResponseBody != null && signerResponseBody.containsKey("ReturnObject")) {
-          List<Map<String, Object>> returnObject = (List<Map<String, Object>>) signerResponseBody.get("ReturnObject");
-
-          boolean isSignerFound = returnObject.stream()
-            .anyMatch(signer -> debtorDto.getKaryawanName().equalsIgnoreCase(signer.get("SignerName").toString()));
-
-          debtorDto.setSignerStatus(isSignerFound ? "active" : "not active");
-        } else {
-          debtorDto.setSignerStatus("not active");
-        }
-      } else {
-        debtorDto.setSignerStatus("not active");
-      }
+      SignerRequestDto request = new SignerRequestDto(
+        agreement.getCwr().getCustomer().getCustNo(),
+        agreement.getCwr().getCwrCode(), LocalDate.now().toString());
+      ExternalApiResponse response = confinsR3FeignClient.getSigners(request);
+      boolean isSignerFound = response != null && response.getReturnObject() != null
+        && response.getReturnObject().stream()
+          .anyMatch(signer -> debtorDto.getKaryawanName() != null
+            && debtorDto.getKaryawanName().equalsIgnoreCase(signer.getSignerName()));
+      debtorDto.setSignerStatus(isSignerFound ? "active" : "not active");
     } catch (Exception e) {
       debtorDto.setSignerStatus("not active");
       e.printStackTrace();
@@ -618,19 +588,7 @@ public class SignerService {
   }
 
   private ExternalApiResponse callExternalApi(SignerRequestDto request) {
-    HttpHeaders headers = new HttpHeaders();
-    headers.set("AdInsKey", adInsKey);
-    headers.setContentType(MediaType.APPLICATION_JSON);
-
-    HttpEntity<SignerRequestDto> entity = new HttpEntity<>(request, headers);
-
-    ResponseEntity<ExternalApiResponse> response = restTemplate.exchange(
-      baseRemoteService.Mou_GetSigner_forward(),
-      HttpMethod.POST,
-      entity,
-      ExternalApiResponse.class);
-
-    return response.getBody();
+    return confinsR3FeignClient.getSigners(request);
   }
 
   private PersonDto mapToPersonDto(ExternalApiResponse externalResponse) {
