@@ -55,6 +55,7 @@ public class CriteriaGenericTypeRemoteRequest<T> {
 
     @Builder.Default
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
+    @com.fasterxml.jackson.databind.annotation.JsonSerialize(using = com.fasterxml.jackson.databind.ser.std.DateSerializer.class)
     @JsonProperty("RequestDateTime")
     private Date requestDateTime = new Date();
 
