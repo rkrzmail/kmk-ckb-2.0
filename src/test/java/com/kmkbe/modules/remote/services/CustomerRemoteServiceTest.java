@@ -25,7 +25,8 @@ public class CustomerRemoteServiceTest extends BaseRemoteServicesTest {
         customerRemoteService = new CustomerRemoteService(
                 restTemplateByPassSSL,
                 baseRemoteService,
-                objectMapper
+                objectMapper,
+                org.mockito.Mockito.mock(com.kmkbe.feign.client.ConfinsR3FeignClient.class)
         );
 
         existingCustomerRequest = ExistingCustomerRequest.builder()

@@ -153,10 +153,10 @@ class AssignmentSubmissionServiceTest {
   @Test
   void assignmentListReturnsAccountOfficerAssignmentsWithAgreementDocument() throws Exception {
     FinancingHdr financingHdr = financingHdr("INPROCESS", "ASSIGNMENT");
+    financingHdr.getCustomer().setExistingCust("New Customer");
     stubUserAndRole("account_officer");
     when(financingHdrRepository.findAllAssignmentFinancingRaw(eq("JKT"), eq(null), eq(null), eq(null), any()))
         .thenReturn(pageOf(financingHdr));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(financingHdr.getCustomer(), "PAID")).thenReturn(0L);
     Agreement agreement = Agreement.builder().agreementCode("AGR001").build();
     when(agreementRepository.findTopByFinancingHdr(financingHdr)).thenReturn(Optional.of(agreement));
     when(agreementFileRepository.findTopByAgreementOrderByAgreementFileId(agreement))
@@ -180,11 +180,11 @@ class AssignmentSubmissionServiceTest {
   @Test
   void assignmentListReturnsBranchAdminAssignmentAndExistingCustomerWithoutAgreement() throws Exception {
     FinancingHdr financingHdr = financingHdr("INPROCESS", "INPROCESS");
+    financingHdr.getCustomer().setExistingCust("Existing Customer");
     stubUserAndRole("branch_admin");
     PaginationRequest request = pagination(null, null, 1, 5);
     when(financingHdrRepository.findAllAssignmentFinancingRaw(eq("JKT"), eq(null), eq(null), eq(null), any()))
         .thenReturn(pageOf(financingHdr));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(financingHdr.getCustomer(), "PAID")).thenReturn(1L);
     when(agreementRepository.findTopByFinancingHdr(financingHdr)).thenReturn(Optional.empty());
 
     PaginationResult<AssignmentDto> result = service.assignmentList(httpServletRequest, request);
@@ -212,7 +212,6 @@ class AssignmentSubmissionServiceTest {
     FinancingHdr financingHdr = financingHdr("INPROCESS", "INPROCESS");
     stubUserAndRole("account_officer");
     when(financingHdrRepository.findAllAssignmentFinancingRaw(any(), any(), any(), any(), any())).thenReturn(pageOf(financingHdr));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(financingHdr.getCustomer(), "PAID")).thenReturn(0L);
     when(agreementRepository.findTopByFinancingHdr(financingHdr)).thenReturn(Optional.empty());
 
     assertThat(service.assignmentList(httpServletRequest, pagination("financingHdrCode", FINANCING_HDR_CODE.toString(), 1, 5)).getList()).hasSize(1);

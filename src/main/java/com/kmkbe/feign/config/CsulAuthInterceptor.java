@@ -19,7 +19,9 @@ public class CsulAuthInterceptor implements RequestInterceptor {
     String url = template.url();
 
     // Robust condition check covering relative paths and complete targets
-    if (url.contains("/webhook/token") || url.endsWith("/token") || template.feignTarget().name().equals("csulAuthFeignClient")) {
+    if (url.contains("/webhook/token") || url.endsWith("/token")
+        || template.feignTarget().name().equals("csulAuthFeignClient")
+        || template.feignTarget().type().equals(com.kmkbe.feign.client.ConfinsR3FeignClient.class)) {
       return; // Skip token injection completely for login calls
     }
 

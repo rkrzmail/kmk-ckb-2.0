@@ -6,9 +6,9 @@ import lombok.Data;
 @Data
 public class AppRequest {
     @JsonProperty("TrxNo")
-    private String TrxNo;
+    private String trxNo;
 
     @JsonProperty("RequestDateTime")
-    private String RequestDateTime;
+    private String requestDateTime;
 }
 
