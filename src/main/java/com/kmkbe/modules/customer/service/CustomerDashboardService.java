@@ -217,8 +217,8 @@ public class CustomerDashboardService {
         phoneNo = financingHdr.getCustomer().getPersonal() == null ? "" : financingHdr.getCustomer().getPersonal().getPhone();
       }
       long total = agreementFileSigningRepository.countUploadedAgreementsByCustomer(uuid);
-      long totalBerjalan = agreementFileSigningRepository.countRunningUploadedAgreementsByCustomer(uuid);
       long totalBerakhir = agreementFileSigningRepository.countCompletedUploadedAgreementsByCustomer(uuid);
+      long totalBerjalan = total - totalBerakhir;
 
       return CustomerPerjanjianDto.builder()
         .financingHdrCode(financingHdr.getFinancingHdrCode())

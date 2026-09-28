@@ -10,6 +10,7 @@ import com.kmkbe.core.domain.dto.SignerAgreementDto;
 import com.kmkbe.core.domain.dto.SignerCheckResultDto;
 import com.kmkbe.core.domain.dto.SignerDocDto;
 import com.kmkbe.core.domain.entity.Agreement;
+import com.kmkbe.core.domain.entity.AgreementFile;
 import com.kmkbe.core.domain.entity.AgreementFileSigning;
 import com.kmkbe.core.domain.entity.Cwr;
 import com.kmkbe.core.domain.entity.Debtor;
@@ -18,6 +19,7 @@ import com.kmkbe.core.domain.mapper.DebtorMapper;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.AgreementFileSigningRepository;
+import com.kmkbe.core.domain.repository.AgreementFileRepository;
 import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.DebtorRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
@@ -70,6 +72,7 @@ class SignerServiceTest {
   @Mock private EmailService emailService;
   @Mock private AgreementRepository agreementRepository;
   @Mock private AgreementFileSigningRepository agreementFileSigningRepository;
+  @Mock private AgreementFileRepository agreementFileRepository;
   @Mock private AssignmentSubmissionService assignmentSubmissionService;
   @Mock private NotifDebtorRepository notifDebtorRepository;
   @Mock private AuditTrailService auditTrailService;
@@ -89,6 +92,7 @@ class SignerServiceTest {
         emailService,
         agreementRepository,
         agreementFileSigningRepository,
+        agreementFileRepository,
         assignmentSubmissionService,
         notifDebtorRepository,
         auditTrailService,
@@ -743,6 +747,52 @@ class SignerServiceTest {
     when(agreementFileSigningRepository.findByDocumentId("BROKEN")).thenThrow(new RuntimeException("db down"));
     ResponseEntity<ApiResponse<?>> unexpected = service.downloadDocument("BROKEN", "maker");
     assertThat(unexpected.getBody().getMessage()).contains("Internal server error: db down");
+  }
+
+  @Test
+  void signerDocListIncludesManualAgreementFromAnotherFinancingHeaderOfSameCustomer() {
+    AgreementFileSigning manual = AgreementFileSigning.builder()
+        .agreementFileId(25L)
+        .agreementCode("AGR-MANUAL")
+        .fileTypeCode("SIGN_DOC")
+        .financingHdrCode(UUID.randomUUID().toString())
+        .documentId("-")
+        .stamp("Signed")
+        .verifDate(LocalDateTime.of(2026, 9, 28, 0, 0))
+        .build();
+    AgreementFileSigning legacyManual = AgreementFileSigning.builder()
+        .agreementFileId(26L)
+        .agreementCode("AGR-LEGACY")
+        .fileTypeCode("E_SIGN_DOC")
+        .documentId("-")
+        .stamp("Not Signed")
+        .build();
+    when(agreementRepository.findByFinancingHdr_FinancingHdrCode(FINANCING_HDR_CODE))
+        .thenReturn(List.of(agreement()));
+    when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE))
+        .thenReturn(Optional.of(financingHdr()));
+    when(agreementFileSigningRepository.findManualUploadedByCustomer(FINANCING_HDR_CODE))
+        .thenReturn(List.of(manual, legacyManual));
+    when(agreementRepository.findCwrCodesByAgreementCodes(List.of("AGR-MANUAL", "AGR-LEGACY")))
+        .thenReturn(List.of(
+            new Object[]{"AGR-MANUAL", "CWR-MANUAL"},
+            new Object[]{"AGR-LEGACY", "CWR-LEGACY"}));
+    when(agreementFileRepository.findByAgreement_AgreementCode("AGR-MANUAL"))
+        .thenReturn(Optional.of(AgreementFile.builder().agreementFileId(99L).build()));
+    when(agreementFileRepository.findByAgreement_AgreementCode("AGR-LEGACY"))
+        .thenReturn(Optional.of(AgreementFile.builder().agreementFileId(100L).build()));
+
+    List<SignerDocDto> result = service.signerDocList(FINANCING_HDR_CODE.toString(), "maker");
+
+    assertThat(result).hasSize(2);
+    assertThat(result.getFirst().getAgreementCode()).isEqualTo("AGR-MANUAL");
+    assertThat(result.getFirst().getFileTypeCode()).isEqualTo("SIGN_DOC");
+    assertThat(result.getFirst().getUploadedAgreementFileId()).isEqualTo(99L);
+    assertThat(result.getFirst().getStatus()).isEqualTo("Signed");
+    assertThat(result.get(1).getFileTypeCode()).isEqualTo("SIGN_DOC");
+    assertThat(result.get(1).getUploadedAgreementFileId()).isEqualTo(100L);
+    assertThat(result.get(1).getStatus()).isEqualTo("Signed");
+    verifyNoInteractions(restTemplate);
   }
 
   @Test

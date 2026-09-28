@@ -101,7 +101,6 @@ class CustomerDashboardServiceIssueRegressionTest {
     when(financingHdrService.findByCode(financingHdrCode.toString())).thenReturn(financingHdr);
     when(agreementRepository.findAgreement(financingHdrCode)).thenReturn(Optional.of(agreement));
     when(agreementFileSigningRepository.countUploadedAgreementsByCustomer(financingHdrCode)).thenReturn(5L);
-    when(agreementFileSigningRepository.countRunningUploadedAgreementsByCustomer(financingHdrCode)).thenReturn(3L);
     when(agreementFileSigningRepository.countCompletedUploadedAgreementsByCustomer(financingHdrCode)).thenReturn(2L);
 
     CustomerPerjanjianDto result = service.perjanjian(financingHdrCode.toString());
@@ -112,6 +111,37 @@ class CustomerDashboardServiceIssueRegressionTest {
     verify(financingHdrRepository, never()).countSigningAndSigned(financingHdrCode.toString());
     verify(financingHdrRepository, never()).countCompleted(financingHdrCode.toString());
     verify(agreementFileSigningRepository, never()).countBySigner(org.mockito.ArgumentMatchers.anyString());
+  }
+
+  @Test
+  void perjanjianClassifiesAllNonCompletedUploadedAgreementsAsRunning() {
+    UUID financingHdrCode = UUID.randomUUID();
+    Customer customer = Customer.builder()
+      .custCode(UUID.randomUUID())
+      .custName("Debitur")
+      .custEmail("debtor@example.com")
+      .custTypeCode("Company")
+      .custIdTypeCode("NPWP")
+      .custIdNo("123")
+      .build();
+    FinancingHdr financingHdr = new FinancingHdr();
+    financingHdr.setFinancingHdrCode(financingHdrCode);
+    financingHdr.setCustomer(customer);
+    financingHdr.setBouwheer(Bouwheer.builder()
+      .bouwheerCode(UUID.randomUUID())
+      .bouwheerName("Bouwheer")
+      .build());
+
+    when(financingHdrService.findByCode(financingHdrCode.toString())).thenReturn(financingHdr);
+    when(agreementRepository.findAgreement(financingHdrCode))
+      .thenReturn(Optional.of(Agreement.builder().agreementCode("AGR001").build()));
+    when(agreementFileSigningRepository.countUploadedAgreementsByCustomer(financingHdrCode)).thenReturn(3L);
+
+    CustomerPerjanjianDto result = service.perjanjian(financingHdrCode.toString());
+
+    assertThat(result.getPerjanjian().getTotalPerjanjian()).isEqualTo(3);
+    assertThat(result.getPerjanjian().getPerjanjianBerjalan()).isEqualTo(3);
+    assertThat(result.getPerjanjian().getPerjanjianBerakhir()).isZero();
   }
 
   @Test
