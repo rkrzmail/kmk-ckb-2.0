@@ -198,11 +198,17 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
 
   interface DistributionReferenceIssue {
     String getFinancingHdrCode();
+
     String getCustCode();
+
     String getBouwheerCode();
+
     String getBranchCode();
+
     Boolean getCustomerMissing();
+
     Boolean getBouwheerMissing();
+
     Boolean getBranchMissing();
   }
 
