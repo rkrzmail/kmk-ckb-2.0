@@ -10,28 +10,38 @@ spring:
           username: vandikalvandi@gmail.com
           password: 12345
   datasource:
-    url: jdbc:postgresql://aurora-kmk.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified
+    url: jdbc:postgresql://aurora-kmk.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified&connectTimeout=10&socketTimeout=30&tcpKeepAlive=true
     username: postgres
     password: Csultmt10
+    hikari:
+      maximum-pool-size: 5
+      minimum-idle: 1
+      connection-timeout: 30000
+      validation-timeout: 5000
+      idle-timeout: 300000
+      max-lifetime: 1200000
+      keepalive-time: 300000
+      initialization-fail-timeout: 0
+      connection-test-query: SELECT 1
   data:
     mongodb:
-      host: localhost
-      port: 27017
-      database: kmklog
+      host: ${MONGO_HOST:localhost}
+      port: ${MONGO_PORT:27017}
+      database: ${MONGO_DATABASE:kmklog}
     redis:
-      host: localhost
-      port: 6379
-      database: 6
-      password:
-      timeout: 6000
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:6}
+      password: ${REDIS_PASSWORD:}
+      timeout: ${REDIS_TIMEOUT:6000}
       lettuce:
         pool:
           enabled: true
-          max-active: 30
-          max-idle: 10
-          min-idle: 2
-          shutdown-timeout: 1000
-          max-wait: 10000
+          max-active: ${REDIS_POOL_MAX_ACTIVE:30}
+          max-idle: ${REDIS_POOL_MAX_IDLE:10}
+          min-idle: ${REDIS_POOL_MIN_IDLE:2}
+          shutdown-timeout: ${REDIS_POOL_SHUTDOWN_TIMEOUT:1000}
+          max-wait: ${REDIS_POOL_MAX_WAIT:10000}
 
   jpa:
     show-sql: true
@@ -63,12 +73,12 @@ spring:
 
 # region testing mail env
 testing:
-    mail:
-      host: srv150.niagahoster.com
-      port: 465
-      protocol: smtp
-      username: csul@nikita.co.id
-      password: DArS!OP#csul6?6Uu
+  mail:
+    host: srv150.niagahoster.com
+    port: 465
+    protocol: smtp
+    username: csul@nikita.co.id
+    password: DArS!OP#csul6?6Uu
 
 # Keep your custom collection property anywhere you like
 custom:
@@ -127,27 +137,14 @@ csul:
     adinskey: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
     fou:
       v1: http://uat-confinsr3.csulfinance.com/api/fou/v1
-      getzipcode: http://localhost/confins/fou_getzipcode.php
-      getcalculate: http://localhost/confins/fou_getcalculate.php
     mou:
       v1: http://uat-confinsr3.csulfinance.com/api/mou/v1
-      getcwrbwhr: http://localhost/confins/mou_getcwrbouwheer.php
-      getlistcwrbwhr: http://localhost/confins/mou_getlistcwrbwhr.php
-      getpagingSQL: http://localhost/confins/mou_getpagingsql.php
-      fwd: http://localhost/confins/mou_getsigner.php
     #LOS
     los:
       v1: http://uat-confinsr3.csulfinance.com/api/los/v1
-      fwd: http://localhost/confins/los_getagr.php
-      getRekening: http://localhost/confins/los_getrekening.php
-      getAppNo: http://localhost/confins/los_getappno.php
-      getpagingSQL: http://localhost/confins/los_getpagingsql.php
     #CORELOS
     corelos:
       v1: http://uat-confinsr3.csulfinance.com/api/corelos/v1
-      getFinData: http://localhost/confins/corelos_getfindata.php
-      getFactoring: http://localhost/confins/corelos_getfactoring.php
-
     ar:
       v1: http://uat-confinsr3.csulfinance.com/api/ar/v1
     payment:

@@ -153,6 +153,7 @@ feign:
 
   confins:
     url: https://uat-confinsr3.csulfinance.com
+    adins-key: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
     secret:
     api-key:
     fou: "${feign.confins.url}/api/fou"

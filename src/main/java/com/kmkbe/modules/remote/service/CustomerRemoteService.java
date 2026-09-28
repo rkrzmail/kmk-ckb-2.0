@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.dto.CustomerRemoteDto;
 import com.kmkbe.core.domain.dto.InquiryVendorRemoteDto;
 import com.kmkbe.core.domain.entity.ApiIntegrationLog;
 import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.feign.client.ConfinsR3FeignClient;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.loan_submission.service.LoanSubmissionService;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
@@ -34,6 +35,9 @@ public class CustomerRemoteService {
   private final RestTemplate restTemplate;
   private final BaseRemoteService baseRemoteService;
   private final ObjectMapper objectMapper;
+  private final ConfinsR3FeignClient confinsR3FeignClient;
+  @org.springframework.beans.factory.annotation.Value("${feign.confins.url}")
+  private String confinsUrl;
   // private final ApiSbuRepository apiSbuRepository;
 
   /**
@@ -46,44 +50,20 @@ public class CustomerRemoteService {
     String responseStr = null;
     int statusCode = 200;
 //        final String url = baseRemoteService.CustObj_GetListKeyValueActiveByCode();
-    final String url = baseRemoteService.confinsFouCalculcate;
+    final String url = confinsUrl + "/api/fou/v1/CustObj/GetObjectByKeyAndValue";
     try {
       jsonStr = ObjectUtils.jsonToStr(params);
-      //params.setRandom(DateTimeUtils.now()+"");
-      final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
-      final HttpEntity<String> requestArgs = new HttpEntity<>(
-        jsonStr,
-        headers
-      );
-      log.info("ini Request Body: {}", jsonStr);
-      log.info("ini Header: {}", headers);
-
-
-      final ResponseEntity<CustomerRemoteDto> response = restTemplate.exchange(
-        url,
-        HttpMethod.POST,
-        requestArgs,
-        new ParameterizedTypeReference<>() {
-        }
-      );
-
-      log.info("ini URL: {}", url);
-
-
-      statusCode = response.getStatusCode().value();
-      responseStr = ObjectUtils.jsonToStr(response.getBody());
-      if (StringUtil.isNullOrEmpty(responseStr)) {
-        responseStr = objectMapper.writeValueAsString(response.getBody());
-      }
+      final CustomerRemoteDto response = confinsR3FeignClient.validateExisting(params);
+      responseStr = objectMapper.writeValueAsString(response);
       log.info("Response: {}", responseStr);
 
-      return response.getBody();
-    } catch (HttpStatusCodeException httpStatusCodeException) {
+      return response;
+    } catch (feign.FeignException httpStatusCodeException) {
       String message = "Failed to validate Existing Customer";
-      statusCode = httpStatusCodeException.getStatusCode().value();
-      responseStr = httpStatusCodeException.getResponseBodyAsString();
+      statusCode = httpStatusCodeException.status();
+      responseStr = httpStatusCodeException.contentUTF8();
 
-      Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
+      Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.contentUTF8());
       if (errorObj != null) {
         message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
       }

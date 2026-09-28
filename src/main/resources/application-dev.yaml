@@ -108,27 +108,15 @@ custom:
 csul:
   confins:
     mou:
-      fwd: http://172.21.10.149:8083/mou_getsigner.php
-      getcwrbwhr: http://172.21.10.149:8083/mou_getcwrbouwheer.php
-      getlistcwrbwhr: http://172.21.10.149:8083/mou_getlistcwrbwhr.php
       v1: https://uat-confinsr3.csulfinance.com/api/mou/v1
-      getpagingSQL: http://172.21.10.149:8083/mou_getpagingsql.php
     los:
-      getAppNo: http://172.21.10.149:8083/los_getappno.php
-      getpagingSQL: http://172.21.10.149:8083/los_getpagingsql.php
-      fwd: http://172.21.10.149:8083/los_getagr.php
-      getRekening: http://172.21.10.149:8083/los_getrekening.php
       v1: https://uat-confinsr3.csulfinance.com/api/los/v1
     corelos:
       v1: https://uat-confinsr3.csulfinance.com/api/corelos/v1
-      getFinData: http://172.21.10.149:8083/corelos_getfindata.php
-      getFactoring: http://172.21.10.149:8083/corelos_getfactoring.php
     ap:
       v1: https://uat-confinsr3.csulfinance.com/api/ap/v1
     fou:
       v1: https://uat-confinsr3.csulfinance.com/api/fou/v1
-      getcalculate: http://172.21.10.149:8083/fou_getcalculate.php
-      getzipcode: http://172.21.10.149:8083/fou_getzipcode.php
     payment:
       v1: https://uat-confinsr3.csulfinance.com/api/payment/v1
     adinskey: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=

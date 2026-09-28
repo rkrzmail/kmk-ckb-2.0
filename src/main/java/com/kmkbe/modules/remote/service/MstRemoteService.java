@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.dto.AreaRemoteDto;
 import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
 import com.kmkbe.core.domain.dto.InputOptionsRemoteDto;
 import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.feign.client.ConfinsR3FeignClient;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.remote.request.*;
 import io.netty.util.internal.StringUtil;
@@ -28,6 +29,7 @@ import java.util.List;
 @RequiredArgsConstructor
 public class MstRemoteService {
     private final ObjectMapper objectMapper;
+    private final ConfinsR3FeignClient confinsR3FeignClient;
     private final RestTemplate restTemplate;
     private final BaseRemoteService baseRemoteService;
 
@@ -87,23 +89,7 @@ public class MstRemoteService {
                     .rowPerPage(rowPerPage != null ? rowPerPage : 10)
                     .build();
 
-            final HttpHeaders headers = baseRemoteService.adInsKeyHeaders();
-            final HttpEntity<String> requestArgs = new HttpEntity<>(
-                    ObjectUtils.jsonToStr(criteriaRequest, false),
-                    headers
-            );
-
-//            String url = baseRemoteService.Fou_Generic_GetPagingObjectBySQL();
-            String url = baseRemoteService.confinsFouFwd;
-            final ResponseEntity<BaseMstRemoteResponseDto<List<AreaRemoteDto>>> response = restTemplate.exchange(
-                    url,
-                    HttpMethod.POST,
-                    requestArgs,
-                    new ParameterizedTypeReference<>() {
-                    }
-            );
-
-            return response.getBody();
+            return confinsR3FeignClient.areaQuery(criteriaRequest);
         } catch (Exception e) {
             log.error("areaQuery: {}", e.getMessage());
             return null;
