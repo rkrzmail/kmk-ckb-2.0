@@ -28,6 +28,9 @@ class ConfinsR3TestControllerTest {
     private ConfinsR3FeignClient client;
     private final AtomicReference<String> calledMethod = new AtomicReference<>();
 
+  public ConfinsR3TestControllerTest(ConfinsR3FeignClient client) {
+  }
+
   @BeforeEach
     void setup() {
         client = mock(ConfinsR3FeignClient.class, invocation -> {
@@ -39,7 +42,7 @@ class ConfinsR3TestControllerTest {
             if (result instanceof AppResponse app) app.setAppId(42);
             return result;
         });
-        mvc = MockMvcBuilders.standaloneSetup(new ConfinsR3TestController(client)).build();
+        mvc = MockMvcBuilders.standaloneSetup(new ConfinsR3TestControllerTest(client)).build();
     }
 
     static Stream<Arguments> routes() {

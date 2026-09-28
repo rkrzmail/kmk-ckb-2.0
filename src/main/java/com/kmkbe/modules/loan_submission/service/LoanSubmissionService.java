@@ -1001,13 +1001,11 @@ public class LoanSubmissionService {
 
           if (hdrBranch != null) {
             //update jadi Assign
-            if (financingHdr.getFapStatus().equals("Repeat Order")) {
-              log.info("Repeat Order loan submitted {} ",customer.getCustEmail());
+              log.info("Repeat Order loan submitted {} , Branch {} ",customer.getCustEmail(),hdrBranch.getBranchCode());
               financing.setFinancingStatus("INPROCESS");
               financing.setFinancingStep("ASSIGNMENT");
               financing.setMstBranch(hdrBranch);
               financing.setDtmUpd(DateTimeUtils.now());
-            }
 
             final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
               .stream()
