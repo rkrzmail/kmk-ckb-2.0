@@ -20,6 +20,29 @@ public interface AgreementFileSigningRepository extends JpaRepository<AgreementF
   @Query("SELECT a FROM AgreementFileSigning a WHERE a.signer = :signer AND a.fileTypeCode='E_SIGN_DOC'")
   List<AgreementFileSigning> findByKaryawan(@Param("signer") String signerName);
 
+  @Query(value = """
+    SELECT afs.*
+    FROM agreement_file_signing afs
+    JOIN financing_hdr agreement_fh
+      ON CAST(agreement_fh.financing_hdr_code AS VARCHAR) = afs.financing_hdr_code
+    WHERE agreement_fh.cust_code = (
+      SELECT current_fh.cust_code
+      FROM financing_hdr current_fh
+      WHERE current_fh.financing_hdr_code = :financingHdrCode
+    )
+    AND (afs.file_type_code = 'SIGN_DOC' OR (
+      afs.document_id = '-'
+      AND EXISTS (
+        SELECT 1 FROM agreement_file uploaded
+        WHERE uploaded.agreement_code = afs.agreement_code
+      )
+    ))
+    ORDER BY afs.agreement_file_id
+    """, nativeQuery = true)
+  List<AgreementFileSigning> findManualUploadedByCustomer(
+    @Param("financingHdrCode") UUID financingHdrCode
+  );
+
   long countBySigner(String signerName);
 
   @Query(value = """
@@ -47,23 +70,7 @@ public interface AgreementFileSigningRepository extends JpaRepository<AgreementF
       FROM financing_hdr current_fh
       WHERE current_fh.financing_hdr_code = :financingHdrCode
     )
-    AND UPPER(agreement_fh.financing_step) IN ('SIGNING', 'SIGNED', 'PAID')
-    """, nativeQuery = true)
-  long countRunningUploadedAgreementsByCustomer(
-    @Param("financingHdrCode") UUID financingHdrCode
-  );
-
-  @Query(value = """
-    SELECT COUNT(DISTINCT afs.agreement_code)
-    FROM agreement_file_signing afs
-    JOIN financing_hdr agreement_fh
-      ON CAST(agreement_fh.financing_hdr_code AS VARCHAR) = afs.financing_hdr_code
-    WHERE agreement_fh.cust_code = (
-      SELECT current_fh.cust_code
-      FROM financing_hdr current_fh
-      WHERE current_fh.financing_hdr_code = :financingHdrCode
-    )
-    AND UPPER(agreement_fh.financing_step) = 'COMPLETED'
+    AND UPPER(agreement_fh.financing_status) = 'COMPLETED'
     """, nativeQuery = true)
   long countCompletedUploadedAgreementsByCustomer(
     @Param("financingHdrCode") UUID financingHdrCode

@@ -29,6 +29,44 @@ import static org.mockito.Mockito.when;
 class AgreementFileSigningServiceTest {
 
     @Test
+    void manualUploadReplacesExistingEsignMetadata() {
+        AgreementFileSigningRepository signingRepository = mock(AgreementFileSigningRepository.class);
+        FinancingHdrRepository financingHdrRepository = mock(FinancingHdrRepository.class);
+        DebtorRepository debtorRepository = mock(DebtorRepository.class);
+        NotifDebtorRepository notifDebtorRepository = mock(NotifDebtorRepository.class);
+        AuditTrailService auditTrailService = mock(AuditTrailService.class);
+        CurrentUserService currentUserService = mock(CurrentUserService.class);
+        AgreementFileSigningService service = new AgreementFileSigningService(
+                signingRepository, financingHdrRepository, debtorRepository,
+                notifDebtorRepository, auditTrailService, currentUserService);
+        UUID financingHdrCode = UUID.randomUUID();
+        AgreementFileSigning existing = AgreementFileSigning.builder()
+                .agreementCode("AGR-MANUAL")
+                .fileTypeCode("E_SIGN_DOC")
+                .stamp("Not Signed")
+                .build();
+        FinancingHdr financingHdr = new FinancingHdr();
+        financingHdr.setFinancingStep("SIGNING");
+        Customer customer = new Customer();
+        customer.setCustCode(UUID.randomUUID());
+        financingHdr.setCustomer(customer);
+
+        when(financingHdrRepository.findDebtorNameByFinancingHdrCode(financingHdrCode)).thenReturn("Debtor");
+        when(debtorRepository.findActiveSignerByDebtorName("Debtor"))
+                .thenReturn(List.of(Debtor.builder().karyawanName("Signer").build()));
+        when(signingRepository.findByAgreementCode("AGR-MANUAL")).thenReturn(List.of(existing));
+        when(signingRepository.save(any(AgreementFileSigning.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(financingHdrRepository.findByFinancingHdrCode(financingHdrCode)).thenReturn(Optional.of(financingHdr));
+        when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.saveSigningResult("AGR-MANUAL", "-", "maker", financingHdrCode.toString(), "SIGN_DOC");
+
+        assertThat(existing.getFileTypeCode()).isEqualTo("SIGN_DOC");
+        assertThat(existing.getStamp()).isEqualTo("Signed");
+        assertThat(existing.getVerifDate()).isNotNull();
+    }
+
+    @Test
     void saveSigningResultCreatesSigningRecordUpdatesStepAndCreatesNotification() {
         AgreementFileSigningRepository signingRepository = mock(AgreementFileSigningRepository.class);
         FinancingHdrRepository financingHdrRepository = mock(FinancingHdrRepository.class);
