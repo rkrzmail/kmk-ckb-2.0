@@ -11,4 +11,6 @@ public interface AgreementFileRepository extends JpaRepository<AgreementFile, Lo
     Optional<AgreementFile> findByAgreement(Agreement agreement);
 
     Optional<AgreementFile> findTopByAgreementOrderByAgreementFileId(Agreement agreement);
+
+    Optional<AgreementFile> findByAgreement_AgreementCode(String agreementCode);
 }

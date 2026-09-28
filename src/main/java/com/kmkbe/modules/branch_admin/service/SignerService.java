@@ -50,6 +50,7 @@ public class SignerService {
   private final EmailService emailService;
   private final AgreementRepository agreementRepository;
   private final AgreementFileSigningRepository agreementFileSigningRepository;
+  private final AgreementFileRepository agreementFileRepository;
   private final AssignmentSubmissionService assignmentSubmissionService;
   private final NotifDebtorRepository notifDebtorRepository;
   private final AuditTrailService auditTrailService;
@@ -861,7 +862,17 @@ public class SignerService {
         fileSignings.addAll(agreementFileSigningRepository.findByKaryawan(signer));
       }
 
+      fileSignings.removeIf(signing -> "-".equals(signing.getDocumentId()));
       checkExternalSigningStatus(fileSignings, username);
+
+      Set<String> listedAgreementCodes = fileSignings.stream()
+        .map(AgreementFileSigning::getAgreementCode)
+        .collect(Collectors.toSet());
+      for (AgreementFileSigning manualFile : agreementFileSigningRepository.findManualUploadedByCustomer(financingHdrUuid)) {
+        if (listedAgreementCodes.add(manualFile.getAgreementCode())) {
+          fileSignings.add(manualFile);
+        }
+      }
 
       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
 
@@ -878,8 +889,16 @@ public class SignerService {
 
 
       return fileSignings.stream()
-        .map(signing -> SignerDocDto.builder()
+        .map(signing -> {
+          boolean manual = "SIGN_DOC".equals(signing.getFileTypeCode())
+            || "-".equals(signing.getDocumentId());
+          return SignerDocDto.builder()
           .agreementFileId(signing.getAgreementFileId())
+          .fileTypeCode(manual ? "SIGN_DOC" : signing.getFileTypeCode())
+          .uploadedAgreementFileId(manual
+            ? agreementFileRepository.findByAgreement_AgreementCode(signing.getAgreementCode())
+              .map(AgreementFile::getAgreementFileId).orElse(null)
+            : null)
           .agreementCode(signing.getAgreementCode())
           .cwrCode(cwrMap.getOrDefault(signing.getAgreementCode(), "")) // di db belum ada
           .bowheerName(bowheerName)
@@ -889,9 +908,10 @@ public class SignerService {
               : (signing.getDtmCrt() != null ? signing.getDtmCrt().format(formatter) : null)
           )
           .signProgress(signing.getSignProgress())
-          .status(signing.stamp())
+          .status(manual ? "Signed" : signing.stamp())
           .documentId(signing.getDocumentId())
-          .build())
+          .build();
+        })
         .toList();
     } catch (IllegalArgumentException e) {
       throw new IllegalArgumentException("Invalid financingHdrCode format: " + financingHdrCode);

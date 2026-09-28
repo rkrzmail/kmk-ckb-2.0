@@ -63,7 +63,9 @@ public class AgreementFileSigningService {
         agreementFileSigningRepository.deleteAll(existingList.subList(1, existingList.size()));
       }
 
-      entity.setStamp("Not Signed");
+      entity.setFileTypeCode(fileTypeCode);
+      entity.setStamp(fileTypeCode.equals("E_SIGN_DOC") ? "Not Signed" : "Signed");
+      entity.setVerifDate(fileTypeCode.equals("E_SIGN_DOC") ? null : LocalDateTime.now());
       entity.setSigner(debtor.getKaryawanName());
       entity.setEmailSigner(debtor.getEmail());
       entity.setIdentityNo(debtor.getIdentityNo());
