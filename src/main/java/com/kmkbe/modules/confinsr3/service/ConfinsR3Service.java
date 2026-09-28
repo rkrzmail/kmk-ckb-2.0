@@ -14,6 +14,7 @@ import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.helpers.utils.CommonUtils;
+import com.kmkbe.helpers.utils.PaginationRequests;
 import com.kmkbe.modules.confinsr3.model.response.*;
 import com.kmkbe.modules.master.request.AreaPageRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +25,8 @@ import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -92,25 +95,40 @@ public class ConfinsR3Service {
   }
 
   public BaseResponseBuilder<List<GetZipCodeResponse>> pageZipcode(AreaPageRequest request) {
+    var pagination = PaginationRequests.from(request);
+    if (pagination.getPageNo() == null || pagination.getPageSize() == null) {
+      throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "pageNo dan pageSize wajib diisi.");
+    }
+
+    Object orderBy = null;
+    boolean hasSortBy = request.getSortBy() != null && !request.getSortBy().isBlank();
+    boolean hasSortType = request.getSortType() != null && !request.getSortType().isBlank();
+    if (hasSortBy != hasSortType) {
+      throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "sortBy dan sortType harus diisi bersama.");
+    }
+    if (hasSortBy) {
+      String direction = request.getSortType().trim().toUpperCase(Locale.ROOT);
+      if (!direction.equals("ASC") && !direction.equals("DESC")) {
+        throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "sortType harus ASC atau DESC.");
+      }
+      orderBy = Map.of("key", areaColumn(request.getSortBy()), "value", String.valueOf(direction.equals("ASC")));
+    }
 
     List<ConfinsR3GetPagingObjectBySQLRequest.CriterionDto> criterionDtos = new ArrayList<>();
 
     /**
      * Criteria
      */
-    if (request.getCriteria() !=null){
-      request.getCriteria().stream().toList().forEach(item -> {
-        ConfinsR3GetPagingObjectBySQLRequest.CriterionDto type = new ConfinsR3GetPagingObjectBySQLRequest.CriterionDto();
-        type.setLow(0);
-        type.setHigh(0);
-        type.setDataType("");
-        type.setIsCriteriaDataTable(false);
-        type.setRestriction("LIKE");
-        type.setPropName(item.getPropName());
-        type.setValue("%"+item.getValue().toUpperCase()+"%");
-
-        criterionDtos.add(type);
+    if (request.getCriteria() != null) {
+      request.getCriteria().forEach(item -> {
+        if (item == null || item.getValue() == null || item.getValue().isBlank()) {
+          throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "criteria harus memiliki propName dan value.");
+        }
+        criterionDtos.add(areaCriterion(item.getPropName(), item.getValue()));
       });
+    }
+    if (pagination.getSearchValue() != null) {
+      criterionDtos.add(areaCriterion(pagination.getSearchBy(), pagination.getSearchValue()));
     }
 
     ConfinsR3ApiResponseWrapper<ConfinsR3GetZipCodeDto> response = apiConfinsR3Adapter.getAllZipcode(ConfinsR3GetPagingObjectBySQLRequest.builder()
@@ -123,10 +141,10 @@ public class ConfinsR3Service {
       .rowVersion("")
       .integrationObj(null)
       .joinType("INNER")
-      .pageNo(request.getPageNo())
-      .rowPerPage(request.getPageSize())
-      .orderBy(null)
-      .criteria(criterionDtos.isEmpty()? List.of() :criterionDtos)
+      .pageNo(pagination.getPageNo())
+      .rowPerPage(pagination.getPageSize())
+      .orderBy(orderBy)
+      .criteria(criterionDtos)
       .requestDateTime(CommonUtils.generateDate(AppConstants.DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ))
       .build());
 
@@ -143,6 +161,31 @@ public class ConfinsR3Service {
     }).toList();
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, recordResponseList);
+  }
+
+  private ConfinsR3GetPagingObjectBySQLRequest.CriterionDto areaCriterion(String field, String value) {
+    return ConfinsR3GetPagingObjectBySQLRequest.CriterionDto.builder()
+      .low(0)
+      .high(0)
+      .dataType("")
+      .isCriteriaDataTable(false)
+      .restriction("LIKE")
+      .propName(areaColumn(field))
+      .value("%" + value.trim().toUpperCase(Locale.ROOT) + "%")
+      .build();
+  }
+
+  private String areaColumn(String field) {
+    if (field == null) {
+      throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "Field area tidak valid.");
+    }
+    return switch (field.trim().toLowerCase(Locale.ROOT)) {
+      case "zipcode", "rz.zipcode" -> "RZ.ZIPCODE";
+      case "city", "rz.city" -> "RZ.CITY";
+      case "kecamatan", "areacode1", "rz.area_code_1" -> "RZ.AREA_CODE_1";
+      case "kelurahan", "areacode2", "rz.area_code_2" -> "RZ.AREA_CODE_2";
+      default -> throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "Field area tidak valid: " + field);
+    };
   }
 
   /**
