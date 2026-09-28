@@ -966,8 +966,8 @@ public class LoanSubmissionService {
       }
 
 
-      Optional<Customer>customerOptional = customerRepository.findByCustCode(custCOde.getCustCode());
-      if (customerOptional.isEmpty()){
+      Optional<Customer> customerOptional = customerRepository.findByCustCode(custCOde.getCustCode());
+      if (customerOptional.isEmpty()) {
         log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", custCOde.getCustCode());
         throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Customer tidak ditemukan!");
       }
@@ -975,9 +975,125 @@ public class LoanSubmissionService {
       final FinancingHdr financing = financingHdrService.getByCode(request.getFinancingHdrCode());
       FinancingAuditData before = toFinancingAuditData(financing);
 
-        applySubmissionMetadata(financing, customer.getCustName(), DateTimeUtils.now());
+      applySubmissionMetadata(financing, customer.getCustName(), DateTimeUtils.now());
+
+      boolean isAutoASSIGNMENT = false;
+      //set auto ASSIGNMENT
+      List<FinancingHdr> financingHdrs = new ArrayList<>();
+      if (financing.getMstBranch() != null) {
+        financingHdrs.add(financing);
+      }
+      financingHdrs.addAll(financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer));
+      for (FinancingHdr financingHdr : financingHdrs) {
+        MstBranch hdrBranch = financingHdr.getMstBranch();
+
+        if (hdrBranch != null) {
+          //update jadi Assign
+          log.info("Repeat Order loan submitted {} , Branch {} ", customer.getCustEmail(), hdrBranch.getBranchCode());
+          financing.setFinancingStatus("INPROCESS");
+          financing.setFinancingStep("ASSIGNMENT");
+          financing.setMstBranch(hdrBranch);
+          financing.setDtmUpd(DateTimeUtils.now());
+
+          final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
+            .stream()
+            .map((item) ->
+              InvoiceEmailPayload.builder()
+                .invoiceNo(item.getInvoice().getCustInvNo())
+                .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
+                .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+                .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
+                .description(item.getInvoice().getInvoiceDescription())
+                .bouwheerName(financing.getBouwheer().getBouwheerName())
+                .build()
+            ).toList();
+          final double totalFeeAmt =
+            financing.getAdminFeeAmt()
+              + financing.getLegalFeeAmtNett()
+              + financing.getInsuranceFeeAmt()
+              + financing.getOthersFeeAmt()
+              + financing.getProvisionFeeAmt()
+              + financing.getSurveyFeeAmtNett();
+          //getAPI AO,BH
+          MailPositionDto to = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "BM/BOH");
+          MailPositionDto ccRM = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "RM");
+          MailPositionDto toAO = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "AO/AM");
+
+          java.util.Set<String> toEmailSet = new java.util.LinkedHashSet<>();
+          java.util.Set<String> ccEmailSet = new java.util.LinkedHashSet<>();
+
+          if (to != null && to.getData() != null) {
+            to.getData().stream()
+              .map(MailDataDto::getEmail)
+              .filter(email -> email != null && !email.trim().isEmpty())
+              .forEach(toEmailSet::add);
+          }
+
+          if (toAO != null && toAO.getData() != null) {
+            toAO.getData().stream()
+              .map(MailDataDto::getEmail)
+              .filter(email -> email != null && !email.trim().isEmpty())
+              .forEach(toEmailSet::add);
+          }
 
 
+          if (ccRM != null && ccRM.getData() != null) {
+            ccRM.getData().stream()
+              .map(MailDataDto::getEmail)
+              .filter(email -> email != null && !email.trim().isEmpty())
+              .forEach(ccEmailSet::add);
+          }
+
+          String toEmail = toEmailSet.isEmpty() ? null : String.join(";", toEmailSet);
+          String ccEmail = ccEmailSet.isEmpty() ? null : String.join(";", ccEmailSet);
+
+          if (ccEmail != null && toEmailSet.contains(ccEmail)) {
+            ccEmailSet.remove(ccEmail);
+            ccEmail = ccEmailSet.isEmpty() ? null : String.join(";", ccEmailSet);
+          }
+
+          log.info("Final To Emails : {}", toEmail);
+          log.info("Final Cc Emails : {}", ccEmail);
+
+          String phone = financing.getCustomer().getCustMobilePhone();
+          if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
+            if (financing.getCustomer().getCompany() != null) {
+              phone = financing.getCustomer().getCompany().getPhone();
+            }
+          }
+
+          isAutoASSIGNMENT = true;
+          log.info("Send email to Branch notification loan submitted to: {}  cc: {} ", toEmail, ccEmail);
+          emailService.sendNotificationBranchAssign(
+            toEmail,
+            financing.getBouwheer().getBouwheerName(),
+            financing.getMstBranch().getBranchName(),
+            LoanDisburseEmailPayload.builder()
+              .financingCode(financing.getFinancingHdrCode().toString())
+              .applicationDate(DateTimeUtils.formatToDate(financing.getDtmCrt()))
+              .bouwheerName(financing.getBouwheer().getBouwheerName())
+              .companyName(financing.getCustomer().getCustName())
+              .email(financing.getCustomer().getCustEmail())
+              .phoneNumber(phone)
+              .tenor(financing.getTenor())
+              .toEmail(toEmail)
+              .ccEmail(ccEmail)
+              .financingCode(financing.getFinancingHdrCode().toString())
+              .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
+              .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
+              .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
+              .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+              .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
+              .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
+              .invoices(invoices)
+              .build()
+          );
+          break;
+        }
+      }
+
+
+      if (!isAutoASSIGNMENT) {
         try {
           assignMappedBranch(financing);
         } catch (Exception exception) {
@@ -988,199 +1104,81 @@ public class LoanSubmissionService {
           );
         }
 
+        log.info("Process send email notification loan submitted");
+        final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
+          .stream()
+          .map((item) ->
+            InvoiceEmailPayload.builder()
+              .invoiceNo(item.getInvoice().getCustInvNo())
+              .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
+              .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+              .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
+              .description(item.getInvoice().getInvoiceDescription())
+              .bouwheerName(financing.getBouwheer().getBouwheerName())
+              .build()
+          ).toList();
+        final double totalFeeAmt =
+          financing.getAdminFeeAmt()
+            + financing.getLegalFeeAmtNett()
+            + financing.getInsuranceFeeAmt()
+            + financing.getOthersFeeAmt()
+            + financing.getProvisionFeeAmt()
+            + financing.getSurveyFeeAmtNett();
+        //getAPI CMS
+        String branchCode = mstBranchRepository.findByBranchName("HEAD OFFICE")
+          .map(MstBranch::getBranchCode)
+          .orElseThrow(() -> new RuntimeException("BranchCode tidak ditemukan"));
 
-        boolean isAutoASSIGNMENT = false;
-        //set auto ASSIGNMENT
-        List<FinancingHdr> financingHdrs = new ArrayList<>();
-        if (financing.getMstBranch() != null) {
-          financingHdrs.add(financing);
-        }
-        financingHdrs.addAll(financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer));
-        for (FinancingHdr financingHdr : financingHdrs) {
-          MstBranch hdrBranch = financingHdr.getMstBranch();
+        MailPositionDto ccBM = configRemoteService.getEmailByPosition("", branchCode, "CMS");
+        StringBuilder ccEmailBuilder = new StringBuilder();
 
-          if (hdrBranch != null) {
-            //update jadi Assign
-              log.info("Repeat Order loan submitted {} , Branch {} ",customer.getCustEmail(),hdrBranch.getBranchCode());
-              financing.setFinancingStatus("INPROCESS");
-              financing.setFinancingStep("ASSIGNMENT");
-              financing.setMstBranch(hdrBranch);
-              financing.setDtmUpd(DateTimeUtils.now());
-
-            final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
-              .stream()
-              .map((item) ->
-                InvoiceEmailPayload.builder()
-                  .invoiceNo(item.getInvoice().getCustInvNo())
-                  .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
-                  .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
-                  .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-                  .description(item.getInvoice().getInvoiceDescription())
-                  .bouwheerName(financing.getBouwheer().getBouwheerName())
-                  .build()
-              ).toList();
-            final double totalFeeAmt =
-              financing.getAdminFeeAmt()
-                + financing.getLegalFeeAmtNett()
-                + financing.getInsuranceFeeAmt()
-                + financing.getOthersFeeAmt()
-                + financing.getProvisionFeeAmt()
-                + financing.getSurveyFeeAmtNett();
-            //getAPI AO,BH
-            MailPositionDto to = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "BM/BOH");
-            MailPositionDto ccRM = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "RM");
-            MailPositionDto toAO = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "AO/AM");
-
-            java.util.Set<String> toEmailSet = new java.util.LinkedHashSet<>();
-            java.util.Set<String> ccEmailSet = new java.util.LinkedHashSet<>();
-
-            if (to != null && to.getData() != null) {
-              to.getData().stream()
-                .map(MailDataDto::getEmail)
-                .filter(email -> email != null && !email.trim().isEmpty())
-                .forEach(toEmailSet::add);
-            }
-
-            if (toAO != null && toAO.getData() != null) {
-              toAO.getData().stream()
-                .map(MailDataDto::getEmail)
-                .filter(email -> email != null && !email.trim().isEmpty())
-                .forEach(toEmailSet::add);
-            }
-
-
-            if (ccRM != null && ccRM.getData() != null) {
-              ccRM.getData().stream()
-                .map(MailDataDto::getEmail)
-                .filter(email -> email != null && !email.trim().isEmpty())
-                .forEach(ccEmailSet::add);
-            }
-
-            String toEmail = toEmailSet.isEmpty() ? null : String.join(";", toEmailSet);
-            String ccEmail = ccEmailSet.isEmpty() ? null : String.join(";", ccEmailSet);
-
-            if (ccEmail != null && toEmailSet.contains(ccEmail)) {
-              ccEmailSet.remove(ccEmail);
-              ccEmail = ccEmailSet.isEmpty() ? null : String.join(";", ccEmailSet);
-            }
-
-            log.info("Final To Emails : {}", toEmail);
-            log.info("Final Cc Emails : {}", ccEmail);
-
-            String phone = financing.getCustomer().getCustMobilePhone();
-            if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
-              if (financing.getCustomer().getCompany() != null) {
-                phone = financing.getCustomer().getCompany().getPhone();
-              }
-            }
-
-            isAutoASSIGNMENT = true;
-            log.info("Send email to Branch notification loan submitted to: {}  cc: {} ",toEmail,ccEmail);
-            emailService.sendNotificationBranchAssign(
-              toEmail,
-              financing.getBouwheer().getBouwheerName(),
-              financing.getMstBranch().getBranchName(),
-              LoanDisburseEmailPayload.builder()
-                .financingCode(financing.getFinancingHdrCode().toString())
-                .applicationDate(DateTimeUtils.formatToDate(financing.getDtmCrt()))
-                .bouwheerName(financing.getBouwheer().getBouwheerName())
-                .companyName(financing.getCustomer().getCustName())
-                .email(financing.getCustomer().getCustEmail())
-                .phoneNumber(phone)
-                .tenor(financing.getTenor())
-                .toEmail(toEmail)
-                .ccEmail(ccEmail)
-                .financingCode(financing.getFinancingHdrCode().toString())
-                .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
-                .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
-                .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
-                .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-                .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
-                .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
-                .invoices(invoices)
-                .build()
-            );
-            break;
+        if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
+          for (int i = 0; i < ccBM.getData().size(); i++) {
+            ccEmailBuilder.append(!ccEmailBuilder.isEmpty() ? ";" : "");
+            ccEmailBuilder.append(ccBM.getData().get(i).getEmail());
           }
         }
 
+        String mjrEmail = ccEmailBuilder.toString();
+        String toEmail = ccEmailBuilder.toString();
+        log.info("email CMS: {}", ccEmailBuilder);
 
-        if (!isAutoASSIGNMENT) {
-          log.info("Process send email notification loan submitted");
-            final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
-              .stream()
-              .map((item) ->
-                InvoiceEmailPayload.builder()
-                  .invoiceNo(item.getInvoice().getCustInvNo())
-                  .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
-                  .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
-                  .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-                  .description(item.getInvoice().getInvoiceDescription())
-                  .bouwheerName(financing.getBouwheer().getBouwheerName())
-                  .build()
-              ).toList();
-            final double totalFeeAmt =
-              financing.getAdminFeeAmt()
-                + financing.getLegalFeeAmtNett()
-                + financing.getInsuranceFeeAmt()
-                + financing.getOthersFeeAmt()
-                + financing.getProvisionFeeAmt()
-                + financing.getSurveyFeeAmtNett();
-            //getAPI CMS
-            String branchCode = mstBranchRepository.findByBranchName("HEAD OFFICE")
-              .map(MstBranch::getBranchCode)
-              .orElseThrow(() -> new RuntimeException("BranchCode tidak ditemukan"));
-
-            MailPositionDto ccBM = configRemoteService.getEmailByPosition("", branchCode, "CMS");
-            StringBuilder ccEmailBuilder = new StringBuilder();
-
-            if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
-              for (int i = 0; i < ccBM.getData().size(); i++) {
-                ccEmailBuilder.append(!ccEmailBuilder.isEmpty() ? ";" : "");
-                ccEmailBuilder.append(ccBM.getData().get(i).getEmail());
-              }
-            }
-
-            String mjrEmail = ccEmailBuilder.toString();
-            String toEmail = ccEmailBuilder.toString();
-            log.info("email CMS: {}", ccEmailBuilder);
-
-            String phone = financing.getCustomer().getCustMobilePhone();
-            if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
-              if (financing.getCustomer().getCompany() != null) {
-                phone = financing.getCustomer().getCompany().getPhone();
-              }
-            }
-
-           log.info("Send email to Major Account Assign and Re Assign notification loan submitted {} ",mjrEmail);
-            emailService.sendNotificationMajorAccount(
-              mjrEmail,
-              financing.getBouwheer().getBouwheerName(),
-              financing.getMstBranch().getBranchName(),
-              LoanDisburseEmailPayload.builder()
-                .financingCode(financing.getFinancingHdrCode().toString())
-                .applicationDate(DateTimeUtils.formatToDate(financing.getDtmCrt()))
-                .companyName(financing.getCustomer().getCustName())
-                .email(financing.getCustomer().getCustEmail())
-                .bouwheerName(financing.getBouwheer().getBouwheerName())
-                .phoneNumber(phone)
-                .tenor(financing.getTenor())
-                .toEmail(toEmail)
-                .ccEmail(toEmail)
-                .financingCode(financing.getFinancingHdrCode().toString())
-                .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
-                .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
-                .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
-                .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-                .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
-                .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
-                .invoices(invoices)
-                .build()
-            );
+        String phone = financing.getCustomer().getCustMobilePhone();
+        if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
+          if (financing.getCustomer().getCompany() != null) {
+            phone = financing.getCustomer().getCompany().getPhone();
+          }
         }
 
-        log.info("Save financing header {} ",financing.getFinancingHdrCode());
-        financingHdrRepository.save(financing);
+        log.info("Send email to Major Account Assign and Re Assign notification loan submitted {} ", mjrEmail);
+        emailService.sendNotificationMajorAccount(
+          mjrEmail,
+          financing.getBouwheer().getBouwheerName(),
+          financing.getMstBranch().getBranchName(),
+          LoanDisburseEmailPayload.builder()
+            .financingCode(financing.getFinancingHdrCode().toString())
+            .applicationDate(DateTimeUtils.formatToDate(financing.getDtmCrt()))
+            .companyName(financing.getCustomer().getCustName())
+            .email(financing.getCustomer().getCustEmail())
+            .bouwheerName(financing.getBouwheer().getBouwheerName())
+            .phoneNumber(phone)
+            .tenor(financing.getTenor())
+            .toEmail(toEmail)
+            .ccEmail(toEmail)
+            .financingCode(financing.getFinancingHdrCode().toString())
+            .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
+            .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
+            .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
+            .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+            .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
+            .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
+            .invoices(invoices)
+            .build()
+        );
+      }
+
+      log.info("Save financing header {} ", financing.getFinancingHdrCode());
+      financingHdrRepository.save(financing);
 
       auditTrailService.record(
         "LOAN_SUBMISSION",
@@ -1233,7 +1231,7 @@ public class LoanSubmissionService {
         }
       }
 
-      log.info("Send email to Debitur notification loan submitted {} ",customer.getCustEmail());
+      log.info("Send email to Debitur notification loan submitted {} ", customer.getCustEmail());
       emailService.sendNotificationLoanSubmited(
         customer,
         LoanDisburseEmailPayload.builder()
