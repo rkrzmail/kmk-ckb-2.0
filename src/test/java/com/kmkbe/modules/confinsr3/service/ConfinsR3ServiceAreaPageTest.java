@@ -73,6 +73,30 @@ class ConfinsR3ServiceAreaPageTest {
   }
 
   @Test
+  void provinceCanBeUsedForCriteriaSearchAndSort() {
+    AreaPageRequest request = pageRequest();
+    request.setCriteria(List.of(ConfinsR3ZipcodeCriteriaRequest.builder()
+      .propName("province")
+      .value("Jawa Barat")
+      .build()));
+    request.setSearchBy("province");
+    request.setSearchValue("Jawa");
+    request.setSortBy("province");
+    request.setSortType("asc");
+    when(adapter.getAllZipcode(any())).thenReturn(emptyResponse());
+
+    service.pageZipcode(request);
+
+    ArgumentCaptor<ConfinsR3GetPagingObjectBySQLRequest> captor = pagingRequest();
+    verify(adapter).getAllZipcode(captor.capture());
+    assertThat(captor.getValue().getOrderBy()).isEqualTo(Map.of("key", "RZ.PROVINCE", "value", "true"));
+    assertThat(captor.getValue().getCriteria()).extracting("propName")
+      .containsExactly("RZ.PROVINCE", "RZ.PROVINCE");
+    assertThat(captor.getValue().getCriteria()).extracting("value")
+      .containsExactly("%JAWA BARAT%", "%JAWA%");
+  }
+
+  @Test
   void invalidSearchSortAndPagingAreRejectedBeforeCallingConfins() {
     AreaPageRequest missingSearchBy = pageRequest();
     missingSearchBy.setSearchValue("Gambir");

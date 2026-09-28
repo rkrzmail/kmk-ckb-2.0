@@ -182,6 +182,7 @@ public class ConfinsR3Service {
     return switch (field.trim().toLowerCase(Locale.ROOT)) {
       case "zipcode", "rz.zipcode" -> "RZ.ZIPCODE";
       case "city", "rz.city" -> "RZ.CITY";
+      case "province", "rz.province" -> "RZ.PROVINCE";
       case "kecamatan", "areacode1", "rz.area_code_1" -> "RZ.AREA_CODE_1";
       case "kelurahan", "areacode2", "rz.area_code_2" -> "RZ.AREA_CODE_2";
       default -> throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "Field area tidak valid: " + field);
