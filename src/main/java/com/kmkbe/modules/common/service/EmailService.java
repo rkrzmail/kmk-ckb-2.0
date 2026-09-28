@@ -758,7 +758,6 @@ public class EmailService {
 
   private DeliveryResult sendMailMessageWithResult(EmailTemplate template, String email) {
     try {
-      //CsulMailSender csulMailSender = new CsulMailSender(mailConfig, configRemoteService);
       int attempts = 0;
       boolean success = false;
       MailRemoteDto internalMail = resolveMailConfig();
