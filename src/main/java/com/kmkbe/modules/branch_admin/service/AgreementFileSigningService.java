@@ -64,8 +64,8 @@ public class AgreementFileSigningService {
       }
 
       entity.setFileTypeCode(fileTypeCode);
-      entity.setStamp(fileTypeCode.equals("E_SIGN_DOC") ? "Not Signed" : "Signed");
-      entity.setVerifDate(fileTypeCode.equals("E_SIGN_DOC") ? null : LocalDateTime.now());
+      entity.setStamp(fileTypeCode.equals("SIGN_DOC") ? "Not Signed" : "Signed");
+      entity.setVerifDate(fileTypeCode.equals("SIGN_DOC") ? null : LocalDateTime.now());
       entity.setSigner(debtor.getKaryawanName());
       entity.setEmailSigner(debtor.getEmail());
       entity.setIdentityNo(debtor.getIdentityNo());

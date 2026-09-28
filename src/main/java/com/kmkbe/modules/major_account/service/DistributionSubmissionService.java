@@ -423,7 +423,7 @@ public class DistributionSubmissionService {
         mstBranch.getBranchName(),
         LoanDisburseEmailPayload.builder()
           .financingCode(financingHdr.getFinancingHdrCode().toString())
-          .applicationDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
+          .applicationDate(DateTimeUtils.formatToDate(financingHdr.getDtmCrt()))
           .companyName(financingHdr.getCustomer().getCustName())
           .email(financingHdr.getCustomer().getCustEmail())
           .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
