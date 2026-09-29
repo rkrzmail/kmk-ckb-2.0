@@ -1,6 +1,7 @@
 package com.kmkbe.modules.branch_admin.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.AgreementDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementDto;
 import com.kmkbe.core.domain.entity.*;
@@ -88,7 +89,6 @@ public class AgreementController {
     );
   }
 
-  @Transactional
   @PostMapping(
     value = "/upload/contract",
     consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -99,6 +99,10 @@ public class AgreementController {
 
   ) throws Exception {
     FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+
+    if (financingHdr.getFinancingStatus().equals("LIVE")) {
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Status sudah GOLIVE");
+    }
 
     if (financingHdr.getFinancingStep().equals("GOLIVE")) {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Status sudah GOLIVE");
@@ -133,8 +137,8 @@ public class AgreementController {
 //      updateFinancingStatusRequest
 //    );
 
-    financingHdr.setFinancingStatus(financingHdr.getFinancingStatus().equalsIgnoreCase("LIVE")?financingHdr.getFinancingStatus():"INPROCESS");
-    financingHdr.setFinancingStep(financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")?financingHdr.getFinancingStep():"SIGNED");
+    financingHdr.setFinancingStatus(FinancingStatus.IN_PROCESS.getValue());
+    financingHdr.setFinancingStep(FinancingStatus.SIGNED.getValue());
     financingHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
     financingHdr.setDtmUpd(LocalDateTime.now());
     financingHdrRepository.save(financingHdr);
@@ -152,7 +156,7 @@ public class AgreementController {
     );
 
     /**
-     * Send email to bouhweer
+     * Send email to bouwheer
      */
     agreementService.sendBouwheerPaymentNotification(financingHdr);
 

@@ -365,6 +365,7 @@ public class EmailService {
       args.put("additionalArgs", payloadArgs);
 
       send(customer.getCustEmail(), args, M_CUST_LOAN);
+      log.info("Send email Notification laon disbursement to : {} ",customer.getCustEmail());
     } catch (Exception e) {
       log.error("Error sendNotificationLoanDisbursement {}", e.getMessage());
     }
@@ -506,7 +507,6 @@ public class EmailService {
         payloadArgs.remove("invoices");
         payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
       }
-
       args.put("additionalArgs", payloadArgs);
 
       final EmailTemplate template = loadTemplate(M_BOUWHEER_PAYMENT);
@@ -514,19 +514,8 @@ public class EmailService {
       template.setMailTo(email);
       template.setBodyMail(payload.bodyMail(template));
 
-      boolean success = false;
-      for (int i = 0; i < 3; i++) {
-        try {
-          send(args, template);
-          success = true;
-        } catch (Exception e) {
-          log.error("failed send sendNotificationBouwheerPayment to {} due to {}", email, e.getMessage());
-        }
-
-        if (success) {
-          break;
-        }
-      }
+      send(args, template);
+      log.info("Send email Notification laon Bouwheer to : {} ",email);
     } catch (Exception e) {
       log.error("Error sendNotificationBouwheerPayment {}", e.getMessage());
     }
@@ -546,6 +535,7 @@ public class EmailService {
       template.setSubjectMail(template.getSubjectMail().replace("{agreementCode}", payload.getAgreementCode()));
 
       send(args, template);
+      log.info("Send email Notification laon contract uplaod to : {} ", branchAdminEmails);
     } catch (Exception e) {
       log.error(
         "sendNotificationContractUploadRequired failed. agreementCode={}, recipients={}",
