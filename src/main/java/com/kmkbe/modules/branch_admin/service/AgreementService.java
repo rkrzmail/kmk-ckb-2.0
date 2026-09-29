@@ -160,8 +160,6 @@ public class AgreementService {
             .custCode(e.get("cust_code") != null ? UUID.fromString(e.get("cust_code").toString()) : null)
             .bouwheerName(e.get("bouwheer_name") != null ? e.get("bouwheer_name").toString() : null)
             .custName(e.get("cust_name") != null ? e.get("cust_name").toString() : null)
-            /*.bankName(e.get("bank_name") != null ? e.get("bank_name").toString() : null)
-            .rekeningNo(e.get("rekening_no") != null ? e.get("rekening_no").toString() : null)*/
             .bankName(obj.get("bankName").toString())
             .rekeningNo(obj.get("accountNo").toString())
             .financingAmt(new BigDecimal(e.get("financing_amt") != null ? Double.parseDouble(e.get("financing_amt").toString()) : 0, MathContext.DECIMAL64))
@@ -231,8 +229,6 @@ public class AgreementService {
         AgreementFile savedAgreementFile = agreementFileRepository.save(agreementFile);
         auditTrailService.record("AGREEMENT", AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), null, toAgreementFileAuditData(savedAgreementFile));
       } else {
-        //fileStorageService.delete(agreementFile.getFilePath() + "/" + agreementFile.getFileName(), "");
-
         agreementFile.setFileName(uploadName);
         agreementFile.setFilePath(FileUtils.getFilePathFromFullPath(uploadedPath));
         agreementFile.setDtmUpd(DateTimeUtils.now());
@@ -243,10 +239,6 @@ public class AgreementService {
 
 
     } catch (Exception e) {
-            /*if (code != null && multipartFile != null && multipartFile.getOriginalFilename() != null) {
-                fileStorageService.delete(multipartFile.getOriginalFilename(), code);
-            }*/
-
       log.error("upload, error {}", e.getMessage());
       throw e;
     }
