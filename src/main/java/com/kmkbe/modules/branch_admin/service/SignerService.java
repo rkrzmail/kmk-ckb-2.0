@@ -9,6 +9,7 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.utils.ListPagination;
 import com.kmkbe.helpers.utils.PaginationRequests;
@@ -22,6 +23,7 @@ import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.http.*;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -30,6 +32,11 @@ import org.springframework.web.client.HttpServerErrorException;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.InetAddress;
 import java.security.SignatureException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -56,8 +63,8 @@ public class SignerService {
   private final AuditTrailService auditTrailService;
   private final SigningEligibilityService signingEligibilityService;
   private final CurrentUserService currentUserService;
-
   private final Map<String, List<String>> signerCache = new ConcurrentHashMap<>();
+  private final FileStorageService fileStorageService;
 
   private final String apiKey = "YiByHB@CSUL_DEV";
   private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
@@ -770,6 +777,41 @@ public class SignerService {
           .body(new ApiResponse<>(false, "Document not found in database", null, null, null));
       }
 
+      if(doc.get().getFileTypeCode().equals("SIGN_DOC")){
+        Optional<AgreementFile>agreementFileOptional = agreementFileRepository.findByAgreement_AgreementCode(doc.get().getAgreementCode());
+        if(agreementFileOptional.isPresent()){
+          // Get the local host instance
+          Resource resource = fileStorageService.load(agreementFileOptional.get().getFilePath().concat("/").concat(doc.get().getDocumentId().trim()).concat(".pdf"));
+          try (InputStream inputStream = resource.getInputStream()) {
+            // Read the input stream into a byte array
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            int nRead;
+            byte[] data = new byte[16384]; // Buffer size
+            while ((nRead = inputStream.read(data, 0, data.length)) != -1) {
+              buffer.write(data, 0, nRead);
+            }
+            buffer.flush();
+
+            byte[] fileBytes = buffer.toByteArray();
+
+            // Encode the byte array to a base64 string
+            String base64Content = Base64.getEncoder().encodeToString(fileBytes);
+
+            // Now you can use base64Content as needed
+            return ResponseEntity.ok()
+              .body(new ApiResponse<>(true, "Document retrieved successfully",
+                Map.of(
+                  "filename", "document_" + doc.get().getDocumentId() + ".pdf",
+                  "content", base64Content,
+                  "length", fileBytes.length
+                ),
+                0, null));
+          } catch (IOException e) {
+            // Handle the exception appropriately
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Error retrieving document", null, 0, null));
+          }
+        }
+      }
       HttpHeaders requestHeaders = new HttpHeaders();
       requestHeaders.set("x-api-Key", apiKey);
       requestHeaders.setContentType(MediaType.APPLICATION_JSON);

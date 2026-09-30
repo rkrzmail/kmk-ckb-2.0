@@ -64,8 +64,8 @@ public class AgreementFileSigningService {
       }
 
       entity.setFileTypeCode(fileTypeCode);
-      entity.setStamp(fileTypeCode.equals("SIGN_DOC") ? "Not Signed" : "Signed");
-      entity.setVerifDate(fileTypeCode.equals("SIGN_DOC") ? null : LocalDateTime.now());
+      entity.setStamp("signed");
+      entity.setVerifDate(LocalDateTime.now());
       entity.setSigner(debtor.getKaryawanName());
       entity.setEmailSigner(debtor.getEmail());
       entity.setIdentityNo(debtor.getIdentityNo());
@@ -81,8 +81,10 @@ public class AgreementFileSigningService {
       log.info("Update financing Step");
       updateFinancingStep(financingHdrCode);
 
-      log.info("Create signing notification !");
-      createSigningNotification(financingHdrCode, username, debtor);
+      if(fileTypeCode.equals("E_SIGN_DOC")) {
+        log.info("Create signing notification !");
+        createSigningNotification(financingHdrCode, username, debtor);
+      }
       agreementFileSigningMapper.entityToDto(saveDoc);
       return;
     } else {
@@ -95,7 +97,7 @@ public class AgreementFileSigningService {
         .build();
     }
 
-    entity.setStamp(fileTypeCode.equals("E_SIGN_DOC") ? "Not Signed" : "Signed");
+    entity.setStamp(fileTypeCode.equals("E_SIGN_DOC") ? "Not Signed" : "signed");
     entity.setVerifDate(fileTypeCode.equals("E_SIGN_DOC") ? null : LocalDateTime.now());
     entity.setSigner(debtor.getKaryawanName());
     entity.setEmailSigner(debtor.getEmail());
@@ -103,6 +105,7 @@ public class AgreementFileSigningService {
     entity.setDocumentId(documentId);
     entity.setFinancingHdrCode(financingHdrCode);
     entity.setUsrUpd(username);
+    entity.setSignProgress(fileTypeCode.equals("E_SIGN_DOC") ? null:"1/1");
     entity.setDtmUpd(LocalDateTime.now());
     AgreementFileSigning saveDoc = agreementFileSigningRepository.save(entity);
 
@@ -111,9 +114,12 @@ public class AgreementFileSigningService {
 
     log.info("Update financing Step");
     updateFinancingStep(financingHdrCode);
-    log.info("Create signing notification !");
-    createSigningNotification(financingHdrCode, username, debtor);
 
+    if(fileTypeCode.equals("E_SIGN_DOC")){
+      log.info("Create signing notification !");
+      createSigningNotification(financingHdrCode, username, debtor);
+
+    }
     agreementFileSigningMapper.entityToDto(saveDoc);
   }
 

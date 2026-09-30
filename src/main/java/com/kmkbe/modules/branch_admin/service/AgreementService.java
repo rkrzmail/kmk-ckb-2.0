@@ -49,6 +49,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -182,7 +183,7 @@ public class AgreementService {
     }
   }
 
-  public void upload(
+  public String upload(
     MstUser user,
     MultipartFile multipartFile,
     String agreementCode,
@@ -223,20 +224,25 @@ public class AgreementService {
           .filePath(FileUtils.getFilePathFromFullPath(uploadedPath))
           .contentType(multipartFile.getContentType())
           .usrCrt(user.getUsername())
-          .dtmCrt(DateTimeUtils.now())
+          .dtmCrt(LocalDateTime.now())
           .build();
 
         AgreementFile savedAgreementFile = agreementFileRepository.save(agreementFile);
         auditTrailService.record("AGREEMENT", AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), null, toAgreementFileAuditData(savedAgreementFile));
+
       } else {
         agreementFile.setFileName(uploadName);
         agreementFile.setFilePath(FileUtils.getFilePathFromFullPath(uploadedPath));
-        agreementFile.setDtmUpd(DateTimeUtils.now());
+        agreementFile.setDtmUpd(LocalDateTime.now());
         agreementFile.setUsrUpd(user.getUsername());
         AgreementFile savedAgreementFile = agreementFileRepository.save(agreementFile);
         auditTrailService.record("AGREEMENT", AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), before, toAgreementFileAuditData(savedAgreementFile));
       }
 
+      // Split the URL by the '/' delimiter
+      String[] parts = uploadedPath.split("/");
+      // Get the last part of the URL
+      return parts[parts.length - 1];
 
     } catch (Exception e) {
       log.error("upload, error {}", e.getMessage());

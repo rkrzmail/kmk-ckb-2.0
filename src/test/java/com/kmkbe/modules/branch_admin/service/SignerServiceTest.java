@@ -26,6 +26,7 @@ import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.NotifDebtorRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.feign.client.ConfinsR3FeignClient;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.common.service.AuditTrailService;
@@ -80,6 +81,7 @@ class SignerServiceTest {
   @Mock private SigningEligibilityService signingEligibilityService;
   @Mock private HttpServletRequest httpServletRequest;
   @Mock private CurrentUserService currentUserService;
+  @Mock private FileStorageService fileStorageService;
   private SignerService service;
 
 
@@ -97,7 +99,7 @@ class SignerServiceTest {
         notifDebtorRepository,
         auditTrailService,
         signingEligibilityService,
-        currentUserService,confinsR3FeignClient
+        currentUserService,fileStorageService,confinsR3FeignClient
     );
     lenient().when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
   }
