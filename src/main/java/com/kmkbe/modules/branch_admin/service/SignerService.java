@@ -776,7 +776,7 @@ public class SignerService {
           .body(new ApiResponse<>(false, "Document not found in database", null, null, null));
       }
 
-      if(doc.get().getFileTypeCode().equals("SIGN_DOC")){
+      if ("SIGN_DOC".equals(doc.get().getFileTypeCode())) {
         Optional<AgreementFile>agreementFileOptional = agreementFileRepository.findByAgreement_AgreementCode(doc.get().getAgreementCode());
         if(agreementFileOptional.isPresent()){
           // Get the local host instance
