@@ -144,7 +144,7 @@ public class CustomerDashboardListService {
   public PaginationResult<CustomerCreditFacilityDueDateDto> listinvoicesduedate(
     Customer customer,
     BasePaginationRequest request
-  ) throws SignatureException {
+  ) {
     PaginationRequest paginationRequest = PaginationRequests.from(request);
     Page<FinancingDtl> financingPage = financingDtlRepository.findByCustomer(
       customer.getCustCode().toString(), Pageable.unpaged()
@@ -166,13 +166,7 @@ public class CustomerDashboardListService {
   public PaginationResult<CustomerCreditFacilityDueDateDto> listinvoicesduedate(
     Customer customer,
     PaginationRequest request
-  ) throws SignatureException {
-        /*
-        status samapi paid
-        nama debitur diganti PO
-        tgl ver digato postdate
-         */
-
+  ) {
     try {
       int pageNo = 0, pageSize = 10;
 
@@ -210,9 +204,6 @@ public class CustomerDashboardListService {
   private CustomerCreditFacilityNewDto toCreditFacilityDto(FinancingHdr financing) {
     CustomerLocation location = customerLocation(financing);
     BranchInfo branch = branchInfo(financing, location);
-    boolean isNewCustomer = financingHdrRepository.countByCustomerAndFinancingStatus(
-      financing.getCustomer(), "PAID"
-    ) == 0;
     MappedFinancingStatus mappedStatus = new MappedFinancingStatus(
       financing, MappedFinancingStatus.Type.Customer
     );
@@ -231,7 +222,7 @@ public class CustomerDashboardListService {
       .branchRecommended(branch.recommendedName())
       .currentBranchCode(branch.currentCode())
       .currentBranch(branch.currentName())
-      .custStatus(isNewCustomer ? "New Customer" : "Existing Customer")
+      .custStatus(financing.getCustomer().getExistingCust())
       .status(StatusLabelDto.builder()
         .status(mappedStatus.getStatus())
         .statusLabel(mappedStatus.getLabel())
@@ -245,9 +236,7 @@ public class CustomerDashboardListService {
     FinancingHdr financing = financingDetail.getFinancingHdr();
     CustomerLocation location = customerLocation(financing);
     BranchInfo branch = branchInfo(financing, location);
-    boolean isNewCustomer = financingHdrRepository.countByCustomerAndFinancingStatus(
-      financing.getCustomer(), "PAID"
-    ) == 0;
+
     MappedFinancingStatus mappedStatus = new MappedFinancingStatus(
       financing, MappedFinancingStatus.Type.MajorAccount
     );
@@ -268,7 +257,7 @@ public class CustomerDashboardListService {
       .branchRecommended(branch.recommendedName())
       .currentBranchCode(branch.currentCode())
       .currentBranch(branch.currentName())
-      .custStatus(isNewCustomer ? "New Customer" : "Existing Customer")
+      .custStatus(financing.getCustomer().getExistingCust())
       .status(StatusLabelDto.builder()
         .status(mappedStatus.getStatus())
         .statusLabel(mappedStatus.getLabel())

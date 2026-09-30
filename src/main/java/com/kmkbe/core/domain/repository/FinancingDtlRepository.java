@@ -38,10 +38,10 @@ public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID
       JOIN invoice i ON (i.invoice_code=fd.invoice_code)
       WHERE
       fh.cust_code  = :custCode and
-      fh.financing_status is not null  and
-      fh.financing_status <> 'LIVE' and
-      fh.financing_status <> '' and
-      i.invoice_due_date BETWEEN CURRENT_DATE and date_add(NOW(),INTERVAL '14 DAY')
+      fh.financing_status not in('PAID','COMPLETETD') and
+      fh.financing_status !='' and
+      fh.financing_status is not null and
+      i.invoice_due_date <= date_add(NOW(), INTERVAL '14 DAY')
       
       """,
     countQuery = """
@@ -51,11 +51,10 @@ public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID
       JOIN invoice i ON (i.invoice_code=fd.invoice_code)
       WHERE 
       fh.cust_code = :custCode and
-      fh.financing_status is not null  and
-      fh.financing_status <> 'LIVE' and
-      fh.financing_status <> '' and
-      i.invoice_due_date BETWEEN CURRENT_DATE and date_add(NOW(),INTERVAL '14 DAY')
-      
+      fh.financing_status not in('PAID','COMPLETETD') and
+      fh.financing_status !='' and
+      fh.financing_status is not null and
+      i.invoice_due_date <= date_add(NOW(), INTERVAL '14 DAY')
       """,
 
     nativeQuery = true
