@@ -23,6 +23,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
@@ -115,12 +117,28 @@ public class AgreementController {
       throw new IllegalStateException("Agreement Not Found with given argument");
     }
 
-   String agreementFile =  agreementService.upload(
-      currentUserService.internalUser(),
-      file,
-      agreement.getAgreementCode(),
-      String.valueOf(financingHdr.getBouwheer().getBouwheerCode())
-    );
+    String agreementFile;
+    try {
+      agreementFile = agreementService.upload(
+        currentUserService.internalUser(),
+        file,
+        agreement.getAgreementCode(),
+        String.valueOf(financingHdr.getBouwheer().getBouwheerCode())
+      );
+    } catch (DataIntegrityViolationException exception) {
+      for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+        if (cause instanceof ConstraintViolationException violation
+          && "agreement_file_agreement_code_idx".equals(violation.getConstraintName())) {
+          throw new BusinessException(HttpStatus.CONFLICT, HttpStatus.CONFLICT.value(),
+            "Kontrak untuk No. Perjanjian " + agreement.getAgreementCode()
+              + " gagal diunggah karena data dokumennya bentrok saat diperbarui. "
+              + "Minta administrator memeriksa ID dokumen yang duplikat pada tabel agreement_file. "
+              + "Status pengajuan tidak berubah dan email notifikasi tidak diproses.");
+        }
+      }
+      throw new BusinessException(HttpStatus.CONFLICT, HttpStatus.CONFLICT.value(),
+        "Upload kontrak gagal karena data dokumen perjanjian bermasalah. Status pengajuan tidak berubah dan email notifikasi tidak diproses. Hubungi administrator.");
+    }
 
 
     // Update financing status

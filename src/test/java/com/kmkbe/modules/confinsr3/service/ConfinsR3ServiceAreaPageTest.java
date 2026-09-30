@@ -73,27 +73,31 @@ class ConfinsR3ServiceAreaPageTest {
   }
 
   @Test
-  void provinceCanBeUsedForCriteriaSearchAndSort() {
-    AreaPageRequest request = pageRequest();
-    request.setCriteria(List.of(ConfinsR3ZipcodeCriteriaRequest.builder()
+  void provinceIsRejectedBeforeConfinsCallUntilItsQueryColumnIsKnown() {
+    AreaPageRequest criteriaRequest = pageRequest();
+    criteriaRequest.setCriteria(List.of(ConfinsR3ZipcodeCriteriaRequest.builder()
       .propName("province")
       .value("Jawa Barat")
       .build()));
-    request.setSearchBy("province");
-    request.setSearchValue("Jawa");
-    request.setSortBy("province");
-    request.setSortType("asc");
-    when(adapter.getAllZipcode(any())).thenReturn(emptyResponse());
+    assertThatThrownBy(() -> service.pageZipcode(criteriaRequest))
+      .isInstanceOf(BusinessException.class)
+      .hasMessageContaining("RZ.PROVINCE tidak tersedia");
 
-    service.pageZipcode(request);
+    AreaPageRequest searchRequest = pageRequest();
+    searchRequest.setSearchBy("province");
+    searchRequest.setSearchValue("Jawa");
+    assertThatThrownBy(() -> service.pageZipcode(searchRequest))
+      .isInstanceOf(BusinessException.class)
+      .hasMessageContaining("RZ.PROVINCE tidak tersedia");
 
-    ArgumentCaptor<ConfinsR3GetPagingObjectBySQLRequest> captor = pagingRequest();
-    verify(adapter).getAllZipcode(captor.capture());
-    assertThat(captor.getValue().getOrderBy()).isEqualTo(Map.of("key", "RZ.PROVINCE", "value", "true"));
-    assertThat(captor.getValue().getCriteria()).extracting("propName")
-      .containsExactly("RZ.PROVINCE", "RZ.PROVINCE");
-    assertThat(captor.getValue().getCriteria()).extracting("value")
-      .containsExactly("%JAWA BARAT%", "%JAWA%");
+    AreaPageRequest sortRequest = pageRequest();
+    sortRequest.setSortBy("province");
+    sortRequest.setSortType("asc");
+    assertThatThrownBy(() -> service.pageZipcode(sortRequest))
+      .isInstanceOf(BusinessException.class)
+      .hasMessageContaining("RZ.PROVINCE tidak tersedia");
+
+    verify(adapter, never()).getAllZipcode(any());
   }
 
   @Test
