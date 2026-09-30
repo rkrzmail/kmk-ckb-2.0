@@ -1236,7 +1236,7 @@ public class LoanSubmissionService {
         customer,
         LoanDisburseEmailPayload.builder()
           .financingCode(createdFinancing.getFinancingHdrCode().toString())
-          .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
+          .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDtmCrt()))
           .companyName(customer.getCustName())//createdFinancing.getBouwheer().getBouwheerName()
           .phoneNumber(phoneNumber == null ? createdFinancing.getCustomer().getCustMobilePhone() : phoneNumber)
           .tenor(createdFinancing.getTenor())
