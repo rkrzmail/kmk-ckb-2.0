@@ -280,6 +280,12 @@ public class FinancingDtlService {
     LocalDateTime settlementDate = request.getInvoicePaid().isEmpty() ? DateTimeUtils.now() : Utils.toInstant(request.getInvoicePaid().getFirst().getClearingDate());
 
     String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
+
+    if(noAggrNo.isEmpty()){
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}",noAggrNo);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Pembayaran belum dapat diproses karena invoice masih dalam tahap persetujuan internal CSUL.");
+    }
+
     //Inquiry Data Agreement to Confins
     log.info("Inquiry Data Agreement to Confins, Financing HDR code {} ", request.getFinancingCode());
     InquiryDataAgreementDto inquiryDataAgreementDto = inquiryDataAgreement(InquiryDataAgreementRequest.builder()
