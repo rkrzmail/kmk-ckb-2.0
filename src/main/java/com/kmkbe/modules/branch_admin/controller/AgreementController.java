@@ -115,7 +115,7 @@ public class AgreementController {
       throw new IllegalStateException("Agreement Not Found with given argument");
     }
 
-    agreementService.upload(
+   String agreementFile =  agreementService.upload(
       currentUserService.internalUser(),
       file,
       agreement.getAgreementCode(),
@@ -137,23 +137,22 @@ public class AgreementController {
 //      updateFinancingStatusRequest
 //    );
 
+    /**
+     * Save Agreement Signing Manual
+     */
+    agreementFileSigningService.saveSigningResult(
+      agreement.getAgreementCode(),
+      agreementFile,
+      currentUserService.internalUsername(),
+      financingHdrCode,
+      "SIGN_DOC"
+    );
+
     financingHdr.setFinancingStatus(FinancingStatus.IN_PROCESS.getValue());
     financingHdr.setFinancingStep(FinancingStatus.SIGNED.getValue());
     financingHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
     financingHdr.setDtmUpd(LocalDateTime.now());
     financingHdrRepository.save(financingHdr);
-
-    /**
-     * Save Agreement Signing Manual
-     */
-
-    agreementFileSigningService.saveSigningResult(
-      agreement.getAgreementCode(),
-      "-",
-      currentUserService.internalUsername(),
-      financingHdrCode,
-      "SIGN_DOC"
-    );
 
     /**
      * Send email to bouwheer
