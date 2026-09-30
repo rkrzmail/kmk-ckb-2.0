@@ -444,7 +444,7 @@ public class AgreementService {
           .bankAccount(bank.get("accountName").toString())
           .bankName(bank.get("bankName").toString())
           .bankKey(bank.get("bankKey").toString())
-          .tglPengajuan(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
+          .tglPengajuan(DateTimeUtils.formatToDate(financingHdr.getDtmCrt()))
           .invoices(toInvoiceEmailPayloads(financingHdr, financingDtls))
           .build()
       );

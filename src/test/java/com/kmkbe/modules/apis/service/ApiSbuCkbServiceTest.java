@@ -92,7 +92,7 @@ class ApiSbuCkbServiceTest {
   }
 
   @Test
-  void apiValidationReturnsValidationResponseWhenApiKeyBouwheerAndTokenAreValid() throws IOException {
+  void apiValidationReturnsValidationResponseWhenApiKeyBouwheerAndTokenAreValid() {
     ApiSbu apiSbu = apiSbu();
     ValidationResponse expected = validationResponse(BOUWHEER_CODE.toString(), futureEpochSecond());
     when(apiSbuRepository.findByAppKey(API_KEY)).thenReturn(Optional.of(apiSbu));
