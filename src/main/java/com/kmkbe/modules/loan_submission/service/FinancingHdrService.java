@@ -884,7 +884,7 @@ public class FinancingHdrService {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Pembayaran belum dapat diproses karena invoice masih dalam tahap persetujuan internal CSUL.");
     }
 
-    financingHdr.setFinancingStatus("LIVE");
+    financingHdr.setFinancingStatus("PAID");
     financingHdr.setFinancingStep("PAID");
     financingHdr.setUsrUpd(financingHdr.getBouwheer().getBouwheerName());
     financingHdr.setDtmUpd(DateTimeUtils.now());
