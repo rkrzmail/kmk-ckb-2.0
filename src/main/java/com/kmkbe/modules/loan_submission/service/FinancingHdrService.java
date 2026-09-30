@@ -865,21 +865,27 @@ public class FinancingHdrService {
     }
   }
 
+  @Transactional
   public FinancingHdr paidFinancing(
     FinancingInvoicePaidRequest request
   ) {
 
     if (request.getFinancingCode() == null || request.getFinancingCode().isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", false);
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Invalid given financingCode");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Financing Code tidak tidak boleh kosong!");
     }
 
     FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(request.getFinancingCode()))
-      .orElseThrow(() -> new IllegalStateException("Financing Not Found with given financingCode"));
+      .orElseThrow(() -> new IllegalStateException("Financing Code tidak ditemukan!"));
+
+    String noAggrNo = financingHdr.getAgreement().isEmpty() ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();
+    if(noAggrNo.isEmpty()){
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}",noAggrNo);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Pembayaran belum dapat diproses karena invoice masih dalam tahap persetujuan internal CSUL.");
+    }
 
     financingHdr.setFinancingStatus("LIVE");
     financingHdr.setFinancingStep("PAID");
-
     financingHdr.setUsrUpd(financingHdr.getBouwheer().getBouwheerName());
     financingHdr.setDtmUpd(DateTimeUtils.now());
     return financingHdrRepository.save(financingHdr);

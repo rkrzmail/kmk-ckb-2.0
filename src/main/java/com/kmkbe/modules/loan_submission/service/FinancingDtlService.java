@@ -242,11 +242,10 @@ public class FinancingDtlService {
           throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Nominal Invoice tidak sesuai (Kelebihan Bayar)");
         }
 
-        // Update data entitas (Bug .getFirst() sudah diperbaiki di sini menggunakan reqInvoice)
+        log.info("Update Invoice status PAID");
         financingDtl.getInvoice().setStatus("PAID");
         financingDtl.getInvoice().setUsrUpd(updater);
         financingDtl.getInvoice().setDtmUpd(LocalDateTime.now());
-
         financingDtl.setBouwheerPaidDate(Utils.toInstant(reqInvoice.getPostingDate()));
         financingDtl.setUsrUpd(updater);
         financingDtl.setDtmUpd(LocalDateTime.now());
