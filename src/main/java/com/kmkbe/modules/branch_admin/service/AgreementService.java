@@ -190,9 +190,12 @@ public class AgreementService {
     String bouwheerCode
   ) throws Exception {
     try {
-      final MstFileType mstFileType = mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(bouwheerCode))
+      UUID requestedBouwheerCode = UUID.fromString(bouwheerCode);
+      final MstFileType mstFileType = mstFileTypeRepository.findById("AGGREMENT01")
+        .filter(fileType -> fileType.getBouwheerCode() == null
+          || fileType.getBouwheerCode().equals(requestedBouwheerCode))
         .orElseThrow(
-          () -> new IllegalArgumentException("File type not found")
+          () -> new IllegalArgumentException("File type AGGREMENT01 tidak tersedia untuk bouwheer " + bouwheerCode)
         );
 
       final Agreement agreement = agreementRepository.findTopByAgreementCodeOrderByAgreementId(

@@ -194,7 +194,7 @@ class SignerServiceTest {
   }
 
   @Test
-  void signerPersonListResetsStatusWhenRegistrationFlowCannotUpdateDebtor() {
+  void signerPersonListPreservesStatusWhenAgreementIsMissing() {
     Debtor signer = debtor(1L);
     signer.setFinancingHdrCode(FINANCING_HDR_CODE.toString());
     when(financingHdrRepository.findDebtorNameByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn("Debtor");
@@ -207,8 +207,9 @@ class SignerServiceTest {
     List<DebtorDto> result = service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker");
 
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getSignhubStatus()).isEqualTo("not register");
-    assertThat(result.get(0).getSignerStatus()).isEqualTo("not active");
+    assertThat(result.get(0).getSignhubStatus()).isEqualTo("active");
+    assertThat(result.get(0).getSignerStatus()).isEqualTo("active");
+    verify(debtorRepository, never()).save(any(Debtor.class));
   }
 
   @Test
@@ -227,18 +228,19 @@ class SignerServiceTest {
   }
 
   @Test
-  void checkSignerDanasaktiWrapsFailedAsyncProcessing() {
+  void checkSignerDanasaktiReadsOnlyActiveRegisteredSignersWithoutRefreshing() {
     Debtor signer = debtor(1L);
-    SignerService spy = org.mockito.Mockito.spy(service);
-    java.util.concurrent.CompletableFuture<DebtorDto> failed = new java.util.concurrent.CompletableFuture<>();
-    failed.completeExceptionally(new RuntimeException("boom"));
+    Debtor unregistered = debtor(3L);
+    unregistered.setSignhubStatus("not register");
     when(financingHdrRepository.findDebtorNameByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn("Debtor");
-    when(debtorRepository.findByDebtorName("Debtor")).thenReturn(List.of(signer));
-    org.mockito.Mockito.doReturn(failed).when(spy).processDebtorAsync(any(Debtor.class), anyString(), anyString());
+    when(debtorRepository.findActiveSignerByDebtorName("Debtor")).thenReturn(List.of(signer, unregistered));
 
-    assertThatThrownBy(() -> spy.checkSignerDanasakti(FINANCING_HDR_CODE.toString(), "maker"))
-        .isInstanceOf(RuntimeException.class)
-        .hasMessage("Error processing debtors");
+    List<DebtorDto> result = service.checkSignerDanasakti(FINANCING_HDR_CODE.toString(), "maker");
+
+    assertThat(result).extracting(DebtorDto::getDebtorId).containsExactly(1L);
+    assertThat(result.get(0).getSignerStatus()).isEqualTo("active");
+    verifyNoInteractions(restTemplate, agreementRepository, confinsR3FeignClient);
+    verify(debtorRepository, never()).save(any(Debtor.class));
   }
 
   @Test
@@ -253,12 +255,11 @@ class SignerServiceTest {
     when(confinsR3FeignClient.getSigners(any()))
         .thenReturn(new ExternalApiResponse());
     when(debtorRepository.findById(1L)).thenReturn(Optional.of(signer));
-    when(debtorRepository.save(any(Debtor.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     List<DebtorDto> noReturnObject = service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker");
 
-    assertThat(noReturnObject.get(0).getSignhubStatus()).isEqualTo("not register");
-    assertThat(noReturnObject.get(0).getSignerStatus()).isEqualTo("not active");
+    assertThat(noReturnObject.get(0).getSignhubStatus()).isEqualTo("active");
+    assertThat(noReturnObject.get(0).getSignerStatus()).isEqualTo("active");
 
     when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(new ResponseEntity<>(Map.of("status", Map.of("code", 1)), HttpStatus.BAD_REQUEST));
@@ -267,8 +268,9 @@ class SignerServiceTest {
 
     List<DebtorDto> nonOk = service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker");
 
-    assertThat(nonOk.get(0).getSignhubStatus()).isEqualTo("not register");
-    assertThat(nonOk.get(0).getSignerStatus()).isEqualTo("not active");
+    assertThat(nonOk.get(0).getSignhubStatus()).isEqualTo("active");
+    assertThat(nonOk.get(0).getSignerStatus()).isEqualTo("active");
+    verify(debtorRepository, never()).save(any(Debtor.class));
   }
 
   @Test
@@ -278,13 +280,12 @@ class SignerServiceTest {
     when(financingHdrRepository.findDebtorNameByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn("Debtor");
     when(debtorRepository.findByDebtorName("Debtor")).thenReturn(List.of(signer));
     when(debtorRepository.findById(1L)).thenReturn(Optional.of(signer));
-    when(debtorRepository.save(any(Debtor.class))).thenAnswer(invocation -> invocation.getArgument(0));
     when(agreementRepository.findCwr(FINANCING_HDR_CODE)).thenReturn(Optional.of(agreement()));
 
     when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(null));
     when(confinsR3FeignClient.getSigners(any())).thenReturn(null);
-    assertThat(service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker").get(0).getSignerStatus()).isEqualTo("not active");
+    assertThat(service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker").get(0).getSignerStatus()).isEqualTo("active");
 
     when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(Map.of("status", Map.of("code", 0))));
@@ -337,7 +338,7 @@ class SignerServiceTest {
   }
 
   @Test
-  void signerPersonListResetsPersistedDebtorWhenRegistrationApiThrows() {
+  void signerPersonListPreservesPersistedDebtorWhenRegistrationApiThrows() {
     Debtor signer = debtor(1L);
     signer.setFinancingHdrCode(FINANCING_HDR_CODE.toString());
     when(financingHdrRepository.findDebtorNameByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn("Debtor");
@@ -345,12 +346,12 @@ class SignerServiceTest {
     when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenThrow(new RuntimeException("registration down"));
     when(debtorRepository.findById(1L)).thenReturn(Optional.of(signer));
-    when(debtorRepository.save(any(Debtor.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
     List<DebtorDto> result = service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker");
 
-    assertThat(result.get(0).getSignhubStatus()).isEqualTo("not register");
-    assertThat(result.get(0).getSignerStatus()).isEqualTo("not active");
+    assertThat(result.get(0).getSignhubStatus()).isEqualTo("active");
+    assertThat(result.get(0).getSignerStatus()).isEqualTo("active");
+    verify(debtorRepository, never()).save(any(Debtor.class));
   }
 
   @Test
@@ -358,25 +359,17 @@ class SignerServiceTest {
     when(financingHdrRepository.findDebtorNameByFinancingHdrCode(FINANCING_HDR_CODE))
         .thenReturn("Debtor")
         .thenReturn("Debtor");
-    when(debtorRepository.findByDebtorName("Debtor"))
+    when(debtorRepository.findActiveSignerByDebtorName("Debtor"))
         .thenReturn(List.of())
         .thenReturn(List.of(debtor(1L)));
 
     assertThat(service.checkSignerDanasakti(FINANCING_HDR_CODE.toString(), "maker")).isEmpty();
 
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
-        .thenReturn(ResponseEntity.ok(signhubRegistrationStatus("1", "Vida")));
-    when(agreementRepository.findCwr(FINANCING_HDR_CODE)).thenReturn(Optional.of(agreement()));
-    when(confinsR3FeignClient.getSigners(any()))
-        .thenReturn(externalSignerResponse("Other"));
-    when(debtorRepository.findById(1L)).thenReturn(Optional.of(debtor(1L)));
-    when(debtorRepository.save(any(Debtor.class))).thenAnswer(invocation -> invocation.getArgument(0));
-
     List<DebtorDto> result = service.checkSignerDanasakti(FINANCING_HDR_CODE.toString(), "maker");
 
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getSignhubStatus()).isEqualTo("pending");
-    assertThat(result.get(0).getSignerStatus()).isEqualTo("not active");
+    assertThat(result.get(0).getSignhubStatus()).isEqualTo("active");
+    assertThat(result.get(0).getSignerStatus()).isEqualTo("active");
   }
 
   @Test
@@ -574,6 +567,28 @@ class SignerServiceTest {
   }
 
   @Test
+  void getSignersFromExternalApiReportsMissingCwrAndCustomer() {
+    Agreement missingCwr = agreement();
+    missingCwr.setCwr(null);
+    when(agreementRepository.findByFinancingHdr_FinancingHdrCode2(FINANCING_HDR_CODE, "AGR001"))
+        .thenReturn(Optional.of(missingCwr));
+
+    PersonDto cwrError = service.getSignersFromExternalApi(FINANCING_HDR_CODE.toString(), "AGR001");
+
+    assertThat(cwrError.getMessage()).contains("CWR tidak ditemukan untuk agreement AGR001");
+
+    Agreement missingCustomer = agreement();
+    missingCustomer.getCwr().setCustomer(null);
+    when(agreementRepository.findByFinancingHdr_FinancingHdrCode2(FINANCING_HDR_CODE, "AGR001"))
+        .thenReturn(Optional.of(missingCustomer));
+
+    PersonDto customerError = service.getSignersFromExternalApi(FINANCING_HDR_CODE.toString(), "AGR001");
+
+    assertThat(customerError.getMessage()).contains("Customer tidak ditemukan untuk agreement AGR001");
+    verifyNoInteractions(confinsR3FeignClient);
+  }
+
+  @Test
   void getSignersFromExternalApiMapsNullAndEmptyExternalResponses() {
     when(agreementRepository.findByFinancingHdr_FinancingHdrCode2(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of(agreement()));
     when(confinsR3FeignClient.getSigners(any()))
@@ -632,12 +647,41 @@ class SignerServiceTest {
     assertThatThrownBy(() -> service.getSignersForGroup(FINANCING_HDR_CODE.toString(), List.of()))
         .isInstanceOf(RuntimeException.class)
         .hasMessage("FinancingHdrCode tidak ditemukan");
+  }
 
+  @Test
+  void getSignersForGroupSkipsFriendWithoutAgreement() {
+    UUID friendCode = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    AssignmentDto target = AssignmentDto.builder().custCode(CUSTOMER_CODE).financingHdrCode(FINANCING_HDR_CODE).build();
+    AssignmentDto friend = AssignmentDto.builder().custCode(CUSTOMER_CODE).financingHdrCode(friendCode).build();
+    Agreement agreement = agreement();
     when(agreementRepository.findAllByFinancingHdrCodes(List.of(FINANCING_HDR_CODE, friendCode)))
         .thenReturn(List.of(agreement));
+    when(agreementRepository.findByFinancingHdr_FinancingHdrCode2(FINANCING_HDR_CODE, "AGR001"))
+        .thenReturn(Optional.of(agreement));
+    when(confinsR3FeignClient.getSigners(any())).thenReturn(externalSignerResponse("Budi"));
+
+    PersonDto result = service.getSignersForGroup(FINANCING_HDR_CODE.toString(), List.of(target, friend));
+
+    assertThat(result.getStatusCode()).isEqualTo("200");
+    assertThat(result.getSigners()).extracting(PersonDto.Signer::getSignerName).containsExactly("Budi");
+    verify(agreementRepository, never()).findByFinancingHdr_FinancingHdrCode2(eq(friendCode), anyString());
+  }
+
+  @Test
+  void getSignersForGroupRequiresTargetAgreement() {
+    UUID friendCode = UUID.fromString("33333333-3333-3333-3333-333333333333");
+    AssignmentDto target = AssignmentDto.builder().custCode(CUSTOMER_CODE).financingHdrCode(FINANCING_HDR_CODE).build();
+    AssignmentDto friend = AssignmentDto.builder().custCode(CUSTOMER_CODE).financingHdrCode(friendCode).build();
+    Agreement friendAgreement = agreement();
+    friendAgreement.getFinancingHdr().setFinancingHdrCode(friendCode);
+    when(agreementRepository.findAllByFinancingHdrCodes(List.of(FINANCING_HDR_CODE, friendCode)))
+        .thenReturn(List.of(friendAgreement));
+
     assertThatThrownBy(() -> service.getSignersForGroup(FINANCING_HDR_CODE.toString(), List.of(target, friend)))
         .isInstanceOf(RuntimeException.class)
-        .hasMessageContaining("Agreement tidak ditemukan");
+        .hasMessageContaining("Agreement tidak ditemukan untuk financingHdrCode " + FINANCING_HDR_CODE);
+    verifyNoInteractions(confinsR3FeignClient);
   }
 
   @Test
@@ -972,7 +1016,7 @@ class SignerServiceTest {
     assertThat(service.checkSendDocument(FINANCING_HDR_CODE.toString(), "AGR001")).containsEntry("needConfirmation", false);
 
     when(financingHdrRepository.findDebtorNameByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn("Debtor");
-    when(debtorRepository.findByDebtorName("Debtor")).thenReturn(null);
+    when(debtorRepository.findActiveSignerByDebtorName("Debtor")).thenReturn(null);
     assertThat(service.checkSignerDanasakti(FINANCING_HDR_CODE.toString(), "maker")).isEmpty();
   }
 

@@ -197,7 +197,6 @@ public class SignerController {
       signingEligibilityService.validateDebtorSigner(financingHdrCode);
       List<DebtorDto> signerPersonList = signerService.checkSignerDanasakti(
         financingHdrCode, currentUserService.internalUsername());
-      signingEligibilityService.validateDebtorSigner(financingHdrCode);
       if (signerPersonList == null || signerPersonList.isEmpty()) {
         return new CommonResult<Map<String, Object>>()
           .fail(404, "Signer tidak tersedia", responseData);

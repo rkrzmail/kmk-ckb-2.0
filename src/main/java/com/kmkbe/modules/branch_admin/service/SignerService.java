@@ -197,15 +197,18 @@ public class SignerService {
     debtorDto.setIsActive(signer.getIsActive());
     debtorDto.setEmailDebtor(signer.getEmailDebtor());
     debtorDto.setFinancingHdrCode(signer.getFinancingHdrCode());
+    debtorDto.setSignerStatus(signer.getSignerStatus());
+    debtorDto.setSignhubStatus(signer.getSignhubStatus());
 
     return debtorDto;
   }
 
   @Transactional
   protected void checkRegistrationStatus(DebtorDto debtorDto, String identityNo, String financingHdrCode, String username) {
+    String previousSignerStatus = debtorDto.getSignerStatus();
+    String previousSignhubStatus = debtorDto.getSignhubStatus();
     try {
 
-      debtorDto.setSignhubStatus("not register");
       Map<String, Object> requestBody = new HashMap<>();
       Map<String, String> audit = new HashMap<>();
       audit.put("callerId", username);
@@ -272,18 +275,13 @@ public class SignerService {
       auditTrailService.record("SIGNER", AuditAction.UPDATE, "Debtor", savedDebtor.getDebtorId(), before, toDebtorAuditData(savedDebtor));
 
     } catch (Exception e) {
-      debtorDto.setSignerStatus("not active");
-      debtorDto.setSignhubStatus("not register");
-
-      Debtor debtor = debtorRepository.findById(debtorDto.getDebtorId())
-        .orElse(null);
-      if (debtor != null) {
-        DebtorAuditData before = toDebtorAuditData(debtor);
-        debtor.setSignerStatus("not active");
-        debtor.setSignhubStatus("not register");
-        Debtor savedDebtor = debtorRepository.save(debtor);
-        auditTrailService.record("SIGNER", AuditAction.UPDATE, "Debtor", savedDebtor.getDebtorId(), before, toDebtorAuditData(savedDebtor));
-      }
+      log.warn("Unable to refresh signer status for debtorId={}: {}", debtorDto.getDebtorId(), e.getMessage());
+      debtorDto.setSignerStatus(previousSignerStatus);
+      debtorDto.setSignhubStatus(previousSignhubStatus);
+      debtorRepository.findById(debtorDto.getDebtorId()).ifPresent(debtor -> {
+        debtorDto.setSignerStatus(debtor.getSignerStatus());
+        debtorDto.setSignhubStatus(debtor.getSignhubStatus());
+      });
     }
   }
 
@@ -297,14 +295,15 @@ public class SignerService {
         agreement.getCwr().getCustomer().getCustNo(),
         agreement.getCwr().getCwrCode(), LocalDate.now().toString());
       ExternalApiResponse response = confinsR3FeignClient.getSigners(request);
-      boolean isSignerFound = response != null && response.getReturnObject() != null
-        && response.getReturnObject().stream()
+      if (response == null || !"200".equals(response.getStatusCode()) || response.getReturnObject() == null) {
+        throw new IllegalStateException("Respons signer Confins tidak berhasil atau tidak lengkap");
+      }
+      boolean isSignerFound = response.getReturnObject().stream()
           .anyMatch(signer -> debtorDto.getKaryawanName() != null
             && debtorDto.getKaryawanName().equalsIgnoreCase(signer.getSignerName()));
       debtorDto.setSignerStatus(isSignerFound ? "active" : "not active");
     } catch (Exception e) {
-      debtorDto.setSignerStatus("not active");
-      e.printStackTrace();
+      throw new IllegalStateException("Gagal memeriksa signer di Confins", e);
     }
   }
 
@@ -543,13 +542,13 @@ public class SignerService {
       .stream()
       .collect(Collectors.toMap(a -> a.getFinancingHdr().getFinancingHdrCode(), Agreement::getAgreementCode));
 
-    List<PersonDto> allSigners = friendFinancingHdrCodes.parallelStream()
-      .map(fHdrCode -> {
-        String agreementNo = agreementMap.get(fHdrCode);
-        if (agreementNo == null) throw new RuntimeException("Agreement tidak ditemukan");
+    if (!agreementMap.containsKey(target.getFinancingHdrCode())) {
+      throw new RuntimeException("Agreement tidak ditemukan untuk financingHdrCode " + financingHdrCode);
+    }
 
-        return getSignersFromExternalApi(fHdrCode.toString(), agreementNo);
-      })
+    List<PersonDto> allSigners = friendFinancingHdrCodes.parallelStream()
+      .filter(agreementMap::containsKey)
+      .map(fHdrCode -> getSignersFromExternalApi(fHdrCode.toString(), agreementMap.get(fHdrCode)))
       .toList();
 
     return mergeSigners(allSigners);
@@ -777,7 +776,7 @@ public class SignerService {
           .body(new ApiResponse<>(false, "Document not found in database", null, null, null));
       }
 
-      if(doc.get().getFileTypeCode().equals("SIGN_DOC")){
+      if ("SIGN_DOC".equals(doc.get().getFileTypeCode())) {
         Optional<AgreementFile>agreementFileOptional = agreementFileRepository.findByAgreement_AgreementCode(doc.get().getAgreementCode());
         if(agreementFileOptional.isPresent()){
           // Get the local host instance
@@ -1156,29 +1155,16 @@ public class SignerService {
       return Collections.emptyList();
     }
 
-    List<Debtor> debtors = debtorRepository.findByDebtorName(debtorName);
-
+    List<Debtor> debtors = debtorRepository.findActiveSignerByDebtorName(debtorName);
     if (debtors == null || debtors.isEmpty()) {
       return Collections.emptyList();
     }
-
-    List<CompletableFuture<DebtorDto>> futures = debtors.stream()
-      .map(debtor -> processDebtorAsync(debtor, debtor.getFinancingHdrCode(), username))
-      .collect(Collectors.toList());
-
-    CompletableFuture<Void> allOf = CompletableFuture.allOf(
-      futures.toArray(new CompletableFuture[0])
-    );
-
-    try {
-      allOf.join();
-      return futures.stream()
-        .map(CompletableFuture::join)
-        .toList();
-
-    } catch (Exception e) {
-      throw new RuntimeException("Error processing debtors", e);
-    }
+    return debtors.stream()
+      .filter(debtor -> !Boolean.FALSE.equals(debtor.getIsActive()))
+      .filter(debtor -> "active".equalsIgnoreCase(debtor.getSignhubStatus())
+        || "registered".equalsIgnoreCase(debtor.getSignhubStatus()))
+      .map(this::mapDebtorToDto)
+      .toList();
   }
 
   public Map<String, Object> checkSendDocument(String financingHdrCode, String agreementCode) {

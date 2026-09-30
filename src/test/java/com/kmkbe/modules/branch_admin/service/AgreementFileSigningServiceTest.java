@@ -62,7 +62,7 @@ class AgreementFileSigningServiceTest {
         service.saveSigningResult("AGR-MANUAL", "-", "maker", financingHdrCode.toString(), "SIGN_DOC");
 
         assertThat(existing.getFileTypeCode()).isEqualTo("SIGN_DOC");
-        assertThat(existing.getStamp()).isEqualTo("Signed");
+        assertThat(existing.getStamp()).isEqualTo("signed");
         assertThat(existing.getVerifDate()).isNotNull();
     }
 

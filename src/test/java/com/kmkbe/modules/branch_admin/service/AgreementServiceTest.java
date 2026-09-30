@@ -271,7 +271,7 @@ class AgreementServiceTest {
         MultipartFile file = new MockMultipartFile("file", "agreement.pdf", "application/pdf", "pdf".getBytes());
         Agreement agreement = agreementWithFinancing();
         MstFileType fileType = MstFileType.builder().fileTypeCode("AGGREMENT01").build();
-        when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(uuid))).thenReturn(Optional.of(fileType));
+        when(mstFileTypeRepository.findById("AGGREMENT01")).thenReturn(Optional.of(fileType));
         when(agreementRepository.findTopByAgreementCodeOrderByAgreementId("AGR001")).thenReturn(Optional.of(agreement));
         when(agreementFileRepository.findTopByAgreementOrderByAgreementFileId(agreement)).thenReturn(Optional.empty());
         when(fileStorageService.save(eq(file), eq(CUSTOMER_CODE + "/agreement"), eq("AGGREMENT01_agreement.pdf"), eq(null)))
@@ -293,9 +293,12 @@ class AgreementServiceTest {
         MstUser user = MstUser.builder().username("uploader").build();
         MultipartFile file = new MockMultipartFile("file", "new.pdf", "application/pdf", "pdf".getBytes());
         Agreement agreement = agreementWithFinancing();
-        MstFileType fileType = MstFileType.builder().fileTypeCode("AGGREMENT01").build();
+        MstFileType fileType = MstFileType.builder()
+                .fileTypeCode("AGGREMENT01")
+                .bouwheerCode(UUID.fromString(uuid))
+                .build();
         AgreementFile existing = AgreementFile.builder().agreementFileId(1L).fileName("old.pdf").build();
-        when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(uuid))).thenReturn(Optional.of(fileType));
+        when(mstFileTypeRepository.findById("AGGREMENT01")).thenReturn(Optional.of(fileType));
         when(agreementRepository.findTopByAgreementCodeOrderByAgreementId("AGR001")).thenReturn(Optional.of(agreement));
         when(agreementFileRepository.findTopByAgreementOrderByAgreementFileId(agreement)).thenReturn(Optional.of(existing));
         when(fileStorageService.save(eq(file), eq(CUSTOMER_CODE + "/agreement"), eq("AGGREMENT01_new.pdf"), eq(null)))
@@ -310,14 +313,30 @@ class AgreementServiceTest {
     }
 
     @Test
-    void uploadThrowsForMissingFileTypeAgreementAndFinancing() {
+    void uploadRejectsMissingFileType() {
         MultipartFile file = new MockMultipartFile("file", "agreement.pdf", "application/pdf", "pdf".getBytes());
         MstUser user = MstUser.builder().username("uploader").build();
-        when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(uuid))).thenReturn(Optional.empty());
+        when(mstFileTypeRepository.findById("AGGREMENT01")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.upload(user, file, "AGR001", uuid))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("File type not found");
+                .hasMessageContaining("File type AGGREMENT01 tidak tersedia untuk bouwheer");
+    }
+
+    @Test
+    void uploadRejectsFileTypeBelongingToAnotherBouwheer() {
+        MultipartFile file = new MockMultipartFile("file", "agreement.pdf", "application/pdf", "pdf".getBytes());
+        MstUser user = MstUser.builder().username("uploader").build();
+        MstFileType otherBouwheerFileType = MstFileType.builder()
+                .fileTypeCode("AGGREMENT01")
+                .bouwheerCode(UUID.randomUUID())
+                .build();
+        when(mstFileTypeRepository.findById("AGGREMENT01")).thenReturn(Optional.of(otherBouwheerFileType));
+
+        assertThatThrownBy(() -> service.upload(user, file, "AGR001", uuid))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("File type AGGREMENT01 tidak tersedia untuk bouwheer");
+        verify(agreementFileRepository, never()).save(any());
     }
 
     @Test
@@ -325,7 +344,7 @@ class AgreementServiceTest {
         MultipartFile file = new MockMultipartFile("file", "agreement.pdf", "application/pdf", "pdf".getBytes());
         MstUser user = MstUser.builder().username("uploader").build();
         MstFileType fileType = MstFileType.builder().fileTypeCode("AGGREMENT01").build();
-        when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(uuid))).thenReturn(Optional.of(fileType));
+        when(mstFileTypeRepository.findById("AGGREMENT01")).thenReturn(Optional.of(fileType));
         when(agreementRepository.findTopByAgreementCodeOrderByAgreementId("AGR404")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.upload(user, file, "AGR404", uuid))

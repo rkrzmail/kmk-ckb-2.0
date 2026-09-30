@@ -102,29 +102,8 @@ class SignerControllerTest {
     assertThat(result.isSuccess()).isTrue();
     assertThat(result.getCode()).isEqualTo(200);
     assertThat(result.getData()).containsEntry("signerName", List.of("Signer One"));
-    verify(signingEligibilityService, org.mockito.Mockito.times(2))
+    verify(signingEligibilityService)
       .validateDebtorSigner(FINANCING_HDR_CODE);
-  }
-
-  @Test
-  void checkSignerDanasaktiRejectsStatusThatBecomesIneligibleAfterRefresh() throws Exception {
-    DebtorDto signer = new DebtorDto();
-    signer.setKaryawanName("Signer One");
-    doNothing()
-      .doThrow(new IllegalStateException(SigningEligibilityService.SIGNER_NOT_REGISTERED_MESSAGE))
-      .when(signingEligibilityService)
-      .validateDebtorSigner(FINANCING_HDR_CODE);
-    when(currentUserService.internalUsername()).thenReturn("maker");
-    when(signerService.checkSignerDanasakti(FINANCING_HDR_CODE, "maker")).thenReturn(List.of(signer));
-
-    CommonResult<Map<String, Object>> result = controller.checkSignerDanasakti(
-      FINANCING_HDR_CODE,
-      AGREEMENT_CODE
-    );
-
-    assertThat(result.isSuccess()).isFalse();
-    assertThat(result.getCode()).isEqualTo(400);
-    assertThat(result.getMessage()).isEqualTo(SigningEligibilityService.SIGNER_NOT_REGISTERED_MESSAGE);
   }
 
   @Test
