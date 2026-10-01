@@ -46,6 +46,7 @@ public class EmailService {
   private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";//(2)
   private static final String M_BRANCH_ASSIGN_MJR = "M_BRANCH_ASSIGN_MJR";
   private static final String M_BOUWHEER_PAYMENT = "M_BOUWHEER_PAYMENT";
+  private static final String M_FINANCE_INVOICE_PAID = "M_FINANCE_INVOICE_PAID";
   private static final String M_BRANCH_CONTRACT_UPLOAD = "M_BRANCH_CONTRACT_UPLOAD";
   private static final String M_CUST_LOAD_CHANGE = "M_CUST_LOAD_CHANGE";
   private static final String M_CUST_PENCAIRAN = "M_CUST_PENCAIRAN";//(5)
@@ -234,6 +235,20 @@ public class EmailService {
   }
 
   public record DeliveryResult(boolean acceptedBySmtp, String errorMessage) {}
+
+  public DeliveryResult sendFinanceInvoicePaidNotification(String recipients, String agreementCode,
+                                                           Map<String, Object> fields) {
+    try {
+      EmailTemplate template = loadTemplate(M_FINANCE_INVOICE_PAID);
+      template.setMailTo(recipients);
+      template.setSubjectMail(template.getSubjectMail().replace("{agreementCode}", agreementCode));
+      template.setBodyMail(mappingBody(template.getBodyMail(), Map.of("additionalArgs", fields)));
+      return sendMailMessageWithResult(template, recipients);
+    } catch (Exception e) {
+      log.error("Finance invoice paid email preparation failed. agreementCode={}", agreementCode, e);
+      return new DeliveryResult(false, e.getClass().getSimpleName() + ": " + e.getMessage());
+    }
+  }
 
   public DeliveryResult sendCustomerApprovalNotification(Customer customer, String approvalStatus, String note) {
     String recipient = customer.getCustEmail();

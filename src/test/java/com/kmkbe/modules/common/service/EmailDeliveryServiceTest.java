@@ -97,6 +97,33 @@ class EmailDeliveryServiceTest {
     assertThat(service.history(code)).containsExactly(delivery);
   }
 
+  @Test
+  void recordsFinanceInvoicePaidSmtpOutcome() {
+    UUID code = UUID.randomUUID();
+    when(repository.save(any())).thenAnswer(call -> call.getArgument(0));
+
+    EmailDeliveryLog sent = service.recordFinanceInvoicePaid(code, "finance@example.com",
+      new EmailService.DeliveryResult(true, null));
+    assertThat(sent.getCustomerCode()).isEqualTo(code);
+    assertThat(sent.getTemplateCode()).isEqualTo("M_FINANCE_INVOICE_PAID");
+    assertThat(sent.getRecipient()).isEqualTo("finance@example.com");
+    assertThat(sent.getStatus()).isEqualTo(EmailDeliveryLog.Status.SENT);
+    assertThat(sent.getAttemptCount()).isEqualTo(1);
+    assertThat(sent.getSentAt()).isNotNull();
+
+    EmailDeliveryLog failed = service.recordFinanceInvoicePaid(code, "finance@example.com",
+      new EmailService.DeliveryResult(false, "SMTP rejected"));
+    assertThat(failed.getStatus()).isEqualTo(EmailDeliveryLog.Status.FAILED);
+    assertThat(failed.getAttemptCount()).isEqualTo(1);
+    assertThat(failed.getErrorMessage()).isEqualTo("SMTP rejected");
+    assertThat(failed.getSentAt()).isNull();
+
+    EmailDeliveryLog skipped = service.recordFinanceInvoicePaid(code, "",
+      new EmailService.DeliveryResult(false, "No Finance recipient"));
+    assertThat(skipped.getAttemptCount()).isZero();
+    assertThat(skipped.getStatus()).isEqualTo(EmailDeliveryLog.Status.FAILED);
+  }
+
   private static Customer customer(String status) {
     return Customer.builder().custCode(UUID.randomUUID()).custEmail("customer@example.com")
       .approvalStatus(status).build();

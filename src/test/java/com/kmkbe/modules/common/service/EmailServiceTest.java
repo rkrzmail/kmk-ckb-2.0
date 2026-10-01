@@ -25,6 +25,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -141,6 +142,31 @@ class EmailServiceTest {
 
     assertThat(result.acceptedBySmtp()).isFalse();
     assertThat(result.errorMessage()).contains("SMTP config unavailable");
+  }
+
+  @Test
+  void financeInvoicePaidRendersFieldsAndInvoiceRows() throws Exception {
+    EmailTemplate source = templateWithSubject("M_FINANCE_INVOICE_PAID", "#{agreementCode} Telah Dikembalikan",
+      "<html><body>{bouwheerName} {agreementCode} {vendorName} {vendorEmail} {vendorPhone} "
+        + "{submissionDate}<table><tbody>{invoices}</tbody></table></body></html>");
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_FINANCE_INVOICE_PAID", true))
+      .thenReturn(source);
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+
+    var result = service.sendFinanceInvoicePaidNotification("finance@example.com", "AGR-123", Map.of(
+      "bouwheerName", "PT Trakindo", "agreementCode", "AGR-123", "vendorName", "Vendor",
+      "vendorEmail", "vendor@example.com", "vendorPhone", "08123",
+      "submissionDate", "01/10/2026", "invoices", "<tr><td>INV-1</td></tr>"));
+
+    assertThat(result.acceptedBySmtp()).isTrue();
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    EmailTemplate sent = captor.getValue();
+    assertThat(sent.getSubjectMail()).isEqualTo("#AGR-123 Telah Dikembalikan");
+    assertThat(sent.getBodyMail()).contains("PT Trakindo AGR-123 Vendor vendor@example.com 08123 01/10/2026")
+      .contains("<tbody><tr><td>INV-1</td></tr></tbody>")
+      .doesNotContain("{agreementCode}", "{vendorName}", "{invoices}");
+    assertThat(source.getBodyMail()).contains("{invoices}");
   }
 
   @Test

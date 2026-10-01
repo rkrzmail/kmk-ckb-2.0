@@ -24,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -40,19 +41,22 @@ public class FinancingDtlService {
   private final BaseRemoteService baseRemoteService;
   private final ObjectMapper objectMapper;
   private final RestTemplate restTemplate;
+  private final ApplicationEventPublisher eventPublisher;
 
   public FinancingDtlService(FinancingDtlRepository financingDtlRepository,
                              PaymentReceiveHistoryRepository paymentReceiveHistoryRepository,
                              FinancingHdrRepository financingHdrRepository,
                              BaseRemoteService baseRemoteService,
                              ObjectMapper objectMapper,
-                             RestTemplate restTemplate) {
+                             RestTemplate restTemplate,
+                             ApplicationEventPublisher eventPublisher) {
     this.financingDtlRepository = financingDtlRepository;
     this.paymentReceiveHistoryRepository = paymentReceiveHistoryRepository;
     this.financingHdrRepository = financingHdrRepository;
     this.baseRemoteService = baseRemoteService;
     this.objectMapper = objectMapper;
     this.restTemplate = restTemplate;
+    this.eventPublisher = eventPublisher;
   }
 
   /**
@@ -197,8 +201,7 @@ public class FinancingDtlService {
   @Transactional
   public void updatePaid(FinancingInvoicePaidRequest request, FinancingHdr financingHdr) {
 
-      List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
-        .orElse(Collections.emptyList());
+      List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdrForUpdate(financingHdr);
 
       if (financingDtls.isEmpty()) {
         return;
@@ -220,6 +223,7 @@ public class FinancingDtlService {
       validateInvoicePresence(systemInvoices, requestInvoices, request.getFinancingCode());
 
       String updater = financingHdr.getUsrUpd();
+      boolean newlyPaid = false;
 
       for (FinancingDtl financingDtl : financingDtls) {
         String invoiceNo = financingDtl.getInvoice().getCustInvNo();
@@ -243,6 +247,7 @@ public class FinancingDtlService {
         }
 
         log.info("Update Invoice status PAID");
+        newlyPaid |= !"PAID".equalsIgnoreCase(financingDtl.getInvoice().getStatus());
         financingDtl.getInvoice().setStatus("PAID");
         financingDtl.getInvoice().setUsrUpd(updater);
         financingDtl.getInvoice().setDtmUpd(LocalDateTime.now());
@@ -250,6 +255,9 @@ public class FinancingDtlService {
         financingDtl.setUsrUpd(updater);
         financingDtl.setDtmUpd(LocalDateTime.now());
         financingDtlRepository.save(financingDtl);
+      }
+      if (newlyPaid) {
+        eventPublisher.publishEvent(new InvoicePaidEvent(financingHdr.getFinancingHdrCode()));
       }
   }
 
