@@ -37,6 +37,7 @@ import com.kmkbe.modules.remote.service.CurrencyRemoteService;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.modules.remote.service.InvoiceRemoteDto;
 import com.kmkbe.modules.user.entity.MstBranch;
+import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.helpers.utils.Utils;
 import io.netty.util.internal.StringUtil;
@@ -95,6 +96,7 @@ public class LoanSubmissionService {
   private final AuditTrailService auditTrailService;
   private final FinancingDtlRepository financingDtlRepository;
   private final BranchAssignmentResolver branchAssignmentResolver;
+  private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
 
   public List<PostedInvoiceDto> fetchActiveInvoice(
     Customer customer,
@@ -1095,6 +1097,7 @@ public class LoanSubmissionService {
 
       if (!isAutoASSIGNMENT) {
         try {
+          log.info("New Order loan submitted {}", customer.getCustEmail());
           assignMappedBranch(financing);
         } catch (Exception exception) {
           log.warn(
@@ -1124,24 +1127,25 @@ public class LoanSubmissionService {
             + financing.getOthersFeeAmt()
             + financing.getProvisionFeeAmt()
             + financing.getSurveyFeeAmtNett();
-        //getAPI CMS
-        String branchCode = mstBranchRepository.findByBranchName("HEAD OFFICE")
-          .map(MstBranch::getBranchCode)
-          .orElseThrow(() -> new RuntimeException("BranchCode tidak ditemukan"));
 
-        MailPositionDto ccBM = configRemoteService.getEmailByPosition("", branchCode, "CMS");
-        StringBuilder ccEmailBuilder = new StringBuilder();
-
-        if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
-          for (int i = 0; i < ccBM.getData().size(); i++) {
-            ccEmailBuilder.append(!ccEmailBuilder.isEmpty() ? ";" : "");
-            ccEmailBuilder.append(ccBM.getData().get(i).getEmail());
-          }
-        }
-
-        String mjrEmail = ccEmailBuilder.toString();
-        String toEmail = ccEmailBuilder.toString();
-        log.info("email CMS: {}", ccEmailBuilder);
+        //Skip get email from API
+//        String branchCode = mstBranchRepository.findByBranchName("HEAD OFFICE")
+//          .map(MstBranch::getBranchCode)
+//          .orElseThrow(() -> new RuntimeException("BranchCode tidak ditemukan"));
+//
+//        MailPositionDto ccBM = configRemoteService.getEmailByPosition("", branchCode, "CMS");
+//        StringBuilder ccEmailBuilder = new StringBuilder();
+//
+//        if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
+//          for (int i = 0; i < ccBM.getData().size(); i++) {
+//            ccEmailBuilder.append(!ccEmailBuilder.isEmpty() ? ";" : "");
+//            ccEmailBuilder.append(ccBM.getData().get(i).getEmail());
+//          }
+//        }
+//
+//        String mjrEmail = ccEmailBuilder.toString();
+//        String toEmail = ccEmailBuilder.toString();
+//        log.info("email CMS: {}", ccEmailBuilder);
 
         String phone = financing.getCustomer().getCustMobilePhone();
         if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
@@ -1150,9 +1154,21 @@ public class LoanSubmissionService {
           }
         }
 
-        log.info("Send email to Major Account Assign and Re Assign notification loan submitted {} ", mjrEmail);
+        List<String> majorAccountEmails = mstAppRoleFormUserRepository.findActiveMajorAccountEmails();
+        java.util.Set<String> toMjrEmailSet = new java.util.LinkedHashSet<>();
+
+        if (majorAccountEmails != null && !majorAccountEmails.isEmpty()) {
+          majorAccountEmails.stream()
+            .map(String::trim)
+            .filter(email -> !email.trim().isEmpty())
+            .forEach(toMjrEmailSet::add);
+        }
+
+        String toMjrEmails = toMjrEmailSet.isEmpty() ? null : String.join(";", toMjrEmailSet);
+        log.info("Send email to Major Account Assign and Re Assign notification loan submitted {} ", toMjrEmails);
+
         emailService.sendNotificationMajorAccount(
-          mjrEmail,
+          toMjrEmails,
           financing.getBouwheer().getBouwheerName(),
           financing.getMstBranch().getBranchName(),
           LoanDisburseEmailPayload.builder()
@@ -1163,8 +1179,8 @@ public class LoanSubmissionService {
             .bouwheerName(financing.getBouwheer().getBouwheerName())
             .phoneNumber(phone)
             .tenor(financing.getTenor())
-            .toEmail(toEmail)
-            .ccEmail(toEmail)
+            .toEmail(toMjrEmails)
+            .ccEmail(null)
             .financingCode(financing.getFinancingHdrCode().toString())
             .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
             .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
