@@ -417,7 +417,9 @@ public class LoanSubmissionService {
       double jumlahBiaya;
       double provisionRateFee = product.getProvisionRate() * plafonLimit / 100;
 
+      log.info("Customer existing customer {} ", isCustomerExisting);
       if (!isCustomerExisting) {
+        log.info("Customer existing customer {} ", isCustomerExisting);
         jumlahBiaya = provisionRateFee
           + product.getSurveyFee()
           + product.getLegalFee()
@@ -429,6 +431,7 @@ public class LoanSubmissionService {
         adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
         othersFeeAmount = BigDecimal.valueOf(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
       } else {
+        log.info("Customer existing customer {} ", isCustomerExisting);
         provisionFeeAmount = new BigDecimal(0);
         surveyFeeAmount = new BigDecimal(0);
         legalFeeAmount = new BigDecimal(0);
@@ -441,12 +444,11 @@ public class LoanSubmissionService {
       final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
       final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
 
-      // Update custoemr existing
+      log.info("Update status customer ");
       Optional<Customer> customerOptional = customerRepository.findByCustCode(customer.getCustCode());
       if (customerOptional.isPresent()) {
         log.info("Update customer existing customer {} ", isCustomerExisting);
-
-        customer.setExistingCust(isCustomerExisting ? AppConstants.NEW_CUSTOMER : AppConstants.EXIT_CUSTOMER);
+        customer.setExistingCust(isCustomerExisting ?AppConstants.EXIT_CUSTOMER:AppConstants.NEW_CUSTOMER);
         customer.setDtmUpd(LocalDateTime.now());
         customerRepository.save(customer);
       }
