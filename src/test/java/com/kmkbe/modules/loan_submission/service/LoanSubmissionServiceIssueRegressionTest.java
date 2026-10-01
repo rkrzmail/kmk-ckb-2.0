@@ -22,6 +22,7 @@ import com.kmkbe.modules.product.repository.ProductRepository;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.remote.service.CurrencyRemoteService;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
+import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.modules.user.entity.MstBranch;
 import org.junit.jupiter.api.BeforeEach;
@@ -77,6 +78,8 @@ class LoanSubmissionServiceIssueRegressionTest {
   @Mock private AuditTrailService auditTrailService;
   @Mock private FinancingDtlRepository financingDtlRepository;
   @Mock private BranchAssignmentResolver branchAssignmentResolver;
+  @Mock private MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
+
   @InjectMocks
   private LoanSubmissionService service;
   @Mock
@@ -112,7 +115,8 @@ class LoanSubmissionServiceIssueRegressionTest {
       apiCsulAdapter,
       auditTrailService,
       financingDtlRepository,
-      branchAssignmentResolver
+      branchAssignmentResolver,
+      mstAppRoleFormUserRepository
     );
   }
 
