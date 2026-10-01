@@ -5,8 +5,6 @@ import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
 import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementCwrDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementDto;
-import com.kmkbe.core.domain.dto.email.MailDataDto;
-import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.AgreementFile;
 import com.kmkbe.core.domain.entity.Cwr;
@@ -35,11 +33,11 @@ import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
-import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.entity.MstBranch;
+import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -54,7 +52,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -90,7 +87,7 @@ class AgreementServiceTest {
     @Mock private FileStorageService fileStorageService;
     @Mock private EmailService emailService;
     @Mock private AuditTrailService auditTrailService;
-    @Mock private ConfigRemoteService configRemoteService;
+    @Mock private MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
 
     private ObjectMapper objectMapper;
     private AgreementService service;
@@ -129,22 +126,13 @@ class AgreementServiceTest {
                 objectMapper,
                 emailService,
                 auditTrailService,
-                configRemoteService
+                mstAppRoleFormUserRepository
         );
-        ReflectionTestUtils.setField(service, "siscaBranchAdminPosition", "BRANCH ADMIN");
 
         lenient().when(agreementFileRepository.save(any(AgreementFile.class))).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        MailPositionDto branchAdminResponse = MailPositionDto.builder()
-                .data(new ArrayList<>(List.of(
-                        MailDataDto.builder()
-                                .branchCode("412")
-                                .email("branch.admin@csul.co.id")
-                                .build()
-                )))
-                .build();
-        lenient().when(configRemoteService.getEmailByPosition("", "412", "BRANCH ADMIN"))
-                .thenReturn(branchAdminResponse);
+        lenient().when(mstAppRoleFormUserRepository.findActiveBranchAdminEmails("412"))
+                .thenReturn(List.of("branch.admin@csul.co.id"));
     }
 
     @Test
@@ -486,9 +474,9 @@ class AgreementServiceTest {
     }
 
     @Test
-    void contractUploadNotificationSkipsEmailWhenSiscaReturnsNoData() {
-        when(configRemoteService.getEmailByPosition("", "412", "BRANCH ADMIN"))
-                .thenReturn(MailPositionDto.builder().data(new ArrayList<>()).build());
+    void contractUploadNotificationSkipsEmailWhenDbReturnsNoData() {
+        when(mstAppRoleFormUserRepository.findActiveBranchAdminEmails("412"))
+                .thenReturn(List.of());
 
         ReflectionTestUtils.invokeMethod(
                 service,
@@ -501,9 +489,9 @@ class AgreementServiceTest {
     }
 
     @Test
-    void contractUploadNotificationSkipsEmailWhenSiscaRequestFails() {
-        when(configRemoteService.getEmailByPosition("", "412", "BRANCH ADMIN"))
-                .thenThrow(new IllegalStateException("SISCA unavailable"));
+    void contractUploadNotificationSkipsEmailWhenDbLookupFails() {
+        when(mstAppRoleFormUserRepository.findActiveBranchAdminEmails("412"))
+                .thenThrow(new IllegalStateException("DB unavailable"));
 
         ReflectionTestUtils.invokeMethod(
                 service,
@@ -513,6 +501,22 @@ class AgreementServiceTest {
         );
 
         verify(emailService, never()).sendNotificationContractUploadRequired(any(), any());
+    }
+
+    @Test
+    void contractUploadNotificationUsesDistinctDbEmailsForBranch() {
+        when(mstAppRoleFormUserRepository.findActiveBranchAdminEmails("412"))
+                .thenReturn(List.of(" branch.admin@csul.co.id ", "branch.admin@csul.co.id", "other.admin@csul.co.id"));
+
+        ReflectionTestUtils.invokeMethod(
+                service,
+                "sendContractUploadRequiredNotification",
+                financingHdr(),
+                "AGR-MULTI-RECIPIENT"
+        );
+
+        verify(emailService).sendNotificationContractUploadRequired(
+                eq("branch.admin@csul.co.id;other.admin@csul.co.id"), any());
     }
 
     @Test
@@ -630,14 +634,13 @@ class AgreementServiceTest {
                 objectMapper,
                 emailService,
                 auditTrailService,
-                configRemoteService
+                mstAppRoleFormUserRepository
         ) {
             @Override
             boolean bypassRemotePosting() {
                 return bypass;
             }
         };
-        ReflectionTestUtils.setField(postingService, "siscaBranchAdminPosition", "BRANCH ADMIN");
         return postingService;
     }
 
