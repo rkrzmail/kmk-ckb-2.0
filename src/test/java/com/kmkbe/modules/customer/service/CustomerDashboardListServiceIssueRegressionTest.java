@@ -78,7 +78,6 @@ class CustomerDashboardListServiceIssueRegressionTest {
     );
     when(financingHdrRepository.findAllByRawOrder(eq(customer.getCustCode().toString()), any(Pageable.class)))
       .thenReturn(new PageImpl<>(java.util.List.of(financing)));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(customer, "PAID")).thenReturn(0L);
     when(financingDtlRepository.findAllByFinancingHdrOrderByDtmCrtDesc(financing))
       .thenReturn(financingDetails);
 
@@ -125,7 +124,6 @@ class CustomerDashboardListServiceIssueRegressionTest {
       .build();
     when(financingDtlRepository.findByCustomer(eq(customer.getCustCode().toString()), any(Pageable.class)))
       .thenReturn(new PageImpl<>(java.util.List.of(financingDtl)));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(customer, "PAID")).thenReturn(0L);
 
     PaginationResult<CustomerCreditFacilityDueDateDto> result = service.listinvoicesduedate(
       customer,
@@ -146,7 +144,6 @@ class CustomerDashboardListServiceIssueRegressionTest {
     when(financingHdrRepository.findAllByRawOrder(
       eq(customer.getCustCode().toString()), eq(Pageable.unpaged())
     )).thenReturn(new PageImpl<>(java.util.List.of(lowerAmount, higherAmount)));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(customer, "PAID")).thenReturn(0L);
     when(financingDtlRepository.findAllByFinancingHdrOrderByDtmCrtDesc(lowerAmount))
       .thenReturn(java.util.List.of(financingDetail("INV-LOW")));
     when(financingDtlRepository.findAllByFinancingHdrOrderByDtmCrtDesc(higherAmount))
@@ -173,7 +170,6 @@ class CustomerDashboardListServiceIssueRegressionTest {
     when(financingDtlRepository.findByCustomer(
       eq(customer.getCustCode().toString()), eq(Pageable.unpaged())
     )).thenReturn(new PageImpl<>(java.util.List.of(older, excluded, newer)));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(customer, "PAID")).thenReturn(0L);
 
     BasePaginationRequest request = request("poNumber", "match", "postingDate", "desc", 1, 10);
     PaginationResult<CustomerCreditFacilityDueDateDto> result = service.listinvoicesduedate(customer, request);
