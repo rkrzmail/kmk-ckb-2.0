@@ -9,6 +9,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.lang.NonNull;
 
 import java.util.List;
@@ -17,6 +19,12 @@ import java.util.UUID;
 
 public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID>, JpaSpecificationExecutor<FinancingDtl> {
   Optional<List<FinancingDtl>> findAllByFinancingHdr(FinancingHdr financingHdr);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT d FROM FinancingDtl d WHERE d.financingHdr = :financingHdr")
+  List<FinancingDtl> findAllByFinancingHdrForUpdate(
+    @org.springframework.data.repository.query.Param("financingHdr") FinancingHdr financingHdr
+  );
 
   @Query(value = """
     SELECT COUNT(*) FROM public.financing_dtl fd
