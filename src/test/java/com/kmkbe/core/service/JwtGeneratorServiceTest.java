@@ -4,6 +4,7 @@ import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.modules.api_sbu.repository.ApiSbuRepository;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 
 import java.time.Clock;
@@ -34,11 +35,11 @@ class JwtGeneratorServiceTest {
 
         String token = service.generateToken(apiKey, bouwheer.toString(), 600);
 
-        Claims claims = Jwts.parserBuilder()
-                .setSigningKey(secret.getBytes())
+        Claims claims = Jwts.parser()
+                .verifyWith(Keys.hmacShaKeyFor(secret.getBytes()))
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
 
         assertThat(claims.get("bouwheer_code", String.class)).isEqualTo(bouwheer.toString());
         assertThat(claims.getIssuedAt()).isEqualTo(Date.from(clock.instant()));

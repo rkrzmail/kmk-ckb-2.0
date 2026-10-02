@@ -3,7 +3,6 @@ package com.kmkbe.core.service;
 import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.modules.api_sbu.repository.ApiSbuRepository;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.stereotype.Service;
 
@@ -48,14 +47,13 @@ public class JwtGeneratorService {
 
 
         String jwtToken = Jwts.builder()
-                .setHeaderParam("alg", "HS256")
-                .setHeaderParam("typ", "JWT")
+                .header().add("typ", "JWT").and()
                 .claim("bouwheer_code", bouwheer)
-                .setIssuedAt(now)
-                .setExpiration(expireDate)   // ← expired 10 menit dari sekarang
+                .issuedAt(now)
+                .expiration(expireDate)   // ← expired 10 menit dari sekarang
                 .signWith(
                         Keys.hmacShaKeyFor(appSecret.getBytes()),
-                        SignatureAlgorithm.HS256
+                        Jwts.SIG.HS256
                 )
                 .compact();
 
@@ -78,14 +76,13 @@ public class JwtGeneratorService {
 
         // === STEP 3: Build & sign JWT ===
         String jwtToken = Jwts.builder()
-                .setHeaderParam("alg", "HS256")   // algorithm
-                .setHeaderParam("typ", "JWT")      // type
+                .header().add("typ", "JWT").and()   // algorithm otomatis HS256 dari signWith
                 .claim("bouwheer_code", bouwheer)        // custom claim — sama seperti yg di-read validator
-                .setIssuedAt(now)                     // iat: waktu dibuat
-                .setExpiration(expireDate)          // exp: waktu expired — dicek di validator STEP 5
+                .issuedAt(now)                     // iat: waktu dibuat
+                .expiration(expireDate)          // exp: waktu expired — dicek di validator STEP 5
                 .signWith(
                         Keys.hmacShaKeyFor(appSecret.getBytes()),  // secret dari DB
-                        SignatureAlgorithm.HS256                   // harus sama dg validator
+                        Jwts.SIG.HS256                   // harus sama dg validator
                 )
                 .compact();                        // hasilkan string header.payload.signature
 
