@@ -37,3 +37,5 @@ build/
 
 src/main/resources/application-prod-old.properties
 .continue
+SECURITY.md
+.continue

@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.3.0</version>
+        <version>3.5.6</version>
         <relativePath/>
     </parent>
 
@@ -20,9 +20,22 @@
 
     <properties>
         <java.version>21</java.version>
-        <org.mapstruct.version>1.5.5.Final</org.mapstruct.version>
-        <lombok.version>1.18.34</lombok.version>
+        <org.mapstruct.version>1.6.3</org.mapstruct.version>
+        <lombok.version>1.18.38</lombok.version>
+        <spring-cloud.version>2025.0.0</spring-cloud.version>
     </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
     <dependencies>
 
@@ -74,17 +87,17 @@
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
-            <version>0.11.5</version>
+            <version>0.12.6</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
-            <version>0.11.5</version>
+            <version>0.12.6</version>
         </dependency>
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.11.5</version>
+            <version>0.12.6</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
@@ -107,7 +120,7 @@
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
-            <version>5.1.2</version>
+            <version>5.2.0</version>
         </dependency>
 
         <!-- Mail & Template -->
@@ -124,7 +137,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.5.0</version>
+            <version>2.8.9</version>
         </dependency>
 
         <!-- Monitoring -->
@@ -135,7 +148,7 @@
         <dependency>
             <groupId>de.codecentric</groupId>
             <artifactId>spring-boot-admin-starter-client</artifactId>
-            <version>3.3.2</version>
+            <version>3.5.1</version>
         </dependency>
 
         <!-- Lombok & MapStruct -->
@@ -155,17 +168,17 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>5.3.0</version>
+            <version>5.4.1</version>
         </dependency>
         <dependency>
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports</artifactId>
-            <version>6.20.0</version>
+            <version>7.0.3</version>
         </dependency>
         <dependency>
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports-fonts</artifactId>
-            <version>6.20.0</version>
+            <version>7.0.3</version>
         </dependency>
 
         <!-- Validation -->
@@ -174,11 +187,10 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- Jackson for Java Time -->
+        <!-- Jackson for Java Time (managed by Spring Boot BOM, do not pin old version) -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>2.14.0</version>
         </dependency>
 
 
@@ -191,31 +203,25 @@
         <dependency>
             <groupId>io.zipkin.brave</groupId>
             <artifactId>brave</artifactId>
-            <version>5.13.10</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
+            <version>6.0.3</version>
         </dependency>
 
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-openfeign</artifactId>
-            <version>4.1.2</version>
         </dependency>
 
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>33.2.1-jre</version>
+            <version>33.4.8-jre</version>
         </dependency>
 
         <!-- Source: https://mvnrepository.com/artifact/org.apache.httpcomponents.client5/httpclient5 -->
         <dependency>
             <groupId>org.apache.httpcomponents.client5</groupId>
             <artifactId>httpclient5</artifactId>
-            <version>5.3.1</version>
+            <version>5.4.4</version>
         </dependency>
     </dependencies>
 
@@ -236,14 +242,14 @@
                 </configuration>
             </plugin>
 
-            <!-- Compiler plugin (fix TypeTag issue) -->
+            <!-- Compiler plugin -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.13.0</version>
+                <version>3.14.0</version>
                 <configuration>
-                    <source>21</source>
-                    <target>21</target>
+                    <release>21</release>
+                    <parameters>true</parameters>
                     <annotationProcessorPaths>
                         <path>
                             <groupId>org.projectlombok</groupId>
@@ -267,14 +273,11 @@
                 </configuration>
             </plugin>
 
-            <!-- Skip tests for faster packaging -->
+            <!-- Tests run in build (do not skip; use -DskipTests only for emergency) -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
-                <configuration>
-                    <skipTests>true</skipTests>
-                </configuration>
+                <version>3.5.3</version>
             </plugin>
 
         </plugins>

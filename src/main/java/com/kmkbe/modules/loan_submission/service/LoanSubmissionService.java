@@ -46,7 +46,6 @@ import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jfree.util.Log;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -110,7 +109,7 @@ public class LoanSubmissionService {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
     }
 
-    Log.info("Customer code {} " + customer.getCustExternalCode());
+    log.info("Customer code {} ", customer.getCustExternalCode());
 
     Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null);
     if (bouwheerOptional.isEmpty()) {

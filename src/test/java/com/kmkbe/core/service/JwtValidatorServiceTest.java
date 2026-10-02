@@ -5,7 +5,6 @@ import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.modules.api_sbu.repository.ApiSbuRepository;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
 import org.junit.jupiter.api.Test;
 
@@ -68,9 +67,9 @@ class JwtValidatorServiceTest {
     private String token(String bouwheer, Instant issuedAt, Instant expiresAt) {
         return Jwts.builder()
                 .claim("bouwheer_code", bouwheer)
-                .setIssuedAt(Date.from(issuedAt))
-                .setExpiration(Date.from(expiresAt))
-                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes()), SignatureAlgorithm.HS256)
+                .issuedAt(Date.from(issuedAt))
+                .expiration(Date.from(expiresAt))
+                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes()), Jwts.SIG.HS256)
                 .compact();
     }
 }
