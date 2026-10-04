@@ -15,6 +15,7 @@ import com.kmkbe.core.domain.entity.Invoice;
 import com.kmkbe.core.domain.entity.MstFileType;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
+import com.kmkbe.core.domain.model.AgreementContractEmailPayload;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.repository.AgreementFileRepository;
 import com.kmkbe.core.domain.repository.AgreementRepository;
@@ -48,6 +49,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
@@ -399,6 +402,17 @@ class AgreementServiceTest {
         financingHdr.setBouwheer(bouwheer());
         financingHdr.setFinancingStatus("TEST");
         financingHdr.setFinancingStep("TEST");
+        financingHdr.setTotalInvoiceAmt(2_000_000D);
+        financingHdr.setRetention(20D);
+        financingHdr.setFinancingAmt(1_600_000D);
+        financingHdr.setAdminFeeAmt(10_000D);
+        financingHdr.setLegalFeeAmtNett(20_000D);
+        financingHdr.setInsuranceFeeAmt(30_000D);
+        financingHdr.setOthersFeeAmt(5_000D);
+        financingHdr.setProvisionFeeAmt(15_000D);
+        financingHdr.setSurveyFeeAmtNett(20_000D);
+        financingHdr.setTenor(30L);
+        financingHdr.setDisburseAmt(1_500_000D);
         when(agreementRepository.findById("AGR001")).thenReturn(Optional.empty());
         BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = new BaseMstRemoteResponseDto<>();
         response.setData(List.of(inquiryAgreement("CWR001", "AGR001")));
@@ -413,7 +427,16 @@ class AgreementServiceTest {
         assertThat(financingHdr.getFinancingStatus()).isEqualTo("INPROCESS");
         assertThat(financingHdr.getFinancingStep()).isEqualTo("INPROCESS");
         verify(financingHdrRepository).save(financingHdr);
-        verify(emailService).sendNotificationContractUploadRequired(eq("branch.admin@csul.co.id"), any());
+        ArgumentCaptor<AgreementContractEmailPayload> mailPayload = ArgumentCaptor.forClass(AgreementContractEmailPayload.class);
+        verify(emailService).sendNotificationContractUploadRequired(eq("branch.admin@csul.co.id"), mailPayload.capture());
+        assertThat(mailPayload.getValue().getCwrCode()).isEqualTo("CWR001");
+        assertThat(mailPayload.getValue().getTotalInvoiceAmt()).isEqualTo("Rp 2.000.000");
+        assertThat(mailPayload.getValue().getRetention()).isEqualTo("20%");
+        assertThat(mailPayload.getValue().getFinancingAmt()).isEqualTo("Rp 1.600.000");
+        assertThat(mailPayload.getValue().getTotalFeeAmt()).isEqualTo("Rp 100.000");
+        assertThat(mailPayload.getValue().getTenor()).isEqualTo("30 hari");
+        assertThat(mailPayload.getValue().getDisburseAmt()).isEqualTo("Rp 1.500.000");
+        assertThat(mailPayload.getValue().getInvoices()).contains("INV001");
         verify(emailService, never()).sendNotificationBouwheerPayment(any(), any());
         verify(financingRemoteService, never()).postedSubmission(any());
     }
@@ -480,9 +503,10 @@ class AgreementServiceTest {
 
         ReflectionTestUtils.invokeMethod(
                 service,
-                "sendContractUploadRequiredNotification",
-                financingHdr(),
-                "AGR-NO-RECIPIENT"
+                 "sendContractUploadRequiredNotification",
+                 financingHdr(),
+                 "AGR-NO-RECIPIENT",
+                 "CWR001"
         );
 
         verify(emailService, never()).sendNotificationContractUploadRequired(any(), any());
@@ -495,9 +519,10 @@ class AgreementServiceTest {
 
         ReflectionTestUtils.invokeMethod(
                 service,
-                "sendContractUploadRequiredNotification",
-                financingHdr(),
-                "AGR-SISCA-ERROR"
+                 "sendContractUploadRequiredNotification",
+                 financingHdr(),
+                 "AGR-SISCA-ERROR",
+                 "CWR001"
         );
 
         verify(emailService, never()).sendNotificationContractUploadRequired(any(), any());
@@ -507,16 +532,40 @@ class AgreementServiceTest {
     void contractUploadNotificationUsesDistinctDbEmailsForBranch() {
         when(mstAppRoleFormUserRepository.findActiveBranchAdminEmails("412"))
                 .thenReturn(List.of(" branch.admin@csul.co.id ", "branch.admin@csul.co.id", "other.admin@csul.co.id"));
+        when(financingDtlRepository.findAllByFinancingHdr(any(FinancingHdr.class)))
+                .thenReturn(Optional.of(List.of(financingDtl(true))));
 
         ReflectionTestUtils.invokeMethod(
                 service,
-                "sendContractUploadRequiredNotification",
-                financingHdr(),
-                "AGR-MULTI-RECIPIENT"
+                 "sendContractUploadRequiredNotification",
+                 financingHdr(),
+                 "AGR-MULTI-RECIPIENT",
+                 "CWR001"
         );
 
         verify(emailService).sendNotificationContractUploadRequired(
                 eq("branch.admin@csul.co.id;other.admin@csul.co.id"), any());
+    }
+
+    @Test
+    void contractUploadNotificationWaitsUntilTransactionCommit() {
+        when(financingDtlRepository.findAllByFinancingHdr(any(FinancingHdr.class)))
+                .thenReturn(Optional.of(List.of(financingDtl(true))));
+        TransactionSynchronizationManager.initSynchronization();
+        TransactionSynchronizationManager.setActualTransactionActive(true);
+        try {
+            ReflectionTestUtils.invokeMethod(service, "sendContractUploadRequiredNotification",
+                    financingHdr(), "AGR001", "CWR001");
+            verify(emailService, never()).sendNotificationContractUploadRequired(any(), any());
+
+            TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(TransactionSynchronization::afterCommit);
+            verify(emailService).sendNotificationContractUploadRequired(
+                    eq("branch.admin@csul.co.id"), any());
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+            TransactionSynchronizationManager.setActualTransactionActive(false);
+        }
     }
 
     @Test

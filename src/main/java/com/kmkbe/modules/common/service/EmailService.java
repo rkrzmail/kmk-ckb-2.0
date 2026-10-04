@@ -47,7 +47,7 @@ public class EmailService {
   private static final String M_BRANCH_ASSIGN_MJR = "M_BRANCH_ASSIGN_MJR";
   private static final String M_BOUWHEER_PAYMENT = "M_BOUWHEER_PAYMENT";
   private static final String M_FINANCE_INVOICE_PAID = "M_FINANCE_INVOICE_PAID";
-  private static final String M_BRANCH_CONTRACT_UPLOAD = "M_BRANCH_CONTRACT_UPLOAD";
+  private static final String M_BRANCH_UTILIZATION_PLACEMENT = "M_BRANCH_UTILIZATION_PLACEMENT";
   private static final String M_CUST_LOAD_CHANGE = "M_CUST_LOAD_CHANGE";
   private static final String M_CUST_PENCAIRAN = "M_CUST_PENCAIRAN";//(5)
   private static final String M_SIM_LOAN = "M_SIM_LOAN";//(1)
@@ -542,14 +542,15 @@ public class EmailService {
     AgreementContractEmailPayload payload
   ) {
     try {
-      Map<String, Object> args = new HashMap<>();
-      args.put("additionalArgs", ObjectUtils.objectToJson(payload));
+      Map<String, Object> fields = ObjectUtils.objectToJson(payload);
+      fields.replaceAll((key, value) -> "invoices".equals(key)
+        ? value : HtmlUtils.htmlEscape(value == null ? "" : value.toString()));
 
-      EmailTemplate template = loadTemplate(M_BRANCH_CONTRACT_UPLOAD);
+      EmailTemplate template = loadTemplate(M_BRANCH_UTILIZATION_PLACEMENT);
       template.setMailTo(branchAdminEmails);
       template.setSubjectMail(template.getSubjectMail().replace("{agreementCode}", payload.getAgreementCode()));
 
-      send(args, template);
+      send(Map.of("additionalArgs", fields), template);
       log.info("Send email Notification laon contract uplaod to : {} ", branchAdminEmails);
     } catch (Exception e) {
       log.error(
