@@ -14,6 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.Base64;
 import java.util.Date;
@@ -92,7 +93,7 @@ public class JwtValidatorService {
     Claims claims;
     try {
       claims = Jwts.parser()
-        .verifyWith(Keys.hmacShaKeyFor(appSecret.getBytes()))   // secret key dari DB
+        .verifyWith(Keys.hmacShaKeyFor(appSecret.getBytes(StandardCharsets.UTF_8)))   // secret key dari DB
         .build()
         .parseSignedClaims(jwtToken)              // jika signature salah → throw security.SignatureException
         .getPayload();

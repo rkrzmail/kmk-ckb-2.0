@@ -49,6 +49,7 @@ class InvoicePaidNotificationTest {
       mock(BaseRemoteService.class), mock(ObjectMapper.class), mock(RestTemplate.class), publisher);
     FinancingHdr financing = new FinancingHdr();
     financing.setFinancingHdrCode(financingCode);
+    financing.setTotalInvoiceAmt(100.0);
     Invoice invoice = Invoice.builder().custInvNo("INV-1").invoiceAmt(100.0).status("UNPAID").build();
     FinancingDtl detail = FinancingDtl.builder().invoice(invoice).build();
     when(details.findAllByFinancingHdrForUpdate(financing)).thenReturn(List.of(detail));

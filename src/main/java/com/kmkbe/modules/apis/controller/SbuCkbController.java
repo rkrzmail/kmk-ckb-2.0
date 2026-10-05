@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.feign.model.dto.CsulInquiryInvoiceRemoteDto;
 import com.kmkbe.helpers.base.BaseResponse;
-import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.modules.apis.service.ApiSbuCkbService;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
