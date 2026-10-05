@@ -902,6 +902,7 @@ public class LoanSubmissionService {
     CreatedSimulationDto result = CreatedSimulationDto.builder()
       .productId(request.getProductId())
       .financingHdrCode(finalFinancingHdr.getFinancingHdrCode())
+      .totalInvoiceAmount(BigDecimal.valueOf(finalFinancingHdr.getTotalInvoiceAmt()))
       .invoices(createdInvoices)
       .build();
 

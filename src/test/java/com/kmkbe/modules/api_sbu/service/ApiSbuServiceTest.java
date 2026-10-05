@@ -187,7 +187,7 @@ class ApiSbuServiceTest {
     ApiSbuRequest request = apiSbuRequest("Created App");
     when(bouwheerRepository.findByBouwheerCode(BOUWHEER_CODE)).thenReturn(Optional.of(Bouwheer.builder().build()));
     when(apiSbuRepository.findByBouwheerCodeAndAppName(BOUWHEER_CODE, request.getAppName())).thenReturn(Optional.empty());
-    when(jwtGeneratorService.generateToken(anyString(), anyString(), eq(BOUWHEER_CODE.toString()), eq(EXPIRED_DATE)))
+    when(jwtGeneratorService.generateToken(anyString(), eq(BOUWHEER_CODE.toString()), eq(EXPIRED_DATE)))
         .thenReturn("jwt-token");
     when(currentUserService.usernameOrDefault(AppConstants.CREATOR)).thenReturn(AppConstants.CREATOR);
     when(apiSbuRepository.save(any(ApiSbu.class))).thenAnswer(invocation -> {
@@ -214,7 +214,7 @@ class ApiSbuServiceTest {
     when(bouwheerRepository.findByBouwheerCode(BOUWHEER_CODE)).thenReturn(Optional.of(Bouwheer.builder().build()));
     when(apiSbuRepository.findByBouwheerCodeAndAppName(BOUWHEER_CODE, request.getAppName()))
         .thenReturn(Optional.of(existingDifferentApp));
-    when(jwtGeneratorService.generateToken(anyString(), anyString(), eq(BOUWHEER_CODE.toString()), eq(EXPIRED_DATE)))
+    when(jwtGeneratorService.generateToken(anyString(), eq(BOUWHEER_CODE.toString()), eq(EXPIRED_DATE)))
         .thenReturn("jwt-token");
     when(currentUserService.usernameOrDefault(AppConstants.CREATOR)).thenReturn(AppConstants.CREATOR);
     when(apiSbuRepository.save(any(ApiSbu.class))).thenAnswer(invocation -> invocation.getArgument(0));
