@@ -41,15 +41,19 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.text.NumberFormat;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -374,7 +378,7 @@ public class AgreementService {
       financingHdr.setFinancingStep(financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")?financingHdr.getFinancingStep():"INPROCESS");
       FinancingHdr savedFinancing = financingHdrRepository.save(financingHdr);
       auditTrailService.record("AGREEMENT", AuditAction.UPDATE, "FinancingHdr", savedFinancing.getFinancingHdrCode(), before, toFinancingAgreementAuditData(savedFinancing));
-      sendContractUploadRequiredNotification(savedFinancing, request.getAgreementNo());
+      sendContractUploadRequiredNotification(savedFinancing, request.getAgreementNo(), request.getCwrCode());
     } catch (Exception e) {
       log.error("createAgreement: error {}", e.getMessage());
       throw e;
@@ -509,7 +513,7 @@ public class AgreementService {
     return value == null ? 0D : value;
   }
 
-  private void sendContractUploadRequiredNotification(FinancingHdr financingHdr, String agreementCode) {
+  private void sendContractUploadRequiredNotification(FinancingHdr financingHdr, String agreementCode, String cwrCode) {
     try {
       if (financingHdr.getMstBranch() == null) {
         log.warn("Contract upload notification skipped: branch is empty for financingHdrCode={}", financingHdr.getFinancingHdrCode());
@@ -536,18 +540,69 @@ public class AgreementService {
         financingHdr.getFinancingHdrCode(), agreementCode, branchCode, recipients.size()
       );
 
-      emailService.sendNotificationContractUploadRequired(
-        String.join(";", recipients),
-        AgreementContractEmailPayload.builder()
+      List<FinancingDtl> details = financingDtlRepository.findAllByFinancingHdr(financingHdr).orElse(List.of());
+      if (details.isEmpty()) {
+        log.warn("Contract upload notification skipped: no invoice for financingHdrCode={}", financingHdr.getFinancingHdrCode());
+        return;
+      }
+
+      double totalFeeAmount = valueOrZero(financingHdr.getAdminFeeAmt())
+        + valueOrZero(financingHdr.getLegalFeeAmtNett())
+        + valueOrZero(financingHdr.getInsuranceFeeAmt())
+        + valueOrZero(financingHdr.getOthersFeeAmt())
+        + valueOrZero(financingHdr.getProvisionFeeAmt())
+        + valueOrZero(financingHdr.getSurveyFeeAmtNett());
+      NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID"));
+      numberFormat.setMaximumFractionDigits(2);
+      List<InvoiceEmailPayload> invoices = details.stream()
+        .filter(detail -> detail.getInvoice() != null)
+        .map(detail -> InvoiceEmailPayload.builder()
+          .invoiceNo(detail.getInvoice().getCustInvNo())
+          .description(detail.getInvoice().getInvoiceDescription())
+          .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+          .invoiceDate(DateTimeUtils.formatToDate(detail.getInvoice().getInvoiceDate()))
+          .invoiceDueDate(DateTimeUtils.formatToDate(detail.getInvoice().getInvoiceDueDate()))
+          .invoiceAmt(numberFormat.format(detail.getInvoice().getInvoiceAmt()))
+          .build())
+        .toList();
+      if (invoices.isEmpty()) {
+        log.warn("Contract upload notification skipped: no valid invoice for financingHdrCode={}", financingHdr.getFinancingHdrCode());
+        return;
+      }
+
+      Customer customer = financingHdr.getCustomer();
+      AgreementContractEmailPayload payload = AgreementContractEmailPayload.builder()
           .agreementCode(agreementCode)
           .financingCode(financingHdr.getFinancingHdrCode().toString())
-          .vendorCode(financingHdr.getCustomer().getCustExternalCode())
-          .vendorName(financingHdr.getCustomer().getCustName())
+          .vendorCode(customer.getCustExternalCode())
+          .vendorName(customer.getCustName())
+          .vendorEmail(customer.getCustEmail())
+          .vendorPhone(customer.getCustMobilePhone())
           .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
           .bouwheerPicEmails(financingHdr.getBouwheer().getPicEmail())
           .branchName(financingHdr.getMstBranch().getBranchName())
-          .build()
-      );
+          .submissionDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
+          .cwrCode(cwrCode)
+          .totalInvoiceAmt("Rp " + numberFormat.format(valueOrZero(financingHdr.getTotalInvoiceAmt())))
+          .retention(numberFormat.format(valueOrZero(financingHdr.getRetention())) + "%")
+          .financingAmt("Rp " + numberFormat.format(valueOrZero(financingHdr.getFinancingAmt())))
+          .totalFeeAmt("Rp " + numberFormat.format(totalFeeAmount))
+          .tenor(financingHdr.getTenor() == null ? "-" : financingHdr.getTenor() + " hari")
+          .disburseAmt("Rp " + numberFormat.format(valueOrZero(financingHdr.getDisburseAmt())))
+          .invoices(InvoiceEmailPayload.toHtmlListBody(invoices))
+          .build();
+      String recipientList = String.join(";", recipients);
+      if (TransactionSynchronizationManager.isSynchronizationActive()
+        && TransactionSynchronizationManager.isActualTransactionActive()) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+          @Override
+          public void afterCommit() {
+            emailService.sendNotificationContractUploadRequired(recipientList, payload);
+          }
+        });
+      } else {
+        emailService.sendNotificationContractUploadRequired(recipientList, payload);
+      }
     } catch (Exception e) {
       log.error(
         "Contract upload notification failed while resolving Branch Admin emails from DB. financingHdrCode={}, agreementCode={}, branchCode={}",
