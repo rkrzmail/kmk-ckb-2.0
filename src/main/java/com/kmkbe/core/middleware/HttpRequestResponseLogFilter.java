@@ -1,13 +1,11 @@
 package com.kmkbe.core.middleware;
 
-import com.kmkbe.core.service.LoggingService;
 import com.kmkbe.core.utils.HttpUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
-import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.AbstractRequestLoggingFilter;
 import org.springframework.web.util.ContentCachingRequestWrapper;
@@ -17,18 +15,13 @@ import java.util.Map;
 
 @Component
 public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
-    private final ApplicationContext applicationContext;
-    private final LoggingService loggingService;
 
-    public HttpRequestResponseLogFilter(LoggingService loggingService, ApplicationContext applicationContext) {
+    public HttpRequestResponseLogFilter() {
         setIncludeClientInfo(true);
         setIncludeQueryString(true);
         setIncludeHeaders(true);
         setIncludePayload(true);
         setMaxPayloadLength(HttpUtils.DEFAULT_MAX_PAYLOAD_LENGTH);
-
-        this.loggingService = loggingService;
-        this.applicationContext = applicationContext;
     }
 
     @Override
@@ -82,16 +75,6 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
             if (requestLog.get("payload") == null) {
                 requestLog.put("payload", ((HttpServletRequestCopier) requestToUse).getPayload());
             }
-
-            /*loggingService.create(
-                    HttpLoggerPayload.builder()
-                            .uri(request.getRequestURI())
-                            .statusCode(response.getStatus())
-                            .httpMethod(request.getMethod())
-                            .request(requestLog)
-                            .response(responseLog)
-                            .build()
-            );*/
         }
     }
 
