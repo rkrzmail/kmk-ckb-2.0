@@ -1632,21 +1632,6 @@ public class LoanSubmissionService {
     return productOptional;
   }
 
-  private Product findProductByIdAndBouwheer(Long productId, String bouwheerCode) {
-    Product product = productRepository.findById(productId).orElseThrow();
-    UUID parsedBouwheerCode = parseBouwheerCode(bouwheerCode);
-
-    if (parsedBouwheerCode == null || product.getBouwheer() == null) {
-      return product;
-    }
-
-    if (!parsedBouwheerCode.equals(product.getBouwheer().getBouwheerCode())) {
-      throw new IllegalStateException("Product not found for selected Bouwheer");
-    }
-
-    return product;
-  }
-
   private UUID parseBouwheerCode(String bouwheerCode) {
     if (StringUtil.isNullOrEmpty(bouwheerCode)) {
       return null;
