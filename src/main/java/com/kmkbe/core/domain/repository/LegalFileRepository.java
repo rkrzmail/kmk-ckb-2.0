@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface LegalFileRepository extends JpaRepository<LegalFile, Long>, JpaSpecificationExecutor<LegalFile> {
+    boolean existsByFileTypeCode_FileTypeCode(String fileTypeCode);
     List<LegalFile> findAllByCustCode(Customer customer);
 
     Optional<LegalFile> findByCustCodeAndFileTypeCode(Customer customer, MstFileType fileType);
