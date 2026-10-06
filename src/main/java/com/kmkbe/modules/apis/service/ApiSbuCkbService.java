@@ -108,7 +108,6 @@ public class ApiSbuCkbService {
     Map<String, Object> response;
     try {
       String token = jwtGeneratorService.generateToken(
-        apiKey,
         strSecret,
         bouwheerCode,
         expireDate

@@ -793,10 +793,10 @@ public class LoanSubmissionService {
     final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null)
       .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
 
-    final double totalInvoiceAmount = request.getInvoices()
-      .stream()
-      .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
-      .sum();
+//    final double totalInvoiceAmount = request.getInvoices()
+//      .stream()
+//      .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
+//      .sum();
 
     final Date maxInvoiceDueDate = request.getInvoices()
       .stream()
@@ -806,7 +806,7 @@ public class LoanSubmissionService {
 
     final CalculateSimulationRequest simulation = new CalculateSimulationRequest();
     simulation.setDisbursePercentage(request.getDisbursePercentage());
-    simulation.setTotalInvoiceAmount(BigDecimal.valueOf(totalInvoiceAmount).setScale(2, RoundingMode.CEILING));
+    simulation.setTotalInvoiceAmount(BigDecimal.valueOf(request.getTotalInvoiceAmount()).setScale(2, RoundingMode.CEILING));
     simulation.setBouwheerCode(request.getInvoices().getFirst().getBouwheerCode());
     simulation.setInvoiceDueDate(
       DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
@@ -834,7 +834,7 @@ public class LoanSubmissionService {
       .financingAmount(calculateDisburse.getFinancingAmount())
       .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
       .maxInvoiceDate(maxInvoiceDueDate)
-      .totalInvoiceAmount(totalInvoiceAmount)
+      .totalInvoiceAmount(request.getTotalInvoiceAmount())
       .interestFeeAmount(calculateDisburse.getInterestFeeAmount())
       .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
       .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
@@ -902,6 +902,7 @@ public class LoanSubmissionService {
     CreatedSimulationDto result = CreatedSimulationDto.builder()
       .productId(request.getProductId())
       .financingHdrCode(finalFinancingHdr.getFinancingHdrCode())
+      .totalInvoiceAmount(BigDecimal.valueOf(finalFinancingHdr.getTotalInvoiceAmt()))
       .invoices(createdInvoices)
       .build();
 
@@ -920,7 +921,8 @@ public class LoanSubmissionService {
         bouwheer.getBouwheerCode(),
         request.getProductId(),
         createdInvoices.size(),
-        totalInvoiceAmount,
+//        totalInvoiceAmount,
+        request.getTotalInvoiceAmount(),
         finalFinancingHdr.getFinancingAmt(),
         finalFinancingHdr.getDisburseAmt()
       )
@@ -1628,21 +1630,6 @@ public class LoanSubmissionService {
       throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Product not found");
     }
     return productOptional;
-  }
-
-  private Product findProductByIdAndBouwheer(Long productId, String bouwheerCode) {
-    Product product = productRepository.findById(productId).orElseThrow();
-    UUID parsedBouwheerCode = parseBouwheerCode(bouwheerCode);
-
-    if (parsedBouwheerCode == null || product.getBouwheer() == null) {
-      return product;
-    }
-
-    if (!parsedBouwheerCode.equals(product.getBouwheer().getBouwheerCode())) {
-      throw new IllegalStateException("Product not found for selected Bouwheer");
-    }
-
-    return product;
   }
 
   private UUID parseBouwheerCode(String bouwheerCode) {

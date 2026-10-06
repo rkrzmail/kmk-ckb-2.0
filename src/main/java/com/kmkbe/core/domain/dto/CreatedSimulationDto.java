@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,5 +14,6 @@ import java.util.UUID;
 public class CreatedSimulationDto {
     private Long productId;
     private UUID financingHdrCode;
+    private BigDecimal totalInvoiceAmount;
     private List<InvoiceDto> invoices;
 }

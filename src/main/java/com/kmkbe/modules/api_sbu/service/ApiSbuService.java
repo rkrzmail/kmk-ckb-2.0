@@ -198,7 +198,6 @@ public class ApiSbuService {
       .appKey(apiKey)
       .appSecret(appSecret)
       .tokenJwt(jwtGeneratorService.generateToken(
-        apiKey,
         appSecret,
         request.getBouwheerCode(),
         request.getExpiredDate()
