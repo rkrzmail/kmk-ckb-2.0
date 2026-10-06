@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface AgreementFileSigningRepository extends JpaRepository<AgreementFileSigning, Long> {
+  boolean existsByFileTypeCode(String fileTypeCode);
 
   Optional<AgreementFileSigning> findByDocumentId(String documentId);
 
