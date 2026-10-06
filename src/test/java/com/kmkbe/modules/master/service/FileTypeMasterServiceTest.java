@@ -9,6 +9,8 @@ import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.modules.master.request.FileTypeRequest;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -21,6 +23,7 @@ import org.springframework.data.jpa.domain.Specification;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -32,6 +35,7 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class FileTypeMasterServiceTest {
     @Mock MstFileTypeRepository repository;
+    @Mock BouwheerRepository bouwheerRepository;
     @Mock LegalFileRepository legalFileRepository;
     @Mock AgreementFileRepository agreementFileRepository;
     @Mock AgreementFileSigningRepository signingRepository;
@@ -63,6 +67,33 @@ class FileTypeMasterServiceTest {
         assertThat(captor.getValue().getPageNumber()).isEqualTo(1);
         assertThat(captor.getValue().getPageSize()).isEqualTo(5);
         assertThat(captor.getValue().getSort().getOrderFor("fileTypeName").getDirection().name()).isEqualTo("DESC");
+    }
+
+    @Test
+    void listsBouwheerNameWithOneBatchLookup() {
+        UUID bouwheerCode = UUID.randomUUID();
+        MstFileType first = MstFileType.builder().fileTypeCode("A").bouwheerCode(bouwheerCode).build();
+        MstFileType second = MstFileType.builder().fileTypeCode("B").bouwheerCode(bouwheerCode).build();
+        when(repository.findAll(any(Specification.class), any(Pageable.class)))
+            .thenReturn(new PageImpl<>(List.of(first, second)));
+        when(bouwheerRepository.findAllById(any()))
+            .thenReturn(List.of(Bouwheer.builder().bouwheerCode(bouwheerCode).bouwheerName("PT CKB").build()));
+
+        var result = service.list(new BasePaginationRequest());
+
+        assertThat(result.getList()).extracting("bouwheerName").containsExactly("PT CKB", "PT CKB");
+        verify(bouwheerRepository).findAllById(any());
+    }
+
+    @Test
+    void detailIncludesBouwheerName() {
+        UUID bouwheerCode = UUID.randomUUID();
+        when(repository.findById("A")).thenReturn(Optional.of(
+            MstFileType.builder().fileTypeCode("A").bouwheerCode(bouwheerCode).build()));
+        when(bouwheerRepository.findById(bouwheerCode)).thenReturn(Optional.of(
+            Bouwheer.builder().bouwheerCode(bouwheerCode).bouwheerName("PT CKB").build()));
+
+        assertThat(service.get("A").bouwheerName()).isEqualTo("PT CKB");
     }
 
     @Test
