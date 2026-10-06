@@ -11,6 +11,8 @@ import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.modules.master.request.FileTypeRequest;
 import com.kmkbe.modules.master.response.FileTypeResponse;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.bouwheer.repository.BouwheerRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
@@ -25,6 +27,9 @@ import java.time.LocalDateTime;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 
 @Service
 @RequiredArgsConstructor
@@ -42,6 +47,7 @@ public class FileTypeMasterService {
     );
 
     private final MstFileTypeRepository repository;
+    private final BouwheerRepository bouwheerRepository;
     private final LegalFileRepository legalFileRepository;
     private final AgreementFileRepository agreementFileRepository;
     private final AgreementFileSigningRepository signingRepository;
@@ -86,13 +92,19 @@ public class FileTypeMasterService {
         Sort sort = Sort.by(direction, sortBy);
         if (!sortBy.equals("fileTypeCode")) sort = sort.and(Sort.by("fileTypeCode"));
         Page<MstFileType> page = repository.findAll(filter, PageRequest.of(pageNo - 1, pageSize, sort));
+        Set<UUID> bouwheerCodes = page.getContent().stream()
+            .map(MstFileType::getBouwheerCode).filter(java.util.Objects::nonNull).collect(Collectors.toSet());
+        Map<UUID, String> bouwheerNames = bouwheerCodes.isEmpty() ? Map.of() : StreamSupport
+            .stream(bouwheerRepository.findAllById(bouwheerCodes).spliterator(), false)
+            .collect(Collectors.toMap(Bouwheer::getBouwheerCode, Bouwheer::getBouwheerName));
         return new PaginationResult<>(pageNo, page.getTotalPages(), page.getTotalElements(),
-            page.map(FileTypeResponse::from).getContent());
+            page.map(entity -> FileTypeResponse.from(entity, entity.getBouwheerCode() == null
+                ? null : bouwheerNames.get(entity.getBouwheerCode()))).getContent());
     }
 
     @Transactional(readOnly = true)
     public FileTypeResponse get(String code) {
-        return FileTypeResponse.from(find(code));
+        return toResponse(find(code));
     }
 
     @Transactional
@@ -104,7 +116,7 @@ public class FileTypeMasterService {
         apply(entity, request);
         entity.setUsrCrt(currentUserService.usernameOrDefault("SYSTEM"));
         entity.setDtmCrt(LocalDateTime.now());
-        return FileTypeResponse.from(repository.save(entity));
+        return toResponse(repository.save(entity));
     }
 
     @Transactional
@@ -116,7 +128,7 @@ public class FileTypeMasterService {
         apply(entity, request);
         entity.setUsrUpd(currentUserService.usernameOrDefault("SYSTEM"));
         entity.setDtmUpd(LocalDateTime.now());
-        return FileTypeResponse.from(repository.save(entity));
+        return toResponse(repository.save(entity));
     }
 
     @Transactional
@@ -138,6 +150,13 @@ public class FileTypeMasterService {
     private MstFileType find(String code) {
         return repository.findById(code).orElseThrow(() ->
             new BusinessException(HttpStatus.NOT_FOUND, 404, "File type tidak ditemukan: " + code));
+    }
+
+    private FileTypeResponse toResponse(MstFileType entity) {
+        UUID bouwheerCode = entity.getBouwheerCode();
+        String bouwheerName = bouwheerCode == null ? null : bouwheerRepository.findById(bouwheerCode)
+            .map(Bouwheer::getBouwheerName).orElse(null);
+        return FileTypeResponse.from(entity, bouwheerName);
     }
 
     private void apply(MstFileType entity, FileTypeRequest request) {
