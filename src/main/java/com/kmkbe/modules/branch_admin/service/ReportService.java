@@ -19,6 +19,8 @@ import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
+import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -47,67 +49,41 @@ import org.slf4j.LoggerFactory;
 import net.sf.jasperreports.engine.JRException;
 
 @Service
+@RequiredArgsConstructor
 public class ReportService {
 
   private static final Logger log = LoggerFactory.getLogger(ReportService.class);
-
-  @Autowired
+  
   private FinancingHdrRepository financingHdrRepository;
-
-  @Autowired
   private CsulSignerRepository csulSignerRepository;
-
-  @Autowired
   private AgreementCodeService agreementCodeService;
-
-  @Autowired
   private AgreementFileSigningRepository agreementFileSigningRepository;
-
-  @Autowired
   private VisitorRepository visitorRepository;
-
-  @Autowired
   private CwrRepository cwrRepository;
-
-  @Autowired
   private MstBranchService mstBranchService;
-
-  @Autowired
   private AuthRemoteService authRemoteService;
-
-  @Autowired
   private EmailAo emailAo;
-
-  @Autowired
   private InvoiceService invoiceService;
-
-  @Autowired
   private AgreementRepository agreementRepo;
-
-  @Autowired
   private ExternalApiService externalApiService;
-
-  @Autowired
   private FinancingHdrService financingHdrService;
-
   private String jwtToken;
-  @Autowired
   private DebtorRepository debtorRepository;
-
-  @Autowired
+  private AgreementService agreementService;
+  
   @Qualifier("taskExecutor")
   private Executor executor;
 
-  @Autowired
+  
   private JasperReportRenderer jasperReportRenderer;
 
-  @Autowired
+  
   private SigningClient signingClient;
 
-  @Autowired
+  
   private AgreementFileSigningService agreementFileSigningService;
 
-  @Autowired
+  
   private SigningEligibilityService signingEligibilityService;
 
   private void ensureJwtToken() {
@@ -1071,6 +1047,20 @@ public class ReportService {
           financingHdrCode,
           "E_SIGN_DOC"
         );
+
+
+        Optional<FinancingHdr>financingHdrOptional = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
+        if(financingHdrOptional.isPresent()){
+          /**
+           * Send email to bouwheer
+           */
+          agreementService.sendBouwheerPaymentNotification(financingHdrOptional.get());
+
+          /**
+           * Send email to debtor
+           */
+          agreementService.sendDebtorDisbursementNotification(financingHdrOptional.get());
+        }
 
         return SigningResponse.builder()
           .success(true)
