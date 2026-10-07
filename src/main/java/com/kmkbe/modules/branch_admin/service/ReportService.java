@@ -19,8 +19,6 @@ import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
-import lombok.AllArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -49,42 +47,71 @@ import org.slf4j.LoggerFactory;
 import net.sf.jasperreports.engine.JRException;
 
 @Service
-@RequiredArgsConstructor
 public class ReportService {
 
   private static final Logger log = LoggerFactory.getLogger(ReportService.class);
-  
+
+  @Autowired
   private FinancingHdrRepository financingHdrRepository;
+
+  @Autowired
   private CsulSignerRepository csulSignerRepository;
+
+  @Autowired
   private AgreementCodeService agreementCodeService;
+
+  @Autowired
   private AgreementFileSigningRepository agreementFileSigningRepository;
+
+  @Autowired
   private VisitorRepository visitorRepository;
+
+  @Autowired
   private CwrRepository cwrRepository;
+
+  @Autowired
   private MstBranchService mstBranchService;
+
+  @Autowired
   private AuthRemoteService authRemoteService;
+
+  @Autowired
   private EmailAo emailAo;
+
+  @Autowired
   private InvoiceService invoiceService;
+
+  @Autowired
   private AgreementRepository agreementRepo;
+
+  @Autowired
   private ExternalApiService externalApiService;
+
+  @Autowired
   private FinancingHdrService financingHdrService;
+
   private String jwtToken;
+  @Autowired
   private DebtorRepository debtorRepository;
-  private AgreementService agreementService;
-  
+
+  @Autowired
   @Qualifier("taskExecutor")
   private Executor executor;
 
-  
+  @Autowired
   private JasperReportRenderer jasperReportRenderer;
 
-  
+  @Autowired
   private SigningClient signingClient;
 
-  
+  @Autowired
   private AgreementFileSigningService agreementFileSigningService;
 
-  
+  @Autowired
   private SigningEligibilityService signingEligibilityService;
+
+  @Autowired
+  private AgreementService agreementService;
 
   private void ensureJwtToken() {
     jwtToken = authRemoteService.fetchAuthJwt().getData();
@@ -848,60 +875,6 @@ public class ReportService {
     response.setTotalRetentionAmount("0");
     response.setTotalInvoiceAmount("0");
     return response;
-  }
-
-  private static String fmtDateObj(Object val) {
-    if (val == null) return "-";
-
-    final String targetFormat = "dd/MM/yyyy";
-    java.time.format.DateTimeFormatter outFmt = java.time.format.DateTimeFormatter.ofPattern(targetFormat);
-
-    try {
-      if (val instanceof java.util.Date) {
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(targetFormat);
-        return sdf.format((java.util.Date) val);
-      }
-
-      if (val instanceof java.time.LocalDate) {
-        return ((java.time.LocalDate) val).format(outFmt);
-      }
-
-      if (val instanceof java.time.LocalDateTime) {
-        return ((java.time.LocalDateTime) val).toLocalDate().format(outFmt);
-      }
-
-      if (val instanceof String) {
-        String s = ((String) val).trim();
-        if (s.isEmpty()) return "-";
-
-        try {
-          java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(
-            s,
-            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-          );
-          return ldt.toLocalDate().format(outFmt);
-        } catch (Exception ignore) {
-        }
-
-        try {
-          java.time.LocalDate ld = java.time.LocalDate.parse(s);
-          return ld.format(outFmt);
-        } catch (Exception ignore) {
-        }
-
-        try {
-          java.text.SimpleDateFormat inSdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-          java.util.Date d = inSdf.parse(s);
-          java.text.SimpleDateFormat outSdf = new java.text.SimpleDateFormat(targetFormat);
-          return outSdf.format(d);
-        } catch (Exception ignore) {
-        }
-      }
-
-      return val.toString();
-    } catch (Exception e) {
-      return "-";
-    }
   }
 
   private static String fmtDateObj2(Object val) {
