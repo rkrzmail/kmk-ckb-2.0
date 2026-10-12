@@ -200,6 +200,8 @@ public class AssignmentSubmissionService {
               .orElse(null))
             .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
             .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
+            .totalInvoiceAmount(e.getTotalInvoiceAmt() == null ? null : BigDecimal.valueOf(e.getTotalInvoiceAmt()))
+            .invoiceQty(e.getInvoiceQty())
             .custStatus(e.getCustomer().getExistingCust())
             .status(financingStatus.getStatus())
             .statusLabel(financingStatus.getLabel())
