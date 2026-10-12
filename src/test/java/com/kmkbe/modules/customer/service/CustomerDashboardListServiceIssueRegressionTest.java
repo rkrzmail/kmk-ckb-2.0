@@ -70,6 +70,8 @@ class CustomerDashboardListServiceIssueRegressionTest {
     financing.setFinancingStep("NEW");
     financing.setFinancingDueDate(LocalDateTime.of(2026, 10, 1, 0, 0));
     financing.setFinancingAmt(1_000_000D);
+    financing.setTotalInvoiceAmt(1_250_000.75D);
+    financing.setInvoiceQty(2L);
     financing.setAgreement(Set.of());
     java.util.List<FinancingDtl> financingDetails = java.util.List.of(
       financingDetail(" INV-002 "),
@@ -89,6 +91,8 @@ class CustomerDashboardListServiceIssueRegressionTest {
     assertThat(result.getList()).singleElement()
       .extracting(CustomerCreditFacilityNewDto::getInvoiceNo)
       .isEqualTo("INV-001, INV-002");
+    assertThat(result.getList().getFirst().getTotalInvoiceAmount()).isEqualByComparingTo("1250000.75");
+    assertThat(result.getList().getFirst().getInvoiceQty()).isEqualTo(2L);
   }
 
   @Test
@@ -140,6 +144,8 @@ class CustomerDashboardListServiceIssueRegressionTest {
     Customer customer = customer();
     FinancingHdr lowerAmount = financing(customer, 1_000_000D, LocalDateTime.of(2026, 10, 1, 0, 0));
     FinancingHdr higherAmount = financing(customer, 2_000_000D, LocalDateTime.of(2026, 11, 1, 0, 0));
+    higherAmount.setTotalInvoiceAmt(2_500_000D);
+    higherAmount.setInvoiceQty(4L);
 
     when(financingHdrRepository.findAllByRawOrder(
       eq(customer.getCustCode().toString()), eq(Pageable.unpaged())
@@ -157,6 +163,8 @@ class CustomerDashboardListServiceIssueRegressionTest {
     assertThat(result.getList()).singleElement()
       .extracting(CustomerCreditFacilityNewDto::getInvoiceNo)
       .isEqualTo("INV-HIGH");
+    assertThat(result.getList().getFirst().getTotalInvoiceAmount()).isEqualByComparingTo("2500000");
+    assertThat(result.getList().getFirst().getInvoiceQty()).isEqualTo(4L);
   }
 
   @Test

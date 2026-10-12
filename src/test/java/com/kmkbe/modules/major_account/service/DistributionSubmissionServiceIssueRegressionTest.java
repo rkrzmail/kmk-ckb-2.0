@@ -97,6 +97,20 @@ class DistributionSubmissionServiceIssueRegressionTest {
   }
 
   @Test
+  void distributionListIncludesInvoiceTotalsFromFinancingHeader() {
+    FinancingHdr financing = row("invoice-total", "Vendor", 1_000D, null);
+    financing.setTotalInvoiceAmt(1_250.75D);
+    financing.setInvoiceQty(3L);
+    when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(financing));
+
+    DistributionSubmissionDto dto = service.submissionDistribution(new PaginationRequest()).getList().getFirst();
+
+    assertThat(dto.getFinancingAmount()).isEqualByComparingTo("1000");
+    assertThat(dto.getTotalInvoiceAmount()).isEqualByComparingTo("1250.75");
+    assertThat(dto.getInvoiceQty()).isEqualTo(3L);
+  }
+
+  @Test
   void filtersSubmissionsUsingDashboardDateRangeBeforePagination() {
     when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(
       row("before", "Before", 1D, LocalDateTime.of(2026, 7, 31, 23, 59)),

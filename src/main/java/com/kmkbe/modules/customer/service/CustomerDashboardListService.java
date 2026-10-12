@@ -218,6 +218,8 @@ public class CustomerDashboardListService {
       .city(location.city())
       .dueDate(Utils.fromInstant(financing.getFinancingDueDate()))
       .financingAmount(BigDecimal.valueOf(financing.getFinancingAmt()))
+      .totalInvoiceAmount(financing.getTotalInvoiceAmt() == null ? null : BigDecimal.valueOf(financing.getTotalInvoiceAmt()))
+      .invoiceQty(financing.getInvoiceQty())
       .branchRecommendedCode(branch.recommendedCode())
       .branchRecommended(branch.recommendedName())
       .currentBranchCode(branch.currentCode())
