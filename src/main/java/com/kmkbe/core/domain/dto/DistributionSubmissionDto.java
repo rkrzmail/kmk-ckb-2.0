@@ -20,6 +20,8 @@ public class DistributionSubmissionDto {
     private String city;
     private Date dueDate;
     private BigDecimal financingAmount;
+    private BigDecimal totalInvoiceAmount;
+    private Long invoiceQty;
     private String branchRecommendedCode;
     private String branchRecommended;
     private String currentBranchCode;

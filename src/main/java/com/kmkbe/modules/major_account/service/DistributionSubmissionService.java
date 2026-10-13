@@ -166,6 +166,8 @@ public class DistributionSubmissionService {
             .city(city)
             .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
             .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
+            .totalInvoiceAmount(e.getTotalInvoiceAmt() == null ? null : BigDecimal.valueOf(e.getTotalInvoiceAmt()))
+            .invoiceQty(e.getInvoiceQty())
             .branchRecommendedCode(branchRecommendedCode)
             .branchRecommended(branchRecommended)
             .currentBranchCode(currentBranchCode)

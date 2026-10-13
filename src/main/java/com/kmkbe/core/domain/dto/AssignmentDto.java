@@ -22,6 +22,8 @@ public class AssignmentDto {
     private LocalDateTime verifDate;
     private Date dueDate;
     private BigDecimal financingAmount;
+    private BigDecimal totalInvoiceAmount;
+    private Long invoiceQty;
     private String custStatus;
     private String status;
     private String statusLabel;

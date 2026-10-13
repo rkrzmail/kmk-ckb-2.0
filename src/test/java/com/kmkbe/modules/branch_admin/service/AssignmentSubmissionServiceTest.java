@@ -153,6 +153,8 @@ class AssignmentSubmissionServiceTest {
   @Test
   void assignmentListReturnsAccountOfficerAssignmentsWithAgreementDocument() throws Exception {
     FinancingHdr financingHdr = financingHdr("INPROCESS", "ASSIGNMENT");
+    financingHdr.setTotalInvoiceAmt(1_250.75D);
+    financingHdr.setInvoiceQty(3L);
     financingHdr.getCustomer().setExistingCust("New Customer");
     stubUserAndRole("account_officer");
     when(financingHdrRepository.findAllAssignmentFinancingRaw(eq("JKT"), eq(null), eq(null), eq(null), any()))
@@ -172,6 +174,9 @@ class AssignmentSubmissionServiceTest {
     assertThat(dto.getCustCode()).isEqualTo(CUSTOMER_CODE);
     assertThat(dto.getCustName()).isEqualTo("Customer");
     assertThat(dto.getBouwheerName()).isEqualTo("PT BOUWHEER");
+    assertThat(dto.getFinancingAmount()).isEqualByComparingTo("1000");
+    assertThat(dto.getTotalInvoiceAmount()).isEqualByComparingTo("1250.75");
+    assertThat(dto.getInvoiceQty()).isEqualTo(3L);
     assertThat(dto.getCustStatus()).isEqualTo("New Customer");
     assertThat(dto.getStatus()).isEqualTo("NEW");
     assertThat(dto.getAgreementDoc()).contains("/api/v1/documents/download/agreement/9");
