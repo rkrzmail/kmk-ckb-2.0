@@ -359,19 +359,19 @@ public class LoanSubmissionService {
 
   public EstimatedDisburseDto calculateDisburse(
     Customer customer,
-    CalculateSimulationRequest request
+    CalculateSimulationRequest calculateSimulationRequest
   ) throws SignatureException, JsonProcessingException, ParseException {
     try {
-      if (request.getDisbursePercentage() == null || request.getDisbursePercentage() < 50.0 || request.getDisbursePercentage() > 95.0) {
+      if (calculateSimulationRequest.getDisbursePercentage() == null || calculateSimulationRequest.getDisbursePercentage() < 50.0 || calculateSimulationRequest.getDisbursePercentage() > 95.0) {
         throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Persentase pencairan harus di antara 50% sampai 95%");
       }
 
-      final BigDecimal ntfResult = request.getTotalInvoiceAmount()
-        .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
+      final BigDecimal ntfResult = calculateSimulationRequest.getTotalInvoiceAmount()
+        .multiply(BigDecimal.valueOf(calculateSimulationRequest.getDisbursePercentage() / 100.0));
 
       final Optional<Product> findProduct = findProductByAmountAndBouwheer(
         ntfResult.doubleValue(),
-        request.getBouwheerCode()
+        calculateSimulationRequest.getBouwheerCode()
       );
 
       if (findProduct.isEmpty()) {
@@ -385,8 +385,8 @@ public class LoanSubmissionService {
 
       boolean isCustomerExisting = false;
       Cwr validateCwr = null;
-      if (customer != null || !StringUtil.isNullOrEmpty(request.getToken())) {
-        validateCwr = isCustomerExistingByCwr(customer, request.getToken());
+      if (customer != null || !StringUtil.isNullOrEmpty(calculateSimulationRequest.getToken())) {
+        validateCwr = isCustomerExistingByCwr(customer, calculateSimulationRequest.getToken());
         isCustomerExisting = validateCwr != null;
       }
 
@@ -398,9 +398,9 @@ public class LoanSubmissionService {
         legalFeeAmount;
 
       int tenor = 90; // (duedate - skr) + gp bouwherr
-      if (request.getBouwheerCode() != null && request.getInvoiceDueDate() != null) {
-        Optional<Bouwheer> bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
-        int top = DateTimeUtils.dateDiffInDay(new Date(), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(request.getInvoiceDueDate()));
+      if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
+        Optional<Bouwheer> bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(calculateSimulationRequest.getBouwheerCode()));
+        int top = DateTimeUtils.dateDiffInDay(new Date(), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
         tenor = top + (bouwheer.map(value -> value.getGracePeriod().intValue()).orElse(0));
       }
 
@@ -466,7 +466,7 @@ public class LoanSubmissionService {
         .adminRate(adminRate)
         .effectiveRate(effectiveRate)
         .provisionRate(provisionRate)
-        .totalInvoiceAmount(request.getTotalInvoiceAmount())
+        .totalInvoiceAmount(calculateSimulationRequest.getTotalInvoiceAmount())
         .totalNtfAmount(ntfResult)
         .product(findProduct.get())
         .build();
@@ -793,10 +793,10 @@ public class LoanSubmissionService {
     final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null)
       .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
 
-//    final double totalInvoiceAmount = request.getInvoices()
-//      .stream()
-//      .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
-//      .sum();
+    final double totalInvoiceAmount = request.getInvoices()
+      .stream()
+      .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
+      .sum();
 
     final Date maxInvoiceDueDate = request.getInvoices()
       .stream()
@@ -806,7 +806,7 @@ public class LoanSubmissionService {
 
     final CalculateSimulationRequest simulation = new CalculateSimulationRequest();
     simulation.setDisbursePercentage(request.getDisbursePercentage());
-    simulation.setTotalInvoiceAmount(BigDecimal.valueOf(request.getTotalInvoiceAmount()).setScale(2, RoundingMode.CEILING));
+    simulation.setTotalInvoiceAmount(BigDecimal.valueOf(totalInvoiceAmount).setScale(2, RoundingMode.CEILING));
     simulation.setBouwheerCode(request.getInvoices().getFirst().getBouwheerCode());
     simulation.setInvoiceDueDate(
       DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
@@ -834,7 +834,7 @@ public class LoanSubmissionService {
       .financingAmount(calculateDisburse.getFinancingAmount())
       .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
       .maxInvoiceDate(maxInvoiceDueDate)
-      .totalInvoiceAmount(request.getTotalInvoiceAmount())
+      .totalInvoiceAmount(calculateDisburse.getTotalInvoiceAmount())
       .interestFeeAmount(calculateDisburse.getInterestFeeAmount())
       .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
       .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
@@ -884,7 +884,7 @@ public class LoanSubmissionService {
       .bouwheerCode(request.getBouwheerCode())
       .productId(request.getProductId())
       .disbursePercentage(request.getDisbursePercentage())
-      .totalInvoiceAmount(request.getTotalInvoiceAmount())
+      .totalInvoiceAmount(totalInvoiceAmount)
       .invoices(request.getInvoices())
       .build());
 
@@ -921,8 +921,7 @@ public class LoanSubmissionService {
         bouwheer.getBouwheerCode(),
         request.getProductId(),
         createdInvoices.size(),
-//        totalInvoiceAmount,
-        request.getTotalInvoiceAmount(),
+        totalInvoiceAmount,
         finalFinancingHdr.getFinancingAmt(),
         finalFinancingHdr.getDisburseAmt()
       )

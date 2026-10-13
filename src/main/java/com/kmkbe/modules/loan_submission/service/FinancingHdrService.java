@@ -69,7 +69,7 @@ public class FinancingHdrService {
     FinancingHdr header = new FinancingHdr();
     {
       final double disburseAmount = simulationResult.getEstimatedDisburseAmount().doubleValue();
-      final double totalInvoiceAmount = simulationResult.getTotalInvoiceAmount();
+      final double totalInvoiceAmount = simulationResult.getTotalInvoiceAmount().doubleValue();
       final double financingAmount = simulationResult.getFinancingAmount().doubleValue();
 
       Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer);
@@ -106,7 +106,7 @@ public class FinancingHdrService {
       header.setInsuranceFeeAmt(0.0);
       header.setInsuranceFeePercentage(0.0);
       header.setAdminLimitAmt(0.0);
-
+      header.setTotalInvoiceSubmittedAmt(request.getTotalInvoiceAmount());
       header.setMstBranch(financingHdrOptional
         .map(FinancingHdr::getMstBranch)
         .orElse(null)
