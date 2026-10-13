@@ -97,6 +97,14 @@ public class FinancingHdr implements Serializable {
   @Column(name = "total_invoice_amt", nullable = false) // , precision = 17, scale = 2
   private Double totalInvoiceAmt;
 
+  @Column(name = "financeable_invoice_amt", precision = 17, scale = 2)
+  private Double financeableInvoiceAmt;
+
+  @Transient
+  public Double getInvoiceFinancingBase() {
+    return financeableInvoiceAmt != null ? financeableInvoiceAmt : totalInvoiceAmt;
+  }
+
   @NotNull
   @Column(name = "provision_fee_percentage", nullable = false) // , precision = 5, scale = 2
   private Double provisionFeePercentage;

@@ -35,6 +35,11 @@ public class FinancingHdrDto implements Serializable {
     private Long gracePeriod;
     private Double retention;
     private Double totalInvoiceAmt;
+    private Double financeableInvoiceAmt;
+
+    public Double getInvoiceFinancingBase() {
+        return financeableInvoiceAmt != null ? financeableInvoiceAmt : totalInvoiceAmt;
+    }
     private Double provisionFeePercentage;
     private Double provisionFeeAmt;
     private Double surveyFeeAmt;

@@ -88,6 +88,7 @@ public class FinancingHdrService {
       header.setGracePeriod(bouwheer.getGracePeriod()); // get from bouwheer grace_period
       header.setRetention(100 - request.getDisbursePercentage()); // not clear
       header.setTotalInvoiceAmt(totalInvoiceAmount);
+      header.setFinanceableInvoiceAmt(simulationResult.getFinanceableInvoiceAmount());
       header.setFinancingAmt(financingAmount);
       header.setDisburseAmt(disburseAmount);
       header.setInterestAmt(simulationResult.getInterestFeeAmount().doubleValue()); // not clear

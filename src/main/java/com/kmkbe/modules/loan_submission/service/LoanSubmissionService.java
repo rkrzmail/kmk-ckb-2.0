@@ -508,6 +508,7 @@ public class LoanSubmissionService {
           .financingHdrCode(fin.getFinancingHdrCode())
           .retention(fin.getRetention())
           .totalInvoiceAmt(fin.getTotalInvoiceAmt())
+          .financeableInvoiceAmt(fin.getFinanceableInvoiceAmt())
           .interestAmt(fin.getInterestAmt())
 
 
@@ -561,7 +562,7 @@ public class LoanSubmissionService {
     }
     FinancingHdr finHdr = financingHdr.get();
 
-    final BigDecimal ntfResult = BigDecimal.valueOf(finHdr.getTotalInvoiceAmt())
+    final BigDecimal ntfResult = BigDecimal.valueOf(finHdr.getInvoiceFinancingBase())
       .multiply(BigDecimal.valueOf(schemaRate / 100.0));
     //.setScale(0, RoundingMode.UP);
 
@@ -793,6 +794,23 @@ public class LoanSubmissionService {
     final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null)
       .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
 
+    BigDecimal financingBase = financeableInvoiceTotal(request.getInvoices());
+    if (request.getTotalInvoiceAmount() == null ||
+      BigDecimal.valueOf(request.getTotalInvoiceAmount()).compareTo(financingBase) < 0) {
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,
+        "Total invoice tidak boleh lebih kecil dari jumlah invoice tanpa PPN yang dipilih");
+    }
+    for (PostedInvoicePayload posted : request.getInvoices()) {
+      invoiceRepository.findFirstByCustomerAndBouwheerInvNoAndCustInvNo(
+        customer, posted.getBouwheerInvoiceNo(), posted.getCustomerInvoiceNo()
+      ).ifPresent(existing -> {
+        if (BigDecimal.valueOf(existing.getInvoiceAmt()).compareTo(posted.getInvoiceAmount()) != 0) {
+          throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,
+            "Nilai invoice " + posted.getCustomerInvoiceNo() + " berbeda dari data yang tersimpan");
+        }
+      });
+    }
+
 //    final double totalInvoiceAmount = request.getInvoices()
 //      .stream()
 //      .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
@@ -806,7 +824,7 @@ public class LoanSubmissionService {
 
     final CalculateSimulationRequest simulation = new CalculateSimulationRequest();
     simulation.setDisbursePercentage(request.getDisbursePercentage());
-    simulation.setTotalInvoiceAmount(BigDecimal.valueOf(request.getTotalInvoiceAmount()).setScale(2, RoundingMode.CEILING));
+    simulation.setTotalInvoiceAmount(financingBase);
     simulation.setBouwheerCode(request.getInvoices().getFirst().getBouwheerCode());
     simulation.setInvoiceDueDate(
       DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
@@ -835,6 +853,7 @@ public class LoanSubmissionService {
       .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
       .maxInvoiceDate(maxInvoiceDueDate)
       .totalInvoiceAmount(request.getTotalInvoiceAmount())
+      .financeableInvoiceAmount(financingBase.doubleValue())
       .interestFeeAmount(calculateDisburse.getInterestFeeAmount())
       .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
       .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
@@ -867,6 +886,16 @@ public class LoanSubmissionService {
 
     if (!existingDetails.isEmpty()) {
       finalFinancingHdr = existingDetails.getFirst().getFinancingHdr();
+      if (existingDetails.size() != request.getInvoices().size() ||
+        existingDetails.stream().anyMatch(detail -> !detail.getFinancingHdr().getFinancingHdrCode().equals(finalFinancingHdr.getFinancingHdrCode())) ||
+        !finalFinancingHdr.getCustomer().getCustCode().equals(customer.getCustCode()) ||
+        !finalFinancingHdr.getBouwheer().getBouwheerCode().equals(bouwheer.getBouwheerCode()) ||
+        !StringUtil.isNullOrEmpty(finalFinancingHdr.getFinancingStatus()) ||
+        BigDecimal.valueOf(finalFinancingHdr.getInvoiceFinancingBase()).compareTo(financingBase) != 0 ||
+        BigDecimal.valueOf(finalFinancingHdr.getTotalInvoiceAmt()).compareTo(BigDecimal.valueOf(request.getTotalInvoiceAmount())) != 0) {
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,
+          "Invoice sudah digunakan pada pengajuan lain atau memiliki dasar pembiayaan berbeda");
+      }
     } else {
       finalFinancingHdr = financingHdrService.create(
         customer,
@@ -902,7 +931,7 @@ public class LoanSubmissionService {
     CreatedSimulationDto result = CreatedSimulationDto.builder()
       .productId(request.getProductId())
       .financingHdrCode(finalFinancingHdr.getFinancingHdrCode())
-      .totalInvoiceAmount(BigDecimal.valueOf(finalFinancingHdr.getTotalInvoiceAmt()))
+      .totalInvoiceAmount(BigDecimal.valueOf(finalFinancingHdr.getInvoiceFinancingBase()))
       .invoices(createdInvoices)
       .build();
 
@@ -928,6 +957,16 @@ public class LoanSubmissionService {
       )
     );
     return result;
+  }
+
+  static BigDecimal financeableInvoiceTotal(List<PostedInvoicePayload> invoices) {
+    if (invoices == null || invoices.isEmpty() || invoices.stream().anyMatch(invoice ->
+      invoice == null || invoice.getInvoiceAmount() == null || invoice.getInvoiceAmount().signum() <= 0)) {
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,
+        "Invoice yang dipilih harus memiliki nilai tanpa PPN lebih dari nol");
+    }
+    return invoices.stream().map(PostedInvoicePayload::getInvoiceAmount)
+      .reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
   public void createLoanSubmission(
@@ -1088,7 +1127,7 @@ public class LoanSubmissionService {
               .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
               .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
               .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-              .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
+              .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getInvoiceFinancingBase()))
               .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
               .invoices(invoices)
               .build()
@@ -1189,7 +1228,7 @@ public class LoanSubmissionService {
             .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
             .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
             .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-            .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
+            .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getInvoiceFinancingBase()))
             .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
             .invoices(invoices)
             .build()
@@ -1266,7 +1305,7 @@ public class LoanSubmissionService {
           .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
           .toEmail(customer.getCustEmail())
           .ccEmail(customer.getCustEmail())
-          .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getTotalInvoiceAmt()))
+          .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getInvoiceFinancingBase()))
           .disburseAmt(CommonFormattingUtils.formatAmount(createdFinancing.getDisburseAmt()))
           .invoices(invoices)
           .build()
@@ -1326,7 +1365,7 @@ public class LoanSubmissionService {
       .retention(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getRetention()))
       .financingAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getFinancingAmt()))
       .totalFeeAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(totalFeeAmt))
-      .invoiceAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getTotalInvoiceAmt()))
+      .invoiceAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getInvoiceFinancingBase()))
       .disburseAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getDisburseAmt()))
       .invoices(invoices)
       .build();

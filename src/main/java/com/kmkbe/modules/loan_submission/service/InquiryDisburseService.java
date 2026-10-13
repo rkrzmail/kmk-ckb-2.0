@@ -231,7 +231,7 @@ public class InquiryDisburseService {
                 .retention(CommonFormattingUtils.formatAmount(financingHdr.getRetention()))
                 .financingAmt(CommonFormattingUtils.formatAmount(financingHdr.getFinancingAmt()))
                 .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-                .invoiceAmt(CommonFormattingUtils.formatAmount(financingHdr.getTotalInvoiceAmt()))
+                .invoiceAmt(CommonFormattingUtils.formatAmount(financingHdr.getInvoiceFinancingBase()))
                 .disburseAmt(CommonFormattingUtils.formatAmount(financingHdr.getDisburseAmt()))
                 .invoices(invoices)
                 .build()

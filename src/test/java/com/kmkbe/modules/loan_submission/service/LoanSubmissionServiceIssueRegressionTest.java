@@ -6,6 +6,8 @@ import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.CustomerCompany;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
+import com.kmkbe.core.domain.model.PostedInvoicePayload;
+import com.kmkbe.core.domain.model.SimulationDisburseResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.exception.BusinessException;
@@ -17,6 +19,7 @@ import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.service.ExistingCustomerService;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
+import com.kmkbe.modules.loan_submission.request.CreateSimulationRequest;
 import com.kmkbe.modules.product.model.entity.Product;
 import com.kmkbe.modules.product.repository.ProductRepository;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
@@ -38,6 +41,7 @@ import java.math.BigDecimal;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -45,7 +49,12 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import org.mockito.ArgumentCaptor;
 
 @ExtendWith(MockitoExtension.class)
 class LoanSubmissionServiceIssueRegressionTest {
@@ -278,6 +287,101 @@ class LoanSubmissionServiceIssueRegressionTest {
       assertThat(emailInvoice.getDescription()).isEqualTo("Jasa pengangkutan CKB");
       assertThat(emailInvoice.getInvoiceAmt()).isEqualTo("6,000,000,000.00");
     });
+  }
+
+  @Test
+  void financeableTotalExcludesGrossPpnDifference() {
+    PostedInvoicePayload invoice = new PostedInvoicePayload();
+    invoice.setInvoiceAmount(new BigDecimal("100000000.00"));
+
+    assertThat(LoanSubmissionService.financeableInvoiceTotal(List.of(invoice)))
+      .isEqualByComparingTo("100000000.00");
+    assertThat(LoanSubmissionService.financeableInvoiceTotal(List.of(invoice))
+      .multiply(new BigDecimal("0.95"))).isEqualByComparingTo("95000000.00");
+  }
+
+  @Test
+  void createSimulationCalculatesFromPreTaxInvoicesAndPreservesGrossAmount() throws Exception {
+    UUID bouwheerCode = UUID.randomUUID();
+    when(customer.getBouwheer()).thenReturn(bouwheerCode.toString());
+    Bouwheer bouwheer = Bouwheer.builder().bouwheerCode(bouwheerCode).build();
+    when(bouwheerRepository.findByBouwheerCode(bouwheerCode)).thenReturn(Optional.of(bouwheer));
+
+    PostedInvoicePayload invoice = new PostedInvoicePayload();
+    invoice.setInvoiceAmount(new BigDecimal("100000000"));
+    invoice.setInvoiceDueDate(new Date());
+    invoice.setBouwheerCode(bouwheerCode.toString());
+    invoice.setCustomerInvoiceNo("INV-100");
+    invoice.setBouwheerInvoiceNo("B-100");
+    CreateSimulationRequest request = CreateSimulationRequest.builder()
+      .totalInvoiceAmount(109_000_000D)
+      .disbursePercentage(95D)
+      .invoices(List.of(invoice))
+      .build();
+
+    LoanSubmissionService spy = spy(service);
+    EstimatedDisburseDto estimate = EstimatedDisburseDto.builder()
+      .financingAmount(new BigDecimal("95000000"))
+      .estimatedDisburseAmount(new BigDecimal("94000000"))
+      .interestFeeAmount(BigDecimal.ZERO)
+      .provisionFeeAmount(BigDecimal.ZERO)
+      .adminFeeAmount(BigDecimal.ZERO)
+      .othersFeeAmount(BigDecimal.ZERO)
+      .legalFeeAmount(BigDecimal.ZERO)
+      .surveyFeeAmount(BigDecimal.ZERO)
+      .build();
+    doReturn(estimate).when(spy).calculateDisburse(eq(customer), any(CalculateSimulationRequest.class));
+    FinancingHdr saved = new FinancingHdr();
+    saved.setFinancingHdrCode(UUID.randomUUID());
+    saved.setTotalInvoiceAmt(109_000_000D);
+    saved.setFinanceableInvoiceAmt(100_000_000D);
+    when(financingHdrService.create(eq(customer), eq(bouwheer), eq(request), any(SimulationDisburseResult.class)))
+      .thenReturn(saved);
+
+    spy.createSimulation(customer, request);
+
+    ArgumentCaptor<CalculateSimulationRequest> calculation = ArgumentCaptor.forClass(CalculateSimulationRequest.class);
+    verify(spy).calculateDisburse(eq(customer), calculation.capture());
+    assertThat(calculation.getValue().getTotalInvoiceAmount()).isEqualByComparingTo("100000000");
+
+    ArgumentCaptor<SimulationDisburseResult> result = ArgumentCaptor.forClass(SimulationDisburseResult.class);
+    verify(financingHdrService).create(eq(customer), eq(bouwheer), eq(request), result.capture());
+    assertThat(result.getValue().getTotalInvoiceAmount()).isEqualTo(109_000_000D);
+    assertThat(result.getValue().getFinanceableInvoiceAmount()).isEqualTo(100_000_000D);
+  }
+
+  @Test
+  void financingBaseFallsBackOnlyForLegacyHeaders() {
+    FinancingHdr financing = new FinancingHdr();
+    financing.setTotalInvoiceAmt(109_000_000D);
+    assertThat(financing.getInvoiceFinancingBase()).isEqualTo(109_000_000D);
+
+    financing.setFinanceableInvoiceAmt(100_000_000D);
+    assertThat(financing.getInvoiceFinancingBase()).isEqualTo(100_000_000D);
+    assertThat(financing.getTotalInvoiceAmt()).isEqualTo(109_000_000D);
+  }
+
+  @Test
+  void simulationAdjustmentEmailShowsPreTaxTransactionAmount() {
+    Customer debtor = Customer.builder().custTypeCode("Company").build();
+    FinancingHdrDto financing = FinancingHdrDto.builder()
+      .financingHdrCode(UUID.randomUUID())
+      .bouwheer(Bouwheer.builder().bouwheerName("PT Trakindo Utama").build())
+      .details(List.of())
+      .disburseDate(LocalDateTime.of(2026, 10, 1, 0, 0))
+      .financingDueDate(LocalDateTime.of(2026, 11, 1, 0, 0))
+      .tenor(30L)
+      .retention(5D)
+      .totalInvoiceAmt(109_000_000D)
+      .financeableInvoiceAmt(100_000_000D)
+      .financingAmt(95_000_000D)
+      .disburseAmt(94_000_000D)
+      .adminFeeAmt(0D).legalFeeAmtNett(0D).insuranceFeeAmt(0D)
+      .othersFeeAmt(0D).provisionFeeAmt(0D).surveyFeeAmtNett(0D)
+      .build();
+
+    assertThat(service.buildSimulationAdjustmentEmailPayload(financing, debtor).getInvoiceAmt())
+      .isEqualTo("100,000,000.00");
   }
 
   @Test

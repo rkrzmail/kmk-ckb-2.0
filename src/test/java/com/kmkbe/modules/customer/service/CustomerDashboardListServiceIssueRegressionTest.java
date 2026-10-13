@@ -71,6 +71,7 @@ class CustomerDashboardListServiceIssueRegressionTest {
     financing.setFinancingDueDate(LocalDateTime.of(2026, 10, 1, 0, 0));
     financing.setFinancingAmt(1_000_000D);
     financing.setTotalInvoiceAmt(1_250_000.75D);
+    financing.setFinanceableInvoiceAmt(1_100_000D);
     financing.setInvoiceQty(2L);
     financing.setAgreement(Set.of());
     java.util.List<FinancingDtl> financingDetails = java.util.List.of(
@@ -91,7 +92,7 @@ class CustomerDashboardListServiceIssueRegressionTest {
     assertThat(result.getList()).singleElement()
       .extracting(CustomerCreditFacilityNewDto::getInvoiceNo)
       .isEqualTo("INV-001, INV-002");
-    assertThat(result.getList().getFirst().getTotalInvoiceAmount()).isEqualByComparingTo("1250000.75");
+    assertThat(result.getList().getFirst().getTotalInvoiceAmount()).isEqualByComparingTo("1100000");
     assertThat(result.getList().getFirst().getInvoiceQty()).isEqualTo(2L);
   }
 
