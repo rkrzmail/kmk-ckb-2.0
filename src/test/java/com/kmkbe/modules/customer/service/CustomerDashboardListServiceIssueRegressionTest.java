@@ -56,7 +56,7 @@ class CustomerDashboardListServiceIssueRegressionTest {
   }
 
   @Test
-  void activeCreditFacilityContainsAllDistinctCustomerInvoiceNumbers() throws Exception {
+  void activeCreditFacilityContainsAllDistinctCustomerInvoiceNumbers() {
     Customer customer = Customer.builder()
       .custCode(UUID.randomUUID())
       .custName("Debitur")
@@ -85,7 +85,7 @@ class CustomerDashboardListServiceIssueRegressionTest {
 
     PaginationResult<CustomerCreditFacilityNewDto> result = service.listcreditfacilities(
       customer,
-      new PaginationRequest()
+      new BasePaginationRequest()
     );
 
     assertThat(result.getList()).singleElement()

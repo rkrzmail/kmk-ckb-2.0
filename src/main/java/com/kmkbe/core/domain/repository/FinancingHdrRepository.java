@@ -24,8 +24,6 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
 
   List<FinancingHdr> findAllByCustomerOrderByDtmCrtDesc(@NotNull Customer customer);
 
-  Long countByCustomerAndFinancingStatus(Customer customer, String status);
-
   @Query(
     value = """
       select 
