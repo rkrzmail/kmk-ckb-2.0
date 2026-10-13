@@ -134,6 +134,7 @@ public class AgreementFileSigningService {
 
         log.info("Save Audit Trail !");
         auditTrailService.record("AGREEMENT_SIGNING", AuditAction.UPDATE, "FinancingHdr", saved.getFinancingHdrCode(), before, toFinancingStepAuditData(saved));
+
       });
   }
 
