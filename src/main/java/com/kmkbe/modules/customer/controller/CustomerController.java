@@ -168,7 +168,6 @@ public class CustomerController {
   public CommonResult<PaginationResult<CustomerCreditFacilityNewDto>> getActiveCreditFacilities(
     BasePaginationRequest request
   ) throws SignatureException {
-    //invoiceService.customerCreditFacilities(authentication, request)
 
     return new CommonResult<PaginationResult<CustomerCreditFacilityNewDto>>().success(
       customerDashboardListService.listcreditfacilities(currentUserService.customer(), request)

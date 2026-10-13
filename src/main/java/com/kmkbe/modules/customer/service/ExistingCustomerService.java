@@ -2,6 +2,7 @@ package com.kmkbe.modules.customer.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.Cwr;
@@ -147,6 +148,7 @@ public class ExistingCustomerService {
           loadedCust.setCustNo(existingCustomer.getCustNo());
           loadedCust.setUsrUpd(customer.getCustName());
           loadedCust.setDtmUpd(DateTimeUtils.now());
+          loadedCust.setExistingCust(AppConstants.EXIT_CUSTOMER);
           customerRepository.save(loadedCust);
         }
       }
