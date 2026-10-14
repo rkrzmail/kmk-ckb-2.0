@@ -186,6 +186,7 @@ public class DistributionSubmissionService {
               .flatMap(stream -> stream.map(MstEmployee::getEmployeeName).findFirst())
               .orElse(null))
             .dtmCrt(e.getDtmCrt())
+            .updatedAt(e.getDtmUpd())
             .build();
         }
 
