@@ -52,13 +52,27 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
 
   Optional<Agreement> findTopByAgreementCodeOrderByAgreementId(String agreementCode);
 
+  // Change to agreement_file_signing
+//  @Query(
+//    value = """
+//      select
+//          ag.*
+//      from
+//          public.agreement ag
+//              join public.agreement_file agf on ag.agreement_code = agf.agreement_code
+//
+//      """,
+//    nativeQuery = true
+//  )
+//  List<Agreement> viewApprovalStatusNoPending();
+
   @Query(
     value = """
       select
           ag.*
       from
           public.agreement ag
-              join public.agreement_file agf on ag.agreement_code = agf.agreement_code
+              join public.agreement_file_signing agf on ag.agreement_code = agf.agreement_code
       
       """,
     nativeQuery = true
