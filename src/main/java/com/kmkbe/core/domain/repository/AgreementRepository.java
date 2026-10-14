@@ -73,6 +73,7 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
       from
           public.agreement ag
               join public.agreement_file_signing agf on ag.agreement_code = agf.agreement_code
+              where ag.agreement_code='41250270010'
       
       """,
     nativeQuery = true
