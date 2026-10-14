@@ -111,6 +111,22 @@ class DistributionSubmissionServiceIssueRegressionTest {
   }
 
   @Test
+  void distributionListIncludesLastUpdateTimestampWithoutReplacingCreationTimestamp() {
+    LocalDateTime createdAt = LocalDateTime.of(2026, 10, 10, 9, 0);
+    LocalDateTime updatedAt = LocalDateTime.of(2026, 10, 14, 11, 30);
+    FinancingHdr updated = row("updated", "Updated Vendor", 1_000D, createdAt);
+    updated.setDtmUpd(updatedAt);
+    FinancingHdr untouched = row("untouched", "Untouched Vendor", 2_000D, createdAt);
+    when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(updated, untouched));
+
+    List<DistributionSubmissionDto> result = service.submissionDistribution(new PaginationRequest()).getList();
+
+    assertThat(result.get(0).getDtmCrt()).isEqualTo(createdAt);
+    assertThat(result.get(0).getUpdatedAt()).isEqualTo(updatedAt);
+    assertThat(result.get(1).getUpdatedAt()).isNull();
+  }
+
+  @Test
   void filtersSubmissionsUsingDashboardDateRangeBeforePagination() {
     when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(
       row("before", "Before", 1D, LocalDateTime.of(2026, 7, 31, 23, 59)),
