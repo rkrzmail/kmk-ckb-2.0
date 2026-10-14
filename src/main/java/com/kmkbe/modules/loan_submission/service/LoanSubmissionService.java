@@ -369,6 +369,7 @@ public class LoanSubmissionService {
       final BigDecimal ntfResult = calculateSimulationRequest.getTotalInvoiceAmount()
         .multiply(BigDecimal.valueOf(calculateSimulationRequest.getDisbursePercentage() / 100.0));
 
+      log.info("NTF Amount : {} ",ntfResult);
       final Optional<Product> findProduct = findProductByAmountAndBouwheer(
         ntfResult.doubleValue(),
         calculateSimulationRequest.getBouwheerCode()
@@ -398,27 +399,61 @@ public class LoanSubmissionService {
         legalFeeAmount;
 
       int tenor = 90; // (duedate - skr) + gp bouwherr
+      log.info("Term tenor : {} ",tenor);
       if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
         Optional<Bouwheer> bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(calculateSimulationRequest.getBouwheerCode()));
         int top = DateTimeUtils.dateDiffInDay(new Date(), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
-        tenor = top + (bouwheer.map(value -> value.getGracePeriod().intValue()).orElse(0));
+        log.info("Invoice duedate : {} ",calculateSimulationRequest.getInvoiceDueDate());
+        log.info("Top : {} ",top);
+        int gracePeriode = (bouwheer.map(value -> value.getGracePeriod().intValue()).orElse(0));
+        log.info("Grace periode : {} ",gracePeriode);
+        tenor = top + gracePeriode;
+        log.info("New Tenor : {} ",tenor);
       }
 
       BigDecimal plafondLimitBigDecimal = validateCwr != null
         ? BigDecimal.valueOf(validateCwr.getPlafondAmt())
         : ntfResult.multiply(BigDecimal.valueOf(3.0));
 
+      log.info("Tenor : {} ",tenor);
       double plafonLimit = plafondLimitBigDecimal.doubleValue();
+      log.info("Plafond limit : {} ",plafonLimit);
+
       double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
+      log.info("Nilai pembiayaan : {} ",nilaiPembiayaan);
+
       double effective_Rate = product.getEffectiveRate();
-      double interestAmount = nilaiPembiayaan * effective_Rate / 100 * tenor / 360;//6 digit
+      log.info("Effective Rate : {} ",effective_Rate);
+
+      // simple intertest
+      boolean isSimpleInterets = false;
+      double interestAmount;
+      if(isSimpleInterets){
+        interestAmount   = nilaiPembiayaan * effective_Rate/100 * tenor / 360;//6 digit
+        log.info("Simple interest : {} ",interestAmount);
+      }else{
+
+        // 2. Diskonto (In Advance)
+        interestAmount =  nilaiPembiayaan - ((nilaiPembiayaan * 360) / (((effective_Rate/100) * tenor) + 360));
+        log.info("1 {}",nilaiPembiayaan * 360);
+        log.info("2 {}",(((effective_Rate/100) * tenor) + 360));
+        log.info("Diskonto to interest : {} ",interestAmount);
+      }
+
+
+      log.info("Interest Amount : {} ",interestAmount);
+
       double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
+      log.info("Admin Fee : {} ",adminFee);
+
       double jumlahBiaya;
       double provisionRateFee = product.getProvisionRate() * plafonLimit / 100;
+      log.info("Provision Rate : {} ",provisionRateFee);
+
 
       log.info("Customer existing customer {} ", isCustomerExisting);
       if (!isCustomerExisting) {
-        log.info("Customer existing customer {} ", isCustomerExisting);
+        log.info("Customer new customer {} ", isCustomerExisting);
         jumlahBiaya = provisionRateFee
           + product.getSurveyFee()
           + product.getLegalFee()
@@ -429,6 +464,14 @@ public class LoanSubmissionService {
         legalFeeAmount = BigDecimal.valueOf(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
         adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
         othersFeeAmount = BigDecimal.valueOf(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
+
+        log.info("Provision rate fee {} ", provisionRateFee);
+        log.info("Survey fee {} ", product.getSurveyFee());
+        log.info("Legal fee {} ", product.getLegalFee());
+        log.info("Admin fee {} ", adminFee);
+        log.info("Other fee {} ", product.getOthersFee());
+
+        log.info("Jumlah biaya new customer : {} ",jumlahBiaya);
       } else {
         log.info("Customer existing customer {} ", isCustomerExisting);
         provisionFeeAmount = new BigDecimal(0);
@@ -437,6 +480,8 @@ public class LoanSubmissionService {
         adminFeeAmount = new BigDecimal(0);
         othersFeeAmount = new BigDecimal(0);
         jumlahBiaya = adminFee + product.getOthersFee();
+
+        log.info("Jumlah Biaya existing customer : {} ",jumlahBiaya);
       }
 
       double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
@@ -1009,6 +1054,7 @@ public class LoanSubmissionService {
               + financing.getOthersFeeAmt()
               + financing.getProvisionFeeAmt()
               + financing.getSurveyFeeAmtNett();
+
           //getAPI AO,BH
           MailPositionDto to = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "BM/BOH");
           MailPositionDto ccRM = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "RM");
