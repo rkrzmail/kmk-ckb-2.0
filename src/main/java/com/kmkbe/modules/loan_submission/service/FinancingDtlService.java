@@ -230,7 +230,7 @@ public class FinancingDtlService {
         FinancingInvoicePaidRequest.InvoicePaid reqInvoice = requestInvoices.get(invoiceNo);
 
 //      BigDecimal systemAmount = BigDecimal.valueOf(financingDtl.getInvoice().getInvoiceAmt());
-        BigDecimal systemAmount = BigDecimal.valueOf(financingHdr.getTotalInvoiceAmt());
+        BigDecimal systemAmount = BigDecimal.valueOf(financingHdr.getTotalInvoiceSubmittedAmt());
         BigDecimal reqAmount = reqInvoice.getInvoiceAmount();
 
         if (reqAmount.compareTo(systemAmount) < 0) {

@@ -49,7 +49,6 @@ public class CustomerRemoteService {
     String jsonStr = "";
     String responseStr = null;
     int statusCode = 200;
-//        final String url = baseRemoteService.CustObj_GetListKeyValueActiveByCode();
     final String url = confinsUrl + "/api/fou/v1/CustObj/GetObjectByKeyAndValue";
     try {
       jsonStr = ObjectUtils.jsonToStr(params);
@@ -67,7 +66,6 @@ public class CustomerRemoteService {
       if (errorObj != null) {
         message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
       }
-
 
       throw new RuntimeException("Error while perform action to Confins\nDetail:" + message);
     } catch (Exception e) {

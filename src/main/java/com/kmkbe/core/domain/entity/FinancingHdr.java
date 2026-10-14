@@ -218,4 +218,7 @@ public class FinancingHdr implements Serializable {
 
   @Column(name = "vendor_id")
   private String vendorId;
+
+  @Column(name = "total_invoice_submitted_amt")
+  private Double totalInvoiceSubmittedAmt;
 }

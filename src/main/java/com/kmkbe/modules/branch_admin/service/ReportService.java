@@ -110,6 +110,9 @@ public class ReportService {
   @Autowired
   private SigningEligibilityService signingEligibilityService;
 
+  @Autowired
+  private AgreementService agreementService;
+
   private void ensureJwtToken() {
     jwtToken = authRemoteService.fetchAuthJwt().getData();
   }
@@ -874,60 +877,6 @@ public class ReportService {
     return response;
   }
 
-  private static String fmtDateObj(Object val) {
-    if (val == null) return "-";
-
-    final String targetFormat = "dd/MM/yyyy";
-    java.time.format.DateTimeFormatter outFmt = java.time.format.DateTimeFormatter.ofPattern(targetFormat);
-
-    try {
-      if (val instanceof java.util.Date) {
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(targetFormat);
-        return sdf.format((java.util.Date) val);
-      }
-
-      if (val instanceof java.time.LocalDate) {
-        return ((java.time.LocalDate) val).format(outFmt);
-      }
-
-      if (val instanceof java.time.LocalDateTime) {
-        return ((java.time.LocalDateTime) val).toLocalDate().format(outFmt);
-      }
-
-      if (val instanceof String) {
-        String s = ((String) val).trim();
-        if (s.isEmpty()) return "-";
-
-        try {
-          java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(
-            s,
-            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-          );
-          return ldt.toLocalDate().format(outFmt);
-        } catch (Exception ignore) {
-        }
-
-        try {
-          java.time.LocalDate ld = java.time.LocalDate.parse(s);
-          return ld.format(outFmt);
-        } catch (Exception ignore) {
-        }
-
-        try {
-          java.text.SimpleDateFormat inSdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-          java.util.Date d = inSdf.parse(s);
-          java.text.SimpleDateFormat outSdf = new java.text.SimpleDateFormat(targetFormat);
-          return outSdf.format(d);
-        } catch (Exception ignore) {
-        }
-      }
-
-      return val.toString();
-    } catch (Exception e) {
-      return "-";
-    }
-  }
-
   private static String fmtDateObj2(Object val) {
     if (val == null) return "-";
 
@@ -1071,6 +1020,20 @@ public class ReportService {
           financingHdrCode,
           "E_SIGN_DOC"
         );
+
+
+        Optional<FinancingHdr>financingHdrOptional = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
+        if(financingHdrOptional.isPresent()){
+          /**
+           * Send email to bouwheer
+           */
+          agreementService.sendBouwheerPaymentNotification(financingHdrOptional.get());
+
+          /**
+           * Send email to debtor
+           */
+          agreementService.sendDebtorDisbursementNotification(financingHdrOptional.get());
+        }
 
         return SigningResponse.builder()
           .success(true)

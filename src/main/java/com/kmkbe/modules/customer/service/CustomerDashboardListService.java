@@ -65,7 +65,7 @@ public class CustomerDashboardListService {
   public PaginationResult<CustomerCreditFacilityNewDto> listcreditfacilities(
     Customer customer,
     BasePaginationRequest request
-  ) throws SignatureException {
+  ) {
     PaginationRequest paginationRequest = PaginationRequests.from(request);
     Page<FinancingHdr> financingPage = financingHdrRepository.findAllByRawOrder(
       customer.getCustCode().toString(), Pageable.unpaged()
@@ -81,49 +81,6 @@ public class CustomerDashboardListService {
       this::creditFacilityField,
       CustomerCreditFacilityNewDto::getFinancingHdrCode
     );
-  }
-
-  public PaginationResult<CustomerCreditFacilityNewDto> listcreditfacilities(
-    Customer customer,
-    PaginationRequest request
-  ) throws SignatureException {
-    try {
-      int pageNo = 0, pageSize = 10;
-
-      if (request.getPageNo() != null) {
-        pageNo = request.getPageNo();
-      }
-
-      if (request.getPageSize() != null) {
-        pageSize = request.getPageSize();
-      }
-
-      if (pageNo > 0) {
-        pageNo = pageNo - 1;
-      }
-
-      final Page<FinancingHdr> paginationFinancing = financingHdrRepository.findAllByRawOrder(
-        customer.getCustCode().toString(), PageRequest.of(pageNo, pageSize)
-
-      );
-
-      //DateTimeUtils.now()
-
-      final List<CustomerCreditFacilityNewDto> list = paginationFinancing.getContent()
-        .stream()
-        .map(this::toCreditFacilityDto)
-        .toList();
-
-      return PaginationResult.<CustomerCreditFacilityNewDto>builder()
-        .currentPage(pageNo + 1)
-        .totalData(paginationFinancing.getTotalElements())
-        .totalPage(paginationFinancing.getTotalPages())
-        .list(list)
-        .build();
-    } catch (Exception e) {
-      log.error("submissionDistribution: error {}", e.getMessage());
-      throw e;
-    }
   }
 
   String invoiceNumbers(List<FinancingDtl> financingDetails) {

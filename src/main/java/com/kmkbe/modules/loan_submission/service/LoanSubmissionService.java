@@ -359,19 +359,19 @@ public class LoanSubmissionService {
 
   public EstimatedDisburseDto calculateDisburse(
     Customer customer,
-    CalculateSimulationRequest request
+    CalculateSimulationRequest calculateSimulationRequest
   ) throws SignatureException, JsonProcessingException, ParseException {
     try {
-      if (request.getDisbursePercentage() == null || request.getDisbursePercentage() < 50.0 || request.getDisbursePercentage() > 95.0) {
+      if (calculateSimulationRequest.getDisbursePercentage() == null || calculateSimulationRequest.getDisbursePercentage() < 50.0 || calculateSimulationRequest.getDisbursePercentage() > 95.0) {
         throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Persentase pencairan harus di antara 50% sampai 95%");
       }
 
-      final BigDecimal ntfResult = request.getTotalInvoiceAmount()
-        .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
+      final BigDecimal ntfResult = calculateSimulationRequest.getTotalInvoiceAmount()
+        .multiply(BigDecimal.valueOf(calculateSimulationRequest.getDisbursePercentage() / 100.0));
 
       final Optional<Product> findProduct = findProductByAmountAndBouwheer(
         ntfResult.doubleValue(),
-        request.getBouwheerCode()
+        calculateSimulationRequest.getBouwheerCode()
       );
 
       if (findProduct.isEmpty()) {
@@ -385,8 +385,8 @@ public class LoanSubmissionService {
 
       boolean isCustomerExisting = false;
       Cwr validateCwr = null;
-      if (customer != null || !StringUtil.isNullOrEmpty(request.getToken())) {
-        validateCwr = isCustomerExistingByCwr(customer, request.getToken());
+      if (customer != null || !StringUtil.isNullOrEmpty(calculateSimulationRequest.getToken())) {
+        validateCwr = isCustomerExistingByCwr(customer, calculateSimulationRequest.getToken());
         isCustomerExisting = validateCwr != null;
       }
 
@@ -398,9 +398,9 @@ public class LoanSubmissionService {
         legalFeeAmount;
 
       int tenor = 90; // (duedate - skr) + gp bouwherr
-      if (request.getBouwheerCode() != null && request.getInvoiceDueDate() != null) {
-        Optional<Bouwheer> bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
-        int top = DateTimeUtils.dateDiffInDay(new Date(), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(request.getInvoiceDueDate()));
+      if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
+        Optional<Bouwheer> bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(calculateSimulationRequest.getBouwheerCode()));
+        int top = DateTimeUtils.dateDiffInDay(new Date(), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
         tenor = top + (bouwheer.map(value -> value.getGracePeriod().intValue()).orElse(0));
       }
 
@@ -442,16 +442,7 @@ public class LoanSubmissionService {
       double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
       final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
       final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
-
-      log.info("Update status customer ");
-      Optional<Customer> customerOptional = customerRepository.findByCustCode(customer.getCustCode());
-      if (customerOptional.isPresent()) {
-        log.info("Update customer existing customer {} ", isCustomerExisting);
-        customer.setExistingCust(isCustomerExisting ?AppConstants.EXIT_CUSTOMER:AppConstants.NEW_CUSTOMER);
-        customer.setDtmUpd(LocalDateTime.now());
-        customerRepository.save(customer);
-      }
-
+      
       return EstimatedDisburseDto.builder()
         .productId(product.getProductId())
         .financingAmount(ntfResult.setScale(0, RoundingMode.HALF_UP)) //yng diajukan
@@ -466,7 +457,7 @@ public class LoanSubmissionService {
         .adminRate(adminRate)
         .effectiveRate(effectiveRate)
         .provisionRate(provisionRate)
-        .totalInvoiceAmount(request.getTotalInvoiceAmount())
+        .totalInvoiceAmount(calculateSimulationRequest.getTotalInvoiceAmount())
         .totalNtfAmount(ntfResult)
         .product(findProduct.get())
         .build();
@@ -508,7 +499,6 @@ public class LoanSubmissionService {
           .financingHdrCode(fin.getFinancingHdrCode())
           .retention(fin.getRetention())
           .totalInvoiceAmt(fin.getTotalInvoiceAmt())
-          .financeableInvoiceAmt(fin.getFinanceableInvoiceAmt())
           .interestAmt(fin.getInterestAmt())
 
 
@@ -562,7 +552,7 @@ public class LoanSubmissionService {
     }
     FinancingHdr finHdr = financingHdr.get();
 
-    final BigDecimal ntfResult = BigDecimal.valueOf(finHdr.getInvoiceFinancingBase())
+    final BigDecimal ntfResult = BigDecimal.valueOf(finHdr.getTotalInvoiceAmt())
       .multiply(BigDecimal.valueOf(schemaRate / 100.0));
     //.setScale(0, RoundingMode.UP);
 
@@ -794,27 +784,10 @@ public class LoanSubmissionService {
     final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null)
       .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
 
-    BigDecimal financingBase = financeableInvoiceTotal(request.getInvoices());
-    if (request.getTotalInvoiceAmount() == null ||
-      BigDecimal.valueOf(request.getTotalInvoiceAmount()).compareTo(financingBase) < 0) {
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,
-        "Total invoice tidak boleh lebih kecil dari jumlah invoice tanpa PPN yang dipilih");
-    }
-    for (PostedInvoicePayload posted : request.getInvoices()) {
-      invoiceRepository.findFirstByCustomerAndBouwheerInvNoAndCustInvNo(
-        customer, posted.getBouwheerInvoiceNo(), posted.getCustomerInvoiceNo()
-      ).ifPresent(existing -> {
-        if (BigDecimal.valueOf(existing.getInvoiceAmt()).compareTo(posted.getInvoiceAmount()) != 0) {
-          throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,
-            "Nilai invoice " + posted.getCustomerInvoiceNo() + " berbeda dari data yang tersimpan");
-        }
-      });
-    }
-
-//    final double totalInvoiceAmount = request.getInvoices()
-//      .stream()
-//      .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
-//      .sum();
+    final double totalInvoiceAmount = request.getInvoices()
+      .stream()
+      .mapToDouble((item) -> item.getInvoiceAmount().doubleValue())
+      .sum();
 
     final Date maxInvoiceDueDate = request.getInvoices()
       .stream()
@@ -824,7 +797,7 @@ public class LoanSubmissionService {
 
     final CalculateSimulationRequest simulation = new CalculateSimulationRequest();
     simulation.setDisbursePercentage(request.getDisbursePercentage());
-    simulation.setTotalInvoiceAmount(financingBase);
+    simulation.setTotalInvoiceAmount(BigDecimal.valueOf(totalInvoiceAmount).setScale(2, RoundingMode.CEILING));
     simulation.setBouwheerCode(request.getInvoices().getFirst().getBouwheerCode());
     simulation.setInvoiceDueDate(
       DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
@@ -852,8 +825,7 @@ public class LoanSubmissionService {
       .financingAmount(calculateDisburse.getFinancingAmount())
       .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
       .maxInvoiceDate(maxInvoiceDueDate)
-      .totalInvoiceAmount(request.getTotalInvoiceAmount())
-      .financeableInvoiceAmount(financingBase.doubleValue())
+      .totalInvoiceAmount(calculateDisburse.getTotalInvoiceAmount())
       .interestFeeAmount(calculateDisburse.getInterestFeeAmount())
       .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
       .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
@@ -886,16 +858,6 @@ public class LoanSubmissionService {
 
     if (!existingDetails.isEmpty()) {
       finalFinancingHdr = existingDetails.getFirst().getFinancingHdr();
-      if (existingDetails.size() != request.getInvoices().size() ||
-        existingDetails.stream().anyMatch(detail -> !detail.getFinancingHdr().getFinancingHdrCode().equals(finalFinancingHdr.getFinancingHdrCode())) ||
-        !finalFinancingHdr.getCustomer().getCustCode().equals(customer.getCustCode()) ||
-        !finalFinancingHdr.getBouwheer().getBouwheerCode().equals(bouwheer.getBouwheerCode()) ||
-        !StringUtil.isNullOrEmpty(finalFinancingHdr.getFinancingStatus()) ||
-        BigDecimal.valueOf(finalFinancingHdr.getInvoiceFinancingBase()).compareTo(financingBase) != 0 ||
-        BigDecimal.valueOf(finalFinancingHdr.getTotalInvoiceAmt()).compareTo(BigDecimal.valueOf(request.getTotalInvoiceAmount())) != 0) {
-        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,
-          "Invoice sudah digunakan pada pengajuan lain atau memiliki dasar pembiayaan berbeda");
-      }
     } else {
       finalFinancingHdr = financingHdrService.create(
         customer,
@@ -913,7 +875,7 @@ public class LoanSubmissionService {
       .bouwheerCode(request.getBouwheerCode())
       .productId(request.getProductId())
       .disbursePercentage(request.getDisbursePercentage())
-      .totalInvoiceAmount(request.getTotalInvoiceAmount())
+      .totalInvoiceAmount(totalInvoiceAmount)
       .invoices(request.getInvoices())
       .build());
 
@@ -931,7 +893,7 @@ public class LoanSubmissionService {
     CreatedSimulationDto result = CreatedSimulationDto.builder()
       .productId(request.getProductId())
       .financingHdrCode(finalFinancingHdr.getFinancingHdrCode())
-      .totalInvoiceAmount(BigDecimal.valueOf(finalFinancingHdr.getInvoiceFinancingBase()))
+      .totalInvoiceAmount(BigDecimal.valueOf(finalFinancingHdr.getTotalInvoiceAmt()))
       .invoices(createdInvoices)
       .build();
 
@@ -950,23 +912,12 @@ public class LoanSubmissionService {
         bouwheer.getBouwheerCode(),
         request.getProductId(),
         createdInvoices.size(),
-//        totalInvoiceAmount,
-        request.getTotalInvoiceAmount(),
+        totalInvoiceAmount,
         finalFinancingHdr.getFinancingAmt(),
         finalFinancingHdr.getDisburseAmt()
       )
     );
     return result;
-  }
-
-  static BigDecimal financeableInvoiceTotal(List<PostedInvoicePayload> invoices) {
-    if (invoices == null || invoices.isEmpty() || invoices.stream().anyMatch(invoice ->
-      invoice == null || invoice.getInvoiceAmount() == null || invoice.getInvoiceAmount().signum() <= 0)) {
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,
-        "Invoice yang dipilih harus memiliki nilai tanpa PPN lebih dari nol");
-    }
-    return invoices.stream().map(PostedInvoicePayload::getInvoiceAmount)
-      .reduce(BigDecimal.ZERO, BigDecimal::add);
   }
 
   public void createLoanSubmission(
@@ -1127,7 +1078,7 @@ public class LoanSubmissionService {
               .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
               .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
               .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-              .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getInvoiceFinancingBase()))
+              .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
               .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
               .invoices(invoices)
               .build()
@@ -1228,7 +1179,7 @@ public class LoanSubmissionService {
             .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
             .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
             .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-            .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getInvoiceFinancingBase()))
+            .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
             .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
             .invoices(invoices)
             .build()
@@ -1305,7 +1256,7 @@ public class LoanSubmissionService {
           .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
           .toEmail(customer.getCustEmail())
           .ccEmail(customer.getCustEmail())
-          .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getInvoiceFinancingBase()))
+          .invoiceAmt(CommonFormattingUtils.formatAmount(createdFinancing.getTotalInvoiceAmt()))
           .disburseAmt(CommonFormattingUtils.formatAmount(createdFinancing.getDisburseAmt()))
           .invoices(invoices)
           .build()
@@ -1365,7 +1316,7 @@ public class LoanSubmissionService {
       .retention(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getRetention()))
       .financingAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getFinancingAmt()))
       .totalFeeAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(totalFeeAmt))
-      .invoiceAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getInvoiceFinancingBase()))
+      .invoiceAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getTotalInvoiceAmt()))
       .disburseAmt(CommonFormattingUtils.formatAmountWithTwoDecimals(financing.getDisburseAmt()))
       .invoices(invoices)
       .build();
@@ -1539,7 +1490,7 @@ public class LoanSubmissionService {
     String identityNo,
     Customer customer,
     Bouwheer bouwheer
-  ) throws JsonProcessingException {
+  ) {
     try {
       return existingCustomerService.inquiryAndDecideExistingCustomer(
         ExistingCustomerRequest.KeyType.valueOf(identityType.toLowerCase()),
