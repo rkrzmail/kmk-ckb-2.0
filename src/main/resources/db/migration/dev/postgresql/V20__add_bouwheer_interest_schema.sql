@@ -1,0 +1,2 @@
+ALTER TABLE bouwheer
+ADD COLUMN IF NOT EXISTS interest_scheme VARCHAR(1) DEFAULT 'D';

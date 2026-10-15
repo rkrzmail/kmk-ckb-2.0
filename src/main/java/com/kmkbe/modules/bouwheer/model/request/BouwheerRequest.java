@@ -72,6 +72,8 @@ public class BouwheerRequest extends BaseRequest {
 
   private Float minRetention;
 
+  private String interestScheme;
+
   // Long types usually don't need validation unless range constraints are known
   private Long termOfPayment;
   private Long gracePeriod;

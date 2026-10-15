@@ -39,6 +39,7 @@ public class BouwheerResponse extends BaseResponse {
   private String secretKey;
   private String apiKey;
   private Float minRetention;
+  private String interestScheme;
   private String usrCrt;
   private LocalDateTime dtmCrt;
   private String usrUpd;

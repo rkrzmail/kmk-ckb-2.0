@@ -362,6 +362,13 @@ public class LoanSubmissionService {
     CalculateSimulationRequest calculateSimulationRequest
   ) throws SignatureException, JsonProcessingException, ParseException {
     try {
+
+      Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(calculateSimulationRequest.getBouwheerCode()));
+      if(bouwheerOptional.isEmpty()){
+
+      }
+
+      Bouwheer bouwheer = bouwheerOptional.get();
       if (calculateSimulationRequest.getDisbursePercentage() == null || calculateSimulationRequest.getDisbursePercentage() < 50.0 || calculateSimulationRequest.getDisbursePercentage() > 95.0) {
         throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Persentase pencairan harus di antara 50% sampai 95%");
       }
@@ -401,11 +408,11 @@ public class LoanSubmissionService {
       int tenor = 90; // (duedate - skr) + gp bouwherr
       log.info("Term tenor : {} ",tenor);
       if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
-        Optional<Bouwheer> bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(calculateSimulationRequest.getBouwheerCode()));
+
         int top = DateTimeUtils.dateDiffInDay(new Date(), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
         log.info("Invoice duedate : {} ",calculateSimulationRequest.getInvoiceDueDate());
         log.info("Top : {} ",top);
-        int gracePeriode = (bouwheer.map(value -> value.getGracePeriod().intValue()).orElse(0));
+        int gracePeriode = Math.toIntExact(bouwheer.getGracePeriod());
         log.info("Grace periode : {} ",gracePeriode);
         tenor = top + gracePeriode;
         log.info("New Tenor : {} ",tenor);
@@ -428,11 +435,10 @@ public class LoanSubmissionService {
       // simple intertest
       boolean isSimpleInterets = false;
       double interestAmount;
-      if(isSimpleInterets){
+      if(!Objects.equals(bouwheer.getInterestScheme(), "D")){
         interestAmount   = nilaiPembiayaan * effective_Rate/100 * tenor / 360;//6 digit
         log.info("Simple interest : {} ",interestAmount);
       }else{
-
         // 2. Diskonto (In Advance)
         interestAmount =  nilaiPembiayaan - ((nilaiPembiayaan * 360) / (((effective_Rate/100) * tenor) + 360));
         log.info("1 {}",nilaiPembiayaan * 360);

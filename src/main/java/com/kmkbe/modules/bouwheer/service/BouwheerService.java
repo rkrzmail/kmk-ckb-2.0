@@ -142,6 +142,7 @@ public class BouwheerService {
       .secretKey(request.getSecretKey())
       .apiKey(request.getApiKey())
       .minRetention(request.getMinRetention())
+      .interestScheme(request.getInterestScheme()==null?"D":request.getInterestScheme())
       .dtmCrt(LocalDateTime.now())
       .build());
     auditTrailService.record("BOUWHEER", AuditAction.CREATE, "Bouwheer", saved.getBouwheerCode(), null, toResponse(saved));
@@ -218,6 +219,7 @@ public class BouwheerService {
       .secretKey(bouwheer.getSecretKey())
       .apiKey(bouwheer.getApiKey())
       .minRetention(bouwheer.getMinRetention())
+      .interestScheme(bouwheer.getInterestScheme())
       .build();
   }
 
