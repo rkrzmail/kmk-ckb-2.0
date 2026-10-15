@@ -806,6 +806,10 @@ class ReportServiceTest {
   private static FinancingHdr financingHdr() {
     FinancingHdr financingHdr = new FinancingHdr();
     financingHdr.setFinancingHdrCode(FINANCING_HDR_CODE);
+    financingHdr.setBouwheer(Bouwheer.builder()
+        .picName("TEST")
+        .legalAddress("TETS")
+      .build());
     return financingHdr;
   }
 

@@ -155,6 +155,9 @@ class LoanSubmissionServiceIssueRegressionTest {
       .totalInvoiceAmount(BigDecimal.valueOf(1_000_000))
       .disbursePercentage(96.0)
       .build();
+    when(bouwheerRepository.findByBouwheerCode(any())).thenReturn(Optional.of(
+      Bouwheer.builder().bouwheerName("PT Cipta Krida Bahari").minRetention(10.0F).build()
+    ));
 
     assertThatThrownBy(() -> service.calculateDisburse(null, request))
       .isInstanceOf(BusinessException.class)
