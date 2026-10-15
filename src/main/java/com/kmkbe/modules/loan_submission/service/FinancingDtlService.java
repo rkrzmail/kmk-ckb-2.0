@@ -28,8 +28,10 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 @Service
@@ -286,6 +288,9 @@ public class FinancingDtlService {
 
     String noAggrNo = financingHdr.getAgreement().isEmpty() ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();
     LocalDateTime settlementDate = request.getInvoicePaid().isEmpty() ? DateTimeUtils.now() : Utils.toInstant(request.getInvoicePaid().getFirst().getClearingDate());
+
+//    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+//    LocalDateTime settlementDate = LocalDate.parse("01-03-2027", formatter).atStartOfDay();
 
     String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
 
