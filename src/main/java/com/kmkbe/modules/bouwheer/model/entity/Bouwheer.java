@@ -137,8 +137,10 @@ public class Bouwheer {
   @Column(name = "min_retention")
   private Float minRetention;
 
-  @Size(max = 50)
+  @Column(name = "interest_scheme")
+  private String interestScheme;
 
+  @Size(max = 50)
   @Column(name = "usr_crt", nullable = false, length = 50)
   private String usrCrt;
 
@@ -158,5 +160,6 @@ public class Bouwheer {
 
   @OneToMany(mappedBy = "bouwheer")
   private Set<Invoice> invoices = new LinkedHashSet<>();
+
 
 }

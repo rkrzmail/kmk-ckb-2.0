@@ -569,7 +569,7 @@ public class FinancingHdrService {
     try {
       List<DisbursementLog> disbursementLog = disbursementLogRepository.findAllByAgreement(agreement);
       if (disbursementLog != null && !disbursementLog.isEmpty() && disbursementLog.get(0).getApPaidAmt() != null) {
-        return BigDecimal.valueOf(disbursementLog.get(0).getApPaidAmt());
+        return BigDecimal.valueOf(disbursementLog.getFirst().getApPaidAmt());
       }
     } catch (Exception ex) {
       errorLogs.add("Agreement " + agreement.getAgreementCode() + " gagal ambil disbursement log: " + ex.getMessage());

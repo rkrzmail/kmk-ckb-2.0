@@ -104,7 +104,7 @@ public class FinancingService {
     log.info("Process update status if Golive agreement from confins {} ", agreement);
     if (agreement.getStatus().equalsIgnoreCase("Live")) {
       Optional<FinancingHdr> financingHdrO = financingHdrRepository.findByFinancingHdrCode(agreement.getFinancingHdr().getFinancingHdrCode());
-      if (financingHdrO.isPresent() && financingHdrO.get().getFinancingStatus().equalsIgnoreCase("INPROCESS") || financingHdrO.isPresent() && financingHdrO.get().getFinancingStatus().equalsIgnoreCase("LIVE")) {
+      if (financingHdrO.isPresent() && financingHdrO.get().getFinancingStatus().equalsIgnoreCase("INPROCESS")) {
         FinancingHdr financingHdr = financingHdrO.get();
         financingHdr.setFinancingStatus("LIVE");
         financingHdr.setFinancingStep(!Objects.equals(financingHdr.getFinancingStep(), "PAID") ?"GOLIVE":financingHdr.getFinancingStep());
