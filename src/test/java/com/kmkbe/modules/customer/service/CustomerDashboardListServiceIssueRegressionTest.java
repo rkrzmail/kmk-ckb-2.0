@@ -102,6 +102,28 @@ class CustomerDashboardListServiceIssueRegressionTest {
   }
 
   @Test
+  void paidCreditFacilityIsNotDisplayedAsNew() {
+    Customer customer = Customer.builder().custCode(UUID.randomUUID()).custTypeCode("Company").build();
+    FinancingHdr financing = new FinancingHdr();
+    financing.setFinancingHdrCode(UUID.randomUUID());
+    financing.setCustomer(customer);
+    financing.setBouwheer(Bouwheer.builder().bouwheerName("CKB").build());
+    financing.setFinancingStatus("PAID");
+    financing.setFinancingStep("PAID");
+    financing.setFinancingDueDate(LocalDateTime.of(2026, 10, 26, 0, 0));
+    financing.setFinancingAmt(1_000_000D);
+    financing.setAgreement(Set.of());
+    when(financingHdrRepository.findAllByRawOrder(eq(customer.getCustCode().toString()), any(Pageable.class)))
+      .thenReturn(new PageImpl<>(java.util.List.of(financing)));
+
+    CustomerCreditFacilityNewDto dto = service.listcreditfacilities(customer, new BasePaginationRequest())
+      .getList().getFirst();
+
+    assertThat(dto.getStatus().getStatus()).isEqualTo("PAID");
+    assertThat(dto.getStatus().getStatusLabel()).isEqualTo("Paid");
+  }
+
+  @Test
   void invoiceDueDateContainsCustomerInvoiceNumber() throws Exception {
     Customer customer = Customer.builder()
       .custCode(UUID.randomUUID())

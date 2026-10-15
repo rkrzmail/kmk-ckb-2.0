@@ -131,6 +131,7 @@ public class DistributionSubmissionService {
               || e.getFinancingStatus().equalsIgnoreCase("signed")
               || e.getFinancingStatus().equalsIgnoreCase("live")
               || e.getFinancingStatus().equalsIgnoreCase("golive")
+              || e.getFinancingStatus().equalsIgnoreCase("paid")
 
           ) {
             color = "#ccffcc";

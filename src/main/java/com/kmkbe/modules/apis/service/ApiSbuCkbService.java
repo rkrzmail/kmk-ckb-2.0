@@ -359,7 +359,8 @@ public class ApiSbuCkbService {
       || finStatus.equalsIgnoreCase("signing")
       || finStatus.equalsIgnoreCase("signed")
       || finStatus.equalsIgnoreCase("live")
-      || finStatus.equalsIgnoreCase("golive")) {
+      || finStatus.equalsIgnoreCase("golive")
+      || finStatus.equalsIgnoreCase("paid")) {
       color = "#ccffcc";
     } else {
       color = "#FF5C5C";

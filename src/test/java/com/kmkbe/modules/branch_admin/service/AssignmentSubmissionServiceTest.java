@@ -240,6 +240,23 @@ class AssignmentSubmissionServiceTest {
   }
 
   @Test
+  void branchAdminCanFindPaidFinancingByHeaderCode() throws Exception {
+    FinancingHdr financing = financingHdr("PAID", "PAID");
+    stubUserAndRole("branch_admin");
+    when(financingHdrRepository.findAllAssignmentFinancingRaw(eq("JKT"), eq(null), eq(null), eq(null), any()))
+      .thenReturn(pageOf(financing));
+
+    PaginationResult<AssignmentDto> result = service.assignmentList(
+      httpServletRequest, pagination("financingHdrCode", FINANCING_HDR_CODE.toString(), 1, 10));
+
+    assertThat(result.getList()).singleElement().satisfies(dto -> {
+      assertThat(dto.getFinancingHdrCode()).isEqualTo(FINANCING_HDR_CODE);
+      assertThat(dto.getStatus()).isEqualTo("PAID");
+      assertThat(dto.getStatusLabel()).isEqualTo("Paid");
+    });
+  }
+
+  @Test
   void assignmentListRethrowsWhenAuthenticationFails() throws Exception {
     when(currentUserService.internalUser()).thenThrow(new SignatureException("not authenticated"));
 
