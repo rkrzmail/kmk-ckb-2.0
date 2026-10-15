@@ -216,6 +216,8 @@ class AssignmentSubmissionServiceTest {
   void assignmentListSpecSearchCoversFinancingHdrCustomerBouwheerAndNoMatch() throws Exception {
     FinancingHdr financingHdr = financingHdr("INPROCESS", "INPROCESS");
     stubUserAndRole("account_officer");
+    when(financingHdrRepository.findByFinancingHdrCodeAndMstBranch_BranchCode(FINANCING_HDR_CODE, "JKT"))
+      .thenReturn(Optional.of(financingHdr));
     when(financingHdrRepository.findAllAssignmentFinancingRaw(any(), any(), any(), any(), any())).thenReturn(pageOf(financingHdr));
     when(agreementRepository.findTopByFinancingHdr(financingHdr)).thenReturn(Optional.empty());
 
@@ -243,8 +245,8 @@ class AssignmentSubmissionServiceTest {
   void branchAdminCanFindPaidFinancingByHeaderCode() throws Exception {
     FinancingHdr financing = financingHdr("PAID", "PAID");
     stubUserAndRole("branch_admin");
-    when(financingHdrRepository.findAllAssignmentFinancingRaw(eq("JKT"), eq(null), eq(null), eq(null), any()))
-      .thenReturn(pageOf(financing));
+    when(financingHdrRepository.findByFinancingHdrCodeAndMstBranch_BranchCode(FINANCING_HDR_CODE, "JKT"))
+      .thenReturn(Optional.of(financing));
 
     PaginationResult<AssignmentDto> result = service.assignmentList(
       httpServletRequest, pagination("financingHdrCode", FINANCING_HDR_CODE.toString(), 1, 10));
@@ -254,6 +256,17 @@ class AssignmentSubmissionServiceTest {
       assertThat(dto.getStatus()).isEqualTo("PAID");
       assertThat(dto.getStatusLabel()).isEqualTo("Paid");
     });
+  }
+
+  @Test
+  void branchAdminCannotFindPaidFinancingOutsideTheirBranch() throws Exception {
+    stubUserAndRole("branch_admin");
+
+    PaginationResult<AssignmentDto> result = service.assignmentList(
+      httpServletRequest, pagination("financingHdrCode", FINANCING_HDR_CODE.toString(), 1, 10));
+
+    assertThat(result.getList()).isEmpty();
+    assertThat(result.getTotalData()).isZero();
   }
 
   @Test
