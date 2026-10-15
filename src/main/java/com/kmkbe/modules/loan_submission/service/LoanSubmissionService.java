@@ -365,7 +365,7 @@ public class LoanSubmissionService {
 
       Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(calculateSimulationRequest.getBouwheerCode()));
       if(bouwheerOptional.isEmpty()){
-
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Bouwheer Not Found");
       }
 
       Bouwheer bouwheer = bouwheerOptional.get();
