@@ -14,6 +14,7 @@ import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.core.service.ExternalApiService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ExecutionTimer;
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
@@ -737,6 +738,9 @@ public class ReportService {
     params.put("Provisi", "IDR 0.00");
     params.put("Survey", "IDR 0.00");
 
+
+    FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+
     CommonResult<SitDto> sitData = agreementCodeService.getAgreementsByFinancingHdrCode(UUID.fromString(financingHdrCode));
     if (sitData.getCode() == 200 && sitData.getData() != null) {
       SitDto sitDto = sitData.getData();
@@ -749,6 +753,13 @@ public class ReportService {
         ? sitDto.getFinancingDueDate().format(dateFormat)
         : "-";
 
+      // Split Legal Address
+      String[] legalAddress = Optional.ofNullable(financingHdr)
+        .map(FinancingHdr::getBouwheer)
+        .map(Bouwheer::getLegalAddress)
+        .map(addr -> addr.split(","))
+        .orElse(new String[]{""});
+
       log.info("BM {} ",agreement.getFinancingHdr().getBouwheer().getPicName());
       params.put("NoDokumen", sitDto.getAgreementCode());
       params.put("TempatTanggal", tanggalDokumen);
@@ -758,14 +769,14 @@ public class ReportService {
       params.put("NamaDirektur", sitDto.getDirectorName());
       params.put("NamaGMFinanceCSUL", "");
       params.put("TotalPembayaran", totalPembayaran);
+      params.put("legalAddress",legalAddress[0].trim());
+      params.put("picName", financingHdr.getBouwheer().getPicName() != null ? financingHdr.getBouwheer().getPicName() : "-");
     } else {
       throw new RuntimeException("Failed to get agreement data: " + (sitData.getMessage() != null ? sitData.getMessage() : ""));
     }
 
     // tabel 3
     List<Map<String, String>> tableData3 = new ArrayList<>();
-
-    FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
     PaginationResult<PostedInvoiceDto> invoiceResult = invoiceService.invoiceSubmissionByFinancingHdr(
       financingHdr,
       new PaginationRequest()
@@ -783,13 +794,11 @@ public class ReportService {
         row.put("invoice_amt", fmtRupiah(invoice.getInvoiceAmount() != null ? invoice.getInvoiceAmount().toString() : "-"));
         row.put("description", invoice.getInvoiceDescription() != null ? invoice.getInvoiceDescription() : "-");
         row.put("bouwheer", invoice.getBouwheerName() != null ? invoice.getBouwheerName() : "-");
-        row.put("legalAddress", financingHdr.getBouwheer().getLegalAddress() != null ? financingHdr.getBouwheer().getLegalAddress() : "-");
-        row.put("picName", financingHdr.getBouwheer().getPicName() != null ? financingHdr.getBouwheer().getPicName() : "-");
         row.put("invoice_duedate", fmtDateObj2(invoice.getInvoiceDueDate() != null ? invoice.getInvoiceDueDate() : "-"));
         tableData3.add(row);
       }
 
-      PostedInvoiceDto firstInvoice = invoices.get(0);
+      PostedInvoiceDto firstInvoice = invoices.getFirst();
       if (firstInvoice.getInvoiceDueDate() != null) {
         invoiceDueDateParam = fmtDateObj2(firstInvoice.getInvoiceDueDate());
       }
