@@ -433,7 +433,6 @@ public class LoanSubmissionService {
       log.info("Effective Rate : {} ",effective_Rate);
 
       // simple intertest
-      boolean isSimpleInterets = false;
       double interestAmount;
       if(!Objects.equals(bouwheer.getInterestScheme(), "D")){
         interestAmount   = nilaiPembiayaan * effective_Rate/100 * tenor / 360;//6 digit

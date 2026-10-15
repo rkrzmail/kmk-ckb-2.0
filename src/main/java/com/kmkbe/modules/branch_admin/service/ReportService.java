@@ -783,6 +783,8 @@ public class ReportService {
         row.put("invoice_amt", fmtRupiah(invoice.getInvoiceAmount() != null ? invoice.getInvoiceAmount().toString() : "-"));
         row.put("description", invoice.getInvoiceDescription() != null ? invoice.getInvoiceDescription() : "-");
         row.put("bouwheer", invoice.getBouwheerName() != null ? invoice.getBouwheerName() : "-");
+        row.put("legalAddress", financingHdr.getBouwheer().getLegalAddress() != null ? financingHdr.getBouwheer().getLegalAddress() : "-");
+        row.put("picName", financingHdr.getBouwheer().getPicName() != null ? financingHdr.getBouwheer().getPicName() : "-");
         row.put("invoice_duedate", fmtDateObj2(invoice.getInvoiceDueDate() != null ? invoice.getInvoiceDueDate() : "-"));
         tableData3.add(row);
       }
@@ -798,6 +800,8 @@ public class ReportService {
       emptyRow.put("invoice_amt", "No Data Available");
       emptyRow.put("description", "No Data Available");
       emptyRow.put("bouwheer", "No Data Available");
+      emptyRow.put("legalAddress","No Data Available");
+      emptyRow.put("picName", "No Data Available");
       emptyRow.put("invoice_duedate", "No Data Available");
       tableData3.add(emptyRow);
     }
