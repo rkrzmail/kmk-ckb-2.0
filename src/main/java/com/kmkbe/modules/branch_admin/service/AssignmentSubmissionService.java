@@ -22,6 +22,7 @@ import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -108,14 +109,28 @@ public class AssignmentSubmissionService {
         }
       }
 
-      // Role-specific statuses are mapped below, so pagination must happen after that filter.
-      Page<FinancingHdr> financingHdrPage = financingHdrRepository.findAllAssignmentFinancingRaw(
-        user.getEmployee().getBranch().getBranchCode(),
-        financingStatusFilter,
-        custNameFilter,
-        bouwheerNameFilter,
-        org.springframework.data.domain.Pageable.unpaged(PaginationSort.assignments(request))
-      );
+      String branchCode = user.getEmployee().getBranch().getBranchCode();
+      Page<FinancingHdr> financingHdrPage;
+      if ("financingHdrCode".equalsIgnoreCase(request.getSearchBy())
+          && !StringUtil.isNullOrEmpty(request.getSearchValue())) {
+        UUID code;
+        try {
+          code = UUID.fromString(request.getSearchValue().trim());
+        } catch (IllegalArgumentException exception) {
+          code = null;
+        }
+        financingHdrPage = new PageImpl<>(code == null ? List.of() : financingHdrRepository
+          .findByFinancingHdrCodeAndMstBranch_BranchCode(code, branchCode).stream().toList());
+      } else {
+        // Role-specific statuses are mapped below, so pagination must happen after that filter.
+        financingHdrPage = financingHdrRepository.findAllAssignmentFinancingRaw(
+          branchCode,
+          financingStatusFilter,
+          custNameFilter,
+          bouwheerNameFilter,
+          org.springframework.data.domain.Pageable.unpaged(PaginationSort.assignments(request))
+        );
+      }
 
 
       return SpecPagination.paginationData(new SpecPagination<FinancingHdr, AssignmentDto>(financingHdrPage.stream().toList(), request) {

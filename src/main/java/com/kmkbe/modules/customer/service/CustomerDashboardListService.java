@@ -275,7 +275,8 @@ public class CustomerDashboardListService {
       || "signing".equalsIgnoreCase(status)
       || "signed".equalsIgnoreCase(status)
       || "live".equalsIgnoreCase(status)
-      || "golive".equalsIgnoreCase(status)) return "#ccffcc";
+      || "golive".equalsIgnoreCase(status)
+      || "paid".equalsIgnoreCase(status)) return "#ccffcc";
     return "#FF5C5C";
   }
 

@@ -18,6 +18,10 @@ import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -39,6 +43,17 @@ import static org.mockito.Mockito.when;
 
 class InvoicePaidNotificationTest {
   private final UUID financingCode = UUID.randomUUID();
+
+  @Test
+  void financeNotificationRunsAfterCommitInWritableTransaction() throws Exception {
+    var method = InvoicePaidFinanceNotificationService.class.getMethod("onInvoicePaid", InvoicePaidEvent.class);
+    var listener = method.getAnnotation(TransactionalEventListener.class);
+    var transaction = method.getAnnotation(Transactional.class);
+
+    assertThat(listener.phase()).isEqualTo(TransactionPhase.AFTER_COMMIT);
+    assertThat(transaction.propagation()).isEqualTo(Propagation.REQUIRES_NEW);
+    assertThat(transaction.readOnly()).isFalse();
+  }
 
   @Test
   void publishesOneEventOnlyForFirstPaidTransition() {

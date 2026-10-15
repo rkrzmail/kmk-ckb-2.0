@@ -111,6 +111,20 @@ class DistributionSubmissionServiceIssueRegressionTest {
   }
 
   @Test
+  void paidFinancingIsReturnedAsPaidInsteadOfNew() {
+    FinancingHdr financing = row("paid", "Vendor", 1_000D, null);
+    financing.setFinancingStatus("PAID");
+    financing.setFinancingStep("PAID");
+    when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(financing));
+
+    DistributionSubmissionDto dto = service.submissionDistribution(new PaginationRequest()).getList().getFirst();
+
+    assertThat(dto.getStatus().getStatus()).isEqualTo("PAID");
+    assertThat(dto.getStatus().getStatusLabel()).isEqualTo("Paid");
+    assertThat(dto.getStatus().getColor()).isEqualTo("#ccffcc");
+  }
+
+  @Test
   void distributionListIncludesLastUpdateTimestampWithoutReplacingCreationTimestamp() {
     LocalDateTime createdAt = LocalDateTime.of(2026, 10, 10, 9, 0);
     LocalDateTime updatedAt = LocalDateTime.of(2026, 10, 14, 11, 30);
