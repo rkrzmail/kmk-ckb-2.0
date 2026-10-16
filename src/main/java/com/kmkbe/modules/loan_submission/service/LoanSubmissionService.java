@@ -609,7 +609,7 @@ public class LoanSubmissionService {
     UUID bouwheerCode = finHdr.getBouwheer() != null ? finHdr.getBouwheer().getBouwheerCode() : null;
     Optional<Product> findProduct = findProductByNtfRangeAndBouwheer(ntfResult.doubleValue(), bouwheerCode);
     if (findProduct.isEmpty()) {
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_409, "Product not found");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_409, "Nominal belum terdaftar di mapping produk");
     }
 
     final Product product = findProduct.get();
@@ -1660,7 +1660,7 @@ public class LoanSubmissionService {
     UUID parsedBouwheerCode = parseBouwheerCode(bouwheerCode);
     Optional<Product> productOptional = productRepository.findFirstByAmountInRangeAndBouwheerCode(amount, parsedBouwheerCode);
     if (productOptional.isEmpty()) {
-      throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Product not found");
+      throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Nominal belum terdaftar di mapping produk");
     }
     return productOptional;
   }
@@ -1668,7 +1668,7 @@ public class LoanSubmissionService {
   private Optional<Product> findProductByNtfRangeAndBouwheer(Double amount, UUID bouwheerCode) {
     Optional<Product> productOptional = productRepository.findFirstByAmountInRangeAndBouwheerCode(amount, bouwheerCode);
     if (productOptional.isEmpty()) {
-      throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Product not found");
+      throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Nominal belum terdaftar di mapping produk");
     }
     return productOptional;
   }
