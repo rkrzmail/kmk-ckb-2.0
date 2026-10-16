@@ -744,6 +744,10 @@ public class FinancingHdrService {
         financingStep.in("golive", "paid")
       ),
       criteriaBuilder.and(
+        criteriaBuilder.equal(financingStatus, "paid"),
+        criteriaBuilder.equal(financingStep, "paid")
+      ),
+      criteriaBuilder.and(
         criteriaBuilder.equal(financingStatus, "completed"),
         criteriaBuilder.equal(financingStep, "refund")
       )
