@@ -120,6 +120,7 @@ public class ImportantNotesService {
         "select bouwheer_code, vendor_code, already_accept_important_notes, dtm_crt from public._loan_important_notes where bouwheer_code = ? and vendor_code = ? order by id desc limit 1",
         (rs, rowNum) -> ExternalIntegrationLoanSimulationDto.builder()
           .bouwheerCode(rs.getString("bouwheer_code"))
+          .vendor(rs.getString("vendor_code"))
           .alreadyAcceptImportantNotes(rs.getBoolean("already_accept_important_notes"))
           .dtmCrt(rs.getTimestamp("dtm_crt"))
           .build(),

@@ -515,8 +515,8 @@ public class AgreementService {
 
   private void sendContractUploadRequiredNotification(FinancingHdr financingHdr, String agreementCode, String cwrCode) {
     try {
-      if (financingHdr.getMstBranch() == null) {
-        log.warn("Contract upload notification skipped: branch is empty for financingHdrCode={}", financingHdr.getFinancingHdrCode());
+      if (financingHdr == null || financingHdr.getMstBranch() == null) {
+        log.warn("Contract upload notification skipped: branch is empty for financingHdrCode={}", financingHdr != null ? financingHdr.getFinancingHdrCode() : null);
         return;
       }
 
