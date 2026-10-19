@@ -186,8 +186,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     final String rtoken = request.getHeader("rtoken");
     Optional<RedisLog> redisLog = redisRepository.findFirstByRedis(username);
-    if (rtoken.equalsIgnoreCase("")) {
-      //abaikan
+    if (rtoken == null || rtoken.trim().isEmpty()) {
+      // abaikan jika header rtoken absen / kosong (mencegah NPE)
     } else if (redisLog.isPresent()) {
       if (request.getRequestURI().toLowerCase().contains("/loan-submissions/create")) {
 
