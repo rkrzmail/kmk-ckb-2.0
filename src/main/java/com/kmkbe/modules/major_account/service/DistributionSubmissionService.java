@@ -371,9 +371,10 @@ public class DistributionSubmissionService {
           + financingHdr.getSurveyFeeAmtNett();
 
       //getAPI AO,BH
-      MailPositionDto to = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "BM/BOH");
-      MailPositionDto ccRM = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "RM");
-      MailPositionDto toAO = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "AO/AM");
+      String branchCode = (financingHdr.getMstBranch() != null) ? financingHdr.getMstBranch().getBranchCode() : "";
+      MailPositionDto to = configRemoteService.getEmailByPosition("", branchCode, "BM/BOH");
+      MailPositionDto ccRM = configRemoteService.getEmailByPosition("", branchCode, "RM");
+      MailPositionDto toAO = configRemoteService.getEmailByPosition("", branchCode, "AO/AM");
 
       java.util.Set<String> toEmailSet = new java.util.LinkedHashSet<>();
       java.util.Set<String> ccEmailSet = new java.util.LinkedHashSet<>();

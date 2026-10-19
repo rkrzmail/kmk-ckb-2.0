@@ -60,7 +60,7 @@ public class FileStorageService {
 
             // Ambil ekstensi file dengan benar dari titik terakhir
             String ext = getFileExtension(file.getOriginalFilename());
-            log.info("Detected file extension: " + ext);
+            log.info("Detected file extension: {}", ext != null ? ext.replaceAll("[\r\n]", "_") : "");
 
             if (StringUtil.isNullOrEmpty(ext)) {
                 throw new Exception("File format or extension is not valid, try to upload valid file. Uploaded File: " + name);
@@ -77,7 +77,7 @@ public class FileStorageService {
 
             // Ganti spasi dalam nama file dengan garis bawah
             name = name.replaceAll("\\s", "_");
-            log.info("Processed file name: " + name);
+            log.info("Processed file name: {}", name.replaceAll("[\r\n]", "_"));
 
             // Pastikan nama file memiliki ekstensi yang benar
             if (!name.endsWith("." + ext)) {
@@ -114,8 +114,11 @@ public class FileStorageService {
             filename = filename.replace("/uploads/", "");
           }
 
-          Path file = root.resolve(filename);
-            Resource resource = new UrlResource(file.toUri());
+          Path file = root.resolve(filename).normalize().toAbsolutePath();
+          if (!file.startsWith(root.toAbsolutePath())) {
+              throw new SecurityException("Path traversal attempt detected: " + filename);
+          }
+          Resource resource = new UrlResource(file.toUri());
 
             if (resource.exists() || resource.isReadable()) {
                 return resource;
@@ -133,7 +136,10 @@ public class FileStorageService {
                 filename = filename.replace("/uploads/", "");
             }
 
-            Path file = root.resolve(filename);
+            Path file = root.resolve(filename).normalize().toAbsolutePath();
+            if (!file.startsWith(root.toAbsolutePath())) {
+                throw new SecurityException("Path traversal attempt detected: " + filename);
+            }
             boolean res = Files.deleteIfExists(file);
             return res;
         } catch (IOException e) {
@@ -148,7 +154,10 @@ public class FileStorageService {
             String cd
     ) {
         try {
-            Path paths = root.resolve(filePath).normalize()  .toAbsolutePath();
+            Path paths = root.resolve(filePath).normalize().toAbsolutePath();
+            if (!paths.startsWith(root.toAbsolutePath())) {
+                throw new SecurityException("Path traversal attempt detected: " + filePath);
+            }
             Resource resource = new UrlResource(paths.toUri());
             if (!resource.exists() || !resource.isReadable()) {
                 throw new RuntimeException("File not found or not readable: " + paths.toUri());
