@@ -38,11 +38,17 @@ public class FinancingController {
   private final FinancingDtlService financingDtlService;
   private final CurrentUserService currentUserService;
 
+  @org.springframework.beans.factory.annotation.Value("${security.api.key}")
+  private String expectedApiKey;
+
   @PostMapping("/invoice-paid")
   public CommonResult<Object> invoicePaid(
+    HttpServletRequest httpServletRequest,
     @Valid @RequestBody FinancingInvoicePaidRequest request
   ) {
     try {
+      validateInternalApiKey(httpServletRequest);
+
       FinancingHdr financingHdr = financingHdrService.paidFinancing(
         request
       );
