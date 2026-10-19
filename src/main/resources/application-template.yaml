@@ -86,6 +86,16 @@ logging:
   file:
     name: ${LOG_FILE_PATH:./logs/log-file.log}
 
+security:
+  aes:
+    key: ${SECURITY_AES_KEY:}
+  api:
+    key: ${SECURITY_API_KEY:}
+  jwt:
+    secret-key: ${SECURITY_JWT_SECRET_KEY:}
+    expiration-time: ${SECURITY_JWT_EXPIRATION_TIME:3000000}
+  secret-key: ${SECURITY_SECRET_KEY:}
+
 rsa:
   public-key: ${RSA_PUBLIC_KEY:classpath:certs/public-key.pem}
   private-key: ${RSA_PRIVATE_KEY:classpath:certs/pkcs8.pem}
