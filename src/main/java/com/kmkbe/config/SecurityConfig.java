@@ -20,6 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
@@ -46,6 +47,7 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class SecurityConfig {
   @Value("${spring.profiles.active:dev}")
   private String profileActives;
@@ -153,6 +155,10 @@ public class SecurityConfig {
 
           auth.requestMatchers(JwtAuthenticationFilter.ENDPOINTS_WHITELIST_LOAN_SUBMISSION).permitAll();
           auth.requestMatchers(JwtAuthenticationFilter.ENDPOINTS_WHITELIST_FINANCING).permitAll();
+
+          // Role-based Access Control Guard (Issue H1)
+          // Endpoint internal hanya untuk user internal backoffice yang memiliki authority/role
+          auth.requestMatchers("/api/v1/internal/**").hasAnyAuthority("ROLE_USER", "INTERNAL_USER", "ROLE_INTERNAL");
 
           auth.dispatcherTypeMatchers(
             DispatcherType.ASYNC,
