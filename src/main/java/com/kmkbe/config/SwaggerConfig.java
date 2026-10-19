@@ -10,14 +10,16 @@ import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
 import org.springdoc.core.customizers.OperationCustomizer;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
+@ConditionalOnProperty(name = "springdoc.api-docs.enabled", havingValue = "true", matchIfMissing = true)
 public class SwaggerConfig {
 
   @Bean
-  public OpenAPI openAPI(@Value("${springdoc.version}") String appVersion) {
+  public OpenAPI openAPI(@Value("${springdoc.version:1.0.0}") String appVersion) {
     final String securitySchemeName = "bearerAuth";
 
     return new OpenAPI()
