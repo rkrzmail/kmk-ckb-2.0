@@ -1,6 +1,7 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.kmkbe.adapter.ApiCsulAdapter;
 import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.*;
@@ -32,9 +33,12 @@ import com.kmkbe.modules.product.model.entity.Product;
 import com.kmkbe.modules.product.repository.ProductRepository;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
+import com.kmkbe.modules.remote.service.CurrencyRemoteService;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
+import com.kmkbe.modules.remote.service.InvoiceRemoteDto;
 import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
+import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.helpers.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,9 +47,11 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
+
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
@@ -63,14 +69,18 @@ public class LoanSubmissionService {
   private final ProductRepository productRepository;
   private final BouwheerRepository bouwheerRepository;
   private final BCryptPasswordEncoder bcryptEncoder;
+  private final JdbcTemplate jdbcTemplate;
   private final ConfigRemoteService configRemoteService;
   private final JwtLoanSubmissionService jwtLoanSubmissionService;
   private final SimulationHistRepository simulationHistRepository;
   private final InvoiceRepository invoiceRepository;
   private final CustomerRemoteService customerRemoteService;
+  private InvoiceRemoteDto invoiceRemoteDto;
+  private final CurrencyRemoteService currencyRemoteService;
   private final ExistingCustomerService existingCustomerService;
   private final CustomerCompanyRepository customerCompanyRepository;
   private final CustomerPersonalRepository customerPersonalRepository;
+  private final AgreementRepository agreementRepository;
   private final InvoiceService invoiceService;
   private final FinancingHdrService financingHdrService;
   private final FinancingDtlService financingDtlService;
@@ -79,7 +89,9 @@ public class LoanSubmissionService {
   private final LegalFileRepository legalFileRepository;
   private final ImportantNotesService importantNotesService;
   private final FinancingHdrRepository financingHdrRepository;
+  private final MstBranchRepository mstBranchRepository;
   private final CustomerRepository customerRepository;
+  private final ApiCsulAdapter apiCsulAdapter;
   private final AuditTrailService auditTrailService;
   private final FinancingDtlRepository financingDtlRepository;
   private final BranchAssignmentResolver branchAssignmentResolver;
@@ -90,7 +102,7 @@ public class LoanSubmissionService {
     String token
   ) throws Exception {
     final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
-    CsulInquiryInvoiceRemoteDto inquiryInvoiceRemote;
+    CsulInquiryInvoiceRemoteDto inquiryInvoiceRemote = null;
 
     if (customer.getCustCode() == null) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
@@ -170,6 +182,8 @@ public class LoanSubmissionService {
     }
 
     final SimpleDateFormat sdfNoSeperator = new SimpleDateFormat("yyyyMMdd");
+    //double baseUsdToIdr = currencyRemoteService.fetchIdrFrom("usd");
+
 
     //jika data banyak berpotensi timeout
     List<PostedInvoiceDto> result = new ArrayList<>();
@@ -348,6 +362,7 @@ public class LoanSubmissionService {
     CalculateSimulationRequest calculateSimulationRequest
   ) throws SignatureException, JsonProcessingException, ParseException {
     try {
+
       Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(calculateSimulationRequest.getBouwheerCode()));
       if(bouwheerOptional.isEmpty()){
         throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Bouwheer Not Found");
@@ -378,8 +393,8 @@ public class LoanSubmissionService {
 
       boolean isCustomerExisting = false;
       Cwr validateCwr = null;
-      if (customer != null) {
-        validateCwr = isCustomerExistingByCwr(customer);
+      if (customer != null || !StringUtil.isNullOrEmpty(calculateSimulationRequest.getToken())) {
+        validateCwr = isCustomerExistingByCwr(customer, calculateSimulationRequest.getToken());
         isCustomerExisting = validateCwr != null;
       }
 
@@ -395,7 +410,6 @@ public class LoanSubmissionService {
       if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
 
         int top = DateTimeUtils.dateDiffInDay(DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getPostingDate()), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
-        log.info("Posting Date : {} ",calculateSimulationRequest.getPostingDate());
         log.info("Invoice duedate : {} ",calculateSimulationRequest.getInvoiceDueDate());
         log.info("Top : {} ",top);
         int gracePeriode = Math.toIntExact(bouwheer.getGracePeriod());
@@ -512,12 +526,7 @@ public class LoanSubmissionService {
       Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financeCode));
       if (financingHdr.isPresent()) {
         FinancingHdr fin = financingHdr.get();
-        double effectiveRate = fin.getEffectiveRate();
-        if (effectiveRate < 1) {
-          effectiveRate = effectiveRate * 100;
-        } else if (effectiveRate > 100) {
-          effectiveRate = Math.floor(effectiveRate / 100);
-        }
+        double effectiveRate = normalizeEffectiveRate(fin.getEffectiveRate());
 
         FinancingHdrDto financingHdrDto = FinancingHdrDto.builder()
           .financingDate(fin.getFinancingDate())
@@ -544,12 +553,7 @@ public class LoanSubmissionService {
           Optional<SimulationHist> simulationHist = simulationHistRepository.findTopBySimulationHistCode(UUID.fromString(histCode));
           if (simulationHist.isPresent()) {
             SimulationHist simH = simulationHist.get();
-            effectiveRate = simH.getEffectiveRate();
-            if (effectiveRate < 1) {
-              effectiveRate = effectiveRate * 100;
-            } else if (effectiveRate > 100) {
-              effectiveRate = Math.floor(effectiveRate / 100);
-            }
+            effectiveRate = normalizeEffectiveRate(simH.getEffectiveRate());
 
             SimulationHistDto simulationHistDto = SimulationHistDto.builder()
               .schema(100 - simH.getRetention())
@@ -579,9 +583,9 @@ public class LoanSubmissionService {
   ) {
     int schemaRate = Utils.getInt(request.getParameter("schemaRate"));
     int intestRate = Utils.getInt(request.getParameter("intestRate"));
+
     double adminFee = Utils.getInt(request.getParameter("adminFee"));
     String financingHdrCode = request.getParameter("financingHdrCode");
-
     Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
     if (financingHdr.isEmpty()) {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_409, "FinancingHdr not found");
@@ -590,15 +594,12 @@ public class LoanSubmissionService {
 
     final BigDecimal ntfResult = BigDecimal.valueOf(finHdr.getTotalInvoiceAmt())
       .multiply(BigDecimal.valueOf(schemaRate / 100.0));
+    //.setScale(0, RoundingMode.UP);
 
-    log.info("NTF Amount : {} ",ntfResult);
-    final Optional<Product> findProduct = findProductByAmountAndBouwheer(
-      ntfResult.doubleValue(),
-      String.valueOf(finHdr.getBouwheer().getBouwheerCode())
-    );
-
+    UUID bouwheerCode = finHdr.getBouwheer() != null ? finHdr.getBouwheer().getBouwheerCode() : null;
+    Optional<Product> findProduct = findProductByNtfRangeAndBouwheer(ntfResult.doubleValue(), bouwheerCode);
     if (findProduct.isEmpty()) {
-      throw new IllegalStateException("Mohon maaf, Product yang sesuai limit tidak ditemukan");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_409, "Nominal belum terdaftar di mapping produk");
     }
 
     final Product product = findProduct.get();
@@ -613,38 +614,25 @@ public class LoanSubmissionService {
       surveyFeeAmount,
       legalFeeAmount;
 
+
     int tenor = finHdr.getTenor().intValue();
 
-    double nilaiPembiayaan = ntfResult.doubleValue();
-    double effective_Rate;
 
-    effective_Rate = intestRate;
-    if (effective_Rate < 1) {
-      effective_Rate = effective_Rate * 100;
-    } else if (effective_Rate > 100) {
-      effective_Rate = Math.floor(effective_Rate / 100);
-    }
+    double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
+    double effective_Rate = product.getEffectiveRate();
+    effective_Rate = intestRate;//kiriman dari client
 
-    double interestAmount;
-    if(!Objects.equals(finHdr.getBouwheer().getInterestScheme(), "D")){
-      interestAmount   = nilaiPembiayaan * effective_Rate/100 * tenor / 360;
-      log.info("Simple interest : {} ",interestAmount);
-    }else{
-      // 2. Diskonto (In Advance)
-      interestAmount =  nilaiPembiayaan - ((nilaiPembiayaan * 360) / (((effective_Rate/100) * tenor) + 360));
-      log.info("1 {}",nilaiPembiayaan * 360);
-      log.info("2 {}",(((effective_Rate/100) * tenor) + 360));
-      log.info("Diskonto to interest : {} ",interestAmount);
-    }
-    log.info("Interest Amount : {} ",interestAmount);
+    effective_Rate = normalizeEffectiveRate(effective_Rate);
 
-    double jumlahBiaya;
-    double provisionRateFee = finHdr.getProvisionFeeAmt();
-    log.info("Provision Rate : {} ",provisionRateFee);
+    double interestAmount = nilaiPembiayaan * effective_Rate / 100;
+    //double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
+    double jumlahBiaya = 0;
+    double provisionRateFee = finHdr.getProvisionFeeAmt();//  product.getProvisionRate() * plafonLimit / 100;
+
 
     boolean isCustomerExisting = finHdr.getSurveyFeeAmt().intValue() != 0;
     if (!isCustomerExisting) {
-      log.info("Customer new customer {} ", isCustomerExisting);
+      //newCustomer
       jumlahBiaya = provisionRateFee
         + product.getSurveyFee()
         + product.getLegalFee()
@@ -655,24 +643,13 @@ public class LoanSubmissionService {
       legalFeeAmount = BigDecimal.valueOf(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
       adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
       othersFeeAmount = BigDecimal.valueOf(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
-
-      log.info("Provision rate fee {} ", provisionRateFee);
-      log.info("Survey fee {} ", product.getSurveyFee());
-      log.info("Legal fee {} ", product.getLegalFee());
-      log.info("Admin fee {} ", adminFee);
-      log.info("Other fee {} ", product.getOthersFee());
-
-      log.info("Jumlah biaya new customer : {} ",jumlahBiaya);
     } else {
-      log.info("Customer existing customer {} ", isCustomerExisting);
       provisionFeeAmount = new BigDecimal(0);
       surveyFeeAmount = new BigDecimal(0);
       legalFeeAmount = new BigDecimal(0);
-      adminFeeAmount = new BigDecimal(0);
+      adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
       othersFeeAmount = new BigDecimal(0);
       jumlahBiaya = adminFee + product.getOthersFee();
-
-      log.info("Jumlah Biaya existing customer : {} ",jumlahBiaya);
     }
 
     double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
@@ -718,13 +695,7 @@ public class LoanSubmissionService {
           finHdr.setRetention(simulationHist.getRetention());
           finHdr.setAdminFeeAmt(simulationHist.getAdminAmt());
           finHdr.setInterestAmt(simulationHist.getInterestAmt());
-          if (simulationHist.getEffectiveRate() < 1) {
-            finHdr.setEffectiveRate(simulationHist.getEffectiveRate() * 100);
-          } else if (simulationHist.getEffectiveRate() > 100) {
-            finHdr.setEffectiveRate(Math.floor(simulationHist.getEffectiveRate() / 100));
-          } else {
-            finHdr.setEffectiveRate(simulationHist.getEffectiveRate());
-          }
+          finHdr.setEffectiveRate(normalizeEffectiveRate(simulationHist.getEffectiveRate()));
           finHdr.setFinancingAmt(simulationHist.getFinancingAmt());
           FinancingHdr savedFinancing = financingHdrRepository.save(finHdr);
           auditTrailService.record(
@@ -1487,7 +1458,7 @@ public class LoanSubmissionService {
     }
   }
 
-  private VendorTokenExtractor vendorTokenExtractor(Customer customer, String token) {
+  private VendorTokenExtractor vendorTokenExtractor(Customer customer, String token) throws SignatureException {
     return new VendorTokenExtractor(
       bouwheerRepository,
       jwtLoanSubmissionService,
@@ -1496,7 +1467,34 @@ public class LoanSubmissionService {
     );
   }
 
-  private Cwr isCustomerExistingByCwr(Customer customer) {
+  private Cwr isCustomerExistingByCwr(Customer customer, String token) throws SignatureException, JsonProcessingException {
+    final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
+    final ExistingCustomerDto existingCustomer = existingCustomerService.findLastByVendorCode(vendorTokenExtractor.getVendorCode())
+      .orElse(null);
+    if (customer == null) {
+      InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService
+        .inquiryVendor(vendorTokenExtractor.getVendorCode())
+        .getData();
+
+      Cwr cwr = validateCwrForCustomerExisting(
+        ExistingCustomerRequest.KeyType.npwp.name(),
+        inquiryVendorRemote.getNpwp(),
+        null,
+        null
+      );
+
+      if (existingCustomer == null) {
+        existingCustomerService.createOrUpdate(
+          vendorTokenExtractor.getVendorCode(),
+          cwr != null,
+          ExistingCustomerRequest.KeyType.npwp.name().toUpperCase(),
+          inquiryVendorRemote.getNpwp()
+        );
+      }
+
+      return cwr;
+    }
+
     final String identityType = customer.getCustIdTypeCode();
     final String identityNo = customer.getCompany() != null
       ? customer.getCompany().getIdentityNo()
@@ -1506,7 +1504,7 @@ public class LoanSubmissionService {
       identityType,
       identityNo,
       customer,
-      bouwheerRepository.findByBouwheerCode(UUID.fromString(customer.getBouwheer()))
+      bouwheerRepository.findByBouwheerCode(vendorTokenExtractor.getBouwheerCode())
         .orElse(null)
     );
 
@@ -1715,6 +1713,30 @@ public class LoanSubmissionService {
             "dengan pihak PT. Trakindo Utama.")
           .build();
       }
+    }
+  }
+
+  /**
+   * Menormalisasi effectiveRate tahunan (p.a.) dengan mempertahankan presisi desimal (Issue H11).
+   * Mencegah pemotongan presisi akibat Math.floor (misal 14.75% terpotong menjadi 14.0%).
+   * - Nilai < 1 (misal 0.1475) dinormalisasi menjadi persentase penuh (14.75).
+   * - Nilai basis point > 100 (misal 1475 bps) dinormalisasi menjadi 14.75 via pembagian BigDecimal presisi 4 desimal.
+   * - Nilai standar persentase (1 - 100) dibulatkan secara wajar ke 4 desimal tanpa membuang pecahan.
+   */
+  public static Double normalizeEffectiveRate(Double rate) {
+    if (rate == null) {
+      return null;
+    }
+    if (rate == 0.0) {
+      return 0.0;
+    }
+    BigDecimal bdRate = BigDecimal.valueOf(rate);
+    if (rate < 1.0) {
+      return bdRate.multiply(BigDecimal.valueOf(100.0)).setScale(4, RoundingMode.HALF_UP).doubleValue();
+    } else if (rate > 100.0) {
+      return bdRate.divide(BigDecimal.valueOf(100.0), 4, RoundingMode.HALF_UP).doubleValue();
+    } else {
+      return bdRate.setScale(4, RoundingMode.HALF_UP).doubleValue();
     }
   }
 }
