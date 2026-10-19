@@ -176,7 +176,14 @@ public class CustomerController {
 
   @GetMapping("/plafond/{financingHdrCode}")
   public BaseResponse getPlafond(
-    @PathVariable String financingHdrCode) {
+    @PathVariable String financingHdrCode
+  ) throws SignatureException {
+    Customer currentCustomer = currentUserService.customerOrNull();
+    if (currentCustomer != null) {
+      customerDashboardService.verifyFinancingHdrOwnership(financingHdrCode, currentCustomer);
+    } else {
+      currentUserService.authenticatedInternalUser();
+    }
     return customerDashboardService.plafondByFinancingHdrCode(financingHdrCode);
   }
 
@@ -190,7 +197,15 @@ public class CustomerController {
     @PathVariable String custCode,
     PaginationRequest request,
     HttpServletRequest httpServletRequest
-  ) {
+  ) throws SignatureException {
+    Customer currentCustomer = currentUserService.customerOrNull();
+    if (currentCustomer != null) {
+      if (currentCustomer.getCustCode() == null || !currentCustomer.getCustCode().toString().equalsIgnoreCase(custCode)) {
+        throw new org.springframework.security.access.AccessDeniedException("Access denied: You cannot view other customer's documents");
+      }
+    } else {
+      currentUserService.authenticatedInternalUser();
+    }
     return new CommonResult<PaginationResult<LegalFileDto>>().success(
       documentService.uploadedCustomerDoc(
         custCode,

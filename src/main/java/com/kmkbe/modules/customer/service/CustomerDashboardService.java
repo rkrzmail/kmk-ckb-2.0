@@ -84,6 +84,19 @@ public class CustomerDashboardService {
    * @param financingHdrCode
    * @return
    */
+  public void verifyFinancingHdrOwnership(String financingHdrCode, Customer customer) {
+    if (customer == null || customer.getCustCode() == null) {
+      throw new org.springframework.security.access.AccessDeniedException("Access denied: Not authorized");
+    }
+    Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
+    if (financingHdrOptional.isPresent()) {
+      FinancingHdr financingHdr = financingHdrOptional.get();
+      if (financingHdr.getCustomer() == null || !customer.getCustCode().equals(financingHdr.getCustomer().getCustCode())) {
+        throw new org.springframework.security.access.AccessDeniedException("Access denied: You do not own this financing header");
+      }
+    }
+  }
+
   public BaseResponseBuilder<CustomerPlafondDto> plafondByFinancingHdrCode(String financingHdrCode) {
     Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
 
