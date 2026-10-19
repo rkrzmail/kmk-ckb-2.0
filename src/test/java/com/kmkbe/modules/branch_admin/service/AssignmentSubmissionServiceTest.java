@@ -259,6 +259,23 @@ class AssignmentSubmissionServiceTest {
   }
 
   @Test
+  void branchAdminCanFindPaidFinancingWithSignedStepByHeaderCode() throws Exception {
+    FinancingHdr financing = financingHdr("PAID", "SIGNED");
+    stubUserAndRole("branch_admin");
+    when(financingHdrRepository.findByFinancingHdrCodeAndMstBranch_BranchCode(FINANCING_HDR_CODE, "JKT"))
+      .thenReturn(Optional.of(financing));
+
+    PaginationResult<AssignmentDto> result = service.assignmentList(
+      httpServletRequest, pagination("financingHdrCode", FINANCING_HDR_CODE.toString(), 1, 10));
+
+    assertThat(result.getList()).singleElement().satisfies(dto -> {
+      assertThat(dto.getFinancingHdrCode()).isEqualTo(FINANCING_HDR_CODE);
+      assertThat(dto.getStatus()).isEqualTo("SIGNED");
+      assertThat(dto.getStatusLabel()).isEqualTo("Signed");
+    });
+  }
+
+  @Test
   void branchAdminCannotFindPaidFinancingOutsideTheirBranch() throws Exception {
     stubUserAndRole("branch_admin");
 

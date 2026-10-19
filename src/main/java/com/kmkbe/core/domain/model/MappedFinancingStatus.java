@@ -23,6 +23,12 @@ public class MappedFinancingStatus {
             status = "PAID";
             return;
         }
+        if ("PAID".equalsIgnoreCase(financingHdr.getFinancingStatus())
+                && "SIGNED".equalsIgnoreCase(financingHdr.getFinancingStep())) {
+            label = "Signed";
+            status = "SIGNED";
+            return;
+        }
         switch (type) {
             case Customer:
                 mappedCustomer();
