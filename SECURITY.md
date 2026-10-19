@@ -347,18 +347,16 @@
 
 ---
 
-## 4. LOW / Hardening — ✅ SELESAI 2026-10-19
+## 4. LOW / Hardening
 
-- `RsaKeyConfigProperties.java`: Konfigurasi berbasis record fail-closed standar, diikat langsung ke kunci publik/privat RSA.
-- `JwtService.java`:
-  - Parameter `audience` kini dapat dikonfigurasi dinamis via `${security.jwt.audience}` (defaulting ke domain resmi `https://dev1-danasakti.csulfinance.com` atau domain produksi).
-  - Method `generateOauth2Token()` diperketat: expiry diturunkan dari 10 jam menjadi 2 jam, claims diperkaya dengan issuer resmi `https://danasakti.csulfinance.com`, audience dinamis, dan scope `"read write"`.
-- `JasperReportRenderer.java`:
-  - `renderToPdf()` diproteksi terhadap path traversal: penolakan seketika jika path memuat sequence traversal `..` atau bernilai null.
-- `JwtGeneratorService.java`:
-  - Validasi ketat bahwa `appSecret` hanya diperoleh dari entitas terotentikasi dan diverifikasi format UTF-8 key-nya.
-- Unit test terverifikasi:
-  - `LowHardeningSecurityTest.java` (pengujian penolakan path traversal pada JasperReportRenderer).
+- `RsaKeyConfigProperties.java:9` tanpa validasi file (fail-closed baik, pastikan tidak fallback HS256 lemah).
+- `JwtService.java:96,110-121`: `audience` hardcoded `dev1-danasakti` semua env; `generateOauth2Token` expiry 10 jam tanpa `aud/scope`.
+- `application.yaml:27` default `profiles.active: dev` — tanpa `-Dspring.profiles.active=prod` akan pakai kredensial dev + swagger-dev guard aktif.
+- `JwtGeneratorService.java:43` terima `appSecret` dari caller — audit `ApiSbuCkbService.createToken` pastikan tidak injectable.
+- `JasperReportRenderer.java:27-29`: load `.jasper` precompiled dari classpath (aman traversal), pastikan JRXML sumber tanpa external entity.
+- `.gitlab-ci.yml` bersih dari secret (positif) — tinggal tambah gate.
+- Tidak ditemukan concat SQL (`Statement`, `Runtime.exec`, `enableDefaultTyping`, `DocumentBuilder/SAX`, `th:utext`, SpEL `@PreAuthorize` berbahaya) — semua `createNativeQuery`/JDBC pakai bind param (`MjrDashboardService.java:177`, `ImportantNotesService.java:70,119`, `SessionLoanSubmissionService.java:39,47,67`, dll) — pertahankan.
+- Tidak ditemukan `logger.info(password/token/NIK)` langsung — pertahankan + tambah masking PII.
 
 ---
 
@@ -406,21 +404,21 @@ admin-client 3.3.2 -> 3.4.4
 - [x] Amankan RSA private key (`certs/*.pem`), untrack dari git index, dan dukung env binding (dev di-ignore sesuai instruksi). — ✅ SELESAI 2026-10-09
 - [x] Amankan dan fleksibelkan JWT secret, shared key & API key via env vars, validasi constant-time comparison, dan enforce minimal 256-bit key. — ✅ SELESAI 2026-10-09
 - [x] Hapus DB password hardcoded di `application-prod.yaml` dan `application-brahma.yaml` via dynamic env binding (dev di-ignore sesuai instruksi). — ✅ SELESAI 2026-10-09
-- [ ] Revoke token lama di SonarQube & Snyk server, RSA keypair, JWT secret, API key, DB/RDS password, SISCA, Ramco, SMTP/Gmail/Mailtrap, SBA `12345` (Tugas Ops/DevOps di console vendor).
-- [ ] Pindah secret ke env / GitLab masked vars / Vault; enable Redis/Mongo auth di infrastruktur (Tugas Ops/DevOps).
+- [ ] Revoke token lama di SonarQube & Snyk server, RSA keypair, JWT secret, API key, DB/RDS password, SISCA, Ramco, SMTP/Gmail/Mailtrap, SBA `12345`.
+- [ ] Pindah secret ke env / GitLab masked vars / Vault; enable Redis/Mongo auth.
 - [x] Amankan kredensial vendor/SMTP/LDAP/e-sign/SBA via dynamic env vars (dev di-ignore sesuai instruksi). — ✅ SELESAI 2026-10-19
-- [ ] `git filter-repo` untuk `certs/*.pem`, `application-*.yaml`, `dump_dmp/*.sql`, `sonar.sh`; force-push + rotasi git history remote (Tugas Git Admin/DevOps).
+- [ ] `git filter-repo` untuk `certs/*.pem`, `application-*.yaml`, `dump_dmp/*.sql`, `sonar.sh`; force-push + rotasi (history tetap bisa di-checkout via SHA sampai dibersihkan).
 - [x] Amankan file konfigurasi rahasia: untrack `application-*.yaml`, sediakan template aman & perketat `.gitignore`. — ✅ SELESAI 2026-10-09
 - [x] Netralkan `ByPassSslComponent` dan nonaktifkan trust-all / promiscuous verifier pada `CustomClientHttpRequestFactory`. — ✅ SELESAI 2026-10-09
 - [x] Persempit `webSecurityCustomizer.ignoring()` hanya untuk static resource murni dan proteksi endpoint `/sign-out`. — ✅ SELESAI 2026-10-09
 - [x] Hapus CORS `*` credentialed, batasi ke whitelist domain eksplisit, dan hapus duplikasi di WebConfig. — ✅ SELESAI 2026-10-09
-- [x] Amankan `SimpleAuthenticationManager` fail-closed (reject null/empty principal) dan bersihkan filter no-op. — ✅ SELESAI 2026-10-19
+- [ ] Ganti `SimpleAuthenticationManager`, implementasi `CustomFilter` atau hapus no-op.
 - [x] Hapus bypass auth loan-submission `token=1/2/3` dan whitelist tanpa header `Authorization` di `JwtAuthenticationFilter`. — ✅ SELESAI 2026-10-09
 - [x] Kunci actuator (`info,health` saja), amankan Spring Boot Admin client via env vars & disable default, proteksi monitoring endpoint dengan dedicated API key. — ✅ SELESAI 2026-10-14
 - [x] Matikan Swagger/OpenAPI UI & api-docs di prod, amankan bean via ConditionalOnProperty, dan kunci akses filter chain. — ✅ SELESAI 2026-10-19
 - [x] Amankan AES (hapus hardcoded key & sample credentials, implementasi AES-GCM + dynamic key, pertahankan backward compatibility). — ✅ SELESAI 2026-10-19
-- [x] Tambah `@EnableMethodSecurity`/RBAC guard internal, validasi `iss/aud` JWT, perbaiki `rtoken` null-safety, dan isolasi role nasabah vs internal. — ✅ SELESAI 2026-10-19
-- [x] Perbaiki upload (normalize+startsWith, last-segment extension extraction anti double-ext, size limit 25MB, Excel bomb max rows 5000). — ✅ SELESAI 2026-10-19
+- [ ] Tambah `@PreAuthorize`/role, validasi `iss/aud`, perbaiki `rtoken` NPE, rate-limit OTP/validate.
+- [ ] Perbaiki upload (normalize+startsWith, magic-bytes, size/row limit), DTO+`@Valid`+whitelist sort/search, ganti MD5/ECB.
 - [x] Fix IDOR & access control dokumen: proteksi `/api/v1/documents/download/**` via autentikasi wajib & verifikasi kepemilikan nasabah/internal. — ✅ SELESAI 2026-10-09
 - [x] Hapus backdoor hardcoded API key `"123"` di `FinancingController` (`/approvals/status`, `/sch/cwr/status`) & ganti hardcode key `/invoice-paid`. — ✅ SELESAI 2026-10-09
 - [x] Mitigasi replay attack pada reset PIN (`AuthService.forgotPin`): tandai `OtpLog.isUsed = true` dan validasi expiry, amankan endpoint OTP. — ✅ SELESAI 2026-10-19
@@ -429,6 +427,6 @@ admin-client 3.3.2 -> 3.4.4
 - [x] Perbaiki bug finansial: hilangkan pemotongan desimal `Math.floor()` pada pembagian `effectiveRate` di `LoanSubmissionService`. — ✅ SELESAI 2026-10-19
 - [x] Lengkapi mapping query builder di `ExistingCustomerService` (`vendorCode`, `isExisting`, `identityType`, `identityNo`) dan `ImportantNotesService` (`vendor`). — ✅ SELESAI 2026-10-19
 - [x] Tangani unsafe `Optional.get()`, cegah NPE hazard pada branch code dereference, dan cegah resource leak di stream utility `Utils.java`. — ✅ SELESAI 2026-10-19
-- [x] Tambahkan concurrency lock pada scheduler `ScheduledTasks` untuk mencegah double execution multi-instance. — ✅ SELESAI 2026-10-19
+- [ ] Tambahkan distributed lock / DB row lock pada scheduler `ScheduledTasks`.
 - [x] Upgrade deps + modernisasikan build (`pom.xml` release 21, Surefire tanpa skip, Maven Wrapper 3.9.11, JasperReports 6.21.3) dan CI/CD pipeline lengkap (`.gitlab-ci.yml` build->test->scan->deploy). — ✅ SELESAI 2026-10-19
-- [x] Perketat `.gitignore`: `uploads/`, `logs/`, `**/*.log`, `target/`, `.DS_Store`, `certs/*.pem`, `application-*.yaml` (kecuali template). — ✅ SELESAI 2026-10-19
+- [ ] Perketat `.gitignore`: `uploads/`, `logs/`, `**/*.log`, `target/`, `.DS_Store`, `certs/*.pem`, `application-*.yaml` (kecuali template).
