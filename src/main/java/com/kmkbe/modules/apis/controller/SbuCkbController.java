@@ -51,7 +51,7 @@ public class SbuCkbController {
   public CommonResult<EstimatedDisburseDto> getCalculateDisburse(
     @PathVariable("jwtToken") String jwtToken,
     @RequestHeader("ApiKey") String apiKey,
-    @RequestBody CalculateSimulationRequest request
+    @Valid @RequestBody CalculateSimulationRequest request
   ) throws IOException, SignatureException, ParseException {
 
     /**
@@ -90,9 +90,15 @@ public class SbuCkbController {
     /**
      * Check Bouwheer Code
      */
+    if (rawBody == null) {
+      throw new IllegalArgumentException("Request body cannot be null");
+    }
 
     JsonNode node = objectMapper.valueToTree(rawBody);
     String vendorCode = node.path("vendorCode").asText();
+    if (vendorCode == null || vendorCode.trim().isEmpty() || "null".equalsIgnoreCase(vendorCode)) {
+      throw new IllegalArgumentException("vendorCode is required and cannot be empty");
+    }
     return apiSbuCkbService.inquiryListPostedInvoice(vendorCode);
   }
 

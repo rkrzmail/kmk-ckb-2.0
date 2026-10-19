@@ -44,6 +44,8 @@ public class SpecPagination<D, R> {
         }
         return false;
     }
+    public static final int MAX_PAGE_SIZE = 100;
+
     public static <D, R> PaginationResult<R> paginationData( SpecPagination<D, R> specPagination){
         int pageNo = 0, pageSize = 10;//def
 
@@ -54,12 +56,15 @@ public class SpecPagination<D, R> {
         if (specPagination.request!=null &&  specPagination.request.getPageSize() != null) {
             pageSize = specPagination.request.getPageSize();
         }
+        pageSize = Math.min(Math.max(pageSize, 1), MAX_PAGE_SIZE);
         if (pageNo > 0) {
             pageNo = pageNo - 1;
         }
         return  paginationData(pageNo, pageSize, specPagination);
     }
     public static <D, R> PaginationResult<R> paginationData(int page, int size, SpecPagination<D, R> specPagination){
+        size = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        page = Math.max(page, 0);
         List<R> specData = new ArrayList<>();
         boolean filteredSearch  = specPagination.isSearchUsed();
         for (D datum : specPagination.privData) {

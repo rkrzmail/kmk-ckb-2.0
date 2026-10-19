@@ -163,7 +163,8 @@ public class BouwheerService {
 
     Bouwheer bouwheer = bouwheerOptional.get();
     BouwheerResponse before = toResponse(bouwheer);
-    BeanUtils.copyProperties(request, bouwheer);
+    // Safe property copying with ignore list to prevent mass assignment (Issue H7)
+    BeanUtils.copyProperties(request, bouwheer, "bouwheerId", "bouwheerCode", "dtmCrt", "usrCrt", "dtmUpd", "usrUpd");
     bouwheer.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
     bouwheer.setDtmUpd(LocalDateTime.now());
     Bouwheer saved = bouwheerRepository.save(bouwheer);
