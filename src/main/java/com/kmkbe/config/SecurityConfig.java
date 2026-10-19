@@ -20,7 +20,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
@@ -47,9 +46,8 @@ import java.util.List;
 
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
 public class SecurityConfig {
-  @Value("${spring.profiles.active:dev}")
+  @Value("${spring.profiles.active}")
   private String profileActives;
 
   @Value("${security.api.key}")
@@ -148,17 +146,13 @@ public class SecurityConfig {
           auth.requestMatchers("/api/v1/digital-sign/callback").permitAll();
           auth.requestMatchers(JwtAuthenticationFilter.ENDPOINTS_WHITELIST).permitAll();
 
-          // Swagger/OpenAPI hanya dibuka secara bebas untuk profile dev/local (Issue H3)
-          if (isSwaggerAllowedProfile()) {
+          //determine dev env should has Swaggers access freely
+          if (profileActives.equals("dev")) {
             auth.requestMatchers(JwtAuthenticationFilter.ENDPOINTS_SWAGGERS).permitAll();
           }
 
           auth.requestMatchers(JwtAuthenticationFilter.ENDPOINTS_WHITELIST_LOAN_SUBMISSION).permitAll();
           auth.requestMatchers(JwtAuthenticationFilter.ENDPOINTS_WHITELIST_FINANCING).permitAll();
-
-          // Role-based Access Control Guard (Issue H1)
-          // Endpoint internal hanya untuk user internal backoffice yang memiliki authority/role
-          auth.requestMatchers("/api/v1/internal/**").hasAnyAuthority("ROLE_USER", "INTERNAL_USER", "ROLE_INTERNAL");
 
           auth.dispatcherTypeMatchers(
             DispatcherType.ASYNC,
@@ -228,15 +222,6 @@ public class SecurityConfig {
       .map(String::trim)
       .filter(s -> !s.isEmpty())
       .toList();
-  }
-
-  private boolean isSwaggerAllowedProfile() {
-    if (profileActives == null) {
-      return false;
-    }
-    String normalized = profileActives.trim().toLowerCase();
-    return normalized.equals("dev") || normalized.equals("local")
-      || normalized.contains("dev") || normalized.contains("local");
   }
 
   @Bean
