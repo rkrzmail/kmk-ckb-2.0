@@ -18,15 +18,25 @@ import java.util.List;
 @Component
 public class ProductExcelParser {
 
+    public static final int MAX_EXCEL_ROWS = 5000;
+
     public List<ProductRow> parse(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         List<ProductRow> rows = new ArrayList<>();
 
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(inputStream)) {
 
             Sheet sheet = workbook.getSheetAt(0);
+            int rowCount = 0;
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue;
+                if (row == null || row.getRowNum() == 0) continue;
+                if (++rowCount > MAX_EXCEL_ROWS) {
+                    throw new IllegalArgumentException("Excel file exceeds maximum allowed rows limit (" + MAX_EXCEL_ROWS + ")");
+                }
 
                 rows.add(new ProductRow(
                         (long) getAsNumber(row, 0),
@@ -47,6 +57,8 @@ public class ProductExcelParser {
                 ));
             }
             return rows;
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -65,18 +77,22 @@ public class ProductExcelParser {
     }
 
     private Object get(Row row, int column) {
+        if (row == null || row.getCell(column) == null) {
+            return null;
+        }
         Object object;
-        if (row.getCell(column).getCellType() == CellType.NUMERIC) {
+        CellType cellType = row.getCell(column).getCellType();
+        if (cellType == CellType.NUMERIC) {
             object = row.getCell(column).getNumericCellValue();
-        } else if (row.getCell(column).getCellType() == CellType.STRING) {
+        } else if (cellType == CellType.STRING) {
             object = row.getCell(column).getStringCellValue();
-        } else if (row.getCell(column).getCellType() == CellType.BOOLEAN) {
+        } else if (cellType == CellType.BOOLEAN) {
             object = row.getCell(column).getBooleanCellValue();
-        } else if (row.getCell(column).getCellType() == CellType.ERROR) {
+        } else if (cellType == CellType.ERROR) {
             object = row.getCell(column).getErrorCellValue();
-        } else if (row.getCell(column).getCellType() == CellType.FORMULA) {
+        } else if (cellType == CellType.FORMULA) {
             object = row.getCell(column).getCellFormula();
-        } else if (row.getCell(column).getCellType() == CellType._NONE) {
+        } else if (cellType == CellType._NONE) {
             object = "";
         } else {
             object = null;
