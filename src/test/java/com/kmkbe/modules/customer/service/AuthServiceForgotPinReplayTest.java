@@ -83,8 +83,8 @@ class AuthServiceForgotPinReplayTest {
         otpLog.setEmail(email);
         otpLog.setOtpCode(token);
         otpLog.setIsUsed(false);
-        // Expiry 5 minutes in the future relative to fixed clock
-        otpLog.setExpiredDate(LocalDateTime.now(clock).plusMinutes(5));
+        // Expiry 1 day in the future relative to current time
+        otpLog.setExpiredDate(LocalDateTime.now().plusDays(1));
 
         when(customerRepository.findByCustEmail(email)).thenReturn(Optional.of(customer));
         when(otpRepository.findTopByEmailAndOtpCodeOrderByDtmCrtDesc(email, token)).thenReturn(Optional.of(otpLog));
