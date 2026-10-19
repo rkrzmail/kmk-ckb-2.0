@@ -23,6 +23,14 @@ public class ScheduledTasks {
   @Scheduled(fixedDelayString = "PT1H", initialDelayString = "PT1H")
   public void updateStatusAgreement() {
     String jobName = "UPDATE_STATUS_AGREEMENT";
+
+    // Lightweight concurrency lock: cegah multi-instance double-run jika job sedang berjalan < 30 menit
+    LocalDateTime thirtyMinutesAgo = LocalDateTime.now().minusMinutes(30);
+    if (logRepository.findTopByJobNameAndStatusAndStartTimeAfterOrderByStartTimeDesc(jobName, "RUNNING", thirtyMinutesAgo).isPresent()) {
+      log.info("Job {} is already running in another instance. Skipping this execution.", jobName);
+      return;
+    }
+
     SchedulerLog history = new SchedulerLog();
     history.setJobName(jobName);
     history.setStartTime(LocalDateTime.now());
