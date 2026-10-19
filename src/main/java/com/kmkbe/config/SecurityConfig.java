@@ -47,7 +47,7 @@ import java.util.List;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-  @Value("${spring.profiles.active}")
+  @Value("${spring.profiles.active:dev}")
   private String profileActives;
 
   @Value("${security.api.key}")
@@ -146,8 +146,8 @@ public class SecurityConfig {
           auth.requestMatchers("/api/v1/digital-sign/callback").permitAll();
           auth.requestMatchers(JwtAuthenticationFilter.ENDPOINTS_WHITELIST).permitAll();
 
-          //determine dev env should has Swaggers access freely
-          if (profileActives.equals("dev")) {
+          // Swagger/OpenAPI hanya dibuka secara bebas untuk profile dev/local (Issue H3)
+          if (isSwaggerAllowedProfile()) {
             auth.requestMatchers(JwtAuthenticationFilter.ENDPOINTS_SWAGGERS).permitAll();
           }
 
@@ -222,6 +222,15 @@ public class SecurityConfig {
       .map(String::trim)
       .filter(s -> !s.isEmpty())
       .toList();
+  }
+
+  private boolean isSwaggerAllowedProfile() {
+    if (profileActives == null) {
+      return false;
+    }
+    String normalized = profileActives.trim().toLowerCase();
+    return normalized.equals("dev") || normalized.equals("local")
+      || normalized.contains("dev") || normalized.contains("local");
   }
 
   @Bean
