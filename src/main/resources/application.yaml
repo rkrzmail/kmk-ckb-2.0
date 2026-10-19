@@ -2,15 +2,28 @@ management:
   endpoints:
     web:
       exposure:
-        include: info, health, logfile, loggers, env
+        include: ${MANAGEMENT_ENDPOINTS_INCLUDE:info,health}
       base-path: /api/monitoring
   endpoint:
     health:
       show-details: never
-      show-components: always
+      show-components: when-authorized
     logfile:
       external-file: admin.log
+  info:
+    env:
+      enabled: false
+
 spring:
+  boot:
+    admin:
+      client:
+        enabled: ${SPRING_BOOT_ADMIN_CLIENT_ENABLED:false}
+        url: ${SPRING_BOOT_ADMIN_URL:http://localhost:9000}
+        instance:
+          name: Kmk-Digital-2.0
+        username: ${SPRING_BOOT_ADMIN_USERNAME:}
+        password: ${SPRING_BOOT_ADMIN_PASSWORD:}
   jackson:
     deserialization:
       adjust-dates-to-context-time-zone: 'true'
@@ -43,6 +56,8 @@ spring:
         follow-redirects: false
 
 security:
+  actuator:
+    api-key: ${SECURITY_ACTUATOR_API_KEY:${security.api.key}}
   jwt:
     secret-key: ${SECURITY_JWT_SECRET_KEY:84b6e04f3268b78e7fee1883733e47aff50b88d1184b3512f2b5bffadb99d7eb}
     expiration-time: ${SECURITY_JWT_EXPIRATION_TIME:3000000}
@@ -81,3 +96,13 @@ cors:
   exposed-headers: Referrer-Policy,Authorization,rtoken,ApiKey
   allow-credentials: true
   max-age: 3600
+
+springdoc:
+  version: ${SPRINGDOC_VERSION:1.0.0}
+  api-docs:
+    enabled: ${SPRINGDOC_API_DOCS_ENABLED:true}
+    path: /api/v1/api-docs
+  paths-to-match: /api/v1/**
+  swagger-ui:
+    enabled: ${SPRINGDOC_SWAGGER_UI_ENABLED:true}
+    path: /api/v1/swagger-ui.html
