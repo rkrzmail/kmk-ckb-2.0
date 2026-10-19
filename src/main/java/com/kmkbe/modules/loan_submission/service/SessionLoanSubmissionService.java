@@ -53,7 +53,7 @@ public class SessionLoanSubmissionService {
                 );
             }
 
-            result = findLastByCust(customer).get();
+            result = findLastByCust(customer).orElse(null);
 
             return result;
         } catch (Exception e) {
