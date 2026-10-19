@@ -66,7 +66,8 @@ public class SignerService {
   private final Map<String, List<String>> signerCache = new ConcurrentHashMap<>();
   private final FileStorageService fileStorageService;
 
-  private final String apiKey = "YiByHB@CSUL_DEV";
+  @org.springframework.beans.factory.annotation.Value("${esign.api-key:${app.api.key:YiByHB@CSUL_DEV}}")
+  private String apiKey;
   private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
   private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
   private final String downloadDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/downloadDocument";
