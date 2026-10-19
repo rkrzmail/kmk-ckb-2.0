@@ -42,8 +42,9 @@ public class KeySecretServices {
         final LocalDateTime now = LocalDateTime.now();
         final LocalDateTime timeStamps = LocalDateTime.parse(payloadObj.get("TimeStamps").toString(), DateTimeUtils.DTF_DATE_TIME_STANDARD_FORMATTER);
 
-        if (timeStamps.isAfter(now)) {
-
+        // Mitigasi H8: reject token jika timestamp sudah kedaluwarsa
+        if (now.isAfter(timeStamps)) {
+            return false;
         }
 
         final MessageDigest messageDigest = MessageDigest.getInstance("MD5");
