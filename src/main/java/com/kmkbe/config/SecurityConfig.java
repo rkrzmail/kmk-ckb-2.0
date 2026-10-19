@@ -4,6 +4,7 @@ import com.kmkbe.core.callback.UnauthorizedEntryPoint;
 import com.kmkbe.core.middleware.ApiKeyAuthenticationFilter;
 import com.kmkbe.core.middleware.JwtAuthenticationFilter;
 import com.kmkbe.core.service.ApiKeyAuthenticationService;
+import com.kmkbe.core.utils.SecurityUtils;
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
@@ -17,6 +18,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ScopedProxyMode;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -51,6 +53,24 @@ public class SecurityConfig {
   @Value("${security.api.key}")
   private String apiKey;
 
+  @Value("${cors.allowed-origins:https://dev1-danasakti.csulfinance.com,https://danasakti.csulfinance.com}")
+  private String corsAllowedOrigins;
+
+  @Value("${cors.allowed-methods:GET,POST,PUT,PATCH,DELETE,OPTIONS}")
+  private String corsAllowedMethods;
+
+  @Value("${cors.allowed-headers:*}")
+  private String corsAllowedHeaders;
+
+  @Value("${cors.exposed-headers:Referrer-Policy,Authorization,rtoken,ApiKey}")
+  private String corsExposedHeaders;
+
+  @Value("${cors.allow-credentials:true}")
+  private boolean corsAllowCredentials;
+
+  @Value("${cors.max-age:3600}")
+  private Long corsMaxAge;
+
   private final AuthenticationProvider authenticationProvider;
   private final JwtAuthenticationFilter jwtAuthenticationFilter;
   private final RsaKeyConfigProperties rsaKeyConfigProperties;
@@ -75,20 +95,15 @@ public class SecurityConfig {
   }
 
 
+  /**
+   * Mengamankan webSecurityCustomizer agar tidak lagi meng-ignore request secara luas (Issue C7).
+   * Hanya file statis benar-benar publik yang di-ignore; seluruh endpoint API, auth, swagger, dan
+   * dokumen wajib melewati SecurityFilterChain agar filter keamanan & otorisasi tetap aktif.
+   */
   @Bean
   public WebSecurityCustomizer webSecurityCustomizer() {
     return (web) -> web.ignoring().requestMatchers(
-      "/api/v*/auth/**",
-      "/actuator/**",
-      "/api-docs/**",
-      "/swagger-ui/**",
-      "/v3/api-docs/**",
-      "/webjars/**",
-      "/configuration/**",
-      "/swagger-ui.html",
-      "/static/**",
-      "/public/storage/**",
-      "/api/public/**"
+      "/static/**"
     );
   }
 
@@ -105,7 +120,7 @@ public class SecurityConfig {
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     apiKeyAuthenticationFilter.setAuthenticationManager(authentication -> {
       String providedApiKey = (String) authentication.getPrincipal();
-      if (providedApiKey.equals(apiKey)) {
+      if (SecurityUtils.constantTimeEquals(providedApiKey, apiKey)) {
         return new ApiKeyAuthenticationService(
           Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")),
           apiKey
@@ -126,6 +141,8 @@ public class SecurityConfig {
         }
       )
       .authorizeHttpRequests(auth -> {
+          // Preflight CORS request selalu permitAll agar browser options tidak diblokir security
+          auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
           auth.requestMatchers("/api/v1/digital-sign/callback").permitAll();
           auth.requestMatchers(JwtAuthenticationFilter.ENDPOINTS_WHITELIST).permitAll();
 
@@ -162,16 +179,49 @@ public class SecurityConfig {
   @Bean
   CorsConfigurationSource corsConfigurationSource() {
     CorsConfiguration corsConfiguration = new CorsConfiguration();
-    corsConfiguration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-    corsConfiguration.addAllowedOriginPattern("*");
-    corsConfiguration.addAllowedHeader("*");
-    corsConfiguration.addAllowedMethod("*");
-    corsConfiguration.setAllowCredentials(true);
-    corsConfiguration.addExposedHeader("Referrer-Policy");
+
+    // Parse and set explicit allowed origins (Issue C8: prevent wildcard * with allowCredentials=true)
+    List<String> origins = parseCommaSeparatedList(corsAllowedOrigins);
+    if (origins.contains("*")) {
+      // If wildcard is configured, allowCredentials must NEVER be true per CORS specifications
+      corsConfiguration.addAllowedOriginPattern("*");
+      corsConfiguration.setAllowCredentials(false);
+    } else {
+      for (String origin : origins) {
+        if (origin.contains("*")) {
+          corsConfiguration.addAllowedOriginPattern(origin);
+        } else {
+          corsConfiguration.addAllowedOrigin(origin);
+        }
+      }
+      corsConfiguration.setAllowCredentials(corsAllowCredentials);
+    }
+
+    corsConfiguration.setAllowedMethods(parseCommaSeparatedList(corsAllowedMethods));
+    corsConfiguration.setAllowedHeaders(parseCommaSeparatedList(corsAllowedHeaders));
+
+    List<String> exposedHeaders = parseCommaSeparatedList(corsExposedHeaders);
+    if (!exposedHeaders.isEmpty()) {
+      corsConfiguration.setExposedHeaders(exposedHeaders);
+    }
+
+    if (corsMaxAge != null) {
+      corsConfiguration.setMaxAge(corsMaxAge);
+    }
 
     UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
     source.registerCorsConfiguration("/**", corsConfiguration);
     return source;
+  }
+
+  private List<String> parseCommaSeparatedList(String value) {
+    if (value == null || value.trim().isEmpty()) {
+      return Collections.emptyList();
+    }
+    return java.util.Arrays.stream(value.split(","))
+      .map(String::trim)
+      .filter(s -> !s.isEmpty())
+      .toList();
   }
 
   @Bean

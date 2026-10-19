@@ -32,8 +32,22 @@ build/
 ### VS Code ###
 .vscode/
 /logs/**
-**.log
-/uploads
+*.log
+**/*.log
+/uploads/
+uploads/
+target/
+.DS_Store
+
+# Environment & Secrets (Issue C4, C1)
+.env
+.env.*
+!.env.example
+src/main/resources/application-*.yaml
+!src/main/resources/application-template.yaml
+src/main/resources/application-*.properties
+src/main/resources/certs/*.pem
+!src/main/resources/certs/public-key.pem
 
 src/main/resources/application-prod-old.properties
 .continue
