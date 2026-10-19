@@ -142,4 +142,14 @@ feign:
       adins-key: ${FEIGN_CONFINS_ADINS_KEY:}
 
 cors:
-  allowed-origins: {CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4200,http://localhost:5173,http://localhost:8080}
+  allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4200,http://localhost:5173,http://localhost:8080}
+
+springdoc:
+  version: ${SPRINGDOC_VERSION:1.0.0}
+  api-docs:
+    enabled: ${SPRINGDOC_API_DOCS_ENABLED:false}
+    path: /api/v1/api-docs
+  paths-to-match: /api/v1/**
+  swagger-ui:
+    enabled: ${SPRINGDOC_SWAGGER_UI_ENABLED:false}
+    path: /api/v1/swagger-ui.html
