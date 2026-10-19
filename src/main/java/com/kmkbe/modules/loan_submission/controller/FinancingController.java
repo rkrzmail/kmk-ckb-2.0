@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.core.utils.SecurityUtils;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaginationRequest;
 import com.kmkbe.modules.loan_submission.service.FinancingDtlService;
@@ -17,6 +18,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -93,11 +95,9 @@ public class FinancingController {
 
   @GetMapping("/approvals/status")
   public CommonResult<Object> updateApproval(
-    @RequestParam("apiKey") String apiKey
+    HttpServletRequest httpServletRequest
   ) {
-    if (!apiKey.equalsIgnoreCase("123")) {
-      throw new IllegalApiKeyException();
-    }
+    validateInternalApiKey(httpServletRequest);
     try {
       financingService.recallApprovalStatus();
     } catch (Exception ignored) {
@@ -109,11 +109,9 @@ public class FinancingController {
 
   @GetMapping("/sch/cwr/status")
   public CommonResult<Object> schCWR(
-    @RequestParam("apiKey") String apiKey
+    HttpServletRequest httpServletRequest
   ) {
-    if (!apiKey.equalsIgnoreCase("123")) {
-      throw new IllegalApiKeyException();
-    }
+    validateInternalApiKey(httpServletRequest);
     try {
       financingService.recallCWRStatus();
     } catch (Exception ignored) {
@@ -121,5 +119,18 @@ public class FinancingController {
     }
 
     return new CommonResult<>().success(null);
+  }
+
+  private void validateInternalApiKey(HttpServletRequest request) {
+    String providedApiKey = request.getHeader("ApiKey");
+    if (providedApiKey == null) {
+      providedApiKey = request.getHeader("API-Key");
+    }
+    if (providedApiKey == null) {
+      providedApiKey = request.getParameter("apiKey");
+    }
+    if (!SecurityUtils.constantTimeEquals(providedApiKey, expectedApiKey)) {
+      throw new IllegalApiKeyException();
+    }
   }
 }

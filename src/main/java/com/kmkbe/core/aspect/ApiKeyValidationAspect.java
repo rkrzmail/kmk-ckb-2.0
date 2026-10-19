@@ -1,6 +1,7 @@
 package com.kmkbe.core.aspect;
 
 import com.kmkbe.core.exception.IllegalApiKeyException;
+import com.kmkbe.core.utils.SecurityUtils;
 import jakarta.servlet.http.HttpServletRequest;
 import org.aspectj.lang.annotation.Aspect;
 import org.aspectj.lang.annotation.Before;
@@ -28,7 +29,7 @@ public class ApiKeyValidationAspect {
     public void validateApiKey() {
         String providedApiKey = request.getHeader("API-Key");
 
-        if (providedApiKey == null || !providedApiKey.equals(apiKey)) {
+        if (!SecurityUtils.constantTimeEquals(providedApiKey, apiKey)) {
             throw new IllegalApiKeyException();
         }
     }

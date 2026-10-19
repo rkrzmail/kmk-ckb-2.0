@@ -8,6 +8,7 @@ import com.kmkbe.core.service.JwtLoanSubmissionService;
 import com.kmkbe.core.service.JwtService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.HttpUtils;
+import com.kmkbe.core.utils.SecurityUtils;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.FilterChain;
@@ -53,38 +54,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
   private String envString;
 
   public static final String[] ENDPOINTS_WHITELIST_FINANCING = {
-    "/api/v1/financing/invoice-paid",
-    "/api/v1/financing/approvals/status",
-    "/api/v1/financing/sch/cwr/status",
   };
 
 
   public static final String[] ENDPOINTS_WHITELIST_LOAN_SUBMISSION = {
-    "/api/v1/loan-submissions",
-    "/api/v1/loan-submissions/invoices",
-    "/api/v1/loan-submissions/importance-notes",
-    "/api/v1/loan-submissions/simulations/percentage",
-    "/api/v1/loan-submissions/simulations/calculate",
-    "/api/v1/loan-submissions/simulations/recalculate",
-    "/api/v1/loan-submissions/simulations/viewcalculate",
   };
 
   public static final String[] ENDPOINTS_WHITELIST = {
     "/api/v1/auth/sign-in",
-    "/api/v1/sbu/**",
     "/api/v1/auth/sign-up",
     "/api/v1/auth/forgot-pin",
     "/api/v1/auth/refresh-token",
+    "/api/v1/sbu/**",
     "/api/v1/otp/**",
     "/api/v1/error/**",
     "/api/v1/uploads/**",
     "/api/v1/testing/**",
-    "/api/v1/documents/download/**",
 
-    // internal
-    //"/api/v1/internal/user/**",
-    "/api/v1/internal/auth/**",
-    //"/api/v1/internal/auth/refresh-token",
+    // internal auth
+    "/api/v1/internal/auth/sign-in",
+    "/api/v1/internal/auth/refresh-token",
 
     "/api/monitoring/**", // actuator replacement
     "/uploads/**",
@@ -139,6 +128,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @NonNull FilterChain filterChain
   ) throws ServletException, IOException {
     DateTimeUtils.envMode(envString);
+    // Preflight OPTIONS request tidak membawa header auth dan wajib langsung diteruskan ke CORS processor
+    if ("OPTIONS".equalsIgnoreCase(request.getMethod())) {
+      filterChain.doFilter(request, response);
+      return;
+    }
     try {
       if (shouldValidateApiKey(request, response, filterChain)) {
         return;
@@ -267,7 +261,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @NonNull HttpServletResponse response,
     @NonNull FilterChain filterChain
   ) throws ServletException, IOException {
-    final String loanSubmissionBypassToken = request.getParameter("token"); //determine loan-submission whitelist when token integrate valid
+    final String loanSubmissionBypassToken = request.getParameter("token");
     boolean invalidBouwheer = false;
     if (
       !StringUtil.isNullOrEmpty(loanSubmissionBypassToken)
@@ -279,15 +273,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         new AntPathRequestMatcher("/api/v1/loan-submissions/simulations/calculate")
       ).matches(request)
     ) {
-      if (
-        loanSubmissionBypassToken.equalsIgnoreCase("1")
-          || loanSubmissionBypassToken.equalsIgnoreCase("2")
-          || loanSubmissionBypassToken.equalsIgnoreCase("3")
-      ) {
-        filterChain.doFilter(request, response);
-        return true;
-      }
-
       if (new AntPathRequestMatcher("/api/v1/loan-submissions/**").matches(request)) {
         JwtSimulasiModel jwtSimulasiModel = jwtLoanSubmissionService.extractToken(loanSubmissionBypassToken);
         if (jwtSimulasiModel == null) {
@@ -295,15 +280,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } else if (!StringUtil.isNullOrEmpty(jwtSimulasiModel.getBouwheerCode())) {
           filterChain.doFilter(request, response);
           return true;
-        }
-      }
-    } else {
-      if (HttpUtils.getHeaderAuthorization(request) == null) {
-        for (String endpoint : ENDPOINTS_WHITELIST_LOAN_SUBMISSION) {
-          if (new AntPathRequestMatcher(endpoint).matches(request)) {
-            filterChain.doFilter(request, response);
-            return true;
-          }
+        } else {
+          invalidBouwheer = true;
         }
       }
     }
@@ -341,7 +319,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @NonNull HttpServletResponse response
   ) {
     final String providedApiKey = HttpUtils.getHeaderApiKey(request);
-    if (providedApiKey == null || !providedApiKey.equals(apiKey)) {
+    if (!SecurityUtils.constantTimeEquals(providedApiKey, apiKey)) {
       handlerExceptionResolver.resolveException(request, response, null, new IllegalApiKeyException());
       return false;
     }

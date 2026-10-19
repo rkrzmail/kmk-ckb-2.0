@@ -11,6 +11,7 @@ import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
+import com.kmkbe.core.security.CurrentUserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -40,6 +41,7 @@ class DocumentServiceIssueRegressionTest {
   @Mock private CustomerRepository customerRepository;
   @Mock private FinancingHdrRepository financingHdrRepository;
   @Mock private AuditTrailService auditTrailService;
+  @Mock private CurrentUserService currentUserService;
 
   private DocumentService service;
 
@@ -54,7 +56,8 @@ class DocumentServiceIssueRegressionTest {
       customerRemoteService,
       customerRepository,
       financingHdrRepository,
-      auditTrailService
+      auditTrailService,
+      currentUserService
     );
   }
 

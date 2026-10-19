@@ -130,6 +130,7 @@ public class JwtService {
     protected Claims extractAllClaims(String token) {
         return Jwts
                 .parser()
+                .clock(() -> Date.from(clock.instant()))
                 .verifyWith(getSignInKey())
                 .build()
                 .parseSignedClaims(token)
@@ -137,7 +138,16 @@ public class JwtService {
     }
 
     private SecretKey getSignInKey() {
-        byte[] keyBytes = Decoders.BASE64.decode(secretKey);
+        byte[] keyBytes;
+        try {
+            keyBytes = Decoders.BASE64.decode(secretKey);
+        } catch (Exception e) {
+            // Fallback ke UTF-8 bytes jika secret bukan format base64
+            keyBytes = secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        }
+        if (keyBytes.length < 32) {
+            throw new IllegalArgumentException("JWT Secret Key must be at least 256 bits (32 bytes). Current length: " + (keyBytes.length * 8) + " bits");
+        }
         return Keys.hmacShaKeyFor(keyBytes);
     }
 }
