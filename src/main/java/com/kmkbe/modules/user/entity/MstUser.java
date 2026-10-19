@@ -95,7 +95,10 @@ public class MstUser implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of();
+        return List.of(
+            new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_USER"),
+            new org.springframework.security.core.authority.SimpleGrantedAuthority("INTERNAL_USER")
+        );
     }
 
     @Override
