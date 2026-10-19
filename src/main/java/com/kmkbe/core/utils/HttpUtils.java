@@ -10,6 +10,7 @@ import org.springframework.http.server.ServletServerHttpRequest;
 import org.springframework.web.util.WebUtils;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -46,16 +47,18 @@ public class HttpUtils {
         if (buf.length > 0) {
           int length = Math.min(buf.length, payloadLength);
           try {
-            payload = new String(buf, 0, length, wrapper.getCharacterEncoding());
+            String encoding = wrapper.getCharacterEncoding() != null ? wrapper.getCharacterEncoding() : StandardCharsets.UTF_8.name();
+            payload = new String(buf, 0, length, encoding);
           } catch (UnsupportedEncodingException ignored) {
+            payload = new String(buf, 0, length, StandardCharsets.UTF_8);
           }
         }
       }
     }
 
-    result.put("queryString", queryString);
-    result.put("headers", headers);
-    result.put("payload", ObjectUtils.strToJson(payload));
+    result.put("queryString", AuditMaskingUtils.maskJsonString(queryString));
+    result.put("headers", AuditMaskingUtils.maskHeaders(headers));
+    result.put("payload", AuditMaskingUtils.maskObject(ObjectUtils.strToJson(payload)));
     result.put("client", client);
     result.put("sessionId", sessionId);
     result.put("user", user);
@@ -86,8 +89,10 @@ public class HttpUtils {
         if (buf.length > 0) {
           int length = Math.min(buf.length, payloadLength);
           try {
-            payload = new String(buf, 0, length, wrapper.getCharacterEncoding());
+            String encoding = wrapper.getCharacterEncoding() != null ? wrapper.getCharacterEncoding() : StandardCharsets.UTF_8.name();
+            payload = new String(buf, 0, length, encoding);
           } catch (UnsupportedEncodingException ignored) {
+            payload = new String(buf, 0, length, StandardCharsets.UTF_8);
           }
         }
       }
@@ -95,7 +100,7 @@ public class HttpUtils {
 
     result.put("statusCode", statusCode);
     result.put("contentType", contentType);
-    result.put("payload", ObjectUtils.strToJson(payload));
+    result.put("payload", AuditMaskingUtils.maskObject(ObjectUtils.strToJson(payload)));
 
     return result;
   }

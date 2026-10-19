@@ -1,5 +1,6 @@
 package com.kmkbe.core.middleware;
 
+import com.kmkbe.core.utils.AuditMaskingUtils;
 import com.kmkbe.core.utils.HttpUtils;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -72,8 +73,8 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
                 logger.info(responseLog);
             }
 
-            if (requestLog.get("payload") == null) {
-                requestLog.put("payload", ((HttpServletRequestCopier) requestToUse).getPayload());
+            if (requestLog.get("payload") == null && requestToUse instanceof HttpServletRequestCopier copier) {
+                requestLog.put("payload", AuditMaskingUtils.maskObject(copier.getPayload()));
             }
         }
     }
@@ -84,13 +85,18 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
     }
 
     @Override
-    protected void beforeRequest(HttpServletRequest request, String message) {
-        logger.info(message);
+    protected String createMessage(HttpServletRequest request, String prefix, String suffix) {
+        String msg = super.createMessage(request, prefix, suffix);
+        return AuditMaskingUtils.maskJsonString(msg);
     }
 
+    @Override
+    protected void beforeRequest(HttpServletRequest request, String message) {
+        logger.info(AuditMaskingUtils.maskJsonString(message));
+    }
 
     @Override
     protected void afterRequest(HttpServletRequest request, String message) {
-        logger.info(message);
+        logger.info(AuditMaskingUtils.maskJsonString(message));
     }
 }
