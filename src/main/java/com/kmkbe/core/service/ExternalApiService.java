@@ -18,7 +18,8 @@ public class ExternalApiService {
 
     private final ConfinsR3FeignClient confinsR3FeignClient;
 
-    private String xapiKey = "YiByHB@CSUL_DEV";
+    @org.springframework.beans.factory.annotation.Value("${esign.api-key:${app.api.key:YiByHB@CSUL_DEV}}")
+    private String xapiKey;
 
     public AppResponse getAppByAppNo(String applicationCode) {
         try {
