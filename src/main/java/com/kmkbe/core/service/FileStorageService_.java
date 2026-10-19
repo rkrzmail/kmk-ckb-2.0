@@ -100,6 +100,9 @@ public class FileStorageService_ {
             Path fileDestination = uploadPath.resolve(Paths.get(name))
                     .normalize()
                     .toAbsolutePath();
+            if (!fileDestination.startsWith(root.toAbsolutePath())) {
+                throw new SecurityException("Path traversal attempt detected in upload: " + name);
+            }
 
             try (InputStream inputStream = file.getInputStream()) {
                 Files.copy(inputStream, fileDestination, StandardCopyOption.REPLACE_EXISTING);
@@ -116,7 +119,14 @@ public class FileStorageService_ {
 
     public Resource load(String filename) {
         try {
-            Path file = root.resolve(filename);
+            if (filename.startsWith("/uploads/")) {
+                filename = filename.replace("/uploads/", "");
+            }
+
+            Path file = root.resolve(filename).normalize().toAbsolutePath();
+            if (!file.startsWith(root.toAbsolutePath())) {
+                throw new SecurityException("Path traversal attempt detected: " + filename);
+            }
             Resource resource = new UrlResource(file.toUri());
 
             if (resource.exists() || resource.isReadable()) {
@@ -135,7 +145,10 @@ public class FileStorageService_ {
                 filename = filename.replace("/uploads/", "");
             }
 
-            Path file = root.resolve(filename);
+            Path file = root.resolve(filename).normalize().toAbsolutePath();
+            if (!file.startsWith(root.toAbsolutePath())) {
+                throw new SecurityException("Path traversal attempt detected: " + filename);
+            }
             boolean res = Files.deleteIfExists(file);
             return res;
         } catch (IOException e) {
@@ -154,15 +167,22 @@ public class FileStorageService_ {
         }
 
         try {
-            Path paths = root.resolve(filePathStr);
+            Path paths = root.resolve(filePathStr).normalize().toAbsolutePath();
+            if (!paths.startsWith(root.toAbsolutePath())) {
+                throw new SecurityException("Path traversal attempt detected: " + filePathStr);
+            }
             Resource resource = new UrlResource(paths.toUri());
             String contentType = httpServletRequest
                     .getServletContext()
-                    .getMimeType(resource.getFile().getAbsolutePath());
+                    .getMimeType(fileName);
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
 
-            if (resource.exists()) {
+            if (resource.exists() && resource.isReadable()) {
                 HttpHeaders headers = new HttpHeaders();
-                headers.add("content-disposition", "inline;filename=" + fileName);
+                String safeName = fileName != null ? fileName.replaceAll("[\r\n\"]", "_") : "download";
+                headers.add("content-disposition", "inline; filename=\"" + safeName + "\"");
 
                 return ResponseEntity.ok()
                         .contentLength(paths.toFile().length())
@@ -170,12 +190,12 @@ public class FileStorageService_ {
                         .headers(headers)
                         .body(resource);
             } else {
-                throw new RuntimeException("File not found ");
+                throw new RuntimeException("File not found or not readable: " + paths.toUri());
             }
         } catch (MalformedURLException ex) {
             throw new RuntimeException("File not found ");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e.getMessage());
         }
     }
 }
