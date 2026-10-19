@@ -151,6 +151,17 @@ public class AssignmentSubmissionService {
             return data;
           } else if (isSearchBy("status") && like(data.getStatus())) {
             return data;
+          } else if (isSearchBy("financingAmount")) {
+            try {
+              if (data.getFinancingAmount() != null
+                  && data.getFinancingAmount().compareTo(new BigDecimal(getSearchValue().trim())) == 0) {
+                return data;
+              }
+            } catch (NumberFormatException ignored) {
+              return null;
+            }
+          } else if (isSearchBy("custStatus") && like(data.getCustStatus())) {
+            return data;
           } else if (isSearchBy("Cabang") && like(user.getEmployee().getBranch().getBranchName())) {
             return data;
           }

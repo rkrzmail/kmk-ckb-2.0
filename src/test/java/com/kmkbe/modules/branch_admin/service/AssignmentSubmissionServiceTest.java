@@ -228,6 +228,46 @@ class AssignmentSubmissionServiceTest {
   }
 
   @Test
+  void assignmentListFiltersFinancingAmountExactlyBeforePagination() throws Exception {
+    FinancingHdr first = financingHdr("INPROCESS", "INPROCESS");
+    FinancingHdr second = financingHdr("INPROCESS", "INPROCESS");
+    second.setFinancingHdrCode(UUID.fromString("44444444-4444-4444-4444-444444444444"));
+    second.setFinancingAmt(2_500D);
+    stubUserAndRole("branch_admin");
+    when(financingHdrRepository.findAllAssignmentFinancingRaw(any(), any(), any(), any(), any()))
+      .thenReturn(new PageImpl<>(List.of(first, second)));
+
+    PaginationResult<AssignmentDto> result = service.assignmentList(
+      httpServletRequest, pagination("financingAmount", "2500.00", 1, 1));
+
+    assertThat(result.getTotalData()).isEqualTo(1);
+    assertThat(result.getTotalPage()).isEqualTo(1);
+    assertThat(result.getList()).extracting(AssignmentDto::getFinancingHdrCode)
+      .containsExactly(second.getFinancingHdrCode());
+    assertThat(service.assignmentList(httpServletRequest,
+      pagination("financingAmount", "not-a-number", 1, 10)).getList()).isEmpty();
+  }
+
+  @Test
+  void assignmentListFiltersCustomerStatusIgnoringCase() throws Exception {
+    FinancingHdr first = financingHdr("INPROCESS", "INPROCESS");
+    first.getCustomer().setExistingCust("New Customer");
+    FinancingHdr second = financingHdr("INPROCESS", "INPROCESS");
+    second.setFinancingHdrCode(UUID.fromString("44444444-4444-4444-4444-444444444444"));
+    second.getCustomer().setExistingCust("Existing Customer");
+    stubUserAndRole("branch_admin");
+    when(financingHdrRepository.findAllAssignmentFinancingRaw(any(), any(), any(), any(), any()))
+      .thenReturn(new PageImpl<>(List.of(first, second)));
+
+    PaginationResult<AssignmentDto> result = service.assignmentList(
+      httpServletRequest, pagination("custStatus", "existing", 1, 10));
+
+    assertThat(result.getTotalData()).isEqualTo(1);
+    assertThat(result.getList()).extracting(AssignmentDto::getCustStatus)
+      .containsExactly("Existing Customer");
+  }
+
+  @Test
   void assignmentListSkipsRowsWithMissingCustomerOrBouwheerAndBranchAdminNewStatus() throws Exception {
     FinancingHdr missingCustomer = financingHdr("INPROCESS", "INPROCESS");
     missingCustomer.setCustomer(null);
