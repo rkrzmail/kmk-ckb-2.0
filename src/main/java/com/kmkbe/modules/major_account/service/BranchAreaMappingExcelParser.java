@@ -16,15 +16,25 @@ import java.util.List;
 @Component
 public class BranchAreaMappingExcelParser {
 
+    public static final int MAX_EXCEL_ROWS = 5000;
+
     public List<BranchAreaMappingRow> parse(MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return new ArrayList<>();
+        }
+
         List<BranchAreaMappingRow> rows = new ArrayList<>();
 
         try (InputStream inputStream = file.getInputStream();
              Workbook workbook = new XSSFWorkbook(inputStream)) {
 
             Sheet sheet = workbook.getSheetAt(0);
+            int rowCount = 0;
             for (Row row : sheet) {
-                if (row.getRowNum() == 0) continue;
+                if (row == null || row.getRowNum() == 0) continue;
+                if (++rowCount > MAX_EXCEL_ROWS) {
+                    throw new IllegalArgumentException("Excel file exceeds maximum allowed rows limit (" + MAX_EXCEL_ROWS + ")");
+                }
 
                 rows.add(new BranchAreaMappingRow(
                         (long) getAsNumber(row, 0),
@@ -35,6 +45,8 @@ public class BranchAreaMappingExcelParser {
                 ));
             }
             return rows;
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

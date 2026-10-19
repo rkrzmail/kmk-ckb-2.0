@@ -13,23 +13,25 @@ public class FileUtils {
             throw new Exception("File cannot be null");
         }
 
-        String[] splitter = file.getOriginalFilename().split("\\.");
-        if (splitter.length >= 1) {
-            return splitter[1];
-        }
-        return null;
+        return extractLastExtension(file.getOriginalFilename());
     }
 
     public static String getFileNameExtension(String fileName) throws Exception {
-        if (StringUtil.isNullOrEmpty(fileName.trim())) {
+        if (StringUtil.isNullOrEmpty(fileName)) {
             return null;
         }
 
-        String[] splitter = fileName.split("\\.");
-        if (splitter.length > 1) {
-            return splitter[1];
-        }
+        return extractLastExtension(fileName.trim());
+    }
 
+    private static String extractLastExtension(String filename) {
+        if (filename == null) {
+            return null;
+        }
+        int lastDotIndex = filename.lastIndexOf('.');
+        if (lastDotIndex != -1 && lastDotIndex < filename.length() - 1) {
+            return filename.substring(lastDotIndex + 1).toLowerCase();
+        }
         return null;
     }
 
@@ -38,6 +40,10 @@ public class FileUtils {
             return null;
         }
 
-        return path.substring(0, path.lastIndexOf("/"));
+        int lastSlashIndex = path.lastIndexOf("/");
+        if (lastSlashIndex == -1) {
+            return path;
+        }
+        return path.substring(0, lastSlashIndex);
     }
 }

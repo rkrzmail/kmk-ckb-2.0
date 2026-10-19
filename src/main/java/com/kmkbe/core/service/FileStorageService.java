@@ -93,6 +93,9 @@ public class FileStorageService {
             Path fileDestination = uploadPath.resolve(name)
                     .normalize()
                     .toAbsolutePath();
+            if (!fileDestination.startsWith(root.toAbsolutePath())) {
+                throw new SecurityException("Path traversal attempt detected in upload: " + name);
+            }
 
             try (InputStream inputStream = file.getInputStream()) {
                 Files.copy(inputStream, fileDestination, StandardCopyOption.REPLACE_EXISTING);
@@ -171,8 +174,9 @@ public class FileStorageService {
 
             // Header untuk file response
             HttpHeaders headers = new HttpHeaders();
+            String safeFileName = (fileName != null) ? fileName.replaceAll("[\r\n\"]", "_") : "download";
             if (String.valueOf(httpServletRequest.getParameter("cd")).equalsIgnoreCase("attachment")){
-                headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName + "\"");
+                headers.add(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + safeFileName + "\"");
             }else{
                 headers.set("Content-Disposition","inline");
             }
