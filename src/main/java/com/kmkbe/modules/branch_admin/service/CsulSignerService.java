@@ -39,7 +39,8 @@ public class CsulSignerService {
   private final AuthRemoteService authRemoteService;
   private final EmailAo emailAo;
   private final AuditTrailService auditTrailService;
-  private final String apiKey = "YiByHB@CSUL_DEV";
+  @org.springframework.beans.factory.annotation.Value("${esign.api-key:${app.api.key:YiByHB@CSUL_DEV}}")
+  private String apiKey;
   private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
 
   private String jwtToken;
