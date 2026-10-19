@@ -310,6 +310,23 @@ public class MstProductService {
 
   // UPDATE
   @Transactional
+  public Product updateProduct(String productCode, ProductDto productDto) {
+    Optional<Product> existingProductOpt = productRepository.findByProductCode(productCode);
+
+    if (existingProductOpt.isPresent()) {
+      Product existingProduct = existingProductOpt.get();
+      Product updated = fromDto(productDto, existingProduct);
+      updated.setUsrUpd("SYSTEM");
+      updated.setDtmUpd(LocalDateTime.now());
+      productRepository.save(updated);
+
+      return updated;
+    } else {
+      throw new RuntimeException("Product not found with code: " + productCode);
+    }
+  }
+
+  @Transactional
   public Product updateProduct(String productCode, Product productDetails) {
     Optional<Product> existingProductOpt = productRepository.findByProductCode(productCode);
 
