@@ -119,4 +119,28 @@ class ConfigurationSecurityComplianceTest {
             assertThat(templateContent).contains("${SPRINGDOC_SWAGGER_UI_ENABLED:false}");
         }
     }
+
+    @Test
+    @DisplayName("H5 Compliance: External integration credentials (SISCA, Confins, e-sign, SBA) support dynamic env vars")
+    void externalIntegrationCredentialsSupportEnvVars() throws IOException {
+        Path prodPath = Path.of("src/main/resources/application-prod.yaml");
+        if (Files.exists(prodPath)) {
+            String prodContent = Files.readString(prodPath);
+            assertThat(prodContent).contains("${TEST_MAIL_PASSWORD:");
+            assertThat(prodContent).contains("${CSUL_SISCA_PASSWORD:");
+            assertThat(prodContent).contains("${FEIGN_CONFINS_ADINS_KEY:");
+            assertThat(prodContent).contains("${APP_API_KEY:");
+            assertThat(prodContent).contains("${ESIGN_API_KEY:");
+            assertThat(prodContent).contains("${SPRING_BOOT_ADMIN_PASSWORD:}");
+            assertThat(prodContent).contains("${REDIS_PASSWORD:}");
+            assertThat(prodContent).contains("${MONGO_PASSWORD:}");
+        }
+
+        Path appYaml = Path.of("src/main/resources/application.yaml");
+        if (Files.exists(appYaml)) {
+            String appContent = Files.readString(appYaml);
+            assertThat(appContent).contains("${APP_API_KEY:");
+            assertThat(appContent).contains("${ESIGN_API_KEY:");
+        }
+    }
 }
