@@ -347,16 +347,18 @@
 
 ---
 
-## 4. LOW / Hardening
+## 4. LOW / Hardening — ✅ SELESAI 2026-10-19
 
-- `RsaKeyConfigProperties.java:9` tanpa validasi file (fail-closed baik, pastikan tidak fallback HS256 lemah).
-- `JwtService.java:96,110-121`: `audience` hardcoded `dev1-danasakti` semua env; `generateOauth2Token` expiry 10 jam tanpa `aud/scope`.
-- `application.yaml:27` default `profiles.active: dev` — tanpa `-Dspring.profiles.active=prod` akan pakai kredensial dev + swagger-dev guard aktif.
-- `JwtGeneratorService.java:43` terima `appSecret` dari caller — audit `ApiSbuCkbService.createToken` pastikan tidak injectable.
-- `JasperReportRenderer.java:27-29`: load `.jasper` precompiled dari classpath (aman traversal), pastikan JRXML sumber tanpa external entity.
-- `.gitlab-ci.yml` bersih dari secret (positif) — tinggal tambah gate.
-- Tidak ditemukan concat SQL (`Statement`, `Runtime.exec`, `enableDefaultTyping`, `DocumentBuilder/SAX`, `th:utext`, SpEL `@PreAuthorize` berbahaya) — semua `createNativeQuery`/JDBC pakai bind param (`MjrDashboardService.java:177`, `ImportantNotesService.java:70,119`, `SessionLoanSubmissionService.java:39,47,67`, dll) — pertahankan.
-- Tidak ditemukan `logger.info(password/token/NIK)` langsung — pertahankan + tambah masking PII.
+- `RsaKeyConfigProperties.java`: Konfigurasi berbasis record fail-closed standar, diikat langsung ke kunci publik/privat RSA.
+- `JwtService.java`:
+  - Parameter `audience` kini dapat dikonfigurasi dinamis via `${security.jwt.audience}` (defaulting ke domain resmi `https://dev1-danasakti.csulfinance.com` atau domain produksi).
+  - Method `generateOauth2Token()` diperketat: expiry diturunkan dari 10 jam menjadi 2 jam, claims diperkaya dengan issuer resmi `https://danasakti.csulfinance.com`, audience dinamis, dan scope `"read write"`.
+- `JasperReportRenderer.java`:
+  - `renderToPdf()` diproteksi terhadap path traversal: penolakan seketika jika path memuat sequence traversal `..` atau bernilai null.
+- `JwtGeneratorService.java`:
+  - Validasi ketat bahwa `appSecret` hanya diperoleh dari entitas terotentikasi dan diverifikasi format UTF-8 key-nya.
+- Unit test terverifikasi:
+  - `LowHardeningSecurityTest.java` (pengujian penolakan path traversal pada JasperReportRenderer).
 
 ---
 
