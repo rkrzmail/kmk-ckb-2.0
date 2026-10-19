@@ -84,9 +84,10 @@ public class LegalFileService {
       if ("DOC005".equals(fileType.getFileTypeCode()) || "DOC006".equals(fileType.getFileTypeCode())) {
         dto.setFileUrl(null);
       } else {
-        // Generate URL untuk dokumen lainnya
+        // Generate URL untuk dokumen lainnya (tanpa token di query string, C10).
+        // Klien wajib memakai header Authorization: Bearer saat mengunduh.
         String generatedUrl = UriUtils.getBaseUrl(httpServletRequest).replace("http", "https")
-          + "/api/v1/documents/download/loan/" + legalFile.getFileId() + "?token=";
+          + "/api/v1/documents/download/loan/" + legalFile.getFileId();
 
         dto.setFileUrl(generatedUrl);
       }

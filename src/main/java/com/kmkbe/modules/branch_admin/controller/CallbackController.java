@@ -1,6 +1,7 @@
 package com.kmkbe.modules.branch_admin.controller;
 
 import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.utils.SecurityUtils;
 import com.kmkbe.modules.branch_admin.request.CallbackRequest;
 import com.kmkbe.modules.branch_admin.service.CallbackService;
 import lombok.RequiredArgsConstructor;
@@ -25,7 +26,7 @@ public class CallbackController {
             @RequestHeader("x-api-key") String apiKey,
             @RequestBody CallbackRequest request) {
 
-        if (!expectedApiKey.equals(apiKey)) {
+        if (!SecurityUtils.constantTimeEquals(expectedApiKey, apiKey)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new CommonResult<String>().fail(401, "Invalid API Key"));
         }

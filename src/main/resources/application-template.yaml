@@ -1,0 +1,145 @@
+# ==============================================================================
+# ENVIRONMENT TEMPLATE: application-template.yaml
+# Copy this file to application-{profile}.yaml (e.g. application-local.yaml,
+# application-dev.yaml, application-prod.yaml) and provide valid secrets via
+# environment variables or secret managers (Vault / AWS Secrets Manager / K8s).
+#
+# DO NOT COMMIT application-*.yaml files containing real credentials to Git!
+# ==============================================================================
+
+env: ${APP_ENV:local}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_INCLUDE:info,health}
+      base-path: /api/monitoring
+  endpoint:
+    health:
+      show-components: always
+      show-details: never
+    logfile:
+      external-file: admin.log
+
+spring:
+  application:
+    name: kmkbe
+  flyway:
+    enabled: ${FLYWAY_ENABLED:true}
+    schemas: public
+    locations: classpath:db/migration/${APP_ENV:dev}/{vendor}
+    baseline-on-migrate: true
+    out-of-order: true
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/kmkds?stringtype=unspecified}
+    username: ${SPRING_DATASOURCE_USERNAME:postgres}
+    password: ${SPRING_DATASOURCE_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+      database: ${REDIS_DATABASE:6}
+      password: ${REDIS_PASSWORD:}
+      lettuce:
+        pool:
+          enabled: true
+          max-active: ${REDIS_POOL_MAX_ACTIVE:30}
+          max-idle: ${REDIS_POOL_MAX_IDLE:10}
+          min-idle: ${REDIS_POOL_MIN_IDLE:2}
+          max-wait: ${REDIS_POOL_MAX_WAIT:10000}
+    mongodb:
+      host: ${MONGO_HOST:localhost}
+      port: ${MONGO_PORT:27017}
+      database: ${MONGO_DATABASE:kmklog}
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: ${JPA_SHOW_SQL:false}
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+  cache:
+    type: redis
+  boot:
+    admin:
+      client:
+        url: ${BOOT_ADMIN_URL:http://localhost:9000}
+        username: ${BOOT_ADMIN_USERNAME:}
+        password: ${BOOT_ADMIN_PASSWORD:}
+        instance:
+          name: Kmk-Digital-2.0
+  mail:
+    host: ${SPRING_MAIL_HOST:localhost}
+    port: ${SPRING_MAIL_PORT:587}
+    protocol: smtp
+    username: ${SPRING_MAIL_USERNAME:}
+    password: ${SPRING_MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
+logging:
+  level:
+    root: ${LOG_LEVEL_ROOT:INFO}
+    org.hibernate: ERROR
+    org.springframework.web: ERROR
+  file:
+    name: ${LOG_FILE_PATH:./logs/log-file.log}
+
+rsa:
+  public-key: ${RSA_PUBLIC_KEY:classpath:certs/public-key.pem}
+  private-key: ${RSA_PRIVATE_KEY:classpath:certs/pkcs8.pem}
+
+testing:
+  mail:
+    host: ${TEST_MAIL_HOST:sandbox.smtp.mailtrap.io}
+    port: ${TEST_MAIL_PORT:587}
+    username: ${TEST_MAIL_USERNAME:}
+    password: ${TEST_MAIL_PASSWORD:}
+
+csul:
+  sisca:
+    v1:
+      internal: ${CSUL_SISCA_INTERNAL_URL:http://localhost:8185/SISCAConnect/api/v1}
+      white_list: ${CSUL_SISCA_WHITELIST_URL:http://localhost:8185/SISCAConnect/api/v1}
+      auth:
+        username: ${CSUL_SISCA_USERNAME:KMKDigital}
+        password: ${CSUL_SISCA_PASSWORD:}
+      mail-position:
+        branch-admin: "ADM"
+        account-officer: "AO/AM"
+        branch-manager: "BM/BOH"
+        area-sales-manager: "RM"
+  confins:
+    mou:
+      v1: ${CONFINS_MOU_V1_URL:}
+    los:
+      v1: ${CONFINS_LOS_V1_URL:}
+    corelos:
+      v1: ${CONFINS_CORELOS_V1_URL:}
+    ap:
+      v1: ${CONFINS_AP_V1_URL:}
+    fou:
+      v1: ${CONFINS_FOU_V1_URL:}
+    payment:
+      v1: ${CONFINS_PAYMENT_V1_URL:}
+    ar:
+      v1: ${CONFINS_AR_V1_URL:}
+    adinskey: ${CONFINS_ADINS_KEY:}
+  mst:
+    v1: ${CSUL_MST_V1_URL:}
+
+feign:
+  csul:
+    ckb:
+      url: ${FEIGN_CKB_URL:}
+      username: ${FEIGN_CKB_USERNAME:}
+      password: ${FEIGN_CKB_PASSWORD:}
+      client-secret: ${FEIGN_CKB_CLIENT_SECRET:}
+      api-key: ${FEIGN_CKB_API_KEY:}
+    confins:
+      url: ${FEIGN_CONFINS_URL:}
+      adins-key: ${FEIGN_CONFINS_ADINS_KEY:}
+
+cors:
+  allowed-origins: {CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4200,http://localhost:5173,http://localhost:8080}
