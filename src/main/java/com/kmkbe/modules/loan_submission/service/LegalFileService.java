@@ -60,22 +60,20 @@ public class LegalFileService {
       if (StringUtil.isNullOrEmpty(path)) {
         throw new Exception("File path cannot be null. Expected upload dir, provided: " + path);
       }
-      LegalFile legalFile = new LegalFile();
-      LegalFile checkExisting = fetchByMstFileTypeAndCust(customer, fileType);
-      if (checkExisting != null) {
-        legalFileRepository.delete(checkExisting);
-        legalFile.setFileId(checkExisting.getFileId());
+      LegalFile legalFile = fetchByMstFileTypeAndCust(customer, fileType);
+      if (legalFile == null) {
+        legalFile = new LegalFile();
+        legalFile.setCustCode(customer);
+        legalFile.setFileTypeCode(fileType);
+        legalFile.setUsrCrt(customer.getCustName());
+        legalFile.setDtmCrt(DateTimeUtils.now());
       }
-      legalFile.setCustCode(customer);
       legalFile.setFileName(fileName);
       legalFile.setFilePath(path);
       legalFile.setContentType(file.getContentType());
-      legalFile.setFileTypeCode(fileType);
-      legalFile.setUsrCrt(customer.getCustName());
-      legalFile.setDtmCrt(DateTimeUtils.now());
       legalFile.setUsrUpd(customer.getCustName());
       legalFile.setDtmUpd(DateTimeUtils.now());
-      legalFileRepository.save(legalFile);
+      legalFile = legalFileRepository.save(legalFile);
 
       LegalFileDto dto = FileTypeMapper.INSTANCE.legalFileToDto(legalFile);
       dto.setUploadedDate(legalFile.getDtmUpd());

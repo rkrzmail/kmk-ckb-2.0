@@ -130,16 +130,21 @@ public class MstProductController {
 
   // EDIT PRODUK
   @GetMapping("/item/{productCode}")
-  public ResponseEntity<Product> getProductByCode(@PathVariable String productCode) {
+  public ResponseEntity<Product> getProductByCode(@PathVariable String productCode) throws SignatureException {
+     currentUserService.authenticatedInternalUser();
      return productService.getProductByCode(productCode);
   }
 
   @PutMapping("/item/{productCode}")
-  public ResponseEntity<?> updateProduct(@PathVariable String productCode, @RequestBody Product productDetails) {
+  public ResponseEntity<?> updateProduct(@PathVariable String productCode, @Valid @RequestBody ProductDto productDto) {
     try {
-      Product updatedProduct = productService.updateProduct(productCode, productDetails);
+      currentUserService.authenticatedInternalUser();
+      Product updatedProduct = productService.updateProduct(productCode, productDto);
       CommonResult<Product> result = new CommonResult<Product>().success(updatedProduct);
       return ResponseEntity.ok(result);
+    } catch (SignatureException e) {
+      CommonResult<String> result = new CommonResult<String>().fail(401, "Unauthorized");
+      return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(result);
     } catch (Exception e) {
       CommonResult<String> result = new CommonResult<String>().fail(500, "An error occurred: " + e.getMessage());
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(result);
