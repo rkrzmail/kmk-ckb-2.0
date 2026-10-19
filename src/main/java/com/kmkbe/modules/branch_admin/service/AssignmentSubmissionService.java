@@ -113,14 +113,22 @@ public class AssignmentSubmissionService {
       Page<FinancingHdr> financingHdrPage;
       if ("financingHdrCode".equalsIgnoreCase(request.getSearchBy())
           && !StringUtil.isNullOrEmpty(request.getSearchValue())) {
-        UUID code;
-        try {
-          code = UUID.fromString(request.getSearchValue().trim());
-        } catch (IllegalArgumentException exception) {
-          code = null;
+        String codeSearch = request.getSearchValue().trim();
+        if (!codeSearch.matches("(?i)[0-9a-f-]{1,36}")) {
+          financingHdrPage = Page.empty();
+        } else if (codeSearch.length() == 36) {
+          UUID code;
+          try {
+            code = UUID.fromString(codeSearch);
+          } catch (IllegalArgumentException exception) {
+            code = null;
+          }
+          financingHdrPage = new PageImpl<>(code == null ? List.of() : financingHdrRepository
+            .findByFinancingHdrCodeAndMstBranch_BranchCode(code, branchCode).stream().toList());
+        } else {
+          financingHdrPage = financingHdrRepository.findAllAssignmentFinancingByCodeFragment(
+            branchCode, codeSearch, org.springframework.data.domain.Pageable.unpaged(PaginationSort.assignments(request)));
         }
-        financingHdrPage = new PageImpl<>(code == null ? List.of() : financingHdrRepository
-          .findByFinancingHdrCodeAndMstBranch_BranchCode(code, branchCode).stream().toList());
       } else {
         // Role-specific statuses are mapped below, so pagination must happen after that filter.
         financingHdrPage = financingHdrRepository.findAllAssignmentFinancingRaw(
@@ -143,7 +151,7 @@ public class AssignmentSubmissionService {
         @Override
         public AssignmentDto filter(AssignmentDto data) {
 
-          if (isSearchBy("financingHdrCode") && equal(data.getFinancingHdrCode().toString())) {
+          if (isSearchBy("financingHdrCode") && like(data.getFinancingHdrCode().toString())) {
             return data;
           } else if ((isSearchBy("custName") || isSearchBy("NamaDebitur")) && like(data.getCustName())) {
             return data;
