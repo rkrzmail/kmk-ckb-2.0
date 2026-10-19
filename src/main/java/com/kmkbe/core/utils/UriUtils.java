@@ -22,6 +22,11 @@ public class UriUtils {
                 .replace("https://", "");
     }
 
+    /**
+     * Membangun URL download dokumen tanpa menyematkan token di query string (C10).
+     * Token via query bocor ke access-log, browser history, dan referer header.
+     * Klien wajib mengakses URL ini dengan header Authorization: Bearer.
+     */
     public static String fileUlr(
             HttpServletRequest httpServletRequest,
             int id,
@@ -33,9 +38,7 @@ public class UriUtils {
                 + "/documents/download/"
                 + type.name()
                 + "/"
-                + id
-                + "?token="
-                + HttpUtils.getHeaderBearerToken(httpServletRequest);
+                + id;
     }
 
     public enum DocType{

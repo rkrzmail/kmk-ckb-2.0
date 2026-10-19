@@ -18,13 +18,49 @@ public class DateTimeUtils {
 
     public static final ZoneId JAKARTA_ZONE = ZoneId.of("Asia/Jakarta");
 
-    public static final SimpleDateFormat SDF_STANDARD_DATE_TIME = new SimpleDateFormat(DATE_TIME_STANDARD_PATTERN);
+    /**
+     * Thread-safe subclass of SimpleDateFormat backed by ThreadLocal.
+     * Mencegah race condition, corrupt date state, dan NumberFormatException
+     * saat diakses secara concurrent oleh request thread Tomcat (Issue C12).
+     */
+    public static class ThreadSafeSimpleDateFormat extends SimpleDateFormat {
+        private final String pattern;
+        private final ThreadLocal<SimpleDateFormat> delegate;
 
-    public static final SimpleDateFormat SDF_STANDARD_DATE = new SimpleDateFormat(DATE_STANDARD_PATTERN);
+        public ThreadSafeSimpleDateFormat(String pattern) {
+            super(pattern);
+            this.pattern = pattern;
+            this.delegate = ThreadLocal.withInitial(() -> new SimpleDateFormat(pattern));
+        }
 
-    public static final SimpleDateFormat SDF_STANDARD_RESPONSE_DATE = new SimpleDateFormat(DATE_RESPONSE_STANDARD_PATTERN);
+        @Override
+        public StringBuffer format(Date date, StringBuffer toAppendTo, java.text.FieldPosition pos) {
+            return delegate.get().format(date, toAppendTo, pos);
+        }
 
-    public static final SimpleDateFormat SDF_STANDARD_RESPONSE_DATE_TIME = new SimpleDateFormat(DATE_TIME_RESPONSE_STANDARD_PATTERN);
+        @Override
+        public Date parse(String text, java.text.ParsePosition pos) {
+            return delegate.get().parse(text, pos);
+        }
+
+        @Override
+        public Date parse(String source) throws java.text.ParseException {
+            return delegate.get().parse(source);
+        }
+
+        @Override
+        public Object clone() {
+            return new ThreadSafeSimpleDateFormat(pattern);
+        }
+    }
+
+    public static final SimpleDateFormat SDF_STANDARD_DATE_TIME = new ThreadSafeSimpleDateFormat(DATE_TIME_STANDARD_PATTERN);
+
+    public static final SimpleDateFormat SDF_STANDARD_DATE = new ThreadSafeSimpleDateFormat(DATE_STANDARD_PATTERN);
+
+    public static final SimpleDateFormat SDF_STANDARD_RESPONSE_DATE = new ThreadSafeSimpleDateFormat(DATE_RESPONSE_STANDARD_PATTERN);
+
+    public static final SimpleDateFormat SDF_STANDARD_RESPONSE_DATE_TIME = new ThreadSafeSimpleDateFormat(DATE_TIME_RESPONSE_STANDARD_PATTERN);
 
     public static final DateTimeFormatter ISO_8601_FORMATTER = DateTimeFormatter
             .ofPattern("yyyy-MM-dd'T'HH:mm:ssxxx")

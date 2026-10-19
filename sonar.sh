@@ -1,18 +1,20 @@
 #!/bin/bash
+set -e
 
-# Navigate to your project directory
-cd /path/to/your/project
+# Validate required environment variable
+if [ -z "${SONAR_TOKEN}" ]; then
+  echo "Error: SONAR_TOKEN environment variable is not set." >&2
+  echo "Please set SONAR_TOKEN before running this script (e.g., export SONAR_TOKEN=your_token)." >&2
+  exit 1
+fi
 
-# Run the SonarQube scan
+SONAR_HOST_URL="${SONAR_HOST_URL:-http://localhost:9000}"
+
+# Run the SonarQube scan using environment variables
 mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
   -Dsonar.projectKey=kmk-ckb-api \
   -Dsonar.projectName='kmk-ckb-api' \
-  -Dsonar.host.url=http://localhost:9000 \
-  -Dsonar.token=sqp_3afb6dccf2551b250c532469e7801a876a4c0f59
+  -Dsonar.host.url="${SONAR_HOST_URL}" \
+  -Dsonar.token="${SONAR_TOKEN}"
 
-# Check the exit status
-if [ $? -eq 0 ]; then
-  echo "SonarQube scan completed successfully."
-else
-  echo "SonarQube scan failed. Please check the logs for details."
-fi
+echo "SonarQube scan completed successfully."
