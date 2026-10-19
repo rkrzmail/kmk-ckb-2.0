@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.entity.ApiIntegrationLog;
 import com.kmkbe.core.domain.repository.ApiIntegrationLogRepository;
 import com.kmkbe.core.middleware.HttpServletRequestCopier;
+import com.kmkbe.core.utils.AuditMaskingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.thymeleaf.util.StringUtils;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 
 @Aspect
@@ -34,9 +36,6 @@ public class HttpRequestAspect {
   private final ObjectMapper objectMapper;
 
   @Around("execution(* org.springframework.web.client.RestTemplate.exchange(..))")
-  //@Around("execution(* com.kmkbe.modules.loan_submission.controller.FinancingController.invoicePaid(..))")
-  //@Around("execution(* org.springframework.web.client.RestTemplate.exchange(..))||execution(* com.kmkbe.modules.loan_submission.controller.FinancingController.invoicePaid(..))")
-
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public Object logRestTemplateCalls(ProceedingJoinPoint joinPoint) throws Throwable {
     long startTime = System.currentTimeMillis();
@@ -46,32 +45,31 @@ public class HttpRequestAspect {
     String url = "";
     int statusCode = 200;
 
-
     try {
       response = joinPoint.proceed();
       if (response instanceof ResponseEntity<?> responseEntity) {
         statusCode = responseEntity.getStatusCode().value();
-        responseStr = objectMapper.writeValueAsString(responseEntity.getBody());
-        if (StringUtil.isNullOrEmpty(responseStr)) {
-          responseStr = objectMapper.writeValueAsString(responseEntity.getBody());
+        Object body = responseEntity.getBody();
+        if (body instanceof String strBody) {
+          responseStr = AuditMaskingUtils.maskJsonString(strBody);
+        } else {
+          responseStr = objectMapper.writeValueAsString(AuditMaskingUtils.maskObject(body));
         }
       }
     } catch (HttpStatusCodeException httpStatusCodeException) {
       String message = "Unknown error";
 
       statusCode = httpStatusCodeException.getStatusCode().value();
-      responseStr = httpStatusCodeException.getResponseBodyAsString();
+      responseStr = AuditMaskingUtils.maskJsonString(httpStatusCodeException.getResponseBodyAsString());
       Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
       if (errorObj != null) {
         message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
       }
 
       response = new ResponseEntity<String>(responseStr, HttpStatusCode.valueOf(statusCode));
-      //throw new RuntimeException("Error while perform action. Detail:" + message);
     } catch (Exception e) {
       log.error("Error while executing RestTemplate call {}", e.getMessage());
       response = null;
-      //throw e;
     } finally {
       long executionTime = System.currentTimeMillis() - startTime;
 
@@ -80,19 +78,27 @@ public class HttpRequestAspect {
           url = argUrl;
         }
         if (arg instanceof HttpEntity<?> requestEntity) {
-          requestHeader = objectMapper.writeValueAsString(requestEntity.getHeaders());
+          requestHeader = objectMapper.writeValueAsString(AuditMaskingUtils.maskHeaders(requestEntity.getHeaders()));
 
           if (requestEntity.getBody() != null) {
-            requestStr = objectMapper.writeValueAsString(requestEntity.getBody());
+            Object body = requestEntity.getBody();
+            if (body instanceof String strBody) {
+              requestStr = AuditMaskingUtils.maskJsonString(strBody);
+            } else {
+              requestStr = objectMapper.writeValueAsString(AuditMaskingUtils.maskObject(body));
+            }
           }
         }
       }
 
+      String sanitizedRequest = StringUtils.isEmpty(requestStr) ? "empty" : AuditMaskingUtils.maskJsonString(requestStr);
+      String sanitizedResponse = AuditMaskingUtils.maskJsonString(responseStr);
+
       ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
         .endpointUrl(url)
         .contentType("application/json;" + executionTime + "ms")
-        .requestPayload(StringUtils.isEmpty(requestStr) ? "empty" : requestStr)
-        .responseJson(responseStr)
+        .requestPayload(sanitizedRequest)
+        .responseJson(sanitizedResponse)
         .responseStatus(String.valueOf(statusCode))
         .dtmUpd(DateTimeUtils.now())
         .build();
@@ -100,10 +106,8 @@ public class HttpRequestAspect {
       apiIntegrationLogRepository.save(apiIntegrationLog);
     }
 
-
     return response;
   }
-
 
   @Around("execution(* com.kmkbe.modules.loan_submission.controller.FinancingController.invoicePaid(..))")
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
@@ -114,7 +118,6 @@ public class HttpRequestAspect {
     String requestStr = "empty", requestHeader = "", responseStr = "";
     String url = "";
     int statusCode = 200;
-
 
     try {
       response = joinPoint.proceed();
@@ -134,25 +137,23 @@ public class HttpRequestAspect {
       long executionTime = System.currentTimeMillis() - startTime;
 
       for (Object arg : args) {
-        if (arg instanceof HttpServletRequestCopier) {
-          HttpServletRequestCopier request = (HttpServletRequestCopier) arg;
-          requestStr = new String(request.getContentAsByteArray());
+        if (arg instanceof HttpServletRequestCopier request) {
+          requestStr = AuditMaskingUtils.maskJsonString(new String(request.getContentAsByteArray(), StandardCharsets.UTF_8));
           url = request.getRequestURL().toString();
         }
-        if (arg instanceof FinancingInvoicePaidRequest) {
-          FinancingInvoicePaidRequest request = (FinancingInvoicePaidRequest) arg;
-
-          requestHeader = objectMapper.writeValueAsString(request);
-
-
+        if (arg instanceof FinancingInvoicePaidRequest request) {
+          requestHeader = objectMapper.writeValueAsString(AuditMaskingUtils.maskObject(request));
         }
       }
+
+      String sanitizedRequest = StringUtils.isEmpty(requestStr) ? "empty" : AuditMaskingUtils.maskJsonString(requestStr);
+      String sanitizedResponse = AuditMaskingUtils.maskJsonString(responseStr);
 
       ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
         .endpointUrl(url)
         .contentType("application/json;" + executionTime + "ms")
-        .requestPayload(StringUtils.isEmpty(requestStr) ? "empty" : requestStr)
-        .responseJson(responseStr)
+        .requestPayload(sanitizedRequest)
+        .responseJson(sanitizedResponse)
         .responseStatus(String.valueOf(statusCode))
         .dtmUpd(DateTimeUtils.now())
         .build();
@@ -160,10 +161,8 @@ public class HttpRequestAspect {
       apiIntegrationLogRepository.save(apiIntegrationLog);
     }
 
-
     return response;
   }
-
 
   @Around("execution(* com.kmkbe.modules.customer.service.AuthService.signIn(..))")
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
