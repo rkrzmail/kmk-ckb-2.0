@@ -19,6 +19,9 @@ import java.util.Map;
 public class JasperReportRenderer {
 
     public byte[] renderToPdf(String templatePath, Map<String, Object> params) throws JRException, IOException {
+        if (templatePath == null || templatePath.contains("..")) {
+            throw new IllegalArgumentException("Invalid template path: path traversal detected");
+        }
         try (InputStream reportStream = getClass().getResourceAsStream(templatePath)) {
             if (reportStream == null) {
                 throw new FileNotFoundException(templatePath + " tidak ditemukan");

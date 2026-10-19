@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -34,6 +35,9 @@ public class JwtService {
 
     @Value("${jwt.refreshExpirationDateInMs}")
     private int refreshExpirationDateInMs;
+
+    @Value("${security.jwt.audience:${jwt.audience:https://dev1-danasakti.csulfinance.com}}")
+    private String jwtAudience;
 
     private final JwtDecoder jwtDecoder;
     private final JwtEncoder jwtEncoder;
@@ -85,6 +89,8 @@ public class JwtService {
     ) {
         Instant now = clock.instant();
 
+        String audienceToUse = (jwtAudience != null && !jwtAudience.isBlank()) ? jwtAudience : DEFAULT_AUDIENCE;
+
         return Jwts
                 .builder()
                 .claims(extraClaims)
@@ -92,7 +98,7 @@ public class JwtService {
                 .issuer(userDetails.getUsername() + "@DanaSakti")
                 .issuedAt(Date.from(now))
                 .expiration(Date.from(now.plusMillis(expiration)))
-                .audience().add("https://dev1-danasakti.csulfinance.com").and()
+                .audience().add(audienceToUse).and()
                 .signWith(getSignInKey(), Jwts.SIG.HS256)
                 .compact();
     }
@@ -136,11 +142,14 @@ public class JwtService {
 
     public String generateOauth2Token(Authentication authentication) {
         Instant now = clock.instant();
+        String audienceToUse = (jwtAudience != null && !jwtAudience.isBlank()) ? jwtAudience : DEFAULT_AUDIENCE;
 
         JwtClaimsSet claims = JwtClaimsSet.builder()
-                .issuer("self")
+                .issuer("https://danasakti.csulfinance.com")
+                .audience(List.of(audienceToUse))
+                .claim("scope", "read write")
                 .issuedAt(now)
-                .expiresAt(now.plus(10, ChronoUnit.HOURS))
+                .expiresAt(now.plus(2, ChronoUnit.HOURS))
                 .subject(authentication.getName())
                 .build();
 
