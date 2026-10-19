@@ -58,6 +58,8 @@ spring:
 security:
   actuator:
     api-key: ${SECURITY_ACTUATOR_API_KEY:${security.api.key}}
+  aes:
+    key: ${SECURITY_AES_KEY:aXty08csul99hjkl}
   jwt:
     secret-key: ${SECURITY_JWT_SECRET_KEY:84b6e04f3268b78e7fee1883733e47aff50b88d1184b3512f2b5bffadb99d7eb}
     expiration-time: ${SECURITY_JWT_EXPIRATION_TIME:3000000}
