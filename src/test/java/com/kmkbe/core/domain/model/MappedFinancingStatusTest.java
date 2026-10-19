@@ -21,6 +21,23 @@ class MappedFinancingStatusTest {
   }
 
   @Test
+  void paidHeaderWithSignedStepMapsToSignedInSubmissionLists() {
+    FinancingHdr financing = new FinancingHdr();
+    financing.setFinancingStatus("PAID");
+    financing.setFinancingStep("SIGNED");
+
+    for (MappedFinancingStatus.Type type : new MappedFinancingStatus.Type[] {
+      MappedFinancingStatus.Type.BranchAdmin,
+      MappedFinancingStatus.Type.AccountOfficer,
+      MappedFinancingStatus.Type.MajorAccount
+    }) {
+      MappedFinancingStatus mapped = new MappedFinancingStatus(financing, type);
+      assertThat(mapped.getStatus()).as(type.name()).isEqualTo("SIGNED");
+      assertThat(mapped.getLabel()).as(type.name()).isEqualTo("Signed");
+    }
+  }
+
+  @Test
   void livePaidRemainsPaidAndNewRemainsNew() {
     FinancingHdr financing = new FinancingHdr();
     financing.setFinancingStatus("LIVE");
