@@ -68,15 +68,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     "/api/v1/sbu/**",
     "/api/v1/otp/**",
     "/api/v1/error/**",
-    "/api/v1/uploads/**",
-    "/api/v1/testing/**",
 
     // internal auth
     "/api/v1/internal/auth/sign-in",
     "/api/v1/internal/auth/refresh-token",
 
     "/api/monitoring/**", // actuator replacement
-    "/uploads/**",
     "/error/**",
   };
 
@@ -242,11 +239,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
     for (String endpoint : ENDPOINTS_WHITELIST_FINANCING) {
       if (new AntPathRequestMatcher(endpoint).matches(request)) {
-        filterChain.doFilter(request, response);
-        return true;
-      }
-      String sts = request.getRequestURI();
-      if (endpoint.endsWith(request.getRequestURI())) {
         filterChain.doFilter(request, response);
         return true;
       }
