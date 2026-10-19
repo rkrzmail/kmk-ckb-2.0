@@ -7,6 +7,7 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
@@ -317,34 +318,53 @@ public class Utils {
         return null;
     }
     public static String readInputStreamAsString(String file) {
-        try {
-            return readInputStreamAsString(new FileInputStream(file));
-        } catch (Exception e) {  }
-        return "";
-    }
-    public static String readInputStreamAsString(InputStream inputStream) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
-        int length;
-        try {
-            while ((length = inputStream.read(buffer)) != -1) {
-                baos.write(buffer, 0, length);
-            }
-            inputStream.close();
-        } catch (Exception e) {
+        if (file == null) {
+            return "";
         }
-         return baos.toString( );//StandardCharsets.UTF_8
+        try (InputStream is = new FileInputStream(file)) {
+            return readInputStreamAsString(is);
+        } catch (Exception e) {
+            return "";
+        }
     }
+
+    public static String readInputStreamAsString(InputStream inputStream) {
+        if (inputStream == null) {
+            return "";
+        }
+        try (ByteArrayOutputStream baos = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) != -1) {
+                baos.write(buffer, 0, length);
+            }
+            return baos.toString(StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            return "";
+        } finally {
+            try {
+                inputStream.close();
+            } catch (Exception ignored) {
+            }
+        }
+    }
+
     public static void copyStream(InputStream inputStream, OutputStream baos) {
+        if (inputStream == null || baos == null) {
+            return;
+        }
         byte[] buffer = new byte[1024];
         int length;
         try {
             while ((length = inputStream.read(buffer)) != -1) {
                 baos.write(buffer, 0, length);
             }
-            inputStream.close();
-        } catch (Exception e) {
-
+        } catch (Exception ignored) {
+        } finally {
+            try {
+                inputStream.close();
+            } catch (Exception ignored) {
+            }
         }
     }
 
