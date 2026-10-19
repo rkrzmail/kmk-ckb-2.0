@@ -33,9 +33,9 @@ spring:
     static-path-pattern: /static/**
   servlet:
     multipart:
-      max-file-size: 100MB
+      max-file-size: ${MULTIPART_MAX_FILE_SIZE:25MB}
       enabled: 'true'
-      max-request-size: 100MB
+      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:25MB}
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
