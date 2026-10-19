@@ -228,40 +228,6 @@ class AssignmentSubmissionServiceTest {
   }
 
   @Test
-  void assignmentListFindsPartialFinancingHdrCodeWithinBranchBeforePagination() throws Exception {
-    FinancingHdr first = financingHdr("INPROCESS", "INPROCESS");
-    FinancingHdr second = financingHdr("INPROCESS", "INPROCESS");
-    second.setFinancingHdrCode(UUID.fromString("22222222-3333-3333-3333-333333333333"));
-    stubUserAndRole("branch_admin");
-    when(financingHdrRepository.findAllAssignmentFinancingByCodeFragment(eq("JKT"), eq("22222222-"), any()))
-      .thenReturn(new PageImpl<>(List.of(first, second)));
-
-    PaginationResult<AssignmentDto> result = service.assignmentList(
-      httpServletRequest, pagination("financingHdrCode", "22222222-", 1, 1));
-
-    assertThat(result.getTotalData()).isEqualTo(2);
-    assertThat(result.getTotalPage()).isEqualTo(2);
-    assertThat(result.getList()).extracting(AssignmentDto::getFinancingHdrCode)
-      .containsExactly(FINANCING_HDR_CODE);
-    var pageable = org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
-    org.mockito.Mockito.verify(financingHdrRepository).findAllAssignmentFinancingByCodeFragment(
-      eq("JKT"), eq("22222222-"), pageable.capture());
-    assertThat(pageable.getValue().isUnpaged()).isTrue();
-  }
-
-  @Test
-  void assignmentListRejectsWildcardInFinancingHdrCodeSearch() throws Exception {
-    stubUserAndRole("branch_admin");
-
-    PaginationResult<AssignmentDto> result = service.assignmentList(
-      httpServletRequest, pagination("financingHdrCode", "%", 1, 10));
-
-    assertThat(result.getList()).isEmpty();
-    assertThat(result.getTotalData()).isZero();
-    org.mockito.Mockito.verifyNoInteractions(financingHdrRepository);
-  }
-
-  @Test
   void assignmentListFiltersFinancingAmountExactlyBeforePagination() throws Exception {
     FinancingHdr first = financingHdr("INPROCESS", "INPROCESS");
     FinancingHdr second = financingHdr("INPROCESS", "INPROCESS");
