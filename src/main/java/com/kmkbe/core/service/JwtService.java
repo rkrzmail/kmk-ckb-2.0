@@ -97,13 +97,41 @@ public class JwtService {
                 .compact();
     }
 
+    public static final String DEFAULT_AUDIENCE = "https://dev1-danasakti.csulfinance.com";
+    public static final String ISSUER_SUFFIX = "@DanaSakti";
+
     public boolean isTokenValid(String token, UserDetails userDetails) {
+        if (token == null || userDetails == null) {
+            return false;
+        }
         final String username = extractUsername(token);
-        /*return userDetails != null
-                && username.equals(userDetails.getUsername())
-                && !isTokenExpired(token);*/
-        return username.equals(userDetails.getUsername())
-                && !isTokenExpired(token);
+        if (username == null || !username.equals(userDetails.getUsername())) {
+            return false;
+        }
+        if (isTokenExpired(token)) {
+            return false;
+        }
+
+        // Validasi issuer & audience (Issue H1)
+        Claims claims = extractAllClaims(token);
+        String issuer = claims.getIssuer();
+        if (issuer != null && !issuer.isBlank()) {
+            if (!issuer.endsWith(ISSUER_SUFFIX) && !issuer.equals(username)) {
+                return false;
+            }
+        }
+
+        java.util.Set<String> audience = claims.getAudience();
+        if (audience != null && !audience.isEmpty()) {
+            boolean matchesAudience = audience.stream().anyMatch(aud ->
+                    aud.contains("danasakti") || aud.contains("csulfinance") || aud.contains("localhost")
+            );
+            if (!matchesAudience) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     public String generateOauth2Token(Authentication authentication) {
