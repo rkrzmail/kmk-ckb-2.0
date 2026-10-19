@@ -12,8 +12,10 @@ import static com.google.common.base.CaseFormat.LOWER_UNDERSCORE;
 public final class PageableUtil {
 
   private static final String ASC_VALUE = "ASC";
+  public static final int MAX_PAGE_SIZE = 100;
 
-  private static final String SORT="[a-zA-Z]";
+  private static final String SORT = "^[a-zA-Z0-9_]+$";
+
   private PageableUtil() {
 
   }
@@ -24,16 +26,24 @@ public final class PageableUtil {
       req.setSortBy(LOWER_CAMEL.to(LOWER_UNDERSCORE, req.getSortBy()));
     }
 
-    if (defaultSortBy.matches(SORT)) {
+    if (defaultSortBy != null && defaultSortBy.matches(SORT)) {
       defaultSortBy = LOWER_CAMEL.to(LOWER_UNDERSCORE, defaultSortBy);
     }
 
     if (req.getPageSize() != null) {
-      defaultPageSize = req.getPageSize();
+      defaultPageSize = Math.min(Math.max(req.getPageSize(), 1), MAX_PAGE_SIZE);
+    } else if (defaultPageSize != null) {
+      defaultPageSize = Math.min(Math.max(defaultPageSize, 1), MAX_PAGE_SIZE);
+    } else {
+      defaultPageSize = 10;
     }
 
     if (req.getPageNo() != null) {
-      defaultPageNumber = req.getPageNo();
+      defaultPageNumber = Math.max(req.getPageNo(), 1);
+    } else if (defaultPageNumber != null) {
+      defaultPageNumber = Math.max(defaultPageNumber, 1);
+    } else {
+      defaultPageNumber = 1;
     }
 
     if (req.getSortBy() != null) {
@@ -54,17 +64,24 @@ public final class PageableUtil {
       req.setSortBy(LOWER_UNDERSCORE.to(LOWER_CAMEL, req.getSortBy()));
     }
 
-    if (defaultSortBy.contains("_")) {
+    if (defaultSortBy != null && defaultSortBy.contains("_")) {
       defaultSortBy = LOWER_UNDERSCORE.to(LOWER_CAMEL, defaultSortBy);
     }
 
-
     if (req.getPageSize() != null) {
-      defaultPageSize = req.getPageSize();
+      defaultPageSize = Math.min(Math.max(req.getPageSize(), 1), MAX_PAGE_SIZE);
+    } else if (defaultPageSize != null) {
+      defaultPageSize = Math.min(Math.max(defaultPageSize, 1), MAX_PAGE_SIZE);
+    } else {
+      defaultPageSize = 10;
     }
 
     if (req.getPageNo() != null) {
-      defaultPageNumber = req.getPageNo();
+      defaultPageNumber = Math.max(req.getPageNo(), 1);
+    } else if (defaultPageNumber != null) {
+      defaultPageNumber = Math.max(defaultPageNumber, 1);
+    } else {
+      defaultPageNumber = 1;
     }
 
     if (req.getSortBy() != null) {

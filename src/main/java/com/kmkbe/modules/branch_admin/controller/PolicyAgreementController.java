@@ -3,6 +3,7 @@ package com.kmkbe.modules.branch_admin.controller;
 import com.kmkbe.core.domain.dto.PolicyAgreementDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.modules.branch_admin.service.PolicyAgreementService;
+import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,7 +19,7 @@ public class PolicyAgreementController {
     private PolicyAgreementService policyAgreementService;
 
     @PostMapping("/create")
-    public CommonResult<PolicyAgreementDto> createPolicyAgreement(@RequestBody PolicyAgreementDto policyAgreementDto) {
+    public CommonResult<PolicyAgreementDto> createPolicyAgreement(@Valid @RequestBody PolicyAgreementDto policyAgreementDto) {
         return policyAgreementService.createPolicyAgreement(policyAgreementDto);
     }
 
@@ -56,7 +57,7 @@ public class PolicyAgreementController {
     @PutMapping("/{id}")
     public ResponseEntity<CommonResult<PolicyAgreementDto>> updatePolicyAgreement(
             @PathVariable Long id,
-            @RequestBody PolicyAgreementDto policyAgreementDto
+            @Valid @RequestBody PolicyAgreementDto policyAgreementDto
     ) {
         CommonResult<PolicyAgreementDto> result = policyAgreementService.updatePolicyAgreement(id, policyAgreementDto);
 
