@@ -63,6 +63,15 @@ class NativePaginationSortTest {
       .contains("fh.branch_code = :branchcode");
   }
 
+  @Test
+  void partialAssignmentCodeSearchPreservesBranchAndSort() throws Exception {
+    String sql = enhance(FinancingHdrRepository.class, "findAllAssignmentFinancingByCodeFragment", sort("custName", false));
+    assertThat(sql.toLowerCase()).contains("order by c.cust_name asc, fh.financing_hdr_id asc")
+      .contains("fh.branch_code = :branchcode")
+      .contains("cast(fh.financing_hdr_code as text)")
+      .contains(":codefragment");
+  }
+
   private Sort sort(String field, boolean agreement) {
     var request = new PaginationRequest();
     request.setSortBy(field);

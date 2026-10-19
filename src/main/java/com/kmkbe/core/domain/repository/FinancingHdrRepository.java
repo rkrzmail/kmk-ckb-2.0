@@ -66,6 +66,27 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
     Pageable pageable
   );
 
+  @Query(value = """
+      select fh.*
+      from public.financing_hdr fh
+      join public.customer c on fh.cust_code = c.cust_code
+      join bouwheer bw on fh.bouwheer_code = bw.bouwheer_code
+      where fh.branch_code = :branchCode
+        and lower(cast(fh.financing_hdr_code as text)) like '%' || lower(:codeFragment) || '%'
+      """, countQuery = """
+      select count(*)
+      from public.financing_hdr fh
+      join public.customer c on fh.cust_code = c.cust_code
+      join bouwheer bw on fh.bouwheer_code = bw.bouwheer_code
+      where fh.branch_code = :branchCode
+        and lower(cast(fh.financing_hdr_code as text)) like '%' || lower(:codeFragment) || '%'
+      """, nativeQuery = true)
+  Page<FinancingHdr> findAllAssignmentFinancingByCodeFragment(
+    @Param("branchCode") String branchCode,
+    @Param("codeFragment") String codeFragment,
+    Pageable pageable
+  );
+
   @Query(
     value = """
       select
