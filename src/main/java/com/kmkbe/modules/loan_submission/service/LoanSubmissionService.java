@@ -526,12 +526,7 @@ public class LoanSubmissionService {
       Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financeCode));
       if (financingHdr.isPresent()) {
         FinancingHdr fin = financingHdr.get();
-        double effectiveRate = fin.getEffectiveRate();
-        if (effectiveRate < 1) {
-          effectiveRate = effectiveRate * 100;
-        } else if (effectiveRate > 100) {
-          effectiveRate = Math.floor(effectiveRate / 100);
-        }
+        double effectiveRate = normalizeEffectiveRate(fin.getEffectiveRate());
 
         FinancingHdrDto financingHdrDto = FinancingHdrDto.builder()
           .financingDate(fin.getFinancingDate())
@@ -558,12 +553,7 @@ public class LoanSubmissionService {
           Optional<SimulationHist> simulationHist = simulationHistRepository.findTopBySimulationHistCode(UUID.fromString(histCode));
           if (simulationHist.isPresent()) {
             SimulationHist simH = simulationHist.get();
-            effectiveRate = simH.getEffectiveRate();
-            if (effectiveRate < 1) {
-              effectiveRate = effectiveRate * 100;
-            } else if (effectiveRate > 100) {
-              effectiveRate = Math.floor(effectiveRate / 100);
-            }
+            effectiveRate = normalizeEffectiveRate(simH.getEffectiveRate());
 
             SimulationHistDto simulationHistDto = SimulationHistDto.builder()
               .schema(100 - simH.getRetention())
@@ -632,11 +622,7 @@ public class LoanSubmissionService {
     double effective_Rate = product.getEffectiveRate();
     effective_Rate = intestRate;//kiriman dari client
 
-    if (effective_Rate < 1) {
-      effective_Rate = effective_Rate * 100;
-    } else if (effective_Rate > 100) {
-      effective_Rate = Math.floor(effective_Rate / 100);
-    }
+    effective_Rate = normalizeEffectiveRate(effective_Rate);
 
     double interestAmount = nilaiPembiayaan * effective_Rate / 100;
     //double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
@@ -709,13 +695,7 @@ public class LoanSubmissionService {
           finHdr.setRetention(simulationHist.getRetention());
           finHdr.setAdminFeeAmt(simulationHist.getAdminAmt());
           finHdr.setInterestAmt(simulationHist.getInterestAmt());
-          if (simulationHist.getEffectiveRate() < 1) {
-            finHdr.setEffectiveRate(simulationHist.getEffectiveRate() * 100);
-          } else if (simulationHist.getEffectiveRate() > 100) {
-            finHdr.setEffectiveRate(Math.floor(simulationHist.getEffectiveRate() / 100));
-          } else {
-            finHdr.setEffectiveRate(simulationHist.getEffectiveRate());
-          }
+          finHdr.setEffectiveRate(normalizeEffectiveRate(simulationHist.getEffectiveRate()));
           finHdr.setFinancingAmt(simulationHist.getFinancingAmt());
           FinancingHdr savedFinancing = financingHdrRepository.save(finHdr);
           auditTrailService.record(
@@ -1732,6 +1712,30 @@ public class LoanSubmissionService {
             "dengan pihak PT. Trakindo Utama.")
           .build();
       }
+    }
+  }
+
+  /**
+   * Menormalisasi effectiveRate tahunan (p.a.) dengan mempertahankan presisi desimal (Issue H11).
+   * Mencegah pemotongan presisi akibat Math.floor (misal 14.75% terpotong menjadi 14.0%).
+   * - Nilai < 1 (misal 0.1475) dinormalisasi menjadi persentase penuh (14.75).
+   * - Nilai basis point > 100 (misal 1475 bps) dinormalisasi menjadi 14.75 via pembagian BigDecimal presisi 4 desimal.
+   * - Nilai standar persentase (1 - 100) dibulatkan secara wajar ke 4 desimal tanpa membuang pecahan.
+   */
+  public static Double normalizeEffectiveRate(Double rate) {
+    if (rate == null) {
+      return null;
+    }
+    if (rate == 0.0) {
+      return 0.0;
+    }
+    BigDecimal bdRate = BigDecimal.valueOf(rate);
+    if (rate < 1.0) {
+      return bdRate.multiply(BigDecimal.valueOf(100.0)).setScale(4, RoundingMode.HALF_UP).doubleValue();
+    } else if (rate > 100.0) {
+      return bdRate.divide(BigDecimal.valueOf(100.0), 4, RoundingMode.HALF_UP).doubleValue();
+    } else {
+      return bdRate.setScale(4, RoundingMode.HALF_UP).doubleValue();
     }
   }
 }
