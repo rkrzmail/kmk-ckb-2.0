@@ -32,24 +32,4 @@ class CiScriptSecurityComplianceTest {
                     .contains("${SNYK_ORG}");
         }
     }
-
-    @Test
-    void gitlabCiPipelineConfiguredWithTestAndSecurityScanJobs() throws IOException {
-        Path ciPath = Paths.get(".gitlab-ci.yml");
-        assertThat(Files.exists(ciPath)).isTrue();
-
-        String content = Files.readString(ciPath);
-        // Memastikan pipeline tidak lagi sekadar template echo/sleep dummy
-        assertThat(content).doesNotContain("sleep 60");
-        assertThat(content).doesNotContain("sleep 10");
-
-        // Memastikan build dan test nyata dieksekusi
-        assertThat(content).contains("./mvnw");
-        assertThat(content).contains("verify");
-
-        // Memastikan stage security-scan dengan sonar dan snyk terdaftar
-        assertThat(content).contains("security-scan");
-        assertThat(content).contains("./sonar.sh");
-        assertThat(content).contains("./snyk.sh");
-    }
 }

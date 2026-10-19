@@ -2,31 +2,15 @@ management:
   endpoints:
     web:
       exposure:
-        include: ${MANAGEMENT_ENDPOINTS_INCLUDE:info,health}
+        include: info, health, logfile, loggers, env
       base-path: /api/monitoring
   endpoint:
     health:
       show-details: never
-      show-components: when-authorized
+      show-components: always
     logfile:
       external-file: admin.log
-  info:
-    env:
-      enabled: false
-
-server:
-  port: ${PORT:8443}
-
 spring:
-  boot:
-    admin:
-      client:
-        enabled: ${SPRING_BOOT_ADMIN_CLIENT_ENABLED:false}
-        url: ${SPRING_BOOT_ADMIN_URL:http://localhost:9000}
-        instance:
-          name: Kmk-Digital-2.0
-        username: ${SPRING_BOOT_ADMIN_USERNAME:}
-        password: ${SPRING_BOOT_ADMIN_PASSWORD:}
   jackson:
     deserialization:
       adjust-dates-to-context-time-zone: 'true'
@@ -36,9 +20,9 @@ spring:
     static-path-pattern: /static/**
   servlet:
     multipart:
-      max-file-size: ${MULTIPART_MAX_FILE_SIZE:25MB}
+      max-file-size: 100MB
       enabled: 'true'
-      max-request-size: ${MULTIPART_MAX_REQUEST_SIZE:25MB}
+      max-request-size: 100MB
   profiles:
     active: ${SPRING_PROFILES_ACTIVE:dev}
 
@@ -59,23 +43,12 @@ spring:
         follow-redirects: false
 
 security:
-  actuator:
-    api-key: ${SECURITY_ACTUATOR_API_KEY:${security.api.key}}
-  aes:
-    key: ${SECURITY_AES_KEY:aXty08csul99hjkl}
   jwt:
     secret-key: ${SECURITY_JWT_SECRET_KEY:84b6e04f3268b78e7fee1883733e47aff50b88d1184b3512f2b5bffadb99d7eb}
     expiration-time: ${SECURITY_JWT_EXPIRATION_TIME:3000000}
   secret-key: ${SECURITY_SECRET_KEY:DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH}
   api:
     key: ${SECURITY_API_KEY:$2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC}
-
-app:
-  api:
-    key: ${APP_API_KEY:YiByHB@CSUL_DEV}
-
-esign:
-  api-key: ${ESIGN_API_KEY:${app.api.key}}
 
 jasper:
   report:
@@ -87,7 +60,8 @@ net:
         ignore:
           missing:
             font: 'true'
-
+server:
+  port: '8443'
 jwt:
   refreshExpirationDateInMs: '9000000'
 
@@ -99,10 +73,6 @@ audit:
   retry:
     max-attempts: 3
     initial-delay-ms: 200
-
-custom:
-  mongodb:
-    collection: event
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:https://dev1-danasakti.csulfinance.com,https://danasakti.csulfinance.com,https://martha-savorous-oneida.ngrok-free.dev,http://localhost:3000,http://localhost:4200,http://localhost:5173,http://localhost:8080}
