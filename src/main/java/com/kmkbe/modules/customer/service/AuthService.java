@@ -392,6 +392,23 @@ public class AuthService {
         throw new EntityNotFoundException("User doesn't exists");
       }
 
+      OtpLog otpLog = findCust.get();
+
+      // Mitigasi H8: Cegah OTP replay attack dan validasi masa berlaku OTP
+      if (Boolean.TRUE.equals(otpLog.getIsUsed())) {
+        throw new IllegalStateException("OTP has already been used");
+      }
+
+      LocalDateTime now = LocalDateTime.now();
+      if (otpLog.getExpiredDate() != null && now.isAfter(otpLog.getExpiredDate())) {
+        throw new IllegalStateException("OTP has expired");
+      }
+
+      // Tandai OTP telah digunakan
+      otpLog.setIsUsed(true);
+      otpLog.setUsrUpd("system");
+      otpLog.setDtmUpd(now);
+      otpRepository.save(otpLog);
 
       final Customer cust = find.get();
       final String oldPin = cust.getCustPin();
