@@ -78,7 +78,7 @@ public class ExistingCustomerService {
         );
       }
 
-      result = findLastByVendorCode(vendorCode).get();
+      result = findLastByVendorCode(vendorCode).orElse(null);
 
       return result;
     } catch (Exception e) {
@@ -92,8 +92,11 @@ public class ExistingCustomerService {
       ExistingCustomerDto result = jdbcTemplate.queryForObject(
         "select vendor_code, is_existing, identity_type, identity_no, dtm_crt, dtm_upd from public._existing_customer where vendor_code = ? order by id desc limit 1",
         (rs, rowNum) -> ExistingCustomerDto.builder()
-
-          .dtmCrt(Utils.toInstant(new Date(rs.getTimestamp("dtm_crt").getTime())))
+          .vendorCode(rs.getString("vendor_code"))
+          .isExisting(rs.getBoolean("is_existing"))
+          .identityType(rs.getString("identity_type"))
+          .identityNo(rs.getString("identity_no"))
+          .dtmCrt(rs.getTimestamp("dtm_crt") != null ? Utils.toInstant(new Date(rs.getTimestamp("dtm_crt").getTime())) : null)
           .dtmUpd(rs.getTimestamp("dtm_upd") != null ? Utils.toInstant(new Date(rs.getTimestamp("dtm_upd").getTime())) : null)
           .build(),
         vendorCode

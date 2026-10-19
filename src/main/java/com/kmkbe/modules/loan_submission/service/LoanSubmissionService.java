@@ -749,6 +749,7 @@ public class LoanSubmissionService {
               buildSimulationAdjustmentEmailPayload(createdFinancing, customer)
             );
           } catch (Exception e) {
+            log.error("Failed to send simulation adjustment email for financingHdrCode={}: {}", finHdr.getFinancingHdrCode(), e.getMessage(), e);
           }
 
           return null;
