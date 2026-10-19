@@ -17,6 +17,7 @@ import com.kmkbe.helpers.utils.Utils;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -24,6 +25,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/otp")
 @Tag(
@@ -171,35 +173,38 @@ public class OtpController {
   }
 
   @PostMapping("/generate")
-  public CommonResult<String> generateOtp(@RequestBody RequestOtpRequest request) {
+  public CommonResult<String> generateOtp(@Valid @RequestBody RequestOtpRequest request) {
     try {
       // Generate OTP for the provided email
       otpService.resendOtpForEmail(request.email(), OtpService.OtpType.SIGNUP); // Directly generate OTP and send it
-      return new CommonResult<String>().success("OTP has been sent to the email address: " + request.email());
+      return new CommonResult<String>().success("OTP has been sent to your email address if it is registered");
     } catch (Exception e) {
-      return new CommonResult<String>().fail(400, "Error generating OTP: " + e.getMessage());
+      log.error("Error generating OTP: {}", e.getMessage());
+      return new CommonResult<String>().fail(400, "Unable to generate OTP. Please try again later.");
     }
   }
 
   // New endpoint to resend OTP without checking the customer (using JSON body)
   @PostMapping("/resend")
-  public CommonResult<String> resendOtp(@RequestBody RequestOtpRequest request) {
+  public CommonResult<String> resendOtp(@Valid @RequestBody RequestOtpRequest request) {
     try {
       // Resend OTP for the provided email
       otpService.resendOtpForEmail(request.email(), OtpService.OtpType.SIGNUP); // Resend OTP to the email
-      return new CommonResult<String>().success("OTP has been resent to the email address: " + request.email());
+      return new CommonResult<String>().success("OTP has been resent to your email address if it is registered");
     } catch (Exception e) {
-      return new CommonResult<String>().fail(400, "Error resending OTP: " + e.getMessage());
+      log.error("Error resending OTP: {}", e.getMessage());
+      return new CommonResult<String>().fail(400, "Unable to resend OTP. Please try again later.");
     }
   }
 
   @PostMapping("/verify")
-  public CommonResult<String> verifyOtp(@RequestBody VerifyOtpRequest request) {
+  public CommonResult<String> verifyOtp(@Valid @RequestBody VerifyOtpRequest request) {
     try {
       // Verify the OTP for the provided email
       otpService.verifyOtp(request.email(), request.otp());  // Validate OTP
       return new CommonResult<String>().success("OTP verified successfully.");
     } catch (Exception e) {
+      log.error("Error verifying OTP: {}", e.getMessage());
       return new CommonResult<String>().fail(400, "Error verifying OTP: " + e.getMessage());
     }
   }
