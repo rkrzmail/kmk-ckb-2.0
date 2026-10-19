@@ -44,14 +44,11 @@ public class WebConfig implements WebMvcConfigurer {
         return new ConcurrentTaskExecutor(Executors.newFixedThreadPool(5));
     }
 
-    @Override
-    public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/**")
-                /*.allowedHeaders("*")
-                .allowedOrigins("*")*/
-                //.allowedHeaders("*")
-                .allowedMethods("HEAD", "GET", "PUT", "POST", "DELETE", "PATCH");
-    }
+    /*
+     * Catatan CORS: Konfigurasi CORS ditangani secara terpusat oleh Spring Security
+     * di SecurityConfig#corsConfigurationSource() untuk mencegah duplikasi dan
+     * inkonsistensi header Access-Control-* (Issue C8).
+     */
 
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {

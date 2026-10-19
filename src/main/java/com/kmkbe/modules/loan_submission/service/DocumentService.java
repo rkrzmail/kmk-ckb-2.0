@@ -19,6 +19,7 @@ import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.helpers.utils.SpecPagination;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -38,6 +39,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.AccessDeniedException;
 import java.security.SignatureException;
 import java.util.*;
 
@@ -54,6 +56,7 @@ public class DocumentService {
   private final CustomerRepository customerRepository;
   private final FinancingHdrRepository financingHdrRepository;
   private final AuditTrailService auditTrailService;
+  private final CurrentUserService currentUserService;
 
   public List<DocumentTemplateFinancingDto> fetchDocumentTemplateFinancing(
     Customer customer
@@ -238,7 +241,7 @@ public class DocumentService {
   public ResponseEntity<Resource> documentByLegalFileId(
     HttpServletRequest httpServletRequest,
     Long id
-  ) {
+  ) throws SignatureException, AccessDeniedException {
     try {
       HttpHeaders headers = new HttpHeaders();
       if (String.valueOf(httpServletRequest.getParameter("cd")).equalsIgnoreCase("attachment")) {
@@ -251,6 +254,7 @@ public class DocumentService {
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         return new ResponseEntity<>(null, headers, HttpStatus.OK);
       }
+      verifyLoanDocumentAccess(legalFile);
       if (legalFile.getFilePath().contains("http")) {
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "LegalFile", legalFile.getFileId(), null, toLegalFileAuditData(legalFile));
@@ -265,6 +269,8 @@ public class DocumentService {
       );
       auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "LegalFile", legalFile.getFileId(), null, toLegalFileAuditData(legalFile));
       return response;
+    } catch (AccessDeniedException | SignatureException e) {
+      throw e;
     } catch (Exception e) {
       log.error("documentByLegalFileId, error {}", e.getMessage());
       throw e;
@@ -274,7 +280,7 @@ public class DocumentService {
   public ResponseEntity<Resource> agreementDocByAgreementId(
     HttpServletRequest httpServletRequest,
     Long id
-  ) {
+  ) throws SignatureException, AccessDeniedException {
     try {
       HttpHeaders headers = new HttpHeaders();
       AgreementFile agreementFile = agreementFileRepository.findById(id).orElse(null);
@@ -283,6 +289,7 @@ public class DocumentService {
         return new ResponseEntity<>(null, headers, HttpStatus.OK);
       }
 
+      verifyAgreementDocumentAccess(agreementFile);
       if (agreementFile.getFilePath().contains("http")) {
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "AgreementFile", agreementFile.getAgreementFileId(), null, toAgreementFileAuditData(agreementFile));
@@ -296,9 +303,62 @@ public class DocumentService {
       );
       auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "AgreementFile", agreementFile.getAgreementFileId(), null, toAgreementFileAuditData(agreementFile));
       return response;
+    } catch (AccessDeniedException | SignatureException e) {
+      throw e;
     } catch (Exception e) {
       log.error("agreementDocByAgreementId, error {}", e.getMessage());
       throw e;
+    }
+  }
+
+  /**
+   * Verifikasi kepemilikan dokumen loan (C10 - IDOR fix).
+   * Nasabah hanya boleh mengunduh dokumen miliknya sendiri.
+   * User internal berwenang diizinkan untuk keperluan operasional/backoffice.
+   *
+   * @throws SignatureException jika tidak ada autentikasi
+   * @throws AccessDeniedException jika terautentikasi tapi bukan pemilik
+   */
+  void verifyLoanDocumentAccess(LegalFile legalFile) throws SignatureException, AccessDeniedException {
+    if (isInternalUser()) {
+      return;
+    }
+    Customer customer = currentUserService.customer();
+    if (legalFile.getCustCode() != null
+      && customer.getCustCode() != null
+      && legalFile.getCustCode().getCustCode().equals(customer.getCustCode())) {
+      return;
+    }
+    throw new AccessDeniedException("Anda tidak memiliki akses untuk mengunduh dokumen ini");
+  }
+
+  /**
+   * Verifikasi kepemilikan dokumen agreement via relasi
+   * AgreementFile -&gt; Agreement -&gt; FinancingHdr -&gt; Customer (C10 - IDOR fix).
+   * Fail-closed: relasi tidak lengkap langsung ditolak kecuali user internal.
+   */
+  void verifyAgreementDocumentAccess(AgreementFile agreementFile) throws SignatureException, AccessDeniedException {
+    if (isInternalUser()) {
+      return;
+    }
+    Customer customer = currentUserService.customer();
+    Agreement agreement = agreementFile.getAgreement();
+    if (agreement != null && agreement.getFinancingHdr() != null
+      && agreement.getFinancingHdr().getCustomer() != null
+      && customer.getCustCode() != null
+      && agreement.getFinancingHdr().getCustomer().getCustCode() != null
+      && agreement.getFinancingHdr().getCustomer().getCustCode().equals(customer.getCustCode())) {
+      return;
+    }
+    throw new AccessDeniedException("Anda tidak memiliki akses untuk mengunduh dokumen ini");
+  }
+
+  private boolean isInternalUser() {
+    try {
+      currentUserService.internalUser();
+      return true;
+    } catch (Exception ignored) {
+      return false;
     }
   }
 
