@@ -29,9 +29,9 @@ build/
 !**/src/main/**/build/
 !**/src/test/**/build/
 
-### Logs & Uploads ###
-/logs/
-logs/
+### VS Code ###
+.vscode/
+/logs/**
 *.log
 **/*.log
 /uploads/
@@ -51,7 +51,7 @@ src/main/resources/certs/*.pem
 
 src/main/resources/application-prod-old.properties
 .continue
-.antigravity/
+SECURITY.md
+.continue
 
 *.env
-.env.*
