@@ -28,6 +28,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.util.Set;
+
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
@@ -81,6 +83,22 @@ public class ApiSbuService {
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, responses);
   }
 
+  private static final Set<String> ALLOWED_SEARCH_FIELDS = Set.of(
+    "appName", "appPath", "sesStatus", "bouwheerCode"
+  );
+
+  private String resolveSafeSearchBy(String searchBy) {
+    if (searchBy == null || searchBy.isBlank()) {
+      return "appName";
+    }
+    for (String allowed : ALLOWED_SEARCH_FIELDS) {
+      if (allowed.equalsIgnoreCase(searchBy.trim())) {
+        return allowed;
+      }
+    }
+    return "appName";
+  }
+
   /**
    * Page
    *
@@ -93,8 +111,9 @@ public class ApiSbuService {
     Pageable pageable = PageableUtil.createPageRequest(request, request.getPageSize(), request.getPageNo(),
       sortBy, request.getSortType());
 
+    final String safeSearchBy = resolveSafeSearchBy(request.getSearchBy());
     Page<ApiSbu> page = apiSbuRepository.findAll((Root<ApiSbu> root, CriteriaQuery<?> query, CriteriaBuilder builder) ->
-      builder.and(builder.like(root.get(request.getSearchBy()), '%' + request.getSearchValue() + '%')), pageable);
+      builder.and(builder.like(root.get(safeSearchBy), '%' + (request.getSearchValue() == null ? "" : request.getSearchValue()) + '%')), pageable);
 
     List<ApiSbuResponse> responses = page.getContent().stream().map(response -> ApiSbuResponse.builder()
       .sesId(response.getSesId())
@@ -131,9 +150,10 @@ public class ApiSbuService {
     Page<ApiSbu> page = apiSbuRepository.findAll((Root<ApiSbu> root, CriteriaQuery<?> query, CriteriaBuilder builder) -> {
       List<Predicate> predicates = new ArrayList<>();
 
-      // 1. Dynamic search by selected column
+      // 1. Dynamic search by selected column (whitelisted against criteria injection)
       if (request.getSearchBy() != null && request.getSearchValue() != null && !request.getSearchValue().isEmpty()) {
-        predicates.add(builder.like(root.get(request.getSearchBy()), "%" + request.getSearchValue() + "%"));
+        String safeField = resolveSafeSearchBy(request.getSearchBy());
+        predicates.add(builder.like(root.get(safeField), "%" + request.getSearchValue() + "%"));
       }
 
       // 2. Filter by bouwheerCode (Convert String to UUID)
