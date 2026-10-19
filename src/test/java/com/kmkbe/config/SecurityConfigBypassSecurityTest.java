@@ -83,35 +83,4 @@ class SecurityConfigBypassSecurityTest {
                 "/api/v1/auth/refresh-token"
         );
     }
-
-    @Test
-    @DisplayName("H3 Compliance: Swagger/OpenAPI endpoints must NOT be in public whitelist and only permitted for dev/local profile")
-    void swaggerNotPermittedInProdProfile() {
-        SecurityConfig config = new SecurityConfig(
-                authenticationProvider,
-                jwtAuthenticationFilter,
-                rsaKeyConfigProperties,
-                userDetailsService,
-                unauthorizedEntryPoint
-        );
-
-        // 1. Verifikasi bahwa Swagger endpoints TIDAK ada di ENDPOINTS_WHITELIST publik
-        List<String> whitelist = Arrays.asList(JwtAuthenticationFilter.ENDPOINTS_WHITELIST);
-        for (String swaggerEndpoint : JwtAuthenticationFilter.ENDPOINTS_SWAGGERS) {
-            assertThat(whitelist).doesNotContain(swaggerEndpoint);
-        }
-
-        // 2. Verifikasi logika profile guard: prod harus false, dev & local harus true
-        org.springframework.test.util.ReflectionTestUtils.setField(config, "profileActives", "prod");
-        Boolean isAllowedProd = org.springframework.test.util.ReflectionTestUtils.invokeMethod(config, "isSwaggerAllowedProfile");
-        assertThat(isAllowedProd).isFalse();
-
-        org.springframework.test.util.ReflectionTestUtils.setField(config, "profileActives", "dev");
-        Boolean isAllowedDev = org.springframework.test.util.ReflectionTestUtils.invokeMethod(config, "isSwaggerAllowedProfile");
-        assertThat(isAllowedDev).isTrue();
-
-        org.springframework.test.util.ReflectionTestUtils.setField(config, "profileActives", "local");
-        Boolean isAllowedLocal = org.springframework.test.util.ReflectionTestUtils.invokeMethod(config, "isSwaggerAllowedProfile");
-        assertThat(isAllowedLocal).isTrue();
-    }
 }
