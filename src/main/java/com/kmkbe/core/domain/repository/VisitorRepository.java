@@ -1,6 +1,5 @@
 package com.kmkbe.core.domain.repository;
 
-import com.kmkbe.core.domain.dto.ProyeksiReportDto;
 import com.kmkbe.core.domain.dto.VisitorDto;
 import com.kmkbe.core.domain.entity.Visitor;
 import io.lettuce.core.dynamic.annotation.Param;
@@ -9,8 +8,6 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
-
-import java.util.List;
 
 @Repository
 public interface VisitorRepository extends JpaRepository<Visitor, Long> {
