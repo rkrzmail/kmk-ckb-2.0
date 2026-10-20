@@ -153,7 +153,6 @@ feign:
       username: ${FEIGN_CKB_USERNAME:}
       password: ${FEIGN_CKB_PASSWORD:}
       client-secret: ${FEIGN_CKB_CLIENT_SECRET:}
-      api-key: ${FEIGN_CKB_API_KEY:}
     confins:
       url: ${FEIGN_CONFINS_URL:}
       adins-key: ${FEIGN_CONFINS_ADINS_KEY:}
