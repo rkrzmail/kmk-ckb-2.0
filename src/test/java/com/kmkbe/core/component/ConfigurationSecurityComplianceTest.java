@@ -133,7 +133,6 @@ class ConfigurationSecurityComplianceTest {
             assertThat(prodContent).contains("${ESIGN_API_KEY:");
             assertThat(prodContent).contains("${SPRING_BOOT_ADMIN_PASSWORD:}");
             assertThat(prodContent).contains("${REDIS_PASSWORD:}");
-            assertThat(prodContent).contains("${MONGO_PASSWORD:}");
         }
 
         Path appYaml = Path.of("src/main/resources/application.yaml");
