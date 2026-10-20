@@ -14,6 +14,9 @@ management:
     env:
       enabled: false
 
+server:
+  port: ${PORT:8443}
+
 spring:
   boot:
     admin:
@@ -84,8 +87,7 @@ net:
         ignore:
           missing:
             font: 'true'
-server:
-  port: '8443'
+
 jwt:
   refreshExpirationDateInMs: '9000000'
 
@@ -97,6 +99,10 @@ audit:
   retry:
     max-attempts: 3
     initial-delay-ms: 200
+
+custom:
+  mongodb:
+    collection: event
 
 cors:
   allowed-origins: ${CORS_ALLOWED_ORIGINS:https://dev1-danasakti.csulfinance.com,https://danasakti.csulfinance.com,https://martha-savorous-oneida.ngrok-free.dev,http://localhost:3000,http://localhost:4200,http://localhost:5173,http://localhost:8080}
