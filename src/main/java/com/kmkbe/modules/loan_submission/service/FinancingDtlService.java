@@ -289,8 +289,13 @@ public class FinancingDtlService {
     String noAggrNo = financingHdr.getAgreement().isEmpty() ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();
     LocalDateTime settlementDate = request.getInvoicePaid().isEmpty() ? DateTimeUtils.now() : Utils.toInstant(request.getInvoicePaid().getFirst().getClearingDate());
 
-//    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-//    LocalDateTime settlementDate = LocalDate.parse("01-03-2027", formatter).atStartOfDay();
+    /** For Dev only
+     *
+     */
+    if (System.getenv("ENV").equals("dev")) {
+      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+      settlementDate = LocalDate.parse("01-03-2027", formatter).atStartOfDay();
+    }
 
     String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
 
