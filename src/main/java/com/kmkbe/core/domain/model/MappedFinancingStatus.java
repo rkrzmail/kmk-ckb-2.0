@@ -77,8 +77,8 @@ public class MappedFinancingStatus {
         status = String.valueOf(FinancingStatus.PAID);
       }
     } else {
-      label = "Untracked";
-      status = "UNTRACKED";
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
     }
   }
 
@@ -106,8 +106,8 @@ public class MappedFinancingStatus {
         status = String.valueOf(FinancingStatus.PAID);
       }
     } else {
-      label = "Untracked";
-      status = "UNTRACKED";
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
     }
   }
 
@@ -129,8 +129,8 @@ public class MappedFinancingStatus {
       label = "Live";
       status = String.valueOf(FinancingStatus.LIVE);
     } else {
-      label = "Untracked";
-      status = String.valueOf(FinancingStatus.UNTRACKED);
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
     }
   }
 
@@ -161,8 +161,8 @@ public class MappedFinancingStatus {
         status = String.valueOf(FinancingStatus.PAID);
       }
     } else {
-      label = "Untracked";
-      status = String.valueOf(FinancingStatus.UNTRACKED);
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
     }
   }
 
@@ -181,8 +181,8 @@ public class MappedFinancingStatus {
         status = String.valueOf(FinancingStatus.PAID);
       }
     } else {
-      label = "Untracked";
-      status = String.valueOf(FinancingStatus.UNTRACKED);
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
     }
   }
 
@@ -201,8 +201,8 @@ public class MappedFinancingStatus {
         status = String.valueOf(FinancingStatus.PAID);
       }
     } else {
-      label = "Untracked";
-      status = String.valueOf(FinancingStatus.UNTRACKED);
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
     }
   }
 
