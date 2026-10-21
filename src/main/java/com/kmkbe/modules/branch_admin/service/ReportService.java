@@ -512,7 +512,7 @@ public class ReportService {
           safeApiCall(() -> {
             RekDebiturResponse bankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
             if (bankResponse != null && bankResponse.getBankAccounts() != null && !bankResponse.getBankAccounts().isEmpty()) {
-              return bankResponse.getBankAccounts().get(0);
+              return bankResponse.getBankAccounts().getFirst();
             }
             return new RekDebiturResponse.BankAccount("-", "-", "-");
           }, new RekDebiturResponse.BankAccount("-", "-", "-"))
@@ -753,13 +753,6 @@ public class ReportService {
         ? sitDto.getFinancingDueDate().format(dateFormat)
         : "-";
 
-      // Split Legal Address
-      String[] legalAddress = Optional.ofNullable(financingHdr)
-        .map(FinancingHdr::getBouwheer)
-        .map(Bouwheer::getLegalAddress)
-        .map(addr -> addr.split(","))
-        .orElse(new String[]{""});
-
       log.info("BM {} ",agreement.getFinancingHdr().getBouwheer().getPicName());
       params.put("NoDokumen", sitDto.getAgreementCode());
       params.put("TempatTanggal", tanggalDokumen);
@@ -769,7 +762,7 @@ public class ReportService {
       params.put("NamaDirektur", sitDto.getDirectorName());
       params.put("NamaGMFinanceCSUL", "");
       params.put("TotalPembayaran", totalPembayaran);
-      params.put("legalAddress",legalAddress[0].trim());
+      params.put("legalAddress",financingHdr.getBouwheer().getLegalAddress().concat("\n\n").concat(financingHdr.getBouwheer().getProvince()).concat(" - ").concat(financingHdr.getBouwheer().getZipcode()));
       params.put("picName", financingHdr.getBouwheer().getPicName() != null ? financingHdr.getBouwheer().getPicName() : "-");
     } else {
       throw new RuntimeException("Failed to get agreement data: " + (sitData.getMessage() != null ? sitData.getMessage() : ""));
