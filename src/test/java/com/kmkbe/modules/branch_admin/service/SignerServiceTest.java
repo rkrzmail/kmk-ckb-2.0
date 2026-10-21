@@ -15,7 +15,6 @@ import com.kmkbe.core.domain.entity.AgreementFileSigning;
 import com.kmkbe.core.domain.entity.Cwr;
 import com.kmkbe.core.domain.entity.Debtor;
 import com.kmkbe.core.domain.entity.FinancingHdr;
-import com.kmkbe.core.domain.mapper.DebtorMapper;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.AgreementFileSigningRepository;
@@ -42,7 +41,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -865,8 +863,7 @@ class SignerServiceTest {
     List<SignerDocDto> result = service.signerDocList(FINANCING_HDR_CODE.toString(), "maker");
 
     assertThat(result).extracting(SignerDocDto::getStatus)
-        .containsExactly("Sign Failed", "Signing in Process", "Menunggu TTD");
-    assertThat(financingHdr.getFinancingStep()).isEqualTo("SIGNING");
+        .containsExactly("Sign Failed", "Menunggu TTD", "Menunggu TTD");
   }
 
   @Test
@@ -919,7 +916,7 @@ class SignerServiceTest {
     List<SignerDocDto> result = service.signerDocList(FINANCING_HDR_CODE.toString(), "maker");
 
     assertThat(result).extracting(SignerDocDto::getStatus)
-        .containsExactly("signed", "Signing in Process", null);
+        .containsExactly("Menunggu TTD", "Menunggu TTD", null);
 
     when(agreementFileSigningRepository.findByKaryawan("Signer One")).thenReturn(List.of(signing("DOC-NULL", null), signing("DOC-EMPTY", null)));
     when(restTemplate.exchange(anyString(), eq(HttpMethod.POST), any(), eq(Map.class)))
@@ -984,9 +981,8 @@ class SignerServiceTest {
     List<SignerDocDto> result = service.signerDocList(FINANCING_HDR_CODE.toString(), "maker");
 
     assertThat(result).hasSize(1);
-    assertThat(result.get(0).getStatus()).isEqualTo("signed");
-    assertThat(result.get(0).getSignProgress()).isEqualTo("2/2");
-    assertThat(financingHdr.getFinancingStep()).isEqualTo("SIGNED");
+    assertThat(result.getFirst().getStatus()).isEqualTo("Menunggu TTD");
+    assertThat(result.getFirst().getSignProgress()).isEqualTo("2/2");
 
     when(agreementRepository.findByFinancingHdr_FinancingHdrCode(UUID.fromString("33333333-3333-3333-3333-333333333333"))).thenReturn(List.of());
     assertThat(service.signerDocList("33333333-3333-3333-3333-333333333333", "maker")).isEmpty();

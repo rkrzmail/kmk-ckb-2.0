@@ -71,7 +71,7 @@ public interface AgreementFileSigningRepository extends JpaRepository<AgreementF
       FROM financing_hdr current_fh
       WHERE current_fh.financing_hdr_code = :financingHdrCode
     )
-    AND UPPER(agreement_fh.financing_status) = 'COMPLETED'
+    AND UPPER(agreement_fh.financing_status) = 'PAID'
     """, nativeQuery = true)
   long countCompletedUploadedAgreementsByCustomer(
     @Param("financingHdrCode") UUID financingHdrCode

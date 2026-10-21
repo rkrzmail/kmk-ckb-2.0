@@ -19,4 +19,5 @@ public class CalculateSimulationRequest extends BaseRequest {
   private Double disbursePercentage;
   private String invoiceDueDate;
   private Double interest;
+  private String postingDate;
 }

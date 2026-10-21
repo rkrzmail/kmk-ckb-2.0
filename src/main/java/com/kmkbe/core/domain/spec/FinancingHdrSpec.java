@@ -41,8 +41,8 @@ public class FinancingHdrSpec {
         return (root, query, criteriaBuilder) -> {
 
             // Define lists of possible statuses and steps
-            List<String> financingStatusList = Arrays.asList("INPROCESS", "LIVE", "COMPLETED");
-            List<String> financingStepList = Arrays.asList("SIGNED", "GOLIVE", "PAID", "REFUND");
+            List<String> financingStatusList = Arrays.asList("INPROCESS", "LIVE");
+            List<String> financingStepList = Arrays.asList("SIGNED", "GOLIVE", "PAID");
 
             // Base conditions for status and step filtering
             Predicate stepStatusPredicate = criteriaBuilder.and(
@@ -77,8 +77,8 @@ public class FinancingHdrSpec {
 
     public static Specification<FinancingHdr> byDisbursement(String searchBy, String value) {
         return (root, query, criteriaBuilder) -> {
-            List<String> financingStatusList = Arrays.asList("INPROCESS", "LIVE", "COMPLETED");
-            List<String> financingStepList = Arrays.asList("SIGNED", "GOLIVE", "PAID", "REFUND");
+            List<String> financingStatusList = Arrays.asList("INPROCESS", "LIVE");
+            List<String> financingStepList = Arrays.asList("SIGNED", "GOLIVE", "PAID");
 
             // Base conditions for status and step filtering
             Predicate stepStatusPredicate = criteriaBuilder.and(
@@ -87,8 +87,6 @@ public class FinancingHdrSpec {
             );
 
             Predicate searchPredicate;
-            Join<FinancingHdr,Agreement> joinAgreement = root.join("agreement", JoinType.INNER);
-            Join<Agreement, DisbursementLog> joinDisbursement = joinAgreement.join("disbursementLogs", JoinType.INNER);
             Join<FinancingHdr, Customer> joinCust = root.join("customer", JoinType.INNER);
             Join<FinancingHdr, Bouwheer> joinBouwheer = root.join("bouwheer", JoinType.INNER);
 
