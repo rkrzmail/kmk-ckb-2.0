@@ -5,16 +5,14 @@ set -e
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 cd "$DIR"
 
-# Deteksi file env (prioritas: .env.development -> .env.dev -> .env)
+# Deteksi file env (.env)
 ENV_FILE=""
-if [ -f ".env.development" ]; then
-  ENV_FILE=".env.development"
-elif [ -f ".env.dev" ]; then
+if [ -f ".env.dev" ]; then
   ENV_FILE=".env.dev"
 elif [ -f ".env" ]; then
   ENV_FILE=".env"
 else
-  echo "Error: File environment (.env.development / .env.dev / .env) tidak ditemukan di $DIR"
+  echo "Error: File environment (.env.dev / .env) tidak ditemukan di $DIR"
   exit 1
 fi
 
