@@ -808,6 +808,8 @@ class ReportServiceTest {
     financingHdr.setBouwheer(Bouwheer.builder()
         .picName("TEST")
         .legalAddress("TETS")
+        .province("TEST")
+        .zipcode("15122")
       .build());
     return financingHdr;
   }
