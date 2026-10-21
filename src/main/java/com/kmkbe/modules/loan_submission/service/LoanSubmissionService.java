@@ -409,7 +409,7 @@ public class LoanSubmissionService {
       log.info("Term tenor : {} ",tenor);
       if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
 
-        int top = DateTimeUtils.dateDiffInDay(new Date(), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
+        int top = DateTimeUtils.dateDiffInDay(DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getPostingDate()), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
         log.info("Invoice duedate : {} ",calculateSimulationRequest.getInvoiceDueDate());
         log.info("Top : {} ",top);
         int gracePeriode = Math.toIntExact(bouwheer.getGracePeriod());
@@ -852,8 +852,9 @@ public class LoanSubmissionService {
     simulation.setInvoiceDueDate(
       DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
     );
+    simulation.setPostingDate( DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getPostingDate()));
 
-    /**
+    /**)
      * Calculate
      */
     final EstimatedDisburseDto calculateDisburse = calculateDisburse(customer, simulation);

@@ -11,6 +11,7 @@ import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.helpers.base.BasePaginationRequest;
+import com.kmkbe.helpers.constant.StatusConstants;
 import com.kmkbe.helpers.utils.ListPagination;
 import com.kmkbe.helpers.utils.PaginationRequests;
 import com.kmkbe.feign.client.ConfinsR3FeignClient;
@@ -1044,12 +1045,12 @@ public class SignerService {
     financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode))
       .ifPresent(finHdr -> {
         FinancingSigningAuditData before = toFinancingSigningAuditData(finHdr);
-        if ("Signing in Process".equalsIgnoreCase(stampStatus) && !Objects.equals(finHdr.getFinancingStep(), "GOLIVE")) {
-          finHdr.setFinancingStep("SIGNING");
-        } else if ("Menunggu TTD".equalsIgnoreCase(stampStatus) && !Objects.equals(finHdr.getFinancingStep(), "GOLIVE")) {
-          finHdr.setFinancingStep("SIGNING");
-        } else if ("signed".equalsIgnoreCase(stampStatus) && !Objects.equals(finHdr.getFinancingStep(), "GOLIVE")) {
-          finHdr.setFinancingStep("SIGNED");
+        if ("Signing in Process".equalsIgnoreCase(stampStatus) && !StatusConstants.FINANCING_FINAL_STEPS.contains(finHdr.getFinancingStep())) {
+          finHdr.setFinancingStep(StatusConstants.FINANCING_FINAL_STEPS.contains(finHdr.getFinancingStep())?finHdr.getFinancingStep():StatusConstants.FINANCING_STEP_SIGNING);
+        } else if ("Menunggu TTD".equalsIgnoreCase(stampStatus) && !StatusConstants.FINANCING_FINAL_STEPS.contains(finHdr.getFinancingStep())) {
+          finHdr.setFinancingStep(StatusConstants.FINANCING_FINAL_STEPS.contains(finHdr.getFinancingStep())?finHdr.getFinancingStep():StatusConstants.FINANCING_STEP_SIGNING);
+        } else if ("signed".equalsIgnoreCase(stampStatus) && !StatusConstants.FINANCING_FINAL_STEPS.contains(finHdr.getFinancingStep())) {
+          finHdr.setFinancingStep(StatusConstants.FINANCING_FINAL_STEPS.contains(finHdr.getFinancingStep())?finHdr.getFinancingStep():StatusConstants.FINANCING_STEP_SIGNED);
         }
         finHdr.setDtmUpd(LocalDateTime.now());
         finHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));

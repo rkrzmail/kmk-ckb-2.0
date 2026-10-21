@@ -324,7 +324,6 @@ public class CustomerService {
 
     FinancingHdr financingHdr = resolveFapFinancing(customer, request.getFinancingHdrCode());
     FapAuditData before = toFapAuditData(financingHdr);
-
     financingHdr.setFapDate(request.getFapDate() != null ? request.getFapDate() : DateTimeUtils.now());
     financingHdr.setFapStatus(request.getFapStatus().trim());
     financingHdr.setUsrUpd(customer.getCustName());
