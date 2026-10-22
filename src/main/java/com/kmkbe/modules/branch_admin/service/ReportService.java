@@ -14,7 +14,6 @@ import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.core.service.ExternalApiService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.ExecutionTimer;
-import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
@@ -563,7 +562,7 @@ public class ReportService {
       CwrBwhrResponse cwrBwhrData = externalApiService.getCwrBwhr(cwrCode);
       return (cwrBwhrData != null && cwrBwhrData.getCwrBouwheerCustNos() != null
         && !cwrBwhrData.getCwrBouwheerCustNos().isEmpty())
-        ? cwrBwhrData.getCwrBouwheerCustNos().get(0)
+        ? cwrBwhrData.getCwrBouwheerCustNos().getFirst()
         : null;
     }, null);
 
@@ -609,10 +608,10 @@ public class ReportService {
     Debtor Kdata;
 
     if (!karyawanList.isEmpty()) {
-      Kdata = karyawanList.get(0);
+      Kdata = karyawanList.getFirst();
     } else {
       List<Debtor> karyawanByName = debtorRepository.findActiveSignerByDebtorName(debtorName);
-      Kdata = karyawanByName.isEmpty() ? null : karyawanByName.get(0);
+      Kdata = karyawanByName.isEmpty() ? null : karyawanByName.getFirst();
 
     }
 

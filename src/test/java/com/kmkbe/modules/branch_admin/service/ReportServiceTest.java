@@ -649,7 +649,7 @@ class ReportServiceTest {
     ArgumentCaptor<ExternalSigningRequest> captor = ArgumentCaptor.forClass(ExternalSigningRequest.class);
     verify(signingClient).sendDocumentSigning(captor.capture());
     assertThat(captor.getValue().getAudit().getCallerId()).isEqualTo("maker");
-    assertThat(captor.getValue().getRequests().get(0).getSigners()).hasSize(3);
+    assertThat(captor.getValue().getRequests().getFirst().getSigners()).hasSize(3);
   }
 
   @Test
