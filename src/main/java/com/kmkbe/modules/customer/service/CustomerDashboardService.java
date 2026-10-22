@@ -15,8 +15,6 @@ import com.kmkbe.helpers.utils.Utils;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
@@ -111,20 +109,17 @@ public class CustomerDashboardService {
     String vaidateLimit = null;
     double jumlahivoice = 0;
 
-    Page<Cwr> page = cwrRepository.findAllByCustomerOrderByDtmUpdDescUsrCrtDesc(
-      financingHdr.getCustomer(),
-      PageRequest.of(0, 10)
-    );
-
-    List<Cwr> cwrs = page.stream().toList();
-    if (!cwrs.isEmpty()) {
-      plafondTotal = cwrs.getFirst().getPlafondAmt();
-      plafond = cwrs.getFirst().getRealisationAmt();
+    Optional<Cwr> latestCwr = cwrRepository
+      .findFirstByCustomerOrderByCwrEndDateDescCwrCodeDesc(financingHdr.getCustomer());
+    if (latestCwr.isPresent()) {
+      Cwr cwr = latestCwr.get();
+      plafondTotal = cwr.getPlafondAmt();
+      plafond = cwr.getRealisationAmt();
       availableplafond = plafondTotal - plafond;
-      if (cwrs.getFirst().getCwrEndDate() != null) {
-        vaidateLimit = String.valueOf(cwrs.getFirst().getCwrEndDate().toLocalDate());
+      if (cwr.getCwrEndDate() != null) {
+        vaidateLimit = String.valueOf(cwr.getCwrEndDate().toLocalDate());
       }
-      List<Agreement> agreements = agreementRepository.findAllByCwr(cwrs.getFirst());
+      List<Agreement> agreements = agreementRepository.findAllByCwr(cwr);
       for (Agreement agreement : agreements) {
         jumlahivoice = jumlahivoice + agreement.getFinancingAmt();
       }
@@ -167,7 +162,8 @@ public class CustomerDashboardService {
    */
   public BaseResponseBuilder<CustomerDashboardDto> mainDashboard() throws SignatureException {
      Customer authenticatedCustomer = currentUserService.customer();
-      Optional<Cwr> lastOptional = cwrRepository.findTopByCustomerOrderByDtmUpdDescUsrCrtDesc(authenticatedCustomer);
+      Optional<Cwr> lastOptional = cwrRepository
+        .findFirstByCustomerOrderByCwrEndDateDescCwrCodeDesc(authenticatedCustomer);
       if (lastOptional.isEmpty()) {
         return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY,new CustomerDashboardDto());
       }
