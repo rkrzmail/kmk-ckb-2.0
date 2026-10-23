@@ -37,7 +37,7 @@ public class CwrRemoteService {
   public BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> inquiryCwr(
     InquiryCwrRemoteRequest request
   ) throws JsonProcessingException {
-    String jsonStr = "";
+    String requestStr = "";
     String responseStr = null;
     int statusCode = 200;
     final String url = confinsUrl + "/api/mou/v1/Generic/GetPagingObjectBySQL";
@@ -56,11 +56,12 @@ public class CwrRemoteService {
         .criteria(List.of(propCriteria))
         .build();
 
-      jsonStr = ObjectUtils.jsonToStr(criteriaRequest);
+      requestStr = ObjectUtils.jsonToStr(criteriaRequest);
+      log.info("CWR request inquiry {} ",requestStr);
       final BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> response = confinsR3FeignClient.inquiryCwr(criteriaRequest);
-
-      log.info("CWR ");
       responseStr = ObjectUtils.jsonToStr(response);
+
+      log.info("CWR response inquiry {} ",responseStr);
       if (StringUtil.isNullOrEmpty(responseStr)) {
         responseStr = objectMapper.writeValueAsString(response);
       }
@@ -90,7 +91,7 @@ public class CwrRemoteService {
       ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()
         .endpointUrl(url)
         .contentType("application/json")
-        .requestPayload(jsonStr)
+        .requestPayload(requestStr)
         .responseJson(responseStr)
         .responseStatus(String.valueOf(statusCode))
         .build();

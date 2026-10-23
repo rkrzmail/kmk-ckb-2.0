@@ -378,7 +378,7 @@ public class LoanSubmissionService {
 
       boolean isCustomerExisting = false;
       Cwr validateCwr = null;
-      if (customer != null || !StringUtil.isNullOrEmpty(calculateSimulationRequest.getToken())) {
+      if (customer != null) {
         validateCwr = isCustomerExistingByCwr(customer);
         isCustomerExisting = validateCwr != null;
       }

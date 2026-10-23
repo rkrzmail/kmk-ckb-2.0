@@ -54,8 +54,7 @@ public class CustomerRemoteService {
       jsonStr = ObjectUtils.jsonToStr(params);
       final CustomerRemoteDto response = confinsR3FeignClient.validateExisting(params);
       responseStr = objectMapper.writeValueAsString(response);
-      log.info("Response: {}", responseStr);
-
+      log.info("Response Customer existing: {}", responseStr);
       return response;
     } catch (feign.FeignException httpStatusCodeException) {
       String message = "Failed to validate Existing Customer";
@@ -66,7 +65,6 @@ public class CustomerRemoteService {
       if (errorObj != null) {
         message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
       }
-
       throw new RuntimeException("Error while perform action to Confins\nDetail:" + message);
     } catch (Exception e) {
       log.error("validateExistingCustomer, error {}", e.getMessage());
