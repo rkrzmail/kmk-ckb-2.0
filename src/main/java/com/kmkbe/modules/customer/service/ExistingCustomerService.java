@@ -122,8 +122,7 @@ public class ExistingCustomerService {
     }
 
     try {
-      CustomerRemoteDto existingCustomer = null;
-      try {
+      CustomerRemoteDto existingCustomer;
         existingCustomer = customerRemoteService.validateExisting(
           ExistingCustomerRequest.builder()
             .args(
@@ -136,12 +135,9 @@ public class ExistingCustomerService {
             .requestDateTime(DateTimeUtils.SDF_STANDARD_DATE.format(new Date()))
             .build()
         );
-      } catch (Exception ignored) {
-      }
-
       if (existingCustomer == null) {
         return null;
-      } else {
+      }
         if (StringUtil.isNullOrEmpty(customer.getCustNo())) {
           final Customer loadedCust = customerRepository.findByCustCode(customer.getCustCode())
             .orElseThrow();
@@ -151,19 +147,14 @@ public class ExistingCustomerService {
           loadedCust.setExistingCust(AppConstants.EXIT_CUSTOMER);
           customerRepository.save(loadedCust);
         }
-      }
 
-      BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> cwrResponse = null;
-      try {
-        cwrResponse = cwrRemoteService.inquiryCwr(
+
+      BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> cwrResponse = cwrRemoteService.inquiryCwr(
           InquiryCwrRemoteRequest.builder()
             .name(PropCriteriaGenericTypeRequest.CwrPropName.custNo)
             .custNo(existingCustomer.getCustNo())
             .build()
         );
-      } catch (Exception ignored) {
-      }
-
       if (cwrResponse == null) {
         return null;
       }
@@ -185,16 +176,13 @@ public class ExistingCustomerService {
             }
           }
 
-          if (
-            cwr.getCurrStep().equalsIgnoreCase("active")
-              &&
-              (
-                startDt != null && (DateUtils.isSameDay(startDt, now) || startDt.after(now))
-              )
-              &&
-              (
-                endDt != null && (DateUtils.isSameDay(endDt, now) || endDt.before(now))
-              )
+          log.info("CWR step {} ",cwr);
+          if (cwr.getCurrStep() != null
+            && cwr.getCurrStep().equalsIgnoreCase("active")
+            && startDt != null
+            && (DateUtils.isSameDay(startDt, now) || startDt.after(now))
+            && endDt != null
+            && (DateUtils.isSameDay(endDt, now) || endDt.after(now))
           ) {
             cwrActives.add(cwr);
           }
@@ -231,12 +219,10 @@ public class ExistingCustomerService {
           if (bouwheer != null) {
             final Cwr cwr = cwrRepository.findTopByCwrCode(firstCwr.getCwrNo())
               .orElse(null);
-
             if (cwr == null) {
               cwrRepository.save(result);
             }
           }
-
           return result;
         }
       }
