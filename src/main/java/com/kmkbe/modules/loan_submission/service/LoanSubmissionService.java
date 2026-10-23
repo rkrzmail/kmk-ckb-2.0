@@ -394,7 +394,7 @@ public class LoanSubmissionService {
       boolean isCustomerExisting = false;
       Cwr validateCwr = null;
       if (customer != null || !StringUtil.isNullOrEmpty(calculateSimulationRequest.getToken())) {
-        validateCwr = isCustomerExistingByCwr(customer, calculateSimulationRequest.getToken());
+        validateCwr = isCustomerExistingByCwr(customer);
         isCustomerExisting = validateCwr != null;
       }
 
@@ -410,6 +410,7 @@ public class LoanSubmissionService {
       if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
 
         int top = DateTimeUtils.dateDiffInDay(DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getPostingDate()), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
+        log.info("Posting Date : {} ",calculateSimulationRequest.getPostingDate());
         log.info("Invoice duedate : {} ",calculateSimulationRequest.getInvoiceDueDate());
         log.info("Top : {} ",top);
         int gracePeriode = Math.toIntExact(bouwheer.getGracePeriod());
@@ -1477,7 +1478,7 @@ public class LoanSubmissionService {
     }
   }
 
-  private VendorTokenExtractor vendorTokenExtractor(Customer customer, String token) throws SignatureException {
+  private VendorTokenExtractor vendorTokenExtractor(Customer customer, String token) {
     return new VendorTokenExtractor(
       bouwheerRepository,
       jwtLoanSubmissionService,
@@ -1486,34 +1487,7 @@ public class LoanSubmissionService {
     );
   }
 
-  private Cwr isCustomerExistingByCwr(Customer customer, String token) throws SignatureException, JsonProcessingException {
-    final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
-    final ExistingCustomerDto existingCustomer = existingCustomerService.findLastByVendorCode(vendorTokenExtractor.getVendorCode())
-      .orElse(null);
-    if (customer == null) {
-      InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService
-        .inquiryVendor(vendorTokenExtractor.getVendorCode())
-        .getData();
-
-      Cwr cwr = validateCwrForCustomerExisting(
-        ExistingCustomerRequest.KeyType.npwp.name(),
-        inquiryVendorRemote.getNpwp(),
-        null,
-        null
-      );
-
-      if (existingCustomer == null) {
-        existingCustomerService.createOrUpdate(
-          vendorTokenExtractor.getVendorCode(),
-          cwr != null,
-          ExistingCustomerRequest.KeyType.npwp.name().toUpperCase(),
-          inquiryVendorRemote.getNpwp()
-        );
-      }
-
-      return cwr;
-    }
-
+  private Cwr isCustomerExistingByCwr(Customer customer) {
     final String identityType = customer.getCustIdTypeCode();
     final String identityNo = customer.getCompany() != null
       ? customer.getCompany().getIdentityNo()
@@ -1523,7 +1497,7 @@ public class LoanSubmissionService {
       identityType,
       identityNo,
       customer,
-      bouwheerRepository.findByBouwheerCode(vendorTokenExtractor.getBouwheerCode())
+      bouwheerRepository.findByBouwheerCode(UUID.fromString(customer.getBouwheer()))
         .orElse(null)
     );
 

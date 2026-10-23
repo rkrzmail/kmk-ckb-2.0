@@ -14,6 +14,7 @@ import com.kmkbe.helpers.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,7 +28,7 @@ import java.util.Map;
 @Slf4j
 @RequiredArgsConstructor
 public class CwrRemoteService {
-  @org.springframework.beans.factory.annotation.Value("${feign.confins.url}")
+  @Value("${feign.confins.url}")
   private String confinsUrl;
   private final ObjectMapper objectMapper;
   private final ConfinsR3FeignClient confinsR3FeignClient;
@@ -58,6 +59,7 @@ public class CwrRemoteService {
       jsonStr = ObjectUtils.jsonToStr(criteriaRequest);
       final BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> response = confinsR3FeignClient.inquiryCwr(criteriaRequest);
 
+      log.info("CWR ");
       responseStr = ObjectUtils.jsonToStr(response);
       if (StringUtil.isNullOrEmpty(responseStr)) {
         responseStr = objectMapper.writeValueAsString(response);
