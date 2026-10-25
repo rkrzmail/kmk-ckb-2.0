@@ -7,13 +7,13 @@ import java.util.UUID;
 
 public record FileTypeResponse(
     String fileTypeCode, Long fileTypeId, String fileTypeName, String fileTypeDesc,
-    String fileAllocation, Boolean isMandatory, Long maxSizeMb, UUID bouwheerCode, String bouwheerName,
+    String fileAllocation, Boolean isMandatory, Boolean isEsign, Long maxSizeMb, UUID bouwheerCode, String bouwheerName,
     String usrCrt, LocalDateTime dtmCrt, String usrUpd, LocalDateTime dtmUpd
 ) {
     public static FileTypeResponse from(MstFileType entity, String bouwheerName) {
         return new FileTypeResponse(entity.getFileTypeCode(), entity.getFileTypeId(),
             entity.getFileTypeName(), entity.getFileTypeDesc(), entity.getFileAllocation(),
-            entity.getIsMandatory(), entity.getMaxSizeMb(), entity.getBouwheerCode(), bouwheerName,
+            entity.getIsMandatory(), entity.getIsEsign(), entity.getMaxSizeMb(), entity.getBouwheerCode(), bouwheerName,
             entity.getUsrCrt(), entity.getDtmCrt(), entity.getUsrUpd(), entity.getDtmUpd());
     }
 }

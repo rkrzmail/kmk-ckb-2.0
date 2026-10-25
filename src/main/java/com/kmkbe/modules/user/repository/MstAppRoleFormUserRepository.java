@@ -11,6 +11,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface MstAppRoleFormUserRepository extends JpaRepository<MstAppRoleFormUser, UUID> {
+    @Query("""
+        SELECT COUNT(p) > 0 FROM MstAppRoleFormUser p
+        WHERE p.user.userCode = :userCode
+          AND p.isActive = true AND p.appRoleForm.isActive = true
+          AND p.appRoleForm.applicationRole.isActive = true
+          AND p.appRoleForm.applicationRole.roleCode.isActive = true
+          AND p.appRoleForm.applicationRole.roleCode.roleCode IN ('brnch_admin', 'brnch_adm')
+        """)
+    boolean hasActiveBranchAdminRole(@Param("userCode") UUID userCode);
+
     List<MstAppRoleFormUser> findAllByUser(MstUser mstUser);
 
     Optional<MstAppRoleFormUser> findTopByUserOrderByAppRoleFormUserId(MstUser mstUser);

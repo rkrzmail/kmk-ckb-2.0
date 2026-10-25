@@ -53,6 +53,7 @@ public class DocumentService {
   private final CustomerRemoteService customerRemoteService;
   private final CustomerRepository customerRepository;
   private final FinancingHdrRepository financingHdrRepository;
+  private final DokumentHistoryUploadRepository dokumentHistoryUploadRepository;
   private final AuditTrailService auditTrailService;
 
   public List<DocumentTemplateFinancingDto> fetchDocumentTemplateFinancing(
@@ -945,6 +946,23 @@ public class DocumentService {
 
       List<MstFileTypeDto> result = page.map((file) -> {
           MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
+          Optional<DokumentHistoryUpload> latest = dokumentHistoryUploadRepository
+            .findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
+              financingHdr.get().getFinancingHdrCode(), file.getFileTypeCode());
+          if (latest.isPresent()) {
+            DokumentHistoryUpload upload = latest.get();
+            LegalFileDto uploaded = new LegalFileDto();
+            uploaded.setFileId(upload.getId());
+            uploaded.setFileName(upload.getFileName());
+            uploaded.setUploadedDate(upload.getUploadedAt());
+            uploaded.setFileUrl("/api/v1/document-uploads/" + financingHdrCode + "/"
+              + file.getFileTypeCode() + "/" + upload.getId() + "/download");
+            dto.setLegalFile(uploaded);
+            return dto;
+          }
+          if ("DOC006".equals(file.getFileTypeCode())) {
+            return dto;
+          }
           LegalFile legalFile = legalFileService.fetchByMstFileTypeAndCust(financingHdr.get().getCustomer(), file);
 
           if (legalFile != null) {

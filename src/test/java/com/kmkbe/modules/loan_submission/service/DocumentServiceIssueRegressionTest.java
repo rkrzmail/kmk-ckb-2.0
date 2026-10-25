@@ -3,6 +3,8 @@ package com.kmkbe.modules.loan_submission.service;
 import com.kmkbe.core.domain.dto.LegalFileDto;
 import com.kmkbe.core.domain.dto.MstFileTypeDto;
 import com.kmkbe.core.domain.entity.MstFileType;
+import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.DokumentHistoryUpload;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -18,6 +20,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +31,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 class DocumentServiceIssueRegressionTest {
@@ -39,6 +44,7 @@ class DocumentServiceIssueRegressionTest {
   @Mock private CustomerRemoteService customerRemoteService;
   @Mock private CustomerRepository customerRepository;
   @Mock private FinancingHdrRepository financingHdrRepository;
+  @Mock private DokumentHistoryUploadRepository dokumentHistoryUploadRepository;
   @Mock private AuditTrailService auditTrailService;
 
   private DocumentService service;
@@ -54,6 +60,7 @@ class DocumentServiceIssueRegressionTest {
       customerRemoteService,
       customerRepository,
       financingHdrRepository,
+      dokumentHistoryUploadRepository,
       auditTrailService
     );
   }
@@ -136,5 +143,35 @@ class DocumentServiceIssueRegressionTest {
       .singleElement()
       .extracting(MstFileTypeDto::getFileTypeCode)
       .isEqualTo("KTP01");
+  }
+
+  @Test
+  void sitDocumentUsesLatestUploadForLeadNotCustomerFile() {
+    UUID code = UUID.randomUUID();
+    UUID bouwheerCode = UUID.randomUUID();
+    Customer customer = Customer.builder().custCode(UUID.randomUUID()).build();
+    var bouwheer = com.kmkbe.modules.bouwheer.model.entity.Bouwheer.builder()
+      .bouwheerCode(bouwheerCode).build();
+    FinancingHdr hdr = new FinancingHdr();
+    hdr.setFinancingHdrCode(code);
+    hdr.setCustomer(customer);
+    hdr.setBouwheer(bouwheer);
+    MstFileType sit = MstFileType.builder().fileTypeCode("DOC006").build();
+    DokumentHistoryUpload upload = new DokumentHistoryUpload();
+    upload.setId(12L);
+    upload.setFileName("signed.pdf");
+    upload.setUploadedAt(java.time.LocalDateTime.of(2026, 10, 25, 12, 0));
+    when(financingHdrRepository.findByFinancingHdrCode(code)).thenReturn(Optional.of(hdr));
+    when(mstFileTypeRepository.findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(
+      any(), eq(bouwheerCode), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(sit)));
+    when(dokumentHistoryUploadRepository
+      .findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(code, "DOC006"))
+      .thenReturn(Optional.of(upload));
+
+    var result = service.fetchAllLoanDocumentDebitur(new MockHttpServletRequest(), new PaginationRequest(), code.toString());
+
+    assertThat(result.getList().get(0).getLegalFile().getFileUrl())
+      .isEqualTo("/api/v1/document-uploads/" + code + "/DOC006/12/download");
+    verify(legalFileService, never()).fetchByMstFileTypeAndCust(customer, sit);
   }
 }
