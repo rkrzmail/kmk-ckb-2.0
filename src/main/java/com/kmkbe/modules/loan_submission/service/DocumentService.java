@@ -38,7 +38,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.SignatureException;
 import java.util.*;
 
 @Service
@@ -299,21 +298,6 @@ public class DocumentService {
     } catch (Exception e) {
       log.error("agreementDocByAgreementId, error {}", e.getMessage());
       throw e;
-    }
-  }
-
-  private void fetchAndMappingDocVendor(Customer customer) throws SignatureException {
-    InquiryVendorRemoteDto inquiryVendorRemote = null;
-    try {
-      inquiryVendorRemote = customerRemoteService
-        .inquiryVendor(customer.getCustExternalCode()).getData();
-
-    } catch (Exception e) {
-      //throw new IllegalStateException("Your vendor is not registered from MST Integeration");
-    }
-
-    if (inquiryVendorRemote != null) {
-      mappingFromInquiryVendor(customer, inquiryVendorRemote);
     }
   }
 
