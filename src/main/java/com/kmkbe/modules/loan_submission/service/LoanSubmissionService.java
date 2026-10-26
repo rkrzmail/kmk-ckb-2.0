@@ -382,7 +382,7 @@ public class LoanSubmissionService {
       Cwr validateCwr = null;
       if (customer != null) {
         validateCwr = isCustomerExistingByCwr(customer);
-        isCustomerExisting = validateCwr != null;
+        isCustomerExisting = customer.getExistingCust().equals(AppConstants.EXISTING_CUSTOMER);
       }
 
       BigDecimal
