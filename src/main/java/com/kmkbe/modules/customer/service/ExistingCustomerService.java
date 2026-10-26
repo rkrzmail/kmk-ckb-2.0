@@ -135,6 +135,7 @@ public class ExistingCustomerService {
             .requestDateTime(DateTimeUtils.SDF_STANDARD_DATE.format(new Date()))
             .build()
         );
+      log.info("Validate Customer existing {} ",existingCustomer);
       if (existingCustomer == null) {
         return null;
       }
@@ -144,8 +145,9 @@ public class ExistingCustomerService {
           loadedCust.setCustNo(existingCustomer.getCustNo());
           loadedCust.setUsrUpd(customer.getCustName());
           loadedCust.setDtmUpd(DateTimeUtils.now());
-          loadedCust.setExistingCust(AppConstants.EXIT_CUSTOMER);
+          loadedCust.setExistingCust(AppConstants.EXISTING_CUSTOMER);
           customerRepository.save(loadedCust);
+          log.info("Update CWR Customer existing");
         }
 
 
