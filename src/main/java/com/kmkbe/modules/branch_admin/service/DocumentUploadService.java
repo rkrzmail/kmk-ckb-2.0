@@ -96,7 +96,7 @@ public class DocumentUploadService {
       }
       DokumentHistoryUpload upload = new DokumentHistoryUpload();
       upload.setFinancingHdr(hdr);
-      upload.setFileType(fileType);
+      upload.setFileTypeCode(fileTypeCode);
       upload.setFilePath(path);
       upload.setFileName(safeName);
       upload.setContentType("application/pdf");
@@ -118,7 +118,7 @@ public class DocumentUploadService {
     authorizedHdr(financingHdrCode);
     validateFileTypeCode(fileTypeCode);
     return uploadRepository
-      .findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
+      .findTopByFinancingHdr_FinancingHdrCodeAndFileTypeCodeOrderByUploadedAtDescIdDesc(
         financingHdrCode, fileTypeCode)
       .map(DocumentUploadResponse::from).orElse(null);
   }
@@ -128,7 +128,7 @@ public class DocumentUploadService {
     authorizedHdr(financingHdrCode);
     validateFileTypeCode(fileTypeCode);
     return uploadRepository
-      .findByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
+      .findByFinancingHdr_FinancingHdrCodeAndFileTypeCodeOrderByUploadedAtDescIdDesc(
         financingHdrCode, fileTypeCode)
       .stream().map(DocumentUploadResponse::from).toList();
   }
@@ -140,7 +140,7 @@ public class DocumentUploadService {
     authorizedHdr(financingHdrCode);
     validateFileTypeCode(fileTypeCode);
     DokumentHistoryUpload upload = uploadRepository
-      .findByIdAndFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCode(id, financingHdrCode, fileTypeCode)
+      .findByIdAndFinancingHdr_FinancingHdrCodeAndFileTypeCode(id, financingHdrCode, fileTypeCode)
       .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Dokumen tidak ditemukan."));
     return fileStorageService.downloadUploadFile(request, upload.getFilePath(), upload.getFileName(),
       request.getParameter("cd"));
@@ -159,7 +159,7 @@ public class DocumentUploadService {
         request.getParameter("cd"));
     }
     DokumentHistoryUpload latest = uploadRepository
-      .findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
+      .findTopByFinancingHdr_FinancingHdrCodeAndFileTypeCodeOrderByUploadedAtDescIdDesc(
         financingHdrCode, fileTypeCode)
       .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Dokumen tidak ditemukan."));
     return fileStorageService.downloadUploadFile(request, latest.getFilePath(), latest.getFileName(),

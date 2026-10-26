@@ -61,7 +61,7 @@ class InvoicePaidNotificationTest {
     ApplicationEventPublisher publisher = mock(ApplicationEventPublisher.class);
     FinancingDtlService service = new FinancingDtlService(details,
       mock(PaymentReceiveHistoryRepository.class), mock(FinancingHdrRepository.class),
-      mock(BaseRemoteService.class), mock(ObjectMapper.class), mock(RestTemplate.class), publisher);
+      mock(BaseRemoteService.class), new ObjectMapper(), mock(RestTemplate.class), publisher);
     FinancingHdr financing = new FinancingHdr();
     financing.setFinancingHdrCode(financingCode);
     financing.setTotalInvoiceAmt(100.0);
@@ -91,7 +91,7 @@ class InvoicePaidNotificationTest {
     ApplicationEventPublisher publisher = mock(ApplicationEventPublisher.class);
     FinancingDtlService service = new FinancingDtlService(details,
       mock(PaymentReceiveHistoryRepository.class), mock(FinancingHdrRepository.class),
-      mock(BaseRemoteService.class), mock(ObjectMapper.class), mock(RestTemplate.class), publisher);
+      mock(BaseRemoteService.class), new ObjectMapper(), mock(RestTemplate.class), publisher);
     FinancingHdr financing = new FinancingHdr();
     financing.setFinancingHdrCode(financingCode);
     Invoice invoice = Invoice.builder().custInvNo("INV-1").invoiceAmt(100.0).status("UNPAID").build();

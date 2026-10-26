@@ -8,14 +8,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface DokumentHistoryUploadRepository extends JpaRepository<DokumentHistoryUpload, Long> {
-  Optional<DokumentHistoryUpload> findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
+  Optional<DokumentHistoryUpload> findTopByFinancingHdr_FinancingHdrCodeAndFileTypeCodeOrderByUploadedAtDescIdDesc(
     UUID financingHdrCode, String fileTypeCode);
 
-  Optional<DokumentHistoryUpload> findByIdAndFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCode(
+  Optional<DokumentHistoryUpload> findByIdAndFinancingHdr_FinancingHdrCodeAndFileTypeCode(
     Long id, UUID financingHdrCode, String fileTypeCode);
 
-  List<DokumentHistoryUpload> findByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
+  List<DokumentHistoryUpload> findByFinancingHdr_FinancingHdrCodeAndFileTypeCodeOrderByUploadedAtDescIdDesc(
     UUID financingHdrCode, String fileTypeCode);
 
-  boolean existsByFileType_FileTypeCode(String fileTypeCode);
+  boolean existsByFileTypeCode(String fileTypeCode);
 }

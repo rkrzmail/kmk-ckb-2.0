@@ -21,8 +21,14 @@ public interface LegalFileRepository extends JpaRepository<LegalFile, Long>, Jpa
     Optional<LegalFile> findByCustCodeAndFileTypeCodeAndFinancingHdrIsNull(
             Customer customer, MstFileType fileType);
 
+    @Query(value = """
+            select lf.* from public.legal_file lf
+            where lf.financing_hdr_code = :financingHdrCode
+              and lf.file_type_code = :fileTypeCode
+            """, nativeQuery = true)
     Optional<LegalFile> findByFinancingHdr_FinancingHdrCodeAndFileTypeCode_FileTypeCode(
-            UUID financingHdrCode, String fileTypeCode);
+            @org.springframework.data.repository.query.Param("financingHdrCode") UUID financingHdrCode,
+            @org.springframework.data.repository.query.Param("fileTypeCode") String fileTypeCode);
 
     @Query(
             value = """

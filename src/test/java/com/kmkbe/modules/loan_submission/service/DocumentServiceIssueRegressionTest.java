@@ -173,7 +173,7 @@ class DocumentServiceIssueRegressionTest {
     assertThat(result.getList().get(0).getLegalFile().getFileUrl())
       .isEqualTo("/api/v1/document-uploads/" + code + "/DOC006/latest/download");
     verify(dokumentHistoryUploadRepository, never())
-      .findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(code, "DOC006");
+      .findTopByFinancingHdr_FinancingHdrCodeAndFileTypeCodeOrderByUploadedAtDescIdDesc(code, "DOC006");
     verify(legalFileService, never()).fetchByMstFileTypeAndCust(customer, sit);
   }
 }

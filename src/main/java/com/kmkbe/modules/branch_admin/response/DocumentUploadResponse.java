@@ -12,7 +12,7 @@ public record DocumentUploadResponse(
 ) {
   public static DocumentUploadResponse from(DokumentHistoryUpload upload) {
     return new DocumentUploadResponse(upload.getId(), upload.getFinancingHdr().getFinancingHdrCode(),
-      upload.getFileType().getFileTypeCode(), upload.getFileName(), upload.getExpiredDate(),
+      upload.getFileTypeCode(), upload.getFileName(), upload.getExpiredDate(),
       upload.getNotes(), upload.getUploadedBy(), upload.getUploadedAt());
   }
 }
