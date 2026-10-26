@@ -52,7 +52,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 
@@ -380,7 +382,7 @@ public class LoanSubmissionService {
       Cwr validateCwr = null;
       if (customer != null) {
         validateCwr = isCustomerExistingByCwr(customer);
-        isCustomerExisting = validateCwr != null;
+        isCustomerExisting = customer.getExistingCust().equals(AppConstants.EXISTING_CUSTOMER);
       }
 
       BigDecimal
@@ -392,9 +394,13 @@ public class LoanSubmissionService {
 
       int tenor = 90; // (duedate - skr) + gp bouwherr
       log.info("Term tenor : {} ",tenor);
-      if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
+      String postingDate = (calculateSimulationRequest.getPostingDate() == null || calculateSimulationRequest.getPostingDate().isEmpty())
+        ? LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        : calculateSimulationRequest.getPostingDate();
 
-        int top = DateTimeUtils.dateDiffInDay(DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getPostingDate()), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
+      if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
+        // Use modern java.time (LocalDate) instead of java.util.Date
+        int top = DateTimeUtils.dateDiffInDay(DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(postingDate), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
         log.info("Posting Date : {} ",calculateSimulationRequest.getPostingDate());
         log.info("Invoice duedate : {} ",calculateSimulationRequest.getInvoiceDueDate());
         log.info("Top : {} ",top);
@@ -412,7 +418,7 @@ public class LoanSubmissionService {
       double plafonLimit = plafondLimitBigDecimal.doubleValue();
       log.info("Plafond limit : {} ",plafonLimit);
 
-      double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
+      double nilaiPembiayaan = ntfResult.doubleValue(); //total invoice * % pembiayaan
       log.info("Nilai pembiayaan : {} ",nilaiPembiayaan);
 
       double effective_Rate = product.getEffectiveRate();
@@ -495,6 +501,8 @@ public class LoanSubmissionService {
         .provisionRate(provisionRate)
         .totalInvoiceAmount(calculateSimulationRequest.getTotalInvoiceAmount())
         .totalNtfAmount(ntfResult)
+        .postingDate(postingDate)
+        .invoiceDueDate(calculateSimulationRequest.getInvoiceDueDate())
         .product(findProduct.get())
         .build();
     } catch (Exception e) {
@@ -1470,7 +1478,7 @@ public class LoanSubmissionService {
     return importantNotesService.importantNotesDto();
   }
 
-  public ExternalIntegrationLoanSimulationDto saveImportantNotes(SaveImportantNotesRequest request) throws SignatureException, JsonProcessingException {
+  public ExternalIntegrationLoanSimulationDto saveImportantNotes(SaveImportantNotesRequest request) throws JsonProcessingException {
     try {
       VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(null, request.getToken());
       final InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService.inquiryVendor(vendorTokenExtractor.getVendorCode()).getData();

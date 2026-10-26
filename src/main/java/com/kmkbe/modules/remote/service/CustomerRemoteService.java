@@ -52,6 +52,7 @@ public class CustomerRemoteService {
     final String url = confinsUrl + "/api/fou/v1/CustObj/GetObjectByKeyAndValue";
     try {
       jsonStr = ObjectUtils.jsonToStr(params);
+      log.info("Request Customer existing: {}", jsonStr);
       final CustomerRemoteDto response = confinsR3FeignClient.validateExisting(params);
       responseStr = objectMapper.writeValueAsString(response);
       log.info("Response Customer existing: {}", responseStr);
