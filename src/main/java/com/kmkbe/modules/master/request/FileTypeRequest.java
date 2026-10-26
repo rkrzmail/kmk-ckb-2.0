@@ -13,6 +13,7 @@ public record FileTypeRequest(
     @Size(max = 500) String fileTypeDesc,
     @NotBlank @Size(max = 50) String fileAllocation,
     @NotNull Boolean isMandatory,
+    Boolean isEsign,
     @NotNull @Min(1) Long maxSizeMb,
     UUID bouwheerCode
 ) {}

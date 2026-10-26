@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.AgreementFileRepository;
 import com.kmkbe.core.domain.repository.AgreementFileSigningRepository;
 import com.kmkbe.core.domain.repository.LegalFileRepository;
+import com.kmkbe.core.domain.repository.DokumentHistoryUploadRepository;
 import com.kmkbe.core.domain.repository.MstFileTypeRepository;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.exception.BusinessException;
@@ -34,21 +35,22 @@ import java.util.stream.StreamSupport;
 @Service
 @RequiredArgsConstructor
 public class FileTypeMasterService {
-    private static final Map<String, String> FIELDS = Map.of(
-        "fileTypeCode", "fileTypeCode", "fileTypeId", "fileTypeId",
-        "fileTypeName", "fileTypeName", "fileTypeDesc", "fileTypeDesc",
-        "fileAllocation", "fileAllocation", "bouwheerCode", "bouwheerCode",
-        "maxSizeMb", "maxSizeMb", "isMandatory", "isMandatory",
-        "dtmCrt", "dtmCrt", "dtmUpd", "dtmUpd"
+    private static final Map<String, String> FIELDS = Map.ofEntries(
+        Map.entry("fileTypeCode", "fileTypeCode"), Map.entry("fileTypeId", "fileTypeId"),
+        Map.entry("fileTypeName", "fileTypeName"), Map.entry("fileTypeDesc", "fileTypeDesc"),
+        Map.entry("fileAllocation", "fileAllocation"), Map.entry("bouwheerCode", "bouwheerCode"),
+        Map.entry("maxSizeMb", "maxSizeMb"), Map.entry("isMandatory", "isMandatory"),
+        Map.entry("isEsign", "isEsign"), Map.entry("dtmCrt", "dtmCrt"), Map.entry("dtmUpd", "dtmUpd")
     );
     private static final Set<String> SEARCH_FIELDS = Set.of(
         "fileTypeCode", "fileTypeId", "fileTypeName", "fileTypeDesc",
-        "fileAllocation", "bouwheerCode", "maxSizeMb", "isMandatory"
+        "fileAllocation", "bouwheerCode", "maxSizeMb", "isMandatory", "isEsign"
     );
 
     private final MstFileTypeRepository repository;
     private final BouwheerRepository bouwheerRepository;
     private final LegalFileRepository legalFileRepository;
+    private final DokumentHistoryUploadRepository dokumentHistoryUploadRepository;
     private final AgreementFileRepository agreementFileRepository;
     private final AgreementFileSigningRepository signingRepository;
     private final CurrentUserService currentUserService;
@@ -78,7 +80,7 @@ public class FileTypeMasterService {
                     try { yield cb.equal(root.get(searchBy), Long.parseLong(value)); }
                     catch (NumberFormatException ex) { yield cb.disjunction(); }
                 }
-                case "isMandatory" -> {
+                case "isMandatory", "isEsign" -> {
                     if (!value.equalsIgnoreCase("true") && !value.equalsIgnoreCase("false")) yield cb.disjunction();
                     yield cb.equal(root.get(searchBy), Boolean.parseBoolean(value));
                 }
@@ -135,6 +137,7 @@ public class FileTypeMasterService {
     public void delete(String code) {
         MstFileType entity = find(code);
         if (legalFileRepository.existsByFileTypeCode_FileTypeCode(code)
+            || dokumentHistoryUploadRepository.existsByFileType_FileTypeCode(code)
             || agreementFileRepository.existsByMstFileType_FileTypeCode(code)
             || signingRepository.existsByFileTypeCode(code)) {
             throw new BusinessException(HttpStatus.CONFLICT, 409, "File type sudah digunakan dan tidak dapat dihapus.");
@@ -164,6 +167,7 @@ public class FileTypeMasterService {
         entity.setFileTypeDesc(request.fileTypeDesc());
         entity.setFileAllocation(request.fileAllocation().trim());
         entity.setIsMandatory(request.isMandatory());
+        entity.setIsEsign(request.isEsign() != null && request.isEsign());
         entity.setMaxSizeMb(request.maxSizeMb());
         entity.setBouwheerCode(request.bouwheerCode());
     }

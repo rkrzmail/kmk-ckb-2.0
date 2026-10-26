@@ -4,6 +4,7 @@ import com.kmkbe.core.domain.entity.MstFileType;
 import com.kmkbe.core.domain.repository.AgreementFileRepository;
 import com.kmkbe.core.domain.repository.AgreementFileSigningRepository;
 import com.kmkbe.core.domain.repository.LegalFileRepository;
+import com.kmkbe.core.domain.repository.DokumentHistoryUploadRepository;
 import com.kmkbe.core.domain.repository.MstFileTypeRepository;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.exception.BusinessException;
@@ -37,13 +38,14 @@ class FileTypeMasterServiceTest {
     @Mock MstFileTypeRepository repository;
     @Mock BouwheerRepository bouwheerRepository;
     @Mock LegalFileRepository legalFileRepository;
+    @Mock DokumentHistoryUploadRepository dokumentHistoryUploadRepository;
     @Mock AgreementFileRepository agreementFileRepository;
     @Mock AgreementFileSigningRepository signingRepository;
     @Mock CurrentUserService currentUserService;
     @InjectMocks FileTypeMasterService service;
 
     private static FileTypeRequest request(String code) {
-        return new FileTypeRequest(code, "Perjanjian", "Dokumen perjanjian", "Financing", true, 10L, null);
+        return new FileTypeRequest(code, "Perjanjian", "Dokumen perjanjian", "Financing", true, false, 10L, null);
     }
 
     @Test
@@ -122,6 +124,7 @@ class FileTypeMasterServiceTest {
         assertThat(result.usrCrt()).isEqualTo("admin");
         assertThat(result.dtmCrt()).isNotNull();
         assertThat(result.maxSizeMb()).isEqualTo(10L);
+        assertThat(result.isEsign()).isFalse();
     }
 
     @Test

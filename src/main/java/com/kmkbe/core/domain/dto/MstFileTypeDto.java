@@ -15,6 +15,7 @@ public class MstFileTypeDto {
     private String fileTypeDesc;
     private FileAllocationType fileAllocation;
     private Boolean isMandatory;
+    private Boolean isEsign;
     private Long maxSizeMb;
     private LegalFileDto legalFile;
 }
