@@ -1504,14 +1504,9 @@ public class LoanSubmissionService {
   }
 
   private Cwr isCustomerExistingByCwr(Customer customer) {
-    final String identityType = customer.getCustIdTypeCode();
-    final String identityNo = customer.getCompany() != null
-      ? customer.getCompany().getIdentityNo()
-      : (customer.getPersonal() != null ? customer.getPersonal().getIdentityNo() : customer.getCustIdNo());
-
     Cwr cwr = validateCwrForCustomerExisting(
-      identityType,
-      identityNo,
+      customer.getCustIdTypeCode(),
+      customer.getCustIdNo(),
       customer,
       bouwheerRepository.findByBouwheerCode(UUID.fromString(customer.getBouwheer()))
         .orElse(null)
@@ -1520,8 +1515,8 @@ public class LoanSubmissionService {
     existingCustomerService.createOrUpdate(
       customer.getCustExternalCode(),
       cwr != null,
-      identityType,
-      identityNo
+      customer.getCustIdTypeCode(),
+      customer.getCustIdNo()
     );
 
     return cwr;
