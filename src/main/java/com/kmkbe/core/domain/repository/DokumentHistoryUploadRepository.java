@@ -3,6 +3,7 @@ package com.kmkbe.core.domain.repository;
 import com.kmkbe.core.domain.entity.DokumentHistoryUpload;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -12,6 +13,9 @@ public interface DokumentHistoryUploadRepository extends JpaRepository<DokumentH
 
   Optional<DokumentHistoryUpload> findByIdAndFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCode(
     Long id, UUID financingHdrCode, String fileTypeCode);
+
+  List<DokumentHistoryUpload> findByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
+    UUID financingHdrCode, String fileTypeCode);
 
   boolean existsByFileType_FileTypeCode(String fileTypeCode);
 }

@@ -17,6 +17,7 @@ import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.entity.MstEmployee;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
+import com.kmkbe.modules.user.repository.MstUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +28,8 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -35,6 +38,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.ArgumentCaptor;
@@ -43,6 +47,7 @@ import org.mockito.ArgumentCaptor;
 class DocumentUploadServiceTest {
   @Mock CurrentUserService currentUserService;
   @Mock MstAppRoleFormUserRepository roleRepository;
+  @Mock MstUserRepository userRepository;
   @Mock FinancingHdrRepository financingHdrRepository;
   @Mock MstFileTypeRepository fileTypeRepository;
   @Mock DokumentHistoryUploadRepository uploadRepository;
@@ -66,6 +71,7 @@ class DocumentUploadServiceTest {
     user.setUsername("admin412");
     user.setEmployee(employee);
     when(currentUserService.internalUser()).thenReturn(user);
+    lenient().when(userRepository.findBranchCodeByUserCode(userCode)).thenReturn(Optional.of("412"));
 
     hdr = new FinancingHdr();
     hdr.setFinancingHdrCode(code);
@@ -93,6 +99,20 @@ class DocumentUploadServiceTest {
     when(financingHdrRepository.findByFinancingHdrCode(code)).thenReturn(Optional.of(hdr));
     assertThatThrownBy(() -> service.latest(code, "DOC006")).isInstanceOf(BusinessException.class);
     verify(uploadRepository, never()).findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(any(), any());
+  }
+
+  @Test
+  void historyUsesBranchQueryWithoutLoadingDetachedPrincipalEmployee() throws Exception {
+    MstUser detached = new MstUser();
+    detached.setUserCode(userCode);
+    when(currentUserService.internalUser()).thenReturn(detached);
+    when(roleRepository.hasActiveBranchAdminRole(userCode)).thenReturn(true);
+    when(financingHdrRepository.findByFinancingHdrCode(code)).thenReturn(Optional.of(hdr));
+    when(uploadRepository.findByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
+      code, "DOC006")).thenReturn(List.of());
+
+    assertThat(service.history(code, "DOC006")).isEmpty();
+    verify(userRepository).findBranchCodeByUserCode(userCode);
   }
 
   @Test
@@ -168,6 +188,42 @@ class DocumentUploadServiceTest {
     verify(fileStorageService).downloadUploadFile(request, "stored/current.pdf", "current.pdf", "attachment");
     verify(uploadRepository, never())
       .findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(any(), any());
+  }
+
+  @Test
+  void historyReturnsUploadsForAuthorizedLeadInRepositoryOrder() throws Exception {
+    when(roleRepository.hasActiveBranchAdminRole(userCode)).thenReturn(true);
+    when(financingHdrRepository.findByFinancingHdrCode(code)).thenReturn(Optional.of(hdr));
+    MstFileType type = MstFileType.builder().fileTypeCode("DOC006").build();
+    DokumentHistoryUpload upload = new DokumentHistoryUpload();
+    upload.setId(7L);
+    upload.setFinancingHdr(hdr);
+    upload.setFileType(type);
+    upload.setFileName("signed.pdf");
+    upload.setExpiredDate(LocalDate.of(2027, 12, 31));
+    upload.setNotes("versi pertama");
+    upload.setUploadedAt(LocalDateTime.of(2026, 10, 26, 11, 0));
+    when(uploadRepository.findByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
+      code, "DOC006")).thenReturn(List.of(upload));
+
+    var result = service.history(code, "DOC006");
+
+    assertThat(result).hasSize(1);
+    assertThat(result.getFirst().fileName()).isEqualTo("signed.pdf");
+    assertThat(result.getFirst().notes()).isEqualTo("versi pertama");
+  }
+
+  @Test
+  void historyRejectsOtherBranchBeforeReadingUploads() {
+    when(roleRepository.hasActiveBranchAdminRole(userCode)).thenReturn(true);
+    MstBranch other = new MstBranch();
+    other.setBranchCode("413");
+    hdr.setMstBranch(other);
+    when(financingHdrRepository.findByFinancingHdrCode(code)).thenReturn(Optional.of(hdr));
+
+    assertThatThrownBy(() -> service.history(code, "DOC006")).isInstanceOf(BusinessException.class);
+    verify(uploadRepository, never())
+      .findByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(any(), any());
   }
 
   @Test

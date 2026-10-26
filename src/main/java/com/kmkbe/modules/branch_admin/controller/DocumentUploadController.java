@@ -19,6 +19,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SignatureException;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -42,6 +43,12 @@ public class DocumentUploadController {
   public CommonResult<DocumentUploadResponse> latest(@PathVariable UUID financingHdrCode,
       @PathVariable String fileTypeCode) throws SignatureException {
     return new CommonResult<DocumentUploadResponse>().success(service.latest(financingHdrCode, fileTypeCode));
+  }
+
+  @GetMapping("/history")
+  public CommonResult<List<DocumentUploadResponse>> history(@PathVariable UUID financingHdrCode,
+      @PathVariable String fileTypeCode) throws SignatureException {
+    return new CommonResult<List<DocumentUploadResponse>>().success(service.history(financingHdrCode, fileTypeCode));
   }
 
   @GetMapping("/latest/download")

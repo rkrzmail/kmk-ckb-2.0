@@ -14,6 +14,7 @@ import com.kmkbe.exception.BusinessException;
 import com.kmkbe.modules.branch_admin.response.DocumentUploadResponse;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
+import com.kmkbe.modules.user.repository.MstUserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.core.io.Resource;
@@ -29,6 +30,7 @@ import java.io.InputStream;
 import java.security.SignatureException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -38,6 +40,7 @@ public class DocumentUploadService {
 
   private final CurrentUserService currentUserService;
   private final MstAppRoleFormUserRepository roleRepository;
+  private final MstUserRepository userRepository;
   private final FinancingHdrRepository financingHdrRepository;
   private final MstFileTypeRepository fileTypeRepository;
   private final DokumentHistoryUploadRepository uploadRepository;
@@ -121,6 +124,16 @@ public class DocumentUploadService {
   }
 
   @Transactional(readOnly = true)
+  public List<DocumentUploadResponse> history(UUID financingHdrCode, String fileTypeCode) throws SignatureException {
+    authorizedHdr(financingHdrCode);
+    validateFileTypeCode(fileTypeCode);
+    return uploadRepository
+      .findByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
+        financingHdrCode, fileTypeCode)
+      .stream().map(DocumentUploadResponse::from).toList();
+  }
+
+  @Transactional(readOnly = true)
   public ResponseEntity<Resource> download(UUID financingHdrCode, String fileTypeCode,
       Long id, HttpServletRequest request)
     throws SignatureException {
@@ -160,7 +173,8 @@ public class DocumentUploadService {
     }
     FinancingHdr hdr = financingHdrRepository.findByFinancingHdrCode(financingHdrCode)
       .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Leads ID tidak ditemukan."));
-    String userBranch = user.getEmployee().getBranch().getBranchCode();
+    String userBranch = userRepository.findBranchCodeByUserCode(user.getUserCode())
+      .orElseThrow(() -> error(HttpStatus.FORBIDDEN, "Cabang pengguna tidak ditemukan."));
     if (!userBranch.equals(hdr.getMstBranch().getBranchCode())) {
       throw error(HttpStatus.FORBIDDEN, "Leads ID bukan milik cabang pengguna.");
     }
