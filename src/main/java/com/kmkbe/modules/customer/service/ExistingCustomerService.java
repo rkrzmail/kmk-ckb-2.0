@@ -139,17 +139,16 @@ public class ExistingCustomerService {
       if (existingCustomer == null) {
         return null;
       }
-        if (StringUtil.isNullOrEmpty(customer.getCustNo())) {
-          final Customer loadedCust = customerRepository.findByCustCode(customer.getCustCode())
-            .orElseThrow();
-          loadedCust.setCustNo(existingCustomer.getCustNo());
-          loadedCust.setUsrUpd(customer.getCustName());
-          loadedCust.setDtmUpd(DateTimeUtils.now());
-          loadedCust.setExistingCust(AppConstants.EXISTING_CUSTOMER);
-          customerRepository.save(loadedCust);
-          log.info("Update CWR Customer existing");
+          Optional<Customer>customerOptional = customerRepository.findByCustCode(customer.getCustCode());
+          if (customerOptional.isPresent()){
+            Customer loadedCust = customerOptional.get();
+            loadedCust.setCustNo(existingCustomer.getCustNo());
+            loadedCust.setUsrUpd(customer.getCustName());
+            loadedCust.setDtmUpd(DateTimeUtils.now());
+            loadedCust.setExistingCust(AppConstants.EXISTING_CUSTOMER);
+            customerRepository.save(loadedCust);
+            log.info("Update CWR Customer existing");
         }
-
 
       BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> cwrResponse = cwrRemoteService.inquiryCwr(
           InquiryCwrRemoteRequest.builder()
@@ -157,6 +156,7 @@ public class ExistingCustomerService {
             .custNo(existingCustomer.getCustNo())
             .build()
         );
+
       if (cwrResponse == null) {
         return null;
       }
