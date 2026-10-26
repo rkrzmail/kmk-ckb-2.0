@@ -943,7 +943,7 @@ public class DocumentService {
             return dto;
           }
           Optional<DokumentHistoryUpload> latest = dokumentHistoryUploadRepository
-            .findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
+            .findTopByFinancingHdr_FinancingHdrCodeAndFileTypeCodeOrderByUploadedAtDescIdDesc(
               financingHdr.get().getFinancingHdrCode(), file.getFileTypeCode());
           if (latest.isPresent()) {
             DokumentHistoryUpload upload = latest.get();

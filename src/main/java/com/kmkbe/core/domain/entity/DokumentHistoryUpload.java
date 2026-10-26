@@ -28,9 +28,8 @@ public class DokumentHistoryUpload {
   @JoinColumn(name = "financing_hdr_code", nullable = false)
   private FinancingHdr financingHdr;
 
-  @ManyToOne(fetch = FetchType.LAZY, optional = false)
-  @JoinColumn(name = "file_type_code", nullable = false)
-  private MstFileType fileType;
+  @Column(name = "file_type_code", nullable = false, length = 20)
+  private String fileTypeCode;
 
   @Column(name = "file_path", nullable = false, length = 8000)
   private String filePath;

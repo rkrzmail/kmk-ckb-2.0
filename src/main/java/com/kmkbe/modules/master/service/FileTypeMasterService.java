@@ -137,7 +137,7 @@ public class FileTypeMasterService {
     public void delete(String code) {
         MstFileType entity = find(code);
         if (legalFileRepository.existsByFileTypeCode_FileTypeCode(code)
-            || dokumentHistoryUploadRepository.existsByFileType_FileTypeCode(code)
+            || dokumentHistoryUploadRepository.existsByFileTypeCode(code)
             || agreementFileRepository.existsByMstFileType_FileTypeCode(code)
             || signingRepository.existsByFileTypeCode(code)) {
             throw new BusinessException(HttpStatus.CONFLICT, 409, "File type sudah digunakan dan tidak dapat dihapus.");
