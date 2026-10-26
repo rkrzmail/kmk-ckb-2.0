@@ -28,4 +28,6 @@ public class EstimatedDisburseDto extends BaseResponse {
     private Double effectiveRate;
     private Double adminRate;
     private Product product;
+    private String invoiceDueDate;
+    private String postingDate;
 }
