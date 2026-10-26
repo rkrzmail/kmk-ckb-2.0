@@ -8,6 +8,8 @@
 # ==============================================================================
 
 env: ${APP_ENV:local}
+server:
+  port: ${APP_PORT:'8443'}
 
 management:
   endpoints:
@@ -52,6 +54,8 @@ spring:
     mongodb:
       host: ${MONGO_HOST:localhost}
       port: ${MONGO_PORT:27017}
+      username: ${MONGO_USERNAME:admin}
+      password: ${MONGO_PASSWORD:}
       database: ${MONGO_DATABASE:kmklog}
   jpa:
     hibernate:
@@ -143,3 +147,7 @@ feign:
 
 cors:
   allowed-origins: {CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:4200,http://localhost:5173,http://localhost:8080}
+
+custom:
+  mongodb:
+    collection: ${MONGO_DATABASE:kmklog}
