@@ -1478,7 +1478,7 @@ public class LoanSubmissionService {
     return importantNotesService.importantNotesDto();
   }
 
-  public ExternalIntegrationLoanSimulationDto saveImportantNotes(SaveImportantNotesRequest request) throws SignatureException, JsonProcessingException {
+  public ExternalIntegrationLoanSimulationDto saveImportantNotes(SaveImportantNotesRequest request) throws JsonProcessingException {
     try {
       VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(null, request.getToken());
       final InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService.inquiryVendor(vendorTokenExtractor.getVendorCode()).getData();
