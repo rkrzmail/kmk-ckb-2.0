@@ -46,6 +46,10 @@ public class LegalFile {
   @JoinColumn(name = "file_type_code", nullable = false)
   private MstFileType fileTypeCode;
 
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "financing_hdr_code")
+  private FinancingHdr financingHdr;
+
   @Size(max = 500)
   //@NotNull(message = "FileName is required")
   @Column(name = "file_name", nullable = false, length = 500)

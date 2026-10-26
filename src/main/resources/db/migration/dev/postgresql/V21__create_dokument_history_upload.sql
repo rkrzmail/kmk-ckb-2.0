@@ -16,3 +16,36 @@ CREATE TABLE IF NOT EXISTS public.dokument_history_upload (
 
 CREATE INDEX IF NOT EXISTS idx_dokument_history_upload_latest
     ON public.dokument_history_upload(financing_hdr_code, file_type_code, uploaded_at DESC, id DESC);
+
+ALTER TABLE public.legal_file
+    ADD COLUMN financing_hdr_code uuid NULL;
+
+ALTER TABLE public.legal_file
+    ADD CONSTRAINT fk_legal_file_financing_hdr
+    FOREIGN KEY (financing_hdr_code) REFERENCES public.financing_hdr(financing_hdr_code);
+
+CREATE UNIQUE INDEX uq_legal_file_active_lead_type
+    ON public.legal_file(financing_hdr_code, file_type_code)
+    WHERE financing_hdr_code IS NOT NULL;
+
+WITH latest AS (
+    SELECT DISTINCT ON (h.financing_hdr_code, h.file_type_code)
+        h.financing_hdr_code, h.file_type_code, h.file_path, h.file_name,
+        h.content_type, h.uploaded_by, h.uploaded_at
+    FROM public.dokument_history_upload h
+    WHERE h.file_type_code = 'DOC006'
+    ORDER BY h.financing_hdr_code, h.file_type_code, h.uploaded_at DESC, h.id DESC
+)
+INSERT INTO public.legal_file (
+    cust_code, file_type_code, financing_hdr_code, file_path, file_name,
+    content_type, usr_crt, dtm_crt, usr_upd, dtm_upd
+)
+SELECT fh.cust_code, h.file_type_code, h.financing_hdr_code, h.file_path, h.file_name,
+       h.content_type, h.uploaded_by, h.uploaded_at, h.uploaded_by, h.uploaded_at
+FROM latest h
+JOIN public.financing_hdr fh ON fh.financing_hdr_code = h.financing_hdr_code
+WHERE NOT EXISTS (
+    SELECT 1 FROM public.legal_file lf
+    WHERE lf.financing_hdr_code = h.financing_hdr_code
+      AND lf.file_type_code = h.file_type_code
+);

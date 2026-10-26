@@ -868,7 +868,7 @@ public class DocumentService {
           () -> new IllegalStateException("Customer not found")
         );
 
-      Page<LegalFile> paginate = legalFileRepository.findAllByCustCodeOrderByFileName(
+      Page<LegalFile> paginate = legalFileRepository.findAllByCustCodeAndFinancingHdrIsNullOrderByFileName(
         customer,
         PageRequest.of(pageNo, pageSize, Sort.by(Sort.Direction.DESC, "fileName"))
       );
@@ -946,6 +946,18 @@ public class DocumentService {
 
       List<MstFileTypeDto> result = page.map((file) -> {
           MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
+          if ("DOC006".equals(file.getFileTypeCode())) {
+            legalFileRepository
+              .findByFinancingHdr_FinancingHdrCodeAndFileTypeCode_FileTypeCode(
+                financingHdr.get().getFinancingHdrCode(), file.getFileTypeCode())
+              .ifPresent(active -> {
+                LegalFileDto uploaded = FileTypeMapper.INSTANCE.legalFileToDto(active);
+                uploaded.setUploadedDate(active.getDtmUpd() != null ? active.getDtmUpd() : active.getDtmCrt());
+                uploaded.setFileUrl("/api/v1/document-uploads/" + financingHdrCode + "/DOC006/latest/download");
+                dto.setLegalFile(uploaded);
+              });
+            return dto;
+          }
           Optional<DokumentHistoryUpload> latest = dokumentHistoryUploadRepository
             .findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
               financingHdr.get().getFinancingHdrCode(), file.getFileTypeCode());
@@ -958,9 +970,6 @@ public class DocumentService {
             uploaded.setFileUrl("/api/v1/document-uploads/" + financingHdrCode + "/"
               + file.getFileTypeCode() + "/" + upload.getId() + "/download");
             dto.setLegalFile(uploaded);
-            return dto;
-          }
-          if ("DOC006".equals(file.getFileTypeCode())) {
             return dto;
           }
           LegalFile legalFile = legalFileService.fetchByMstFileTypeAndCust(financingHdr.get().getCustomer(), file);

@@ -16,3 +16,14 @@ CREATE TABLE IF NOT EXISTS public.dokument_history_upload (
 
 CREATE INDEX IF NOT EXISTS idx_dokument_history_upload_latest
     ON public.dokument_history_upload(financing_hdr_code, file_type_code, uploaded_at DESC, id DESC);
+
+ALTER TABLE public.legal_file
+    ADD COLUMN financing_hdr_code uuid NULL;
+
+ALTER TABLE public.legal_file
+    ADD CONSTRAINT fk_legal_file_financing_hdr
+    FOREIGN KEY (financing_hdr_code) REFERENCES public.financing_hdr(financing_hdr_code);
+
+CREATE UNIQUE INDEX uq_legal_file_active_lead_type
+    ON public.legal_file(financing_hdr_code, file_type_code)
+    WHERE financing_hdr_code IS NOT NULL;

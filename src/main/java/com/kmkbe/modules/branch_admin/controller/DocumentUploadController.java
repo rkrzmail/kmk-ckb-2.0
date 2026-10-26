@@ -44,6 +44,12 @@ public class DocumentUploadController {
     return new CommonResult<DocumentUploadResponse>().success(service.latest(financingHdrCode, fileTypeCode));
   }
 
+  @GetMapping("/latest/download")
+  public ResponseEntity<Resource> downloadLatest(@PathVariable UUID financingHdrCode,
+      @PathVariable String fileTypeCode, HttpServletRequest request) throws SignatureException {
+    return service.downloadLatest(financingHdrCode, fileTypeCode, request);
+  }
+
   @GetMapping("/{id}/download")
   public ResponseEntity<Resource> download(@PathVariable UUID financingHdrCode,
       @PathVariable String fileTypeCode, @PathVariable Long id,

@@ -2,9 +2,11 @@ package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.entity.DokumentHistoryUpload;
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.core.domain.entity.LegalFile;
 import com.kmkbe.core.domain.entity.MstFileType;
 import com.kmkbe.core.domain.repository.DokumentHistoryUploadRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
+import com.kmkbe.core.domain.repository.LegalFileRepository;
 import com.kmkbe.core.domain.repository.MstFileTypeRepository;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.service.FileStorageService;
@@ -39,6 +41,7 @@ public class DocumentUploadService {
   private final FinancingHdrRepository financingHdrRepository;
   private final MstFileTypeRepository fileTypeRepository;
   private final DokumentHistoryUploadRepository uploadRepository;
+  private final LegalFileRepository legalFileRepository;
   private final FileStorageService fileStorageService;
 
   @Transactional
@@ -67,6 +70,27 @@ public class DocumentUploadService {
       });
     }
     try {
+      String username = currentUserService.internalUsername();
+      LocalDateTime uploadedAt = LocalDateTime.now();
+      if (SIT_FILE_TYPE.equals(fileTypeCode)) {
+        LegalFile activeFile = legalFileRepository
+          .findByFinancingHdr_FinancingHdrCodeAndFileTypeCode_FileTypeCode(financingHdrCode, fileTypeCode)
+          .orElseGet(() -> {
+            LegalFile created = new LegalFile();
+            created.setCustCode(hdr.getCustomer());
+            created.setFileTypeCode(fileType);
+            created.setFinancingHdr(hdr);
+            created.setUsrCrt(username);
+            created.setDtmCrt(uploadedAt);
+            return created;
+          });
+        activeFile.setFilePath(path);
+        activeFile.setFileName(safeName);
+        activeFile.setContentType("application/pdf");
+        activeFile.setUsrUpd(username);
+        activeFile.setDtmUpd(uploadedAt);
+        legalFileRepository.saveAndFlush(activeFile);
+      }
       DokumentHistoryUpload upload = new DokumentHistoryUpload();
       upload.setFinancingHdr(hdr);
       upload.setFileType(fileType);
@@ -75,8 +99,8 @@ public class DocumentUploadService {
       upload.setContentType("application/pdf");
       upload.setExpiredDate(expiredDate);
       upload.setNotes(notes);
-      upload.setUploadedBy(currentUserService.internalUsername());
-      upload.setUploadedAt(LocalDateTime.now());
+      upload.setUploadedBy(username);
+      upload.setUploadedAt(uploadedAt);
       return DocumentUploadResponse.from(uploadRepository.saveAndFlush(upload));
     } catch (Exception exception) {
       if (!TransactionSynchronizationManager.isSynchronizationActive()) {
@@ -106,6 +130,26 @@ public class DocumentUploadService {
       .findByIdAndFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCode(id, financingHdrCode, fileTypeCode)
       .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Dokumen tidak ditemukan."));
     return fileStorageService.downloadUploadFile(request, upload.getFilePath(), upload.getFileName(),
+      request.getParameter("cd"));
+  }
+
+  @Transactional(readOnly = true)
+  public ResponseEntity<Resource> downloadLatest(UUID financingHdrCode, String fileTypeCode,
+      HttpServletRequest request) throws SignatureException {
+    authorizedHdr(financingHdrCode);
+    validateFileTypeCode(fileTypeCode);
+    if (SIT_FILE_TYPE.equals(fileTypeCode)) {
+      LegalFile active = legalFileRepository
+        .findByFinancingHdr_FinancingHdrCodeAndFileTypeCode_FileTypeCode(financingHdrCode, fileTypeCode)
+        .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Dokumen aktif tidak ditemukan."));
+      return fileStorageService.downloadUploadFile(request, active.getFilePath(), active.getFileName(),
+        request.getParameter("cd"));
+    }
+    DokumentHistoryUpload latest = uploadRepository
+      .findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(
+        financingHdrCode, fileTypeCode)
+      .orElseThrow(() -> error(HttpStatus.NOT_FOUND, "Dokumen tidak ditemukan."));
+    return fileStorageService.downloadUploadFile(request, latest.getFilePath(), latest.getFileName(),
       request.getParameter("cd"));
   }
 

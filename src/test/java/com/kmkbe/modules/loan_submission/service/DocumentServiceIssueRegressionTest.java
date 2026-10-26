@@ -5,6 +5,7 @@ import com.kmkbe.core.domain.dto.MstFileTypeDto;
 import com.kmkbe.core.domain.entity.MstFileType;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.entity.DokumentHistoryUpload;
+import com.kmkbe.core.domain.entity.LegalFile;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -146,7 +147,7 @@ class DocumentServiceIssueRegressionTest {
   }
 
   @Test
-  void sitDocumentUsesLatestUploadForLeadNotCustomerFile() {
+  void sitDocumentUsesActiveLegalFileForLeadNotCustomerFile() {
     UUID code = UUID.randomUUID();
     UUID bouwheerCode = UUID.randomUUID();
     Customer customer = Customer.builder().custCode(UUID.randomUUID()).build();
@@ -157,21 +158,22 @@ class DocumentServiceIssueRegressionTest {
     hdr.setCustomer(customer);
     hdr.setBouwheer(bouwheer);
     MstFileType sit = MstFileType.builder().fileTypeCode("DOC006").build();
-    DokumentHistoryUpload upload = new DokumentHistoryUpload();
-    upload.setId(12L);
-    upload.setFileName("signed.pdf");
-    upload.setUploadedAt(java.time.LocalDateTime.of(2026, 10, 25, 12, 0));
+    LegalFile active = new LegalFile();
+    active.setFileId(12L);
+    active.setFileName("signed.pdf");
+    active.setDtmUpd(java.time.LocalDateTime.of(2026, 10, 25, 12, 0));
     when(financingHdrRepository.findByFinancingHdrCode(code)).thenReturn(Optional.of(hdr));
     when(mstFileTypeRepository.findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(
       any(), eq(bouwheerCode), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(sit)));
-    when(dokumentHistoryUploadRepository
-      .findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(code, "DOC006"))
-      .thenReturn(Optional.of(upload));
+    when(legalFileRepository.findByFinancingHdr_FinancingHdrCodeAndFileTypeCode_FileTypeCode(code, "DOC006"))
+      .thenReturn(Optional.of(active));
 
     var result = service.fetchAllLoanDocumentDebitur(new MockHttpServletRequest(), new PaginationRequest(), code.toString());
 
     assertThat(result.getList().get(0).getLegalFile().getFileUrl())
-      .isEqualTo("/api/v1/document-uploads/" + code + "/DOC006/12/download");
+      .isEqualTo("/api/v1/document-uploads/" + code + "/DOC006/latest/download");
+    verify(dokumentHistoryUploadRepository, never())
+      .findTopByFinancingHdr_FinancingHdrCodeAndFileType_FileTypeCodeOrderByUploadedAtDescIdDesc(code, "DOC006");
     verify(legalFileService, never()).fetchByMstFileTypeAndCust(customer, sit);
   }
 }
