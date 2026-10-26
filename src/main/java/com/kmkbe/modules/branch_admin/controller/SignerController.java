@@ -106,8 +106,11 @@ public class SignerController {
     HttpServletRequest httpServletRequest
   ) throws SignatureException {
     try {
+      PaginationRequest allRows = new PaginationRequest();
+      allRows.setPageNo(1);
+      allRows.setPageSize(Integer.MAX_VALUE);
       PaginationResult<AssignmentDto> originalResult =
-        assignmentSubmissionService.assignmentList(httpServletRequest, new PaginationRequest());
+        assignmentSubmissionService.assignmentList(httpServletRequest, allRows);
 
       List<AssignmentDto> originalList = originalResult.getList();
       PersonDto allSigners = signerService.getSignersForGroup(financingHdrCode, originalList);
