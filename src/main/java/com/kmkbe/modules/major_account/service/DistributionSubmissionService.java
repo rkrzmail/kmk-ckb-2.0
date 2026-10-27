@@ -379,7 +379,8 @@ public class DistributionSubmissionService {
         "AO/AM tidak tersedia pada cabang yang dipilih."));
     String toEmail = joinEmails(List.of(selectedAo.getEmail()),
       positionEmails(mstBranch.getBranchCode(), "BM/BOH"));
-    String ccEmail = joinEmails(positionEmails(mstBranch.getBranchCode(), "ASM"), List.of());
+    String ccEmail = joinEmails(positionEmployees(mstBranch.getBranchCode(), "ASM").stream()
+      .map(MailDataDto::getEmail).toList(), List.of());
     Set<String> toAddresses = new LinkedHashSet<>(List.of(toEmail.split(";")));
     ccEmail = String.join(";", java.util.Arrays.stream(ccEmail.split(";"))
       .filter(email -> !toAddresses.contains(email)).toList());
