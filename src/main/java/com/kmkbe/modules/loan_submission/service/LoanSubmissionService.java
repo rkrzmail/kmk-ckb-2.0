@@ -1046,6 +1046,7 @@ public class LoanSubmissionService {
       if (financing.getMstBranch() != null) {
         financingHdrs.add(financing);
       }
+
       financingHdrs.addAll(financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer));
       for (FinancingHdr financingHdr : financingHdrs) {
         MstBranch hdrBranch = financingHdr.getMstBranch();
