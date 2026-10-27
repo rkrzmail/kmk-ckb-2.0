@@ -306,11 +306,14 @@ public class DistributionSubmissionService {
 
   private List<MailDataDto> positionEmployees(String branchCode, String position) {
     MailPositionDto response = configRemoteService.getEmailByPosition("", branchCode, position);
-    if (response == null || response.getData() == null) return List.of();
-    return response.getData().stream()
+    List<MailDataDto> employees = response == null || response.getData() == null ? List.of() : response.getData().stream()
       .filter(employee -> employee.getEmail() != null && !employee.getEmail().isBlank())
       .filter(employee -> employee.getBranchCode() == null || branchCode.equalsIgnoreCase(employee.getBranchCode()))
       .toList();
+    if ("ASM".equals(position) && employees.isEmpty()) {
+      log.warn("SISCA returned no eligible ASM for branchCode={}; response={}", branchCode, response);
+    }
+    return employees;
   }
 
   private List<String> positionEmails(String branchCode, String position) {
@@ -376,7 +379,7 @@ public class DistributionSubmissionService {
         "AO/AM tidak tersedia pada cabang yang dipilih."));
     String toEmail = joinEmails(List.of(selectedAo.getEmail()),
       positionEmails(mstBranch.getBranchCode(), "BM/BOH"));
-    String ccEmail = joinEmails(positionEmails(mstBranch.getBranchCode(), "RM"), List.of());
+    String ccEmail = joinEmails(positionEmails(mstBranch.getBranchCode(), "ASM"), List.of());
     Set<String> toAddresses = new LinkedHashSet<>(List.of(toEmail.split(";")));
     ccEmail = String.join(";", java.util.Arrays.stream(ccEmail.split(";"))
       .filter(email -> !toAddresses.contains(email)).toList());

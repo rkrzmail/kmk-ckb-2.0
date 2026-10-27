@@ -102,7 +102,7 @@ class DistributionSubmissionAssignTest {
       person("AO2", "AO Dua", "ao2@example.com", "JKT01")));
     when(positions.getEmailByPosition("", "JKT01", "BM/BOH")).thenReturn(position(
       person("BM1", "BM", "bm@example.com", "JKT01")));
-    when(positions.getEmailByPosition("", "JKT01", "RM")).thenReturn(position(
+    when(positions.getEmailByPosition("", "JKT01", "ASM")).thenReturn(position(
       person("ASM1", "ASM", "asm@example.com", "JKT01")));
     when(headers.save(financing)).thenReturn(financing);
 
@@ -140,6 +140,21 @@ class DistributionSubmissionAssignTest {
 
     assertThatThrownBy(() -> service.assignSubmission(request("AO2")))
       .hasMessageContaining("Email BM/BOH tidak tersedia");
+    verify(headers, never()).save(any());
+    verifyNoInteractions(email);
+  }
+
+  @Test
+  void doesNotSaveAssignmentWhenAsmHasNoEmail() throws Exception {
+    stubAssignment();
+    when(positions.getEmailByPosition("", "JKT01", "AO/AM")).thenReturn(position(
+      person("AO2", "AO Dua", "ao2@example.com", "JKT01")));
+    when(positions.getEmailByPosition("", "JKT01", "BM/BOH")).thenReturn(position(
+      person("BM1", "BM", "bm@example.com", "JKT01")));
+    when(positions.getEmailByPosition("", "JKT01", "ASM")).thenReturn(position());
+
+    assertThatThrownBy(() -> service.assignSubmission(request("AO2")))
+      .hasMessageContaining("Email ASM tidak tersedia");
     verify(headers, never()).save(any());
     verifyNoInteractions(email);
   }
