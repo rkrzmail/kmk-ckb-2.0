@@ -26,6 +26,17 @@ public class CustomerPlafondDto {
     private String phoneNo;
     private PlafondDto plafond;
     private BranchDto branch;
+    private AoAmDto aoAm;
+
+    @Getter
+    @Setter
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class AoAmDto {
+        private String employeeCode;
+        private String employeeName;
+    }
 
     @Getter
     @Setter
