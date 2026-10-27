@@ -32,5 +32,6 @@ public class DistributionSubmissionDto {
     private LocalDateTime updatedAt;
     private String npwp;
     private String ao;
+    private String aoEmployeeCode;
     private String address;
 }
