@@ -5,8 +5,10 @@ import com.kmkbe.config.MailConfig;
 import com.kmkbe.core.domain.dto.MailRemoteDto;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
+import com.kmkbe.core.domain.entity.EmailDeliveryLog;
 import com.kmkbe.core.domain.entity.EmailTemplate;
 import com.kmkbe.core.domain.model.*;
+import com.kmkbe.core.domain.repository.EmailDeliveryLogRepository;
 import com.kmkbe.core.domain.repository.EmailTemplateRepository;
 import com.kmkbe.core.domain.repository.ErrorLogRepository;
 import com.kmkbe.core.utils.ObjectUtils;
@@ -22,9 +24,11 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.web.util.HtmlUtils;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 @Slf4j
@@ -59,6 +63,7 @@ public class EmailService {
   private final ConfigRemoteService configRemoteService;
   private final MailConfig mailConfig;
   private final ErrorLogRepository errorLogRepository;
+  private final EmailDeliveryLogRepository emailDeliveryLogRepository;
   private final Environment environment;
 
   @Value("${spring.mail.host:}")
@@ -138,12 +143,14 @@ public class EmailService {
     ConfigRemoteService configRemoteService,
     MailConfig mailConfig,
     ErrorLogRepository errorLogRepository,
+    EmailDeliveryLogRepository emailDeliveryLogRepository,
     Environment environment
   ) {
     this.emailTemplateRepository = emailTemplateRepository;
     this.configRemoteService = configRemoteService;
     this.mailConfig = mailConfig;
     this.errorLogRepository = errorLogRepository;
+    this.emailDeliveryLogRepository = emailDeliveryLogRepository;
     this.environment = environment;
   }
 
@@ -446,11 +453,28 @@ public class EmailService {
 
   @Async
   public void sendNotificationBranchAssign(
+    UUID customerCode,
     String email,
     String bouwheerName,
     String branchArea,
     LoanDisburseEmailPayload payload
   ) {
+    EmailDeliveryLog delivery = new EmailDeliveryLog();
+    delivery.setCustomerCode(customerCode);
+    delivery.setTemplateCode(M_BRANCH_ASSIGN);
+    String toEmail = payload == null ? email : payload.getToEmail();
+    String ccEmail = payload == null ? null : payload.getCcEmail();
+    String recipients = ccEmail == null || ccEmail.isBlank() ? toEmail : toEmail + ";" + ccEmail;
+    delivery.setRecipient(recipients == null ? "" : recipients.substring(0, Math.min(recipients.length(), 1000)));
+    delivery.setStatus(EmailDeliveryLog.Status.PENDING);
+    delivery.setRequestedAt(LocalDateTime.now());
+    delivery.setUpdatedAt(delivery.getRequestedAt());
+    try {
+      emailDeliveryLogRepository.save(delivery);
+    } catch (Exception e) {
+      log.error("Failed to record pending branch assignment email for customerCode={}", customerCode, e);
+    }
+
     try {
       Map<String, Object> args = new HashMap<>();
       Map<String, Object> payloadArgs = ObjectUtils.objectToJson(payload);
@@ -470,10 +494,31 @@ public class EmailService {
       template.setMailTo(payload.getToEmail());
       template.setMailCc(payload.getCcEmail());
 
-      send(args, template);
+      template.setBodyMail(mappingBody(template.getBodyMail(), args));
+      delivery.setAttemptCount(1);
+      DeliveryResult result = sendMailMessageWithResult(template, template.getMailTo());
+      delivery.setUpdatedAt(LocalDateTime.now());
+      if (result.acceptedBySmtp()) {
+        delivery.setStatus(EmailDeliveryLog.Status.SENT);
+        delivery.setSentAt(delivery.getUpdatedAt());
+      } else {
+        delivery.setStatus(EmailDeliveryLog.Status.FAILED);
+        String reason = result.errorMessage() == null ? "Pengiriman email gagal tanpa detail dari SMTP." : result.errorMessage();
+        delivery.setErrorMessage(reason.substring(0, Math.min(reason.length(), 2000)));
+      }
       log.info("sendNotificationBranchAssign args: {}", args);
     } catch (Exception e) {
-      log.error("Error sendNotificationBranchAssign {}", e.getMessage());
+      delivery.setStatus(EmailDeliveryLog.Status.FAILED);
+      delivery.setUpdatedAt(LocalDateTime.now());
+      String reason = e.getClass().getSimpleName() + ": " + e.getMessage();
+      delivery.setErrorMessage(reason.substring(0, Math.min(reason.length(), 2000)));
+      log.error("Error sendNotificationBranchAssign", e);
+    } finally {
+      try {
+        emailDeliveryLogRepository.save(delivery);
+      } catch (Exception e) {
+        log.error("Failed to record branch assignment email outcome for customerCode={}", customerCode, e);
+      }
     }
   }
 

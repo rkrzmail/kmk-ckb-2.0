@@ -113,7 +113,7 @@ class DistributionSubmissionAssignTest {
     assertThat(financing.getAssignedAoEmail()).isEqualTo("ao2@example.com");
     assertThat(financing.getFinancingStep()).isEqualTo("ASSIGNMENT");
     ArgumentCaptor<LoanDisburseEmailPayload> payload = ArgumentCaptor.forClass(LoanDisburseEmailPayload.class);
-    verify(email).sendNotificationBranchAssign(any(), any(), any(), payload.capture());
+    verify(email).sendNotificationBranchAssign(any(), any(), any(), any(), payload.capture());
     assertThat(payload.getValue().getToEmail().split(";"))
       .containsExactlyInAnyOrder("ao2@example.com", "bm@example.com");
     assertThat(payload.getValue().getCcEmail()).isEqualTo("asm@example.com");
@@ -158,7 +158,7 @@ class DistributionSubmissionAssignTest {
 
     verify(headers).save(financing);
     ArgumentCaptor<LoanDisburseEmailPayload> payload = ArgumentCaptor.forClass(LoanDisburseEmailPayload.class);
-    verify(email).sendNotificationBranchAssign(any(), any(), any(), payload.capture());
+    verify(email).sendNotificationBranchAssign(any(), any(), any(), any(), payload.capture());
     assertThat(payload.getValue().getToEmail().split(";"))
       .containsExactlyInAnyOrder("ao2@example.com", "bm@example.com");
     assertThat(payload.getValue().getCcEmail()).isEmpty();
