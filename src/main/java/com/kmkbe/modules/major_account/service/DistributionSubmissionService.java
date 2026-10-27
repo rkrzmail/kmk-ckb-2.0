@@ -46,6 +46,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 
 @Slf4j
@@ -181,11 +183,12 @@ public class DistributionSubmissionService {
             .custStatus(customer != null ? customer.getExistingCust() : null)
             .npwp(customer != null ? customer.getNpwp() : null)
             .address(address)
-            .ao(Optional.ofNullable(mstBranch)
+            .ao(e.getAssignedAoName() != null ? e.getAssignedAoName() : Optional.ofNullable(mstBranch)
               .map(MstBranch::getEmployees)
               .map(Collection::stream)
               .flatMap(stream -> stream.map(MstEmployee::getEmployeeName).findFirst())
               .orElse(null))
+            .aoEmployeeCode(e.getAssignedAoEmployeeCode())
             .dtmCrt(e.getDtmCrt())
             .updatedAt(e.getDtmUpd())
             .build();
@@ -288,6 +291,43 @@ public class DistributionSubmissionService {
       && (endDate == null || !submissionDate.isAfter(endDate));
   }
 
+  public List<MailDataDto> aoAmByBranch(String branchCode) throws SignatureException {
+    currentUserService.authenticatedInternalUser();
+    MstBranch branch = mstBranchRepository.findByBranchCode(branchCode)
+      .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, 404, "Cabang tidak ditemukan."));
+    if (!Boolean.TRUE.equals(branch.getIsActive()) || !"CBU".equalsIgnoreCase(branch.getBusinessUnit())) {
+      throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "Cabang tidak aktif atau bukan CBU.");
+    }
+    return positionEmployees(branchCode, "AO/AM").stream()
+      .filter(employee -> employee.getEmployeeCode() != null && !employee.getEmployeeCode().isBlank())
+      .filter(employee -> employee.getEmployeeName() != null && !employee.getEmployeeName().isBlank())
+      .toList();
+  }
+
+  private List<MailDataDto> positionEmployees(String branchCode, String position) {
+    MailPositionDto response = configRemoteService.getEmailByPosition("", branchCode, position);
+    if (response == null || response.getData() == null) return List.of();
+    return response.getData().stream()
+      .filter(employee -> employee.getEmail() != null && !employee.getEmail().isBlank())
+      .filter(employee -> employee.getBranchCode() == null || branchCode.equalsIgnoreCase(employee.getBranchCode()))
+      .toList();
+  }
+
+  private List<String> positionEmails(String branchCode, String position) {
+    List<String> emails = positionEmployees(branchCode, position).stream().map(MailDataDto::getEmail).toList();
+    if (emails.isEmpty()) {
+      throw new BusinessException(HttpStatus.CONFLICT, 409, "Email " + position + " tidak tersedia untuk cabang ini.");
+    }
+    return emails;
+  }
+
+  private String joinEmails(List<String> first, List<String> second) {
+    Set<String> addresses = new LinkedHashSet<>();
+    first.stream().filter(email -> email != null && !email.isBlank()).map(String::trim).forEach(addresses::add);
+    second.stream().filter(email -> email != null && !email.isBlank()).map(String::trim).forEach(addresses::add);
+    return String.join(";", addresses);
+  }
+
   /**
    *
    * @param request
@@ -329,12 +369,27 @@ public class DistributionSubmissionService {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81 + "Financing step has been " + financingHdr.getFinancingStep());
     }
 
+    MailDataDto selectedAo = aoAmByBranch(mstBranch.getBranchCode()).stream()
+      .filter(employee -> employee.getEmployeeCode().equals(request.getEmployeeCode()))
+      .findFirst()
+      .orElseThrow(() -> new BusinessException(HttpStatus.BAD_REQUEST, 400,
+        "AO/AM tidak tersedia pada cabang yang dipilih."));
+    String toEmail = joinEmails(List.of(selectedAo.getEmail()),
+      positionEmails(mstBranch.getBranchCode(), "BM/BOH"));
+    String ccEmail = joinEmails(positionEmails(mstBranch.getBranchCode(), "RM"), List.of());
+    Set<String> toAddresses = new LinkedHashSet<>(List.of(toEmail.split(";")));
+    ccEmail = String.join(";", java.util.Arrays.stream(ccEmail.split(";"))
+      .filter(email -> !toAddresses.contains(email)).toList());
+
     /**
      * Assign process
      */
     financingHdr.setFinancingStatus("INPROCESS");
     financingHdr.setFinancingStep("ASSIGNMENT");
     financingHdr.setMstBranch(mstBranch);
+    financingHdr.setAssignedAoEmployeeCode(selectedAo.getEmployeeCode());
+    financingHdr.setAssignedAoName(selectedAo.getEmployeeName());
+    financingHdr.setAssignedAoEmail(selectedAo.getEmail());
     financingHdr.setDtmUpd(DateTimeUtils.now());
     financingHdr.setUsrUpd(authenticateUser.getUsername());
     FinancingHdr savedFinancing = financingHdrRepository.save(financingHdr);
@@ -348,7 +403,7 @@ public class DistributionSubmissionService {
       toAuditData(savedFinancing)
     );
 
-    if (mstBranch.getEmployees() != null && !mstBranch.getEmployees().isEmpty()) {
+    {
       final List<InvoiceEmailPayload> invoices = financingHdr.getFinancingDtls()
         .stream()
         .map((item) ->
@@ -369,44 +424,6 @@ public class DistributionSubmissionService {
           + financingHdr.getOthersFeeAmt()
           + financingHdr.getProvisionFeeAmt()
           + financingHdr.getSurveyFeeAmtNett();
-
-      //getAPI AO,BH
-      MailPositionDto to = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "BM/BOH");
-      MailPositionDto ccRM = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "RM");
-      MailPositionDto toAO = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "AO/AM");
-
-      java.util.Set<String> toEmailSet = new java.util.LinkedHashSet<>();
-      java.util.Set<String> ccEmailSet = new java.util.LinkedHashSet<>();
-
-      if (to != null && to.getData() != null) {
-        to.getData().stream()
-          .map(MailDataDto::getEmail)
-          .filter(email -> email != null && !email.trim().isEmpty())
-          .forEach(toEmailSet::add);
-      }
-
-      if (toAO != null && toAO.getData() != null) {
-        toAO.getData().stream()
-          .map(MailDataDto::getEmail)
-          .filter(email -> email != null && !email.trim().isEmpty())
-          .forEach(toEmailSet::add);
-      }
-
-
-      if (ccRM != null && ccRM.getData() != null) {
-        ccRM.getData().stream()
-          .map(MailDataDto::getEmail)
-          .filter(email -> email != null && !email.trim().isEmpty())
-          .forEach(ccEmailSet::add);
-      }
-
-      String toEmail = toEmailSet.isEmpty() ? null : String.join(";", toEmailSet);
-      String ccEmail = ccEmailSet.isEmpty() ? null : String.join(";", ccEmailSet);
-
-      if (ccEmail != null && toEmailSet.contains(ccEmail)) {
-        ccEmailSet.remove(ccEmail);
-        ccEmail = ccEmailSet.isEmpty() ? null : String.join(";", ccEmailSet);
-      }
 
       log.info("Final To Emails : {}", toEmail);
       log.info("Final Cc Emails : {}", ccEmail);
@@ -467,6 +484,9 @@ public class DistributionSubmissionService {
       bouwheer != null ? bouwheer.getBouwheerName() : null,
       branch != null ? branch.getBranchCode() : null,
       branch != null ? branch.getBranchName() : null,
+      financingHdr.getAssignedAoEmployeeCode(),
+      financingHdr.getAssignedAoName(),
+      financingHdr.getAssignedAoEmail(),
       financingHdr.getFinancingStatus(),
       financingHdr.getFinancingStep(),
       financingHdr.getTotalInvoiceAmt(),
@@ -486,6 +506,9 @@ public class DistributionSubmissionService {
     String bouwheerName,
     String branchCode,
     String branchName,
+    String assignedAoEmployeeCode,
+    String assignedAoName,
+    String assignedAoEmail,
     String financingStatus,
     String financingStep,
     Double totalInvoiceAmt,

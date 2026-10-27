@@ -2,6 +2,7 @@ package com.kmkbe.modules.major_account.controller;
 
 import com.kmkbe.core.domain.dto.DistributionSubmissionDto;
 import com.kmkbe.core.domain.dto.PostedInvoiceDto;
+import com.kmkbe.core.domain.dto.email.MailDataDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -20,6 +21,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.SignatureException;
+import java.util.List;
 
 
 @Validated
@@ -63,5 +65,10 @@ public class DistributionSubmissionController {
   @PutMapping("/assign")
   public BaseResponse createAssign(@Valid @RequestBody AssignInvoiceToBranchRequest request) throws SignatureException {
     return distributionSubmissionService.assignSubmission(request);
+  }
+
+  @GetMapping("/branches/{branchCode}/ao-am")
+  public CommonResult<List<MailDataDto>> aoAmByBranch(@PathVariable String branchCode) throws SignatureException {
+    return new CommonResult<List<MailDataDto>>().success(distributionSubmissionService.aoAmByBranch(branchCode));
   }
 }
