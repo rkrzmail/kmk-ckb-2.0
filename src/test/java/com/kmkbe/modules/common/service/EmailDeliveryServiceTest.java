@@ -90,6 +90,19 @@ class EmailDeliveryServiceTest {
   }
 
   @Test
+  void retryRefusesBranchAssignmentEmail() {
+    EmailDeliveryLog delivery = new EmailDeliveryLog();
+    delivery.setStatus(EmailDeliveryLog.Status.FAILED);
+    delivery.setTemplateCode("M_BRANCH_ASSIGN");
+    when(repository.findByIdForUpdate(3L)).thenReturn(Optional.of(delivery));
+
+    assertThatThrownBy(() -> service.retry(3L))
+      .isInstanceOf(BusinessException.class)
+      .hasMessageContaining("hanya tersedia untuk email persetujuan customer");
+    verifyNoInteractions(customerRepository, emailService);
+  }
+
+  @Test
   void historyReturnsRepositoryEntries() {
     UUID code = UUID.randomUUID();
     var delivery = new EmailDeliveryLog();

@@ -443,6 +443,7 @@ public class DistributionSubmissionService {
        * Send email assign or reassign
        */
       emailService.sendNotificationBranchAssign(
+        financingHdr.getCustomer().getCustCode(),
         toEmail,
         financingHdr.getBouwheer().getBouwheerName(),
         mstBranch.getBranchName(),

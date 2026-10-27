@@ -1130,6 +1130,7 @@ public class LoanSubmissionService {
           isAutoASSIGNMENT = true;
           log.info("Send email to Branch notification loan submitted to: {}  cc: {} ", toEmail, ccEmail);
           emailService.sendNotificationBranchAssign(
+            financing.getCustomer().getCustCode(),
             toEmail,
             financing.getBouwheer().getBouwheerName(),
             financing.getMstBranch().getBranchName(),

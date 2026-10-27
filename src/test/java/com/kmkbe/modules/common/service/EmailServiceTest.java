@@ -2,12 +2,14 @@ package com.kmkbe.modules.common.service;
 
 import com.kmkbe.config.MailConfig;
 import com.kmkbe.core.domain.dto.MailRemoteDto;
+import com.kmkbe.core.domain.entity.EmailDeliveryLog;
 import com.kmkbe.core.domain.entity.EmailTemplate;
 import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
 import com.kmkbe.core.domain.model.AgreementContractEmailPayload;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.model.PencarianPayload;
+import com.kmkbe.core.domain.repository.EmailDeliveryLogRepository;
 import com.kmkbe.core.domain.repository.EmailTemplateRepository;
 import com.kmkbe.core.domain.repository.ErrorLogRepository;
 import com.kmkbe.modules.customer.model.entity.Customer;
@@ -24,9 +26,11 @@ import org.springframework.mock.env.MockEnvironment;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -45,6 +49,7 @@ class EmailServiceTest {
   @Mock private ConfigRemoteService configRemoteService;
   @Mock private MailConfig mailConfig;
   @Mock private ErrorLogRepository errorLogRepository;
+  @Mock private EmailDeliveryLogRepository emailDeliveryLogRepository;
   @Mock private JavaMailSender testingMailSender;
 
   private EmailService service;
@@ -56,6 +61,7 @@ class EmailServiceTest {
       configRemoteService,
       mailConfig,
       errorLogRepository,
+      emailDeliveryLogRepository,
       new MockEnvironment().withProperty("env", "prod")
     );
     ReflectionTestUtils.setField(service, "testingMailHost", "smtp.test");
@@ -176,6 +182,7 @@ class EmailServiceTest {
       configRemoteService,
       mailConfig,
       errorLogRepository,
+      emailDeliveryLogRepository,
       new MockEnvironment().withProperty("env", "local")
     );
     ReflectionTestUtils.setField(localService, "mailHost", "smtp.local");
@@ -287,7 +294,7 @@ class EmailServiceTest {
     service.sendNotificationLoanDisbursement(customer, loanPayload);
     service.sendNotificationLoanSubmited(customer, loanPayload);
     service.sendNotificationPencairan("pencairan@example.com", "Bouwheer", "Jakarta", pencarianPayload);
-    service.sendNotificationBranchAssign("ignored@example.com", "Bouwheer", "Jakarta", loanPayload);
+    service.sendNotificationBranchAssign(UUID.randomUUID(), "ignored@example.com", "Bouwheer", "Jakarta", loanPayload);
     service.sendNotificationMajorAccount("ignored@example.com", "Bouwheer", "Jakarta", loanPayload);
 
     ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
@@ -302,6 +309,61 @@ class EmailServiceTest {
     assertThat(sent.get(5).getMailTo()).isEqualTo("to@example.com");
     assertThat(sent.get(5).getMailCc()).isEqualTo("cc@example.com");
     assertThat(sent.get(6).getSubjectMail()).isEqualTo("Major Bouwheer");
+  }
+
+  @Test
+  void branchAssignmentRecordsSuccessfulDeliveryWithoutAsmCc() throws Exception {
+    UUID customerCode = UUID.randomUUID();
+    List<EmailDeliveryLog.Status> statuses = new ArrayList<>();
+    when(emailDeliveryLogRepository.save(any(EmailDeliveryLog.class))).thenAnswer(call -> {
+      EmailDeliveryLog delivery = call.getArgument(0);
+      statuses.add(delivery.getStatus());
+      return delivery;
+    });
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BRANCH_ASSIGN", true))
+      .thenReturn(templateWithSubject("M_BRANCH_ASSIGN", "Assign {bouwheerName}", "{branchArea}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    LoanDisburseEmailPayload payload = LoanDisburseEmailPayload.builder()
+      .toEmail("ao@example.com;bm@example.com").ccEmail("").invoices(List.of()).build();
+
+    service.sendNotificationBranchAssign(customerCode, "ao@example.com", "Bouwheer", "Jakarta", payload);
+
+    ArgumentCaptor<EmailDeliveryLog> captor = ArgumentCaptor.forClass(EmailDeliveryLog.class);
+    verify(emailDeliveryLogRepository, org.mockito.Mockito.times(2)).save(captor.capture());
+    EmailDeliveryLog delivery = captor.getValue();
+    assertThat(statuses).containsExactly(EmailDeliveryLog.Status.PENDING, EmailDeliveryLog.Status.SENT);
+    assertThat(delivery.getCustomerCode()).isEqualTo(customerCode);
+    assertThat(delivery.getTemplateCode()).isEqualTo("M_BRANCH_ASSIGN");
+    assertThat(delivery.getRecipient()).isEqualTo("ao@example.com;bm@example.com");
+    assertThat(delivery.getAttemptCount()).isEqualTo(1);
+    assertThat(delivery.getSentAt()).isNotNull();
+    assertThat(delivery.getErrorMessage()).isNull();
+  }
+
+  @Test
+  void branchAssignmentRecordsFailedSmtpDelivery() throws Exception {
+    when(emailDeliveryLogRepository.save(any(EmailDeliveryLog.class))).thenAnswer(call -> call.getArgument(0));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BRANCH_ASSIGN", true))
+      .thenReturn(templateWithSubject("M_BRANCH_ASSIGN", "Assign", "{branchArea}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    doThrow(new RuntimeException("primary smtp down"))
+      .when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
+    when(mailConfig.javaMailSender("smtp.test", 2525, "test-user", "test-pass", false))
+      .thenThrow(new RuntimeException("fallback smtp down"));
+    LoanDisburseEmailPayload payload = LoanDisburseEmailPayload.builder()
+      .toEmail("ao@example.com;bm@example.com").ccEmail("asm@example.com")
+      .invoices(List.of()).build();
+
+    service.sendNotificationBranchAssign(UUID.randomUUID(), "ao@example.com", "Bouwheer", "Jakarta", payload);
+
+    ArgumentCaptor<EmailDeliveryLog> captor = ArgumentCaptor.forClass(EmailDeliveryLog.class);
+    verify(emailDeliveryLogRepository, org.mockito.Mockito.times(2)).save(captor.capture());
+    EmailDeliveryLog delivery = captor.getValue();
+    assertThat(delivery.getStatus()).isEqualTo(EmailDeliveryLog.Status.FAILED);
+    assertThat(delivery.getRecipient()).isEqualTo("ao@example.com;bm@example.com;asm@example.com");
+    assertThat(delivery.getAttemptCount()).isEqualTo(1);
+    assertThat(delivery.getSentAt()).isNull();
+    assertThat(delivery.getErrorMessage()).contains("fallback smtp down");
   }
 
   @Test
@@ -427,7 +489,7 @@ class EmailServiceTest {
     service.sendNotificationLoanDisbursement(customer, null);
     service.sendNotificationLoanSubmited(customer, null);
     service.sendNotificationPencairan("to@example.com", "Bouwheer", "Jakarta", null);
-    service.sendNotificationBranchAssign("to@example.com", "Bouwheer", "Jakarta", null);
+    service.sendNotificationBranchAssign(UUID.randomUUID(), "to@example.com", "Bouwheer", "Jakarta", null);
     service.sendNotificationMajorAccount("to@example.com", "Bouwheer", "Jakarta", null);
     service.sendNotificationBouwheerPayment("to@example.com", null);
 
@@ -472,7 +534,7 @@ class EmailServiceTest {
     service.sendNotificationLoanDisbursement(customer, loanPayload());
     service.sendNotificationLoanSubmited(customer, loanPayload());
     service.sendNotificationPencairan("to@example.com", "Bouwheer", "Jakarta", pencarianPayload());
-    service.sendNotificationBranchAssign("to@example.com", "Bouwheer", "Jakarta", loanPayload());
+    service.sendNotificationBranchAssign(UUID.randomUUID(), "to@example.com", "Bouwheer", "Jakarta", loanPayload());
     service.sendNotificationMajorAccount("to@example.com", "Bouwheer", "Jakarta", loanPayload());
     service.sendNotificationBouwheerPayment("to@example.com", bouwheerPaymentPayload());
   }
