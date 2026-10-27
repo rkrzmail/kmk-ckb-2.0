@@ -1,6 +1,5 @@
 package com.kmkbe.core.service;
 
-import com.kmkbe.core.utils.FileUtils;
 import com.kmkbe.modules.user.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.ServletContext;
@@ -111,7 +110,11 @@ public class FileStorageService {
 
     public Resource load(String filename) {
         try {
-            Path file = root.resolve(filename);
+          if (filename.startsWith("/uploads/")) {
+            filename = filename.replace("/uploads/", "");
+          }
+
+          Path file = root.resolve(filename);
             Resource resource = new UrlResource(file.toUri());
 
             if (resource.exists() || resource.isReadable()) {
@@ -145,24 +148,14 @@ public class FileStorageService {
             String cd
     ) {
         try {
-            // Tentukan path lengkap file
-            //Path paths = root.resolve(filePath).resolve(fileName).normalize().toAbsolutePath();
-
-
             Path paths = root.resolve(filePath).normalize()  .toAbsolutePath();
-
-
-            // Validasi apakah file ada dan dapat dibaca
             Resource resource = new UrlResource(paths.toUri());
             if (!resource.exists() || !resource.isReadable()) {
                 throw new RuntimeException("File not found or not readable: " + paths.toUri());
             }
-
-            // Tentukan content type
             String contentType = httpServletRequest
                     .getServletContext()
                     .getMimeType(fileName);
-
             if (contentType == null) {
                 contentType = "application/octet-stream";
             }
@@ -174,7 +167,6 @@ public class FileStorageService {
             }else{
                 headers.set("Content-Disposition","inline");
             }
-
 
             return ResponseEntity.ok()
                     .contentType(MediaType.parseMediaType(contentType))

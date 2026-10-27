@@ -6,12 +6,10 @@ import com.kmkbe.core.domain.dto.InputOptionsRemoteDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.helpers.base.BaseResponse;
-import com.kmkbe.modules.confinsr3.model.request.ConfinsR3ZipcodeCriteriaRequest;
 import com.kmkbe.modules.confinsr3.service.ConfinsR3Service;
 import com.kmkbe.modules.master.request.AreaPageRequest;
 import com.kmkbe.modules.master.service.MasterService;
 import com.kmkbe.modules.remote.request.ZipCodeRequest;
-import jakarta.validation.Valid;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -37,7 +35,7 @@ public class MstController {
 
 
   @GetMapping(value = "/areas/page", produces = MediaType.APPLICATION_JSON_VALUE)
-  public BaseResponse getPageArea(@Valid AreaPageRequest requests) {
+  public BaseResponse getPageArea(AreaPageRequest requests) {
     return confinsR3Service.pageZipcode(requests);
   }
 

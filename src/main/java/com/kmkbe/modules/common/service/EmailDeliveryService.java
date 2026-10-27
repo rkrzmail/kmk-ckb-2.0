@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.http.HttpStatus;
 import com.kmkbe.exception.BusinessException;
 
@@ -57,6 +58,28 @@ public class EmailDeliveryService {
   @Transactional(readOnly = true)
   public List<EmailDeliveryLog> history(UUID customerCode) {
     return deliveryLogRepository.findByCustomerCodeOrderByRequestedAtDesc(customerCode);
+  }
+
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  public EmailDeliveryLog recordFinanceInvoicePaid(UUID customerCode, String recipients,
+                                                     EmailService.DeliveryResult result) {
+    LocalDateTime now = LocalDateTime.now();
+    EmailDeliveryLog delivery = new EmailDeliveryLog();
+    delivery.setCustomerCode(customerCode);
+    delivery.setTemplateCode("M_FINANCE_INVOICE_PAID");
+    delivery.setRecipient(recipients == null ? "" : recipients);
+    delivery.setRequestedAt(now);
+    delivery.setUpdatedAt(now);
+    delivery.setAttemptCount(recipients == null || recipients.isBlank() ? 0 : 1);
+    if (result.acceptedBySmtp()) {
+      delivery.setStatus(EmailDeliveryLog.Status.SENT);
+      delivery.setSentAt(now);
+    } else {
+      delivery.setStatus(EmailDeliveryLog.Status.FAILED);
+      String reason = result.errorMessage() == null ? "Pengiriman email gagal tanpa detail dari SMTP." : result.errorMessage();
+      delivery.setErrorMessage(reason.substring(0, Math.min(reason.length(), 2000)));
+    }
+    return deliveryLogRepository.save(delivery);
   }
 
   private EmailDeliveryLog attempt(

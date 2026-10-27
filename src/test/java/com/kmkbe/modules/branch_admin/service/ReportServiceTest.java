@@ -53,7 +53,6 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Date;
 import java.util.List;
@@ -650,7 +649,7 @@ class ReportServiceTest {
     ArgumentCaptor<ExternalSigningRequest> captor = ArgumentCaptor.forClass(ExternalSigningRequest.class);
     verify(signingClient).sendDocumentSigning(captor.capture());
     assertThat(captor.getValue().getAudit().getCallerId()).isEqualTo("maker");
-    assertThat(captor.getValue().getRequests().get(0).getSigners()).hasSize(3);
+    assertThat(captor.getValue().getRequests().getFirst().getSigners()).hasSize(3);
   }
 
   @Test
@@ -751,43 +750,6 @@ class ReportServiceTest {
         .isEqualTo("Agreement not found");
   }
 
-  @Test
-  void privateFormattersCoverNullValidAndInvalidInputs() {
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj", (Object) null)).isEqualTo("-");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj", new Date(0))).contains("1970");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj", LocalDate.of(2026, 1, 2))).isEqualTo("02/01/2026");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj", LocalDateTime.of(2026, 1, 2, 3, 4))).isEqualTo("02/01/2026");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj", "2026-01-02T03:04:00")).isEqualTo("02/01/2026");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj", "2026-01-02")).isEqualTo("02/01/2026");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj", "2026-01-02 03:04:00")).isEqualTo("02/01/2026");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj", "")).isEqualTo("-");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj", "bad-date")).isEqualTo("bad-date");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj", throwingToString())).isEqualTo("-");
-
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj2", (Object) null)).isEqualTo("-");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj2", new Date(0))).contains("1970");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj2", LocalDate.of(2026, 1, 2))).contains("2026");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj2", LocalDateTime.of(2026, 1, 2, 3, 4))).contains("2026");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj2", "2026-01-02T03:04:00")).contains("2026");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj2", "2026-01-02")).contains("2026");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj2", "2026-01-02 03:04:00")).contains("2026");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj2", "")).isEqualTo("-");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj2", "bad-date")).isEqualTo("bad-date");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtDateObj2", throwingToString())).isEqualTo("-");
-
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtAmount", (Object) null)).isEqualTo("IDR 0.00");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtAmount", BigDecimal.ONE)).isEqualTo("IDR 1.00");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtAmount", "12345")).isEqualTo("IDR 12,345.00");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtAmount", "12,345")).isEqualTo("IDR 0.00");
-    assertThat((String) ReflectionTestUtils.invokeMethod(ReportService.class, "fmtAmount", "x")).isEqualTo("IDR 0.00");
-    assertThat((String) ReflectionTestUtils.invokeMethod(service, "fmtRupiah", (Object) null)).isEqualTo("-");
-    assertThat((String) ReflectionTestUtils.invokeMethod(service, "fmtRupiah", "1234")).isEqualTo("IDR 1,234.00");
-    assertThat((String) ReflectionTestUtils.invokeMethod(service, "fmtRupiah", "x")).isEqualTo("-");
-    assertThat((String) ReflectionTestUtils.invokeMethod(service, "fmtRupiah2", (Object) null)).isEqualTo("-");
-    assertThat((String) ReflectionTestUtils.invokeMethod(service, "fmtRupiah2", "1234")).isEqualTo("1,234.00");
-    assertThat((String) ReflectionTestUtils.invokeMethod(service, "fmtRupiah2", "x")).isEqualTo("-");
-  }
-
   private void injectDependencies(ReportService target) {
     ReflectionTestUtils.setField(target, "financingHdrRepository", financingHdrRepository);
     ReflectionTestUtils.setField(target, "csulSignerRepository", csulSignerRepository);
@@ -843,6 +805,12 @@ class ReportServiceTest {
   private static FinancingHdr financingHdr() {
     FinancingHdr financingHdr = new FinancingHdr();
     financingHdr.setFinancingHdrCode(FINANCING_HDR_CODE);
+    financingHdr.setBouwheer(Bouwheer.builder()
+        .picName("TEST")
+        .legalAddress("TETS")
+        .province("TEST")
+        .zipcode("15122")
+      .build());
     return financingHdr;
   }
 

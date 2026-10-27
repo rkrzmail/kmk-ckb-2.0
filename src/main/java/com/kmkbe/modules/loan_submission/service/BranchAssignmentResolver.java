@@ -6,10 +6,12 @@ import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.user.entity.MstBranch;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class BranchAssignmentResolver {
@@ -29,6 +31,7 @@ public class BranchAssignmentResolver {
         )
         .map(BranchAreaMapping::getMstBranch);
 
+      log.info("Mapping branch {}", customer.getCustCode());
       if (mappedBranch.isPresent()) {
         return mappedBranch;
       }

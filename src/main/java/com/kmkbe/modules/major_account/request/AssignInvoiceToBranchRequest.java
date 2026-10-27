@@ -19,4 +19,8 @@ public class AssignInvoiceToBranchRequest {
     @NotNull(message = "FinancingHdrCode is null, key: financingHdrCode")
     @NotEmpty(message = "FinancingHdrCode is empty, key: financingHdrCode")
     private String financingHdrCode;
+
+    @NotNull(message = "EmployeeCode is null, key: employeeCode")
+    @NotEmpty(message = "EmployeeCode is empty, key: employeeCode")
+    private String employeeCode;
 }

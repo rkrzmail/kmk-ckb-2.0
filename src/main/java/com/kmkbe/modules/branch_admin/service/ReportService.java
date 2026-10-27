@@ -110,6 +110,9 @@ public class ReportService {
   @Autowired
   private SigningEligibilityService signingEligibilityService;
 
+  @Autowired
+  private AgreementService agreementService;
+
   private void ensureJwtToken() {
     jwtToken = authRemoteService.fetchAuthJwt().getData();
   }
@@ -508,7 +511,7 @@ public class ReportService {
           safeApiCall(() -> {
             RekDebiturResponse bankResponse = externalApiService.getRekDebitur(agreement.getApplicationCode());
             if (bankResponse != null && bankResponse.getBankAccounts() != null && !bankResponse.getBankAccounts().isEmpty()) {
-              return bankResponse.getBankAccounts().get(0);
+              return bankResponse.getBankAccounts().getFirst();
             }
             return new RekDebiturResponse.BankAccount("-", "-", "-");
           }, new RekDebiturResponse.BankAccount("-", "-", "-"))
@@ -559,7 +562,7 @@ public class ReportService {
       CwrBwhrResponse cwrBwhrData = externalApiService.getCwrBwhr(cwrCode);
       return (cwrBwhrData != null && cwrBwhrData.getCwrBouwheerCustNos() != null
         && !cwrBwhrData.getCwrBouwheerCustNos().isEmpty())
-        ? cwrBwhrData.getCwrBouwheerCustNos().get(0)
+        ? cwrBwhrData.getCwrBouwheerCustNos().getFirst()
         : null;
     }, null);
 
@@ -605,10 +608,10 @@ public class ReportService {
     Debtor Kdata;
 
     if (!karyawanList.isEmpty()) {
-      Kdata = karyawanList.get(0);
+      Kdata = karyawanList.getFirst();
     } else {
       List<Debtor> karyawanByName = debtorRepository.findActiveSignerByDebtorName(debtorName);
-      Kdata = karyawanByName.isEmpty() ? null : karyawanByName.get(0);
+      Kdata = karyawanByName.isEmpty() ? null : karyawanByName.getFirst();
 
     }
 
@@ -734,6 +737,9 @@ public class ReportService {
     params.put("Provisi", "IDR 0.00");
     params.put("Survey", "IDR 0.00");
 
+
+    FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+
     CommonResult<SitDto> sitData = agreementCodeService.getAgreementsByFinancingHdrCode(UUID.fromString(financingHdrCode));
     if (sitData.getCode() == 200 && sitData.getData() != null) {
       SitDto sitDto = sitData.getData();
@@ -755,14 +761,14 @@ public class ReportService {
       params.put("NamaDirektur", sitDto.getDirectorName());
       params.put("NamaGMFinanceCSUL", "");
       params.put("TotalPembayaran", totalPembayaran);
+      params.put("legalAddress",financingHdr.getBouwheer().getLegalAddress().concat("\n\n").concat(financingHdr.getBouwheer().getProvince()).concat(" - ").concat(financingHdr.getBouwheer().getZipcode()));
+      params.put("picName", financingHdr.getBouwheer().getPicName() != null ? financingHdr.getBouwheer().getPicName() : "-");
     } else {
       throw new RuntimeException("Failed to get agreement data: " + (sitData.getMessage() != null ? sitData.getMessage() : ""));
     }
 
     // tabel 3
     List<Map<String, String>> tableData3 = new ArrayList<>();
-
-    FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
     PaginationResult<PostedInvoiceDto> invoiceResult = invoiceService.invoiceSubmissionByFinancingHdr(
       financingHdr,
       new PaginationRequest()
@@ -784,7 +790,7 @@ public class ReportService {
         tableData3.add(row);
       }
 
-      PostedInvoiceDto firstInvoice = invoices.get(0);
+      PostedInvoiceDto firstInvoice = invoices.getFirst();
       if (firstInvoice.getInvoiceDueDate() != null) {
         invoiceDueDateParam = fmtDateObj2(firstInvoice.getInvoiceDueDate());
       }
@@ -795,6 +801,8 @@ public class ReportService {
       emptyRow.put("invoice_amt", "No Data Available");
       emptyRow.put("description", "No Data Available");
       emptyRow.put("bouwheer", "No Data Available");
+      emptyRow.put("legalAddress","No Data Available");
+      emptyRow.put("picName", "No Data Available");
       emptyRow.put("invoice_duedate", "No Data Available");
       tableData3.add(emptyRow);
     }
@@ -872,60 +880,6 @@ public class ReportService {
     response.setTotalRetentionAmount("0");
     response.setTotalInvoiceAmount("0");
     return response;
-  }
-
-  private static String fmtDateObj(Object val) {
-    if (val == null) return "-";
-
-    final String targetFormat = "dd/MM/yyyy";
-    java.time.format.DateTimeFormatter outFmt = java.time.format.DateTimeFormatter.ofPattern(targetFormat);
-
-    try {
-      if (val instanceof java.util.Date) {
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat(targetFormat);
-        return sdf.format((java.util.Date) val);
-      }
-
-      if (val instanceof java.time.LocalDate) {
-        return ((java.time.LocalDate) val).format(outFmt);
-      }
-
-      if (val instanceof java.time.LocalDateTime) {
-        return ((java.time.LocalDateTime) val).toLocalDate().format(outFmt);
-      }
-
-      if (val instanceof String) {
-        String s = ((String) val).trim();
-        if (s.isEmpty()) return "-";
-
-        try {
-          java.time.LocalDateTime ldt = java.time.LocalDateTime.parse(
-            s,
-            java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
-          );
-          return ldt.toLocalDate().format(outFmt);
-        } catch (Exception ignore) {
-        }
-
-        try {
-          java.time.LocalDate ld = java.time.LocalDate.parse(s);
-          return ld.format(outFmt);
-        } catch (Exception ignore) {
-        }
-
-        try {
-          java.text.SimpleDateFormat inSdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-          java.util.Date d = inSdf.parse(s);
-          java.text.SimpleDateFormat outSdf = new java.text.SimpleDateFormat(targetFormat);
-          return outSdf.format(d);
-        } catch (Exception ignore) {
-        }
-      }
-
-      return val.toString();
-    } catch (Exception e) {
-      return "-";
-    }
   }
 
   private static String fmtDateObj2(Object val) {
@@ -1071,6 +1025,20 @@ public class ReportService {
           financingHdrCode,
           "E_SIGN_DOC"
         );
+
+
+        Optional<FinancingHdr>financingHdrOptional = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
+        if(financingHdrOptional.isPresent()){
+          /**
+           * Send email to bouwheer
+           */
+          agreementService.sendBouwheerPaymentNotification(financingHdrOptional.get());
+
+          /**
+           * Send email to debtor
+           */
+          agreementService.sendDebtorDisbursementNotification(financingHdrOptional.get());
+        }
 
         return SigningResponse.builder()
           .success(true)

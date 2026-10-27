@@ -45,6 +45,10 @@ public class MstFileType {
   @Column(name = "is_mandatory", nullable = false)
   private Boolean isMandatory = false;
 
+  @Builder.Default
+  @Column(name = "is_esign", nullable = false)
+  private Boolean isEsign = false;
+
   @Column(name = "max_size_mb", nullable = false)
   private Long maxSizeMb;
 

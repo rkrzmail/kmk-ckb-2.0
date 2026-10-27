@@ -24,11 +24,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 @Service
@@ -40,19 +43,22 @@ public class FinancingDtlService {
   private final BaseRemoteService baseRemoteService;
   private final ObjectMapper objectMapper;
   private final RestTemplate restTemplate;
+  private final ApplicationEventPublisher eventPublisher;
 
   public FinancingDtlService(FinancingDtlRepository financingDtlRepository,
                              PaymentReceiveHistoryRepository paymentReceiveHistoryRepository,
                              FinancingHdrRepository financingHdrRepository,
                              BaseRemoteService baseRemoteService,
                              ObjectMapper objectMapper,
-                             RestTemplate restTemplate) {
+                             RestTemplate restTemplate,
+                             ApplicationEventPublisher eventPublisher) {
     this.financingDtlRepository = financingDtlRepository;
     this.paymentReceiveHistoryRepository = paymentReceiveHistoryRepository;
     this.financingHdrRepository = financingHdrRepository;
     this.baseRemoteService = baseRemoteService;
     this.objectMapper = objectMapper;
     this.restTemplate = restTemplate;
+    this.eventPublisher = eventPublisher;
   }
 
   /**
@@ -197,8 +203,7 @@ public class FinancingDtlService {
   @Transactional
   public void updatePaid(FinancingInvoicePaidRequest request, FinancingHdr financingHdr) {
 
-      List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
-        .orElse(Collections.emptyList());
+      List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdrForUpdate(financingHdr);
 
       if (financingDtls.isEmpty()) {
         return;
@@ -220,12 +225,14 @@ public class FinancingDtlService {
       validateInvoicePresence(systemInvoices, requestInvoices, request.getFinancingCode());
 
       String updater = financingHdr.getUsrUpd();
+      boolean newlyPaid = false;
 
       for (FinancingDtl financingDtl : financingDtls) {
         String invoiceNo = financingDtl.getInvoice().getCustInvNo();
         FinancingInvoicePaidRequest.InvoicePaid reqInvoice = requestInvoices.get(invoiceNo);
 
-        BigDecimal systemAmount = BigDecimal.valueOf(financingDtl.getInvoice().getInvoiceAmt());
+//      BigDecimal systemAmount = BigDecimal.valueOf(financingDtl.getInvoice().getInvoiceAmt());
+        BigDecimal systemAmount = BigDecimal.valueOf(financingHdr.getTotalInvoiceSubmittedAmt());
         BigDecimal reqAmount = reqInvoice.getInvoiceAmount();
 
         if (reqAmount.compareTo(systemAmount) < 0) {
@@ -242,15 +249,18 @@ public class FinancingDtlService {
           throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Nominal Invoice tidak sesuai (Kelebihan Bayar)");
         }
 
-        // Update data entitas (Bug .getFirst() sudah diperbaiki di sini menggunakan reqInvoice)
+        log.info("Update Invoice status PAID");
+        newlyPaid |= !"PAID".equalsIgnoreCase(financingDtl.getInvoice().getStatus());
         financingDtl.getInvoice().setStatus("PAID");
         financingDtl.getInvoice().setUsrUpd(updater);
         financingDtl.getInvoice().setDtmUpd(LocalDateTime.now());
-
         financingDtl.setBouwheerPaidDate(Utils.toInstant(reqInvoice.getPostingDate()));
         financingDtl.setUsrUpd(updater);
         financingDtl.setDtmUpd(LocalDateTime.now());
         financingDtlRepository.save(financingDtl);
+      }
+      if (newlyPaid) {
+        eventPublisher.publishEvent(new InvoicePaidEvent(financingHdr.getFinancingHdrCode()));
       }
   }
 
@@ -279,7 +289,21 @@ public class FinancingDtlService {
     String noAggrNo = financingHdr.getAgreement().isEmpty() ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();
     LocalDateTime settlementDate = request.getInvoicePaid().isEmpty() ? DateTimeUtils.now() : Utils.toInstant(request.getInvoicePaid().getFirst().getClearingDate());
 
+    /** For Dev only
+     *
+     */
+    if (System.getenv("ENV").equals("dev")) {
+      DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+      settlementDate = LocalDate.parse("01-03-2027", formatter).atStartOfDay();
+    }
+
     String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
+
+    if(noAggrNo.isEmpty()){
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}",noAggrNo);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Pembayaran belum dapat diproses karena invoice masih dalam tahap persetujuan internal CSUL.");
+    }
+
     //Inquiry Data Agreement to Confins
     log.info("Inquiry Data Agreement to Confins, Financing HDR code {} ", request.getFinancingCode());
     InquiryDataAgreementDto inquiryDataAgreementDto = inquiryDataAgreement(InquiryDataAgreementRequest.builder()

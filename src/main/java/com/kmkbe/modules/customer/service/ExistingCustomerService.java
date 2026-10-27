@@ -2,6 +2,7 @@ package com.kmkbe.modules.customer.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.core.domain.dto.*;
+import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.Cwr;
@@ -121,8 +122,7 @@ public class ExistingCustomerService {
     }
 
     try {
-      CustomerRemoteDto existingCustomer = null;
-      try {
+      CustomerRemoteDto existingCustomer;
         existingCustomer = customerRemoteService.validateExisting(
           ExistingCustomerRequest.builder()
             .args(
@@ -135,32 +135,27 @@ public class ExistingCustomerService {
             .requestDateTime(DateTimeUtils.SDF_STANDARD_DATE.format(new Date()))
             .build()
         );
-      } catch (Exception ignored) {
-      }
-
+      log.info("Validate Customer existing {} ",existingCustomer);
       if (existingCustomer == null) {
         return null;
-      } else {
-        if (StringUtil.isNullOrEmpty(customer.getCustNo())) {
-          final Customer loadedCust = customerRepository.findByCustCode(customer.getCustCode())
-            .orElseThrow();
-          loadedCust.setCustNo(existingCustomer.getCustNo());
-          loadedCust.setUsrUpd(customer.getCustName());
-          loadedCust.setDtmUpd(DateTimeUtils.now());
-          customerRepository.save(loadedCust);
-        }
       }
+          Optional<Customer>customerOptional = customerRepository.findByCustCode(customer.getCustCode());
+          if (customerOptional.isPresent()){
+            Customer loadedCust = customerOptional.get();
+            loadedCust.setCustNo(existingCustomer.getCustNo());
+            loadedCust.setUsrUpd(customer.getCustName());
+            loadedCust.setDtmUpd(DateTimeUtils.now());
+            loadedCust.setExistingCust(AppConstants.EXISTING_CUSTOMER);
+            customerRepository.save(loadedCust);
+            log.info("Update CWR Customer existing");
+        }
 
-      BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> cwrResponse = null;
-      try {
-        cwrResponse = cwrRemoteService.inquiryCwr(
+      BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> cwrResponse = cwrRemoteService.inquiryCwr(
           InquiryCwrRemoteRequest.builder()
             .name(PropCriteriaGenericTypeRequest.CwrPropName.custNo)
             .custNo(existingCustomer.getCustNo())
             .build()
         );
-      } catch (Exception ignored) {
-      }
 
       if (cwrResponse == null) {
         return null;
@@ -183,16 +178,13 @@ public class ExistingCustomerService {
             }
           }
 
-          if (
-            cwr.getCurrStep().equalsIgnoreCase("active")
-              &&
-              (
-                startDt != null && (DateUtils.isSameDay(startDt, now) || startDt.after(now))
-              )
-              &&
-              (
-                endDt != null && (DateUtils.isSameDay(endDt, now) || endDt.before(now))
-              )
+          log.info("CWR step {} ",cwr);
+          if (cwr.getCurrStep() != null
+            && cwr.getCurrStep().equalsIgnoreCase("active")
+            && startDt != null
+            && (DateUtils.isSameDay(startDt, now) || startDt.after(now))
+            && endDt != null
+            && (DateUtils.isSameDay(endDt, now) || endDt.after(now))
           ) {
             cwrActives.add(cwr);
           }
@@ -229,12 +221,10 @@ public class ExistingCustomerService {
           if (bouwheer != null) {
             final Cwr cwr = cwrRepository.findTopByCwrCode(firstCwr.getCwrNo())
               .orElse(null);
-
             if (cwr == null) {
               cwrRepository.save(result);
             }
           }
-
           return result;
         }
       }

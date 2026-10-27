@@ -1,242 +1,217 @@
 package com.kmkbe.core.domain.model;
 
+import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.helpers.constant.StatusConstants;
 import lombok.*;
 
 public class MappedFinancingStatus {
-    @Getter
-    private String status;
-    @Getter
-    private String label;
+  @Getter
+  private String status;
+  @Getter
+  private String label;
 
-    @Setter
-    private FinancingHdr financingHdr;
+  @Setter
+  private FinancingHdr financingHdr;
 
-    public MappedFinancingStatus(FinancingHdr financingHdr, Type type) {
-        label = "";
-        status = "";
+  public MappedFinancingStatus(FinancingHdr financingHdr, Type type) {
+    label = "";
+    status = "";
 
-        this.financingHdr = financingHdr;
-        switch (type) {
-            case Customer:
-                mappedCustomer();
-                break;
-            case BranchAdmin:
-                mappedBranchAdmin();
-                break;
-            case MajorAccount:
-                mappedMajorAccount();
-                break;
-            case Disbursement:
-                mappedDisbursement();
-                break;
-            case Repayment:
-                mappedRepayment();
-                break;
-            case AccountOfficer:
-                mappedAccountOfficer();
-                break;
-        }
+    this.financingHdr = financingHdr;
+    if (StatusConstants.FINANCING_STATUS_PAID.equalsIgnoreCase(financingHdr.getFinancingStatus())
+      && StatusConstants.FINANCING_STEP_PAID.equalsIgnoreCase(financingHdr.getFinancingStep())) {
+      label = "Paid";
+      status = String.valueOf(FinancingStatus.PAID);
+      return;
     }
-    private void mappedAccountOfficer() {
-        if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("ASSIGNMENT")) {
-                label = "Baru";
-                status = "NEW";
-            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("INPROCESS")) {
-                label = "Preparation";
-                status = "PREPARATION";
-            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("SIGNING")) {
-                label = "Signing";
-                status = "SIGNING";
-            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("SIGNED")) {
-                label = "Signed";
-                status = "SIGNED";
-            }
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")) {
-                label = "Live";
-                status = "LIVE";
-            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("PAID")) {
-                label = "Paid";
-                status = "PAID";
-            }
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("COMPLETED")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("REFUND")) {
-                label = "Completed";
-                status = "COMPLETED";
-            }
-        } else {
-            /*label = "Untracked";
-            status = "UNTRACKED";*/
-            label = "New";
-            status = "NEW";
-        }
+    if (StatusConstants.FINANCING_STATUS_PAID.equalsIgnoreCase(financingHdr.getFinancingStatus())
+      && StatusConstants.FINANCING_STEP_SIGNED.equalsIgnoreCase(financingHdr.getFinancingStep())) {
+      label = "Signed";
+      status = String.valueOf(FinancingStatus.SIGNED);
+      return;
     }
-    private void mappedBranchAdmin() {
-        if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("ASSIGNMENT")) {
-                label = "Baru";
-                status = "NEW";//no hide
-            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("INPROCESS")) {
-                label = "Preparation";
-                status = "PREPARATION";
-            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("SIGNING")) {
-                label = "Signing";
-                status = "SIGNING";
-            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("SIGNED")) {
-                label = "Signed";
-                status = "SIGNED";
-            }
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")) {
-                label = "Live";
-                status = "LIVE";
-            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("PAID")) {
-                label = "Paid";
-                status = "PAID";
-            }
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("COMPLETED")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("REFUND")) {
-                label = "Completed";
-                status = "COMPLETED";
-            }
-        } else {
-            /*label = "Untracked";
-            status = "UNTRACKED";*/
-            label = "New";
-            status = "NEW";
-        }
+    switch (type) {
+      case Customer:
+        mappedCustomer();
+        break;
+      case BranchAdmin:
+        mappedBranchAdmin();
+        break;
+      case MajorAccount:
+        mappedMajorAccount();
+        break;
+      case Disbursement:
+        mappedDisbursement();
+        break;
+      case Repayment:
+        mappedRepayment();
+        break;
+      case AccountOfficer:
+        mappedAccountOfficer();
+        break;
     }
+  }
 
-    private void mappedCustomer() {
-        if (financingHdr.getFinancingStatus().equalsIgnoreCase("new")) {
-            label = "New";
-            status = "NEW";
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
-            if (
-                    financingHdr.getFinancingStep().equalsIgnoreCase("ASSIGNMENT")
-                            || financingHdr.getFinancingStep().equalsIgnoreCase("INPROCESS")
-                            || financingHdr.getFinancingStep().equalsIgnoreCase("SIGNING")
-                            || financingHdr.getFinancingStep().equalsIgnoreCase("SIGNED")
-            ) {
-                label = "In proses";
-                status = "INPROCESS";
-            }
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
-            label = "Live";
-            status = "LIVE";
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("COMPLETED")) {
-            label = "Completed";
-            status = "COMPLETED";
-        } else {
-           /* label = "Untracked";
-            status = "UNTRACKED";*/
-            label = "New";
-            status = "NEW";
-        }
+  private void mappedAccountOfficer() {
+    if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
+      if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_ASSIGNMENT)) {
+        label = "Baru";
+        status = String.valueOf(FinancingStatus.NEW);
+      } else if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_INPROCESS)) {
+        label = "Preparation";
+        status = String.valueOf(FinancingStatus.PREPARATION);
+      } else if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_SIGNING)) {
+        label = "Signing";
+        status = String.valueOf(FinancingStatus.SIGNING);
+      } else if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_SIGNED)) {
+        label = "Signed";
+        status = String.valueOf(FinancingStatus.SIGNED);
+      }
+    } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
+      if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_GOLIVE)) {
+        label = "Live";
+        status = String.valueOf(FinancingStatus.LIVE);
+      } else if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_PAID)) {
+        label = "Paid";
+        status = String.valueOf(FinancingStatus.PAID);
+      }
+    } else {
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
     }
+  }
 
-    private void mappedMajorAccount() {
-        if (financingHdr.getFinancingStatus().equalsIgnoreCase("new")) {
-            label = "New";
-            status = "NEW";
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("ASSIGNMENT")) {
-                label = "Assignment";
-                status = "ASSIGNMENT";
-            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("INPROCESS")) {
-                label = "In Process";
-                status = "INPROCESS";
-            } else if (
-                    financingHdr.getFinancingStep().equalsIgnoreCase("SIGNING")
-                            || financingHdr.getFinancingStep().equalsIgnoreCase("SIGNED")
-            ) {
-                label = "Signing";
-                status = "SIGNING";
-            }
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")) {
-                label = "Live";
-                status = "LIVE";
-            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("PAID")) {
-                label = "Paid";
-                status = "PAID";
-            }
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("COMPLETED")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("REFUND")) {
-                label = "Completed";
-                status = "COMPLETED";
-            }
-        } else {
-           /* label = "Untracked";
-            status = "UNTRACKED";*/
-            label = "New";
-            status = "NEW";
-        }
+  private void mappedBranchAdmin() {
+    if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
+      if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_ASSIGNMENT)) {
+        label = "Baru";
+        status = String.valueOf(FinancingStatus.NEW);
+      } else if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_INPROCESS)) {
+        label = "Preparation";
+        status = String.valueOf(FinancingStatus.PREPARATION);
+      } else if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_SIGNING)) {
+        label = "Signing";
+        status = String.valueOf(FinancingStatus.SIGNING);
+      } else if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_SIGNED)) {
+        label = "Signed";
+        status = String.valueOf(FinancingStatus.SIGNED);
+      }
+    } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
+      if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_GOLIVE)) {
+        label = "Live";
+        status = String.valueOf(FinancingStatus.LIVE);
+      } else if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_PAID)) {
+        label = "Paid";
+        status = String.valueOf(FinancingStatus.PAID);
+      }
+    } else {
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
     }
+  }
 
-    private void mappedDisbursement() {
-        if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("SIGNED")) {
-                label = "New";
-                status = "NEW";
-            }
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")) {
-                label = "Disbursed";
-                status = "DISBURSED";
-            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("PAID")) {
-                label = "Paid";
-                status = "PAID";
-            }
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("COMPLETED")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("REFUND")) {
-                label = "Completed";
-                status = "COMPLETED";
-            }
-        } else {
-            /* label = "Untracked";
-            status = "UNTRACKED";*/
-            label = "New";
-            status = "NEW";
-        }
+  private void mappedCustomer() {
+    if (financingHdr.getFinancingStatus().equalsIgnoreCase("new")) {
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
+    } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
+      if (
+        financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_ASSIGNMENT)
+          || financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_INPROCESS)
+          || financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_SIGNING)
+          || financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_SIGNED)
+      ) {
+        label = "In proses";
+        status = String.valueOf(FinancingStatus.IN_PROCESS);
+      }
+    } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
+      label = "Live";
+      status = String.valueOf(FinancingStatus.LIVE);
+    } else {
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
     }
+  }
 
-    private void mappedRepayment() {
-        if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("SIGNED")) {
-                label = "Unpaid";
-                status = "UNPAID";
-            }
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")) {
-                label = "Unpaid";
-                status = "UNPAID";
-            } else if (financingHdr.getFinancingStep().equalsIgnoreCase("PAID")) {
-                label = "Paid";
-                status = "PAID";
-            }
-        } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("COMPLETED")) {
-            if (financingHdr.getFinancingStep().equalsIgnoreCase("REFUND")) {
-                label = "Paid";
-                status = "PAID";
-            }
-        } else {
-            /* label = "Untracked";
-            status = "UNTRACKED";*/
-//            label = "New";
-//            status = "NEW";
-            return;
-        }
+  private void mappedMajorAccount() {
+    if (financingHdr.getFinancingStatus().equalsIgnoreCase("new")) {
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
+    } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
+      if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_ASSIGNMENT)) {
+        label = "Assignment";
+        status = String.valueOf(FinancingStatus.ASSIGNMENT);
+      } else if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_INPROCESS)) {
+        label = "In Process";
+        status = String.valueOf(FinancingStatus.IN_PROCESS);
+      } else if (
+        financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_SIGNING)
+          || financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_SIGNED)
+      ) {
+        label = "Signing";
+        status = String.valueOf(FinancingStatus.SIGNING);
+      }
+    } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
+      if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_GOLIVE)) {
+        label = "Live";
+        status = String.valueOf(FinancingStatus.LIVE);
+      } else if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_PAID)) {
+        label = "Paid";
+        status = String.valueOf(FinancingStatus.PAID);
+      }
+    } else {
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
     }
+  }
 
-    public enum Type {
-        Customer,
-        MajorAccount,
-        BranchAdmin,
-        Disbursement,
-        Repayment,
-        AccountOfficer
+  private void mappedDisbursement() {
+    if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
+      if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_SIGNED)) {
+        label = "New";
+        status = String.valueOf(FinancingStatus.NEW);
+      }
+    } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
+      if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_GOLIVE)) {
+        label = "Disbursed";
+        status = "DISBURSED";
+      } else if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_PAID)) {
+        label = "Paid";
+        status = String.valueOf(FinancingStatus.PAID);
+      }
+    } else {
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
     }
+  }
+
+  private void mappedRepayment() {
+    if (financingHdr.getFinancingStatus().equalsIgnoreCase("inprocess")) {
+      if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_SIGNED)) {
+        label = "Unpaid";
+        status = String.valueOf(FinancingStatus.UNPAID);
+      }
+    } else if (financingHdr.getFinancingStatus().equalsIgnoreCase("live")) {
+      if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_GOLIVE)) {
+        label = "Unpaid";
+        status = String.valueOf(FinancingStatus.UNPAID);
+      } else if (financingHdr.getFinancingStep().equalsIgnoreCase(StatusConstants.FINANCING_STEP_PAID)) {
+        label = "Paid";
+        status = String.valueOf(FinancingStatus.PAID);
+      }
+    } else {
+      label = "New";
+      status = String.valueOf(FinancingStatus.NEW);
+    }
+  }
+
+  public enum Type {
+    Customer,
+    MajorAccount,
+    BranchAdmin,
+    Disbursement,
+    Repayment,
+    AccountOfficer
+  }
 }

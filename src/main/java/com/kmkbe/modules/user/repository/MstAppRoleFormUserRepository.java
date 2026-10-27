@@ -11,6 +11,16 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface MstAppRoleFormUserRepository extends JpaRepository<MstAppRoleFormUser, UUID> {
+    @Query("""
+        SELECT COUNT(p) > 0 FROM MstAppRoleFormUser p
+        WHERE p.user.userCode = :userCode
+          AND p.isActive = true AND p.appRoleForm.isActive = true
+          AND p.appRoleForm.applicationRole.isActive = true
+          AND p.appRoleForm.applicationRole.roleCode.isActive = true
+          AND p.appRoleForm.applicationRole.roleCode.roleCode IN ('brnch_admin', 'brnch_adm')
+        """)
+    boolean hasActiveBranchAdminRole(@Param("userCode") UUID userCode);
+
     List<MstAppRoleFormUser> findAllByUser(MstUser mstUser);
 
     Optional<MstAppRoleFormUser> findTopByUserOrderByAppRoleFormUserId(MstUser mstUser);
@@ -57,6 +67,29 @@ public interface MstAppRoleFormUserRepository extends JpaRepository<MstAppRoleFo
         ORDER BY LOWER(TRIM(employee.email))
         """, nativeQuery = true)
     List<String> findActiveMajorAccountEmails();
+
+    @Query(value = """
+        SELECT DISTINCT LOWER(TRIM(employee.email))
+        FROM users.mst_app_role_form_user permission
+        JOIN users.mst_user app_user ON app_user.user_code = permission.user_code
+        JOIN users.mst_employee employee ON employee.employee_code = app_user.employee_code
+        JOIN users.mst_app_role_form role_form
+          ON role_form.app_role_form_code = permission.app_role_form_code
+        JOIN users.mst_application_role app_role
+          ON app_role.application_role_code = role_form.application_role_code
+        JOIN users.mst_role role ON role.role_code = app_role.role_code
+        WHERE role.role_code = 'finance'
+          AND permission.is_active = true
+          AND role_form.is_active = true
+          AND app_role.is_active = true
+          AND role.is_active = true
+          AND app_user.is_active = true
+          AND employee.is_active = true
+          AND employee.email IS NOT NULL
+          AND TRIM(employee.email) <> ''
+        ORDER BY LOWER(TRIM(employee.email))
+        """, nativeQuery = true)
+    List<String> findActiveFinanceEmails();
 
     @Query("""
         SELECT COUNT(p) > 0 FROM MstAppRoleFormUser p

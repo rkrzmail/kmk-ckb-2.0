@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.dto.EstimatedDisburseDto;
 import com.kmkbe.core.domain.dto.StatusLabelDto;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.MappedFinancingStatus;
+import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.service.JwtGeneratorService;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
@@ -107,7 +108,6 @@ public class ApiSbuCkbService {
     Map<String, Object> response;
     try {
       String token = jwtGeneratorService.generateToken(
-        apiKey,
         strSecret,
         bouwheerCode,
         expireDate
@@ -359,7 +359,8 @@ public class ApiSbuCkbService {
       || finStatus.equalsIgnoreCase("signing")
       || finStatus.equalsIgnoreCase("signed")
       || finStatus.equalsIgnoreCase("live")
-      || finStatus.equalsIgnoreCase("golive")) {
+      || finStatus.equalsIgnoreCase("golive")
+      || finStatus.equalsIgnoreCase("paid")) {
       color = "#ccffcc";
     } else {
       color = "#FF5C5C";

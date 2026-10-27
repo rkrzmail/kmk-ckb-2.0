@@ -97,6 +97,50 @@ class DistributionSubmissionServiceIssueRegressionTest {
   }
 
   @Test
+  void distributionListIncludesInvoiceTotalsFromFinancingHeader() {
+    FinancingHdr financing = row("invoice-total", "Vendor", 1_000D, null);
+    financing.setTotalInvoiceAmt(1_250.75D);
+    financing.setInvoiceQty(3L);
+    when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(financing));
+
+    DistributionSubmissionDto dto = service.submissionDistribution(new PaginationRequest()).getList().getFirst();
+
+    assertThat(dto.getFinancingAmount()).isEqualByComparingTo("1000");
+    assertThat(dto.getTotalInvoiceAmount()).isEqualByComparingTo("1250.75");
+    assertThat(dto.getInvoiceQty()).isEqualTo(3L);
+  }
+
+  @Test
+  void paidFinancingIsReturnedAsPaidInsteadOfNew() {
+    FinancingHdr financing = row("paid", "Vendor", 1_000D, null);
+    financing.setFinancingStatus("PAID");
+    financing.setFinancingStep("PAID");
+    when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(financing));
+
+    DistributionSubmissionDto dto = service.submissionDistribution(new PaginationRequest()).getList().getFirst();
+
+    assertThat(dto.getStatus().getStatus()).isEqualTo("PAID");
+    assertThat(dto.getStatus().getStatusLabel()).isEqualTo("Paid");
+    assertThat(dto.getStatus().getColor()).isEqualTo("#ccffcc");
+  }
+
+  @Test
+  void distributionListIncludesLastUpdateTimestampWithoutReplacingCreationTimestamp() {
+    LocalDateTime createdAt = LocalDateTime.of(2026, 10, 10, 9, 0);
+    LocalDateTime updatedAt = LocalDateTime.of(2026, 10, 14, 11, 30);
+    FinancingHdr updated = row("updated", "Updated Vendor", 1_000D, createdAt);
+    updated.setDtmUpd(updatedAt);
+    FinancingHdr untouched = row("untouched", "Untouched Vendor", 2_000D, createdAt);
+    when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(updated, untouched));
+
+    List<DistributionSubmissionDto> result = service.submissionDistribution(new PaginationRequest()).getList();
+
+    assertThat(result.get(0).getDtmCrt()).isEqualTo(createdAt);
+    assertThat(result.get(0).getUpdatedAt()).isEqualTo(updatedAt);
+    assertThat(result.get(1).getUpdatedAt()).isNull();
+  }
+
+  @Test
   void filtersSubmissionsUsingDashboardDateRangeBeforePagination() {
     when(financingHdrRepository.findAllForDistribution()).thenReturn(List.of(
       row("before", "Before", 1D, LocalDateTime.of(2026, 7, 31, 23, 59)),

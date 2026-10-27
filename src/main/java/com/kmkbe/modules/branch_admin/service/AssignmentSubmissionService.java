@@ -22,6 +22,7 @@ import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -108,14 +109,36 @@ public class AssignmentSubmissionService {
         }
       }
 
-      // Role-specific statuses are mapped below, so pagination must happen after that filter.
-      Page<FinancingHdr> financingHdrPage = financingHdrRepository.findAllAssignmentFinancingRaw(
-        user.getEmployee().getBranch().getBranchCode(),
-        financingStatusFilter,
-        custNameFilter,
-        bouwheerNameFilter,
-        org.springframework.data.domain.Pageable.unpaged(PaginationSort.assignments(request))
-      );
+      String branchCode = user.getEmployee().getBranch().getBranchCode();
+      Page<FinancingHdr> financingHdrPage;
+      if ("financingHdrCode".equalsIgnoreCase(request.getSearchBy())
+          && !StringUtil.isNullOrEmpty(request.getSearchValue())) {
+        String codeSearch = request.getSearchValue().trim();
+        if (!codeSearch.matches("(?i)[0-9a-f-]{1,36}")) {
+          financingHdrPage = Page.empty();
+        } else if (codeSearch.length() == 36) {
+          UUID code;
+          try {
+            code = UUID.fromString(codeSearch);
+          } catch (IllegalArgumentException exception) {
+            code = null;
+          }
+          financingHdrPage = new PageImpl<>(code == null ? List.of() : financingHdrRepository
+            .findByFinancingHdrCodeAndMstBranch_BranchCode(code, branchCode).stream().toList());
+        } else {
+          financingHdrPage = financingHdrRepository.findAllAssignmentFinancingByCodeFragment(
+            branchCode, codeSearch, org.springframework.data.domain.Pageable.unpaged(PaginationSort.assignments(request)));
+        }
+      } else {
+        // Role-specific statuses are mapped below, so pagination must happen after that filter.
+        financingHdrPage = financingHdrRepository.findAllAssignmentFinancingRaw(
+          branchCode,
+          financingStatusFilter,
+          custNameFilter,
+          bouwheerNameFilter,
+          org.springframework.data.domain.Pageable.unpaged(PaginationSort.assignments(request))
+        );
+      }
 
 
       return SpecPagination.paginationData(new SpecPagination<FinancingHdr, AssignmentDto>(financingHdrPage.stream().toList(), request) {
@@ -128,13 +151,24 @@ public class AssignmentSubmissionService {
         @Override
         public AssignmentDto filter(AssignmentDto data) {
 
-          if (isSearchBy("financingHdrCode") && equal(data.getFinancingHdrCode().toString())) {
+          if (isSearchBy("financingHdrCode") && like(data.getFinancingHdrCode().toString())) {
             return data;
           } else if ((isSearchBy("custName") || isSearchBy("NamaDebitur")) && like(data.getCustName())) {
             return data;
           } else if ((isSearchBy("bouwheerName") || isSearchBy("PemberiKerja")) && like(data.getBouwheerName())) {
             return data;
           } else if (isSearchBy("status") && like(data.getStatus())) {
+            return data;
+          } else if (isSearchBy("financingAmount")) {
+            try {
+              if (data.getFinancingAmount() != null
+                  && data.getFinancingAmount().compareTo(new BigDecimal(getSearchValue().trim())) == 0) {
+                return data;
+              }
+            } catch (NumberFormatException ignored) {
+              return null;
+            }
+          } else if (isSearchBy("custStatus") && like(data.getCustStatus())) {
             return data;
           } else if (isSearchBy("Cabang") && like(user.getEmployee().getBranch().getBranchName())) {
             return data;
@@ -200,6 +234,8 @@ public class AssignmentSubmissionService {
               .orElse(null))
             .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
             .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
+            .totalInvoiceAmount(e.getTotalInvoiceAmt() == null ? null : BigDecimal.valueOf(e.getTotalInvoiceAmt()))
+            .invoiceQty(e.getInvoiceQty())
             .custStatus(e.getCustomer().getExistingCust())
             .status(financingStatus.getStatus())
             .statusLabel(financingStatus.getLabel())

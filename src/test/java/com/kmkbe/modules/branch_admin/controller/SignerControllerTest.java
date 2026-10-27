@@ -1,7 +1,11 @@
 package com.kmkbe.modules.branch_admin.controller;
 
 import com.kmkbe.core.domain.dto.DebtorDto;
+import com.kmkbe.core.domain.dto.AssignmentDto;
+import com.kmkbe.core.domain.dto.PersonDto;
 import com.kmkbe.core.domain.model.CommonResult;
+import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.modules.branch_admin.service.AssignmentSubmissionService;
 import com.kmkbe.modules.branch_admin.service.SigningEligibilityService;
@@ -11,9 +15,12 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.mock.web.MockHttpServletRequest;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -23,6 +30,9 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 
 @ExtendWith(MockitoExtension.class)
 class SignerControllerTest {
@@ -45,6 +55,34 @@ class SignerControllerTest {
       currentUserService,
       signingEligibilityService
     );
+  }
+
+  @Test
+  void getSignersIncludesLeadBeyondDefaultFirstPage() throws Exception {
+    MockHttpServletRequest request = new MockHttpServletRequest();
+    List<AssignmentDto> assignments = new ArrayList<>();
+    for (int i = 0; i < 10; i++) {
+      assignments.add(AssignmentDto.builder().financingHdrCode(new UUID(0, i + 1)).build());
+    }
+    assignments.add(AssignmentDto.builder()
+      .financingHdrCode(UUID.fromString(FINANCING_HDR_CODE)).build());
+    when(assignmentSubmissionService.assignmentList(eq(request), any(PaginationRequest.class)))
+      .thenAnswer(call -> {
+        PaginationRequest pagination = call.getArgument(1);
+        assertThat(pagination.getPageNo()).isEqualTo(1);
+        int size = pagination.getPageSize() == null ? 10 : pagination.getPageSize();
+        return new PaginationResult<>(1, 1, 11L,
+          assignments.subList(0, Math.min(size, assignments.size())));
+      });
+    when(signerService.getSignersForGroup(eq(FINANCING_HDR_CODE), any()))
+      .thenReturn(new PersonDto());
+
+    var response = controller.getSigners(FINANCING_HDR_CODE, AGREEMENT_CODE, request);
+
+    assertThat(response.getStatusCode().value()).isEqualTo(200);
+    verify(signerService).getSignersForGroup(eq(FINANCING_HDR_CODE),
+      argThat(list -> list.size() == 11 && list.get(10).getFinancingHdrCode()
+        .equals(UUID.fromString(FINANCING_HDR_CODE))));
   }
 
   @Test
@@ -102,29 +140,8 @@ class SignerControllerTest {
     assertThat(result.isSuccess()).isTrue();
     assertThat(result.getCode()).isEqualTo(200);
     assertThat(result.getData()).containsEntry("signerName", List.of("Signer One"));
-    verify(signingEligibilityService, org.mockito.Mockito.times(2))
+    verify(signingEligibilityService)
       .validateDebtorSigner(FINANCING_HDR_CODE);
-  }
-
-  @Test
-  void checkSignerDanasaktiRejectsStatusThatBecomesIneligibleAfterRefresh() throws Exception {
-    DebtorDto signer = new DebtorDto();
-    signer.setKaryawanName("Signer One");
-    doNothing()
-      .doThrow(new IllegalStateException(SigningEligibilityService.SIGNER_NOT_REGISTERED_MESSAGE))
-      .when(signingEligibilityService)
-      .validateDebtorSigner(FINANCING_HDR_CODE);
-    when(currentUserService.internalUsername()).thenReturn("maker");
-    when(signerService.checkSignerDanasakti(FINANCING_HDR_CODE, "maker")).thenReturn(List.of(signer));
-
-    CommonResult<Map<String, Object>> result = controller.checkSignerDanasakti(
-      FINANCING_HDR_CODE,
-      AGREEMENT_CODE
-    );
-
-    assertThat(result.isSuccess()).isFalse();
-    assertThat(result.getCode()).isEqualTo(400);
-    assertThat(result.getMessage()).isEqualTo(SigningEligibilityService.SIGNER_NOT_REGISTERED_MESSAGE);
   }
 
   @Test

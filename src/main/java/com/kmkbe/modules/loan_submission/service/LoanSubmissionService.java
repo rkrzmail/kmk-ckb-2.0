@@ -1,7 +1,6 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.kmkbe.adapter.ApiCsulAdapter;
 import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.*;
@@ -33,11 +32,9 @@ import com.kmkbe.modules.product.model.entity.Product;
 import com.kmkbe.modules.product.repository.ProductRepository;
 import com.kmkbe.modules.remote.request.ExistingCustomerRequest;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
-import com.kmkbe.modules.remote.service.CurrencyRemoteService;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
-import com.kmkbe.modules.remote.service.InvoiceRemoteDto;
 import com.kmkbe.modules.user.entity.MstBranch;
-import com.kmkbe.modules.user.repository.MstBranchRepository;
+import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.helpers.utils.Utils;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -45,20 +42,19 @@ import jakarta.transaction.Transactional;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.jfree.util.Log;
 import org.springframework.http.HttpStatus;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.security.SignatureException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 
@@ -69,18 +65,14 @@ public class LoanSubmissionService {
   private final ProductRepository productRepository;
   private final BouwheerRepository bouwheerRepository;
   private final BCryptPasswordEncoder bcryptEncoder;
-  private final JdbcTemplate jdbcTemplate;
   private final ConfigRemoteService configRemoteService;
   private final JwtLoanSubmissionService jwtLoanSubmissionService;
   private final SimulationHistRepository simulationHistRepository;
   private final InvoiceRepository invoiceRepository;
   private final CustomerRemoteService customerRemoteService;
-  private InvoiceRemoteDto invoiceRemoteDto;
-  private final CurrencyRemoteService currencyRemoteService;
   private final ExistingCustomerService existingCustomerService;
   private final CustomerCompanyRepository customerCompanyRepository;
   private final CustomerPersonalRepository customerPersonalRepository;
-  private final AgreementRepository agreementRepository;
   private final InvoiceService invoiceService;
   private final FinancingHdrService financingHdrService;
   private final FinancingDtlService financingDtlService;
@@ -89,45 +81,33 @@ public class LoanSubmissionService {
   private final LegalFileRepository legalFileRepository;
   private final ImportantNotesService importantNotesService;
   private final FinancingHdrRepository financingHdrRepository;
-  private final MstBranchRepository mstBranchRepository;
   private final CustomerRepository customerRepository;
-  private final ApiCsulAdapter apiCsulAdapter;
   private final AuditTrailService auditTrailService;
   private final FinancingDtlRepository financingDtlRepository;
   private final BranchAssignmentResolver branchAssignmentResolver;
+  private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
 
   public List<PostedInvoiceDto> fetchActiveInvoice(
     Customer customer,
     String token
   ) throws Exception {
-//    try {
     final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
-    CsulInquiryInvoiceRemoteDto inquiryInvoiceRemote = null;
-
-//      try {
-//        //ambil data dari api
-//        inquiryInvoiceRemote = apiCsulAdapter.findListPostedInvoice(vendorTokenExtractor.getVendorCode());  // invoiceRemoteDto.inquiryInvoice(vendorTokenExtractor.getVendorCode()).getData();
-//        log.info("Reponse Inquery API by vendor {} , payload {} ", vendorTokenExtractor.getVendorCode(), inquiryInvoiceRemote.getDocumentStatus());
-//
-//      } catch (Exception e) {
-//        log.warn("API invoice gagal, fallback ke database: {}", e.getMessage());
+    CsulInquiryInvoiceRemoteDto inquiryInvoiceRemote;
 
     if (customer.getCustCode() == null) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
     }
 
-    Log.info("Customer code {} " + customer.getCustExternalCode());
+    log.info("Customer code {} ", customer.getCustExternalCode());
 
     Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null);
     if (bouwheerOptional.isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Bouwheer code not found " + customer.getBouwheer());
     }
-// CHANGE THIS LINE: Call the invoiceRepository instead
-    List<Invoice> dbInvoices = invoiceRepository.findInvoicesByCustCode(String.valueOf(customer.getCustCode()));
 
-// The rest of your code remains exactly the same!
+    List<Invoice> dbInvoices = invoiceRepository.findInvoicesByCustCode(String.valueOf(customer.getCustCode()));
     SimpleDateFormat sdf = DateTimeUtils.SDF_STANDARD_DATE;
     List<CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto> rows = new ArrayList<>();
     for (Invoice inv : dbInvoices) {
@@ -151,7 +131,6 @@ public class LoanSubmissionService {
       .row(rows)
       .count(rows.size())
       .build();
-//      }
 
     /**
      * Process
@@ -193,8 +172,6 @@ public class LoanSubmissionService {
     }
 
     final SimpleDateFormat sdfNoSeperator = new SimpleDateFormat("yyyyMMdd");
-    //double baseUsdToIdr = currencyRemoteService.fetchIdrFrom("usd");
-
 
     //jika data banyak berpotensi timeout
     List<PostedInvoiceDto> result = new ArrayList<>();
@@ -213,8 +190,8 @@ public class LoanSubmissionService {
       }
 
       BigDecimal invoiceAmount = BigDecimal.valueOf(Double.parseDouble(inquiryInvoiceRemote.getRow().get(i).getAmount().trim()));
-      String currency = inquiryInvoiceRemote.getRow().get(i).getCurrency(),
-        description = inquiryInvoiceRemote.getRow().get(i).getDescription();
+      String currency = inquiryInvoiceRemote.getRow().get(i).getCurrency();
+      String description = inquiryInvoiceRemote.getRow().get(i).getDescription();
       if (
         !currency.equalsIgnoreCase("idr")
           && !currency.equalsIgnoreCase("rupiah")
@@ -313,10 +290,14 @@ public class LoanSubmissionService {
       case "poNumber" -> stringComparator(PostedInvoiceDto::getPoNumber);
       case "invoiceDescription" -> stringComparator(PostedInvoiceDto::getInvoiceDescription);
       case "bouwheerName" -> stringComparator(PostedInvoiceDto::getBouwheerName);
-      case "invoiceDate" -> Comparator.comparing(PostedInvoiceDto::getInvoiceDate, Comparator.nullsLast(Date::compareTo));
-      case "invoiceDueDate" -> Comparator.comparing(PostedInvoiceDto::getInvoiceDueDate, Comparator.nullsLast(Date::compareTo));
-      case "postingDate" -> Comparator.comparing(PostedInvoiceDto::getPostingDate, Comparator.nullsLast(Date::compareTo));
-      case "invoiceAmount" -> Comparator.comparing(PostedInvoiceDto::getInvoiceAmount, Comparator.nullsLast(BigDecimal::compareTo));
+      case "invoiceDate" ->
+        Comparator.comparing(PostedInvoiceDto::getInvoiceDate, Comparator.nullsLast(Date::compareTo));
+      case "invoiceDueDate" ->
+        Comparator.comparing(PostedInvoiceDto::getInvoiceDueDate, Comparator.nullsLast(Date::compareTo));
+      case "postingDate" ->
+        Comparator.comparing(PostedInvoiceDto::getPostingDate, Comparator.nullsLast(Date::compareTo));
+      case "invoiceAmount" ->
+        Comparator.comparing(PostedInvoiceDto::getInvoiceAmount, Comparator.nullsLast(BigDecimal::compareTo));
       default -> null;
     };
   }
@@ -366,19 +347,26 @@ public class LoanSubmissionService {
 
   public EstimatedDisburseDto calculateDisburse(
     Customer customer,
-    CalculateSimulationRequest request
+    CalculateSimulationRequest calculateSimulationRequest
   ) throws SignatureException, JsonProcessingException, ParseException {
     try {
-      if (request.getDisbursePercentage() == null || request.getDisbursePercentage() < 50.0 || request.getDisbursePercentage() > 95.0) {
+      Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(UUID.fromString(calculateSimulationRequest.getBouwheerCode()));
+      if(bouwheerOptional.isEmpty()){
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Bouwheer Not Found");
+      }
+
+      Bouwheer bouwheer = bouwheerOptional.get();
+      if (calculateSimulationRequest.getDisbursePercentage() == null || calculateSimulationRequest.getDisbursePercentage() < 50.0 || calculateSimulationRequest.getDisbursePercentage() > 95.0) {
         throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Persentase pencairan harus di antara 50% sampai 95%");
       }
 
-      final BigDecimal ntfResult = request.getTotalInvoiceAmount()
-        .multiply(BigDecimal.valueOf(request.getDisbursePercentage() / 100.0));
+      final BigDecimal ntfResult = calculateSimulationRequest.getTotalInvoiceAmount()
+        .multiply(BigDecimal.valueOf(calculateSimulationRequest.getDisbursePercentage() / 100.0));
 
+      log.info("NTF Amount : {} ",ntfResult);
       final Optional<Product> findProduct = findProductByAmountAndBouwheer(
         ntfResult.doubleValue(),
-        request.getBouwheerCode()
+        calculateSimulationRequest.getBouwheerCode()
       );
 
       if (findProduct.isEmpty()) {
@@ -392,9 +380,9 @@ public class LoanSubmissionService {
 
       boolean isCustomerExisting = false;
       Cwr validateCwr = null;
-      if (customer != null || !StringUtil.isNullOrEmpty(request.getToken())) {
-        validateCwr = isCustomerExistingByCwr(customer, request.getToken());
-        isCustomerExisting = validateCwr != null;
+      if (customer != null) {
+        validateCwr = isCustomerExistingByCwr(customer);
+        isCustomerExisting = customer.getExistingCust().equals(AppConstants.EXISTING_CUSTOMER);
       }
 
       BigDecimal
@@ -405,25 +393,64 @@ public class LoanSubmissionService {
         legalFeeAmount;
 
       int tenor = 90; // (duedate - skr) + gp bouwherr
-      if (request.getBouwheerCode() != null && request.getInvoiceDueDate() != null) {
-        Optional<Bouwheer> bouwheer = bouwheerRepository.findByBouwheerCode(UUID.fromString(request.getBouwheerCode()));
-        int top = DateTimeUtils.dateDiffInDay(new Date(), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(request.getInvoiceDueDate()));
-        tenor = top + (bouwheer.map(value -> value.getGracePeriod().intValue()).orElse(0));
+      log.info("Term tenor : {} ",tenor);
+      String postingDate = (calculateSimulationRequest.getPostingDate() == null || calculateSimulationRequest.getPostingDate().isEmpty())
+        ? LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
+        : calculateSimulationRequest.getPostingDate();
+
+      if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
+        // Use modern java.time (LocalDate) instead of java.util.Date
+        int top = DateTimeUtils.dateDiffInDay(DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(postingDate), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
+        log.info("Posting Date : {} ",calculateSimulationRequest.getPostingDate());
+        log.info("Invoice duedate : {} ",calculateSimulationRequest.getInvoiceDueDate());
+        log.info("Top : {} ",top);
+        int gracePeriode = Math.toIntExact(bouwheer.getGracePeriod());
+        log.info("Grace periode : {} ",gracePeriode);
+        tenor = top + gracePeriode;
+        log.info("New Tenor : {} ",tenor);
       }
 
       BigDecimal plafondLimitBigDecimal = validateCwr != null
         ? BigDecimal.valueOf(validateCwr.getPlafondAmt())
         : ntfResult.multiply(BigDecimal.valueOf(3.0));
 
+      log.info("Tenor : {} ",tenor);
       double plafonLimit = plafondLimitBigDecimal.doubleValue();
-      double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
+      log.info("Plafond limit : {} ",plafonLimit);
+
+      double nilaiPembiayaan = ntfResult.doubleValue(); //total invoice * % pembiayaan
+      log.info("Nilai pembiayaan : {} ",nilaiPembiayaan);
+
       double effective_Rate = product.getEffectiveRate();
-      double interestAmount = nilaiPembiayaan * effective_Rate / 100 * tenor / 360;//6 digit
+      log.info("Effective Rate : {} ",effective_Rate);
+
+      // simple intertest
+      double interestAmount;
+      if(!Objects.equals(bouwheer.getInterestScheme(), "D")){
+        interestAmount   = nilaiPembiayaan * effective_Rate/100 * tenor / 360;//6 digit
+        log.info("Simple interest : {} ",interestAmount);
+      }else{
+        // 2. Diskonto (In Advance)
+        interestAmount =  nilaiPembiayaan - ((nilaiPembiayaan * 360) / (((effective_Rate/100) * tenor) + 360));
+        log.info("1 {}",nilaiPembiayaan * 360);
+        log.info("2 {}",(((effective_Rate/100) * tenor) + 360));
+        log.info("Diskonto to interest : {} ",interestAmount);
+      }
+
+
+      log.info("Interest Amount : {} ",interestAmount);
+
       double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
+      log.info("Admin Fee : {} ",adminFee);
+
       double jumlahBiaya;
       double provisionRateFee = product.getProvisionRate() * plafonLimit / 100;
+      log.info("Provision Rate : {} ",provisionRateFee);
 
+
+      log.info("Customer existing customer {} ", isCustomerExisting);
       if (!isCustomerExisting) {
+        log.info("Customer new customer {} ", isCustomerExisting);
         jumlahBiaya = provisionRateFee
           + product.getSurveyFee()
           + product.getLegalFee()
@@ -434,29 +461,30 @@ public class LoanSubmissionService {
         legalFeeAmount = BigDecimal.valueOf(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
         adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
         othersFeeAmount = BigDecimal.valueOf(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
+
+        log.info("Provision rate fee {} ", provisionRateFee);
+        log.info("Survey fee {} ", product.getSurveyFee());
+        log.info("Legal fee {} ", product.getLegalFee());
+        log.info("Admin fee {} ", adminFee);
+        log.info("Other fee {} ", product.getOthersFee());
+
+        log.info("Jumlah biaya new customer : {} ",jumlahBiaya);
       } else {
+        log.info("Customer existing customer {} ", isCustomerExisting);
         provisionFeeAmount = new BigDecimal(0);
         surveyFeeAmount = new BigDecimal(0);
         legalFeeAmount = new BigDecimal(0);
         adminFeeAmount = new BigDecimal(0);
         othersFeeAmount = new BigDecimal(0);
         jumlahBiaya = adminFee + product.getOthersFee();
+
+        log.info("Jumlah Biaya existing customer : {} ",jumlahBiaya);
       }
 
       double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
       final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
       final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
-
-      // Update custoemr existing
-      Optional<Customer>customerOptional = customerRepository.findByCustCode(customer.getCustCode());
-      if(customerOptional.isPresent()){
-        log.info("Update customer existing customer {} ",isCustomerExisting);
-
-        customer.setExistingCust(isCustomerExisting?AppConstants.NEW_CUSTOMER:AppConstants.EXIT_CUSTOMER);
-        customer.setDtmUpd(LocalDateTime.now());
-        customerRepository.save(customer);
-      }
-
+      
       return EstimatedDisburseDto.builder()
         .productId(product.getProductId())
         .financingAmount(ntfResult.setScale(0, RoundingMode.HALF_UP)) //yng diajukan
@@ -471,8 +499,10 @@ public class LoanSubmissionService {
         .adminRate(adminRate)
         .effectiveRate(effectiveRate)
         .provisionRate(provisionRate)
-        .totalInvoiceAmount(request.getTotalInvoiceAmount())
+        .totalInvoiceAmount(calculateSimulationRequest.getTotalInvoiceAmount())
         .totalNtfAmount(ntfResult)
+        .postingDate(postingDate)
+        .invoiceDueDate(calculateSimulationRequest.getInvoiceDueDate())
         .product(findProduct.get())
         .build();
     } catch (Exception e) {
@@ -557,9 +587,9 @@ public class LoanSubmissionService {
   ) {
     int schemaRate = Utils.getInt(request.getParameter("schemaRate"));
     int intestRate = Utils.getInt(request.getParameter("intestRate"));
-
     double adminFee = Utils.getInt(request.getParameter("adminFee"));
     String financingHdrCode = request.getParameter("financingHdrCode");
+
     Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
     if (financingHdr.isEmpty()) {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_409, "FinancingHdr not found");
@@ -568,12 +598,15 @@ public class LoanSubmissionService {
 
     final BigDecimal ntfResult = BigDecimal.valueOf(finHdr.getTotalInvoiceAmt())
       .multiply(BigDecimal.valueOf(schemaRate / 100.0));
-    //.setScale(0, RoundingMode.UP);
 
-    UUID bouwheerCode = finHdr.getBouwheer() != null ? finHdr.getBouwheer().getBouwheerCode() : null;
-    Optional<Product> findProduct = findProductByNtfRangeAndBouwheer(ntfResult.doubleValue(), bouwheerCode);
+    log.info("NTF Amount : {} ",ntfResult);
+    final Optional<Product> findProduct = findProductByAmountAndBouwheer(
+      ntfResult.doubleValue(),
+      String.valueOf(finHdr.getBouwheer().getBouwheerCode())
+    );
+
     if (findProduct.isEmpty()) {
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_409, "Product not found");
+      throw new IllegalStateException("Mohon maaf, Product yang sesuai limit tidak ditemukan");
     }
 
     final Product product = findProduct.get();
@@ -588,29 +621,38 @@ public class LoanSubmissionService {
       surveyFeeAmount,
       legalFeeAmount;
 
-
     int tenor = finHdr.getTenor().intValue();
 
+    double nilaiPembiayaan = ntfResult.doubleValue();
+    double effective_Rate;
 
-    double nilaiPembiayaan = ntfResult.doubleValue(); //total invaoice * % pembiayaan
-    double effective_Rate = product.getEffectiveRate();
-    effective_Rate = intestRate;//kiriman dari client
-
+    effective_Rate = intestRate;
     if (effective_Rate < 1) {
       effective_Rate = effective_Rate * 100;
     } else if (effective_Rate > 100) {
       effective_Rate = Math.floor(effective_Rate / 100);
     }
 
-    double interestAmount = nilaiPembiayaan * effective_Rate / 100;
-    //double adminFee = product.getAdminRate() * nilaiPembiayaan / 100;
-    double jumlahBiaya = 0;
-    double provisionRateFee = finHdr.getProvisionFeeAmt();//  product.getProvisionRate() * plafonLimit / 100;
+    double interestAmount;
+    if(!Objects.equals(finHdr.getBouwheer().getInterestScheme(), "D")){
+      interestAmount   = nilaiPembiayaan * effective_Rate/100 * tenor / 360;
+      log.info("Simple interest : {} ",interestAmount);
+    }else{
+      // 2. Diskonto (In Advance)
+      interestAmount =  nilaiPembiayaan - ((nilaiPembiayaan * 360) / (((effective_Rate/100) * tenor) + 360));
+      log.info("1 {}",nilaiPembiayaan * 360);
+      log.info("2 {}",(((effective_Rate/100) * tenor) + 360));
+      log.info("Diskonto to interest : {} ",interestAmount);
+    }
+    log.info("Interest Amount : {} ",interestAmount);
 
+    double jumlahBiaya;
+    double provisionRateFee = finHdr.getProvisionFeeAmt();
+    log.info("Provision Rate : {} ",provisionRateFee);
 
     boolean isCustomerExisting = finHdr.getSurveyFeeAmt().intValue() != 0;
     if (!isCustomerExisting) {
-      //newCustomer
+      log.info("Customer new customer {} ", isCustomerExisting);
       jumlahBiaya = provisionRateFee
         + product.getSurveyFee()
         + product.getLegalFee()
@@ -621,13 +663,24 @@ public class LoanSubmissionService {
       legalFeeAmount = BigDecimal.valueOf(product.getLegalFee()).setScale(0, RoundingMode.HALF_UP);
       adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
       othersFeeAmount = BigDecimal.valueOf(product.getOthersFee()).setScale(0, RoundingMode.HALF_UP);
+
+      log.info("Provision rate fee {} ", provisionRateFee);
+      log.info("Survey fee {} ", product.getSurveyFee());
+      log.info("Legal fee {} ", product.getLegalFee());
+      log.info("Admin fee {} ", adminFee);
+      log.info("Other fee {} ", product.getOthersFee());
+
+      log.info("Jumlah biaya new customer : {} ",jumlahBiaya);
     } else {
+      log.info("Customer existing customer {} ", isCustomerExisting);
       provisionFeeAmount = new BigDecimal(0);
       surveyFeeAmount = new BigDecimal(0);
       legalFeeAmount = new BigDecimal(0);
-      adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
+      adminFeeAmount = new BigDecimal(0);
       othersFeeAmount = new BigDecimal(0);
       jumlahBiaya = adminFee + product.getOthersFee();
+
+      log.info("Jumlah Biaya existing customer : {} ",jumlahBiaya);
     }
 
     double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
@@ -816,8 +869,9 @@ public class LoanSubmissionService {
     simulation.setInvoiceDueDate(
       DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getInvoiceDueDate())
     );
+    simulation.setPostingDate( DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.format(request.getInvoices().getFirst().getPostingDate()));
 
-    /**
+    /**)
      * Calculate
      */
     final EstimatedDisburseDto calculateDisburse = calculateDisburse(customer, simulation);
@@ -839,7 +893,7 @@ public class LoanSubmissionService {
       .financingAmount(calculateDisburse.getFinancingAmount())
       .estimatedDisburseAmount(calculateDisburse.getEstimatedDisburseAmount())
       .maxInvoiceDate(maxInvoiceDueDate)
-      .totalInvoiceAmount(totalInvoiceAmount)
+      .totalInvoiceAmount(calculateDisburse.getTotalInvoiceAmount())
       .interestFeeAmount(calculateDisburse.getInterestFeeAmount())
       .provisionFeeAmount(calculateDisburse.getProvisionFeeAmount())
       .adminFeeAmount(calculateDisburse.getAdminFeeAmount())
@@ -889,7 +943,7 @@ public class LoanSubmissionService {
       .bouwheerCode(request.getBouwheerCode())
       .productId(request.getProductId())
       .disbursePercentage(request.getDisbursePercentage())
-      .totalInvoiceAmount(request.getTotalInvoiceAmount())
+      .totalInvoiceAmount(totalInvoiceAmount)
       .invoices(request.getInvoices())
       .build());
 
@@ -907,6 +961,7 @@ public class LoanSubmissionService {
     CreatedSimulationDto result = CreatedSimulationDto.builder()
       .productId(request.getProductId())
       .financingHdrCode(finalFinancingHdr.getFinancingHdrCode())
+      .totalInvoiceAmount(BigDecimal.valueOf(finalFinancingHdr.getTotalInvoiceAmt()))
       .invoices(createdInvoices)
       .build();
 
@@ -974,16 +1029,137 @@ public class LoanSubmissionService {
       }
 
 
-      Customer customer = customerRepository.findByCustCode(custCOde.getCustCode()).get();
-
-
+      Optional<Customer> customerOptional = customerRepository.findByCustCode(custCOde.getCustCode());
+      if (customerOptional.isEmpty()) {
+        log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", custCOde.getCustCode());
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Customer tidak ditemukan!");
+      }
+      Customer customer = customerOptional.get();
       final FinancingHdr financing = financingHdrService.getByCode(request.getFinancingHdrCode());
       FinancingAuditData before = toFinancingAuditData(financing);
-      {
-        applySubmissionMetadata(financing, customer.getCustName(), DateTimeUtils.now());
+
+      applySubmissionMetadata(financing, customer.getCustName(), DateTimeUtils.now());
+
+      boolean isAutoASSIGNMENT = false;
+      //set auto ASSIGNMENT
+      List<FinancingHdr> financingHdrs = new ArrayList<>();
+      if (financing.getMstBranch() != null) {
+        financingHdrs.add(financing);
+      }
+      financingHdrs.addAll(financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer));
+      for (FinancingHdr financingHdr : financingHdrs) {
+        MstBranch hdrBranch = financingHdr.getMstBranch();
+
+        if (hdrBranch != null) {
+          //update jadi Assign
+          log.info("Repeat Order loan submitted {} , Branch {} ", customer.getCustEmail(), hdrBranch.getBranchCode());
+          financing.setFinancingStatus("INPROCESS");
+          financing.setFinancingStep("ASSIGNMENT");
+          financing.setMstBranch(hdrBranch);
+          financing.setDtmUpd(DateTimeUtils.now());
+
+          final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
+            .stream()
+            .map((item) ->
+              InvoiceEmailPayload.builder()
+                .invoiceNo(item.getInvoice().getCustInvNo())
+                .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
+                .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+                .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
+                .description(item.getInvoice().getInvoiceDescription())
+                .bouwheerName(financing.getBouwheer().getBouwheerName())
+                .build()
+            ).toList();
+          final double totalFeeAmt =
+            financing.getAdminFeeAmt()
+              + financing.getLegalFeeAmtNett()
+              + financing.getInsuranceFeeAmt()
+              + financing.getOthersFeeAmt()
+              + financing.getProvisionFeeAmt()
+              + financing.getSurveyFeeAmtNett();
+
+          //getAPI AO,BH
+          MailPositionDto to = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "BM/BOH");
+          MailPositionDto ccRM = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "RM");
+          MailPositionDto toAO = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "AO/AM");
+
+          java.util.Set<String> toEmailSet = new java.util.LinkedHashSet<>();
+          java.util.Set<String> ccEmailSet = new java.util.LinkedHashSet<>();
+
+          if (to != null && to.getData() != null) {
+            to.getData().stream()
+              .map(MailDataDto::getEmail)
+              .filter(email -> email != null && !email.trim().isEmpty())
+              .forEach(toEmailSet::add);
+          }
+
+          if (toAO != null && toAO.getData() != null) {
+            toAO.getData().stream()
+              .map(MailDataDto::getEmail)
+              .filter(email -> email != null && !email.trim().isEmpty())
+              .forEach(toEmailSet::add);
+          }
 
 
+          if (ccRM != null && ccRM.getData() != null) {
+            ccRM.getData().stream()
+              .map(MailDataDto::getEmail)
+              .filter(email -> email != null && !email.trim().isEmpty())
+              .forEach(ccEmailSet::add);
+          }
+
+          String toEmail = toEmailSet.isEmpty() ? null : String.join(";", toEmailSet);
+          String ccEmail = ccEmailSet.isEmpty() ? null : String.join(";", ccEmailSet);
+
+          if (ccEmail != null && toEmailSet.contains(ccEmail)) {
+            ccEmailSet.remove(ccEmail);
+            ccEmail = ccEmailSet.isEmpty() ? null : String.join(";", ccEmailSet);
+          }
+
+          log.info("Final To Emails : {}", toEmail);
+          log.info("Final Cc Emails : {}", ccEmail);
+
+          String phone = financing.getCustomer().getCustMobilePhone();
+          if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
+            if (financing.getCustomer().getCompany() != null) {
+              phone = financing.getCustomer().getCompany().getPhone();
+            }
+          }
+
+          isAutoASSIGNMENT = true;
+          log.info("Send email to Branch notification loan submitted to: {}  cc: {} ", toEmail, ccEmail);
+          emailService.sendNotificationBranchAssign(
+            toEmail,
+            financing.getBouwheer().getBouwheerName(),
+            financing.getMstBranch().getBranchName(),
+            LoanDisburseEmailPayload.builder()
+              .financingCode(financing.getFinancingHdrCode().toString())
+              .applicationDate(DateTimeUtils.formatToDate(financing.getDtmCrt()))
+              .bouwheerName(financing.getBouwheer().getBouwheerName())
+              .companyName(financing.getCustomer().getCustName())
+              .email(financing.getCustomer().getCustEmail())
+              .phoneNumber(phone)
+              .tenor(financing.getTenor())
+              .toEmail(toEmail)
+              .ccEmail(ccEmail)
+              .financingCode(financing.getFinancingHdrCode().toString())
+              .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
+              .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
+              .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
+              .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+              .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
+              .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
+              .invoices(invoices)
+              .build()
+          );
+          break;
+        }
+      }
+
+
+      if (!isAutoASSIGNMENT) {
         try {
+          log.info("New Order loan submitted {}", customer.getCustEmail());
           assignMappedBranch(financing);
         } catch (Exception exception) {
           log.warn(
@@ -993,212 +1169,95 @@ public class LoanSubmissionService {
           );
         }
 
+        log.info("Process send email notification loan submitted");
+        final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
+          .stream()
+          .map((item) ->
+            InvoiceEmailPayload.builder()
+              .invoiceNo(item.getInvoice().getCustInvNo())
+              .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
+              .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
+              .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
+              .description(item.getInvoice().getInvoiceDescription())
+              .bouwheerName(financing.getBouwheer().getBouwheerName())
+              .build()
+          ).toList();
+        final double totalFeeAmt =
+          financing.getAdminFeeAmt()
+            + financing.getLegalFeeAmtNett()
+            + financing.getInsuranceFeeAmt()
+            + financing.getOthersFeeAmt()
+            + financing.getProvisionFeeAmt()
+            + financing.getSurveyFeeAmtNett();
 
-        boolean isAutoASSIGNMENT = false;
-        //set auto ASSIGNMENT
-        try {
-          List<FinancingHdr> financingHdrs = new ArrayList<>();
-          if (financing.getMstBranch() != null) {
-            financingHdrs.add(financing);
-          }
-          financingHdrs.addAll(financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer));
-          for (FinancingHdr financingHdr : financingHdrs) {
-            MstBranch hdrBranch = financingHdr.getMstBranch();
+        //Skip get email from API
+//        String branchCode = mstBranchRepository.findByBranchName("HEAD OFFICE")
+//          .map(MstBranch::getBranchCode)
+//          .orElseThrow(() -> new RuntimeException("BranchCode tidak ditemukan"));
+//
+//        MailPositionDto ccBM = configRemoteService.getEmailByPosition("", branchCode, "CMS");
+//        StringBuilder ccEmailBuilder = new StringBuilder();
+//
+//        if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
+//          for (int i = 0; i < ccBM.getData().size(); i++) {
+//            ccEmailBuilder.append(!ccEmailBuilder.isEmpty() ? ";" : "");
+//            ccEmailBuilder.append(ccBM.getData().get(i).getEmail());
+//          }
+//        }
+//
+//        String mjrEmail = ccEmailBuilder.toString();
+//        String toEmail = ccEmailBuilder.toString();
+//        log.info("email CMS: {}", ccEmailBuilder);
 
-            if (hdrBranch != null) {
-
-              //update jadi Assign
-              financing.setFinancingStatus("INPROCESS");
-              financing.setFinancingStep("ASSIGNMENT");
-              financing.setMstBranch(hdrBranch);
-              financing.setDtmUpd(DateTimeUtils.now());
-              //send email
-
-              try {
-                final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
-                  .stream()
-                  .map((item) ->
-                    InvoiceEmailPayload.builder()
-                      .invoiceNo(item.getInvoice().getCustInvNo())
-                      .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt().doubleValue()))
-                      .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
-                      .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-                      .description(item.getInvoice().getInvoiceDescription())
-                      .bouwheerName(financing.getBouwheer().getBouwheerName())
-                      .build()
-                  ).toList();
-                final double totalFeeAmt =
-                  financing.getAdminFeeAmt()
-                    + financing.getLegalFeeAmtNett()
-                    + financing.getInsuranceFeeAmt()
-                    + financing.getOthersFeeAmt()
-                    + financing.getProvisionFeeAmt()
-                    + financing.getSurveyFeeAmtNett();
-                //getAPI AO,BH
-                MailPositionDto to = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "BM/BOH");
-                MailPositionDto ccRM = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "RM");
-                MailPositionDto toAO = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "AO/AM");
-
-                java.util.Set<String> toEmailSet = new java.util.LinkedHashSet<>();
-                java.util.Set<String> ccEmailSet = new java.util.LinkedHashSet<>();
-
-                if (to != null && to.getData() != null) {
-                  to.getData().stream()
-                    .map(MailDataDto::getEmail)
-                    .filter(email -> email != null && !email.trim().isEmpty())
-                    .forEach(toEmailSet::add);
-                }
-
-                if (toAO != null && toAO.getData() != null) {
-                  toAO.getData().stream()
-                    .map(MailDataDto::getEmail)
-                    .filter(email -> email != null && !email.trim().isEmpty())
-                    .forEach(toEmailSet::add);
-                }
-
-
-                if (ccRM != null && ccRM.getData() != null) {
-                  ccRM.getData().stream()
-                    .map(MailDataDto::getEmail)
-                    .filter(email -> email != null && !email.trim().isEmpty())
-                    .forEach(ccEmailSet::add);
-                }
-
-                String toEmail = toEmailSet.isEmpty() ? null : String.join(";", toEmailSet);
-                String ccEmail = ccEmailSet.isEmpty() ? null : String.join(";", ccEmailSet);
-
-                if (ccEmail != null && toEmailSet.contains(ccEmail)) {
-                  ccEmailSet.remove(ccEmail);
-                  ccEmail = ccEmailSet.isEmpty() ? null : String.join(";", ccEmailSet);
-                }
-
-                log.info("Final To Emails : {}", toEmail);
-                log.info("Final Cc Emails : {}", ccEmail);
-
-                String phone = financing.getCustomer().getCustMobilePhone();
-                if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
-                  if (financing.getCustomer().getCompany() != null) {
-                    phone = financing.getCustomer().getCompany().getPhone();
-                  }
-                }
-
-                isAutoASSIGNMENT = true;
-
-                emailService.sendNotificationBranchAssign(
-                  toEmail,
-                  financing.getBouwheer().getBouwheerName(),
-                  financing.getMstBranch().getBranchName(),
-                  LoanDisburseEmailPayload.builder()
-                    .financingCode(financing.getFinancingHdrCode().toString())
-                    .applicationDate(DateTimeUtils.formatToDate(financing.getDtmCrt()))
-                    .bouwheerName(financing.getBouwheer().getBouwheerName())
-                    .companyName(financing.getCustomer().getCustName())
-                    .email(financing.getCustomer().getCustEmail())
-                    .phoneNumber(phone)
-                    .tenor(financing.getTenor())
-                    .toEmail(toEmail)
-                    .ccEmail(ccEmail)
-                    .financingCode(financing.getFinancingHdrCode().toString())
-                    .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
-                    .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
-                    .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
-                    .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-                    .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
-                    .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
-                    .invoices(invoices)
-                    .build()
-                );
-              } catch (Exception ignored) {
-
-              }
-              break;
-            }
-          }
-
-        } catch (Exception e) {
-        }
-
-
-        if (!isAutoASSIGNMENT) {
-          //sed to major account
-          try {
-            final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
-              .stream()
-              .map((item) ->
-                InvoiceEmailPayload.builder()
-                  .invoiceNo(item.getInvoice().getCustInvNo())
-                  .invoiceAmt(CommonFormattingUtils.formatAmount(item.getInvoice().getInvoiceAmt()))
-                  .invoiceDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDate()))
-                  .invoiceDueDate(DateTimeUtils.formatToDate(item.getInvoice().getInvoiceDueDate()))
-                  .description(item.getInvoice().getInvoiceDescription())
-                  .bouwheerName(financing.getBouwheer().getBouwheerName())
-                  .build()
-              ).toList();
-            final double totalFeeAmt =
-              financing.getAdminFeeAmt()
-                + financing.getLegalFeeAmtNett()
-                + financing.getInsuranceFeeAmt()
-                + financing.getOthersFeeAmt()
-                + financing.getProvisionFeeAmt()
-                + financing.getSurveyFeeAmtNett();
-            //getAPI CMS
-            String branchCode = mstBranchRepository.findByBranchName("HEAD OFFICE")
-              .map(MstBranch::getBranchCode)
-              .orElseThrow(() -> new RuntimeException("BranchCode tidak ditemukan"));
-
-            MailPositionDto ccBM = configRemoteService.getEmailByPosition("", branchCode, "CMS");
-            StringBuilder ccEmailBuilder = new StringBuilder();
-
-            if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
-              for (int i = 0; i < ccBM.getData().size(); i++) {
-                ccEmailBuilder.append(!ccEmailBuilder.isEmpty() ? ";" : "");
-                ccEmailBuilder.append(ccBM.getData().get(i).getEmail());
-              }
-            }
-
-            String mjrEmail = ccEmailBuilder.toString();
-            String toEmail = ccEmailBuilder.toString();
-            log.info("email CMS: {}", ccEmailBuilder);
-
-            String phone = financing.getCustomer().getCustMobilePhone();
-            if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
-              if (financing.getCustomer().getCompany() != null) {
-                phone = financing.getCustomer().getCompany().getPhone();
-              }
-            }
-            //kirim email assign dan re assign
-            emailService.sendNotificationMajorAccount(
-              mjrEmail,
-              financing.getBouwheer().getBouwheerName(),
-              financing.getMstBranch().getBranchName(),
-              LoanDisburseEmailPayload.builder()
-                .financingCode(financing.getFinancingHdrCode().toString())
-                .applicationDate(DateTimeUtils.formatToDate(financing.getDtmCrt()))
-                .companyName(financing.getCustomer().getCustName())
-                .email(financing.getCustomer().getCustEmail())
-                .bouwheerName(financing.getBouwheer().getBouwheerName())
-                .phoneNumber(phone)
-                .tenor(financing.getTenor())
-                .toEmail(toEmail)
-                .ccEmail(toEmail)
-                .financingCode(financing.getFinancingHdrCode().toString())
-                .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
-                .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
-                .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
-                .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
-                .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
-                .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
-                .invoices(invoices)
-                .build()
-            );
-          } catch (Exception e) {
-            log.error(e.getMessage());
+        String phone = financing.getCustomer().getCustMobilePhone();
+        if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
+          if (financing.getCustomer().getCompany() != null) {
+            phone = financing.getCustomer().getCompany().getPhone();
           }
         }
 
+        List<String> majorAccountEmails = mstAppRoleFormUserRepository.findActiveMajorAccountEmails();
+        java.util.Set<String> toMjrEmailSet = new java.util.LinkedHashSet<>();
 
-        financingHdrRepository.save(financing);
+        if (majorAccountEmails != null && !majorAccountEmails.isEmpty()) {
+          majorAccountEmails.stream()
+            .map(String::trim)
+            .filter(email -> !email.trim().isEmpty())
+            .forEach(toMjrEmailSet::add);
+        }
+
+        String toMjrEmails = toMjrEmailSet.isEmpty() ? null : String.join(";", toMjrEmailSet);
+        log.info("Send email to Major Account Assign and Re Assign notification loan submitted {} ", toMjrEmails);
+
+        emailService.sendNotificationMajorAccount(
+          toMjrEmails,
+          financing.getBouwheer().getBouwheerName(),
+          financing.getMstBranch().getBranchName(),
+          LoanDisburseEmailPayload.builder()
+            .financingCode(financing.getFinancingHdrCode().toString())
+            .applicationDate(DateTimeUtils.formatToDate(financing.getDtmCrt()))
+            .companyName(financing.getCustomer().getCustName())
+            .email(financing.getCustomer().getCustEmail())
+            .bouwheerName(financing.getBouwheer().getBouwheerName())
+            .phoneNumber(phone)
+            .tenor(financing.getTenor())
+            .toEmail(toMjrEmails)
+            .ccEmail(null)
+            .financingCode(financing.getFinancingHdrCode().toString())
+            .financingDueDate(DateTimeUtils.formatToDate(financing.getFinancingDueDate()))
+            .retention(CommonFormattingUtils.formatAmount(financing.getRetention()))
+            .financingAmt(CommonFormattingUtils.formatAmount(financing.getFinancingAmt()))
+            .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
+            .invoiceAmt(CommonFormattingUtils.formatAmount(financing.getTotalInvoiceAmt()))
+            .disburseAmt(CommonFormattingUtils.formatAmount(financing.getDisburseAmt()))
+            .invoices(invoices)
+            .build()
+        );
       }
+
+      log.info("Save financing header {} ", financing.getFinancingHdrCode());
+      financingHdrRepository.save(financing);
+
       auditTrailService.record(
         "LOAN_SUBMISSION",
         AuditAction.SUBMIT,
@@ -1250,13 +1309,12 @@ public class LoanSubmissionService {
         }
       }
 
-      //kirim email setelah submit debitur
+      log.info("Send email to Debitur notification loan submitted {} ", customer.getCustEmail());
       emailService.sendNotificationLoanSubmited(
         customer,
-//                    "",
         LoanDisburseEmailPayload.builder()
           .financingCode(createdFinancing.getFinancingHdrCode().toString())
-          .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDisburseDate()))
+          .applicationDate(DateTimeUtils.formatToDate(createdFinancing.getDtmCrt()))
           .companyName(customer.getCustName())//createdFinancing.getBouwheer().getBouwheerName()
           .phoneNumber(phoneNumber == null ? createdFinancing.getCustomer().getCustMobilePhone() : phoneNumber)
           .tenor(createdFinancing.getTenor())
@@ -1272,9 +1330,7 @@ public class LoanSubmissionService {
           .invoices(invoices)
           .build()
       );
-
     } catch (Exception e) {
-      e.printStackTrace();
       log.error("createLoanSubmission, error {}", e.getMessage());
       throw e;
     }
@@ -1291,7 +1347,6 @@ public class LoanSubmissionService {
     if (firstSubmission) {
       financing.setDtmCrt(submittedAt);
     }
-
     financing.setFinancingStatus(FinancingStatus.NEW.name());
     financing.setFinancingStep(FinancingStatus.NEW.name());
     financing.setDtmUpd(submittedAt);
@@ -1423,7 +1478,7 @@ public class LoanSubmissionService {
     return importantNotesService.importantNotesDto();
   }
 
-  public ExternalIntegrationLoanSimulationDto saveImportantNotes(SaveImportantNotesRequest request) throws SignatureException, JsonProcessingException {
+  public ExternalIntegrationLoanSimulationDto saveImportantNotes(SaveImportantNotesRequest request) throws JsonProcessingException {
     try {
       VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(null, request.getToken());
       final InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService.inquiryVendor(vendorTokenExtractor.getVendorCode()).getData();
@@ -1439,7 +1494,7 @@ public class LoanSubmissionService {
     }
   }
 
-  private VendorTokenExtractor vendorTokenExtractor(Customer customer, String token) throws SignatureException {
+  private VendorTokenExtractor vendorTokenExtractor(Customer customer, String token) {
     return new VendorTokenExtractor(
       bouwheerRepository,
       jwtLoanSubmissionService,
@@ -1448,52 +1503,20 @@ public class LoanSubmissionService {
     );
   }
 
-  private Cwr isCustomerExistingByCwr(Customer customer, String token) throws SignatureException, JsonProcessingException {
-    final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
-    final ExistingCustomerDto existingCustomer = existingCustomerService.findLastByVendorCode(vendorTokenExtractor.getVendorCode())
-      .orElse(null);
-    if (customer == null) {
-      InquiryVendorRemoteDto inquiryVendorRemote = customerRemoteService
-        .inquiryVendor(vendorTokenExtractor.getVendorCode())
-        .getData();
-
-      Cwr cwr = validateCwrForCustomerExisting(
-        ExistingCustomerRequest.KeyType.npwp.name(),
-        inquiryVendorRemote.getNpwp(),
-        null,
-        null
-      );
-
-      if (existingCustomer == null) {
-        existingCustomerService.createOrUpdate(
-          vendorTokenExtractor.getVendorCode(),
-          cwr != null,
-          ExistingCustomerRequest.KeyType.npwp.name().toUpperCase(),
-          inquiryVendorRemote.getNpwp()
-        );
-      }
-
-      return cwr;
-    }
-
-    final String identityType = customer.getCustIdTypeCode();
-    final String identityNo = customer.getCompany() != null
-      ? customer.getCompany().getIdentityNo()
-      : (customer.getPersonal() != null ? customer.getPersonal().getIdentityNo() : customer.getCustIdNo());
-
+  private Cwr isCustomerExistingByCwr(Customer customer) {
     Cwr cwr = validateCwrForCustomerExisting(
-      identityType,
-      identityNo,
+      customer.getCustIdTypeCode(),
+      customer.getCustIdNo(),
       customer,
-      bouwheerRepository.findByBouwheerCode(vendorTokenExtractor.getBouwheerCode())
+      bouwheerRepository.findByBouwheerCode(UUID.fromString(customer.getBouwheer()))
         .orElse(null)
     );
 
     existingCustomerService.createOrUpdate(
       customer.getCustExternalCode(),
       cwr != null,
-      identityType,
-      identityNo
+      customer.getCustIdTypeCode(),
+      customer.getCustIdNo()
     );
 
     return cwr;
@@ -1504,7 +1527,7 @@ public class LoanSubmissionService {
     String identityNo,
     Customer customer,
     Bouwheer bouwheer
-  ) throws JsonProcessingException {
+  ) {
     try {
       return existingCustomerService.inquiryAndDecideExistingCustomer(
         ExistingCustomerRequest.KeyType.valueOf(identityType.toLowerCase()),
@@ -1623,7 +1646,7 @@ public class LoanSubmissionService {
     UUID parsedBouwheerCode = parseBouwheerCode(bouwheerCode);
     Optional<Product> productOptional = productRepository.findFirstByAmountInRangeAndBouwheerCode(amount, parsedBouwheerCode);
     if (productOptional.isEmpty()) {
-      throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Product not found");
+      throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Nominal belum terdaftar di mapping produk");
     }
     return productOptional;
   }
@@ -1631,24 +1654,9 @@ public class LoanSubmissionService {
   private Optional<Product> findProductByNtfRangeAndBouwheer(Double amount, UUID bouwheerCode) {
     Optional<Product> productOptional = productRepository.findFirstByAmountInRangeAndBouwheerCode(amount, bouwheerCode);
     if (productOptional.isEmpty()) {
-      throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Product not found");
+      throw new BusinessException(HttpStatus.NOT_FOUND, AppConstants.CODE_NOT_FOUND, "Nominal belum terdaftar di mapping produk");
     }
     return productOptional;
-  }
-
-  private Product findProductByIdAndBouwheer(Long productId, String bouwheerCode) {
-    Product product = productRepository.findById(productId).orElseThrow();
-    UUID parsedBouwheerCode = parseBouwheerCode(bouwheerCode);
-
-    if (parsedBouwheerCode == null || product.getBouwheer() == null) {
-      return product;
-    }
-
-    if (!parsedBouwheerCode.equals(product.getBouwheer().getBouwheerCode())) {
-      throw new IllegalStateException("Product not found for selected Bouwheer");
-    }
-
-    return product;
   }
 
   private UUID parseBouwheerCode(String bouwheerCode) {

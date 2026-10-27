@@ -5,6 +5,7 @@ import com.kmkbe.core.exception.LoanDocMandatoryException;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.exception.BusinessException;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import io.netty.util.internal.StringUtil;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.extern.slf4j.Slf4j;
@@ -77,6 +78,12 @@ public class ExceptionUtils {
         if (exception instanceof ExpiredJwtException) {
             detail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, exception.getMessage());
             detail.setProperty("description", "Expired Session");
+            detail.setDetail(exception.getMessage());
+        }
+
+        if (exception instanceof JwtException) {
+            detail = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid token signature");
+            detail.setProperty("description", "Invalid token signature");
             detail.setDetail(exception.getMessage());
         }
 

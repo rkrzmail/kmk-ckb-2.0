@@ -14,11 +14,11 @@ public class SignerRequestDto {
     private String cwrNo;
 
     @JsonProperty("RequestDateTime")
-    private String RequestDateTime;
+    private String requestDateTime;
 
     public SignerRequestDto(String custNo, String cwrNo, String RequestDateTime) {
         this.custNo = custNo;
         this.cwrNo = cwrNo;
-        this.RequestDateTime = RequestDateTime;
+        this.requestDateTime = RequestDateTime;
     }
 }

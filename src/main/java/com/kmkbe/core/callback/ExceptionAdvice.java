@@ -8,6 +8,7 @@ import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.utils.ExceptionUtils;
 import com.kmkbe.core.utils.ObjectUtils;
 import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -112,6 +113,14 @@ public class ExceptionAdvice {
   @ExceptionHandler(ExpiredJwtException.class)
   public ResponseEntity<CommonResult<Object>> handleExpiredJwt(
     ExpiredJwtException exception,
+    WebRequest request
+  ) {
+    return ExceptionUtils.handleException(exception, request);
+  }
+
+  @ExceptionHandler(JwtException.class)
+  public ResponseEntity<CommonResult<Object>> handleJwt(
+    JwtException exception,
     WebRequest request
   ) {
     return ExceptionUtils.handleException(exception, request);

@@ -1,6 +1,7 @@
 package com.kmkbe.modules.branch_admin.controller;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.kmkbe.core.domain.constant.FinancingStatus;
 import com.kmkbe.core.domain.dto.AgreementDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementDto;
 import com.kmkbe.core.domain.entity.*;
@@ -22,6 +23,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.transaction.Transactional;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.validation.annotation.Validated;
@@ -88,7 +91,6 @@ public class AgreementController {
     );
   }
 
-  @Transactional
   @PostMapping(
     value = "/upload/contract",
     consumes = MediaType.MULTIPART_FORM_DATA_VALUE
@@ -99,6 +101,10 @@ public class AgreementController {
 
   ) throws Exception {
     FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
+
+    if (financingHdr.getFinancingStatus().equals("LIVE")) {
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Status sudah GOLIVE");
+    }
 
     if (financingHdr.getFinancingStep().equals("GOLIVE")) {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Status sudah GOLIVE");
@@ -111,12 +117,28 @@ public class AgreementController {
       throw new IllegalStateException("Agreement Not Found with given argument");
     }
 
-    agreementService.upload(
-      currentUserService.internalUser(),
-      file,
-      agreement.getAgreementCode(),
-      String.valueOf(financingHdr.getBouwheer().getBouwheerCode())
-    );
+    String agreementFile;
+    try {
+      agreementFile = agreementService.upload(
+        currentUserService.internalUser(),
+        file,
+        agreement.getAgreementCode(),
+        String.valueOf(financingHdr.getBouwheer().getBouwheerCode())
+      );
+    } catch (DataIntegrityViolationException exception) {
+      for (Throwable cause = exception; cause != null; cause = cause.getCause()) {
+        if (cause instanceof ConstraintViolationException violation
+          && "agreement_file_agreement_code_idx".equals(violation.getConstraintName())) {
+          throw new BusinessException(HttpStatus.CONFLICT, HttpStatus.CONFLICT.value(),
+            "Kontrak untuk No. Perjanjian " + agreement.getAgreementCode()
+              + " gagal diunggah karena data dokumennya bentrok saat diperbarui. "
+              + "Minta administrator memeriksa ID dokumen yang duplikat pada tabel agreement_file. "
+              + "Status pengajuan tidak berubah dan email notifikasi tidak diproses.");
+        }
+      }
+      throw new BusinessException(HttpStatus.CONFLICT, HttpStatus.CONFLICT.value(),
+        "Upload kontrak gagal karena data dokumen perjanjian bermasalah. Status pengajuan tidak berubah dan email notifikasi tidak diproses. Hubungi administrator.");
+    }
 
 
     // Update financing status
@@ -133,26 +155,25 @@ public class AgreementController {
 //      updateFinancingStatusRequest
 //    );
 
-    financingHdr.setFinancingStatus(financingHdr.getFinancingStatus().equalsIgnoreCase("LIVE")?financingHdr.getFinancingStatus():"INPROCESS");
-    financingHdr.setFinancingStep(financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")?financingHdr.getFinancingStep():"SIGNED");
-    financingHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
-    financingHdr.setDtmUpd(LocalDateTime.now());
-    financingHdrRepository.save(financingHdr);
-
     /**
      * Save Agreement Signing Manual
      */
-
     agreementFileSigningService.saveSigningResult(
       agreement.getAgreementCode(),
-      "-",
+      agreementFile,
       currentUserService.internalUsername(),
       financingHdrCode,
       "SIGN_DOC"
     );
 
+    financingHdr.setFinancingStatus(FinancingStatus.IN_PROCESS.getValue());
+    financingHdr.setFinancingStep(FinancingStatus.SIGNED.getValue());
+    financingHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
+    financingHdr.setDtmUpd(LocalDateTime.now());
+    financingHdrRepository.save(financingHdr);
+
     /**
-     * Send email to bouhweer
+     * Send email to bouwheer
      */
     agreementService.sendBouwheerPaymentNotification(financingHdr);
 

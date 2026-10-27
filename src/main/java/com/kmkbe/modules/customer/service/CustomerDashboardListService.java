@@ -65,7 +65,7 @@ public class CustomerDashboardListService {
   public PaginationResult<CustomerCreditFacilityNewDto> listcreditfacilities(
     Customer customer,
     BasePaginationRequest request
-  ) throws SignatureException {
+  ) {
     PaginationRequest paginationRequest = PaginationRequests.from(request);
     Page<FinancingHdr> financingPage = financingHdrRepository.findAllByRawOrder(
       customer.getCustCode().toString(), Pageable.unpaged()
@@ -81,49 +81,6 @@ public class CustomerDashboardListService {
       this::creditFacilityField,
       CustomerCreditFacilityNewDto::getFinancingHdrCode
     );
-  }
-
-  public PaginationResult<CustomerCreditFacilityNewDto> listcreditfacilities(
-    Customer customer,
-    PaginationRequest request
-  ) throws SignatureException {
-    try {
-      int pageNo = 0, pageSize = 10;
-
-      if (request.getPageNo() != null) {
-        pageNo = request.getPageNo();
-      }
-
-      if (request.getPageSize() != null) {
-        pageSize = request.getPageSize();
-      }
-
-      if (pageNo > 0) {
-        pageNo = pageNo - 1;
-      }
-
-      final Page<FinancingHdr> paginationFinancing = financingHdrRepository.findAllByRawOrder(
-        customer.getCustCode().toString(), PageRequest.of(pageNo, pageSize)
-
-      );
-
-      //DateTimeUtils.now()
-
-      final List<CustomerCreditFacilityNewDto> list = paginationFinancing.getContent()
-        .stream()
-        .map(this::toCreditFacilityDto)
-        .toList();
-
-      return PaginationResult.<CustomerCreditFacilityNewDto>builder()
-        .currentPage(pageNo + 1)
-        .totalData(paginationFinancing.getTotalElements())
-        .totalPage(paginationFinancing.getTotalPages())
-        .list(list)
-        .build();
-    } catch (Exception e) {
-      log.error("submissionDistribution: error {}", e.getMessage());
-      throw e;
-    }
   }
 
   String invoiceNumbers(List<FinancingDtl> financingDetails) {
@@ -144,7 +101,7 @@ public class CustomerDashboardListService {
   public PaginationResult<CustomerCreditFacilityDueDateDto> listinvoicesduedate(
     Customer customer,
     BasePaginationRequest request
-  ) throws SignatureException {
+  ) {
     PaginationRequest paginationRequest = PaginationRequests.from(request);
     Page<FinancingDtl> financingPage = financingDtlRepository.findByCustomer(
       customer.getCustCode().toString(), Pageable.unpaged()
@@ -166,13 +123,7 @@ public class CustomerDashboardListService {
   public PaginationResult<CustomerCreditFacilityDueDateDto> listinvoicesduedate(
     Customer customer,
     PaginationRequest request
-  ) throws SignatureException {
-        /*
-        status samapi paid
-        nama debitur diganti PO
-        tgl ver digato postdate
-         */
-
+  ) {
     try {
       int pageNo = 0, pageSize = 10;
 
@@ -210,9 +161,6 @@ public class CustomerDashboardListService {
   private CustomerCreditFacilityNewDto toCreditFacilityDto(FinancingHdr financing) {
     CustomerLocation location = customerLocation(financing);
     BranchInfo branch = branchInfo(financing, location);
-    boolean isNewCustomer = financingHdrRepository.countByCustomerAndFinancingStatus(
-      financing.getCustomer(), "PAID"
-    ) == 0;
     MappedFinancingStatus mappedStatus = new MappedFinancingStatus(
       financing, MappedFinancingStatus.Type.Customer
     );
@@ -227,11 +175,13 @@ public class CustomerDashboardListService {
       .city(location.city())
       .dueDate(Utils.fromInstant(financing.getFinancingDueDate()))
       .financingAmount(BigDecimal.valueOf(financing.getFinancingAmt()))
+      .totalInvoiceAmount(financing.getTotalInvoiceAmt() == null ? null : BigDecimal.valueOf(financing.getTotalInvoiceAmt()))
+      .invoiceQty(financing.getInvoiceQty())
       .branchRecommendedCode(branch.recommendedCode())
       .branchRecommended(branch.recommendedName())
       .currentBranchCode(branch.currentCode())
       .currentBranch(branch.currentName())
-      .custStatus(isNewCustomer ? "New Customer" : "Existing Customer")
+      .custStatus(financing.getCustomer().getExistingCust())
       .status(StatusLabelDto.builder()
         .status(mappedStatus.getStatus())
         .statusLabel(mappedStatus.getLabel())
@@ -245,9 +195,7 @@ public class CustomerDashboardListService {
     FinancingHdr financing = financingDetail.getFinancingHdr();
     CustomerLocation location = customerLocation(financing);
     BranchInfo branch = branchInfo(financing, location);
-    boolean isNewCustomer = financingHdrRepository.countByCustomerAndFinancingStatus(
-      financing.getCustomer(), "PAID"
-    ) == 0;
+
     MappedFinancingStatus mappedStatus = new MappedFinancingStatus(
       financing, MappedFinancingStatus.Type.MajorAccount
     );
@@ -268,7 +216,7 @@ public class CustomerDashboardListService {
       .branchRecommended(branch.recommendedName())
       .currentBranchCode(branch.currentCode())
       .currentBranch(branch.currentName())
-      .custStatus(isNewCustomer ? "New Customer" : "Existing Customer")
+      .custStatus(financing.getCustomer().getExistingCust())
       .status(StatusLabelDto.builder()
         .status(mappedStatus.getStatus())
         .statusLabel(mappedStatus.getLabel())
@@ -327,7 +275,8 @@ public class CustomerDashboardListService {
       || "signing".equalsIgnoreCase(status)
       || "signed".equalsIgnoreCase(status)
       || "live".equalsIgnoreCase(status)
-      || "golive".equalsIgnoreCase(status)) return "#ccffcc";
+      || "golive".equalsIgnoreCase(status)
+      || "paid".equalsIgnoreCase(status)) return "#ccffcc";
     return "#FF5C5C";
   }
 

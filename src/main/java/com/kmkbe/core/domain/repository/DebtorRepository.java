@@ -23,7 +23,16 @@ public interface DebtorRepository extends JpaRepository<Debtor, Long> {
   @Query("SELECT d FROM Debtor d WHERE d.financingHdrCode = :financingHdrCode AND d.signerStatus = 'active' ORDER BY d.dtmCrt DESC")
   List<Debtor> findKaryawanByFinancingHdrCode(@Param("financingHdrCode") String financingHdrCode);
 
-  @Query("SELECT d.karyawanName FROM Debtor d WHERE d.debtorName = :debtorName AND d.karyawanName IS NOT NULL")
+  @Query("""
+    SELECT d.karyawanName
+    FROM Debtor d
+    WHERE d.debtorName = :debtorName
+      AND d.karyawanName IS NOT NULL
+      AND d.signerStatus = 'active'
+      AND (d.isActive IS NULL OR d.isActive = true)
+      AND LOWER(COALESCE(d.signhubStatus, '')) IN ('active', 'registered')
+    ORDER BY d.dtmCrt DESC
+    """)
   List<String> findKaryawanNamesByDebtorName(@Param("debtorName") String debtorName);
 
   boolean existsByNoTelp(String noTelp);

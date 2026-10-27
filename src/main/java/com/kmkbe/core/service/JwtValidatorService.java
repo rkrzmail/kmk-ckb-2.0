@@ -5,11 +5,16 @@ import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.modules.api_sbu.model.entity.ApiSbu;
 import com.kmkbe.core.domain.model.ValidationResponse;
 import com.kmkbe.modules.api_sbu.repository.ApiSbuRepository;
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.util.Base64;
 import java.util.Date;
@@ -87,15 +92,15 @@ public class JwtValidatorService {
     // JJWT akan otomatis: rebuild signature → bandingkan → throw jika beda
     Claims claims;
     try {
-      claims = Jwts.parserBuilder()
-        .setSigningKey(appSecret.getBytes())   // secret key dari DB
+      claims = Jwts.parser()
+        .verifyWith(Keys.hmacShaKeyFor(appSecret.getBytes(StandardCharsets.UTF_8)))   // secret key dari DB
         .build()
-        .parseClaimsJws(jwtToken)              // jika signature salah → throw SignatureException
-        .getBody();
+        .parseSignedClaims(jwtToken)              // jika signature salah → throw security.SignatureException
+        .getPayload();
     } catch (ExpiredJwtException e) {
       throw e;   // re-throw, akan ditangkap di controller
-    } catch (SignatureException e) {
-      throw e;   // re-throw
+    } catch (JwtException e) {
+      throw e;   // re-throw (mencakup SignatureException, MalformedJwtException, dll)
     }
 
     // === STEP 5: Cek expiry ===

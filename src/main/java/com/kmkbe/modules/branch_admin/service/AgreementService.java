@@ -5,8 +5,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.core.domain.dto.email.MailDataDto;
-import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
 import com.kmkbe.core.domain.model.AgreementContractEmailPayload;
@@ -31,27 +29,31 @@ import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
 import com.kmkbe.modules.remote.request.InquiryAgreementRemoteRequest;
-import com.kmkbe.modules.remote.service.ConfigRemoteService;
+import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
+import java.text.NumberFormat;
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -73,10 +75,7 @@ public class AgreementService {
   private final ObjectMapper objectMapper;
   private final EmailService emailService;
   private final AuditTrailService auditTrailService;
-  private final ConfigRemoteService configRemoteService;
-
-  @Value("${csul.sisca.mail-position.branch-admin:ADM}")
-  private String siscaBranchAdminPosition;
+  private final MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
 
   public Agreement findByCode(String code) {
     try {
@@ -160,8 +159,6 @@ public class AgreementService {
             .custCode(e.get("cust_code") != null ? UUID.fromString(e.get("cust_code").toString()) : null)
             .bouwheerName(e.get("bouwheer_name") != null ? e.get("bouwheer_name").toString() : null)
             .custName(e.get("cust_name") != null ? e.get("cust_name").toString() : null)
-            /*.bankName(e.get("bank_name") != null ? e.get("bank_name").toString() : null)
-            .rekeningNo(e.get("rekening_no") != null ? e.get("rekening_no").toString() : null)*/
             .bankName(obj.get("bankName").toString())
             .rekeningNo(obj.get("accountNo").toString())
             .financingAmt(new BigDecimal(e.get("financing_amt") != null ? Double.parseDouble(e.get("financing_amt").toString()) : 0, MathContext.DECIMAL64))
@@ -184,16 +181,19 @@ public class AgreementService {
     }
   }
 
-  public void upload(
+  public String upload(
     MstUser user,
     MultipartFile multipartFile,
     String agreementCode,
     String bouwheerCode
   ) throws Exception {
     try {
-      final MstFileType mstFileType = mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(bouwheerCode))
+      UUID requestedBouwheerCode = UUID.fromString(bouwheerCode);
+      final MstFileType mstFileType = mstFileTypeRepository.findById("AGGREMENT01")
+        .filter(fileType -> fileType.getBouwheerCode() == null
+          || fileType.getBouwheerCode().equals(requestedBouwheerCode))
         .orElseThrow(
-          () -> new IllegalArgumentException("File type not found")
+          () -> new IllegalArgumentException("File type AGGREMENT01 tidak tersedia untuk bouwheer " + bouwheerCode)
         );
 
       final Agreement agreement = agreementRepository.findTopByAgreementCodeOrderByAgreementId(
@@ -225,28 +225,27 @@ public class AgreementService {
           .filePath(FileUtils.getFilePathFromFullPath(uploadedPath))
           .contentType(multipartFile.getContentType())
           .usrCrt(user.getUsername())
-          .dtmCrt(DateTimeUtils.now())
+          .dtmCrt(LocalDateTime.now())
           .build();
 
         AgreementFile savedAgreementFile = agreementFileRepository.save(agreementFile);
         auditTrailService.record("AGREEMENT", AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), null, toAgreementFileAuditData(savedAgreementFile));
-      } else {
-        //fileStorageService.delete(agreementFile.getFilePath() + "/" + agreementFile.getFileName(), "");
 
+      } else {
         agreementFile.setFileName(uploadName);
         agreementFile.setFilePath(FileUtils.getFilePathFromFullPath(uploadedPath));
-        agreementFile.setDtmUpd(DateTimeUtils.now());
+        agreementFile.setDtmUpd(LocalDateTime.now());
         agreementFile.setUsrUpd(user.getUsername());
         AgreementFile savedAgreementFile = agreementFileRepository.save(agreementFile);
         auditTrailService.record("AGREEMENT", AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), before, toAgreementFileAuditData(savedAgreementFile));
       }
 
+      // Split the URL by the '/' delimiter
+      String[] parts = uploadedPath.split("/");
+      // Get the last part of the URL
+      return parts[parts.length - 1];
 
     } catch (Exception e) {
-            /*if (code != null && multipartFile != null && multipartFile.getOriginalFilename() != null) {
-                fileStorageService.delete(multipartFile.getOriginalFilename(), code);
-            }*/
-
       log.error("upload, error {}", e.getMessage());
       throw e;
     }
@@ -379,7 +378,7 @@ public class AgreementService {
       financingHdr.setFinancingStep(financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")?financingHdr.getFinancingStep():"INPROCESS");
       FinancingHdr savedFinancing = financingHdrRepository.save(financingHdr);
       auditTrailService.record("AGREEMENT", AuditAction.UPDATE, "FinancingHdr", savedFinancing.getFinancingHdrCode(), before, toFinancingAgreementAuditData(savedFinancing));
-      sendContractUploadRequiredNotification(savedFinancing, request.getAgreementNo());
+      sendContractUploadRequiredNotification(savedFinancing, request.getAgreementNo(), request.getCwrCode());
     } catch (Exception e) {
       log.error("createAgreement: error {}", e.getMessage());
       throw e;
@@ -443,7 +442,7 @@ public class AgreementService {
           .bankAccount(bank.get("accountName").toString())
           .bankName(bank.get("bankName").toString())
           .bankKey(bank.get("bankKey").toString())
-          .tglPengajuan(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
+          .tglPengajuan(DateTimeUtils.formatToDate(financingHdr.getDtmCrt()))
           .invoices(toInvoiceEmailPayloads(financingHdr, financingDtls))
           .build()
       );
@@ -514,7 +513,7 @@ public class AgreementService {
     return value == null ? 0D : value;
   }
 
-  private void sendContractUploadRequiredNotification(FinancingHdr financingHdr, String agreementCode) {
+  private void sendContractUploadRequiredNotification(FinancingHdr financingHdr, String agreementCode, String cwrCode) {
     try {
       if (financingHdr.getMstBranch() == null) {
         log.warn("Contract upload notification skipped: branch is empty for financingHdrCode={}", financingHdr.getFinancingHdrCode());
@@ -522,66 +521,94 @@ public class AgreementService {
       }
 
       String branchCode = financingHdr.getMstBranch().getBranchCode();
-      log.info(
-        "Fetching Branch Admin emails from SISCA. financingHdrCode={}, agreementCode={}, branchCode={}, positionType={}",
-        financingHdr.getFinancingHdrCode(), agreementCode, branchCode, siscaBranchAdminPosition
-      );
-
-      MailPositionDto response = configRemoteService.getEmailByPosition("", branchCode, siscaBranchAdminPosition);
-      if (response == null) {
-        log.error(
-          "Contract upload notification skipped: SISCA returned a null response. financingHdrCode={}, agreementCode={}, branchCode={}, positionType={}",
-          financingHdr.getFinancingHdrCode(), agreementCode, branchCode, siscaBranchAdminPosition
-        );
-        return;
-      }
-
-      if (response.getData() == null || response.getData().isEmpty()) {
-        log.warn(
-          "Contract upload notification skipped: SISCA returned no Branch Admin data. financingHdrCode={}, agreementCode={}, branchCode={}, positionType={}",
-          financingHdr.getFinancingHdrCode(), agreementCode, branchCode, siscaBranchAdminPosition
-        );
-        return;
-      }
-
-      List<String> recipients = response.getData().stream()
-        .map(MailDataDto::getEmail)
+      List<String> emails = mstAppRoleFormUserRepository.findActiveBranchAdminEmails(branchCode);
+      List<String> recipients = emails == null ? List.of() : emails.stream()
         .filter(email -> email != null && !email.isBlank())
         .map(String::trim)
         .distinct()
         .toList();
       if (recipients.isEmpty()) {
-        log.error(
-          "Contract upload notification skipped: SISCA Branch Admin data contains no valid email. financingHdrCode={}, agreementCode={}, branchCode={}, positionType={}, recordCount={}",
-          financingHdr.getFinancingHdrCode(), agreementCode, branchCode, siscaBranchAdminPosition, response.getData().size()
+        log.warn(
+          "Contract upload notification skipped: no active Branch Admin email in DB. financingHdrCode={}, agreementCode={}, branchCode={}",
+          financingHdr.getFinancingHdrCode(), agreementCode, branchCode
         );
         return;
       }
 
       log.info(
-        "Branch Admin emails resolved from SISCA. financingHdrCode={}, agreementCode={}, branchCode={}, recipientCount={}",
+        "Branch Admin emails resolved from DB. financingHdrCode={}, agreementCode={}, branchCode={}, recipientCount={}",
         financingHdr.getFinancingHdrCode(), agreementCode, branchCode, recipients.size()
       );
 
-      emailService.sendNotificationContractUploadRequired(
-        String.join(";", recipients),
-        AgreementContractEmailPayload.builder()
+      List<FinancingDtl> details = financingDtlRepository.findAllByFinancingHdr(financingHdr).orElse(List.of());
+      if (details.isEmpty()) {
+        log.warn("Contract upload notification skipped: no invoice for financingHdrCode={}", financingHdr.getFinancingHdrCode());
+        return;
+      }
+
+      double totalFeeAmount = valueOrZero(financingHdr.getAdminFeeAmt())
+        + valueOrZero(financingHdr.getLegalFeeAmtNett())
+        + valueOrZero(financingHdr.getInsuranceFeeAmt())
+        + valueOrZero(financingHdr.getOthersFeeAmt())
+        + valueOrZero(financingHdr.getProvisionFeeAmt())
+        + valueOrZero(financingHdr.getSurveyFeeAmtNett());
+      NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID"));
+      numberFormat.setMaximumFractionDigits(2);
+      List<InvoiceEmailPayload> invoices = details.stream()
+        .filter(detail -> detail.getInvoice() != null)
+        .map(detail -> InvoiceEmailPayload.builder()
+          .invoiceNo(detail.getInvoice().getCustInvNo())
+          .description(detail.getInvoice().getInvoiceDescription())
+          .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+          .invoiceDate(DateTimeUtils.formatToDate(detail.getInvoice().getInvoiceDate()))
+          .invoiceDueDate(DateTimeUtils.formatToDate(detail.getInvoice().getInvoiceDueDate()))
+          .invoiceAmt(numberFormat.format(detail.getInvoice().getInvoiceAmt()))
+          .build())
+        .toList();
+      if (invoices.isEmpty()) {
+        log.warn("Contract upload notification skipped: no valid invoice for financingHdrCode={}", financingHdr.getFinancingHdrCode());
+        return;
+      }
+
+      Customer customer = financingHdr.getCustomer();
+      AgreementContractEmailPayload payload = AgreementContractEmailPayload.builder()
           .agreementCode(agreementCode)
           .financingCode(financingHdr.getFinancingHdrCode().toString())
-          .vendorCode(financingHdr.getCustomer().getCustExternalCode())
-          .vendorName(financingHdr.getCustomer().getCustName())
+          .vendorCode(customer.getCustExternalCode())
+          .vendorName(customer.getCustName())
+          .vendorEmail(customer.getCustEmail())
+          .vendorPhone(customer.getCustMobilePhone())
           .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
           .bouwheerPicEmails(financingHdr.getBouwheer().getPicEmail())
           .branchName(financingHdr.getMstBranch().getBranchName())
-          .build()
-      );
+          .submissionDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
+          .cwrCode(cwrCode)
+          .totalInvoiceAmt("Rp " + numberFormat.format(valueOrZero(financingHdr.getTotalInvoiceAmt())))
+          .retention(numberFormat.format(valueOrZero(financingHdr.getRetention())) + "%")
+          .financingAmt("Rp " + numberFormat.format(valueOrZero(financingHdr.getFinancingAmt())))
+          .totalFeeAmt("Rp " + numberFormat.format(totalFeeAmount))
+          .tenor(financingHdr.getTenor() == null ? "-" : financingHdr.getTenor() + " hari")
+          .disburseAmt("Rp " + numberFormat.format(valueOrZero(financingHdr.getDisburseAmt())))
+          .invoices(InvoiceEmailPayload.toHtmlListBody(invoices))
+          .build();
+      String recipientList = String.join(";", recipients);
+      if (TransactionSynchronizationManager.isSynchronizationActive()
+        && TransactionSynchronizationManager.isActualTransactionActive()) {
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+          @Override
+          public void afterCommit() {
+            emailService.sendNotificationContractUploadRequired(recipientList, payload);
+          }
+        });
+      } else {
+        emailService.sendNotificationContractUploadRequired(recipientList, payload);
+      }
     } catch (Exception e) {
       log.error(
-        "Contract upload notification failed while resolving Branch Admin emails from SISCA. financingHdrCode={}, agreementCode={}, branchCode={}, positionType={}",
+        "Contract upload notification failed while resolving Branch Admin emails from DB. financingHdrCode={}, agreementCode={}, branchCode={}",
         financingHdr == null ? null : financingHdr.getFinancingHdrCode(),
         agreementCode,
         financingHdr == null || financingHdr.getMstBranch() == null ? null : financingHdr.getMstBranch().getBranchCode(),
-        siscaBranchAdminPosition,
         e
       );
     }

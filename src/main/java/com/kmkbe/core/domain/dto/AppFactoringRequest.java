@@ -6,9 +6,9 @@ import lombok.Data;
 @Data
 public class AppFactoringRequest {
     @JsonProperty("Id")
-    private Integer Id;
+    private Integer id;
 
     @JsonProperty("RequestDateTime")
-    private String RequestDateTime;
+    private String requestDateTime;
 }
 

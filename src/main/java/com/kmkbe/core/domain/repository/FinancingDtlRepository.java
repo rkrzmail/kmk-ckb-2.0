@@ -9,6 +9,8 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
+import jakarta.persistence.LockModeType;
 import org.springframework.lang.NonNull;
 
 import java.util.List;
@@ -17,6 +19,12 @@ import java.util.UUID;
 
 public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID>, JpaSpecificationExecutor<FinancingDtl> {
   Optional<List<FinancingDtl>> findAllByFinancingHdr(FinancingHdr financingHdr);
+
+  @Lock(LockModeType.PESSIMISTIC_WRITE)
+  @Query("SELECT d FROM FinancingDtl d WHERE d.financingHdr = :financingHdr")
+  List<FinancingDtl> findAllByFinancingHdrForUpdate(
+    @org.springframework.data.repository.query.Param("financingHdr") FinancingHdr financingHdr
+  );
 
   @Query(value = """
     SELECT COUNT(*) FROM public.financing_dtl fd
@@ -38,10 +46,10 @@ public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID
       JOIN invoice i ON (i.invoice_code=fd.invoice_code)
       WHERE
       fh.cust_code  = :custCode and
-      fh.financing_status is not null  and
-      fh.financing_status <> 'LIVE' and
-      fh.financing_status <> '' and
-      i.invoice_due_date BETWEEN CURRENT_DATE and date_add(NOW(),INTERVAL '14 DAY')
+      fh.financing_status not in('PAID','COMPLETETD') and
+      fh.financing_status !='' and
+      fh.financing_status is not null and
+      i.invoice_due_date <= date_add(NOW(), INTERVAL '14 DAY')
       
       """,
     countQuery = """
@@ -51,11 +59,10 @@ public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID
       JOIN invoice i ON (i.invoice_code=fd.invoice_code)
       WHERE 
       fh.cust_code = :custCode and
-      fh.financing_status is not null  and
-      fh.financing_status <> 'LIVE' and
-      fh.financing_status <> '' and
-      i.invoice_due_date BETWEEN CURRENT_DATE and date_add(NOW(),INTERVAL '14 DAY')
-      
+      fh.financing_status not in('PAID','COMPLETETD') and
+      fh.financing_status !='' and
+      fh.financing_status is not null and
+      i.invoice_due_date <= date_add(NOW(), INTERVAL '14 DAY')
       """,
 
     nativeQuery = true

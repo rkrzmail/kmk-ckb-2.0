@@ -38,26 +38,22 @@ public class FinancingController {
 
   @PostMapping("/invoice-paid")
   public CommonResult<Object> invoicePaid(
-    HttpServletRequest httpServletRequest,
     @Valid @RequestBody FinancingInvoicePaidRequest request
   ) {
     try {
-      String providedApiKey = httpServletRequest.getHeader("ApiKey");
-      if (!providedApiKey.equals("$2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC")) {
-        throw new IllegalApiKeyException();
-      }
-
       FinancingHdr financingHdr = financingHdrService.paidFinancing(
         request
       );
-
+        /**
+         * Update Paid
+         */
       financingDtlService.updatePaid(request, financingHdr);
 
-      try {
-        financingDtlService.paymentReceive(request, financingHdr);
-      } catch (Exception ignored) {
-        //akan ada proses skeduler
-      }
+      /**
+       * Payment Recceive
+       */
+      financingDtlService.paymentReceive(request, financingHdr);
+
       return new CommonResult<>().success(null);
     } catch (Exception e) {
       return new CommonResult<>().fail(500, e.getMessage());

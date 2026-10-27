@@ -3,13 +3,12 @@ package com.kmkbe.core.service;
 import com.kmkbe.core.domain.dto.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
+import com.kmkbe.feign.client.ConfinsR3FeignClient;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
-import java.util.Collections;
 
 @Slf4j
 @Service
@@ -17,29 +16,7 @@ import java.util.Collections;
 public class ExternalApiService {
     private final RestTemplate restTemplate;
 
-    @Value("${csul.confins.los.getRekening}")
-    public String getRekeningUrl;
-
-    @Value("${csul.confins.los.getAppNo}")
-    public String getAppNoUrl;
-
-    @Value("${csul.confins.corelos.getFactoring}")
-    public String getFactoringUrl;
-
-    @Value("${csul.confins.corelos.getFinData}")
-    public String getFinDataUrl;
-
-    @Value("${csul.confins.mou.getcwrbwhr}")
-    public String getCwrbwhrUrl;
-
-    @Value("${csul.confins.mou.getlistcwrbwhr}")
-    public String getListCwrbwhrUrl;
-
-    @Value("${csul.confins.mou.fwd}")
-    public String getSignerUrl;
-
-    @Value("${csul.confins.adinskey}")
-    private String apiKey;
+    private final ConfinsR3FeignClient confinsR3FeignClient;
 
     private String xapiKey = "YiByHB@CSUL_DEV";
 
@@ -49,22 +26,12 @@ public class ExternalApiService {
             request.setTrxNo(applicationCode);
             request.setRequestDateTime(LocalDate.now().toString());
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("AdInsKey", apiKey);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-
-            ResponseEntity<AppResponse> response = restTemplate.exchange(
-                    getAppNoUrl,
-                    HttpMethod.POST,
-                    new HttpEntity<>(request, headers),
-                    AppResponse.class
-            );
-            if (response.getBody() == null || response.getBody().getHeaderObj() == null) {
+            AppResponse response = confinsR3FeignClient.getAppByAppNo(request);
+            if (response == null || response.getHeaderObj() == null) {
                 throw new RuntimeException("Invalid API response structure");
             }
 
-            return response.getBody();
+            return response;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to call Confins API: " + e.getMessage());
@@ -77,24 +44,15 @@ public class ExternalApiService {
             request.setTrxNo(agreementCode);
             request.setRequestDateTime(LocalDate.now().toString());
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("AdInsKey", apiKey);
-            headers.setContentType(MediaType.APPLICATION_JSON);
+            FinancialDataResponse response = confinsR3FeignClient.getFinancialData(request);
 
-            ResponseEntity<FinancialDataResponse> response = restTemplate.exchange(
-                    getFinDataUrl,
-                    HttpMethod.POST,
-                    new HttpEntity<>(request, headers),
-                    FinancialDataResponse.class
-            );
-
-            if (response.getBody() == null ||
-                    response.getBody().getHeader() == null ||
-                    !"200".equals(response.getBody().getHeader().getStatusCode())) {
+            if (response == null ||
+                    response.getHeader() == null ||
+                    !"200".equals(response.getHeader().getStatusCode())) {
                 throw new RuntimeException("Invalid financial data response");
             }
 
-            return response.getBody();
+            return response;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to get financial data: " + e.getMessage());
@@ -107,24 +65,15 @@ public class ExternalApiService {
             request.setId(appId);
             request.setRequestDateTime(LocalDate.now().toString());
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("AdInsKey", apiKey);
-            headers.setContentType(MediaType.APPLICATION_JSON);
+            AppFactoringResponse response = confinsR3FeignClient.getAppFactoringData(request);
 
-            ResponseEntity<AppFactoringResponse> response = restTemplate.exchange(
-                    getFactoringUrl,
-                    HttpMethod.POST,
-                    new HttpEntity<>(request, headers),
-                    AppFactoringResponse.class
-            );
-
-            if (response.getStatusCode() != HttpStatus.OK ||
-                    response.getBody() == null ||
-                    !"200".equals(response.getBody().getHeader().getStatusCode())) {
+            if (response == null ||
+                    response.getHeader() == null ||
+                    !"200".equals(response.getHeader().getStatusCode())) {
                 throw new RuntimeException("Invalid response from AppFctr API");
             }
 
-            return response.getBody();
+            return response;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to get AppFctr data for AppId: " + appId, e);
@@ -137,22 +86,12 @@ public class ExternalApiService {
             request.setTrxNo(applicationCode);
             request.setRequestDateTime(LocalDate.now().toString());
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("AdInsKey", apiKey);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-
-            ResponseEntity<RekDebiturResponse> response = restTemplate.exchange(
-                    getRekeningUrl,
-                    HttpMethod.POST,
-                    new HttpEntity<>(request, headers),
-                    RekDebiturResponse.class
-            );
-            if (response.getBody() == null || response.getBody().getHeader() == null) {
+            RekDebiturResponse response = confinsR3FeignClient.getRekDebitur(request);
+            if (response == null || response.getHeader() == null) {
                 throw new RuntimeException("Invalid API response structure");
             }
 
-            return response.getBody();
+            return response;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to call Confins API: " + e.getMessage());
@@ -165,22 +104,12 @@ public class ExternalApiService {
             request.setTrxNo(CwrCode);
             request.setRequestDateTime(LocalDate.now().toString());
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("AdInsKey", apiKey);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-
-            ResponseEntity<CwrBwhrResponse> response = restTemplate.exchange(
-                    getCwrbwhrUrl,
-                    HttpMethod.POST,
-                    new HttpEntity<>(request, headers),
-                    CwrBwhrResponse.class
-            );
-            if (response.getBody() == null || response.getBody().getHeader() == null) {
+            CwrBwhrResponse response = confinsR3FeignClient.getCwrBwhr(request);
+            if (response == null || response.getHeader() == null) {
                 throw new RuntimeException("Invalid API response structure");
             }
 
-            return response.getBody();
+            return response;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to call Confins API: " + e.getMessage());
@@ -194,22 +123,12 @@ public class ExternalApiService {
             request.setCwrBouwheerCustNo(CwrBouwheerCustNo);
             request.setRequestDateTime(LocalDate.now().toString());
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("AdInsKey", apiKey);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-
-            ResponseEntity<CwrListBwhrResponse> response = restTemplate.exchange(
-                    getListCwrbwhrUrl,
-                    HttpMethod.POST,
-                    new HttpEntity<>(request, headers),
-                    CwrListBwhrResponse.class
-            );
-            if (response.getBody() == null || response.getBody().getHeader() == null) {
+            CwrListBwhrResponse response = confinsR3FeignClient.getListCwrBwhr(request);
+            if (response == null || response.getHeader() == null) {
                 throw new RuntimeException("Invalid API response structure");
             }
 
-            return response.getBody();
+            return response;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to call Confins API: " + e.getMessage());
@@ -223,22 +142,12 @@ public class ExternalApiService {
             request.setCustNo(CustNo);
             request.setRequestDateTime(LocalDate.now().toString());
 
-            HttpHeaders headers = new HttpHeaders();
-            headers.set("AdInsKey", apiKey);
-            headers.setContentType(MediaType.APPLICATION_JSON);
-            headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
-
-            ResponseEntity<SignerApiResponse> response = restTemplate.exchange(
-                    getSignerUrl,
-                    HttpMethod.POST,
-                    new HttpEntity<>(request, headers),
-                    SignerApiResponse.class
-            );
-            if (response.getBody() == null || response.getBody().getHeader() == null) {
+            SignerApiResponse response = confinsR3FeignClient.getKaryawan(request);
+            if (response == null || response.getHeader() == null) {
                 throw new RuntimeException("Invalid API response structure");
             }
 
-            return response.getBody();
+            return response;
 
         } catch (Exception e) {
             throw new RuntimeException("Failed to call Confins API: " + e.getMessage());

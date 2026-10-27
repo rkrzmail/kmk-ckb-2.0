@@ -17,6 +17,8 @@ import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.mock.web.MockMultipartFile;
@@ -24,6 +26,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.UUID;
+import java.sql.SQLException;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -103,5 +106,55 @@ class AgreementContractUploadTest {
     order.verify(agreementService).sendBouwheerPaymentNotification(financingHdr);
     order.verify(agreementService).sendDebtorDisbursementNotification(financingHdr);
     org.assertj.core.api.Assertions.assertThat(financingHdr.getFinancingStep()).isEqualTo("SIGNED");
+  }
+
+  @Test
+  void documentConflictRejectsUploadWithoutChangingStatusOrSendingEmail() throws Exception {
+    var agreement = new Agreement();
+    agreement.setAgreementCode("AGR-TEST");
+    var bouwheer = new Bouwheer();
+    bouwheer.setBouwheerCode(UUID.fromString("22222222-2222-2222-2222-222222222222"));
+    financingHdr.setBouwheer(bouwheer);
+    when(agreementService.findByFinancingHdr(financingHdr)).thenReturn(agreement);
+    when(currentUserService.internalUser()).thenReturn(mock(MstUser.class));
+    when(agreementService.upload(any(), any(), eq("AGR-TEST"), eq(bouwheer.getBouwheerCode().toString())))
+      .thenThrow(new DataIntegrityViolationException("duplicate agreement_code",
+        new ConstraintViolationException("duplicate key", new SQLException("duplicate key", "23505"),
+          "agreement_file_agreement_code_idx")));
+
+    mockMvc.perform(multipart("/api/v1/cwr/agreement/upload/contract")
+        .file(new MockMultipartFile("file", "contract.pdf", "application/pdf", new byte[] {1}))
+        .param("financingHdrCode", FINANCING_CODE.toString()))
+      .andExpect(status().isConflict())
+      .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.allOf(
+        org.hamcrest.Matchers.containsString("AGR-TEST"),
+        org.hamcrest.Matchers.containsString("ID dokumen yang duplikat"),
+        org.hamcrest.Matchers.containsString("email notifikasi tidak diproses"))));
+
+    org.assertj.core.api.Assertions.assertThat(financingHdr.getFinancingStep()).isEqualTo("INPROCESS");
+    verify(agreementFileSigningService, never()).saveSigningResult(any(), any(), any(), any(), any());
+    verify(financingHdrRepository, never()).save(any());
+    verify(agreementService, never()).sendBouwheerPaymentNotification(any());
+    verify(agreementService, never()).sendDebtorDisbursementNotification(any());
+  }
+
+  @Test
+  void unrelatedDocumentConflictDoesNotClaimDuplicateDocumentId() throws Exception {
+    var agreement = new Agreement();
+    agreement.setAgreementCode("AGR-TEST");
+    var bouwheer = new Bouwheer();
+    bouwheer.setBouwheerCode(UUID.fromString("22222222-2222-2222-2222-222222222222"));
+    financingHdr.setBouwheer(bouwheer);
+    when(agreementService.findByFinancingHdr(financingHdr)).thenReturn(agreement);
+    when(currentUserService.internalUser()).thenReturn(mock(MstUser.class));
+    when(agreementService.upload(any(), any(), eq("AGR-TEST"), eq(bouwheer.getBouwheerCode().toString())))
+      .thenThrow(new DataIntegrityViolationException("another integrity error"));
+
+    mockMvc.perform(multipart("/api/v1/cwr/agreement/upload/contract")
+        .file(new MockMultipartFile("file", "contract.pdf", "application/pdf", new byte[] {1}))
+        .param("financingHdrCode", FINANCING_CODE.toString()))
+      .andExpect(status().isConflict())
+      .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.not(
+        org.hamcrest.Matchers.containsString("ID dokumen yang duplikat"))));
   }
 }

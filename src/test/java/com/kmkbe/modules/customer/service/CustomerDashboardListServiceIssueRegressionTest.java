@@ -56,7 +56,7 @@ class CustomerDashboardListServiceIssueRegressionTest {
   }
 
   @Test
-  void activeCreditFacilityContainsAllDistinctCustomerInvoiceNumbers() throws Exception {
+  void activeCreditFacilityContainsAllDistinctCustomerInvoiceNumbers() {
     Customer customer = Customer.builder()
       .custCode(UUID.randomUUID())
       .custName("Debitur")
@@ -70,6 +70,8 @@ class CustomerDashboardListServiceIssueRegressionTest {
     financing.setFinancingStep("NEW");
     financing.setFinancingDueDate(LocalDateTime.of(2026, 10, 1, 0, 0));
     financing.setFinancingAmt(1_000_000D);
+    financing.setTotalInvoiceAmt(1_250_000.75D);
+    financing.setInvoiceQty(2L);
     financing.setAgreement(Set.of());
     java.util.List<FinancingDtl> financingDetails = java.util.List.of(
       financingDetail(" INV-002 "),
@@ -78,24 +80,47 @@ class CustomerDashboardListServiceIssueRegressionTest {
     );
     when(financingHdrRepository.findAllByRawOrder(eq(customer.getCustCode().toString()), any(Pageable.class)))
       .thenReturn(new PageImpl<>(java.util.List.of(financing)));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(customer, "PAID")).thenReturn(0L);
     when(financingDtlRepository.findAllByFinancingHdrOrderByDtmCrtDesc(financing))
       .thenReturn(financingDetails);
 
     PaginationResult<CustomerCreditFacilityNewDto> result = service.listcreditfacilities(
       customer,
-      new PaginationRequest()
+      new BasePaginationRequest()
     );
 
     assertThat(result.getList()).singleElement()
       .extracting(CustomerCreditFacilityNewDto::getInvoiceNo)
       .isEqualTo("INV-001, INV-002");
+    assertThat(result.getList().getFirst().getTotalInvoiceAmount()).isEqualByComparingTo("1250000.75");
+    assertThat(result.getList().getFirst().getInvoiceQty()).isEqualTo(2L);
   }
 
   @Test
   void activeCreditFacilityUsesEmptyInvoiceNumberWhenDetailsAreUnavailable() {
     assertThat(service.invoiceNumbers(java.util.List.of())).isEmpty();
     assertThat(service.invoiceNumbers(null)).isEmpty();
+  }
+
+  @Test
+  void paidCreditFacilityIsNotDisplayedAsNew() {
+    Customer customer = Customer.builder().custCode(UUID.randomUUID()).custTypeCode("Company").build();
+    FinancingHdr financing = new FinancingHdr();
+    financing.setFinancingHdrCode(UUID.randomUUID());
+    financing.setCustomer(customer);
+    financing.setBouwheer(Bouwheer.builder().bouwheerName("CKB").build());
+    financing.setFinancingStatus("PAID");
+    financing.setFinancingStep("PAID");
+    financing.setFinancingDueDate(LocalDateTime.of(2026, 10, 26, 0, 0));
+    financing.setFinancingAmt(1_000_000D);
+    financing.setAgreement(Set.of());
+    when(financingHdrRepository.findAllByRawOrder(eq(customer.getCustCode().toString()), any(Pageable.class)))
+      .thenReturn(new PageImpl<>(java.util.List.of(financing)));
+
+    CustomerCreditFacilityNewDto dto = service.listcreditfacilities(customer, new BasePaginationRequest())
+      .getList().getFirst();
+
+    assertThat(dto.getStatus().getStatus()).isEqualTo("PAID");
+    assertThat(dto.getStatus().getStatusLabel()).isEqualTo("Paid");
   }
 
   @Test
@@ -125,7 +150,6 @@ class CustomerDashboardListServiceIssueRegressionTest {
       .build();
     when(financingDtlRepository.findByCustomer(eq(customer.getCustCode().toString()), any(Pageable.class)))
       .thenReturn(new PageImpl<>(java.util.List.of(financingDtl)));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(customer, "PAID")).thenReturn(0L);
 
     PaginationResult<CustomerCreditFacilityDueDateDto> result = service.listinvoicesduedate(
       customer,
@@ -142,11 +166,12 @@ class CustomerDashboardListServiceIssueRegressionTest {
     Customer customer = customer();
     FinancingHdr lowerAmount = financing(customer, 1_000_000D, LocalDateTime.of(2026, 10, 1, 0, 0));
     FinancingHdr higherAmount = financing(customer, 2_000_000D, LocalDateTime.of(2026, 11, 1, 0, 0));
+    higherAmount.setTotalInvoiceAmt(2_500_000D);
+    higherAmount.setInvoiceQty(4L);
 
     when(financingHdrRepository.findAllByRawOrder(
       eq(customer.getCustCode().toString()), eq(Pageable.unpaged())
     )).thenReturn(new PageImpl<>(java.util.List.of(lowerAmount, higherAmount)));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(customer, "PAID")).thenReturn(0L);
     when(financingDtlRepository.findAllByFinancingHdrOrderByDtmCrtDesc(lowerAmount))
       .thenReturn(java.util.List.of(financingDetail("INV-LOW")));
     when(financingDtlRepository.findAllByFinancingHdrOrderByDtmCrtDesc(higherAmount))
@@ -160,6 +185,8 @@ class CustomerDashboardListServiceIssueRegressionTest {
     assertThat(result.getList()).singleElement()
       .extracting(CustomerCreditFacilityNewDto::getInvoiceNo)
       .isEqualTo("INV-HIGH");
+    assertThat(result.getList().getFirst().getTotalInvoiceAmount()).isEqualByComparingTo("2500000");
+    assertThat(result.getList().getFirst().getInvoiceQty()).isEqualTo(4L);
   }
 
   @Test
@@ -173,7 +200,6 @@ class CustomerDashboardListServiceIssueRegressionTest {
     when(financingDtlRepository.findByCustomer(
       eq(customer.getCustCode().toString()), eq(Pageable.unpaged())
     )).thenReturn(new PageImpl<>(java.util.List.of(older, excluded, newer)));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(customer, "PAID")).thenReturn(0L);
 
     BasePaginationRequest request = request("poNumber", "match", "postingDate", "desc", 1, 10);
     PaginationResult<CustomerCreditFacilityDueDateDto> result = service.listinvoicesduedate(customer, request);

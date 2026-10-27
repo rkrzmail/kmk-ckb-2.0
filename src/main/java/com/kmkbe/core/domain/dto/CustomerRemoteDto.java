@@ -3,8 +3,10 @@ package com.kmkbe.core.domain.dto;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.extern.jackson.Jacksonized;
 
 @Builder
+@Jacksonized
 @Getter
 public class CustomerRemoteDto {
     @JsonProperty("CustId")

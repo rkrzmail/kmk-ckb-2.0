@@ -13,4 +13,15 @@ public class AgreementContractEmailPayload {
   private String bouwheerName;
   private String bouwheerPicEmails;
   private String branchName;
+  private String vendorEmail;
+  private String vendorPhone;
+  private String submissionDate;
+  private String cwrCode;
+  private String totalInvoiceAmt;
+  private String retention;
+  private String financingAmt;
+  private String totalFeeAmt;
+  private String tenor;
+  private String disburseAmt;
+  private String invoices;
 }

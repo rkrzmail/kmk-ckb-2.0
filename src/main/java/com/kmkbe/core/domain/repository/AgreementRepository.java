@@ -52,13 +52,26 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
 
   Optional<Agreement> findTopByAgreementCodeOrderByAgreementId(String agreementCode);
 
+//  @Query(
+//    value = """
+//      select
+//          ag.*
+//      from
+//          public.agreement ag
+//              join public.agreement_file agf on ag.agreement_code = agf.agreement_code
+//
+//      """,
+//    nativeQuery = true
+//  )
+//  List<Agreement> viewApprovalStatusNoPending();
+
   @Query(
     value = """
       select
           ag.*
       from
           public.agreement ag
-              join public.agreement_file agf on ag.agreement_code = agf.agreement_code
+              join public.agreement_file_signing agf on ag.agreement_code = agf.agreement_code
       
       """,
     nativeQuery = true
@@ -112,8 +125,8 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
   List<Agreement> findByFinancingHdr_FinancingHdrCode(UUID financinghdrCode);
 
   @Query("SELECT a FROM Agreement a " +
-    "JOIN FETCH a.cwr " +
-    "JOIN FETCH a.cwr.customer " +
+    "LEFT JOIN FETCH a.cwr " +
+    "LEFT JOIN FETCH a.cwr.customer " +
     "JOIN FETCH a.financingHdr " +
     "WHERE a.financingHdr.financingHdrCode = :financingHdrCode AND a.agreementCode = :agreementNo")
   Optional<Agreement> findByFinancingHdr_FinancingHdrCode2(@Param("financingHdrCode") UUID financingHdrCode, String agreementNo);

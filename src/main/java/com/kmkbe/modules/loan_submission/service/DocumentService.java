@@ -38,7 +38,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.SignatureException;
 import java.util.*;
 
 @Service
@@ -53,6 +52,7 @@ public class DocumentService {
   private final CustomerRemoteService customerRemoteService;
   private final CustomerRepository customerRepository;
   private final FinancingHdrRepository financingHdrRepository;
+  private final DokumentHistoryUploadRepository dokumentHistoryUploadRepository;
   private final AuditTrailService auditTrailService;
 
   public List<DocumentTemplateFinancingDto> fetchDocumentTemplateFinancing(
@@ -299,21 +299,6 @@ public class DocumentService {
     } catch (Exception e) {
       log.error("agreementDocByAgreementId, error {}", e.getMessage());
       throw e;
-    }
-  }
-
-  private void fetchAndMappingDocVendor(Customer customer) throws SignatureException {
-    InquiryVendorRemoteDto inquiryVendorRemote = null;
-    try {
-      inquiryVendorRemote = customerRemoteService
-        .inquiryVendor(customer.getCustExternalCode()).getData();
-
-    } catch (Exception e) {
-      //throw new IllegalStateException("Your vendor is not registered from MST Integeration");
-    }
-
-    if (inquiryVendorRemote != null) {
-      mappingFromInquiryVendor(customer, inquiryVendorRemote);
     }
   }
 
@@ -867,7 +852,7 @@ public class DocumentService {
           () -> new IllegalStateException("Customer not found")
         );
 
-      Page<LegalFile> paginate = legalFileRepository.findAllByCustCodeOrderByFileName(
+      Page<LegalFile> paginate = legalFileRepository.findAllByCustCodeAndFinancingHdrIsNullOrderByFileName(
         customer,
         PageRequest.of(pageNo, pageSize, Sort.by(Sort.Direction.DESC, "fileName"))
       );
@@ -945,6 +930,32 @@ public class DocumentService {
 
       List<MstFileTypeDto> result = page.map((file) -> {
           MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
+          if ("DOC006".equals(file.getFileTypeCode())) {
+            legalFileRepository
+              .findByFinancingHdr_FinancingHdrCodeAndFileTypeCode_FileTypeCode(
+                financingHdr.get().getFinancingHdrCode(), file.getFileTypeCode())
+              .ifPresent(active -> {
+                LegalFileDto uploaded = FileTypeMapper.INSTANCE.legalFileToDto(active);
+                uploaded.setUploadedDate(active.getDtmUpd() != null ? active.getDtmUpd() : active.getDtmCrt());
+                uploaded.setFileUrl("/api/v1/document-uploads/" + financingHdrCode + "/DOC006/latest/download");
+                dto.setLegalFile(uploaded);
+              });
+            return dto;
+          }
+          Optional<DokumentHistoryUpload> latest = dokumentHistoryUploadRepository
+            .findTopByFinancingHdr_FinancingHdrCodeAndFileTypeCodeOrderByUploadedAtDescIdDesc(
+              financingHdr.get().getFinancingHdrCode(), file.getFileTypeCode());
+          if (latest.isPresent()) {
+            DokumentHistoryUpload upload = latest.get();
+            LegalFileDto uploaded = new LegalFileDto();
+            uploaded.setFileId(upload.getId());
+            uploaded.setFileName(upload.getFileName());
+            uploaded.setUploadedDate(upload.getUploadedAt());
+            uploaded.setFileUrl("/api/v1/document-uploads/" + financingHdrCode + "/"
+              + file.getFileTypeCode() + "/" + upload.getId() + "/download");
+            dto.setLegalFile(uploaded);
+            return dto;
+          }
           LegalFile legalFile = legalFileService.fetchByMstFileTypeAndCust(financingHdr.get().getCustomer(), file);
 
           if (legalFile != null) {

@@ -14,6 +14,8 @@ import java.io.Serializable;
 //@NoArgsConstructor
 public class SignerDocDto implements Serializable {
     private Long agreementFileId;
+    private Long uploadedAgreementFileId;
+    private String fileTypeCode;
     private String agreementCode;
     private String cwrCode;
     private String bowheerName;

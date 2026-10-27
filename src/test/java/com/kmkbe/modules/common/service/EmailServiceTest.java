@@ -25,6 +25,7 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -141,6 +142,31 @@ class EmailServiceTest {
 
     assertThat(result.acceptedBySmtp()).isFalse();
     assertThat(result.errorMessage()).contains("SMTP config unavailable");
+  }
+
+  @Test
+  void financeInvoicePaidRendersFieldsAndInvoiceRows() throws Exception {
+    EmailTemplate source = templateWithSubject("M_FINANCE_INVOICE_PAID", "#{agreementCode} Telah Dikembalikan",
+      "<html><body>{bouwheerName} {agreementCode} {vendorName} {vendorEmail} {vendorPhone} "
+        + "{submissionDate}<table><tbody>{invoices}</tbody></table></body></html>");
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_FINANCE_INVOICE_PAID", true))
+      .thenReturn(source);
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+
+    var result = service.sendFinanceInvoicePaidNotification("finance@example.com", "AGR-123", Map.of(
+      "bouwheerName", "PT Trakindo", "agreementCode", "AGR-123", "vendorName", "Vendor",
+      "vendorEmail", "vendor@example.com", "vendorPhone", "08123",
+      "submissionDate", "01/10/2026", "invoices", "<tr><td>INV-1</td></tr>"));
+
+    assertThat(result.acceptedBySmtp()).isTrue();
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    EmailTemplate sent = captor.getValue();
+    assertThat(sent.getSubjectMail()).isEqualTo("#AGR-123 Telah Dikembalikan");
+    assertThat(sent.getBodyMail()).contains("PT Trakindo AGR-123 Vendor vendor@example.com 08123 01/10/2026")
+      .contains("<tbody><tr><td>INV-1</td></tr></tbody>")
+      .doesNotContain("{agreementCode}", "{vendorName}", "{invoices}");
+    assertThat(source.getBodyMail()).contains("{invoices}");
   }
 
   @Test
@@ -319,11 +345,12 @@ class EmailServiceTest {
   void sendNotificationContractUploadRequiredUsesBranchRecipientsAndMapsPayload() throws Exception {
     when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
     doNothing().when(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(true));
-    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BRANCH_CONTRACT_UPLOAD", true))
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BRANCH_UTILIZATION_PLACEMENT", true))
       .thenReturn(templateWithSubject(
-        "M_BRANCH_CONTRACT_UPLOAD",
-        "Upload {agreementCode}",
-        "{branchName}|{agreementCode}|{financingCode}|{vendorCode}|{vendorName}|{bouwheerName}|{bouwheerPicEmails}"
+        "M_BRANCH_UTILIZATION_PLACEMENT",
+        "Pengajuan Dana Sakti #{agreementCode}",
+        "{branchName}|{agreementCode}|{cwrCode}|{vendorName}|{vendorEmail}|{totalInvoiceAmt}|"
+          + "{retention}|{financingAmt}|{totalFeeAmt}|{tenor}|{disburseAmt}|<tbody>{invoices}</tbody>"
       ));
 
     service.sendNotificationContractUploadRequired(
@@ -333,18 +360,28 @@ class EmailServiceTest {
         .agreementCode("AGR001")
         .financingCode("LEAD001")
         .vendorCode("V001")
-        .vendorName("Vendor")
+        .vendorName("Vendor <One>")
+        .vendorEmail("vendor@example.com")
         .bouwheerName("CKB")
         .bouwheerPicEmails("pic1@ckb.co.id, pic2@ckb.co.id")
+        .cwrCode("CWR001")
+        .totalInvoiceAmt("Rp 2.000.000")
+        .retention("20%")
+        .financingAmt("Rp 1.600.000")
+        .totalFeeAmt("Rp 100.000")
+        .tenor("30 hari")
+        .disburseAmt("Rp 1.500.000")
+        .invoices("<tr><td>INV001</td></tr>")
         .build()
     );
 
     ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
     verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
     assertThat(captor.getValue().getMailTo()).isEqualTo("admin1@csul.co.id;admin2@csul.co.id");
-    assertThat(captor.getValue().getSubjectMail()).isEqualTo("Upload AGR001");
+    assertThat(captor.getValue().getSubjectMail()).isEqualTo("Pengajuan Dana Sakti #AGR001");
     assertThat(captor.getValue().getBodyMail())
-      .isEqualTo("JAKARTA 1|AGR001|LEAD001|V001|Vendor|CKB|pic1@ckb.co.id, pic2@ckb.co.id");
+      .isEqualTo("JAKARTA 1|AGR001|CWR001|Vendor &lt;One&gt;|vendor@example.com|Rp 2.000.000|"
+        + "20%|Rp 1.600.000|Rp 100.000|30 hari|Rp 1.500.000|<tbody><tr><td>INV001</td></tr></tbody>");
   }
 
   @Test

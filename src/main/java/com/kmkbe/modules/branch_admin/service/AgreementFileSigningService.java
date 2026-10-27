@@ -63,7 +63,9 @@ public class AgreementFileSigningService {
         agreementFileSigningRepository.deleteAll(existingList.subList(1, existingList.size()));
       }
 
-      entity.setStamp("Not Signed");
+      entity.setFileTypeCode(fileTypeCode);
+      entity.setStamp("signed");
+      entity.setVerifDate(LocalDateTime.now());
       entity.setSigner(debtor.getKaryawanName());
       entity.setEmailSigner(debtor.getEmail());
       entity.setIdentityNo(debtor.getIdentityNo());
@@ -79,8 +81,10 @@ public class AgreementFileSigningService {
       log.info("Update financing Step");
       updateFinancingStep(financingHdrCode);
 
-      log.info("Create signing notification !");
-      createSigningNotification(financingHdrCode, username, debtor);
+      if(fileTypeCode.equals("E_SIGN_DOC")) {
+        log.info("Create signing notification !");
+        createSigningNotification(financingHdrCode, username, debtor);
+      }
       agreementFileSigningMapper.entityToDto(saveDoc);
       return;
     } else {
@@ -93,7 +97,7 @@ public class AgreementFileSigningService {
         .build();
     }
 
-    entity.setStamp(fileTypeCode.equals("E_SIGN_DOC") ? "Not Signed" : "Signed");
+    entity.setStamp(fileTypeCode.equals("E_SIGN_DOC") ? "Not Signed" : "signed");
     entity.setVerifDate(fileTypeCode.equals("E_SIGN_DOC") ? null : LocalDateTime.now());
     entity.setSigner(debtor.getKaryawanName());
     entity.setEmailSigner(debtor.getEmail());
@@ -101,6 +105,7 @@ public class AgreementFileSigningService {
     entity.setDocumentId(documentId);
     entity.setFinancingHdrCode(financingHdrCode);
     entity.setUsrUpd(username);
+    entity.setSignProgress(fileTypeCode.equals("E_SIGN_DOC") ? null:"1/1");
     entity.setDtmUpd(LocalDateTime.now());
     AgreementFileSigning saveDoc = agreementFileSigningRepository.save(entity);
 
@@ -109,9 +114,12 @@ public class AgreementFileSigningService {
 
     log.info("Update financing Step");
     updateFinancingStep(financingHdrCode);
-    log.info("Create signing notification !");
-    createSigningNotification(financingHdrCode, username, debtor);
 
+    if(fileTypeCode.equals("E_SIGN_DOC")){
+      log.info("Create signing notification !");
+      createSigningNotification(financingHdrCode, username, debtor);
+
+    }
     agreementFileSigningMapper.entityToDto(saveDoc);
   }
 
@@ -126,6 +134,7 @@ public class AgreementFileSigningService {
 
         log.info("Save Audit Trail !");
         auditTrailService.record("AGREEMENT_SIGNING", AuditAction.UPDATE, "FinancingHdr", saved.getFinancingHdrCode(), before, toFinancingStepAuditData(saved));
+
       });
   }
 

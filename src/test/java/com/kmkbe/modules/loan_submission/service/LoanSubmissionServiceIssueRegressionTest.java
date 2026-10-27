@@ -1,6 +1,5 @@
 package com.kmkbe.modules.loan_submission.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.kmkbe.adapter.ApiCsulAdapter;
 import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.CustomerCompany;
@@ -17,11 +16,11 @@ import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.service.ExistingCustomerService;
 import com.kmkbe.modules.loan_submission.request.CalculateSimulationRequest;
-import com.kmkbe.modules.product.model.entity.Product;
 import com.kmkbe.modules.product.repository.ProductRepository;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.remote.service.CurrencyRemoteService;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
+import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import com.kmkbe.modules.user.repository.MstBranchRepository;
 import com.kmkbe.modules.user.entity.MstBranch;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,8 +33,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.math.BigDecimal;
-import java.security.SignatureException;
-import java.text.ParseException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -77,6 +74,8 @@ class LoanSubmissionServiceIssueRegressionTest {
   @Mock private AuditTrailService auditTrailService;
   @Mock private FinancingDtlRepository financingDtlRepository;
   @Mock private BranchAssignmentResolver branchAssignmentResolver;
+  @Mock private MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
+
   @InjectMocks
   private LoanSubmissionService service;
   @Mock
@@ -88,17 +87,14 @@ class LoanSubmissionServiceIssueRegressionTest {
       productRepository,
       bouwheerRepository,
       bcryptEncoder,
-      jdbcTemplate,
       configRemoteService,
       jwtLoanSubmissionService,
       simulationHistRepository,
       invoiceRepository,
       customerRemoteService,
-      currencyRemoteService,
       existingCustomerService,
       customerCompanyRepository,
       customerPersonalRepository,
-      agreementRepository,
       invoiceService,
       financingHdrService,
       financingDtlService,
@@ -107,12 +103,11 @@ class LoanSubmissionServiceIssueRegressionTest {
       legalFileRepository,
       importantNotesService,
       financingHdrRepository,
-      mstBranchRepository,
       customerRepository,
-      apiCsulAdapter,
       auditTrailService,
       financingDtlRepository,
-      branchAssignmentResolver
+      branchAssignmentResolver,
+      mstAppRoleFormUserRepository
     );
   }
 
@@ -151,6 +146,9 @@ class LoanSubmissionServiceIssueRegressionTest {
       .totalInvoiceAmount(BigDecimal.valueOf(1_000_000))
       .disbursePercentage(96.0)
       .build();
+    when(bouwheerRepository.findByBouwheerCode(any())).thenReturn(Optional.of(
+      Bouwheer.builder().bouwheerName("PT Cipta Krida Bahari").minRetention(10.0F).build()
+    ));
 
     assertThatThrownBy(() -> service.calculateDisburse(null, request))
       .isInstanceOf(BusinessException.class)

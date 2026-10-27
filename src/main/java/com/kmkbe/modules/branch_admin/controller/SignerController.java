@@ -106,8 +106,11 @@ public class SignerController {
     HttpServletRequest httpServletRequest
   ) throws SignatureException {
     try {
+      PaginationRequest allRows = new PaginationRequest();
+      allRows.setPageNo(1);
+      allRows.setPageSize(Integer.MAX_VALUE);
       PaginationResult<AssignmentDto> originalResult =
-        assignmentSubmissionService.assignmentList(httpServletRequest, new PaginationRequest());
+        assignmentSubmissionService.assignmentList(httpServletRequest, allRows);
 
       List<AssignmentDto> originalList = originalResult.getList();
       PersonDto allSigners = signerService.getSignersForGroup(financingHdrCode, originalList);
@@ -197,7 +200,6 @@ public class SignerController {
       signingEligibilityService.validateDebtorSigner(financingHdrCode);
       List<DebtorDto> signerPersonList = signerService.checkSignerDanasakti(
         financingHdrCode, currentUserService.internalUsername());
-      signingEligibilityService.validateDebtorSigner(financingHdrCode);
       if (signerPersonList == null || signerPersonList.isEmpty()) {
         return new CommonResult<Map<String, Object>>()
           .fail(404, "Signer tidak tersedia", responseData);

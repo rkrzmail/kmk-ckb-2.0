@@ -8,7 +8,10 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import java.util.Optional;
 
 public interface AgreementFileRepository extends JpaRepository<AgreementFile, Long>, JpaSpecificationExecutor<AgreementFile> {
+    boolean existsByMstFileType_FileTypeCode(String fileTypeCode);
     Optional<AgreementFile> findByAgreement(Agreement agreement);
 
     Optional<AgreementFile> findTopByAgreementOrderByAgreementFileId(Agreement agreement);
+
+    Optional<AgreementFile> findByAgreement_AgreementCode(String agreementCode);
 }

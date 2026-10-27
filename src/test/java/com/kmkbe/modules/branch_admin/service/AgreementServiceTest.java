@@ -5,8 +5,6 @@ import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
 import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementCwrDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementDto;
-import com.kmkbe.core.domain.dto.email.MailDataDto;
-import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.AgreementFile;
 import com.kmkbe.core.domain.entity.Cwr;
@@ -17,6 +15,7 @@ import com.kmkbe.core.domain.entity.Invoice;
 import com.kmkbe.core.domain.entity.MstFileType;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.model.BouwheerPaymentEmailPayload;
+import com.kmkbe.core.domain.model.AgreementContractEmailPayload;
 import com.kmkbe.core.domain.model.LoanDisburseEmailPayload;
 import com.kmkbe.core.domain.repository.AgreementFileRepository;
 import com.kmkbe.core.domain.repository.AgreementRepository;
@@ -35,11 +34,11 @@ import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.common.service.EmailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.request.FinancingSubmissionRequest;
-import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.remote.service.FinancingRemoteService;
 import com.kmkbe.modules.user.entity.MstUser;
 import com.kmkbe.modules.user.entity.MstBranch;
+import com.kmkbe.modules.user.repository.MstAppRoleFormUserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,11 +49,12 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -90,7 +90,7 @@ class AgreementServiceTest {
     @Mock private FileStorageService fileStorageService;
     @Mock private EmailService emailService;
     @Mock private AuditTrailService auditTrailService;
-    @Mock private ConfigRemoteService configRemoteService;
+    @Mock private MstAppRoleFormUserRepository mstAppRoleFormUserRepository;
 
     private ObjectMapper objectMapper;
     private AgreementService service;
@@ -129,22 +129,13 @@ class AgreementServiceTest {
                 objectMapper,
                 emailService,
                 auditTrailService,
-                configRemoteService
+                mstAppRoleFormUserRepository
         );
-        ReflectionTestUtils.setField(service, "siscaBranchAdminPosition", "BRANCH ADMIN");
 
         lenient().when(agreementFileRepository.save(any(AgreementFile.class))).thenAnswer(invocation -> invocation.getArgument(0));
         lenient().when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
-        MailPositionDto branchAdminResponse = MailPositionDto.builder()
-                .data(new ArrayList<>(List.of(
-                        MailDataDto.builder()
-                                .branchCode("412")
-                                .email("branch.admin@csul.co.id")
-                                .build()
-                )))
-                .build();
-        lenient().when(configRemoteService.getEmailByPosition("", "412", "BRANCH ADMIN"))
-                .thenReturn(branchAdminResponse);
+        lenient().when(mstAppRoleFormUserRepository.findActiveBranchAdminEmails("412"))
+                .thenReturn(List.of("branch.admin@csul.co.id"));
     }
 
     @Test
@@ -271,7 +262,7 @@ class AgreementServiceTest {
         MultipartFile file = new MockMultipartFile("file", "agreement.pdf", "application/pdf", "pdf".getBytes());
         Agreement agreement = agreementWithFinancing();
         MstFileType fileType = MstFileType.builder().fileTypeCode("AGGREMENT01").build();
-        when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(uuid))).thenReturn(Optional.of(fileType));
+        when(mstFileTypeRepository.findById("AGGREMENT01")).thenReturn(Optional.of(fileType));
         when(agreementRepository.findTopByAgreementCodeOrderByAgreementId("AGR001")).thenReturn(Optional.of(agreement));
         when(agreementFileRepository.findTopByAgreementOrderByAgreementFileId(agreement)).thenReturn(Optional.empty());
         when(fileStorageService.save(eq(file), eq(CUSTOMER_CODE + "/agreement"), eq("AGGREMENT01_agreement.pdf"), eq(null)))
@@ -293,9 +284,12 @@ class AgreementServiceTest {
         MstUser user = MstUser.builder().username("uploader").build();
         MultipartFile file = new MockMultipartFile("file", "new.pdf", "application/pdf", "pdf".getBytes());
         Agreement agreement = agreementWithFinancing();
-        MstFileType fileType = MstFileType.builder().fileTypeCode("AGGREMENT01").build();
+        MstFileType fileType = MstFileType.builder()
+                .fileTypeCode("AGGREMENT01")
+                .bouwheerCode(UUID.fromString(uuid))
+                .build();
         AgreementFile existing = AgreementFile.builder().agreementFileId(1L).fileName("old.pdf").build();
-        when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(uuid))).thenReturn(Optional.of(fileType));
+        when(mstFileTypeRepository.findById("AGGREMENT01")).thenReturn(Optional.of(fileType));
         when(agreementRepository.findTopByAgreementCodeOrderByAgreementId("AGR001")).thenReturn(Optional.of(agreement));
         when(agreementFileRepository.findTopByAgreementOrderByAgreementFileId(agreement)).thenReturn(Optional.of(existing));
         when(fileStorageService.save(eq(file), eq(CUSTOMER_CODE + "/agreement"), eq("AGGREMENT01_new.pdf"), eq(null)))
@@ -310,14 +304,30 @@ class AgreementServiceTest {
     }
 
     @Test
-    void uploadThrowsForMissingFileTypeAgreementAndFinancing() {
+    void uploadRejectsMissingFileType() {
         MultipartFile file = new MockMultipartFile("file", "agreement.pdf", "application/pdf", "pdf".getBytes());
         MstUser user = MstUser.builder().username("uploader").build();
-        when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(uuid))).thenReturn(Optional.empty());
+        when(mstFileTypeRepository.findById("AGGREMENT01")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.upload(user, file, "AGR001", uuid))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessage("File type not found");
+                .hasMessageContaining("File type AGGREMENT01 tidak tersedia untuk bouwheer");
+    }
+
+    @Test
+    void uploadRejectsFileTypeBelongingToAnotherBouwheer() {
+        MultipartFile file = new MockMultipartFile("file", "agreement.pdf", "application/pdf", "pdf".getBytes());
+        MstUser user = MstUser.builder().username("uploader").build();
+        MstFileType otherBouwheerFileType = MstFileType.builder()
+                .fileTypeCode("AGGREMENT01")
+                .bouwheerCode(UUID.randomUUID())
+                .build();
+        when(mstFileTypeRepository.findById("AGGREMENT01")).thenReturn(Optional.of(otherBouwheerFileType));
+
+        assertThatThrownBy(() -> service.upload(user, file, "AGR001", uuid))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("File type AGGREMENT01 tidak tersedia untuk bouwheer");
+        verify(agreementFileRepository, never()).save(any());
     }
 
     @Test
@@ -325,7 +335,7 @@ class AgreementServiceTest {
         MultipartFile file = new MockMultipartFile("file", "agreement.pdf", "application/pdf", "pdf".getBytes());
         MstUser user = MstUser.builder().username("uploader").build();
         MstFileType fileType = MstFileType.builder().fileTypeCode("AGGREMENT01").build();
-        when(mstFileTypeRepository.findByFileTypeCodeAndBouwheerCode("AGGREMENT01", UUID.fromString(uuid))).thenReturn(Optional.of(fileType));
+        when(mstFileTypeRepository.findById("AGGREMENT01")).thenReturn(Optional.of(fileType));
         when(agreementRepository.findTopByAgreementCodeOrderByAgreementId("AGR404")).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> service.upload(user, file, "AGR404", uuid))
@@ -392,6 +402,17 @@ class AgreementServiceTest {
         financingHdr.setBouwheer(bouwheer());
         financingHdr.setFinancingStatus("TEST");
         financingHdr.setFinancingStep("TEST");
+        financingHdr.setTotalInvoiceAmt(2_000_000D);
+        financingHdr.setRetention(20D);
+        financingHdr.setFinancingAmt(1_600_000D);
+        financingHdr.setAdminFeeAmt(10_000D);
+        financingHdr.setLegalFeeAmtNett(20_000D);
+        financingHdr.setInsuranceFeeAmt(30_000D);
+        financingHdr.setOthersFeeAmt(5_000D);
+        financingHdr.setProvisionFeeAmt(15_000D);
+        financingHdr.setSurveyFeeAmtNett(20_000D);
+        financingHdr.setTenor(30L);
+        financingHdr.setDisburseAmt(1_500_000D);
         when(agreementRepository.findById("AGR001")).thenReturn(Optional.empty());
         BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = new BaseMstRemoteResponseDto<>();
         response.setData(List.of(inquiryAgreement("CWR001", "AGR001")));
@@ -406,7 +427,16 @@ class AgreementServiceTest {
         assertThat(financingHdr.getFinancingStatus()).isEqualTo("INPROCESS");
         assertThat(financingHdr.getFinancingStep()).isEqualTo("INPROCESS");
         verify(financingHdrRepository).save(financingHdr);
-        verify(emailService).sendNotificationContractUploadRequired(eq("branch.admin@csul.co.id"), any());
+        ArgumentCaptor<AgreementContractEmailPayload> mailPayload = ArgumentCaptor.forClass(AgreementContractEmailPayload.class);
+        verify(emailService).sendNotificationContractUploadRequired(eq("branch.admin@csul.co.id"), mailPayload.capture());
+        assertThat(mailPayload.getValue().getCwrCode()).isEqualTo("CWR001");
+        assertThat(mailPayload.getValue().getTotalInvoiceAmt()).isEqualTo("Rp 2.000.000");
+        assertThat(mailPayload.getValue().getRetention()).isEqualTo("20%");
+        assertThat(mailPayload.getValue().getFinancingAmt()).isEqualTo("Rp 1.600.000");
+        assertThat(mailPayload.getValue().getTotalFeeAmt()).isEqualTo("Rp 100.000");
+        assertThat(mailPayload.getValue().getTenor()).isEqualTo("30 hari");
+        assertThat(mailPayload.getValue().getDisburseAmt()).isEqualTo("Rp 1.500.000");
+        assertThat(mailPayload.getValue().getInvoices()).contains("INV001");
         verify(emailService, never()).sendNotificationBouwheerPayment(any(), any());
         verify(financingRemoteService, never()).postedSubmission(any());
     }
@@ -467,33 +497,75 @@ class AgreementServiceTest {
     }
 
     @Test
-    void contractUploadNotificationSkipsEmailWhenSiscaReturnsNoData() {
-        when(configRemoteService.getEmailByPosition("", "412", "BRANCH ADMIN"))
-                .thenReturn(MailPositionDto.builder().data(new ArrayList<>()).build());
+    void contractUploadNotificationSkipsEmailWhenDbReturnsNoData() {
+        when(mstAppRoleFormUserRepository.findActiveBranchAdminEmails("412"))
+                .thenReturn(List.of());
 
         ReflectionTestUtils.invokeMethod(
                 service,
-                "sendContractUploadRequiredNotification",
-                financingHdr(),
-                "AGR-NO-RECIPIENT"
+                 "sendContractUploadRequiredNotification",
+                 financingHdr(),
+                 "AGR-NO-RECIPIENT",
+                 "CWR001"
         );
 
         verify(emailService, never()).sendNotificationContractUploadRequired(any(), any());
     }
 
     @Test
-    void contractUploadNotificationSkipsEmailWhenSiscaRequestFails() {
-        when(configRemoteService.getEmailByPosition("", "412", "BRANCH ADMIN"))
-                .thenThrow(new IllegalStateException("SISCA unavailable"));
+    void contractUploadNotificationSkipsEmailWhenDbLookupFails() {
+        when(mstAppRoleFormUserRepository.findActiveBranchAdminEmails("412"))
+                .thenThrow(new IllegalStateException("DB unavailable"));
 
         ReflectionTestUtils.invokeMethod(
                 service,
-                "sendContractUploadRequiredNotification",
-                financingHdr(),
-                "AGR-SISCA-ERROR"
+                 "sendContractUploadRequiredNotification",
+                 financingHdr(),
+                 "AGR-SISCA-ERROR",
+                 "CWR001"
         );
 
         verify(emailService, never()).sendNotificationContractUploadRequired(any(), any());
+    }
+
+    @Test
+    void contractUploadNotificationUsesDistinctDbEmailsForBranch() {
+        when(mstAppRoleFormUserRepository.findActiveBranchAdminEmails("412"))
+                .thenReturn(List.of(" branch.admin@csul.co.id ", "branch.admin@csul.co.id", "other.admin@csul.co.id"));
+        when(financingDtlRepository.findAllByFinancingHdr(any(FinancingHdr.class)))
+                .thenReturn(Optional.of(List.of(financingDtl(true))));
+
+        ReflectionTestUtils.invokeMethod(
+                service,
+                 "sendContractUploadRequiredNotification",
+                 financingHdr(),
+                 "AGR-MULTI-RECIPIENT",
+                 "CWR001"
+        );
+
+        verify(emailService).sendNotificationContractUploadRequired(
+                eq("branch.admin@csul.co.id;other.admin@csul.co.id"), any());
+    }
+
+    @Test
+    void contractUploadNotificationWaitsUntilTransactionCommit() {
+        when(financingDtlRepository.findAllByFinancingHdr(any(FinancingHdr.class)))
+                .thenReturn(Optional.of(List.of(financingDtl(true))));
+        TransactionSynchronizationManager.initSynchronization();
+        TransactionSynchronizationManager.setActualTransactionActive(true);
+        try {
+            ReflectionTestUtils.invokeMethod(service, "sendContractUploadRequiredNotification",
+                    financingHdr(), "AGR001", "CWR001");
+            verify(emailService, never()).sendNotificationContractUploadRequired(any(), any());
+
+            TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(TransactionSynchronization::afterCommit);
+            verify(emailService).sendNotificationContractUploadRequired(
+                    eq("branch.admin@csul.co.id"), any());
+        } finally {
+            TransactionSynchronizationManager.clearSynchronization();
+            TransactionSynchronizationManager.setActualTransactionActive(false);
+        }
     }
 
     @Test
@@ -611,14 +683,13 @@ class AgreementServiceTest {
                 objectMapper,
                 emailService,
                 auditTrailService,
-                configRemoteService
+                mstAppRoleFormUserRepository
         ) {
             @Override
             boolean bypassRemotePosting() {
                 return bypass;
             }
         };
-        ReflectionTestUtils.setField(postingService, "siscaBranchAdminPosition", "BRANCH ADMIN");
         return postingService;
     }
 

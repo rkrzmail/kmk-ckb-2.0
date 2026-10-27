@@ -177,6 +177,15 @@ public class FinancingHdr implements Serializable {
   )
   private MstBranch mstBranch;
 
+  @Column(name = "assigned_ao_employee_code", length = 50)
+  private String assignedAoEmployeeCode;
+
+  @Column(name = "assigned_ao_name", length = 100)
+  private String assignedAoName;
+
+  @Column(name = "assigned_ao_email", length = 254)
+  private String assignedAoEmail;
+
   @OneToMany(mappedBy = "financingHdr", fetch = FetchType.LAZY)
   private Set<FinancingDtl> financingDtls;
 
@@ -210,4 +219,7 @@ public class FinancingHdr implements Serializable {
 
   @Column(name = "vendor_id")
   private String vendorId;
+
+  @Column(name = "total_invoice_submitted_amt")
+  private Double totalInvoiceSubmittedAmt;
 }

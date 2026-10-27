@@ -153,10 +153,12 @@ class AssignmentSubmissionServiceTest {
   @Test
   void assignmentListReturnsAccountOfficerAssignmentsWithAgreementDocument() throws Exception {
     FinancingHdr financingHdr = financingHdr("INPROCESS", "ASSIGNMENT");
+    financingHdr.setTotalInvoiceAmt(1_250.75D);
+    financingHdr.setInvoiceQty(3L);
+    financingHdr.getCustomer().setExistingCust("New Customer");
     stubUserAndRole("account_officer");
     when(financingHdrRepository.findAllAssignmentFinancingRaw(eq("JKT"), eq(null), eq(null), eq(null), any()))
         .thenReturn(pageOf(financingHdr));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(financingHdr.getCustomer(), "PAID")).thenReturn(0L);
     Agreement agreement = Agreement.builder().agreementCode("AGR001").build();
     when(agreementRepository.findTopByFinancingHdr(financingHdr)).thenReturn(Optional.of(agreement));
     when(agreementFileRepository.findTopByAgreementOrderByAgreementFileId(agreement))
@@ -172,6 +174,9 @@ class AssignmentSubmissionServiceTest {
     assertThat(dto.getCustCode()).isEqualTo(CUSTOMER_CODE);
     assertThat(dto.getCustName()).isEqualTo("Customer");
     assertThat(dto.getBouwheerName()).isEqualTo("PT BOUWHEER");
+    assertThat(dto.getFinancingAmount()).isEqualByComparingTo("1000");
+    assertThat(dto.getTotalInvoiceAmount()).isEqualByComparingTo("1250.75");
+    assertThat(dto.getInvoiceQty()).isEqualTo(3L);
     assertThat(dto.getCustStatus()).isEqualTo("New Customer");
     assertThat(dto.getStatus()).isEqualTo("NEW");
     assertThat(dto.getAgreementDoc()).contains("/api/v1/documents/download/agreement/9");
@@ -180,11 +185,11 @@ class AssignmentSubmissionServiceTest {
   @Test
   void assignmentListReturnsBranchAdminAssignmentAndExistingCustomerWithoutAgreement() throws Exception {
     FinancingHdr financingHdr = financingHdr("INPROCESS", "INPROCESS");
+    financingHdr.getCustomer().setExistingCust("Existing Customer");
     stubUserAndRole("branch_admin");
     PaginationRequest request = pagination(null, null, 1, 5);
     when(financingHdrRepository.findAllAssignmentFinancingRaw(eq("JKT"), eq(null), eq(null), eq(null), any()))
         .thenReturn(pageOf(financingHdr));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(financingHdr.getCustomer(), "PAID")).thenReturn(1L);
     when(agreementRepository.findTopByFinancingHdr(financingHdr)).thenReturn(Optional.empty());
 
     PaginationResult<AssignmentDto> result = service.assignmentList(httpServletRequest, request);
@@ -211,14 +216,89 @@ class AssignmentSubmissionServiceTest {
   void assignmentListSpecSearchCoversFinancingHdrCustomerBouwheerAndNoMatch() throws Exception {
     FinancingHdr financingHdr = financingHdr("INPROCESS", "INPROCESS");
     stubUserAndRole("account_officer");
+    when(financingHdrRepository.findByFinancingHdrCodeAndMstBranch_BranchCode(FINANCING_HDR_CODE, "JKT"))
+      .thenReturn(Optional.of(financingHdr));
     when(financingHdrRepository.findAllAssignmentFinancingRaw(any(), any(), any(), any(), any())).thenReturn(pageOf(financingHdr));
-    when(financingHdrRepository.countByCustomerAndFinancingStatus(financingHdr.getCustomer(), "PAID")).thenReturn(0L);
     when(agreementRepository.findTopByFinancingHdr(financingHdr)).thenReturn(Optional.empty());
 
     assertThat(service.assignmentList(httpServletRequest, pagination("financingHdrCode", FINANCING_HDR_CODE.toString(), 1, 5)).getList()).hasSize(1);
     assertThat(service.assignmentList(httpServletRequest, pagination("custName", "cust", 1, 5)).getList()).hasSize(1);
     assertThat(service.assignmentList(httpServletRequest, pagination("bouwheerName", "bouwheer", 1, 5)).getList()).hasSize(1);
     assertThat(service.assignmentList(httpServletRequest, pagination("unknown", "none", 1, 5)).getList()).isEmpty();
+  }
+
+  @Test
+  void assignmentListFindsPartialFinancingHdrCodeWithinBranchBeforePagination() throws Exception {
+    FinancingHdr first = financingHdr("INPROCESS", "INPROCESS");
+    FinancingHdr second = financingHdr("INPROCESS", "INPROCESS");
+    second.setFinancingHdrCode(UUID.fromString("22222222-3333-3333-3333-333333333333"));
+    stubUserAndRole("branch_admin");
+    when(financingHdrRepository.findAllAssignmentFinancingByCodeFragment(eq("JKT"), eq("22222222-"), any()))
+      .thenReturn(new PageImpl<>(List.of(first, second)));
+
+    PaginationResult<AssignmentDto> result = service.assignmentList(
+      httpServletRequest, pagination("financingHdrCode", "22222222-", 1, 1));
+
+    assertThat(result.getTotalData()).isEqualTo(2);
+    assertThat(result.getTotalPage()).isEqualTo(2);
+    assertThat(result.getList()).extracting(AssignmentDto::getFinancingHdrCode)
+      .containsExactly(FINANCING_HDR_CODE);
+    var pageable = org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+    org.mockito.Mockito.verify(financingHdrRepository).findAllAssignmentFinancingByCodeFragment(
+      eq("JKT"), eq("22222222-"), pageable.capture());
+    assertThat(pageable.getValue().isUnpaged()).isTrue();
+  }
+
+  @Test
+  void assignmentListRejectsWildcardInFinancingHdrCodeSearch() throws Exception {
+    stubUserAndRole("branch_admin");
+
+    PaginationResult<AssignmentDto> result = service.assignmentList(
+      httpServletRequest, pagination("financingHdrCode", "%", 1, 10));
+
+    assertThat(result.getList()).isEmpty();
+    assertThat(result.getTotalData()).isZero();
+    org.mockito.Mockito.verifyNoInteractions(financingHdrRepository);
+  }
+
+  @Test
+  void assignmentListFiltersFinancingAmountExactlyBeforePagination() throws Exception {
+    FinancingHdr first = financingHdr("INPROCESS", "INPROCESS");
+    FinancingHdr second = financingHdr("INPROCESS", "INPROCESS");
+    second.setFinancingHdrCode(UUID.fromString("44444444-4444-4444-4444-444444444444"));
+    second.setFinancingAmt(2_500D);
+    stubUserAndRole("branch_admin");
+    when(financingHdrRepository.findAllAssignmentFinancingRaw(any(), any(), any(), any(), any()))
+      .thenReturn(new PageImpl<>(List.of(first, second)));
+
+    PaginationResult<AssignmentDto> result = service.assignmentList(
+      httpServletRequest, pagination("financingAmount", "2500.00", 1, 1));
+
+    assertThat(result.getTotalData()).isEqualTo(1);
+    assertThat(result.getTotalPage()).isEqualTo(1);
+    assertThat(result.getList()).extracting(AssignmentDto::getFinancingHdrCode)
+      .containsExactly(second.getFinancingHdrCode());
+    assertThat(service.assignmentList(httpServletRequest,
+      pagination("financingAmount", "not-a-number", 1, 10)).getList()).isEmpty();
+  }
+
+  @Test
+  void assignmentListFiltersCustomerStatusIgnoringCase() throws Exception {
+    FinancingHdr first = financingHdr("INPROCESS", "INPROCESS");
+    first.getCustomer().setExistingCust("New Customer");
+    FinancingHdr second = financingHdr("INPROCESS", "INPROCESS");
+    second.setFinancingHdrCode(UUID.fromString("44444444-4444-4444-4444-444444444444"));
+    second.getCustomer().setExistingCust("Existing Customer");
+    stubUserAndRole("branch_admin");
+    when(financingHdrRepository.findAllAssignmentFinancingRaw(any(), any(), any(), any(), any()))
+      .thenReturn(new PageImpl<>(List.of(first, second)));
+
+    PaginationResult<AssignmentDto> result = service.assignmentList(
+      httpServletRequest, pagination("custStatus", "existing", 1, 10));
+
+    assertThat(result.getTotalData()).isEqualTo(1);
+    assertThat(result.getList()).extracting(AssignmentDto::getCustStatus)
+      .containsExactly("Existing Customer");
   }
 
   @Test
@@ -233,6 +313,51 @@ class AssignmentSubmissionServiceTest {
     PaginationResult<AssignmentDto> result = service.assignmentList(httpServletRequest, new PaginationRequest());
 
     assertThat(result.getList()).isEmpty();
+  }
+
+  @Test
+  void branchAdminCanFindPaidFinancingByHeaderCode() throws Exception {
+    FinancingHdr financing = financingHdr("PAID", "PAID");
+    stubUserAndRole("branch_admin");
+    when(financingHdrRepository.findByFinancingHdrCodeAndMstBranch_BranchCode(FINANCING_HDR_CODE, "JKT"))
+      .thenReturn(Optional.of(financing));
+
+    PaginationResult<AssignmentDto> result = service.assignmentList(
+      httpServletRequest, pagination("financingHdrCode", FINANCING_HDR_CODE.toString(), 1, 10));
+
+    assertThat(result.getList()).singleElement().satisfies(dto -> {
+      assertThat(dto.getFinancingHdrCode()).isEqualTo(FINANCING_HDR_CODE);
+      assertThat(dto.getStatus()).isEqualTo("PAID");
+      assertThat(dto.getStatusLabel()).isEqualTo("Paid");
+    });
+  }
+
+  @Test
+  void branchAdminCanFindPaidFinancingWithSignedStepByHeaderCode() throws Exception {
+    FinancingHdr financing = financingHdr("PAID", "SIGNED");
+    stubUserAndRole("branch_admin");
+    when(financingHdrRepository.findByFinancingHdrCodeAndMstBranch_BranchCode(FINANCING_HDR_CODE, "JKT"))
+      .thenReturn(Optional.of(financing));
+
+    PaginationResult<AssignmentDto> result = service.assignmentList(
+      httpServletRequest, pagination("financingHdrCode", FINANCING_HDR_CODE.toString(), 1, 10));
+
+    assertThat(result.getList()).singleElement().satisfies(dto -> {
+      assertThat(dto.getFinancingHdrCode()).isEqualTo(FINANCING_HDR_CODE);
+      assertThat(dto.getStatus()).isEqualTo("SIGNED");
+      assertThat(dto.getStatusLabel()).isEqualTo("Signed");
+    });
+  }
+
+  @Test
+  void branchAdminCannotFindPaidFinancingOutsideTheirBranch() throws Exception {
+    stubUserAndRole("branch_admin");
+
+    PaginationResult<AssignmentDto> result = service.assignmentList(
+      httpServletRequest, pagination("financingHdrCode", FINANCING_HDR_CODE.toString(), 1, 10));
+
+    assertThat(result.getList()).isEmpty();
+    assertThat(result.getTotalData()).isZero();
   }
 
   @Test

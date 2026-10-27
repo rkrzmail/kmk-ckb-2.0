@@ -46,23 +46,11 @@ public class SbuRemoteService {
     @Value("${security.api.key}")
     public String apiKey;
 
-    @Value("${csul.confins.los.fwd}")
-    public String confinsLosFwd;
 
-    @Value("${csul.confins.mou.fwd}")
-    public String confinsMouFwd;
 
-    @Value("${csul.confins.fou.getzipcode}")
-    public String confinsFouFwd;
 
-    @Value("${csul.confins.fou.getcalculate}")
-    public String confinsFouCalculcate;
 
-    @Value("${csul.confins.mou.getpagingSQL}")
-    public String confinsMouGetPagingSQL;
 
-    @Value("${csul.confins.los.getpagingSQL}")
-    public String confinsLosGetPagingSQL;
 
 
     public SbuRemoteService() {
@@ -114,11 +102,11 @@ public class SbuRemoteService {
     }
 
     public String Los_Agreement_GetListAgreementDetailForCwrNo_forward() {
-        return confinsLosFwd;
+        return Los_Agreement_GetListAgreementDetailForCwrByCwrNo();
     }
 
     public String Mou_GetSigner_forward() {
-        return confinsMouFwd;
+        return confinsMouBaseUrl + "/CwrSigner/GetListCwrSignerForUpdatebyCustNoAndCwrNo";
     }
 
     public String Fou_Generic_GetPagingObjectBySQL() {

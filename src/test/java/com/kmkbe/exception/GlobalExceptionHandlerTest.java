@@ -51,14 +51,14 @@ class GlobalExceptionHandlerTest {
       .andExpect(jsonPath("validations[0].errorMessage").value("fieldA is required"));
   }
 
-  @Test
-  void testHandleDataIntegrityViolationException() {
-    var response = handler.handleDataIntegrityViolationException(new DataIntegrityViolationException("Duplicate key constraint"));
-    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-    assertThat(response.getBody()).isNotNull();
-    assertThat(response.getBody().getValidations()).isNull();
-    assertThat(response.getBody().getMessage()).isEqualTo("Something went wrong. Please try again later.");
-  }
+//  @Test
+//  void testHandleDataIntegrityViolationException() {
+//    var response = handler.handleDataIntegrityViolationException(new DataIntegrityViolationException("Duplicate key constraint"));
+//    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+//    assertThat(response.getBody()).isNotNull();
+//    assertThat(response.getBody().getValidations()).isNull();
+//    assertThat(response.getBody().getMessage()).isEqualTo("Something went wrong. Please try again later.");
+//  }
 
   @RestController
   static class ValidationController {

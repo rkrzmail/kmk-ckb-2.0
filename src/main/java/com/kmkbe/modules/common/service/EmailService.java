@@ -46,7 +46,8 @@ public class EmailService {
   private static final String M_BRANCH_ASSIGN = "M_BRANCH_ASSIGN";//(2)
   private static final String M_BRANCH_ASSIGN_MJR = "M_BRANCH_ASSIGN_MJR";
   private static final String M_BOUWHEER_PAYMENT = "M_BOUWHEER_PAYMENT";
-  private static final String M_BRANCH_CONTRACT_UPLOAD = "M_BRANCH_CONTRACT_UPLOAD";
+  private static final String M_FINANCE_INVOICE_PAID = "M_FINANCE_INVOICE_PAID";
+  private static final String M_BRANCH_UTILIZATION_PLACEMENT = "M_BRANCH_UTILIZATION_PLACEMENT";
   private static final String M_CUST_LOAD_CHANGE = "M_CUST_LOAD_CHANGE";
   private static final String M_CUST_PENCAIRAN = "M_CUST_PENCAIRAN";//(5)
   private static final String M_SIM_LOAN = "M_SIM_LOAN";//(1)
@@ -235,6 +236,20 @@ public class EmailService {
 
   public record DeliveryResult(boolean acceptedBySmtp, String errorMessage) {}
 
+  public DeliveryResult sendFinanceInvoicePaidNotification(String recipients, String agreementCode,
+                                                           Map<String, Object> fields) {
+    try {
+      EmailTemplate template = loadTemplate(M_FINANCE_INVOICE_PAID);
+      template.setMailTo(recipients);
+      template.setSubjectMail(template.getSubjectMail().replace("{agreementCode}", agreementCode));
+      template.setBodyMail(mappingBody(template.getBodyMail(), Map.of("additionalArgs", fields)));
+      return sendMailMessageWithResult(template, recipients);
+    } catch (Exception e) {
+      log.error("Finance invoice paid email preparation failed. agreementCode={}", agreementCode, e);
+      return new DeliveryResult(false, e.getClass().getSimpleName() + ": " + e.getMessage());
+    }
+  }
+
   public DeliveryResult sendCustomerApprovalNotification(Customer customer, String approvalStatus, String note) {
     String recipient = customer.getCustEmail();
     String templateCode = "APPROVED".equals(approvalStatus) ? M_CUST_ACTIVE : M_CUST_REJECTED;
@@ -365,6 +380,7 @@ public class EmailService {
       args.put("additionalArgs", payloadArgs);
 
       send(customer.getCustEmail(), args, M_CUST_LOAN);
+      log.info("Send email Notification laon disbursement to : {} ",customer.getCustEmail());
     } catch (Exception e) {
       log.error("Error sendNotificationLoanDisbursement {}", e.getMessage());
     }
@@ -506,7 +522,6 @@ public class EmailService {
         payloadArgs.remove("invoices");
         payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
       }
-
       args.put("additionalArgs", payloadArgs);
 
       final EmailTemplate template = loadTemplate(M_BOUWHEER_PAYMENT);
@@ -514,19 +529,8 @@ public class EmailService {
       template.setMailTo(email);
       template.setBodyMail(payload.bodyMail(template));
 
-      boolean success = false;
-      for (int i = 0; i < 3; i++) {
-        try {
-          send(args, template);
-          success = true;
-        } catch (Exception e) {
-          log.error("failed send sendNotificationBouwheerPayment to {} due to {}", email, e.getMessage());
-        }
-
-        if (success) {
-          break;
-        }
-      }
+      send(args, template);
+      log.info("Send email Notification laon Bouwheer to : {} ",email);
     } catch (Exception e) {
       log.error("Error sendNotificationBouwheerPayment {}", e.getMessage());
     }
@@ -538,14 +542,16 @@ public class EmailService {
     AgreementContractEmailPayload payload
   ) {
     try {
-      Map<String, Object> args = new HashMap<>();
-      args.put("additionalArgs", ObjectUtils.objectToJson(payload));
+      Map<String, Object> fields = ObjectUtils.objectToJson(payload);
+      fields.replaceAll((key, value) -> "invoices".equals(key)
+        ? value : HtmlUtils.htmlEscape(value == null ? "" : value.toString()));
 
-      EmailTemplate template = loadTemplate(M_BRANCH_CONTRACT_UPLOAD);
+      EmailTemplate template = loadTemplate(M_BRANCH_UTILIZATION_PLACEMENT);
       template.setMailTo(branchAdminEmails);
       template.setSubjectMail(template.getSubjectMail().replace("{agreementCode}", payload.getAgreementCode()));
 
-      send(args, template);
+      send(Map.of("additionalArgs", fields), template);
+      log.info("Send email Notification laon contract uplaod to : {} ", branchAdminEmails);
     } catch (Exception e) {
       log.error(
         "sendNotificationContractUploadRequired failed. agreementCode={}, recipients={}",

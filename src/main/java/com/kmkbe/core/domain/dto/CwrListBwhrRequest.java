@@ -6,12 +6,12 @@ import lombok.Data;
 @Data
 public class CwrListBwhrRequest {
     @JsonProperty("CwrNo")
-    private String CwrNo;
+    private String cwrNo;
 
     @JsonProperty("CwrBouwheerCustNo")
-    private String CwrBouwheerCustNo;
+    private String cwrBouwheerCustNo;
 
     @JsonProperty("RequestDateTime")
-    private String RequestDateTime;
+    private String requestDateTime;
 }
 

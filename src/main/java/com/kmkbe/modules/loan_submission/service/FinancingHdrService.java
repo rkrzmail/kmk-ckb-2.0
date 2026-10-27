@@ -69,7 +69,7 @@ public class FinancingHdrService {
     FinancingHdr header = new FinancingHdr();
     {
       final double disburseAmount = simulationResult.getEstimatedDisburseAmount().doubleValue();
-      final double totalInvoiceAmount = simulationResult.getTotalInvoiceAmount();
+      final double totalInvoiceAmount = simulationResult.getTotalInvoiceAmount().doubleValue();
       final double financingAmount = simulationResult.getFinancingAmount().doubleValue();
 
       Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer);
@@ -106,7 +106,7 @@ public class FinancingHdrService {
       header.setInsuranceFeeAmt(0.0);
       header.setInsuranceFeePercentage(0.0);
       header.setAdminLimitAmt(0.0);
-
+      header.setTotalInvoiceSubmittedAmt(request.getTotalInvoiceAmount());
       header.setMstBranch(financingHdrOptional
         .map(FinancingHdr::getMstBranch)
         .orElse(null)
@@ -569,7 +569,7 @@ public class FinancingHdrService {
     try {
       List<DisbursementLog> disbursementLog = disbursementLogRepository.findAllByAgreement(agreement);
       if (disbursementLog != null && !disbursementLog.isEmpty() && disbursementLog.get(0).getApPaidAmt() != null) {
-        return BigDecimal.valueOf(disbursementLog.get(0).getApPaidAmt());
+        return BigDecimal.valueOf(disbursementLog.getFirst().getApPaidAmt());
       }
     } catch (Exception ex) {
       errorLogs.add("Agreement " + agreement.getAgreementCode() + " gagal ambil disbursement log: " + ex.getMessage());
@@ -744,6 +744,10 @@ public class FinancingHdrService {
         financingStep.in("golive", "paid")
       ),
       criteriaBuilder.and(
+        criteriaBuilder.equal(financingStatus, "paid"),
+        criteriaBuilder.equal(financingStep, "paid")
+      ),
+      criteriaBuilder.and(
         criteriaBuilder.equal(financingStatus, "completed"),
         criteriaBuilder.equal(financingStep, "refund")
       )
@@ -865,21 +869,27 @@ public class FinancingHdrService {
     }
   }
 
+  @Transactional
   public FinancingHdr paidFinancing(
     FinancingInvoicePaidRequest request
   ) {
 
     if (request.getFinancingCode() == null || request.getFinancingCode().isEmpty()) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", false);
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Invalid given financingCode");
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Financing Code tidak tidak boleh kosong!");
     }
 
     FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(request.getFinancingCode()))
-      .orElseThrow(() -> new IllegalStateException("Financing Not Found with given financingCode"));
+      .orElseThrow(() -> new IllegalStateException("Financing Code tidak ditemukan!"));
 
-    financingHdr.setFinancingStatus("LIVE");
+    String noAggrNo = financingHdr.getAgreement().isEmpty() ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();
+    if(noAggrNo.isEmpty()){
+      log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}",noAggrNo);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Pembayaran belum dapat diproses karena invoice masih dalam tahap persetujuan internal CSUL.");
+    }
+
+    financingHdr.setFinancingStatus("PAID");
     financingHdr.setFinancingStep("PAID");
-
     financingHdr.setUsrUpd(financingHdr.getBouwheer().getBouwheerName());
     financingHdr.setDtmUpd(DateTimeUtils.now());
     return financingHdrRepository.save(financingHdr);
