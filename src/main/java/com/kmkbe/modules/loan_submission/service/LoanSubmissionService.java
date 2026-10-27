@@ -544,8 +544,6 @@ public class LoanSubmissionService {
           .retention(fin.getRetention())
           .totalInvoiceAmt(fin.getTotalInvoiceAmt())
           .interestAmt(fin.getInterestAmt())
-
-
           .build();
 
         if (histCode != null && histCode.length() >= 32) {
