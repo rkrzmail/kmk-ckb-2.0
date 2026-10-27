@@ -481,7 +481,7 @@ public class LoanSubmissionService {
         log.info("Jumlah Biaya existing customer : {} ",jumlahBiaya);
       }
 
-      double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
+      double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya - interestAmount;
       final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
       final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
       
@@ -683,7 +683,7 @@ public class LoanSubmissionService {
       log.info("Jumlah Biaya existing customer : {} ",jumlahBiaya);
     }
 
-    double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
+    double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya -interestAmount;
     final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
     final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
 
