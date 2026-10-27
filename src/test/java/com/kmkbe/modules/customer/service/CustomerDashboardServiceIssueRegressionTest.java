@@ -111,6 +111,7 @@ class CustomerDashboardServiceIssueRegressionTest {
     assertThat(result.getPlafond().getPlafond()).isEqualByComparingTo("1000000000");
     assertThat(result.getPlafond().getAvailablePlafond()).isEqualByComparingTo("4000000000");
     assertThat(result.getPlafond().getValidityLimitData()).isEqualTo("2028-02-18");
+    assertThat(result.getAoAm()).isNull();
     verify(cwrRepository).findFirstByCustomerOrderByCwrEndDateDescCwrCodeDesc(customer);
   }
 
@@ -142,12 +143,17 @@ class CustomerDashboardServiceIssueRegressionTest {
     financingHdr.setFinancingHdrCode(financingHdrCode);
     financingHdr.setCustomer(customer);
     financingHdr.setBouwheer(Bouwheer.builder().bouwheerCode(UUID.randomUUID()).build());
+    financingHdr.setAssignedAoEmployeeCode("74350");
+    financingHdr.setAssignedAoName("ELRICA SELMA KOLLY");
+    financingHdr.setAssignedAoEmail("ao@example.com");
     when(financingHdrRepository.findByFinancingHdrCode(financingHdrCode)).thenReturn(Optional.of(financingHdr));
 
     CustomerPlafondDto result = service.plafondByFinancingHdrCode(financingHdrCode.toString()).getData();
 
     assertThat(result.getPlafond().getTotalPlafond()).isEqualByComparingTo(BigDecimal.ZERO);
     assertThat(result.getPlafond().getAvailablePlafond()).isEqualByComparingTo(BigDecimal.ZERO);
+    assertThat(result.getAoAm().getEmployeeCode()).isEqualTo("74350");
+    assertThat(result.getAoAm().getEmployeeName()).isEqualTo("ELRICA SELMA KOLLY");
   }
 
   @Test
