@@ -476,7 +476,7 @@ public class LoanSubmissionService {
         provisionFeeAmount = new BigDecimal(0);
         surveyFeeAmount = new BigDecimal(0);
         legalFeeAmount = new BigDecimal(0);
-        adminFeeAmount = new BigDecimal(0);
+        adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
         othersFeeAmount = new BigDecimal(0);
         jumlahBiaya = adminFee + product.getOthersFee();
 
@@ -681,7 +681,7 @@ public class LoanSubmissionService {
       provisionFeeAmount = new BigDecimal(0);
       surveyFeeAmount = new BigDecimal(0);
       legalFeeAmount = new BigDecimal(0);
-      adminFeeAmount = new BigDecimal(0);
+      adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
       othersFeeAmount = new BigDecimal(0);
       jumlahBiaya = adminFee + product.getOthersFee();
 
@@ -785,13 +785,14 @@ public class LoanSubmissionService {
       double effRate = intestRate / 100;
 
       FinancingHdr finHdr = financingHdr.get();
-      finHdr.setDisburseAmt(estimatedDisburseDto.getEstimatedDisburseAmount().doubleValue());
-      finHdr.setRetention((double) (100 - schemaRate));
-      finHdr.setAdminFeeAmt(estimatedDisburseDto.getAdminFeeAmount().doubleValue());
-      finHdr.setInterestAmt(estimatedDisburseDto.getInterestFeeAmount().doubleValue());
-      finHdr.setEffectiveRate(effRate);
-      finHdr.setFinancingAmt(estimatedDisburseDto.getFinancingAmount().doubleValue());
-      financingHdrRepository.save(finHdr);
+          /*finHdr.setDisburseAmt(estimatedDisburseDto.getEstimatedDisburseAmount().doubleValue());
+          finHdr.setRetention(Double.valueOf(100-schemaRate));
+          finHdr.setAdminFeeAmt(estimatedDisburseDto.getAdminFeeAmount().doubleValue());
+          finHdr.setInterestAmt(estimatedDisburseDto.getInterestFeeAmount().doubleValue());
+          finHdr.setEffectiveRate(Double.valueOf(effRate));
+          finHdr.setFinancingAmt(estimatedDisburseDto.getFinancingAmount().doubleValue());
+          //financingHdrRepository.save(finHdr);tidak jadi insert*/
+
 
       SimulationHist simulationHist = SimulationHist.builder()
         .simulationHistCode(UUID.randomUUID())
