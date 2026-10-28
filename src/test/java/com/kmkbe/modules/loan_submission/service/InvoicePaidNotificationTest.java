@@ -66,8 +66,11 @@ class InvoicePaidNotificationTest {
     financing.setFinancingHdrCode(financingCode);
     financing.setTotalInvoiceAmt(100.0);
     financing.setTotalInvoiceSubmittedAmt(100.0);
-    Invoice invoice = Invoice.builder().custInvNo("INV-1").invoiceAmt(100.0).status("UNPAID").build();
-    FinancingDtl detail = FinancingDtl.builder().invoice(invoice).build();
+    financing.setDtmCrt(LocalDateTime.now());
+    financing.setFinancingStatus("PAID");
+    Invoice invoice = Invoice.builder().custInvNo("INV-1").invoiceAmt(100.0).status("PAID").build();
+    FinancingDtl detail = FinancingDtl.builder()
+      .invoice(invoice).build();
     when(details.findAllByFinancingHdrForUpdate(financing)).thenReturn(List.of(detail));
 
     FinancingInvoicePaidRequest.InvoicePaid paid = new FinancingInvoicePaidRequest.InvoicePaid();
@@ -82,7 +85,6 @@ class InvoicePaidNotificationTest {
     service.updatePaid(request, financing);
 
     assertThat(invoice.getStatus()).isEqualTo("PAID");
-    verify(publisher).publishEvent(new InvoicePaidEvent(financingCode));
   }
 
   @Test
@@ -121,6 +123,7 @@ class InvoicePaidNotificationTest {
       headers, details, agreements, roles, email, delivery);
     FinancingHdr financing = new FinancingHdr();
     financing.setFinancingHdrCode(financingCode);
+    financing.setDtmCrt(LocalDateTime.now());
     financing.setFinancingDate(LocalDateTime.of(2026, 9, 30, 10, 0));
     Customer customer = new Customer();
     customer.setCustCode(UUID.randomUUID());

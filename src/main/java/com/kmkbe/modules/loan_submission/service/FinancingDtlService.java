@@ -252,6 +252,7 @@ public class FinancingDtlService {
         financingDtl.getInvoice().setStatus("PAID");
         financingDtl.getInvoice().setUsrUpd(updater);
         financingDtl.getInvoice().setDtmUpd(LocalDateTime.now());
+        financingDtl.setPaidToCustDate(LocalDateTime.now());
         financingDtl.setBouwheerPaidDate(Utils.toInstant(reqInvoice.getPostingDate()));
         financingDtl.setUsrUpd(updater);
         financingDtl.setDtmUpd(LocalDateTime.now());

@@ -139,12 +139,8 @@ public class LoanSubmissionController {
   public CommonResult<CreatedSimulationDto> updateSimulation(
     HttpServletRequest request
   ) throws Exception {
-    CreatedSimulationDto result = loanSubmissionService.updateSimulation(request);
-    if (result != null) {
-      int i = 0;
-    }
     return new CommonResult<CreatedSimulationDto>().success(
-      result
+      loanSubmissionService.updateSimulation(request)
     );
   }
 
