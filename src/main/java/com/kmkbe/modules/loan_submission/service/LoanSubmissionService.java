@@ -382,7 +382,9 @@ public class LoanSubmissionService {
       Cwr validateCwr = null;
       if (customer != null) {
         validateCwr = isCustomerExistingByCwr(customer);
-        isCustomerExisting = validateCwr !=null;
+        isCustomerExisting = Optional.ofNullable(customer.getExistingCust())
+          .map(status -> status.equals(AppConstants.EXISTING_CUSTOMER))
+          .orElse(false);
       }
 
       BigDecimal
@@ -594,7 +596,7 @@ public class LoanSubmissionService {
     }
     FinancingHdr finHdr = financingHdr.get();
 
-    final BigDecimal ntfResult = BigDecimal.valueOf(finHdr.getTotalInvoiceAmt())
+    final BigDecimal ntfResult = BigDecimal.valueOf(finHdr.getFinancingAmt())
       .multiply(BigDecimal.valueOf(schemaRate / 100.0));
 
     log.info("NTF Amount : {} ",ntfResult);
@@ -620,7 +622,6 @@ public class LoanSubmissionService {
       legalFeeAmount;
 
     int tenor = finHdr.getTenor().intValue();
-
     double nilaiPembiayaan = ntfResult.doubleValue();
     double effective_Rate;
 
@@ -648,7 +649,13 @@ public class LoanSubmissionService {
     double provisionRateFee = finHdr.getProvisionFeeAmt();
     log.info("Provision Rate : {} ",provisionRateFee);
 
-    boolean isCustomerExisting = finHdr.getSurveyFeeAmt().intValue() != 0;
+    boolean isCustomerExisting = false;
+    if (finHdr.getCustomer() != null) {
+      isCustomerExistingByCwr(finHdr.getCustomer());
+      isCustomerExisting = Optional.ofNullable(finHdr.getCustomer().getExistingCust())
+        .map(status -> status.equals(AppConstants.EXISTING_CUSTOMER))
+        .orElse(false);
+    }
     if (!isCustomerExisting) {
       log.info("Customer new customer {} ", isCustomerExisting);
       jumlahBiaya = provisionRateFee
@@ -778,14 +785,13 @@ public class LoanSubmissionService {
       double effRate = intestRate / 100;
 
       FinancingHdr finHdr = financingHdr.get();
-          /*finHdr.setDisburseAmt(estimatedDisburseDto.getEstimatedDisburseAmount().doubleValue());
-          finHdr.setRetention(Double.valueOf(100-schemaRate));
-          finHdr.setAdminFeeAmt(estimatedDisburseDto.getAdminFeeAmount().doubleValue());
-          finHdr.setInterestAmt(estimatedDisburseDto.getInterestFeeAmount().doubleValue());
-          finHdr.setEffectiveRate(Double.valueOf(effRate));
-          finHdr.setFinancingAmt(estimatedDisburseDto.getFinancingAmount().doubleValue());
-          //financingHdrRepository.save(finHdr);tidak jadi insert*/
-
+      finHdr.setDisburseAmt(estimatedDisburseDto.getEstimatedDisburseAmount().doubleValue());
+      finHdr.setRetention((double) (100 - schemaRate));
+      finHdr.setAdminFeeAmt(estimatedDisburseDto.getAdminFeeAmount().doubleValue());
+      finHdr.setInterestAmt(estimatedDisburseDto.getInterestFeeAmount().doubleValue());
+      finHdr.setEffectiveRate(effRate);
+      finHdr.setFinancingAmt(estimatedDisburseDto.getFinancingAmount().doubleValue());
+      financingHdrRepository.save(finHdr);
 
       SimulationHist simulationHist = SimulationHist.builder()
         .simulationHistCode(UUID.randomUUID())
