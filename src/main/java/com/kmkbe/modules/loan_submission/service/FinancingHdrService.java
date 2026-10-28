@@ -73,50 +73,76 @@ public class FinancingHdrService {
       final double financingAmount = simulationResult.getFinancingAmount().doubleValue();
 
       Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer);
-      // ((tanggal due date invoice) 10 - hari berjalan) + 7 (bouwheer grace period)
-      Long top = (long) DateTimeUtils.dateDiffInDay(new Date(), request.getInvoices().getFirst().getInvoiceDueDate());
-
-      header.setFinancingHdrCode(UUID.randomUUID());
-      header.setCustomer(customer);
-      header.setBouwheer(bouwheer);
-      header.setTenor(top + bouwheer.getGracePeriod());
-      header.setFinancingDate(DateTimeUtils.now());
-      header.setCurrencyCode(firstInvoice.getCurrencyCode());
-      header.setInvoiceQty((long) request.getInvoices().size());
-      header.setInterestType("COF"); // not clear
-      header.setTermOfPayment(top); // not clear
-      header.setGracePeriod(bouwheer.getGracePeriod()); // get from bouwheer grace_period
-      header.setRetention(100 - request.getDisbursePercentage()); // not clear
-      header.setTotalInvoiceAmt(totalInvoiceAmount);
-      header.setFinancingAmt(financingAmount);
-      header.setDisburseAmt(disburseAmount);
-      header.setInterestAmt(simulationResult.getInterestFeeAmount().doubleValue()); // not clear
-      header.setFinancingDueDate(Utils.toInstant(simulationResult.getMaxInvoiceDate())); // not clear
-      header.setProvisionFeeAmt(simulationResult.getProvisionFeeAmount().doubleValue()); // not clear
-      header.setProvisionFeePercentage(simulationResult.getProvisionRate());
-      header.setAdminFeePercentage(simulationResult.getAdminRate());
-      header.setEffectiveRate(simulationResult.getEffectiveRate());
-      header.setSurveyFeeAmt(simulationResult.getSurveyFeeAmount().doubleValue());
-      header.setLegalFeeAmt(simulationResult.getLegalFeeAmount().doubleValue());
-      header.setOthersFeeAmt(simulationResult.getOthersFeeAmount().doubleValue());
-      header.setAdminFeeAmt(simulationResult.getAdminFeeAmount().doubleValue());
-
-      header.setSurveyFeeAmtNett(simulationResult.getSurveyFeeAmount().doubleValue());
-      header.setLegalFeeAmtNett(simulationResult.getLegalFeeAmount().doubleValue());
-      header.setInsuranceFeeAmt(0.0);
-      header.setInsuranceFeePercentage(0.0);
-      header.setAdminLimitAmt(0.0);
-      header.setTotalInvoiceSubmittedAmt(request.getTotalInvoiceAmount());
-      header.setMstBranch(financingHdrOptional
-        .map(FinancingHdr::getMstBranch)
-        .orElse(null)
-      );
-      header.setDisburseDate(DateTimeUtils.now());
-      header.setFinancingStatus("");
-      header.setFinancingStep("");
-      header.setUsrCrt(customer.getCustName());
-      header.setDtmCrt(DateTimeUtils.now());
-      header = financingHdrRepository.save(header);
+      if (financingHdrOptional.isPresent()){
+        header=financingHdrOptional.get();
+        header.setTenor(simulationResult.getTenor());
+        header.setCurrencyCode(firstInvoice.getCurrencyCode());
+        header.setInvoiceQty((long) request.getInvoices().size());
+        header.setInterestType("COF");
+        header.setTermOfPayment(simulationResult.getTop());
+        header.setGracePeriod(bouwheer.getGracePeriod()); // get from bouwheer grace_period
+        header.setRetention(simulationResult.getRetention()); // not clear
+        header.setTotalInvoiceAmt(totalInvoiceAmount);
+        header.setFinancingAmt(financingAmount);
+        header.setDisburseAmt(disburseAmount);
+        header.setInterestAmt(simulationResult.getInterestFeeAmount().doubleValue()); // not clear
+        header.setFinancingDueDate(Utils.toInstant(simulationResult.getMaxInvoiceDate())); // not clear
+        header.setProvisionFeeAmt(simulationResult.getProvisionFeeAmount().doubleValue()); // not clear
+        header.setProvisionFeePercentage(simulationResult.getProvisionRate());
+        header.setAdminFeePercentage(simulationResult.getAdminRate());
+        header.setEffectiveRate(simulationResult.getEffectiveRate());
+        header.setSurveyFeeAmt(simulationResult.getSurveyFeeAmount().doubleValue());
+        header.setLegalFeeAmt(simulationResult.getLegalFeeAmount().doubleValue());
+        header.setOthersFeeAmt(simulationResult.getOthersFeeAmount().doubleValue());
+        header.setAdminFeeAmt(simulationResult.getAdminFeeAmount().doubleValue());
+        header.setSurveyFeeAmtNett(simulationResult.getSurveyFeeAmount().doubleValue());
+        header.setLegalFeeAmtNett(simulationResult.getLegalFeeAmount().doubleValue());
+        header.setTotalInvoiceSubmittedAmt(request.getTotalInvoiceAmount());
+        header.setMstBranch(financingHdrOptional.get().getMstBranch());
+        header.setUsrUpd(customer.getCustName());
+        header.setDtmUpd(DateTimeUtils.now());
+        header = financingHdrRepository.save(header);
+        log.info("Update Financing HRD code {} ",header.getFinancingHdrCode());
+      }else{
+        header.setFinancingHdrCode(UUID.randomUUID());
+        header.setCustomer(customer);
+        header.setBouwheer(bouwheer);
+        header.setTenor(simulationResult.getTenor());
+        header.setFinancingDate(DateTimeUtils.now());
+        header.setCurrencyCode(firstInvoice.getCurrencyCode());
+        header.setInvoiceQty((long) request.getInvoices().size());
+        header.setInterestType("COF"); // not clear
+        header.setTermOfPayment(simulationResult.getTop()); // not clear
+        header.setGracePeriod(bouwheer.getGracePeriod()); // get from bouwheer grace_period
+        header.setRetention(simulationResult.getRetention()); // not clear
+        header.setTotalInvoiceAmt(totalInvoiceAmount);
+        header.setFinancingAmt(financingAmount);
+        header.setDisburseAmt(disburseAmount);
+        header.setInterestAmt(simulationResult.getInterestFeeAmount().doubleValue()); // not clear
+        header.setFinancingDueDate(Utils.toInstant(simulationResult.getMaxInvoiceDate())); // not clear
+        header.setProvisionFeeAmt(simulationResult.getProvisionFeeAmount().doubleValue()); // not clear
+        header.setProvisionFeePercentage(simulationResult.getProvisionRate());
+        header.setAdminFeePercentage(simulationResult.getAdminRate());
+        header.setEffectiveRate(simulationResult.getEffectiveRate());
+        header.setSurveyFeeAmt(simulationResult.getSurveyFeeAmount().doubleValue());
+        header.setLegalFeeAmt(simulationResult.getLegalFeeAmount().doubleValue());
+        header.setOthersFeeAmt(simulationResult.getOthersFeeAmount().doubleValue());
+        header.setAdminFeeAmt(simulationResult.getAdminFeeAmount().doubleValue());
+        header.setSurveyFeeAmtNett(simulationResult.getSurveyFeeAmount().doubleValue());
+        header.setLegalFeeAmtNett(simulationResult.getLegalFeeAmount().doubleValue());
+        header.setInsuranceFeeAmt(0.0);
+        header.setInsuranceFeePercentage(0.0);
+        header.setAdminLimitAmt(0.0);
+        header.setTotalInvoiceSubmittedAmt(request.getTotalInvoiceAmount());
+        header.setMstBranch(null);
+        header.setDisburseDate(DateTimeUtils.now());
+        header.setFinancingStatus("");
+        header.setFinancingStep("");
+        header.setUsrCrt(customer.getCustName());
+        header.setDtmCrt(DateTimeUtils.now());
+        header = financingHdrRepository.save(header);
+        log.info("Create Financing HRD code {} ",header.getFinancingHdrCode());
+      }
     }
 
     return header;

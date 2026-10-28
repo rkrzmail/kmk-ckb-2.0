@@ -1,0 +1,1 @@
+ALTER TABLE public.customer ALTER COLUMN existing_cust SET DEFAULT 'New Customer';

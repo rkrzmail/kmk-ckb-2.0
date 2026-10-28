@@ -63,32 +63,6 @@ public class InvoiceService {
     Bouwheer bouwheer,
     CreateSubmissionRequest request
   ) {
-//      List<Invoice> invoices = request.getInvoices()
-//        .stream()
-//        .map((posted) -> Invoice.builder()
-//          .customer(customer)
-//          .bouwheer(bouwheer)
-//          .bouwheerInvNo(posted.getBouwheerInvoiceNo())
-//          .custInvNo(posted.getCustomerInvoiceNo())
-//          .invoiceDescription(
-//            StringUtil.isNullOrEmpty(posted.getInvoiceDescription())
-//              ? "Invoice By CKB"
-//              : posted.getInvoiceDescription()
-//          )
-//          .invoiceDate(Utils.toInstant(posted.getInvoiceDate()))
-//          .invoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()))
-//          .invoiceAmt(posted.getInvoiceAmount().doubleValue())
-//          .poNumber(posted.getPoNumber())
-//          .postingDate(posted.getPostingDate())
-//          .usrCrt(customer.getCustName())
-//          .build())
-//        .toList();
-//
-//      return invoiceRepository.saveAll(invoices)
-//        .stream()
-//        .map(InvoiceMapper.INSTANCE::dtoFromEntity)
-//        .toList();
-
     List<Invoice> invoices = request.getInvoices().stream().map(posted -> {
       // 1. Check if the invoice already exists in the database
       return invoiceRepository.findFirstByCustomerAndBouwheerInvNoAndCustInvNo(
@@ -97,16 +71,9 @@ public class InvoiceService {
           posted.getCustomerInvoiceNo()
         )
         .map(existingInvoice -> {
-          // 2. If it EXISTS -> Update the fields using Setters
           existingInvoice.setInvoiceDescription(
             StringUtil.isNullOrEmpty(posted.getInvoiceDescription()) ? "Invoice By " + bouwheer.getBouwheerName() : posted.getInvoiceDescription()
           );
-//            existingInvoice.setInvoiceDate(Utils.toInstant(posted.getInvoiceDate()));
-//            existingInvoice.setInvoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()));
-//            existingInvoice.setInvoiceAmt(posted.getInvoiceAmount().doubleValue());
-//            existingInvoice.setPoNumber(posted.getPoNumber());
-//            existingInvoice.setPostingDate(posted.getPostingDate());
-
           // Set update audit trails instead of create audit trails
           existingInvoice.setUsrUpd(bouwheer.getBouwheerName());
           existingInvoice.setDtmUpd(DateTimeUtils.now());
@@ -114,7 +81,6 @@ public class InvoiceService {
           return existingInvoice;
         })
         .orElseGet(() ->
-          // 3. If it DOES NOT exist -> Create a new one using the Builder
           Invoice.builder()
             .customer(customer)
             .bouwheer(bouwheer)

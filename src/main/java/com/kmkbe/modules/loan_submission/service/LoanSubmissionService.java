@@ -394,6 +394,7 @@ public class LoanSubmissionService {
         surveyFeeAmount,
         legalFeeAmount;
 
+      int top = Math.toIntExact(bouwheer.getTermOfPayment());
       int tenor = 90; // (duedate - skr) + gp bouwherr
       log.info("Term tenor : {} ",tenor);
       String postingDate = (calculateSimulationRequest.getPostingDate() == null || calculateSimulationRequest.getPostingDate().isEmpty())
@@ -402,7 +403,7 @@ public class LoanSubmissionService {
 
       if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
         // Use modern java.time (LocalDate) instead of java.util.Date
-        int top = DateTimeUtils.dateDiffInDay(DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(postingDate), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
+        DateTimeUtils.dateDiffInDay(DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(postingDate), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
         log.info("Posting Date : {} ",calculateSimulationRequest.getPostingDate());
         log.info("Invoice duedate : {} ",calculateSimulationRequest.getInvoiceDueDate());
         log.info("Top : {} ",top);
@@ -506,6 +507,9 @@ public class LoanSubmissionService {
         .postingDate(postingDate)
         .invoiceDueDate(calculateSimulationRequest.getInvoiceDueDate())
         .product(findProduct.get())
+        .retention(100- calculateSimulationRequest.getDisbursePercentage())
+        .top((long) top)
+        .tenor((long) tenor)
         .build();
     } catch (Exception e) {
       log.error("calculateDisburse, error {}", e.getMessage());
@@ -707,6 +711,9 @@ public class LoanSubmissionService {
       .effectiveRate(effectiveRate)
       .provisionRate(provisionRate)
       .product(findProduct.get())
+      .retention(finHdr.getRetention())
+      .top(finHdr.getTermOfPayment())
+      .tenor(finHdr.getTenor())
       .build();
   }
 
@@ -908,37 +915,20 @@ public class LoanSubmissionService {
       .adminRate(calculateDisburse.getAdminRate())
       .effectiveRate(calculateDisburse.getEffectiveRate())
       .provisionRate(calculateDisburse.getProvisionRate())
+      .top(calculateDisburse.getTop())
+      .tenor(calculateDisburse.getTenor())
+      .retention(calculateDisburse.getRetention())
       .build();
 
     /**
      * Insert Financing Header
      */
-//    final FinancingHdr createdFinancingHdr = financingHdrService.create(
-//      customer,
-//      bouwheer,
-//      calculateDisburse.getProduct(),
-//      request,
-//      simulationDisburseResult
-//    );
-
-    List<String> invoiceNumbers = request.getInvoices().stream()
-      .map(PostedInvoicePayload::getBouwheerInvoiceNo)
-      .filter(Objects::nonNull)
-      .toList();
-
-    List<FinancingDtl> existingDetails = financingDtlRepository.findByBouwheerInvNoIn(invoiceNumbers);
-    FinancingHdr finalFinancingHdr;
-
-    if (!existingDetails.isEmpty()) {
-      finalFinancingHdr = existingDetails.getFirst().getFinancingHdr();
-    } else {
-      finalFinancingHdr = financingHdrService.create(
+    FinancingHdr finalFinancingHdr = financingHdrService.create(
         customer,
         bouwheer,
         request,
         simulationDisburseResult
       );
-    }
 
     /**
      * Insert Invoice Serive
