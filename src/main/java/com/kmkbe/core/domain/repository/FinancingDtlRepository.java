@@ -83,5 +83,4 @@ public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID
 
   List<FinancingDtl> findByBouwheerInvNoIn(List<String> invoiceNumbers);
 
-
 }
