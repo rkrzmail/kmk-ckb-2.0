@@ -225,7 +225,6 @@ public class FinancingDtlService {
       validateInvoicePresence(systemInvoices, requestInvoices, request.getFinancingCode());
 
       String updater = financingHdr.getUsrUpd();
-      boolean newlyPaid = false;
 
       for (FinancingDtl financingDtl : financingDtls) {
         String invoiceNo = financingDtl.getInvoice().getCustInvNo();
@@ -250,7 +249,6 @@ public class FinancingDtlService {
         }
 
         log.info("Update Invoice status PAID");
-        newlyPaid |= !"PAID".equalsIgnoreCase(financingDtl.getInvoice().getStatus());
         financingDtl.getInvoice().setStatus("PAID");
         financingDtl.getInvoice().setUsrUpd(updater);
         financingDtl.getInvoice().setDtmUpd(LocalDateTime.now());
@@ -258,8 +256,8 @@ public class FinancingDtlService {
         financingDtl.setUsrUpd(updater);
         financingDtl.setDtmUpd(LocalDateTime.now());
         financingDtlRepository.save(financingDtl);
-      }
-      if (newlyPaid) {
+
+        //Send email paid
         eventPublisher.publishEvent(new InvoicePaidEvent(financingHdr.getFinancingHdrCode()));
       }
   }
