@@ -1,6 +1,7 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.kmkbe.core.domain.entity.Agreement;
+import com.kmkbe.core.domain.entity.FinancingDtl;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
 import com.kmkbe.core.domain.repository.AgreementRepository;
@@ -68,7 +69,7 @@ public class InvoicePaidFinanceNotificationService {
 
       List<InvoiceEmailPayload> invoices = financingDtlRepository.findAllByFinancingHdr(financing)
         .orElse(List.of()).stream()
-        .map(detail -> detail.getInvoice())
+        .map(FinancingDtl::getInvoice)
         .filter(invoice -> invoice != null && "PAID".equalsIgnoreCase(invoice.getStatus()))
         .map(invoice -> InvoiceEmailPayload.builder()
           .invoiceNo(invoice.getCustInvNo())
@@ -93,7 +94,7 @@ public class InvoicePaidFinanceNotificationService {
       fields.put("vendorName", escape(financing.getCustomer().getCustName()));
       fields.put("vendorEmail", escape(financing.getCustomer().getCustEmail()));
       fields.put("vendorPhone", escape(financing.getCustomer().getCustMobilePhone()));
-      fields.put("submissionDate", DateTimeUtils.formatToDate(financing.getFinancingDate()));
+      fields.put("submissionDate", DateTimeUtils.formatToDate(financing.getDtmCrt()));
       fields.put("invoices", InvoiceEmailPayload.toHtmlListBody(invoices));
 
       EmailService.DeliveryResult result = emailService.sendFinanceInvoicePaidNotification(
