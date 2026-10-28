@@ -292,9 +292,11 @@ public class FinancingDtlService {
     /** For Dev only
      *
      */
-    if (System.getenv("ENV").equals("dev")) {
+    if ("dev".equalsIgnoreCase(System.getenv("ENV")) || "dev".equalsIgnoreCase(System.getenv("APP_ENV"))) {
+      log.info("Confins Backdate");
       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-      settlementDate = LocalDate.parse("01-03-2027", formatter).atStartOfDay();
+        settlementDate = LocalDate.parse("18-04-2027", formatter).
+          atStartOfDay();
     }
 
     String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
