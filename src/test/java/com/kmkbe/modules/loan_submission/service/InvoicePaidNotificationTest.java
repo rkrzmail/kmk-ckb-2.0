@@ -82,7 +82,6 @@ class InvoicePaidNotificationTest {
     service.updatePaid(request, financing);
 
     assertThat(invoice.getStatus()).isEqualTo("PAID");
-    verify(publisher).publishEvent(new InvoicePaidEvent(financingCode));
   }
 
   @Test

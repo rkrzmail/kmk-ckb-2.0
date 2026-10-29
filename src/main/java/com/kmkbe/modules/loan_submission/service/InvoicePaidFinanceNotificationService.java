@@ -1,6 +1,7 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.kmkbe.core.domain.entity.Agreement;
+import com.kmkbe.core.domain.entity.FinancingDtl;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.InvoiceEmailPayload;
 import com.kmkbe.core.domain.repository.AgreementRepository;
@@ -68,14 +69,14 @@ public class InvoicePaidFinanceNotificationService {
 
       List<InvoiceEmailPayload> invoices = financingDtlRepository.findAllByFinancingHdr(financing)
         .orElse(List.of()).stream()
-        .map(detail -> detail.getInvoice())
+        .map(FinancingDtl::getInvoice)
         .filter(invoice -> invoice != null && "PAID".equalsIgnoreCase(invoice.getStatus()))
         .map(invoice -> InvoiceEmailPayload.builder()
           .invoiceNo(invoice.getCustInvNo())
           .description(invoice.getInvoiceDescription())
           .bouwheerName(financing.getBouwheer().getBouwheerName())
           .invoiceDate(DateTimeUtils.formatToDate(invoice.getInvoiceDate()))
-          .invoiceDueDate(DateTimeUtils.formatToDate(invoice.getInvoiceDueDate()))
+          .invoiceDueDate(DateTimeUtils.formatToDate(invoice.getDtmCrt()))
           .invoiceAmt(String.format(Locale.forLanguageTag("id-ID"), "%,.0f", invoice.getInvoiceAmt()))
           .build())
         .toList();
