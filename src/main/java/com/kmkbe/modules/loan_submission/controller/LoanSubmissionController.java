@@ -63,7 +63,7 @@ public class LoanSubmissionController {
   @PostMapping("/importance-notes")
   public CommonResult<Object> saveImportantNotes(
     @Valid @RequestBody SaveImportantNotesRequest request
-  ) throws SignatureException, JsonProcessingException {
+  ) throws JsonProcessingException {
     return new CommonResult<>().success(loanSubmissionService.saveImportantNotes(request));
   }
 
@@ -86,7 +86,7 @@ public class LoanSubmissionController {
     BasePaginationRequest request
   ) throws Exception {
     return new CommonResult<PaginationResult<PostedInvoiceDto>>().success(
-      loanSubmissionService.fetchActiveInvoice(currentUserService.customer(), token, request)
+      loanSubmissionService.fetchActiveInvoices(currentUserService.customer(), token, request)
     );
   }
 

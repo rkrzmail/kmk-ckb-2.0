@@ -91,19 +91,18 @@ public class LoanSubmissionService {
     Customer customer,
     String token
   ) throws Exception {
-    final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
     CsulInquiryInvoiceRemoteDto inquiryInvoiceRemote;
 
     if (customer.getCustCode() == null) {
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", customer.getCustExternalCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Vendor code , customer not found " + customer.getCustExternalCode());
     }
 
     log.info("Customer code {} ", customer.getCustExternalCode());
 
     Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null);
     if (bouwheerOptional.isEmpty()) {
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", customer.getCustExternalCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Bouwheer code not found " + customer.getBouwheer());
     }
 
@@ -112,7 +111,7 @@ public class LoanSubmissionService {
     List<CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto> rows = new ArrayList<>();
     for (Invoice inv : dbInvoices) {
       rows.add(CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto.builder()
-        .vendorNo(vendorTokenExtractor.getVendorCode())
+        .vendorNo(customer.getCustExternalCode())
         .reference(inv.getCustInvNo())
         .accountingDocument(inv.getBouwheerInvNo())
         .poNumber(inv.getPoNumber())
@@ -240,7 +239,7 @@ public class LoanSubmissionService {
     return result;
   }
 
-  public PaginationResult<PostedInvoiceDto> fetchActiveInvoice(
+  public PaginationResult<PostedInvoiceDto> fetchActiveInvoices(
     Customer customer,
     String token,
     BasePaginationRequest request

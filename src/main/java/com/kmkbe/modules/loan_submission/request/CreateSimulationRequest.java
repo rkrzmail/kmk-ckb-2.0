@@ -13,6 +13,8 @@ import java.util.List;
 @Builder
 public class CreateSimulationRequest  extends BaseRequest {
 
+  private String financingHdrCode;
+
   private String vendorCode;
 
   private String bouwheerCode;

@@ -16,6 +16,8 @@ import java.util.List;
 @Builder
 public class CreateSubmissionRequest extends BaseRequest {
 
+  private String financingHdrCode;
+
   @NotNull(message = "Vendor Code is required")
   private String vendorCode;
 

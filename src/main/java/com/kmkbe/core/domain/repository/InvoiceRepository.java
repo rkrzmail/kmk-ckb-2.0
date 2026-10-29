@@ -22,6 +22,7 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID>, JpaSpec
     String custInvNo
   );
 
+
   Page<Invoice> findByCustomer(
     Customer cust,
     Specification<Invoice> spec,
@@ -36,4 +37,5 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID>, JpaSpec
     "and (fh.financing_step = '' or fh.financing_step IS NULL)",
     nativeQuery = true)
   List<Invoice> findInvoicesByCustCode(@Param("custCode") String custCode);
+
 }
