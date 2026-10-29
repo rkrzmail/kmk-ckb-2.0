@@ -81,7 +81,7 @@ public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID
     @NonNull Pageable pageable
   );
 
-  List<FinancingDtl> findByBouwheerInvNoIn(List<String> invoiceNumbers);
+  List<FinancingDtl> findByfinancingHdrAndBouwheerInvNoIn(FinancingHdr finalFinancingHdr, List<String> invoiceNumbers);
 
 
 }

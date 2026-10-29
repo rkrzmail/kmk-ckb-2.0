@@ -54,6 +54,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
@@ -118,7 +119,7 @@ public class LoanSubmissionService {
         .amount(inv.getInvoiceAmt() != null ? String.valueOf(inv.getInvoiceAmt()) : "0")
         .currency("IDR")
         .netDueDate(inv.getInvoiceDueDate() != null
-          ? sdf.format(Date.from(inv.getInvoiceDueDate().atZone(java.time.ZoneId.systemDefault()).toInstant()))
+          ? sdf.format(Date.from(inv.getInvoiceDueDate().atZone(ZoneId.systemDefault()).toInstant()))
           : "")
         .postingDate(inv.getPostingDate() != null ? sdf.format(inv.getPostingDate()) : "")
         .description(inv.getInvoiceDescription())
@@ -921,14 +922,19 @@ public class LoanSubmissionService {
 //      simulationDisburseResult
 //    );
 
+    //Find Header Code
+    FinancingHdr finalFinancingHdr = null;
+    Optional<FinancingHdr>financingHdrOptional = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer);
+    if(financingHdrOptional.isPresent()){
+        finalFinancingHdr = financingHdrOptional.get();
+    }
+
     List<String> invoiceNumbers = request.getInvoices().stream()
       .map(PostedInvoicePayload::getBouwheerInvoiceNo)
       .filter(Objects::nonNull)
       .toList();
 
-    List<FinancingDtl> existingDetails = financingDtlRepository.findByBouwheerInvNoIn(invoiceNumbers);
-    FinancingHdr finalFinancingHdr;
-
+    List<FinancingDtl> existingDetails = financingDtlRepository.findByfinancingHdrAndBouwheerInvNoIn(finalFinancingHdr,invoiceNumbers);
     if (!existingDetails.isEmpty()) {
       finalFinancingHdr = existingDetails.getFirst().getFinancingHdr();
     } else {
@@ -1088,8 +1094,8 @@ public class LoanSubmissionService {
           MailPositionDto ccRM = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "RM");
           MailPositionDto toAO = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "AO/AM");
 
-          java.util.Set<String> toEmailSet = new java.util.LinkedHashSet<>();
-          java.util.Set<String> ccEmailSet = new java.util.LinkedHashSet<>();
+          Set<String> toEmailSet = new LinkedHashSet<>();
+          Set<String> ccEmailSet = new LinkedHashSet<>();
 
           if (to != null && to.getData() != null) {
             to.getData().stream()
@@ -1195,7 +1201,7 @@ public class LoanSubmissionService {
             + financing.getOthersFeeAmt()
             + financing.getProvisionFeeAmt()
             + financing.getSurveyFeeAmtNett();
-        
+
         String phone = financing.getCustomer().getCustMobilePhone();
         if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
           if (financing.getCustomer().getCompany() != null) {
@@ -1204,7 +1210,7 @@ public class LoanSubmissionService {
         }
 
         List<String> majorAccountEmails = mstAppRoleFormUserRepository.findActiveMajorAccountEmails();
-        java.util.Set<String> toMjrEmailSet = new java.util.LinkedHashSet<>();
+        Set<String> toMjrEmailSet = new LinkedHashSet<>();
 
         if (majorAccountEmails != null && !majorAccountEmails.isEmpty()) {
           majorAccountEmails.stream()
