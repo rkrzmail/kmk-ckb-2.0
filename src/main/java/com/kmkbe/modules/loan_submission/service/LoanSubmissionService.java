@@ -1150,8 +1150,8 @@ public class LoanSubmissionService {
           );
           break;
         }
+        isAutoASSIGNMENT=true;
       }
-
 
       if (!isAutoASSIGNMENT) {
         try {
