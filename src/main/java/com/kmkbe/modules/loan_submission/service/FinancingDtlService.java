@@ -96,7 +96,7 @@ public class FinancingDtlService {
 
       // 4. Batch query existing records (Ensure your repository method ends with "In")
       Map<String, FinancingDtl> existingDetailsMap = financingDtlRepository
-        .findByBouwheerInvNoIn(invoiceNumbers)
+        .findByfinancingHdrAndBouwheerInvNoIn(financingHdr,invoiceNumbers)
         .stream()
         .collect(Collectors.toMap(FinancingDtl::getBouwheerInvNo, dtl -> dtl));
 
@@ -188,8 +188,6 @@ public class FinancingDtlService {
       validateInvoicePresence(systemInvoices, requestInvoices, request.getFinancingCode());
 
       String updater = financingHdr.getUsrUpd();
-      boolean newlyPaid = false;
-
       for (FinancingDtl financingDtl : financingDtls) {
         String invoiceNo = financingDtl.getInvoice().getCustInvNo();
         FinancingInvoicePaidRequest.InvoicePaid reqInvoice = requestInvoices.get(invoiceNo);
