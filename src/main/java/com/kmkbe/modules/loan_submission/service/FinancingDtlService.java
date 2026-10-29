@@ -73,45 +73,13 @@ public class FinancingDtlService {
     List<InvoiceDto> createdInvoices
   ) {
     try {
-//      return IntStream.range(0, postedInvoices.size())
-//        .mapToObj((index) -> {
-//          final FinancingDtl detail = new FinancingDtl();
-//          {
-//            Invoice invoice = InvoiceMapper.INSTANCE.entityFromDto(
-//              createdInvoices
-//                .stream()
-//                .filter(item -> item.getBouwheerInvNo().equals(postedInvoices.get(index).getBouwheerInvoiceNo()))
-//                .findFirst()
-//                .orElseThrow(() -> new IllegalStateException(""))
-//            );
-//
-//            invoice.setUsrCrt(customer.getCustName());
-//            invoice.setDtmCrt(DateTimeUtils.now());
-//            invoice.setCustomer(customer);
-//            invoice.setBouwheer(bouwheer);
-//
-//            detail.setInvoice(invoice);
-//            detail.setFinancingDtlCode(UUID.randomUUID());
-//            detail.setBouwheerInvNo(postedInvoices.get(index).getBouwheerInvoiceNo());
-//            detail.setFinancingHdr(financingHdr);
-//            detail.setUsrCrt(customer.getCustName());
-//            detail.setDtmCrt(DateTimeUtils.now());
-//          }
-//          financingDtlRepository.save(detail);
-//          return detail;
-//        })
-//        .toList();
-
       if (postedInvoices == null || postedInvoices.isEmpty()) {
         return Collections.emptyList();
       }
 
-      // FIX 1: Merge or re-fetch the header into the CURRENT active transaction session.
-      // This stops the "Unable to find" error if the header was created in a separate transaction block.
       FinancingHdr managedHdr = financingHdrRepository.findById(financingHdr.getFinancingHdrCode())
         .orElseGet(() -> financingHdrRepository.saveAndFlush(financingHdr));
 
-      // 2. Map createdInvoices for O(1) lookups
       Map<String, InvoiceDto> createdInvoiceMap = createdInvoices.stream()
         .filter(item -> item.getBouwheerInvNo() != null)
         .collect(Collectors.toMap(
@@ -151,12 +119,7 @@ public class FinancingDtlService {
         invoice.setCustomer(customer);
         invoice.setBouwheer(bouwheer);
 
-        // FIX 2: If Invoice entity also has a link to FinancingHdr, set it here!
-        // This prevents Invoice cascades from throwing the "Unable to find" error.
-        // invoice.setFinancingHdr(managedHdr); // <-- Uncomment this line if the property exists in Invoice.java
-
         FinancingDtl existingDtl = existingDetailsMap.get(invNo);
-
         if (existingDtl != null) {
           // UPDATE EXPLICITLY (Safe from BeanUtils overwrite side effects)
           existingDtl.setInvoice(invoice);
@@ -250,7 +213,6 @@ public class FinancingDtlService {
         }
 
         log.info("Update Invoice status PAID");
-        newlyPaid |= !"PAID".equalsIgnoreCase(financingDtl.getInvoice().getStatus());
         financingDtl.getInvoice().setStatus("PAID");
         financingDtl.getInvoice().setUsrUpd(updater);
         financingDtl.getInvoice().setDtmUpd(LocalDateTime.now());
@@ -258,8 +220,8 @@ public class FinancingDtlService {
         financingDtl.setUsrUpd(updater);
         financingDtl.setDtmUpd(LocalDateTime.now());
         financingDtlRepository.save(financingDtl);
-      }
-      if (newlyPaid) {
+
+       // Send email PAID
         eventPublisher.publishEvent(new InvoicePaidEvent(financingHdr.getFinancingHdrCode()));
       }
   }

@@ -91,19 +91,18 @@ public class LoanSubmissionService {
     Customer customer,
     String token
   ) throws Exception {
-    final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
     CsulInquiryInvoiceRemoteDto inquiryInvoiceRemote;
 
     if (customer.getCustCode() == null) {
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", customer.getCustExternalCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Vendor code , customer not found " + customer.getCustExternalCode());
     }
 
     log.info("Customer code {} ", customer.getCustExternalCode());
 
     Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null);
     if (bouwheerOptional.isEmpty()) {
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", customer.getCustExternalCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Bouwheer code not found " + customer.getBouwheer());
     }
 
@@ -112,7 +111,7 @@ public class LoanSubmissionService {
     List<CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto> rows = new ArrayList<>();
     for (Invoice inv : dbInvoices) {
       rows.add(CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto.builder()
-        .vendorNo(vendorTokenExtractor.getVendorCode())
+        .vendorNo(customer.getCustExternalCode())
         .reference(inv.getCustInvNo())
         .accountingDocument(inv.getBouwheerInvNo())
         .poNumber(inv.getPoNumber())
@@ -382,7 +381,9 @@ public class LoanSubmissionService {
       Cwr validateCwr = null;
       if (customer != null) {
         validateCwr = isCustomerExistingByCwr(customer);
-        isCustomerExisting = validateCwr !=null;
+        isCustomerExisting = Optional.ofNullable(customer.getExistingCust())
+          .map(status -> status.equals(AppConstants.EXISTING_CUSTOMER))
+          .orElse(false);
       }
 
       BigDecimal
@@ -474,7 +475,7 @@ public class LoanSubmissionService {
         provisionFeeAmount = new BigDecimal(0);
         surveyFeeAmount = new BigDecimal(0);
         legalFeeAmount = new BigDecimal(0);
-        adminFeeAmount = new BigDecimal(0);
+        adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
         othersFeeAmount = new BigDecimal(0);
         jumlahBiaya = adminFee + product.getOthersFee();
 
@@ -648,7 +649,13 @@ public class LoanSubmissionService {
     double provisionRateFee = finHdr.getProvisionFeeAmt();
     log.info("Provision Rate : {} ",provisionRateFee);
 
-    boolean isCustomerExisting = finHdr.getSurveyFeeAmt().intValue() != 0;
+    boolean isCustomerExisting = false;
+    if (finHdr.getCustomer() != null) {
+      isCustomerExistingByCwr(finHdr.getCustomer());
+      isCustomerExisting = Optional.ofNullable(finHdr.getCustomer().getExistingCust())
+        .map(status -> status.equals(AppConstants.EXISTING_CUSTOMER))
+        .orElse(false);
+    }
     if (!isCustomerExisting) {
       log.info("Customer new customer {} ", isCustomerExisting);
       jumlahBiaya = provisionRateFee
@@ -674,7 +681,7 @@ public class LoanSubmissionService {
       provisionFeeAmount = new BigDecimal(0);
       surveyFeeAmount = new BigDecimal(0);
       legalFeeAmount = new BigDecimal(0);
-      adminFeeAmount = new BigDecimal(0);
+      adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
       othersFeeAmount = new BigDecimal(0);
       jumlahBiaya = adminFee + product.getOthersFee();
 
@@ -1048,7 +1055,6 @@ public class LoanSubmissionService {
       financingHdrs.addAll(financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer));
       for (FinancingHdr financingHdr : financingHdrs) {
         MstBranch hdrBranch = financingHdr.getMstBranch();
-
         if (hdrBranch != null) {
           //update jadi Assign
           log.info("Repeat Order loan submitted {} , Branch {} ", customer.getCustEmail(), hdrBranch.getBranchCode());
@@ -1189,26 +1195,7 @@ public class LoanSubmissionService {
             + financing.getOthersFeeAmt()
             + financing.getProvisionFeeAmt()
             + financing.getSurveyFeeAmtNett();
-
-        //Skip get email from API
-//        String branchCode = mstBranchRepository.findByBranchName("HEAD OFFICE")
-//          .map(MstBranch::getBranchCode)
-//          .orElseThrow(() -> new RuntimeException("BranchCode tidak ditemukan"));
-//
-//        MailPositionDto ccBM = configRemoteService.getEmailByPosition("", branchCode, "CMS");
-//        StringBuilder ccEmailBuilder = new StringBuilder();
-//
-//        if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
-//          for (int i = 0; i < ccBM.getData().size(); i++) {
-//            ccEmailBuilder.append(!ccEmailBuilder.isEmpty() ? ";" : "");
-//            ccEmailBuilder.append(ccBM.getData().get(i).getEmail());
-//          }
-//        }
-//
-//        String mjrEmail = ccEmailBuilder.toString();
-//        String toEmail = ccEmailBuilder.toString();
-//        log.info("email CMS: {}", ccEmailBuilder);
-
+        
         String phone = financing.getCustomer().getCustMobilePhone();
         if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
           if (financing.getCustomer().getCompany() != null) {
