@@ -394,6 +394,7 @@ public class LoanSubmissionService {
         surveyFeeAmount,
         legalFeeAmount;
 
+      int top = 0;
       int tenor = 90; // (duedate - skr) + gp bouwherr
       log.info("Term tenor : {} ",tenor);
       String postingDate = (calculateSimulationRequest.getPostingDate() == null || calculateSimulationRequest.getPostingDate().isEmpty())
@@ -402,7 +403,7 @@ public class LoanSubmissionService {
 
       if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
         // Use modern java.time (LocalDate) instead of java.util.Date
-        int top = DateTimeUtils.dateDiffInDay(DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(postingDate), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
+        top = DateTimeUtils.dateDiffInDay(DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(postingDate), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
         log.info("Posting Date : {} ",calculateSimulationRequest.getPostingDate());
         log.info("Invoice duedate : {} ",calculateSimulationRequest.getInvoiceDueDate());
         log.info("Top : {} ",top);
@@ -506,6 +507,9 @@ public class LoanSubmissionService {
         .postingDate(postingDate)
         .invoiceDueDate(calculateSimulationRequest.getInvoiceDueDate())
         .product(findProduct.get())
+        .retention(calculateSimulationRequest.getDisbursePercentage())
+        .tenor((long) tenor)
+        .top((long) top)
         .build();
     } catch (Exception e) {
       log.error("calculateDisburse, error {}", e.getMessage());
@@ -909,20 +913,15 @@ public class LoanSubmissionService {
       .adminRate(calculateDisburse.getAdminRate())
       .effectiveRate(calculateDisburse.getEffectiveRate())
       .provisionRate(calculateDisburse.getProvisionRate())
+      .top(calculateDisburse.getTop())
+      .tenor(calculateDisburse.getTenor())
+      .retention(calculateDisburse.getRetention())
       .build();
 
     /**
-     * Insert Financing Header
+     * Insert Financing finalFinancingHdr
      */
-//    final FinancingHdr createdFinancingHdr = financingHdrService.create(
-//      customer,
-//      bouwheer,
-//      calculateDisburse.getProduct(),
-//      request,
-//      simulationDisburseResult
-//    );
-
-    //Find Header Code
+    //Find finalFinancingHdr Code
     FinancingHdr finalFinancingHdr = null;
     Optional<FinancingHdr>financingHdrOptional = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer);
     if(financingHdrOptional.isPresent()){
@@ -935,8 +934,29 @@ public class LoanSubmissionService {
       .toList();
 
     List<FinancingDtl> existingDetails = financingDtlRepository.findByfinancingHdrAndBouwheerInvNoIn(finalFinancingHdr,invoiceNumbers);
+
     if (!existingDetails.isEmpty()) {
       finalFinancingHdr = existingDetails.getFirst().getFinancingHdr();
+      finalFinancingHdr.setTenor(simulationDisburseResult.getTenor());
+      finalFinancingHdr.setTermOfPayment(simulationDisburseResult.getTop());
+      finalFinancingHdr.setRetention(100 - simulationDisburseResult.getRetention());
+      finalFinancingHdr.setTotalInvoiceAmt(totalInvoiceAmount);
+      finalFinancingHdr.setFinancingAmt(simulationDisburseResult.getFinancingAmount().doubleValue());
+      finalFinancingHdr.setDisburseAmt(simulationDisburseResult.getEstimatedDisburseAmount().doubleValue());
+      finalFinancingHdr.setInterestAmt(simulationDisburseResult.getInterestFeeAmount().doubleValue());
+      finalFinancingHdr.setFinancingDueDate(Utils.toInstant(simulationDisburseResult.getMaxInvoiceDate()));
+      finalFinancingHdr.setProvisionFeeAmt(simulationDisburseResult.getProvisionFeeAmount().doubleValue());
+      finalFinancingHdr.setProvisionFeePercentage(simulationDisburseResult.getProvisionRate());
+      finalFinancingHdr.setAdminFeePercentage(simulationDisburseResult.getAdminRate());
+      finalFinancingHdr.setEffectiveRate(simulationDisburseResult.getEffectiveRate());
+      finalFinancingHdr.setSurveyFeeAmt(simulationDisburseResult.getSurveyFeeAmount().doubleValue());
+      finalFinancingHdr.setLegalFeeAmt(simulationDisburseResult.getLegalFeeAmount().doubleValue());
+      finalFinancingHdr.setOthersFeeAmt(simulationDisburseResult.getOthersFeeAmount().doubleValue());
+      finalFinancingHdr.setAdminFeeAmt(simulationDisburseResult.getAdminFeeAmount().doubleValue());
+      finalFinancingHdr.setSurveyFeeAmtNett(simulationDisburseResult.getSurveyFeeAmount().doubleValue());
+      finalFinancingHdr.setLegalFeeAmtNett(simulationDisburseResult.getLegalFeeAmount().doubleValue());
+      finalFinancingHdr.setUsrCrt(customer.getCustName());
+      finalFinancingHdr.setDtmCrt(DateTimeUtils.now());
     } else {
       finalFinancingHdr = financingHdrService.create(
         customer,
@@ -947,7 +967,7 @@ public class LoanSubmissionService {
     }
 
     /**
-     * Insert Invoice Serive
+     * Insert Invoice Service
      */
     final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, CreateSubmissionRequest.builder()
       .vendorCode(request.getVendorCode())
@@ -1248,7 +1268,7 @@ public class LoanSubmissionService {
         );
       }
 
-      log.info("Save financing header {} ", financing.getFinancingHdrCode());
+      log.info("Save financing finalFinancingHdr {} ", financing.getFinancingHdrCode());
       financingHdrRepository.save(financing);
 
       auditTrailService.record(

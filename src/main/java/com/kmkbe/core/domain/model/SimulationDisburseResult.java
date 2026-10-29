@@ -23,4 +23,7 @@ public class SimulationDisburseResult {
     private Double provisionRate;
     private Double effectiveRate;
     private Double adminRate;
+    private Long tenor;
+    private Long top;
+    private Double retention;
 }
