@@ -293,7 +293,7 @@ class EmailServiceTest {
     service.sendOtpChangePin(customer, "3333");
     service.sendNotificationLoanDisbursement(customer, loanPayload);
     service.sendNotificationLoanSubmited(customer, loanPayload);
-    service.sendNotificationPencairan("pencairan@example.com", "Bouwheer", "Jakarta", pencarianPayload);
+    service.sendNotificationPencairan("pencairan@example.com", "pencairan@example.com","Bouwheer", "Jakarta", pencarianPayload);
     service.sendNotificationBranchAssign(UUID.randomUUID(), "ignored@example.com", "Bouwheer", "Jakarta", loanPayload);
     service.sendNotificationMajorAccount("ignored@example.com", "Bouwheer", "Jakarta", loanPayload);
 
@@ -488,7 +488,7 @@ class EmailServiceTest {
     service.sendNotificationLoanChangeLimit(customer, null);
     service.sendNotificationLoanDisbursement(customer, null);
     service.sendNotificationLoanSubmited(customer, null);
-    service.sendNotificationPencairan("to@example.com", "Bouwheer", "Jakarta", null);
+    service.sendNotificationPencairan("to@example.com","pencairan@example.com", "Bouwheer", "Jakarta", null);
     service.sendNotificationBranchAssign(UUID.randomUUID(), "to@example.com", "Bouwheer", "Jakarta", null);
     service.sendNotificationMajorAccount("to@example.com", "Bouwheer", "Jakarta", null);
     service.sendNotificationBouwheerPayment("to@example.com", null);
@@ -533,7 +533,7 @@ class EmailServiceTest {
     service.sendNotificationActive(customer,"TEST");
     service.sendNotificationLoanDisbursement(customer, loanPayload());
     service.sendNotificationLoanSubmited(customer, loanPayload());
-    service.sendNotificationPencairan("to@example.com", "Bouwheer", "Jakarta", pencarianPayload());
+    service.sendNotificationPencairan("to@example.com","pencairan@example.com", "Bouwheer", "Jakarta", pencarianPayload());
     service.sendNotificationBranchAssign(UUID.randomUUID(), "to@example.com", "Bouwheer", "Jakarta", loanPayload());
     service.sendNotificationMajorAccount("to@example.com", "Bouwheer", "Jakarta", loanPayload());
     service.sendNotificationBouwheerPayment("to@example.com", bouwheerPaymentPayload());
