@@ -252,7 +252,7 @@ public class FinancingDtlService {
     /** For Dev only
      *
      */
-    if ("dev".equalsIgnoreCase(System.getenv("ENV")) || "dev".equalsIgnoreCase(System.getenv("APP_ENV"))) {
+    if ("dev".equalsIgnoreCase(System.getenv("ENV")) || "dev".equalsIgnoreCase(System.getenv("APP_ENV")) || "local".equalsIgnoreCase(System.getenv("ENV")) || "local".equalsIgnoreCase(System.getenv("APP_ENV"))) {
       log.info("Confins Backdate");
       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
         settlementDate = LocalDate.parse("18-04-2027", formatter).
