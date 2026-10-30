@@ -203,6 +203,7 @@ public class InquiryDisburseService {
             log.info("Send disbursement email to {}", financingHdr.getCustomer().getCustEmail());
             emailService.sendNotificationPencairan(
               financingHdr.getCustomer().getCustEmail(),
+              financingHdr.getBouwheer().getPicEmail(),
               financingHdr.getBouwheer().getBouwheerName(),
               financingHdr.getMstBranch().getBranchName(),
               PencarianPayload.builder()

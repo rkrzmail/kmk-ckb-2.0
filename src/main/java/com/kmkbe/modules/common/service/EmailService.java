@@ -423,6 +423,7 @@ public class EmailService {
   @Async
   public void sendNotificationPencairan(
     String email,
+    String emailCC,
     String bouwheerName,
     String branchArea,
     PencarianPayload payload
@@ -439,11 +440,14 @@ public class EmailService {
       args.put("additionalArgs", payloadArgs);
       args.put("bouwheerName", bouwheerName);
       args.put("branchArea", branchArea);
+      args.put("phoneNo","");
+      args.put("discBursDate","");
+      args.put("totalDisburtAmt","");
       args.put("email", email);
 
       final EmailTemplate template = loadTemplate(M_CUST_PENCAIRAN);
       template.setMailTo(email);
-      template.setMailCc(email);
+      template.setMailCc(emailCC);
 
       send(args, template);
     } catch (Exception e) {
