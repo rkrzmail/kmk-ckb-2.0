@@ -937,7 +937,11 @@ public class DocumentService {
               .ifPresent(active -> {
                 LegalFileDto uploaded = FileTypeMapper.INSTANCE.legalFileToDto(active);
                 uploaded.setUploadedDate(active.getDtmUpd() != null ? active.getDtmUpd() : active.getDtmCrt());
-                uploaded.setFileUrl("/api/v1/document-uploads/" + financingHdrCode + "/DOC006/latest/download");
+                uploaded.setFileUrl(UriUtils.fileUlr(
+                  httpServletRequest,
+                  Math.toIntExact(active.getFileId()),
+                  UriUtils.DocType.loan
+                ));
                 dto.setLegalFile(uploaded);
               });
             return dto;
