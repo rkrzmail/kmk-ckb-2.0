@@ -40,7 +40,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: 'true'
+    show-sql: 'false'
   servlet:
     multipart:
       enabled: 'true'
@@ -73,9 +73,9 @@ logging:
       hibernate:
         orm:
           jdbc:
-            bind: trace
-        stat: debug
-        type: trace
+            bind: info
+        stat: info
+        type: info
   file:
     name: ./logs/log-file.log
 springdoc:
