@@ -168,10 +168,12 @@ class DocumentServiceIssueRegressionTest {
     when(legalFileRepository.findByFinancingHdr_FinancingHdrCodeAndFileTypeCode_FileTypeCode(code, "DOC006"))
       .thenReturn(Optional.of(active));
 
-    var result = service.fetchAllLoanDocumentDebitur(new MockHttpServletRequest(), new PaginationRequest(), code.toString());
+    MockHttpServletRequest httpRequest = new MockHttpServletRequest();
+    httpRequest.addHeader("Authorization", "Bearer test-token");
+    var result = service.fetchAllLoanDocumentDebitur(httpRequest, new PaginationRequest(), code.toString());
 
     assertThat(result.getList().get(0).getLegalFile().getFileUrl())
-      .isEqualTo("/api/v1/document-uploads/" + code + "/DOC006/latest/download");
+      .endsWith("/api/v1/documents/download/loan/12?token=test-token");
     verify(dokumentHistoryUploadRepository, never())
       .findTopByFinancingHdr_FinancingHdrCodeAndFileTypeCodeOrderByUploadedAtDescIdDesc(code, "DOC006");
     verify(legalFileService, never()).fetchByMstFileTypeAndCust(customer, sit);
