@@ -14,6 +14,18 @@ import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.Map;
 
+/**
+ * Legacy key-secret verification untuk bypass token loan-submission
+ * (format: {@code base64url(payload) + "." + hex(MD5(payload + "." + secret))}).
+ *
+ * PERINGATAN KEAMANAN (security issue #12, SECURITY.md):
+ * - MD5 di sini dipakai sebagai MAC non-keyed (bukan HMAC) dan secret-nya
+ *   hardcoded di yaml/test - kontrak protokol dengan generator token EKSTERNAL.
+ * - JANGAN mengubah algoritma tanpa koordinasi dengan pemilik generator token:
+   * token yang sudah beredar akan invalid (breaking change).
+ * - Migrasi ke HMAC-SHA256 + rotasi secret + enforce expiry dibahas di fase 2
+ *   (terkait issue #9) dengan dual-accept window.
+ */
 @Service
 public class KeySecretServices {
     @Value("${security.secret-key}")
@@ -28,6 +40,12 @@ public class KeySecretServices {
         return myHash.equalsIgnoreCase(splitter(fullKeyWithSecret, 1));
     }
 
+    /**
+     * @deprecated Dead code: tidak memiliki pemanggil, dan cek expiry-nya kosong
+     * ( {@code if (timeStamps.isAfter(now)) {}} tidak melakukan apa pun ).
+     * Jangan dipakai; lihat javadoc class terkait migrasi HMAC-SHA256.
+     */
+    @Deprecated
     public boolean validateWithTimeStamps(@NonNull String fullKeyWithSecret) throws NoSuchAlgorithmException {
         final String payloadStr = decodePayloadAsString(fullKeyWithSecret);
         final Map<String, Object> payloadObj = ObjectUtils.strToJson(payloadStr);

@@ -81,9 +81,11 @@ logging:
 springdoc:
   api-docs:
     path: /api/v1/api-docs
+    enabled: 'false'
   paths-to-match: /api/v1/**
   swagger-ui:
     path: /api/v1/swagger-ui.html
+    enabled: 'false'
 rsa:
   public-key: classpath:certs/public-key.pem
   private-key: classpath:certs/pkcs8.pem

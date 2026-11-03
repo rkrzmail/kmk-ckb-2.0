@@ -39,6 +39,8 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Collections;
 import java.util.List;
 
@@ -105,7 +107,9 @@ public class SecurityConfig {
   public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     apiKeyAuthenticationFilter.setAuthenticationManager(authentication -> {
       String providedApiKey = (String) authentication.getPrincipal();
-      if (providedApiKey.equals(apiKey)) {
+      if (providedApiKey != null && MessageDigest.isEqual(
+        providedApiKey.getBytes(StandardCharsets.UTF_8),
+        apiKey.getBytes(StandardCharsets.UTF_8))) {
         return new ApiKeyAuthenticationService(
           Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")),
           apiKey
