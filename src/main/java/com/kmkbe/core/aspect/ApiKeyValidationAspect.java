@@ -8,6 +8,9 @@ import org.aspectj.lang.annotation.Pointcut;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+
 @Component
 @Aspect
 public class ApiKeyValidationAspect {
@@ -28,7 +31,9 @@ public class ApiKeyValidationAspect {
     public void validateApiKey() {
         String providedApiKey = request.getHeader("API-Key");
 
-        if (providedApiKey == null || !providedApiKey.equals(apiKey)) {
+        if (providedApiKey == null || !MessageDigest.isEqual(
+            providedApiKey.getBytes(StandardCharsets.UTF_8),
+            apiKey.getBytes(StandardCharsets.UTF_8))) {
             throw new IllegalApiKeyException();
         }
     }

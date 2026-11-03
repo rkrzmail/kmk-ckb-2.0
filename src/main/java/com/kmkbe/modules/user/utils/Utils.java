@@ -196,6 +196,13 @@ public class Utils {
     public static String getTimeZone() {
         return TimeZone.getDefault().getDisplayName(false, TimeZone.SHORT, Locale.US);
     }
+    /**
+     * @deprecated Hash lemah (MD5) - JANGAN dipakai untuk keperluan keamanan
+     * (password, signature, token). Saat ini tidak memiliki pemanggil.
+     * Verifikasi security issue #12 (SECURITY.md); migrasi HMAC-SHA256 dibahas di fase 2.
+     * Catatan: memakai platform default charset, bukan UTF-8 eksplisit.
+     */
+    @Deprecated
     public static final String hashNikita(String _key,  String...s) {
         StringBuilder stringBuilder = new StringBuilder(_key);
         for (int i = 0; i < s.length; i++) {
@@ -204,9 +211,20 @@ public class Utils {
         stringBuilder.append(_key);
         return MD5(stringBuilder.toString());
     }
+    /**
+     * @deprecated Hash lemah (MD5) - JANGAN dipakai untuk keperluan keamanan.
+     * Saat ini tidak memiliki pemanggil. Verifikasi security issue #12 (SECURITY.md).
+     */
+    @Deprecated
     public static final String hashNikita(final String s) {
         return MD5(s);
     }
+    /**
+     * @deprecated Hash lemah (MD5) - JANGAN dipakai untuk keperluan keamanan.
+     * Saat ini tidak memiliki pemanggil. Verifikasi security issue #12 (SECURITY.md).
+     * Catatan: memakai platform default charset, bukan UTF-8 eksplisit.
+     */
+    @Deprecated
     public static final String MD5(final String s) {
         if (!s.equals("")) {
             try {
@@ -224,6 +242,7 @@ public class Utils {
                 }
                 return hexString.toString();
             } catch (NoSuchAlgorithmException e) {
+                throw new IllegalStateException("MD5 algorithm not available", e);
             }
 
         }
@@ -231,10 +250,15 @@ public class Utils {
     }
 
     public static final String RND() {
-        Random rand = new Random();
+        java.security.SecureRandom rand = new java.security.SecureRandom();
 
         return String.valueOf(Math.abs(rand.nextLong()));//+ System.nanoTime()
     }
+    /**
+     * @deprecated Hash lemah (SHA-1) - JANGAN dipakai untuk keperluan keamanan.
+     * Saat ini tidak memiliki pemanggil. Verifikasi security issue #12 (SECURITY.md).
+     */
+    @Deprecated
     public static final String SHA1(final String s) {
         if (!s.equals("")) {
             try {
@@ -248,6 +272,7 @@ public class Utils {
                 }
                 return hexString.toString();
             } catch (NoSuchAlgorithmException e) {
+                throw new IllegalStateException("SHA1 algorithm not available", e);
             }
         }
         return "";
@@ -265,6 +290,7 @@ public class Utils {
                 }
                 return hexString.toString();
             } catch (NoSuchAlgorithmException e) {
+                throw new IllegalStateException("SHA-256 algorithm not available", e);
             }
         }
         return "";
