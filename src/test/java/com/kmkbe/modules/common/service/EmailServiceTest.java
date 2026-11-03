@@ -312,6 +312,32 @@ class EmailServiceTest {
   }
 
   @Test
+  void disbursementNotificationMapsAgreementAndBankWithoutChangingCc() throws Exception {
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_PENCAIRAN", true))
+      .thenReturn(templateWithSubject("M_CUST_PENCAIRAN", "Dana Sakti Telah Ditransfer",
+        "{agreementCode}|{bankName}|{accountNo}|{disbursementDate}|{disburseAmt}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(true));
+    PencarianPayload payload = PencarianPayload.builder()
+      .agreementCode("41250270017")
+      .bankName("BANK CENTRAL ASIA")
+      .accountNo("3245678000")
+      .disbursementDate("02/11/2026")
+      .disburseAmt("483,367,500")
+      .invoices(List.of())
+      .build();
+
+    service.sendNotificationPencairan("debtor@example.com", "pic@example.com", "Bouwheer", "Jakarta", payload);
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(true));
+    EmailTemplate sent = captor.getValue();
+    assertThat(sent.getSubjectMail()).isEqualTo("Dana Sakti Telah Ditransfer");
+    assertThat(sent.getMailTo()).isEqualTo("debtor@example.com");
+    assertThat(sent.getMailCc()).isEqualTo("pic@example.com");
+    assertThat(sent.getBodyMail()).isEqualTo("41250270017|BANK CENTRAL ASIA|3245678000|02/11/2026|483,367,500");
+  }
+
+  @Test
   void branchAssignmentRecordsSuccessfulDeliveryWithoutAsmCc() throws Exception {
     UUID customerCode = UUID.randomUUID();
     List<EmailDeliveryLog.Status> statuses = new ArrayList<>();
