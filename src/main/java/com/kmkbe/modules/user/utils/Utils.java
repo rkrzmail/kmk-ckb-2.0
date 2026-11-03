@@ -250,7 +250,7 @@ public class Utils {
     }
 
     public static final String RND() {
-        Random rand = new Random();
+        java.security.SecureRandom rand = new java.security.SecureRandom();
 
         return String.valueOf(Math.abs(rand.nextLong()));//+ System.nanoTime()
     }

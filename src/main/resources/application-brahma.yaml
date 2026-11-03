@@ -1,6 +1,14 @@
 # -------------------------------
 # DATABASE ENVIRONMENT CONFIGURATION
 # -------------------------------
+# Pre-prod/QA: debugging aktif, env ditutup (security issue #8)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info, health, logfile, loggers
+      base-path: /api/monitoring
+
 spring:
   datasource:
     url: jdbc:postgresql://aurora-kmk.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified

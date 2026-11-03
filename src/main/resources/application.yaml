@@ -2,7 +2,9 @@ management:
   endpoints:
     web:
       exposure:
-        include: info, health, logfile, loggers, env
+        # Security issue #8 (SECURITY.md): env & loggers tidak boleh terekspos;
+        # default aman, env non-prod dapat menaikkan via MANAGEMENT_ENDPOINTS_INCLUDE
+        include: ${MANAGEMENT_ENDPOINTS_INCLUDE:info,health}
       base-path: /api/monitoring
   endpoint:
     health:

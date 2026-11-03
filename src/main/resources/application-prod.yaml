@@ -5,7 +5,9 @@ management:
   endpoints:
     web:
       exposure:
-        include: info, health, logfile, loggers, env
+        # Security issue #8: prod hanya info & health (logfile juga memicu
+        # unduhan log via /api/monitoring/logfile yang di-whitelist)
+        include: info, health
       base-path: /api/monitoring
   endpoint:
     health:
