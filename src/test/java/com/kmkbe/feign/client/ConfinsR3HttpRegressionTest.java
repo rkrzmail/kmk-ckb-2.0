@@ -226,6 +226,47 @@ class ConfinsR3HttpRegressionTest {
     }
 
     @Test
+    void disbursementAccountUsesAgreementAndSelectsDebtorAccount() {
+        response = "{\"ListDisbInfo\":["
+            + "{\"DisbTo\":\"BOUWHEER\",\"BankName\":\"Other\",\"AccNo\":\"111\",\"Nominal\":100},"
+            + "{\"DisbTo\":\"DEBTOR\",\"BankName\":\"BANK CENTRAL ASIA\",\"AccNo\":\"3245678000\",\"Nominal\":483367500}],"
+            + "\"StatusCode\":\"200\"," + HEADER + "}";
+
+        var account = service.getDebtorDisbursementAccount("41250270017");
+
+        assertThat(path).isEqualTo("/api/ar/v1/AgrmntCardView/GetDisburseListByAgrmntNo");
+        assertThat(method).isEqualTo("POST");
+        assertThat(apiKey).isEqualTo("test-key");
+        assertThat(request.get("AgrmntNo").asText()).isEqualTo("41250270017");
+        assertThat(request.get("RequestDateTime").asText()).isEqualTo(LocalDate.now().toString());
+        assertThat(account.getBankName()).isEqualTo("BANK CENTRAL ASIA");
+        assertThat(account.getAccNo()).isEqualTo("3245678000");
+        assertThat(account.getNominal()).isEqualByComparingTo("483367500");
+    }
+
+    @Test
+    void disbursementAccountRejectsMissingDebtorAccount() {
+        response = "{\"ListDisbInfo\":[{\"DisbTo\":\"BOUWHEER\",\"BankName\":\"Other\",\"AccNo\":\"111\",\"Nominal\":100}],"
+            + "\"StatusCode\":\"200\"," + HEADER + "}";
+
+        assertThatThrownBy(() -> service.getDebtorDisbursementAccount("41250270017"))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("DEBTOR");
+    }
+
+    @Test
+    void disbursementAccountRejectsAmbiguousDebtorAccounts() {
+        response = "{\"ListDisbInfo\":["
+            + "{\"DisbTo\":\"DEBTOR\",\"BankName\":\"Bank A\",\"AccNo\":\"111\",\"Nominal\":100},"
+            + "{\"DisbTo\":\"DEBTOR\",\"BankName\":\"Bank B\",\"AccNo\":\"222\",\"Nominal\":200}],"
+            + "\"StatusCode\":\"200\"," + HEADER + "}";
+
+        assertThatThrownBy(() -> service.getDebtorDisbursementAccount("41250270017"))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("ditemukan 2");
+    }
+
+    @Test
     void inquiryServicesPreserveTypedRowsAndCriteria() throws Exception {
         var remote = new CwrRemoteService(mapper, client);
         ReflectionTestUtils.setField(remote, "confinsUrl", baseUrl);

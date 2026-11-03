@@ -435,6 +435,8 @@ public class EmailService {
       if (payloadArgs != null) {
         payloadArgs.remove("invoices");
         payloadArgs.put("invoices", InvoiceEmailPayload.toHtmlListBody(payload.getInvoices()));
+        payloadArgs.put("bankName", InvoiceEmailPayload.esc(payload.getBankName()));
+        payloadArgs.put("accountNo", InvoiceEmailPayload.esc(payload.getAccountNo()));
       }
 
       args.put("additionalArgs", payloadArgs);
