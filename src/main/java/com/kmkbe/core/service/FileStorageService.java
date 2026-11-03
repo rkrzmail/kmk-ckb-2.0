@@ -88,7 +88,7 @@ public class FileStorageService {
                 name = name.substring(0, name.lastIndexOf(".")) + "." + ext;
             }
 
-            Path uploadPath = root.resolve(uploadDir);
+            Path uploadPath = resolveSafely(uploadDir);
             if (!uploadPath.toFile().exists()) {
                 Files.createDirectories(uploadPath);
             }
@@ -118,7 +118,7 @@ public class FileStorageService {
             filename = filename.replace("/uploads/", "");
           }
 
-          Path file = root.resolve(filename);
+          Path file = resolveSafely(filename);
             Resource resource = new UrlResource(file.toUri());
 
             if (resource.exists() || resource.isReadable()) {
@@ -137,7 +137,7 @@ public class FileStorageService {
                 filename = filename.replace("/uploads/", "");
             }
 
-            Path file = root.resolve(filename);
+            Path file = resolveSafely(filename);
             boolean res = Files.deleteIfExists(file);
             return res;
         } catch (IOException e) {
@@ -152,10 +152,11 @@ public class FileStorageService {
             String cd
     ) {
         try {
-            Path paths = root.resolve(filePath).normalize()  .toAbsolutePath();
+            Path paths = resolveSafely(filePath);
             Resource resource = new UrlResource(paths.toUri());
             if (!resource.exists() || !resource.isReadable()) {
-                throw new RuntimeException("File not found or not readable: " + paths.toUri());
+                // Pesan sengaja tidak memuat path absolut agar tidak bocor via response
+                throw new RuntimeException("File not found or not readable");
             }
             String contentType = httpServletRequest
                     .getServletContext()
@@ -179,6 +180,28 @@ public class FileStorageService {
         } catch (Exception e) {
             throw new RuntimeException("Error occurred while downloading file: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Resolve path relatif di dalam storage root dan pastikan hasilnya
+     * tetap berada di bawah root (security issue #11: cegah path traversal).
+     * Absolute path atau path dengan "../" yang meloloskan diri keluar root
+     * ditolak dengan pesan generik (tanpa membocorkan path).
+     */
+    private Path resolveSafely(String relativePath) {
+        if (relativePath == null || relativePath.isBlank()) {
+            throw new RuntimeException("Invalid file path");
+        }
+
+        Path rootAbs = root.toAbsolutePath().normalize();
+        Path resolved = rootAbs.resolve(relativePath).normalize();
+
+        if (!resolved.startsWith(rootAbs)) {
+            log.warn("Rejected file path outside storage root");
+            throw new RuntimeException("Invalid file path");
+        }
+
+        return resolved;
     }
 
     /**
