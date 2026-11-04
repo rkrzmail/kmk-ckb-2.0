@@ -62,8 +62,12 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
         try {
             // do processing
             filterChain.doFilter(requestToUse, responseToUse);
-        } catch (Exception e) {
+        } catch (ServletException | IOException | RuntimeException e) {
             logger.error(e.getMessage(), e);
+            if (!responseToUse.isCommitted() && responseToUse.getStatus() < 400) {
+                responseToUse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            }
+            throw e;
         } finally {
             final Map<String, Object> requestLog = HttpUtils.createRequestLog(requestToUse, getMaxPayloadLength());
             final Map<String, Object> responseLog = HttpUtils.createResponseLog(responseToUse, getMaxPayloadLength());

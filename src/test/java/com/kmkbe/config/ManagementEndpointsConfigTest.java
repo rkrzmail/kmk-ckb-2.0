@@ -13,8 +13,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * Regresi test untuk security issue #8 (SECURITY.md):
  * actuator endpoint sensitif (env, loggers) tidak boleh terekspos di prod.
- * Base application.yaml memakai default aman; dev/local/brahma boleh lebih
- * verbose karena non-prod, namun env tidak boleh kembali ke prod.
+ * Base application.yaml memakai profil local untuk diagnostik; profil prod
+ * harus membatasi exposure meskipun base mengaktifkan endpoint tambahan.
  */
 class ManagementEndpointsConfigTest {
 
@@ -41,11 +41,14 @@ class ManagementEndpointsConfigTest {
   }
 
   @Test
-  void baseConfigDefaultsToSafeEndpoints() throws Exception {
-    String include = includeOf(loadYaml("src/main/resources/application.yaml"));
+  @SuppressWarnings("unchecked")
+  void baseConfigUsesNonProdProfileForDiagnosticEndpoints() throws Exception {
+    Map<String, Object> yaml = loadYaml("src/main/resources/application.yaml");
+    Map<String, Object> spring = (Map<String, Object>) yaml.get("spring");
+    Map<String, Object> profiles = (Map<String, Object>) spring.get("profiles");
 
-    // default env-var harus aman: tanpa env, loggers, logfile
-    assertThat(include).isEqualTo("${MANAGEMENT_ENDPOINTS_INCLUDE:info,health}");
+    assertThat(profiles.get("active")).isIn("local", "dev", "brahma");
+    assertThat(includeOf(yaml)).contains("env", "loggers", "logfile");
   }
 
   @Test

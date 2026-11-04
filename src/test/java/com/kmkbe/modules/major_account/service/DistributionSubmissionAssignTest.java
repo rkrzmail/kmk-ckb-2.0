@@ -91,7 +91,7 @@ class DistributionSubmissionAssignTest {
   }
 
   @Test
-  void sendsOnlySelectedAoAndBmToAndAsmCc() throws Exception {
+  void sendsOnlySelectedAoAndBmToAndRmCc() throws Exception {
     stubAssignment();
     financing.setFinancingStep("ASSIGNMENT");
     financing.setAssignedAoEmployeeCode("AO1");
@@ -102,8 +102,8 @@ class DistributionSubmissionAssignTest {
       person("AO2", "AO Dua", "ao2@example.com", "JKT01")));
     when(positions.getEmailByPosition("", "JKT01", "BM/BOH")).thenReturn(position(
       person("BM1", "BM", "bm@example.com", "JKT01")));
-    when(positions.getEmailByPosition("", "JKT01", "ASM")).thenReturn(position(
-      person("ASM1", "ASM", "asm@example.com", "JKT01")));
+    when(positions.getEmailByPosition("", "JKT01", "RM")).thenReturn(position(
+      person("RM1", "RM", "rm@example.com", "JKT01")));
     when(headers.save(financing)).thenReturn(financing);
 
     service.assignSubmission(request("AO2"));
@@ -116,7 +116,7 @@ class DistributionSubmissionAssignTest {
     verify(email).sendNotificationBranchAssign(any(), any(), any(), any(), payload.capture());
     assertThat(payload.getValue().getToEmail().split(";"))
       .containsExactlyInAnyOrder("ao2@example.com", "bm@example.com");
-    assertThat(payload.getValue().getCcEmail()).isEqualTo("asm@example.com");
+    assertThat(payload.getValue().getCcEmail()).isEqualTo("rm@example.com");
   }
 
   @Test
@@ -145,13 +145,13 @@ class DistributionSubmissionAssignTest {
   }
 
   @Test
-  void assignsWithoutCcWhenAsmHasNoEmail() throws Exception {
+  void assignsWithoutCcWhenRmHasNoEmail() throws Exception {
     stubAssignment();
     when(positions.getEmailByPosition("", "JKT01", "AO/AM")).thenReturn(position(
       person("AO2", "AO Dua", "ao2@example.com", "JKT01")));
     when(positions.getEmailByPosition("", "JKT01", "BM/BOH")).thenReturn(position(
       person("BM1", "BM", "bm@example.com", "JKT01")));
-    when(positions.getEmailByPosition("", "JKT01", "ASM")).thenReturn(position());
+    when(positions.getEmailByPosition("", "JKT01", "RM")).thenReturn(position());
     when(headers.save(financing)).thenReturn(financing);
 
     service.assignSubmission(request("AO2"));
