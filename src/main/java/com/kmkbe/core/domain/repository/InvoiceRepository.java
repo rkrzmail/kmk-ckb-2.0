@@ -1,5 +1,6 @@
 package com.kmkbe.core.domain.repository;
 
+import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.core.domain.entity.Invoice;
 import io.lettuce.core.dynamic.annotation.Param;
@@ -18,6 +19,18 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID>, JpaSpec
 
   Optional<Invoice> findFirstByCustomerAndBouwheerInvNoAndCustInvNo(
     Customer customer,
+    String bouwheerInvNo,
+    String custInvNo
+  );
+
+  /**
+   * Lookup invoice dengan kunci unik lengkap: customer + bouwheer +
+   * bouwheerInvNo + custInvNo. Dipakai untuk menentukan invoice sudah ada
+   * (update) atau baru (insert) pada proses simulasi/pengajuan.
+   */
+  Optional<Invoice> findFirstByCustomerAndBouwheerAndBouwheerInvNoAndCustInvNo(
+    Customer customer,
+    Bouwheer bouwheer,
     String bouwheerInvNo,
     String custInvNo
   );

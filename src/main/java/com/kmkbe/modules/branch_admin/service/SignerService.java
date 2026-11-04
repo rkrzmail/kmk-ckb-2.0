@@ -478,7 +478,6 @@ public class SignerService {
   }
 
   private DebtorDto saveDebtor(DebtorDto debtorDto, String username) {
-//        log.info("Saving debtor to database: {}", debtorDto);
     Debtor debtor = Debtor.builder()
       .debtorName(debtorDto.getDebtorName())
       .karyawanName(debtorDto.getKaryawanName())

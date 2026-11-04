@@ -42,3 +42,4 @@ SECURITY.md
 
 *.env
 .env.*
+!.env.example

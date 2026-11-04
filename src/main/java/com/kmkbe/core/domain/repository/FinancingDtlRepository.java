@@ -83,5 +83,12 @@ public interface FinancingDtlRepository extends JpaRepository<FinancingDtl, UUID
 
   List<FinancingDtl> findByfinancingHdrAndBouwheerInvNoIn(FinancingHdr finalFinancingHdr, List<String> invoiceNumbers);
 
+  /**
+   * Cari financing detail berdasarkan invoice (lintas financing header).
+   * Relasi Invoice -> FinancingDtl adalah @OneToOne, sehingga 1 invoice
+   * hanya boleh memiliki 1 financing detail (bug: duplikat detail per invoice).
+   */
+  List<FinancingDtl> findByInvoice_InvoiceCodeIn(List<UUID> invoiceCodes);
+
 
 }

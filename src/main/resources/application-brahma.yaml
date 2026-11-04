@@ -13,7 +13,7 @@ spring:
   datasource:
     url: jdbc:postgresql://aurora-kmk.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified
     username: postgres
-    password: Csultmt10
+    password: ${SPRING_DATASOURCE_PASSWORD:}
   jpa:
     show-sql: true
     hibernate:
@@ -90,7 +90,7 @@ spring-boot:
       instance:
         name: Kmk-Digital-2.0
       username: vandikalvandi@gmail.com
-      password: '12345'
+      password: ${BOOT_ADMIN_PASSWORD:}
 
 # -------------------------------
 # TESTING & EXTERNAL CREDENTIALS
@@ -100,7 +100,7 @@ testing:
     host: smtp.gmail.com
     port: 587
     username: khesa.oto@gmail.com
-    password: tfru zmuk gtfb mrsz
+    password: ${TESTING_MAIL_PASSWORD:}
 
 rsa:
   private-key: classpath:certs/pkcs8.pem
@@ -123,7 +123,7 @@ csul:
       white-list-url: https://kmk-vpn.nikitagenerator.com/SISCAConnect/api/v1 # Publicly exposed URL
       auth:
         username: KMKDigital
-        password: CSUljkt#2024
+        password: ${SISCA_PASSWORD:}
 
   # --- Confins System (Operational Services) ---
   confins:
@@ -142,7 +142,7 @@ csul:
 
   # --- Legacy and General Services ---
   general:
-    adin-key: Wm5VZ2duUnEvZ1hhUWlSRXVzSUxmdU4zRnZSQVdnT0pTQ0RVcDd6eFJKVUhNTj0= # Key for general services
+    adin-key: ${CONFINS_ADIN_KEY:}
 
   # --- Disabled/Alternative Endpoints (Grouping inactive URLs) ---
   disabled:
