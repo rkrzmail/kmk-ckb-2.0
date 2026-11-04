@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
@@ -77,6 +78,7 @@ public class ConfigRemoteService {
                     headers
             );
 
+            log.info("SISCA get-ao-email request body={}", body);
             final ResponseEntity<MailPositionDto> response = restTemplate.exchange(
                     url,
                     HttpMethod.POST,
@@ -85,9 +87,12 @@ public class ConfigRemoteService {
                     }
             );
 
-            System.out.println("Successfully getEmailByPosition");
+            log.info("SISCA get-ao-email response status={} body={}", response.getStatusCode(), response.getBody());
 
             return response.getBody();
+        } catch (RestClientResponseException e) {
+            log.error("SISCA get-ao-email response status={} body={}", e.getStatusCode(), e.getResponseBodyAsString());
+            throw e;
         } catch (Exception e) {
             log.error("getEmailByPosition: {}", e.getMessage());
             throw e;
