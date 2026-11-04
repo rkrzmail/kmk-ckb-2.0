@@ -1,0 +1,1 @@
+ALTER TABLE public.debtors ALTER COLUMN jabatan DROP NOT NULL;
