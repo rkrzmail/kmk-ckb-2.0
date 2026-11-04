@@ -158,10 +158,9 @@ public class InquiryDisburseService {
         if (l.isEmpty()) {
           DisbursementAccountResponse.DisbInfo debtorAccount =
             externalApiService.getDebtorDisbursementAccount(aggrNo);
+
           //send B to mst
-          UpdateFinancingStatusRequest updateFinancingStatusRequest = null;
-          try {
-            updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
+          UpdateFinancingStatusRequest.builder()
               .vendorCode(agreement.getFinancingHdr().getCustomer().getCustExternalCode())
               .financingCode(agreement.getFinancingHdr().getFinancingHdrCode().toString())
               .status(UpdateFinancingStatusRequest.Status.Disburse)
@@ -170,8 +169,6 @@ public class InquiryDisburseService {
              * For TU
              */
 //         financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
-          } catch (Exception ignored) {
-          }
 
           //send email sendNotification Pencairan
           try {

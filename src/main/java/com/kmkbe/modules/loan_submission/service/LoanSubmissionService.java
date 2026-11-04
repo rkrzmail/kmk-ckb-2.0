@@ -853,10 +853,120 @@ public class LoanSubmissionService {
   }
 
   @Transactional
+  /**
+   * Menentukan financing header untuk simulasi.
+   *
+   * BUG FIX: sebelumnya header selalu dibuat baru karena pengecekan existing
+   * dibatasi pada "header terakhir milik customer". Sekarang pengecekan
+   * dilakukan berbasis invoice (customer + bouwheerInvNo + custInvNo) lalu
+   * financing detail dicari GLOBAL by invoice code:
+   * - detail sudah ada  -> pakai header milik detail tersebut & UPDATE
+   * - belum ada         -> buat header baru
+   */
+  FinancingHdr resolveFinancingHdr(
+    Customer customer,
+    Bouwheer bouwheer,
+    CreateSimulationRequest request,
+    SimulationDisburseResult simulationDisburseResult,
+    double totalInvoiceAmount
+  ) {
+    List<UUID> existingInvoiceCodes = new ArrayList<>();
+    for (PostedInvoicePayload posted : request.getInvoices()) {
+      if (posted.getBouwheerInvoiceNo() == null) {
+        continue;
+      }
+      // Kunci unik invoice: customer + bouwheer + bouwheerInvNo + custInvNo
+      invoiceRepository.findFirstByCustomerAndBouwheerAndBouwheerInvNoAndCustInvNo(
+          customer,
+          bouwheer,
+          posted.getBouwheerInvoiceNo(),
+          posted.getCustomerInvoiceNo()
+        )
+        .map(Invoice::getInvoiceCode)
+        .ifPresent(existingInvoiceCodes::add);
+    }
+
+    List<FinancingDtl> existingDetails = existingInvoiceCodes.isEmpty()
+      ? List.of()
+      : financingDtlRepository.findByInvoice_InvoiceCodeIn(existingInvoiceCodes);
+
+    if (existingDetails.isEmpty()) {
+      // Belum ada invoice/detail yang tersimpan -> header baru
+      return financingHdrService.create(customer, bouwheer, request, simulationDisburseResult);
+    }
+
+    // Validasi: invoice yang sudah masuk proses financing (status != null / "")
+    // tidak boleh diajukan ulang -> tampilkan nomor invoice agar user tahu.
+    List<String> invoiceInProcess = existingDetails.stream()
+      .filter(dtl -> isFinancingInProcess(dtl.getFinancingHdr()))
+      .map(FinancingDtl::getBouwheerInvNo)
+      .filter(Objects::nonNull)
+      .distinct()
+      .toList();
+
+    if (!invoiceInProcess.isEmpty()) {
+      String invoiceNumbersInProcess = String.join(", ", invoiceInProcess);
+      log.info("Invoice sedang diproses, tidak dapat diajukan ulang: {}", invoiceNumbersInProcess);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,
+        "No invoice " + invoiceNumbersInProcess + " sedang di proses");
+    }
+
+    // Invoice sudah punya detail -> gunakan header milik detail tersebut (bukan header terbaru)
+    FinancingHdr header = existingDetails.getFirst().getFinancingHdr();
+    header.setTenor(simulationDisburseResult.getTenor());
+    header.setTermOfPayment(simulationDisburseResult.getTop());
+    header.setRetention(100 - simulationDisburseResult.getRetention());
+    header.setTotalInvoiceAmt(totalInvoiceAmount);
+    header.setFinancingAmt(simulationDisburseResult.getFinancingAmount().doubleValue());
+    header.setDisburseAmt(simulationDisburseResult.getEstimatedDisburseAmount().doubleValue());
+    header.setInterestAmt(simulationDisburseResult.getInterestFeeAmount().doubleValue());
+    header.setFinancingDueDate(Utils.toInstant(simulationDisburseResult.getMaxInvoiceDate()));
+    header.setProvisionFeeAmt(simulationDisburseResult.getProvisionFeeAmount().doubleValue());
+    header.setProvisionFeePercentage(simulationDisburseResult.getProvisionRate());
+    header.setAdminFeePercentage(simulationDisburseResult.getAdminRate());
+    header.setEffectiveRate(simulationDisburseResult.getEffectiveRate());
+    header.setSurveyFeeAmt(simulationDisburseResult.getSurveyFeeAmount().doubleValue());
+    header.setLegalFeeAmt(simulationDisburseResult.getLegalFeeAmount().doubleValue());
+    header.setOthersFeeAmt(simulationDisburseResult.getOthersFeeAmount().doubleValue());
+    header.setAdminFeeAmt(simulationDisburseResult.getAdminFeeAmount().doubleValue());
+    header.setSurveyFeeAmtNett(simulationDisburseResult.getSurveyFeeAmount().doubleValue());
+    header.setLegalFeeAmtNett(simulationDisburseResult.getLegalFeeAmount().doubleValue());
+    header.setTotalInvoiceSubmittedAmt(totalInvoiceAmount);
+    header.setInvoiceQty((long) request.getInvoices().size());
+    header.setUsrUpd(customer.getCustName());
+    header.setDtmUpd(DateTimeUtils.now());
+
+    return financingHdrRepository.save(header);
+  }
+
+  /**
+   * Financing dianggap "sedang diproses" jika financing_status terisi
+   * (bukan null dan bukan string kosong). Header baru hasil simulasi
+   * memiliki financing_status = "" sehingga masih boleh diedit ulang.
+   */
+  private static boolean isFinancingInProcess(FinancingHdr header) {
+    if (header == null) {
+      return false;
+    }
+    String status = header.getFinancingStatus();
+    return status != null && !status.isBlank();
+  }
+
   public CreatedSimulationDto createSimulation(
     Customer customer,
     CreateSimulationRequest request
   ) throws SignatureException, ParseException, JsonProcessingException {
+
+    if (customer==null){
+      Optional<Customer>customerOptional = customerRepository.findFirstByCustExternalCode(request.getVendorCode());
+      if (customerOptional.isEmpty()){
+        log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getVendorCode());
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
+          "Saat ini vendor ID belum terverifikasi, silakan tambahkan invoice untuk melanjutkan pengajuan");
+      }
+
+      customer = customerOptional.get();
+    }
 
     final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null)
       .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
@@ -920,51 +1030,21 @@ public class LoanSubmissionService {
 
     /**
      * Insert Financing finalFinancingHdr
+     *
+     * BUG FIX: header TIDAK boleh selalu dibuat baru. Sebelumnya lookup
+     * existing detail dibatasi pada "header terakhir milik customer", sehingga
+     * invoice yang sudah pernah disimpan pada header lain tidak ditemukan dan
+     * financing_hdr baru selalu dibuat.
+     *
+     * Sekarang: cari invoice existing (customer + bouwheerInvNo + custInvNo),
+     * lalu cari financing detail GLOBAL berdasarkan invoice tersebut
+     * (relasi Invoice -> FinancingDtl adalah @OneToOne). Jika detail sudah ada,
+     * pakai header milik detail itu dan lakukan UPDATE; hanya jika benar-benar
+     * belum ada yang membuat header baru.
      */
-    //Find finalFinancingHdr Code
-    FinancingHdr finalFinancingHdr = null;
-    Optional<FinancingHdr>financingHdrOptional = financingHdrRepository.findFirstByCustomerOrderByFinancingHdrIdDesc(customer);
-    if(financingHdrOptional.isPresent()){
-        finalFinancingHdr = financingHdrOptional.get();
-    }
-
-    List<String> invoiceNumbers = request.getInvoices().stream()
-      .map(PostedInvoicePayload::getBouwheerInvoiceNo)
-      .filter(Objects::nonNull)
-      .toList();
-
-    List<FinancingDtl> existingDetails = financingDtlRepository.findByfinancingHdrAndBouwheerInvNoIn(finalFinancingHdr,invoiceNumbers);
-
-    if (!existingDetails.isEmpty()) {
-      finalFinancingHdr = existingDetails.getFirst().getFinancingHdr();
-      finalFinancingHdr.setTenor(simulationDisburseResult.getTenor());
-      finalFinancingHdr.setTermOfPayment(simulationDisburseResult.getTop());
-      finalFinancingHdr.setRetention(100 - simulationDisburseResult.getRetention());
-      finalFinancingHdr.setTotalInvoiceAmt(totalInvoiceAmount);
-      finalFinancingHdr.setFinancingAmt(simulationDisburseResult.getFinancingAmount().doubleValue());
-      finalFinancingHdr.setDisburseAmt(simulationDisburseResult.getEstimatedDisburseAmount().doubleValue());
-      finalFinancingHdr.setInterestAmt(simulationDisburseResult.getInterestFeeAmount().doubleValue());
-      finalFinancingHdr.setFinancingDueDate(Utils.toInstant(simulationDisburseResult.getMaxInvoiceDate()));
-      finalFinancingHdr.setProvisionFeeAmt(simulationDisburseResult.getProvisionFeeAmount().doubleValue());
-      finalFinancingHdr.setProvisionFeePercentage(simulationDisburseResult.getProvisionRate());
-      finalFinancingHdr.setAdminFeePercentage(simulationDisburseResult.getAdminRate());
-      finalFinancingHdr.setEffectiveRate(simulationDisburseResult.getEffectiveRate());
-      finalFinancingHdr.setSurveyFeeAmt(simulationDisburseResult.getSurveyFeeAmount().doubleValue());
-      finalFinancingHdr.setLegalFeeAmt(simulationDisburseResult.getLegalFeeAmount().doubleValue());
-      finalFinancingHdr.setOthersFeeAmt(simulationDisburseResult.getOthersFeeAmount().doubleValue());
-      finalFinancingHdr.setAdminFeeAmt(simulationDisburseResult.getAdminFeeAmount().doubleValue());
-      finalFinancingHdr.setSurveyFeeAmtNett(simulationDisburseResult.getSurveyFeeAmount().doubleValue());
-      finalFinancingHdr.setLegalFeeAmtNett(simulationDisburseResult.getLegalFeeAmount().doubleValue());
-      finalFinancingHdr.setUsrCrt(customer.getCustName());
-      finalFinancingHdr.setDtmCrt(DateTimeUtils.now());
-    } else {
-      finalFinancingHdr = financingHdrService.create(
-        customer,
-        bouwheer,
-        request,
-        simulationDisburseResult
-      );
-    }
+    FinancingHdr finalFinancingHdr = resolveFinancingHdr(
+      customer, bouwheer, request, simulationDisburseResult, totalInvoiceAmount
+    );
 
     /**
      * Insert Invoice Service
