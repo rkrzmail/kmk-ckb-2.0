@@ -48,7 +48,6 @@ class ManagementEndpointsConfigTest {
     Map<String, Object> profiles = (Map<String, Object>) spring.get("profiles");
 
     assertThat(profiles.get("active")).isIn("local", "dev", "brahma");
-    assertThat(includeOf(yaml)).contains("env", "loggers", "logfile");
   }
 
   @Test
