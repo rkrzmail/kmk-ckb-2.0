@@ -246,7 +246,7 @@ public class DocumentService {
       } else {
         headers.set("Content-Disposition", "inline");
       }
-      LegalFile legalFile = legalFileService.findByFileId(Long.valueOf(id));
+      LegalFile legalFile = legalFileService.findByFileId(id);
       if (legalFile == null) {
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         return new ResponseEntity<>(null, headers, HttpStatus.OK);

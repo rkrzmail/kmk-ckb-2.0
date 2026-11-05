@@ -1167,6 +1167,9 @@ public class LoanSubmissionService {
           financing.setFinancingStatus("INPROCESS");
           financing.setFinancingStep("ASSIGNMENT");
           financing.setMstBranch(hdrBranch);
+          financing.setAssignedAoEmail(financingHdr.getAssignedAoEmail());
+          financing.setAssignedAoName(financingHdr.getAssignedAoName());
+          financing.setAssignedAoEmployeeCode(financingHdr.getAssignedAoEmployeeCode());
           financing.setDtmUpd(DateTimeUtils.now());
 
           final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()

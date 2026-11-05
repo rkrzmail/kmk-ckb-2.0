@@ -15,45 +15,53 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface LegalFileRepository extends JpaRepository<LegalFile, Long>, JpaSpecificationExecutor<LegalFile> {
-    boolean existsByFileTypeCode_FileTypeCode(String fileTypeCode);
-    List<LegalFile> findAllByCustCode(Customer customer);
+  boolean existsByFileTypeCode_FileTypeCode(String fileTypeCode);
 
-    Optional<LegalFile> findByCustCodeAndFileTypeCodeAndFinancingHdrIsNull(
-            Customer customer, MstFileType fileType);
+  List<LegalFile> findAllByCustCode(Customer customer);
 
-    @Query(value = """
-            select lf.* from public.legal_file lf
-            where lf.financing_hdr_code = :financingHdrCode
-              and lf.file_type_code = :fileTypeCode
-            """, nativeQuery = true)
-    Optional<LegalFile> findByFinancingHdr_FinancingHdrCodeAndFileTypeCode_FileTypeCode(
-            @org.springframework.data.repository.query.Param("financingHdrCode") UUID financingHdrCode,
-            @org.springframework.data.repository.query.Param("fileTypeCode") String fileTypeCode);
+  Optional<LegalFile> findByCustCodeAndFileTypeCodeAndFinancingHdrIsNull(
+    Customer customer, MstFileType fileType);
 
-    @Query(
-            value = """
-                    select *
-                    from
-                        public.legal_file
-                    where
-                        file_type_code = :fileTypeCode
-                        and cust_code = :custCode
-                        and financing_hdr_code is null
-                    order by
-                        file_id desc limit 1
-                    """,
-            nativeQuery = true
-    )
-    List<LegalFile> findAllRawByCustAndFileTypeCodeStr(
-            @Param("fileTypeCode") String fileTypeCode,
-            @Param("custCode") String custCode
-    );
+  @Query(value = """
+    select lf.* from public.legal_file lf
+    where lf.financing_hdr_code = :financingHdrCode
+      and lf.file_type_code = :fileTypeCode
+    """, nativeQuery = true)
+  Optional<LegalFile> findByFinancingHdr_FinancingHdrCodeAndFileTypeCode_FileTypeCode(
+    @org.springframework.data.repository.query.Param("financingHdrCode") UUID financingHdrCode,
+    @org.springframework.data.repository.query.Param("fileTypeCode") String fileTypeCode);
 
-    Optional<LegalFile> findTopByFileIdOrderByFileIdDesc(Long fileId);
+  @Query(
+    value = """
+      select *
+      from
+          public.legal_file
+      where
+          file_type_code = :fileTypeCode
+          and cust_code = :custCode
+          and financing_hdr_code is null
+      order by
+          file_id desc limit 1
+      """,
+    nativeQuery = true
+  )
+  List<LegalFile> findAllRawByCustAndFileTypeCodeStr(
+    @Param("fileTypeCode") String fileTypeCode,
+    @Param("custCode") String custCode
+  );
 
-    Page<LegalFile> findAllByCustCodeAndFinancingHdrIsNullOrderByFileName(
-            Customer customer,
-            Pageable pageable
-    );
+  Page<LegalFile> findAllByCustCodeAndFinancingHdrIsNullOrderByFileName(
+    Customer customer,
+    Pageable pageable
+  );
 
+  @Query("SELECT lf FROM LegalFile lf " +
+    "JOIN FETCH lf.custCode " +
+    "JOIN FETCH lf.fileTypeCode " +
+    "WHERE lf.fileId = :fileId")
+  List<LegalFile> findRowsByFileId(@Param("fileId") Long fileId);
+
+  default Optional<LegalFile> findByFileIdFirst(Long fileId) {
+    return findRowsByFileId(fileId).stream().findFirst();
+  }
 }
