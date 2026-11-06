@@ -121,6 +121,7 @@ class InvoicePaidNotificationTest {
     FinancingHdr financing = new FinancingHdr();
     financing.setFinancingHdrCode(financingCode);
     financing.setFinancingDate(LocalDateTime.of(2026, 9, 30, 10, 0));
+    financing.setDtmCrt(LocalDateTime.now());
     Customer customer = new Customer();
     customer.setCustCode(UUID.randomUUID());
     customer.setCustName("Vendor <One>");
