@@ -1158,15 +1158,13 @@ public class LoanSubmissionService {
         financingHdrs.add(financing);
       }
 
-      financingHdrs.addAll(financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer));
-      for (FinancingHdr financingHdr : financingHdrs) {
-        MstBranch hdrBranch = financingHdr.getMstBranch();
-        if (hdrBranch != null) {
-          //update jadi Assign
-          log.info("Repeat Order loan submitted {} , Branch {} ", customer.getCustEmail(), hdrBranch.getBranchCode());
+      Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findLatestValidFinancingHdr(customer);
+      if(financingHdrOptional.isPresent()) {
+       var financingHdr = financingHdrOptional.get();
+          log.info("Repeat Order loan submitted {} , Branch {} ", customer.getCustEmail(), financingHdr.getMstBranch().getBranchCode());
           financing.setFinancingStatus("INPROCESS");
           financing.setFinancingStep("ASSIGNMENT");
-          financing.setMstBranch(hdrBranch);
+          financing.setMstBranch(financingHdr.getMstBranch());
           financing.setAssignedAoEmail(financingHdr.getAssignedAoEmail());
           financing.setAssignedAoName(financingHdr.getAssignedAoName());
           financing.setAssignedAoEmployeeCode(financingHdr.getAssignedAoEmployeeCode());
@@ -1193,9 +1191,17 @@ public class LoanSubmissionService {
               + financing.getSurveyFeeAmtNett();
 
           //getAPI AO,BH
-          MailPositionDto to = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "BM/BOH");
-          MailPositionDto ccRM = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "RM");
-          MailPositionDto toAO = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "AO/AM");
+          MailPositionDto to = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "BM/BOH");
+          MailPositionDto ccRM = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "RM");
+          MailPositionDto toAO = MailPositionDto.builder()
+            .header(null)
+            .data(List.of(MailDataDto.builder()
+                .branchCode(financingHdr.getMstBranch().getBranchCode())
+                .employeeName(financingHdr.getAssignedAoEmail())
+                .email(financingHdr.getAssignedAoEmail())
+                .employeeCode(financingHdr.getAssignedAoEmployeeCode())
+              .build()))
+            .build();
 
           Set<String> toEmailSet = new LinkedHashSet<>();
           Set<String> ccEmailSet = new LinkedHashSet<>();
@@ -1213,7 +1219,6 @@ public class LoanSubmissionService {
               .filter(email -> email != null && !email.trim().isEmpty())
               .forEach(toEmailSet::add);
           }
-
 
           if (ccRM != null && ccRM.getData() != null) {
             ccRM.getData().stream()
@@ -1267,8 +1272,6 @@ public class LoanSubmissionService {
               .invoices(invoices)
               .build()
           );
-          break;
-        }
       }
 
 

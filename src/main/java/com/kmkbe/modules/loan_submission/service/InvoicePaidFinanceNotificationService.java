@@ -76,7 +76,7 @@ public class InvoicePaidFinanceNotificationService {
           .description(invoice.getInvoiceDescription())
           .bouwheerName(financing.getBouwheer().getBouwheerName())
           .invoiceDate(DateTimeUtils.formatToDate(invoice.getInvoiceDate()))
-          .invoiceDueDate(DateTimeUtils.formatToDate(invoice.getDtmCrt()))
+          .invoiceDueDate(DateTimeUtils.formatToDate(invoice.getInvoiceDueDate()))
           .invoiceAmt(String.format(Locale.forLanguageTag("id-ID"), "%,.0f", invoice.getInvoiceAmt()))
           .build())
         .toList();
@@ -94,7 +94,7 @@ public class InvoicePaidFinanceNotificationService {
       fields.put("vendorName", escape(financing.getCustomer().getCustName()));
       fields.put("vendorEmail", escape(financing.getCustomer().getCustEmail()));
       fields.put("vendorPhone", escape(financing.getCustomer().getCustMobilePhone()));
-      fields.put("submissionDate", DateTimeUtils.formatToDate(financing.getFinancingDate()));
+      fields.put("submissionDate", DateTimeUtils.formatToDate(financing.getDtmCrt()));
       fields.put("invoices", InvoiceEmailPayload.toHtmlListBody(invoices));
 
       EmailService.DeliveryResult result = emailService.sendFinanceInvoicePaidNotification(

@@ -359,38 +359,6 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
     "WHERE DATE(f.financingDate) BETWEEN :startDate AND :endDate")
   Page<Object[]> findFinancingDataByFinancingHdrCode(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
 
-//    @Query("SELECT distinct " +
-//            "c.custName, " +
-//            "c.custIdNo, " +
-//            "c.existingCust, " +
-//            "b.bouwheerName, " +
-//            "f.mstBranch.branchCode, " +
-//            "cwr.cwrCode, " +
-//            "a.agreementCode, " +
-//            "(SELECT COUNT(*) FROM Cwr c WHERE LENGTH(c.cwrCode) > 1)," +
-//            "f.retention, " +
-//            "cwr.plafondAmt, " +
-//            "f.financingAmt, " +
-//            "cwr.plafondAmt - cwr.realisationAmt, " +
-//            "f.adminFeeAmt, " +
-//            "f.othersFeeAmt, " +
-//            "f.disburseDate, " +
-//            "f.financingStatus, " +
-//            "i.invoiceDueDate, " +
-//            "c.dtmUpd, " +
-//            "f.financingDate, " +
-//            "ac.goliveDate " +
-//            "FROM FinancingHdr f " +
-//            "JOIN Customer c ON f.customer.custCode = c.custCode " +
-//            "JOIN Bouwheer b ON f.bouwheer.bouwheerCode = b.bouwheerCode " +
-//            "JOIN Agreement a ON a.financingHdr.financingHdrCode = f.financingHdrCode " +
-//            "JOIN Cwr cwr ON cwr.cwrCode = a.cwr.cwrCode " +
-//            "JOIN Agreement ac ON ac.agreementCode = a.agreementCode " +
-//            "JOIN Invoice i ON i.customer.custCode = c.custCode " +
-//            "WHERE DATE(f.financingDate) BETWEEN :startDate AND :endDate")
-
-  /// /            "WHERE c.isActive = TRUE")
-//    Page<Object[]> findSummaryByCustCode(Pageable pageable, @Param("startDate") String startDate, @Param("endDate") String endDate);
   @Query("SELECT NEW com.kmkbe.core.domain.dto.ProyeksiReportDto(" +
     "c.custName, " +
     "c.existingCust, " +
@@ -546,4 +514,10 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
     AND fh.financing_step = 'COMPLETED'
     """, nativeQuery = true)
   Long countCompleted(@Param("financingHdrCode") String financingHdrCode);
+
+  @Query("SELECT f FROM FinancingHdr f WHERE f.customer = :customer " +
+    "AND f.mstBranch IS NOT NULL AND TRIM(f.mstBranch) != '' " +
+    "AND f.assignedAoEmployeeCode IS NOT NULL AND TRIM(f.assignedAoEmployeeCode) != '' " +
+    "ORDER BY f.dtmCrt DESC LIMIT 1")
+  Optional<FinancingHdr> findLatestValidFinancingHdr(@Param("customer") @NotNull Customer customer);
 }
