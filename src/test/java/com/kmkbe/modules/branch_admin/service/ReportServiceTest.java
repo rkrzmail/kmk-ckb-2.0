@@ -66,6 +66,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -365,9 +366,10 @@ class ReportServiceTest {
     when(debtorRepository.findKaryawanByFinancingHdrCode(FINANCING_HDR_CODE.toString())).thenReturn(List.of(reportDebtor()));
     when(agreementRepo.findFaciltyByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn("Factoring");
     when(agreementRepo.finddetailDebtor(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of(Map.of(
-        "cust_company_type", "PT",
+        "debtor_type", "Badan Usaha",
+        "debtor_model", "PT",
         "cust_id_no", "NPWP001",
-        "company_address", "Jl. Test",
+        "debtor_address", "Jl. Test",
         "cust_email", "debtor@example.com",
         "phone", "021"
     )));
@@ -386,7 +388,38 @@ class ReportServiceTest {
     verify(jasperReportRenderer).renderToPdf(eq("/Reports/main_report.jasper"), paramsCaptor.capture());
     assertThat(paramsCaptor.getValue()).containsEntry("NamaBranchManager", "BM");
     assertThat(paramsCaptor.getValue()).containsEntry("AgrmntNo", "AGR-CODE");
+    assertThat(paramsCaptor.getValue()).containsEntry("JenisDebitur", "Badan Usaha");
+    assertThat(paramsCaptor.getValue()).containsEntry("TipePerusahaan", "PT");
+    assertThat(paramsCaptor.getValue()).containsEntry("Alamat", "Jl. Test");
     assertThat(paramsCaptor.getValue()).containsKey("tableDataSource");
+
+    when(agreementRepo.finddetailDebtor(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of(Map.of(
+        "debtor_type", "Personal",
+        "debtor_model", "Pengusaha",
+        "cust_id_no", "KTP001",
+        "debtor_address", "Jl. Pribadi",
+        "cust_email", "personal@example.com",
+        "phone", "0812"
+    )));
+    service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM");
+    verify(jasperReportRenderer, times(2)).renderToPdf(eq("/Reports/main_report.jasper"), paramsCaptor.capture());
+    Map personalParams = paramsCaptor.getAllValues().getLast();
+    assertThat(personalParams).containsEntry("JenisDebitur", "Personal");
+    assertThat(personalParams).containsEntry("TipePerusahaan", "Pengusaha");
+    assertThat(personalParams).containsEntry("NPWP", "KTP001");
+    assertThat(personalParams).containsEntry("Alamat", "Jl. Pribadi");
+    assertThat(personalParams).containsEntry("Email", "personal@example.com");
+    assertThat(personalParams).containsEntry("Telepon", "0812");
+
+    Debtor signerWithoutPosition = reportDebtor();
+    signerWithoutPosition.setJabatan(null);
+    when(debtorRepository.findKaryawanByFinancingHdrCode(FINANCING_HDR_CODE.toString()))
+        .thenReturn(List.of(signerWithoutPosition));
+    service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM");
+    verify(jasperReportRenderer, times(3)).renderToPdf(eq("/Reports/main_report.jasper"), paramsCaptor.capture());
+    Map paramsWithoutPosition = paramsCaptor.getAllValues().getLast();
+    assertThat(paramsWithoutPosition).containsEntry("Jabatan", "");
+    assertThat(paramsWithoutPosition).containsEntry("JabatanSigner", "");
   }
 
   @Test

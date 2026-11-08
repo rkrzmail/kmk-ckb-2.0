@@ -15,8 +15,10 @@ import com.kmkbe.modules.common.service.EmailDeliveryService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.model.request.ApprovalRequest;
 import com.kmkbe.modules.customer.model.request.SignUpRequest;
+import com.kmkbe.modules.customer.model.request.UpdateCustomerRequest;
 import com.kmkbe.modules.customer.model.request.UpdateFapRequest;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
+import jakarta.validation.Validation;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -137,6 +139,38 @@ class CustomerServiceIssueRegressionTest {
     assertThat(customer.getUsrUpd()).isEqualTo("Debitur");
     assertThat(customer.getDtmUpd()).isNotNull();
     verify(customerRepository).save(customer);
+  }
+
+  @Test
+  void updateCustomerKeepsExistingNpwpWhenFieldIsOmitted() {
+    Customer customer = openCustomer();
+    customer.setNpwp("1234567890123456");
+    UpdateCustomerRequest request = updateCustomerRequest(null);
+    when(customerRepository.save(customer)).thenReturn(customer);
+
+    Customer updated = service.update(customer, request);
+
+    assertThat(updated.getNpwp()).isEqualTo("1234567890123456");
+    verify(customerRepository).save(customer);
+  }
+
+  @Test
+  void updateCustomerReplacesNpwpWhenFieldIsProvided() {
+    Customer customer = openCustomer();
+    customer.setNpwp("1234567890123456");
+    when(customerRepository.save(customer)).thenReturn(customer);
+
+    Customer updated = service.update(customer, updateCustomerRequest("9876543210987654"));
+
+    assertThat(updated.getNpwp()).isEqualTo("9876543210987654");
+  }
+
+  @Test
+  void updateCustomerRequestAllowsMissingNpwp() {
+    try (var factory = Validation.buildDefaultValidatorFactory()) {
+      var violations = factory.getValidator().validate(updateCustomerRequest(null));
+      assertThat(violations).isEmpty();
+    }
   }
 
   @Test
@@ -364,6 +398,17 @@ class CustomerServiceIssueRegressionTest {
       .isEmailValid(true)
       .isActive(false)
       .approvalStatus(ApprovalStatus.OPEN.name())
+      .build();
+  }
+
+  private static UpdateCustomerRequest updateCustomerRequest(String npwp) {
+    return UpdateCustomerRequest.builder()
+      .npwp(npwp)
+      .custName("Debitur")
+      .custEmail("customer@example.com")
+      .custTypeCode("Company")
+      .custIdNo("NPWP001")
+      .address(new UpdateCustomerRequest.UpdateAddressRequest())
       .build();
   }
 
