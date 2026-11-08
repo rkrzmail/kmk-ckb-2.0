@@ -270,7 +270,9 @@ public class CustomerService {
 
     customer.setCustName(request.getCustName());
     customer.setCustIdNo(request.getCustIdNo());
-    customer.setNpwp(request.getNpwp());
+    if (request.getNpwp() != null) {
+      customer.setNpwp(request.getNpwp());
+    }
     customer.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
     customer.setDtmUpd(LocalDateTime.now());
     customer = customerRepository.save(customer);

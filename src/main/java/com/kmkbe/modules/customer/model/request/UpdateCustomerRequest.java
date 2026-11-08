@@ -12,7 +12,6 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 public class UpdateCustomerRequest {
-  @NotNull(message = "NPWP is required, key: npwp")
   private String npwp;
 
   @NotNull(message = "Nama is required, key: custName")
