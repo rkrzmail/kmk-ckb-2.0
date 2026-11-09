@@ -79,7 +79,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     "/api/v1/error/**",
     "/api/v1/uploads/**",
     "/api/v1/testing/**",
-    "/api/v1/documents/download/**",
 
     // internal
     //"/api/v1/internal/user/**",
@@ -152,6 +151,18 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         return;
       }
 
+      // Security issue #3 (SECURITY.md): download dokumen tidak lagi di-whitelist.
+      // Token via query (?token=) dianggap Bearer token (URL browser tidak bisa
+      // mengirim Authorization header), lalu divalidasi penuh.
+      final String queryToken = request.getParameter("token");
+      if (HttpUtils.getHeaderAuthorization(request) == null
+        && !StringUtil.isNullOrEmpty(queryToken)
+        && request.getRequestURI().startsWith("/api/v1/documents/download/")
+      ) {
+        setAuthenticationFromJwt(request, response, queryToken, filterChain);
+        return;
+      }
+
       setAuthenticate(request, response, filterChain);
     } catch (ExpiredJwtException e) {
       request.setAttribute("exception", e);
@@ -186,13 +197,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
 
     final String jwt = authHeader.substring("Bearer ".length());
+    setAuthenticationFromJwt(request, response, jwt, filterChain);
+  }
+
+  /**
+   * Security issue #3 (SECURITY.md): endpoint download dokumen tidak lagi
+   * di-whitelist. Frontend memanggil endpoint ini via URL browser dengan
+   * token pada query (?token=...), maka nilai token dari query dianggap
+   * sebagai Bearer token dan divalidasi dengan alur yang sama penuh
+   * (signature + expiry + load user) sehingga principal ter-set dan
+   * ownership check di service layer bisa dievaluasi.
+   */
+  private void setAuthenticationFromJwt(
+    @NonNull HttpServletRequest request,
+    @NonNull HttpServletResponse response,
+    @NonNull String jwt,
+    @NonNull FilterChain filterChain
+  ) throws ServletException, IOException {
     final String username = jwtService.extractUsername(jwt);
     final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 
     final String rtoken = request.getHeader("rtoken");
     Optional<RedisLog> redisLog = redisRepository.findFirstByRedis(username);
-    if (rtoken.equalsIgnoreCase("")) {
+    if (rtoken == null || rtoken.equalsIgnoreCase("")) {
       //abaikan
     } else if (redisLog.isPresent()) {
       if (request.getRequestURI().toLowerCase().contains("/loan-submissions/create")) {

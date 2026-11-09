@@ -65,7 +65,9 @@ class SitTemplateServiceTest {
     Agreement agreement = Agreement.builder()
       .agreementCode("AGR-1")
       .dtmCrt(LocalDateTime.of(2026, 10, 26, 9, 0))
-      .cwr(Cwr.builder().dtmCrt(LocalDateTime.of(2026, 10, 20, 8, 0)).build())
+      .cwr(Cwr.builder()
+        .cwrCode("AGR-1")
+        .dtmCrt(LocalDateTime.of(2026, 10, 20, 8, 0)).build())
       .build();
     when(financingHdrRepository.findByFinancingHdrCode(LEAD)).thenReturn(Optional.of(financing));
     when(agreementRepository.findByFinancingHdr_FinancingHdrCode(LEAD)).thenReturn(List.of(agreement));
@@ -81,7 +83,7 @@ class SitTemplateServiceTest {
     verify(jasperReportRenderer).renderToPdf(eq("/Reports/sit.jasper"), captor.capture());
     assertThat(captor.getValue()).containsEntry("nomorPerjanjian", "AGR-1")
       .containsEntry("tanggalPerjanjian", "26 Oktober 2026")
-      .containsEntry("tanggalCwr", "20 Oktober 2026")
+      .containsEntry("tanggalCwr", "26 Oktober 2026")
       .containsEntry("namaDebitur", "Debitur Satu")
       .containsEntry("companyDebitur", "Debitur Satu")
       .containsEntry("namaBouwheer", "Bouwheer Satu")

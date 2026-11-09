@@ -88,7 +88,7 @@ public class SitTemplateService {
     Customer customer = financing.getCustomer();
     Cwr cwr = agreement.getCwr();
     Map<String, Object> params = new HashMap<>();
-    params.put("tanggalCwr", date(cwr == null ? null : cwr.getDtmCrt()));
+    params.put("tanggalCwr", date(agreement.getDtmCrt()));
     params.put("namaBouwheer", value(bouwheer.getBouwheerName()));
     params.put("periodeBerlaku", date(financing.getFinancingDueDate()));
     params.put("namaDebitur", value(customer.getCustName()));
@@ -99,7 +99,7 @@ public class SitTemplateService {
     params.put("legalAddress", value(bouwheer.getLegalAddress()));
     params.put("picName", value(bouwheer.getPicName()));
     params.put("tanggalPerjanjian", date(agreement.getDtmCrt()));
-    params.put("nomorPerjanjian", value(agreement.getAgreementCode()));
+    params.put("nomorPerjanjian", value(agreement.getCwr().getCwrCode()));
     return params;
   }
 
