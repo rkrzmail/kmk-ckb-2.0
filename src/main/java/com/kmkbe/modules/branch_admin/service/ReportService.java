@@ -642,7 +642,7 @@ public class ReportService {
     params.put("BankAccNo", dataRekening.getAccNo());
     params.put("BankAccName", dataRekening.getAccName());
     params.put("NamaKaryawan", Kdata != null ? Kdata.getKaryawanName() : "-");
-    String jabatan = Kdata != null ? Objects.toString(Kdata.getJabatan(), "-") : "-";
+    String jabatan = Kdata != null ? Objects.toString(Kdata.getJabatan(), null) : null;
     params.put("Jabatan", jabatan);
     params.put("JabatanSigner", jabatan);
     params.put("IdentitySigner", Kdata != null ? Kdata.getIdentityNo() : "-");
