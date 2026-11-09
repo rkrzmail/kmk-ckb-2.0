@@ -35,6 +35,8 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import org.springframework.web.servlet.HandlerExceptionResolver;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -76,9 +78,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     "/api/v1/auth/forgot-pin",
     "/api/v1/auth/refresh-token",
     "/api/v1/otp/**",
-    "/api/v1/error/**",
-    "/api/v1/uploads/**",
-    "/api/v1/testing/**",
+    // Security issue #6 (SECURITY.md): ghost path dihapus — tidak ada
+    // controller/handler untuk /api/v1/testing/**, /api/v1/error/**,
+    // dan /api/v1/uploads/** (handler file publik memakai /uploads/**).
 
     // internal
     //"/api/v1/internal/user/**",
@@ -368,8 +370,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @NonNull HttpServletRequest request,
     @NonNull HttpServletResponse response
   ) {
+    // Security issue #13 (SECURITY.md): constant-time comparison
     final String providedApiKey = HttpUtils.getHeaderApiKey(request);
-    if (providedApiKey == null || !providedApiKey.equals(apiKey)) {
+    if (providedApiKey == null || !MessageDigest.isEqual(
+      providedApiKey.getBytes(StandardCharsets.UTF_8),
+      apiKey.getBytes(StandardCharsets.UTF_8)
+    )) {
       handlerExceptionResolver.resolveException(request, response, null, new IllegalApiKeyException());
       return false;
     }

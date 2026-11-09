@@ -17,9 +17,12 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.security.SignatureException;
 
 @Validated
@@ -35,6 +38,14 @@ public class FinancingController {
   private final FinancingService financingService;
   private final FinancingDtlService financingDtlService;
   private final CurrentUserService currentUserService;
+
+  /**
+   * Security (SECURITY.md, keluarga issue #2/#9): API key trigger job
+   * sebelumnya hardcoded "123". Kini env-overridable; fallback mempertahankan
+   * nilai lama agar pemanggil terjadwal tidak langsung putus (rotasi = task ops).
+   */
+  @Value("${financing.trigger.api-key:${FINANCING_TRIGGER_API_KEY:123}}")
+  private String triggerApiKey;
 
   @PostMapping("/invoice-paid")
   public CommonResult<Object> invoicePaid(
@@ -95,7 +106,8 @@ public class FinancingController {
   public CommonResult<Object> updateApproval(
     @RequestParam("apiKey") String apiKey
   ) {
-    if (!apiKey.equalsIgnoreCase("123")) {
+    // Security issue #13 (SECURITY.md): constant-time comparison
+    if (!isTriggerApiKeyValid(apiKey)) {
       throw new IllegalApiKeyException();
     }
     try {
@@ -111,7 +123,7 @@ public class FinancingController {
   public CommonResult<Object> schCWR(
     @RequestParam("apiKey") String apiKey
   ) {
-    if (!apiKey.equalsIgnoreCase("123")) {
+    if (!isTriggerApiKeyValid(apiKey)) {
       throw new IllegalApiKeyException();
     }
     try {
@@ -121,5 +133,12 @@ public class FinancingController {
     }
 
     return new CommonResult<>().success(null);
+  }
+
+  private boolean isTriggerApiKeyValid(String provided) {
+    return provided != null && MessageDigest.isEqual(
+      provided.getBytes(StandardCharsets.UTF_8),
+      triggerApiKey.getBytes(StandardCharsets.UTF_8)
+    );
   }
 }

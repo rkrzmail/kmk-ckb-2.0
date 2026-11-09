@@ -10,6 +10,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/digital-sign")
@@ -25,7 +28,10 @@ public class CallbackController {
             @RequestHeader("x-api-key") String apiKey,
             @RequestBody CallbackRequest request) {
 
-        if (!expectedApiKey.equals(apiKey)) {
+        // Security issue #13 (SECURITY.md): constant-time comparison
+        if (!MessageDigest.isEqual(
+                expectedApiKey == null ? new byte[0] : expectedApiKey.getBytes(StandardCharsets.UTF_8),
+                apiKey.getBytes(StandardCharsets.UTF_8))) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(new CommonResult<String>().fail(401, "Invalid API Key"));
         }
