@@ -642,8 +642,9 @@ public class ReportService {
     params.put("BankAccNo", dataRekening.getAccNo());
     params.put("BankAccName", dataRekening.getAccName());
     params.put("NamaKaryawan", Kdata != null ? Kdata.getKaryawanName() : "-");
-    params.put("Jabatan", Kdata != null ? Kdata.getJabatan() : "-");
-    params.put("JabatanSigner", Kdata != null ? Kdata.getJabatan() : "-");
+    String jabatan = Kdata != null ? Objects.toString(Kdata.getJabatan(), null) : null;
+    params.put("Jabatan", jabatan);
+    params.put("JabatanSigner", jabatan);
     params.put("IdentitySigner", Kdata != null ? Kdata.getIdentityNo() : "-");
     params.put("AlamatSigner", Kdata != null ? Kdata.getAlamat() : "-");
     params.put("NamaPerusahaan", debtorName);
@@ -662,12 +663,12 @@ public class ReportService {
     params.put("GracePeriodLc", findata.getGracePeriod());
     params.put("InstAmt", fmtRupiah2(findata.getInstallmentAmount()));
     params.put("AgmtNo", agrmntCode);
-    params.put("JenisDebitur", "Badan Usaha");
-    params.put("TipePerusahaan", data.getOrDefault("cust_company_type", "-").toString());
-    params.put("NPWP", data.getOrDefault("cust_id_no", "-").toString());
-    params.put("Alamat", data.getOrDefault("company_address", "-").toString());
-    params.put("Email", data.getOrDefault("cust_email", "-").toString());
-    params.put("Telepon", data.getOrDefault("phone", "-").toString());
+    params.put("JenisDebitur", Objects.toString(data.get("debtor_type"), "-"));
+    params.put("TipePerusahaan", Objects.toString(data.get("debtor_model"), "-"));
+    params.put("NPWP", Objects.toString(data.get("cust_id_no"), "-"));
+    params.put("Alamat", Objects.toString(data.get("debtor_address"), "-"));
+    params.put("Email", Objects.toString(data.get("cust_email"), "-"));
+    params.put("Telepon", Objects.toString(data.get("phone"), "-"));
 
     List<CwrListBwhrResponse.ListData> bwList =
       Optional.ofNullable(bouwheerData)

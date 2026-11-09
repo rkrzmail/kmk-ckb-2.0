@@ -478,7 +478,6 @@ public class SignerService {
   }
 
   private DebtorDto saveDebtor(DebtorDto debtorDto, String username) {
-//        log.info("Saving debtor to database: {}", debtorDto);
     Debtor debtor = Debtor.builder()
       .debtorName(debtorDto.getDebtorName())
       .karyawanName(debtorDto.getKaryawanName())
@@ -777,11 +776,16 @@ public class SignerService {
           .body(new ApiResponse<>(false, "Document not found in database", null, null, null));
       }
 
-      if ("SIGN_DOC".equals(doc.get().getFileTypeCode())) {
+        if ("SIGN_DOC".equals(doc.get().getFileTypeCode())) {
         Optional<AgreementFile>agreementFileOptional = agreementFileRepository.findByAgreement_AgreementCode(doc.get().getAgreementCode());
         if(agreementFileOptional.isPresent()){
+          // Sanitasi documentId dari provider digital-sign sebelum dipakai sebagai
+          // nama file (security issue #11: cegah path traversal via karakter separator)
+          String safeDocumentId = doc.get().getDocumentId().trim()
+            .replace("/", "")
+            .replace("\\", "");
           // Get the local host instance
-          Resource resource = fileStorageService.load(agreementFileOptional.get().getFilePath().concat("/").concat(doc.get().getDocumentId().trim()).concat(".pdf"));
+          Resource resource = fileStorageService.load(agreementFileOptional.get().getFilePath().concat("/").concat(safeDocumentId).concat(".pdf"));
           try (InputStream inputStream = resource.getInputStream()) {
             // Read the input stream into a byte array
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();

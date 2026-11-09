@@ -1,5 +1,14 @@
 #ENV
 env: dev
+
+# Non-prod: exposure penuh untuk troubleshooting (security issue #8)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info, health, logfile, loggers, env
+      base-path: /api/monitoring
+
 spring:
   flyway:
     enabled: 'true'

@@ -63,7 +63,7 @@ public class LoanSubmissionController {
   @PostMapping("/importance-notes")
   public CommonResult<Object> saveImportantNotes(
     @Valid @RequestBody SaveImportantNotesRequest request
-  ) throws SignatureException, JsonProcessingException {
+  ) throws JsonProcessingException {
     return new CommonResult<>().success(loanSubmissionService.saveImportantNotes(request));
   }
 
@@ -139,12 +139,8 @@ public class LoanSubmissionController {
   public CommonResult<CreatedSimulationDto> updateSimulation(
     HttpServletRequest request
   ) throws Exception {
-    CreatedSimulationDto result = loanSubmissionService.updateSimulation(request);
-    if (result != null) {
-      int i = 0;
-    }
     return new CommonResult<CreatedSimulationDto>().success(
-      result
+      loanSubmissionService.updateSimulation(request)
     );
   }
 

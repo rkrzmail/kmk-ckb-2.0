@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.AbstractRequestLoggingFilter;
-import org.springframework.web.util.ContentCachingRequestWrapper;
 
 import java.io.IOException;
 import java.util.Map;
@@ -45,14 +44,16 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
 
         // when required, if request is not cached, create a request cache
         // wrapper to retrieve request content
-        if (isIncludePayload() && isFirstRequest && !(request instanceof ContentCachingRequestWrapper)) {
+        if (isIncludePayload() && isFirstRequest && !(request instanceof HttpServletRequestCopier)) {
             requestToUse = new HttpServletRequestCopier(request);
         }
 
         // when required, print request info before processing
         boolean shouldLog = shouldLog(requestToUse);
         if (shouldLog && isFirstRequest) {
-            logger.info(createMessage(requestToUse, "API Request [", "]"));
+            // Jangan log header/payload mentah di sini; detail tersanitasi dicetak di finally
+            logger.info("API Request [" + requestToUse.getMethod() + " " + requestToUse.getRequestURI()
+              + ";query=" + HttpUtils.sanitizeQueryString(requestToUse.getQueryString()) + "]");
         }
 
         // prepare response wrapper
@@ -61,8 +62,12 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
         try {
             // do processing
             filterChain.doFilter(requestToUse, responseToUse);
-        } catch (Exception e) {
+        } catch (ServletException | IOException | RuntimeException e) {
             logger.error(e.getMessage(), e);
+            if (!responseToUse.isCommitted() && responseToUse.getStatus() < 400) {
+                responseToUse.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            }
+            throw e;
         } finally {
             final Map<String, Object> requestLog = HttpUtils.createRequestLog(requestToUse, getMaxPayloadLength());
             final Map<String, Object> responseLog = HttpUtils.createResponseLog(responseToUse, getMaxPayloadLength());
@@ -72,8 +77,9 @@ public class HttpRequestResponseLogFilter extends AbstractRequestLoggingFilter {
                 logger.info(responseLog);
             }
 
-            if (requestLog.get("payload") == null) {
-                requestLog.put("payload", ((HttpServletRequestCopier) requestToUse).getPayload());
+            if (requestToUse instanceof HttpServletRequestCopier copier && requestLog.get("payload") == null) {
+                requestLog.put("payload", HttpUtils.sanitizePayload(
+                  com.kmkbe.core.utils.ObjectUtils.jsonToStr(copier.getPayload())));
             }
         }
     }

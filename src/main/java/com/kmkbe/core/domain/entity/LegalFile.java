@@ -16,6 +16,14 @@ import java.time.LocalDateTime;
 @Setter
 @Entity
 @Table(name = "legal_file")
+@SqlResultSetMapping(
+  name = "LegalFileWithCustomerAndType",
+  entities = {
+    @EntityResult(entityClass = LegalFile.class),
+    @EntityResult(entityClass = Customer.class),
+    @EntityResult(entityClass = MstFileType.class)
+  }
+)
 public class LegalFile {
   @Id
   @SequenceGenerator(
@@ -43,7 +51,7 @@ public class LegalFile {
   private Customer custCode;
 
   @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.MERGE)
-  @JoinColumn(name = "file_type_code", nullable = false)
+  @JoinColumn(name = "file_type_code", referencedColumnName = "file_type_code")
   private MstFileType fileTypeCode;
 
   @ManyToOne(fetch = FetchType.LAZY)
@@ -51,17 +59,14 @@ public class LegalFile {
   private FinancingHdr financingHdr;
 
   @Size(max = 500)
-  //@NotNull(message = "FileName is required")
   @Column(name = "file_name", nullable = false, length = 500)
   private String fileName;
 
   @Size(max = 8000)
-  //@NotNull(message = "FilePath is required")
   @Column(name = "file_path", nullable = false, length = 8000)
   private String filePath;
 
   @Size(max = 500)
-  //@NotNull(message = "ContentType is required")
   @Column(name = "content_type", nullable = false, length = 500)
   private String contentType;
 

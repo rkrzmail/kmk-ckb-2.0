@@ -172,13 +172,15 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     SELECT 
         c.cust_id_no,
         c.cust_email,
-        cc.cust_company_type,
-        cc.company_address,
-        COALESCE(cc.phone, '-') AS phone
+        CASE WHEN cp.cust_code IS NOT NULL THEN 'Personal' ELSE 'Badan Usaha' END AS debtor_type,
+        COALESCE(cc.cust_company_type, cp.cust_model) AS debtor_model,
+        COALESCE(cc.company_address, cp.legal_address) AS debtor_address,
+        COALESCE(cc.phone, cp.phone, c.cust_mobile_phone) AS phone
     FROM agreement a
-    JOIN cwr w ON a.cwr_code = w.cwr_code
-    JOIN customer c ON w.cust_code = c.cust_code
-    JOIN customer_company cc ON w.cust_code = cc.cust_code
+    JOIN financing_hdr fh ON a.financing_hdr_code = fh.financing_hdr_code
+    JOIN customer c ON fh.cust_code = c.cust_code
+    LEFT JOIN customer_company cc ON c.cust_code = cc.cust_code
+    LEFT JOIN customer_personal cp ON c.cust_code = cp.cust_code
     WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
     """, nativeQuery = true)
   Optional<Map<String, Object>> finddetailDebtor(@Param("financingHdrCode") UUID financingHdrCode, String agreementCode);

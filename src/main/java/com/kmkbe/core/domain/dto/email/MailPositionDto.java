@@ -5,8 +5,7 @@ import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.jackson.Jacksonized;
-
-import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Setter
@@ -15,5 +14,5 @@ import java.util.ArrayList;
 @Jacksonized
 public class MailPositionDto {
     public MailHeaderDto header;
-    public ArrayList<MailDataDto> data;
+    public List<MailDataDto> data;
 }

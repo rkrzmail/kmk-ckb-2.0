@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.core.domain.mapper.InvoiceMapper;
 import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.model.PaginationResult;
+import com.kmkbe.core.domain.model.PostedInvoicePayload;
 import com.kmkbe.core.domain.repository.FinancingDtlRepository;
 import com.kmkbe.core.domain.repository.InvoiceRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
@@ -36,7 +37,9 @@ import java.math.BigDecimal;
 import java.math.MathContext;
 import java.security.SignatureException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Predicate;
@@ -63,54 +66,31 @@ public class InvoiceService {
     Bouwheer bouwheer,
     CreateSubmissionRequest request
   ) {
-//      List<Invoice> invoices = request.getInvoices()
-//        .stream()
-//        .map((posted) -> Invoice.builder()
-//          .customer(customer)
-//          .bouwheer(bouwheer)
-//          .bouwheerInvNo(posted.getBouwheerInvoiceNo())
-//          .custInvNo(posted.getCustomerInvoiceNo())
-//          .invoiceDescription(
-//            StringUtil.isNullOrEmpty(posted.getInvoiceDescription())
-//              ? "Invoice By CKB"
-//              : posted.getInvoiceDescription()
-//          )
-//          .invoiceDate(Utils.toInstant(posted.getInvoiceDate()))
-//          .invoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()))
-//          .invoiceAmt(posted.getInvoiceAmount().doubleValue())
-//          .poNumber(posted.getPoNumber())
-//          .postingDate(posted.getPostingDate())
-//          .usrCrt(customer.getCustName())
-//          .build())
-//        .toList();
-//
-//      return invoiceRepository.saveAll(invoices)
-//        .stream()
-//        .map(InvoiceMapper.INSTANCE::dtoFromEntity)
-//        .toList();
+    if (request.getInvoices() == null || request.getInvoices().isEmpty()) {
+      return new ArrayList<>();
+    }
 
-    List<Invoice> invoices = request.getInvoices().stream().map(posted -> {
-      // 1. Check if the invoice already exists in the database
-      return invoiceRepository.findFirstByCustomerAndBouwheerInvNoAndCustInvNo(
+    String defaultDescription = "Invoice By " + bouwheer.getBouwheerName();
+    Map<String, PostedInvoicePayload> uniqueInvoices = new LinkedHashMap<>();
+    for (PostedInvoicePayload posted : request.getInvoices()) {
+      uniqueInvoices.putIfAbsent(invoiceKey(posted), posted);
+    }
+
+    List<Invoice> invoices = uniqueInvoices.values().stream().map(posted -> {
+      // 1. Check if the invoice already exists in the database.
+      //    Kunci unik: customer + bouwheer + bouwheerInvNo + custInvNo
+      return invoiceRepository.findFirstByCustomerAndBouwheerAndBouwheerInvNoAndCustInvNo(
           customer,
+          bouwheer,
           posted.getBouwheerInvoiceNo(),
           posted.getCustomerInvoiceNo()
         )
         .map(existingInvoice -> {
-          // 2. If it EXISTS -> Update the fields using Setters
-          existingInvoice.setInvoiceDescription(
-            StringUtil.isNullOrEmpty(posted.getInvoiceDescription()) ? "Invoice By " + bouwheer.getBouwheerName() : posted.getInvoiceDescription()
-          );
-//            existingInvoice.setInvoiceDate(Utils.toInstant(posted.getInvoiceDate()));
-//            existingInvoice.setInvoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()));
-//            existingInvoice.setInvoiceAmt(posted.getInvoiceAmount().doubleValue());
-//            existingInvoice.setPoNumber(posted.getPoNumber());
-//            existingInvoice.setPostingDate(posted.getPostingDate());
-
+          // 2. If it EXISTS -> Update seluruh field yang dikirim
+          applyPostedFields(existingInvoice, posted, bouwheer, defaultDescription);
           // Set update audit trails instead of create audit trails
-          existingInvoice.setUsrUpd(bouwheer.getBouwheerName());
+          existingInvoice.setUsrUpd(customer.getCustName());
           existingInvoice.setDtmUpd(DateTimeUtils.now());
-
           return existingInvoice;
         })
         .orElseGet(() ->
@@ -120,10 +100,10 @@ public class InvoiceService {
             .bouwheer(bouwheer)
             .bouwheerInvNo(posted.getBouwheerInvoiceNo())
             .custInvNo(posted.getCustomerInvoiceNo())
-            .invoiceDescription(StringUtil.isNullOrEmpty(posted.getInvoiceDescription()) ? "Invoice By " + bouwheer.getBouwheerName() : posted.getInvoiceDescription())
+            .invoiceDescription(StringUtil.isNullOrEmpty(posted.getInvoiceDescription()) ? defaultDescription : posted.getInvoiceDescription())
             .invoiceDate(Utils.toInstant(posted.getInvoiceDate()))
             .invoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()))
-            .invoiceAmt(posted.getInvoiceAmount().doubleValue())
+            .invoiceAmt(posted.getInvoiceAmount() == null ? null : posted.getInvoiceAmount().doubleValue())
             .poNumber(posted.getPoNumber())
             .postingDate(posted.getPostingDate())
             .usrCrt(bouwheer.getBouwheerName())
@@ -135,6 +115,34 @@ public class InvoiceService {
       .stream()
       .map(InvoiceMapper.INSTANCE::dtoFromEntity)
       .toList();
+  }
+
+  /**
+   * Key unik invoice: customer + bouwheerInvNo + custInvNo.
+   * Null-safe agar invoice tanpa nomor tetap dapat diproses.
+   */
+  private String invoiceKey(PostedInvoicePayload posted) {
+    return String.valueOf(posted.getBouwheerInvoiceNo())
+      + "|" + String.valueOf(posted.getCustomerInvoiceNo());
+  }
+
+  private void applyPostedFields(
+    Invoice invoice,
+    PostedInvoicePayload posted,
+    Bouwheer bouwheer,
+    String defaultDescription
+  ) {
+    invoice.setInvoiceDescription(
+      StringUtil.isNullOrEmpty(posted.getInvoiceDescription()) ? defaultDescription : posted.getInvoiceDescription()
+    );
+    invoice.setInvoiceDate(Utils.toInstant(posted.getInvoiceDate()));
+    invoice.setInvoiceDueDate(Utils.toInstant(posted.getInvoiceDueDate()));
+    if (posted.getInvoiceAmount() != null) {
+      invoice.setInvoiceAmt(posted.getInvoiceAmount().doubleValue());
+    }
+    invoice.setPoNumber(posted.getPoNumber());
+    invoice.setPostingDate(posted.getPostingDate());
+    invoice.setBouwheer(bouwheer);
   }
 
   public void delete(Invoice invoice) {

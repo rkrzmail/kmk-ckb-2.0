@@ -73,6 +73,9 @@ public interface ConfinsR3FeignClient {
   @PostMapping(value = "/api/los/v1/DisbInfo/GetDisburseFctrByAppNo", consumes = "application/json", produces = "application/json")
   RekDebiturResponse getRekDebitur(@RequestBody RekDebiturRequest request);
 
+  @PostMapping(value = "/api/ar/v1/AgrmntCardView/GetDisburseListByAgrmntNo", consumes = "application/json", produces = "application/json")
+  DisbursementAccountResponse getDisbursementAccounts(@RequestBody DisbursementAccountRequest request);
+
   @PostMapping(value = "/api/corelos/v1/AppFctr/GetAppFctrByAppId", consumes = "application/json", produces = "application/json")
   AppFactoringResponse getAppFactoringData(@RequestBody AppFactoringRequest request);
 

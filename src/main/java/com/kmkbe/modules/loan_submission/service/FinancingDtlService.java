@@ -73,66 +73,40 @@ public class FinancingDtlService {
     List<InvoiceDto> createdInvoices
   ) {
     try {
-//      return IntStream.range(0, postedInvoices.size())
-//        .mapToObj((index) -> {
-//          final FinancingDtl detail = new FinancingDtl();
-//          {
-//            Invoice invoice = InvoiceMapper.INSTANCE.entityFromDto(
-//              createdInvoices
-//                .stream()
-//                .filter(item -> item.getBouwheerInvNo().equals(postedInvoices.get(index).getBouwheerInvoiceNo()))
-//                .findFirst()
-//                .orElseThrow(() -> new IllegalStateException(""))
-//            );
-//
-//            invoice.setUsrCrt(customer.getCustName());
-//            invoice.setDtmCrt(DateTimeUtils.now());
-//            invoice.setCustomer(customer);
-//            invoice.setBouwheer(bouwheer);
-//
-//            detail.setInvoice(invoice);
-//            detail.setFinancingDtlCode(UUID.randomUUID());
-//            detail.setBouwheerInvNo(postedInvoices.get(index).getBouwheerInvoiceNo());
-//            detail.setFinancingHdr(financingHdr);
-//            detail.setUsrCrt(customer.getCustName());
-//            detail.setDtmCrt(DateTimeUtils.now());
-//          }
-//          financingDtlRepository.save(detail);
-//          return detail;
-//        })
-//        .toList();
-
       if (postedInvoices == null || postedInvoices.isEmpty()) {
         return Collections.emptyList();
       }
 
-      // FIX 1: Merge or re-fetch the header into the CURRENT active transaction session.
-      // This stops the "Unable to find" error if the header was created in a separate transaction block.
       FinancingHdr managedHdr = financingHdrRepository.findById(financingHdr.getFinancingHdrCode())
         .orElseGet(() -> financingHdrRepository.saveAndFlush(financingHdr));
 
-      // 2. Map createdInvoices for O(1) lookups
       Map<String, InvoiceDto> createdInvoiceMap = createdInvoices.stream()
         .filter(item -> item.getBouwheerInvNo() != null)
         .collect(Collectors.toMap(
-          InvoiceDto::getBouwheerInvNo,
+          item -> invoiceKey(item.getBouwheerInvNo(), item.getCustInvNo()),
           item -> item,
           (existing, replacement) -> existing
         ));
 
-      // 3. Extract invoice numbers for the SQL IN batch fetch
-      List<String> invoiceNumbers = postedInvoices.stream()
-        .map(PostedInvoicePayload::getBouwheerInvoiceNo)
+      // 3. Extract invoice codes untuk batch fetch existing detail.
+      List<UUID> invoiceCodes = createdInvoices.stream()
+        .map(InvoiceDto::getInvoiceCode)
         .filter(Objects::nonNull)
         .toList();
 
-      // 4. Batch query existing records (Ensure your repository method ends with "In")
-      Map<String, FinancingDtl> existingDetailsMap = financingDtlRepository
-        .findByBouwheerInvNoIn(invoiceNumbers)
-        .stream()
-        .collect(Collectors.toMap(FinancingDtl::getBouwheerInvNo, dtl -> dtl));
+      Map<UUID, FinancingDtl> existingDetailsMap = invoiceCodes.isEmpty()
+        ? Collections.emptyMap()
+        : financingDtlRepository
+          .findByInvoice_InvoiceCodeIn(invoiceCodes)
+          .stream()
+          .collect(Collectors.toMap(
+            dtl -> dtl.getInvoice().getInvoiceCode(),
+            dtl -> dtl,
+            (existing, replacement) -> existing
+          ));
 
       List<FinancingDtl> detailsToSave = new ArrayList<>();
+      Set<UUID> processedInvoiceCodes = new HashSet<>();
       LocalDateTime now = DateTimeUtils.now();
       String creatorName = customer.getCustName();
 
@@ -141,8 +115,14 @@ public class FinancingDtlService {
         String invNo = postedInvoice.getBouwheerInvoiceNo();
         if (invNo == null) continue;
 
-        InvoiceDto invoiceDto = Optional.ofNullable(createdInvoiceMap.get(invNo))
+        InvoiceDto invoiceDto = Optional.ofNullable(
+            createdInvoiceMap.get(invoiceKey(invNo, postedInvoice.getCustomerInvoiceNo())))
           .orElseThrow(() -> new IllegalStateException("Invoice data missing for number: " + invNo));
+
+        // Skip duplikat dalam satu request: 1 invoice = 1 financing detail
+        if (!processedInvoiceCodes.add(invoiceDto.getInvoiceCode())) {
+          continue;
+        }
 
         // Map DTO to Entity
         Invoice invoice = InvoiceMapper.INSTANCE.entityFromDto(invoiceDto);
@@ -151,16 +131,12 @@ public class FinancingDtlService {
         invoice.setCustomer(customer);
         invoice.setBouwheer(bouwheer);
 
-        // FIX 2: If Invoice entity also has a link to FinancingHdr, set it here!
-        // This prevents Invoice cascades from throwing the "Unable to find" error.
-        // invoice.setFinancingHdr(managedHdr); // <-- Uncomment this line if the property exists in Invoice.java
-
-        FinancingDtl existingDtl = existingDetailsMap.get(invNo);
-
+        FinancingDtl existingDtl = existingDetailsMap.get(invoiceDto.getInvoiceCode());
         if (existingDtl != null) {
           // UPDATE EXPLICITLY (Safe from BeanUtils overwrite side effects)
           existingDtl.setInvoice(invoice);
           existingDtl.setFinancingHdr(managedHdr); // Bind to active session header
+          existingDtl.setBouwheerInvNo(invNo);
           existingDtl.setUsrUpd(creatorName);
           existingDtl.setDtmUpd(now);
           detailsToSave.add(existingDtl);
@@ -183,6 +159,15 @@ public class FinancingDtlService {
       log.error("createBulk, error {}", e.getMessage());
       throw e;
     }
+  }
+
+  /**
+   * Key unik invoice: bouwheerInvNo + custInvNo (null-safe).
+   * Digunakan agar dua invoice berbeda yang kebetulan memiliki bouwheerInvNo
+   * sama tetap dipetakan ke InvoiceDto masing-masing.
+   */
+  private static String invoiceKey(String bouwheerInvNo, String custInvNo) {
+    return String.valueOf(bouwheerInvNo) + "|" + String.valueOf(custInvNo);
   }
 
   public void delete(FinancingDtl financingDtl) {
@@ -225,8 +210,6 @@ public class FinancingDtlService {
       validateInvoicePresence(systemInvoices, requestInvoices, request.getFinancingCode());
 
       String updater = financingHdr.getUsrUpd();
-      boolean newlyPaid = false;
-
       for (FinancingDtl financingDtl : financingDtls) {
         String invoiceNo = financingDtl.getInvoice().getCustInvNo();
         FinancingInvoicePaidRequest.InvoicePaid reqInvoice = requestInvoices.get(invoiceNo);
@@ -250,7 +233,6 @@ public class FinancingDtlService {
         }
 
         log.info("Update Invoice status PAID");
-        newlyPaid |= !"PAID".equalsIgnoreCase(financingDtl.getInvoice().getStatus());
         financingDtl.getInvoice().setStatus("PAID");
         financingDtl.getInvoice().setUsrUpd(updater);
         financingDtl.getInvoice().setDtmUpd(LocalDateTime.now());
@@ -258,8 +240,8 @@ public class FinancingDtlService {
         financingDtl.setUsrUpd(updater);
         financingDtl.setDtmUpd(LocalDateTime.now());
         financingDtlRepository.save(financingDtl);
-      }
-      if (newlyPaid) {
+
+       // Send email PAID
         eventPublisher.publishEvent(new InvoicePaidEvent(financingHdr.getFinancingHdrCode()));
       }
   }
@@ -292,9 +274,11 @@ public class FinancingDtlService {
     /** For Dev only
      *
      */
-    if (System.getenv("ENV").equals("dev")) {
+    if ("dev".equalsIgnoreCase(System.getenv("ENV")) || "dev".equalsIgnoreCase(System.getenv("APP_ENV")) || "local".equalsIgnoreCase(System.getenv("ENV")) || "local".equalsIgnoreCase(System.getenv("APP_ENV"))) {
+      log.info("Confins Backdate");
       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-      settlementDate = LocalDate.parse("01-03-2027", formatter).atStartOfDay();
+        settlementDate = LocalDate.parse("13-05-2027", formatter).
+          atStartOfDay();
     }
 
     String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());

@@ -91,7 +91,7 @@ class DistributionSubmissionAssignTest {
   }
 
   @Test
-  void sendsOnlySelectedAoAndBmToAndAsmCc() throws Exception {
+  void sendsOnlySelectedAoAndBmToAndRmCc() throws Exception {
     stubAssignment();
     financing.setFinancingStep("ASSIGNMENT");
     financing.setAssignedAoEmployeeCode("AO1");
@@ -103,7 +103,7 @@ class DistributionSubmissionAssignTest {
     when(positions.getEmailByPosition("", "JKT01", "BM/BOH")).thenReturn(position(
       person("BM1", "BM", "bm@example.com", "JKT01")));
     when(positions.getEmailByPosition("", "JKT01", "RM")).thenReturn(position(
-      person("ASM1", "ASM", "asm@example.com", "JKT01")));
+      person("RM1", "RM", "rm@example.com", "JKT01")));
     when(headers.save(financing)).thenReturn(financing);
 
     service.assignSubmission(request("AO2"));
@@ -113,10 +113,10 @@ class DistributionSubmissionAssignTest {
     assertThat(financing.getAssignedAoEmail()).isEqualTo("ao2@example.com");
     assertThat(financing.getFinancingStep()).isEqualTo("ASSIGNMENT");
     ArgumentCaptor<LoanDisburseEmailPayload> payload = ArgumentCaptor.forClass(LoanDisburseEmailPayload.class);
-    verify(email).sendNotificationBranchAssign(any(), any(), any(), payload.capture());
+    verify(email).sendNotificationBranchAssign(any(), any(), any(), any(), payload.capture());
     assertThat(payload.getValue().getToEmail().split(";"))
       .containsExactlyInAnyOrder("ao2@example.com", "bm@example.com");
-    assertThat(payload.getValue().getCcEmail()).isEqualTo("asm@example.com");
+    assertThat(payload.getValue().getCcEmail()).isEqualTo("rm@example.com");
   }
 
   @Test
@@ -142,6 +142,26 @@ class DistributionSubmissionAssignTest {
       .hasMessageContaining("Email BM/BOH tidak tersedia");
     verify(headers, never()).save(any());
     verifyNoInteractions(email);
+  }
+
+  @Test
+  void assignsWithoutCcWhenRmHasNoEmail() throws Exception {
+    stubAssignment();
+    when(positions.getEmailByPosition("", "JKT01", "AO/AM")).thenReturn(position(
+      person("AO2", "AO Dua", "ao2@example.com", "JKT01")));
+    when(positions.getEmailByPosition("", "JKT01", "BM/BOH")).thenReturn(position(
+      person("BM1", "BM", "bm@example.com", "JKT01")));
+    when(positions.getEmailByPosition("", "JKT01", "RM")).thenReturn(position());
+    when(headers.save(financing)).thenReturn(financing);
+
+    service.assignSubmission(request("AO2"));
+
+    verify(headers).save(financing);
+    ArgumentCaptor<LoanDisburseEmailPayload> payload = ArgumentCaptor.forClass(LoanDisburseEmailPayload.class);
+    verify(email).sendNotificationBranchAssign(any(), any(), any(), any(), payload.capture());
+    assertThat(payload.getValue().getToEmail().split(";"))
+      .containsExactlyInAnyOrder("ao2@example.com", "bm@example.com");
+    assertThat(payload.getValue().getCcEmail()).isEmpty();
   }
 
   private AssignInvoiceToBranchRequest request(String employeeCode) {

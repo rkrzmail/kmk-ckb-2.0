@@ -54,6 +54,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
@@ -91,19 +92,18 @@ public class LoanSubmissionService {
     Customer customer,
     String token
   ) throws Exception {
-    final VendorTokenExtractor vendorTokenExtractor = vendorTokenExtractor(customer, token);
     CsulInquiryInvoiceRemoteDto inquiryInvoiceRemote;
 
     if (customer.getCustCode() == null) {
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
-      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Vendor code , customer not found " + vendorTokenExtractor.getVendorCode());
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", customer.getCustExternalCode());
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Vendor code , customer not found " + customer.getCustExternalCode());
     }
 
     log.info("Customer code {} ", customer.getCustExternalCode());
 
     Optional<Bouwheer> bouwheerOptional = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null);
     if (bouwheerOptional.isEmpty()) {
-      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", vendorTokenExtractor.getVendorCode());
+      log.info(ErrorConstant.ERROR_MESSAGE_80 + "{}", customer.getCustExternalCode());
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Bouwheer code not found " + customer.getBouwheer());
     }
 
@@ -112,14 +112,14 @@ public class LoanSubmissionService {
     List<CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto> rows = new ArrayList<>();
     for (Invoice inv : dbInvoices) {
       rows.add(CsulInquiryInvoiceRemoteDto.InvoiceRemoteDto.builder()
-        .vendorNo(vendorTokenExtractor.getVendorCode())
+        .vendorNo(customer.getCustExternalCode())
         .reference(inv.getCustInvNo())
         .accountingDocument(inv.getBouwheerInvNo())
         .poNumber(inv.getPoNumber())
         .amount(inv.getInvoiceAmt() != null ? String.valueOf(inv.getInvoiceAmt()) : "0")
         .currency("IDR")
         .netDueDate(inv.getInvoiceDueDate() != null
-          ? sdf.format(Date.from(inv.getInvoiceDueDate().atZone(java.time.ZoneId.systemDefault()).toInstant()))
+          ? sdf.format(Date.from(inv.getInvoiceDueDate().atZone(ZoneId.systemDefault()).toInstant()))
           : "")
         .postingDate(inv.getPostingDate() != null ? sdf.format(inv.getPostingDate()) : "")
         .description(inv.getInvoiceDescription())
@@ -382,7 +382,9 @@ public class LoanSubmissionService {
       Cwr validateCwr = null;
       if (customer != null) {
         validateCwr = isCustomerExistingByCwr(customer);
-        isCustomerExisting = customer.getExistingCust().equals(AppConstants.EXISTING_CUSTOMER);
+        isCustomerExisting = Optional.ofNullable(customer.getExistingCust())
+          .map(status -> status.equals(AppConstants.EXISTING_CUSTOMER))
+          .orElse(false);
       }
 
       BigDecimal
@@ -392,6 +394,7 @@ public class LoanSubmissionService {
         surveyFeeAmount,
         legalFeeAmount;
 
+      int top = 0;
       int tenor = 90; // (duedate - skr) + gp bouwherr
       log.info("Term tenor : {} ",tenor);
       String postingDate = (calculateSimulationRequest.getPostingDate() == null || calculateSimulationRequest.getPostingDate().isEmpty())
@@ -400,7 +403,7 @@ public class LoanSubmissionService {
 
       if (calculateSimulationRequest.getBouwheerCode() != null && calculateSimulationRequest.getInvoiceDueDate() != null) {
         // Use modern java.time (LocalDate) instead of java.util.Date
-        int top = DateTimeUtils.dateDiffInDay(DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(postingDate), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
+        top = DateTimeUtils.dateDiffInDay(DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(postingDate), DateTimeUtils.SDF_STANDARD_RESPONSE_DATE.parse(calculateSimulationRequest.getInvoiceDueDate()));
         log.info("Posting Date : {} ",calculateSimulationRequest.getPostingDate());
         log.info("Invoice duedate : {} ",calculateSimulationRequest.getInvoiceDueDate());
         log.info("Top : {} ",top);
@@ -474,14 +477,14 @@ public class LoanSubmissionService {
         provisionFeeAmount = new BigDecimal(0);
         surveyFeeAmount = new BigDecimal(0);
         legalFeeAmount = new BigDecimal(0);
-        adminFeeAmount = new BigDecimal(0);
+        adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
         othersFeeAmount = new BigDecimal(0);
         jumlahBiaya = adminFee + product.getOthersFee();
 
         log.info("Jumlah Biaya existing customer : {} ",jumlahBiaya);
       }
 
-      double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
+      double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya - interestAmount;
       final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
       final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
       
@@ -504,6 +507,9 @@ public class LoanSubmissionService {
         .postingDate(postingDate)
         .invoiceDueDate(calculateSimulationRequest.getInvoiceDueDate())
         .product(findProduct.get())
+        .retention(calculateSimulationRequest.getDisbursePercentage())
+        .tenor((long) tenor)
+        .top((long) top)
         .build();
     } catch (Exception e) {
       log.error("calculateDisburse, error {}", e.getMessage());
@@ -544,8 +550,6 @@ public class LoanSubmissionService {
           .retention(fin.getRetention())
           .totalInvoiceAmt(fin.getTotalInvoiceAmt())
           .interestAmt(fin.getInterestAmt())
-
-
           .build();
 
         if (histCode != null && histCode.length() >= 32) {
@@ -650,7 +654,13 @@ public class LoanSubmissionService {
     double provisionRateFee = finHdr.getProvisionFeeAmt();
     log.info("Provision Rate : {} ",provisionRateFee);
 
-    boolean isCustomerExisting = finHdr.getSurveyFeeAmt().intValue() != 0;
+    boolean isCustomerExisting = false;
+    if (finHdr.getCustomer() != null) {
+      isCustomerExistingByCwr(finHdr.getCustomer());
+      isCustomerExisting = Optional.ofNullable(finHdr.getCustomer().getExistingCust())
+        .map(status -> status.equals(AppConstants.EXISTING_CUSTOMER))
+        .orElse(false);
+    }
     if (!isCustomerExisting) {
       log.info("Customer new customer {} ", isCustomerExisting);
       jumlahBiaya = provisionRateFee
@@ -676,14 +686,14 @@ public class LoanSubmissionService {
       provisionFeeAmount = new BigDecimal(0);
       surveyFeeAmount = new BigDecimal(0);
       legalFeeAmount = new BigDecimal(0);
-      adminFeeAmount = new BigDecimal(0);
+      adminFeeAmount = BigDecimal.valueOf(adminFee).setScale(0, RoundingMode.HALF_UP);
       othersFeeAmount = new BigDecimal(0);
       jumlahBiaya = adminFee + product.getOthersFee();
 
       log.info("Jumlah Biaya existing customer : {} ",jumlahBiaya);
     }
 
-    double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya;
+    double nilaiYangdiCarikan = nilaiPembiayaan - jumlahBiaya -interestAmount;
     final BigDecimal serviceFee = BigDecimal.valueOf(jumlahBiaya).setScale(0, RoundingMode.HALF_UP);
     final BigDecimal estimated = BigDecimal.valueOf(nilaiYangdiCarikan).setScale(0, RoundingMode.HALF_UP);
 
@@ -843,10 +853,120 @@ public class LoanSubmissionService {
   }
 
   @Transactional
+  /**
+   * Menentukan financing header untuk simulasi.
+   *
+   * BUG FIX: sebelumnya header selalu dibuat baru karena pengecekan existing
+   * dibatasi pada "header terakhir milik customer". Sekarang pengecekan
+   * dilakukan berbasis invoice (customer + bouwheerInvNo + custInvNo) lalu
+   * financing detail dicari GLOBAL by invoice code:
+   * - detail sudah ada  -> pakai header milik detail tersebut & UPDATE
+   * - belum ada         -> buat header baru
+   */
+  FinancingHdr resolveFinancingHdr(
+    Customer customer,
+    Bouwheer bouwheer,
+    CreateSimulationRequest request,
+    SimulationDisburseResult simulationDisburseResult,
+    double totalInvoiceAmount
+  ) {
+    List<UUID> existingInvoiceCodes = new ArrayList<>();
+    for (PostedInvoicePayload posted : request.getInvoices()) {
+      if (posted.getBouwheerInvoiceNo() == null) {
+        continue;
+      }
+      // Kunci unik invoice: customer + bouwheer + bouwheerInvNo + custInvNo
+      invoiceRepository.findFirstByCustomerAndBouwheerAndBouwheerInvNoAndCustInvNo(
+          customer,
+          bouwheer,
+          posted.getBouwheerInvoiceNo(),
+          posted.getCustomerInvoiceNo()
+        )
+        .map(Invoice::getInvoiceCode)
+        .ifPresent(existingInvoiceCodes::add);
+    }
+
+    List<FinancingDtl> existingDetails = existingInvoiceCodes.isEmpty()
+      ? List.of()
+      : financingDtlRepository.findByInvoice_InvoiceCodeIn(existingInvoiceCodes);
+
+    if (existingDetails.isEmpty()) {
+      // Belum ada invoice/detail yang tersimpan -> header baru
+      return financingHdrService.create(customer, bouwheer, request, simulationDisburseResult);
+    }
+
+    // Validasi: invoice yang sudah masuk proses financing (status != null / "")
+    // tidak boleh diajukan ulang -> tampilkan nomor invoice agar user tahu.
+    List<String> invoiceInProcess = existingDetails.stream()
+      .filter(dtl -> isFinancingInProcess(dtl.getFinancingHdr()))
+      .map(FinancingDtl::getBouwheerInvNo)
+      .filter(Objects::nonNull)
+      .distinct()
+      .toList();
+
+    if (!invoiceInProcess.isEmpty()) {
+      String invoiceNumbersInProcess = String.join(", ", invoiceInProcess);
+      log.info("Invoice sedang diproses, tidak dapat diajukan ulang: {}", invoiceNumbersInProcess);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80,
+        "No invoice " + invoiceNumbersInProcess + " sedang di proses");
+    }
+
+    // Invoice sudah punya detail -> gunakan header milik detail tersebut (bukan header terbaru)
+    FinancingHdr header = existingDetails.getFirst().getFinancingHdr();
+    header.setTenor(simulationDisburseResult.getTenor());
+    header.setTermOfPayment(simulationDisburseResult.getTop());
+    header.setRetention(100 - simulationDisburseResult.getRetention());
+    header.setTotalInvoiceAmt(totalInvoiceAmount);
+    header.setFinancingAmt(simulationDisburseResult.getFinancingAmount().doubleValue());
+    header.setDisburseAmt(simulationDisburseResult.getEstimatedDisburseAmount().doubleValue());
+    header.setInterestAmt(simulationDisburseResult.getInterestFeeAmount().doubleValue());
+    header.setFinancingDueDate(Utils.toInstant(simulationDisburseResult.getMaxInvoiceDate()));
+    header.setProvisionFeeAmt(simulationDisburseResult.getProvisionFeeAmount().doubleValue());
+    header.setProvisionFeePercentage(simulationDisburseResult.getProvisionRate());
+    header.setAdminFeePercentage(simulationDisburseResult.getAdminRate());
+    header.setEffectiveRate(simulationDisburseResult.getEffectiveRate());
+    header.setSurveyFeeAmt(simulationDisburseResult.getSurveyFeeAmount().doubleValue());
+    header.setLegalFeeAmt(simulationDisburseResult.getLegalFeeAmount().doubleValue());
+    header.setOthersFeeAmt(simulationDisburseResult.getOthersFeeAmount().doubleValue());
+    header.setAdminFeeAmt(simulationDisburseResult.getAdminFeeAmount().doubleValue());
+    header.setSurveyFeeAmtNett(simulationDisburseResult.getSurveyFeeAmount().doubleValue());
+    header.setLegalFeeAmtNett(simulationDisburseResult.getLegalFeeAmount().doubleValue());
+    header.setTotalInvoiceSubmittedAmt(totalInvoiceAmount);
+    header.setInvoiceQty((long) request.getInvoices().size());
+    header.setUsrUpd(customer.getCustName());
+    header.setDtmUpd(DateTimeUtils.now());
+
+    return financingHdrRepository.save(header);
+  }
+
+  /**
+   * Financing dianggap "sedang diproses" jika financing_status terisi
+   * (bukan null dan bukan string kosong). Header baru hasil simulasi
+   * memiliki financing_status = "" sehingga masih boleh diedit ulang.
+   */
+  private static boolean isFinancingInProcess(FinancingHdr header) {
+    if (header == null) {
+      return false;
+    }
+    String status = header.getFinancingStatus();
+    return status != null && !status.isBlank();
+  }
+
   public CreatedSimulationDto createSimulation(
     Customer customer,
     CreateSimulationRequest request
   ) throws SignatureException, ParseException, JsonProcessingException {
+
+    if (customer==null){
+      Optional<Customer>customerOptional = customerRepository.findFirstByCustExternalCode(request.getVendorCode());
+      if (customerOptional.isEmpty()){
+        log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", request.getVendorCode());
+        throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, "Mohon maaf anda tidak dapat melanjutkan pengajuan\n" +
+          "Saat ini vendor ID belum terverifikasi, silakan tambahkan invoice untuk melanjutkan pengajuan");
+      }
+
+      customer = customerOptional.get();
+    }
 
     final Bouwheer bouwheer = bouwheerRepository.findByBouwheerCode(customer.getBouwheer() != null ? UUID.fromString(customer.getBouwheer()) : null)
       .orElseThrow(() -> new IllegalStateException("Bouwheer not found or not valid"));
@@ -903,40 +1023,31 @@ public class LoanSubmissionService {
       .adminRate(calculateDisburse.getAdminRate())
       .effectiveRate(calculateDisburse.getEffectiveRate())
       .provisionRate(calculateDisburse.getProvisionRate())
+      .top(calculateDisburse.getTop())
+      .tenor(calculateDisburse.getTenor())
+      .retention(calculateDisburse.getRetention())
       .build();
 
     /**
-     * Insert Financing Header
+     * Insert Financing finalFinancingHdr
+     *
+     * BUG FIX: header TIDAK boleh selalu dibuat baru. Sebelumnya lookup
+     * existing detail dibatasi pada "header terakhir milik customer", sehingga
+     * invoice yang sudah pernah disimpan pada header lain tidak ditemukan dan
+     * financing_hdr baru selalu dibuat.
+     *
+     * Sekarang: cari invoice existing (customer + bouwheerInvNo + custInvNo),
+     * lalu cari financing detail GLOBAL berdasarkan invoice tersebut
+     * (relasi Invoice -> FinancingDtl adalah @OneToOne). Jika detail sudah ada,
+     * pakai header milik detail itu dan lakukan UPDATE; hanya jika benar-benar
+     * belum ada yang membuat header baru.
      */
-//    final FinancingHdr createdFinancingHdr = financingHdrService.create(
-//      customer,
-//      bouwheer,
-//      calculateDisburse.getProduct(),
-//      request,
-//      simulationDisburseResult
-//    );
-
-    List<String> invoiceNumbers = request.getInvoices().stream()
-      .map(PostedInvoicePayload::getBouwheerInvoiceNo)
-      .filter(Objects::nonNull)
-      .toList();
-
-    List<FinancingDtl> existingDetails = financingDtlRepository.findByBouwheerInvNoIn(invoiceNumbers);
-    FinancingHdr finalFinancingHdr;
-
-    if (!existingDetails.isEmpty()) {
-      finalFinancingHdr = existingDetails.getFirst().getFinancingHdr();
-    } else {
-      finalFinancingHdr = financingHdrService.create(
-        customer,
-        bouwheer,
-        request,
-        simulationDisburseResult
-      );
-    }
+    FinancingHdr finalFinancingHdr = resolveFinancingHdr(
+      customer, bouwheer, request, simulationDisburseResult, totalInvoiceAmount
+    );
 
     /**
-     * Insert Invoice Serive
+     * Insert Invoice Service
      */
     final List<InvoiceDto> createdInvoices = invoiceService.createBulk(customer, bouwheer, CreateSubmissionRequest.builder()
       .vendorCode(request.getVendorCode())
@@ -1046,16 +1157,17 @@ public class LoanSubmissionService {
       if (financing.getMstBranch() != null) {
         financingHdrs.add(financing);
       }
-      financingHdrs.addAll(financingHdrRepository.findAllByCustomerOrderByDtmCrtDesc(customer));
-      for (FinancingHdr financingHdr : financingHdrs) {
-        MstBranch hdrBranch = financingHdr.getMstBranch();
 
-        if (hdrBranch != null) {
-          //update jadi Assign
-          log.info("Repeat Order loan submitted {} , Branch {} ", customer.getCustEmail(), hdrBranch.getBranchCode());
+      Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findLatestValidFinancingHdr(customer);
+      if(financingHdrOptional.isPresent()) {
+       var financingHdr = financingHdrOptional.get();
+          log.info("Repeat Order loan submitted {} , Branch {} ", customer.getCustEmail(), financingHdr.getMstBranch().getBranchCode());
           financing.setFinancingStatus("INPROCESS");
           financing.setFinancingStep("ASSIGNMENT");
-          financing.setMstBranch(hdrBranch);
+          financing.setMstBranch(financingHdr.getMstBranch());
+          financing.setAssignedAoEmail(financingHdr.getAssignedAoEmail());
+          financing.setAssignedAoName(financingHdr.getAssignedAoName());
+          financing.setAssignedAoEmployeeCode(financingHdr.getAssignedAoEmployeeCode());
           financing.setDtmUpd(DateTimeUtils.now());
 
           final List<InvoiceEmailPayload> invoices = financing.getFinancingDtls()
@@ -1079,12 +1191,20 @@ public class LoanSubmissionService {
               + financing.getSurveyFeeAmtNett();
 
           //getAPI AO,BH
-          MailPositionDto to = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "BM/BOH");
-          MailPositionDto ccRM = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "RM");
-          MailPositionDto toAO = configRemoteService.getEmailByPosition("", hdrBranch.getBranchCode(), "AO/AM");
+          MailPositionDto to = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "BM/BOH");
+          MailPositionDto ccRM = configRemoteService.getEmailByPosition("", financingHdr.getMstBranch().getBranchCode(), "RM");
+          MailPositionDto toAO = MailPositionDto.builder()
+            .header(null)
+            .data(List.of(MailDataDto.builder()
+                .branchCode(financingHdr.getMstBranch().getBranchCode())
+                .employeeName(financingHdr.getAssignedAoEmail())
+                .email(financingHdr.getAssignedAoEmail())
+                .employeeCode(financingHdr.getAssignedAoEmployeeCode())
+              .build()))
+            .build();
 
-          java.util.Set<String> toEmailSet = new java.util.LinkedHashSet<>();
-          java.util.Set<String> ccEmailSet = new java.util.LinkedHashSet<>();
+          Set<String> toEmailSet = new LinkedHashSet<>();
+          Set<String> ccEmailSet = new LinkedHashSet<>();
 
           if (to != null && to.getData() != null) {
             to.getData().stream()
@@ -1099,7 +1219,6 @@ public class LoanSubmissionService {
               .filter(email -> email != null && !email.trim().isEmpty())
               .forEach(toEmailSet::add);
           }
-
 
           if (ccRM != null && ccRM.getData() != null) {
             ccRM.getData().stream()
@@ -1129,6 +1248,7 @@ public class LoanSubmissionService {
           isAutoASSIGNMENT = true;
           log.info("Send email to Branch notification loan submitted to: {}  cc: {} ", toEmail, ccEmail);
           emailService.sendNotificationBranchAssign(
+            financing.getCustomer().getCustCode(),
             toEmail,
             financing.getBouwheer().getBouwheerName(),
             financing.getMstBranch().getBranchName(),
@@ -1152,8 +1272,6 @@ public class LoanSubmissionService {
               .invoices(invoices)
               .build()
           );
-          break;
-        }
       }
 
 
@@ -1190,25 +1308,6 @@ public class LoanSubmissionService {
             + financing.getProvisionFeeAmt()
             + financing.getSurveyFeeAmtNett();
 
-        //Skip get email from API
-//        String branchCode = mstBranchRepository.findByBranchName("HEAD OFFICE")
-//          .map(MstBranch::getBranchCode)
-//          .orElseThrow(() -> new RuntimeException("BranchCode tidak ditemukan"));
-//
-//        MailPositionDto ccBM = configRemoteService.getEmailByPosition("", branchCode, "CMS");
-//        StringBuilder ccEmailBuilder = new StringBuilder();
-//
-//        if (ccBM != null && ccBM.getData() != null && !ccBM.getData().isEmpty()) {
-//          for (int i = 0; i < ccBM.getData().size(); i++) {
-//            ccEmailBuilder.append(!ccEmailBuilder.isEmpty() ? ";" : "");
-//            ccEmailBuilder.append(ccBM.getData().get(i).getEmail());
-//          }
-//        }
-//
-//        String mjrEmail = ccEmailBuilder.toString();
-//        String toEmail = ccEmailBuilder.toString();
-//        log.info("email CMS: {}", ccEmailBuilder);
-
         String phone = financing.getCustomer().getCustMobilePhone();
         if (financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")) {
           if (financing.getCustomer().getCompany() != null) {
@@ -1217,7 +1316,7 @@ public class LoanSubmissionService {
         }
 
         List<String> majorAccountEmails = mstAppRoleFormUserRepository.findActiveMajorAccountEmails();
-        java.util.Set<String> toMjrEmailSet = new java.util.LinkedHashSet<>();
+        Set<String> toMjrEmailSet = new LinkedHashSet<>();
 
         if (majorAccountEmails != null && !majorAccountEmails.isEmpty()) {
           majorAccountEmails.stream()
@@ -1255,7 +1354,7 @@ public class LoanSubmissionService {
         );
       }
 
-      log.info("Save financing header {} ", financing.getFinancingHdrCode());
+      log.info("Save financing finalFinancingHdr {} ", financing.getFinancingHdrCode());
       financingHdrRepository.save(financing);
 
       auditTrailService.record(

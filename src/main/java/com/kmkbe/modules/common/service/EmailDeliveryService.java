@@ -44,6 +44,11 @@ public class EmailDeliveryService {
     if (delivery.getStatus() != EmailDeliveryLog.Status.FAILED) {
       throw new BusinessException(HttpStatus.CONFLICT, 409, "Hanya email berstatus FAILED yang dapat dikirim ulang.");
     }
+    if (!"M_CUST_ACTIVE".equals(delivery.getTemplateCode())
+        && !"M_CUST_REJECTED".equals(delivery.getTemplateCode())) {
+      throw new BusinessException(HttpStatus.CONFLICT, 409,
+        "Pengiriman ulang hanya tersedia untuk email persetujuan customer.");
+    }
     Customer customer = customerRepository.findByCustCode(delivery.getCustomerCode())
       .orElseThrow(() -> new BusinessException(HttpStatus.NOT_FOUND, 404, "Customer tidak ditemukan."));
     String approvalStatus = "M_CUST_ACTIVE".equals(delivery.getTemplateCode()) ? "APPROVED" : "REJECTED";

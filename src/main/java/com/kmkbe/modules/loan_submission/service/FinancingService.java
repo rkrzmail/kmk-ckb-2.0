@@ -86,9 +86,10 @@ public class FinancingService {
     );
 
     data = response.getData();
-    log.info("Process inquiry agreement to confins response {} ", data);
+    log.info("Process inquiry agreements to confins response {} ", data.size());
 
     for (InquiryAgreementCwrDto inquiryAgreement : data) {
+      log.info("Process inquiry agreement {} to confins response {} ",inquiryAgreement.getAgrmntNo(),inquiryAgreement.getStatus());
       agreement.setStatus(inquiryAgreement.getStatus());
       agreement.setCurrency(inquiryAgreement.getCurrency());
       agreement.setFinancingAmt(inquiryAgreement.getNtfAmt());

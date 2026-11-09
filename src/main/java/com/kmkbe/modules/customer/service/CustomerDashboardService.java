@@ -151,6 +151,10 @@ public class CustomerDashboardService {
           .branchName(branch.getBranchName())
           .build())
         .orElse(null))
+      .aoAm(financingHdr.getAssignedAoEmployeeCode() == null ? null : CustomerPlafondDto.AoAmDto.builder()
+        .employeeCode(financingHdr.getAssignedAoEmployeeCode())
+        .employeeName(financingHdr.getAssignedAoName())
+        .build())
 
       .build());
   }

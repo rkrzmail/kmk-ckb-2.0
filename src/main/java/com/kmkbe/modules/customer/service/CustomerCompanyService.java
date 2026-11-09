@@ -65,7 +65,7 @@ public class CustomerCompanyService {
       company.setPhone(companyReq.getPhone());
       company.setOwnershipStatus(companyReq.getOwnershipStatus());
       company.setStaySince(companyReq.getStaySince());
-      company.setStayLength(CustomerUtils.calculateStayLength(companyReq.getStaySince()));
+      company.setStayLength(company.getStayLength()!=null?CustomerUtils.calculateStayLength(companyReq.getStaySince()):0);
       company.setUsrCrt(customer.getCustName());
       company.setDtmCrt(DateTimeUtils.now());
     }

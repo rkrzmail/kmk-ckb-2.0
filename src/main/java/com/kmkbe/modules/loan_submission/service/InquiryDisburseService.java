@@ -12,6 +12,7 @@ import com.kmkbe.core.domain.request.*;
 import com.kmkbe.core.domain.response.InquiryDisburseDatum;
 import com.kmkbe.core.domain.response.InquiryDisburseResult;
 import com.kmkbe.core.service.BaseRemoteService;
+import com.kmkbe.core.service.ExternalApiService;
 import com.kmkbe.core.utils.CommonFormattingUtils;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.common.service.EmailService;
@@ -28,6 +29,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
+import java.text.DecimalFormat;
+import java.text.DecimalFormatSymbols;
 import java.util.*;
 
 @Service
@@ -41,6 +44,7 @@ public class InquiryDisburseService {
   private final RestTemplate restTemplate;
   private final DisbursementLogRepository disbursementLogRepository;
   private final FinancingRemoteService financingRemoteService;
+  private final ExternalApiService externalApiService;
 
   public InquiryDisburseResult inquiryDisburse(@Nullable InquiryDisburseRequest inquiryDisburseRequest) throws JsonProcessingException {
     try {
@@ -152,10 +156,11 @@ public class InquiryDisburseService {
       if (inquiryDisburseResult.getStatusCode().equalsIgnoreCase("200") && isDisbursP) {
         List<DisbursementLog> l = disbursementLogRepository.findAllByAgreement(agreement);
         if (l.isEmpty()) {
+          DisbursementAccountResponse.DisbInfo debtorAccount =
+            externalApiService.getDebtorDisbursementAccount(aggrNo);
+
           //send B to mst
-          UpdateFinancingStatusRequest updateFinancingStatusRequest = null;
-          try {
-            updateFinancingStatusRequest = UpdateFinancingStatusRequest.builder()
+          UpdateFinancingStatusRequest.builder()
               .vendorCode(agreement.getFinancingHdr().getCustomer().getCustExternalCode())
               .financingCode(agreement.getFinancingHdr().getFinancingHdrCode().toString())
               .status(UpdateFinancingStatusRequest.Status.Disburse)
@@ -164,8 +169,6 @@ public class InquiryDisburseService {
              * For TU
              */
 //         financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
-          } catch (Exception ignored) {
-          }
 
           //send email sendNotification Pencairan
           try {
@@ -203,10 +206,12 @@ public class InquiryDisburseService {
             log.info("Send disbursement email to {}", financingHdr.getCustomer().getCustEmail());
             emailService.sendNotificationPencairan(
               financingHdr.getCustomer().getCustEmail(),
+              financingHdr.getBouwheer().getPicEmail(),
               financingHdr.getBouwheer().getBouwheerName(),
               financingHdr.getMstBranch().getBranchName(),
               PencarianPayload.builder()
                 .financingCode(financingHdr.getFinancingHdrCode().toString())
+                .agreementCode(aggrNo)
                 .applicationDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
                 .companyName(financingHdr.getCustomer().getCustName())
                 .phoneNumber(phone)
@@ -216,12 +221,17 @@ public class InquiryDisburseService {
                 .financingAmt(CommonFormattingUtils.formatAmount(financingHdr.getFinancingAmt()))
                 .totalFeeAmt(CommonFormattingUtils.formatAmount(totalFeeAmt))
                 .invoiceAmt(CommonFormattingUtils.formatAmount(financingHdr.getTotalInvoiceAmt()))
-                .disburseAmt(CommonFormattingUtils.formatAmount(financingHdr.getDisburseAmt()))
+                .disburseAmt(new DecimalFormat("#,##0.##", DecimalFormatSymbols.getInstance(Locale.US))
+                  .format(debtorAccount.getNominal()))
+                .bankName(debtorAccount.getBankName())
+                .accountNo(debtorAccount.getAccNo())
+                .disbursementDate(DateTimeUtils.formatToDate(DateTimeUtils.nowLocal()))
                 .invoices(invoices)
                 .build()
             );
-          } catch (Exception ignored) {
-            ignored.printStackTrace();
+          } catch (Exception e) {
+            log.error("Failed to prepare disbursement email for agreement {}", aggrNo, e);
+            throw e;
           }
         }
       }

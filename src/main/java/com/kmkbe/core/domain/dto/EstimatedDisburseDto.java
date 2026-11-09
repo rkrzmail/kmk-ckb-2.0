@@ -30,4 +30,7 @@ public class EstimatedDisburseDto extends BaseResponse {
     private Product product;
     private String invoiceDueDate;
     private String postingDate;
+    private Long tenor;
+    private Long top;
+    private Double retention;
 }

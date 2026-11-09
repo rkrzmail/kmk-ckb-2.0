@@ -28,21 +28,13 @@ public class LegalFileService {
 
   public LegalFile findByFileId(Long fileId) {
     try {
-      return legalFileRepository.findById(fileId).orElse(null);
+      return legalFileRepository.findByFileIdFirst(fileId).orElse(null);
     } catch (Exception e) {
       log.error("findByFileId, error {}", e.getMessage());
       throw e;
     }
   }
 
-  public List<LegalFile> fetchByMstFileTypeAndCust(Customer customer) {
-    try {
-      return legalFileRepository.findAllByCustCode(customer);
-    } catch (Exception e) {
-      log.error("fetchByCust, error {}", e.getMessage());
-      throw e;
-    }
-  }
 
   public LegalFile fetchByMstFileTypeAndCust(Customer customer, MstFileType mstFileType) {
     return legalFileRepository.findByCustCodeAndFileTypeCodeAndFinancingHdrIsNull(customer, mstFileType).orElse(null);

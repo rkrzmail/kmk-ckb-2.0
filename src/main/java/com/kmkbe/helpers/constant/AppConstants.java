@@ -40,4 +40,8 @@ public class AppConstants {
   public static final String DATE_FORMAT_YYYY_MM_DD = "yyyy-MM-dd";
   public static final String DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
 
+  public static final String bankName ="Bank Mandiri";
+  public static final String accountName="CHANDRA SAKTI UTAMA";
+  public static final String accountNo = "1270098142159";
+
 }

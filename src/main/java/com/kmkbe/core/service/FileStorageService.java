@@ -17,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -75,6 +76,9 @@ public class FileStorageService {
                 throw new Exception("File format or extension is not valid. Detected extension: " + ext + ". Allowed extensions: doc, pdf, jpg, jpeg, png.");
             }
 
+            // Validasi isi file (magic bytes) - extension saja bisa dipalsukan
+            validateFileContent(file, ext);
+
             // Ganti spasi dalam nama file dengan garis bawah
             name = name.replaceAll("\\s", "_");
             log.info("Processed file name: " + name);
@@ -84,7 +88,7 @@ public class FileStorageService {
                 name = name.substring(0, name.lastIndexOf(".")) + "." + ext;
             }
 
-            Path uploadPath = root.resolve(uploadDir);
+            Path uploadPath = resolveSafely(uploadDir);
             if (!uploadPath.toFile().exists()) {
                 Files.createDirectories(uploadPath);
             }
@@ -114,7 +118,7 @@ public class FileStorageService {
             filename = filename.replace("/uploads/", "");
           }
 
-          Path file = root.resolve(filename);
+          Path file = resolveSafely(filename);
             Resource resource = new UrlResource(file.toUri());
 
             if (resource.exists() || resource.isReadable()) {
@@ -133,7 +137,7 @@ public class FileStorageService {
                 filename = filename.replace("/uploads/", "");
             }
 
-            Path file = root.resolve(filename);
+            Path file = resolveSafely(filename);
             boolean res = Files.deleteIfExists(file);
             return res;
         } catch (IOException e) {
@@ -148,10 +152,11 @@ public class FileStorageService {
             String cd
     ) {
         try {
-            Path paths = root.resolve(filePath).normalize()  .toAbsolutePath();
+            Path paths = resolveSafely(filePath);
             Resource resource = new UrlResource(paths.toUri());
             if (!resource.exists() || !resource.isReadable()) {
-                throw new RuntimeException("File not found or not readable: " + paths.toUri());
+                // Pesan sengaja tidak memuat path absolut agar tidak bocor via response
+                throw new RuntimeException("File not found or not readable");
             }
             String contentType = httpServletRequest
                     .getServletContext()
@@ -178,6 +183,28 @@ public class FileStorageService {
     }
 
     /**
+     * Resolve path relatif di dalam storage root dan pastikan hasilnya
+     * tetap berada di bawah root (security issue #11: cegah path traversal).
+     * Absolute path atau path dengan "../" yang meloloskan diri keluar root
+     * ditolak dengan pesan generik (tanpa membocorkan path).
+     */
+    private Path resolveSafely(String relativePath) {
+        if (relativePath == null || relativePath.isBlank()) {
+            throw new RuntimeException("Invalid file path");
+        }
+
+        Path rootAbs = root.toAbsolutePath().normalize();
+        Path resolved = rootAbs.resolve(relativePath).normalize();
+
+        if (!resolved.startsWith(rootAbs)) {
+            log.warn("Rejected file path outside storage root");
+            throw new RuntimeException("Invalid file path");
+        }
+
+        return resolved;
+    }
+
+    /**
      * Utility method to get the file extension from a filename.
      */
     private String getFileExtension(String filename) {
@@ -185,5 +212,60 @@ public class FileStorageService {
             return filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
         }
         return null;
+    }
+
+    /**
+     * Validasi magic bytes dari isi file agar cocok dengan ekstensi yang diterima.
+     * DOC lama (OLE2) dan PDF punya signature pasti; JPG/PNG juga.
+     * DOCX (zip) tidak di-whitelist sehingga tidak perlu dicek di sini.
+     */
+    private void validateFileContent(MultipartFile file, String ext) throws Exception {
+        byte[] header = new byte[8];
+        try (InputStream is = file.getInputStream()) {
+            int read = is.read(header);
+            if (read < 4) {
+                throw new Exception("File content is too small or empty to be validated. Uploaded File: " + file.getOriginalFilename());
+            }
+        }
+
+        boolean valid;
+        switch (ext) {
+            case "pdf":
+                valid = startsWith(header, "%PDF");
+                break;
+            case "jpg":
+            case "jpeg":
+                valid = startsWith(header, new byte[]{(byte) 0xFF, (byte) 0xD8, (byte) 0xFF});
+                break;
+            case "png":
+                valid = startsWith(header, new byte[]{(byte) 0x89, 'P', 'N', 'G'});
+                break;
+            case "doc":
+                // DOC lama (OLE2 Compound File) dimulai dengan signature D0 CF 11 E0
+                valid = startsWith(header, new byte[]{(byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0});
+                break;
+            default:
+                valid = false;
+        }
+
+        if (!valid) {
+            throw new Exception("File content does not match the declared extension: " + ext + ". Uploaded File: " + file.getOriginalFilename());
+        }
+    }
+
+    private boolean startsWith(byte[] data, String prefix) {
+        return startsWith(data, prefix.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    private boolean startsWith(byte[] data, byte[] prefix) {
+        if (data.length < prefix.length) {
+            return false;
+        }
+        for (int i = 0; i < prefix.length; i++) {
+            if (data[i] != prefix[i]) {
+                return false;
+            }
+        }
+        return true;
     }
 }

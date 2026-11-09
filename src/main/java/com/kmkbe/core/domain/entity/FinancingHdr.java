@@ -90,7 +90,7 @@ public class FinancingHdr implements Serializable {
   private Long gracePeriod;
 
   @NotNull
-  @Column(name = "retention", nullable = false) // , precision = 5, scale = 2
+  @Column(name = "retention", nullable = false)
   private Double retention;
 
   @NotNull

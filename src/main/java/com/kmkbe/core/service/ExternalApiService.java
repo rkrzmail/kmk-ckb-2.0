@@ -98,6 +98,27 @@ public class ExternalApiService {
         }
     }
 
+    public DisbursementAccountResponse.DisbInfo getDebtorDisbursementAccount(String agreementCode) {
+        DisbursementAccountResponse response = confinsR3FeignClient.getDisbursementAccounts(
+            new DisbursementAccountRequest(agreementCode, LocalDate.now().toString()));
+        if (response == null || response.getHeader() == null
+            || !"200".equals(response.getHeader().getStatusCode())
+            || !"200".equals(response.getStatusCode()) || response.getListDisbInfo() == null) {
+            throw new IllegalStateException("Respons rekening pencairan Confins tidak valid untuk agreement " + agreementCode);
+        }
+        var debtorAccounts = response.getListDisbInfo().stream()
+            .filter(info -> "DEBTOR".equalsIgnoreCase(info.getDisbTo()))
+            .filter(info -> info.getBankName() != null && !info.getBankName().isBlank()
+                && info.getAccNo() != null && !info.getAccNo().isBlank()
+                && info.getNominal() != null)
+            .toList();
+        if (debtorAccounts.size() != 1) {
+            throw new IllegalStateException("Diperlukan tepat satu rekening pencairan DEBTOR untuk agreement "
+                + agreementCode + "; ditemukan " + debtorAccounts.size());
+        }
+        return debtorAccounts.getFirst();
+    }
+
     public CwrBwhrResponse getCwrBwhr(String CwrCode) {
         try {
             CwrBwhrRequest request = new CwrBwhrRequest();

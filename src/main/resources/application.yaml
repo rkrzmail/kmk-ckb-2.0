@@ -2,7 +2,9 @@ management:
   endpoints:
     web:
       exposure:
-        include: info, health, logfile, loggers, env
+        # Security issue #8 (SECURITY.md): env & loggers tidak boleh terekspos;
+        # default aman, env non-prod dapat menaikkan via MANAGEMENT_ENDPOINTS_INCLUDE
+        include: ${MANAGEMENT_ENDPOINTS_INCLUDE:info,health}
       base-path: /api/monitoring
   endpoint:
     health:
@@ -34,7 +36,7 @@ spring:
           default:
             connectTimeout: 10000
             readTimeout: 60000
-            loggerLevel: FULL
+            loggerLevel: ${FEIGN_LOGGER_LEVEL:BASIC}
             errorDecoder: com.kmkbe.feign.config.FeignErrorDecoder
             decodeSlash: false
       httpclient:
@@ -44,11 +46,13 @@ spring:
 
 security:
   jwt:
-    secret-key: 84b6e04f3268b78e7fee1883733e47aff50b88d1184b3512f2b5bffadb99d7eb
+    # Security issue #9: env-overridable. Prod/brahma WAJIB override via env
+    # (tanpa fallback - lihat application-prod.yaml & .env.example)
+    secret-key: ${SECURITY_JWT_SECRET_KEY:84b6e04f3268b78e7fee1883733e47aff50b88d1184b3512f2b5bffadb99d7eb}
     expiration-time: '3000000'
-  secret-key: DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH
+  secret-key: ${SECURITY_SECRET_KEY:DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH}
   api:
-    key: $2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC
+    key: ${SECURITY_API_KEY:$2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC}
 jasper:
   report:
     dir: classpath:/reports/

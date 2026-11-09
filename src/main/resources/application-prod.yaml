@@ -5,7 +5,9 @@ management:
   endpoints:
     web:
       exposure:
-        include: info, health, logfile, loggers, env
+        # Security issue #8: prod hanya info & health (logfile juga memicu
+        # unduhan log via /api/monitoring/logfile yang di-whitelist)
+        include: info, health
       base-path: /api/monitoring
   endpoint:
     health:
@@ -40,7 +42,7 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: 'true'
+    show-sql: 'false'
   servlet:
     multipart:
       enabled: 'true'
@@ -57,9 +59,10 @@ spring:
         username: vandikalvandi@gmail.com
         instance:
           name: Kmk-Digital-2.0
-        password: '12345'
+        password: ${BOOT_ADMIN_PASSWORD:}
   datasource:
-    password: Csultmt10
+    # Security issue #2: kredensial via env var - WAJIB diset saat deploy prod
+    password: ${SPRING_DATASOURCE_PASSWORD:}
     url: jdbc:postgresql://aurora-kmkprod.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified
     username: postgres
   jackson:
@@ -73,23 +76,25 @@ logging:
       hibernate:
         orm:
           jdbc:
-            bind: trace
-        stat: debug
-        type: trace
+            bind: info
+        stat: info
+        type: info
   file:
     name: ./logs/log-file.log
 springdoc:
   api-docs:
     path: /api/v1/api-docs
+    enabled: 'false'
   paths-to-match: /api/v1/**
   swagger-ui:
     path: /api/v1/swagger-ui.html
+    enabled: 'false'
 rsa:
   public-key: classpath:certs/public-key.pem
   private-key: classpath:certs/pkcs8.pem
 testing:
   mail:
-    password: tfru zmuk gtfb mrsz
+    password: ${TESTING_MAIL_PASSWORD:}
     port: '587'
     host: smtp.gmail.com
     username: khesa.oto@gmail.com
@@ -101,7 +106,7 @@ csul:
       v1: https://confinsr3.csulfinance.com/api/fou/v1
     payment:
       v1: https://confinsr3.csulfinance.com/api/payment/v1
-    adinskey: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
+    adinskey: ${CONFINS_ADINS_KEY:}
     mou:
       v1: https://confinsr3.csulfinance.com/api/mou/v1
     ar:
@@ -112,7 +117,7 @@ csul:
     v1:
       auth:
         username: KMKDigital
-        password: CSUljkt#2024
+        password: ${SISCA_PASSWORD:}
       white-list: http://10.30.15.160:8185/SISCAConnect/api/v1
       internal: http://10.30.15.160:8185/SISCAConnect/api/v1
     mail-position:
@@ -124,11 +129,11 @@ csul:
     v1: https://16.78.161.115/v1
 security:
   api:
-    key: $2b$10$YoLl0SFxCMlIWXfQ9RhixeU8Vxvj9Fi7RmF5j7zA9dhYwdplSGyWC
+    key: ${SECURITY_API_KEY:}
   jwt:
-    secret-key: 84b6e04f3268b78e7fee1883733e47aff50b88d1184b3512f2b5bffadb99d7eb
+    secret-key: ${SECURITY_JWT_SECRET_KEY:}
     expiration-time: '3000000'
-  secret-key: DFA42k6CEhLSiX6o1zIPWUlzQGezQfHH
+  secret-key: ${SECURITY_SECRET_KEY:}
 jwt:
   refreshExpirationDateInMs: '9000000'
 server:
@@ -153,7 +158,7 @@ feign:
 
   confins:
     url: https://uat-confinsr3.csulfinance.com
-    adins-key: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
+    adins-key: ${CONFINS_ADINS_KEY:}
     secret:
     api-key:
     fou: "${feign.confins.url}/api/fou"
