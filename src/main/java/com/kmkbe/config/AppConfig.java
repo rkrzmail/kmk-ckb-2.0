@@ -1,6 +1,5 @@
 package com.kmkbe.config;
 
-import com.kmkbe.core.factory.CustomClientHttpRequestFactory;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.user.repository.MstUserRepository;
 import jakarta.annotation.PostConstruct;
@@ -15,7 +14,6 @@ import org.springframework.security.config.annotation.authentication.configurati
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.Clock;
 import java.util.TimeZone;
@@ -43,11 +41,8 @@ public class AppConfig {
         return restTemplate;
     }*/
 
-    @Bean(name = "restTemplateByPassSSL")
-    @Lazy
-    public RestTemplate restTemplateByPassSSL() {
-        return new RestTemplate(new CustomClientHttpRequestFactory());
-    }
+    // Security issue #4 (SECURITY.md): bean restTemplateByPassSSL dihapus —
+    // tidak pernah di-inject komponen produksi dan memakai trust-all SSL.
 
     @Bean
     UserDetailsService userDetailsService() {

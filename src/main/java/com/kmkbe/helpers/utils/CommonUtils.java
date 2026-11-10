@@ -6,8 +6,11 @@ import javax.crypto.SecretKey;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.Base64;
 import java.util.UUID;
+
+import static com.kmkbe.helpers.constant.AppConstants.DATE_FORMAT;
 
 /**
  * @author hyvercode
@@ -44,5 +47,13 @@ public class CommonUtils {
 
   public static String generateDate(String format) {
     return new SimpleDateFormat(format).format(new java.util.Date());
+  }
+
+  public static String nullValue(String value) {
+    return value == null ? "" : value;
+  }
+
+  public static String toDate(LocalDateTime value) {
+    return value == null ? "" : DATE_FORMAT.format(value);
   }
 }

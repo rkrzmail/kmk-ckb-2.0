@@ -218,4 +218,8 @@ public class HttpUtils {
   public static String getHeaderApiKey(HttpServletRequest request) {
     return request.getHeader("API-Key");
   }
+
+  public static String getHeaderRefreshToken(HttpServletRequest request) {
+    return request.getHeader("rtoken");
+  }
 }

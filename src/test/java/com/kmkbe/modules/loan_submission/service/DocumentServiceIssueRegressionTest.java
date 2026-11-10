@@ -47,6 +47,7 @@ class DocumentServiceIssueRegressionTest {
   @Mock private FinancingHdrRepository financingHdrRepository;
   @Mock private DokumentHistoryUploadRepository dokumentHistoryUploadRepository;
   @Mock private AuditTrailService auditTrailService;
+  @Mock private com.kmkbe.core.security.CurrentUserService currentUserService;
 
   private DocumentService service;
 
@@ -62,7 +63,8 @@ class DocumentServiceIssueRegressionTest {
       customerRepository,
       financingHdrRepository,
       dokumentHistoryUploadRepository,
-      auditTrailService
+      auditTrailService,
+      currentUserService
     );
   }
 

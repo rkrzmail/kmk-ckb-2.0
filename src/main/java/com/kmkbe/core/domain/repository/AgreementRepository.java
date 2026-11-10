@@ -5,7 +5,6 @@ import com.kmkbe.core.domain.entity.Cwr;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import io.lettuce.core.dynamic.annotation.Param;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Size;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -46,24 +45,7 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     @Param("cwrCode") String cwrCode, @Param("financingHdrCode") String financingHdrCode,
     @Param("searchBy") String searchBy, @Param("searchValue") String searchValue, Pageable pageable);
 
-  Optional<Agreement> findTopByAgreementCode(String agreementCode);
-
-  List<Agreement> findAllByStatus(@Size(max = 20) @NotNull(message = "Status cannot be null") String status);
-
   Optional<Agreement> findTopByAgreementCodeOrderByAgreementId(String agreementCode);
-
-//  @Query(
-//    value = """
-//      select
-//          ag.*
-//      from
-//          public.agreement ag
-//              join public.agreement_file agf on ag.agreement_code = agf.agreement_code
-//
-//      """,
-//    nativeQuery = true
-//  )
-//  List<Agreement> viewApprovalStatusNoPending();
 
   @Query(
     value = """
@@ -77,21 +59,6 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
     nativeQuery = true
   )
   List<Agreement> viewApprovalStatusNoPending();
-
-  @Query(
-    value = """
-      select
-          ag.*
-      from
-          public.agreement ag
-              join public.agreement_file agf on ag.agreement_code = agf.agreement_code
-      where
-           ag.approval_flag is null
-        OR ag.approval_flag in ('', 'false');
-      """,
-    nativeQuery = true
-  )
-  List<Agreement> viewApprovalStatusPending();
 
   @Query(
     value = "SELECT cwr.cwr_code, ag.agreement_code, fh.financing_hdr_code, " +

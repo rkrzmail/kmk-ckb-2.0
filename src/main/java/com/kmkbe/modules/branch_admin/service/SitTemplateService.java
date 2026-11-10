@@ -8,6 +8,7 @@ import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.exception.BusinessException;
+import com.kmkbe.helpers.utils.CommonUtils;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
@@ -32,9 +33,6 @@ import java.util.UUID;
 @Slf4j
 public class SitTemplateService {
   private static final String TEMPLATE_PATH = "/Reports/sit.jasper";
-  private static final DateTimeFormatter DATE_FORMAT =
-    DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.forLanguageTag("id-ID"));
-
   private final FinancingHdrRepository financingHdrRepository;
   private final AgreementRepository agreementRepository;
   private final ConfigRemoteService configRemoteService;
@@ -84,22 +82,19 @@ public class SitTemplateService {
   }
 
   private Map<String, Object> parameters(FinancingHdr financing, Agreement agreement) {
-    Bouwheer bouwheer = financing.getBouwheer();
-    Customer customer = financing.getCustomer();
-    Cwr cwr = agreement.getCwr();
     Map<String, Object> params = new HashMap<>();
-    params.put("tanggalCwr", date(cwr == null ? null : cwr.getDtmCrt()));
-    params.put("namaBouwheer", value(bouwheer.getBouwheerName()));
-    params.put("periodeBerlaku", date(financing.getFinancingDueDate()));
-    params.put("namaDebitur", value(customer.getCustName()));
-    params.put("companyDebitur", value(customer.getCustName()));
+    params.put("tanggalCwr", CommonUtils.toDate(agreement.getDtmCrt()));
+    params.put("namaBouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
+    params.put("periodeBerlaku", CommonUtils.toDate(financing.getFinancingDueDate()));
+    params.put("namaDebitur", CommonUtils.nullValue(financing.getCustomer().getCustName()));
+    params.put("companyDebitur", CommonUtils.nullValue(financing.getCustomer().getCustName()));
     params.put("namaRegionalManager", regionalManager(financing));
-    params.put("namaPicFinance", value(bouwheer.getPicName()));
-    params.put("bouwheer", value(bouwheer.getBouwheerName()));
-    params.put("legalAddress", value(bouwheer.getLegalAddress()));
-    params.put("picName", value(bouwheer.getPicName()));
-    params.put("tanggalPerjanjian", date(agreement.getDtmCrt()));
-    params.put("nomorPerjanjian", value(agreement.getAgreementCode()));
+    params.put("namaPicFinance", CommonUtils.nullValue(financing.getBouwheer().getPicName()));
+    params.put("bouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
+    params.put("legalAddress", CommonUtils.nullValue(financing.getBouwheer().getLegalAddress()));
+    params.put("picName", CommonUtils.nullValue(financing.getBouwheer().getPicName()));
+    params.put("tanggalPerjanjian", CommonUtils.toDate(agreement.getDtmCrt()));
+    params.put("nomorPerjanjian", CommonUtils.nullValue(agreement.getCwr().getCwrCode()));
     return params;
   }
 
@@ -119,13 +114,5 @@ public class SitTemplateService {
       log.warn("Nama Regional Manager tidak tersedia untuk cabang {}: {}", branchCode, e.getMessage());
       return "";
     }
-  }
-
-  private static String value(String value) {
-    return value == null ? "" : value;
-  }
-
-  private static String date(LocalDateTime value) {
-    return value == null ? "" : DATE_FORMAT.format(value);
   }
 }
