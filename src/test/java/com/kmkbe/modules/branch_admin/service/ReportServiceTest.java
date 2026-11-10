@@ -418,8 +418,8 @@ class ReportServiceTest {
     service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM");
     verify(jasperReportRenderer, times(3)).renderToPdf(eq("/Reports/main_report.jasper"), paramsCaptor.capture());
     Map paramsWithoutPosition = paramsCaptor.getAllValues().getLast();
-    assertThat(paramsWithoutPosition).containsEntry("Jabatan", "");
-    assertThat(paramsWithoutPosition).containsEntry("JabatanSigner", "");
+    assertThat(paramsWithoutPosition).containsEntry("Jabatan",null);
+    assertThat(paramsWithoutPosition).containsEntry("JabatanSigner",null);
   }
 
   @Test

@@ -18,7 +18,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.Clock;
 import java.util.Optional;
@@ -65,13 +64,6 @@ class AppConfigTest {
     } finally {
       TimeZone.setDefault(previousTimeZone);
     }
-  }
-
-  @Test
-  void restTemplateByPassSSLReturnsRestTemplate() {
-    RestTemplate restTemplate = appConfig.restTemplateByPassSSL();
-
-    assertThat(restTemplate).isNotNull();
   }
 
   @Test

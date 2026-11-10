@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.kmkbe.core.converter.DateDeserializer;
 import com.kmkbe.core.converter.ObjectToUrlEncodedConverter;
 import com.kmkbe.core.converter.TemporalDateTimeSerializer;
-import com.kmkbe.core.factory.CustomClientHttpRequestFactory;
 import com.kmkbe.core.service.BaseRemoteService;
 import com.kmkbe.core.service.LdapUrlService;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,7 +21,7 @@ import java.util.Date;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 abstract class BaseRemoteServicesTest {
     protected RestTemplate restTemplate;
-    protected RestTemplate restTemplateByPassSSL;
+    protected RestTemplate restTemplatePlain;
     protected BaseRemoteService baseRemoteService;
     protected LdapUrlService ldapUrlService;
     protected ObjectMapper objectMapper;
@@ -37,7 +36,7 @@ abstract class BaseRemoteServicesTest {
         objectMapper.registerModule(simpleModule);
 
         restTemplate = new RestTemplate();
-        restTemplateByPassSSL = new RestTemplate(new CustomClientHttpRequestFactory());
+        restTemplatePlain = new RestTemplate();
 
         baseRemoteService = new BaseRemoteService(
                 "https://confins.csulfinance.com/api/fou/v1",

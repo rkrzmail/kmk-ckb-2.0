@@ -25,7 +25,7 @@ public class MstRemoteServiceTest extends BaseRemoteServicesTest {
         mstRemoteService = new MstRemoteService(
                 objectMapper,
                 org.mockito.Mockito.mock(com.kmkbe.feign.client.ConfinsR3FeignClient.class),
-                restTemplateByPassSSL,
+                restTemplatePlain,
                 baseRemoteService
         );
     }

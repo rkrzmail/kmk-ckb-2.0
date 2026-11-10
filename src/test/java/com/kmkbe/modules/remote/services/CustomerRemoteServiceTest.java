@@ -23,7 +23,7 @@ public class CustomerRemoteServiceTest extends BaseRemoteServicesTest {
     public void setupBeforeEach() {
         super.setupBeforeEach();
         customerRemoteService = new CustomerRemoteService(
-                restTemplateByPassSSL,
+                restTemplatePlain,
                 baseRemoteService,
                 objectMapper,
                 org.mockito.Mockito.mock(com.kmkbe.feign.client.ConfinsR3FeignClient.class)

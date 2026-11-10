@@ -7,6 +7,7 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.helpers.utils.CommonUtils;
 import com.kmkbe.helpers.utils.PaginationRequests;
 import com.kmkbe.helpers.utils.PaginationSort;
 import com.kmkbe.helpers.utils.SpecPagination;
@@ -32,8 +33,6 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.text.SimpleDateFormat;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -478,9 +477,6 @@ public class ReportService {
         "Data Agreement tidak ditemukan untuk: " + financingHdrCode
       ));
 
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd MMMM yyyy", new Locale("id", "ID"));
-    String tanggalDokumen = LocalDate.now().format(formatter);
-
     // get csul signer
     CsulSigner branchManagerData = csulSignerRepository
       .findByKaryawanNameAndJabatan(branchManager, "Branch Manager")
@@ -568,16 +564,16 @@ public class ReportService {
 
     Optional<Map<String, Object>> cwrData = agreementRepo.findCwrCodeAndDate(UUID.fromString(financingHdrCode), agreementCode);
     Map<String, Object> Cdata = cwrData.orElseGet(Collections::emptyMap);
-    SimpleDateFormat Csdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("id", "ID"));
-    String formattedCwrDate = cwrData
-      .map(data -> {
-        Object rawDate = data.get("cwr_start_date");
-        if (rawDate instanceof Date) {
-          return Csdf.format((Date) rawDate);
-        }
-        return "-";
-      })
-      .orElse("-");
+//    SimpleDateFormat Csdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("id", "ID"));
+//    String formattedCwrDate = cwrData
+//      .map(data -> {
+//        Object rawDate = data.get("cwr_start_date");
+//        if (rawDate instanceof Date) {
+//          return Csdf.format((Date) rawDate);
+//        }
+//        return "-";
+//      })
+//      .orElse("-");
 
     // 7. Bouwheer List
     CompletableFuture<CwrListBwhrResponse> bouwheerFuture = CompletableFuture.supplyAsync(() ->
@@ -626,18 +622,16 @@ public class ReportService {
     Optional<Map<String, Object>> debtorData = agreementRepo.finddetailDebtor(UUID.fromString(financingHdrCode), agreementCode);
     Map<String, Object> data = debtorData.orElseGet(Collections::emptyMap);
 
-   // String basePath = System.getProperty("user.dir") + java.io.File.separator + "Reports" + java.io.File.separator;
     Map<String, Object> params = new HashMap<>();
     params.put("SUBREPORT_DIR",Objects.requireNonNull(getClass().getResource("/Reports/")).toString());
-
     params.put("NamaBranchManager", branchManagerData.getKaryawanName());
     params.put("JabatanBranchManager", branchManagerData.getJabatan());
     params.put("NamaAreaSalesManager", areaSalesManagerData.getKaryawanName());
     params.put("AppNo", apiResponse.getAppNo());
-    params.put("TglDokumen", tanggalDokumen);
+    params.put("TglDokumen", CommonUtils.toDate(agreement.getDtmCrt()));
     params.put("DebtorName", debtorName);
     params.put("Cwr", Cdata.getOrDefault("cwr_code", "-").toString());
-    params.put("Cwr-Date", formattedCwrDate);
+    params.put("Cwr-Date", CommonUtils.toDate(agreement.getDtmCrt()));
     params.put("BankName", dataRekening.getBankName());
     params.put("BankAccNo", dataRekening.getAccNo());
     params.put("BankAccName", dataRekening.getAccName());
@@ -755,7 +749,7 @@ public class ReportService {
 
       log.info("BM {} ",agreement.getFinancingHdr().getBouwheer().getPicName());
       params.put("NoDokumen", sitDto.getAgreementCode());
-      params.put("TempatTanggal", tanggalDokumen);
+      params.put("TempatTanggal", CommonUtils.toDate(agreement.getDtmCrt()));
       params.put("PeriodeBerlaku", periodeBerlaku);
       params.put("NamaGMFinance", agreement.getFinancingHdr().getBouwheer().getBouwheerName());
       params.put("NamaPICFinance", agreement.getFinancingHdr().getBouwheer().getPicName());

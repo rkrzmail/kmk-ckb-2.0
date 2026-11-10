@@ -10,6 +10,7 @@ import com.kmkbe.core.domain.mapper.FileTypeMapper;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.core.security.CurrentUserService;
 import com.kmkbe.core.service.FileStorageService;
 import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.core.utils.UriUtils;
@@ -20,6 +21,7 @@ import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
 import com.kmkbe.helpers.utils.SpecPagination;
+import com.kmkbe.modules.user.entity.MstUser;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.transaction.Transactional;
@@ -33,6 +35,10 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -54,6 +60,7 @@ public class DocumentService {
   private final FinancingHdrRepository financingHdrRepository;
   private final DokumentHistoryUploadRepository dokumentHistoryUploadRepository;
   private final AuditTrailService auditTrailService;
+  private final CurrentUserService currentUserService;
 
   public List<DocumentTemplateFinancingDto> fetchDocumentTemplateFinancing(
     Customer customer
@@ -235,21 +242,48 @@ public class DocumentService {
     }
   }
 
+  /**
+   * Security issue #3 (SECURITY.md): owner/otorisasi download.
+   * Customer hanya boleh mengunduh dokumen miliknya sendiri;
+   * user internal (admin/branch admin) boleh mengunduh dokumen debitur.
+   */
+  private void authorizeDownload(LegalFile legalFile) throws AccessDeniedException {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+      throw new AccessDeniedException("Forbidden");
+    }
+
+    if (authentication.getPrincipal() instanceof Customer principal) {
+      UUID ownerCustCode = legalFile.getCustCode() != null ? legalFile.getCustCode().getCustCode() : null;
+      if (ownerCustCode == null || !ownerCustCode.equals(principal.getCustCode())) {
+        throw new AccessDeniedException("Forbidden");
+      }
+      return;
+    }
+
+    if (authentication.getPrincipal() instanceof MstUser) {
+      return;
+    }
+
+    throw new AccessDeniedException("Forbidden");
+  }
+
   public ResponseEntity<Resource> documentByLegalFileId(
     HttpServletRequest httpServletRequest,
     Long id
   ) {
     try {
       HttpHeaders headers = new HttpHeaders();
-      if (String.valueOf(httpServletRequest.getParameter("cd")).equalsIgnoreCase("attachment")) {
-        headers.set("Content-Disposition", "attachment; filename=sample.pdf");
-      } else {
-        headers.set("Content-Disposition", "inline");
-      }
       LegalFile legalFile = legalFileService.findByFileId(id);
       if (legalFile == null) {
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         return new ResponseEntity<>(null, headers, HttpStatus.OK);
+      }
+      authorizeDownload(legalFile);
+      if (String.valueOf(httpServletRequest.getParameter("cd")).equalsIgnoreCase("attachment")) {
+        headers.set("Content-Disposition", "attachment; filename=" + legalFile.getFileName());
+      } else {
+        headers.set("Content-Disposition", "inline");
       }
       if (legalFile.getFilePath().contains("http")) {
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
@@ -271,6 +305,38 @@ public class DocumentService {
     }
   }
 
+  /**
+   * Security issue #3 (SECURITY.md): owner/otorisasi download agreement.
+   * Agreement -> Cwr -> Customer; customer hanya boleh agreement miliknya.
+   */
+  private void authorizeAgreementDownload(AgreementFile agreementFile) throws AccessDeniedException {
+    Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+    if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+      throw new AccessDeniedException("Forbidden");
+    }
+
+    if (authentication.getPrincipal() instanceof Customer principal) {
+      UUID ownerCustCode = null;
+      if (agreementFile.getAgreement() != null
+        && agreementFile.getAgreement().getCwr() != null
+        && agreementFile.getAgreement().getCwr().getCustomer() != null
+      ) {
+        ownerCustCode = agreementFile.getAgreement().getCwr().getCustomer().getCustCode();
+      }
+
+      if (ownerCustCode == null || !ownerCustCode.equals(principal.getCustCode())) {
+        throw new AccessDeniedException("Forbidden");
+      }
+      return;
+    }
+
+    if (authentication.getPrincipal() instanceof MstUser) {
+      return;
+    }
+
+    throw new AccessDeniedException("Forbidden");
+  }
+
   public ResponseEntity<Resource> agreementDocByAgreementId(
     HttpServletRequest httpServletRequest,
     Long id
@@ -283,6 +349,7 @@ public class DocumentService {
         return new ResponseEntity<>(null, headers, HttpStatus.OK);
       }
 
+      authorizeAgreementDownload(agreementFile);
       if (agreementFile.getFilePath().contains("http")) {
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
         auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "AgreementFile", agreementFile.getAgreementFileId(), null, toAgreementFileAuditData(agreementFile));
