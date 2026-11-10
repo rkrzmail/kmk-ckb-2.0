@@ -1,5 +1,8 @@
 package com.kmkbe.helpers.constant;
 
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
+
 public class AppConstants {
   private AppConstants() {
   }
@@ -32,13 +35,14 @@ public class AppConstants {
   public static final String PASS_PATTERN_CHARACTERS = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()–[{}]:;',?/*~$^+=<>]).{6,30}$";
   public static final String EMAIL_PATTERN = ".+@.+\\.[a-z]+";
   public static final String IMAGE_FORMAT = "png";
-  public static final String DATE_FORMAT = "yyyy/MM/dd HH:mm:ss";
   public static final String TIMESTAMP_FORMAT = "yyyy-MM-dd HH:mm:ss";
   public static final String DATETIME_FORMAT = "yyyy-MM-dd HH:mm:ss.SSS";
   public static final String DATE_FORMAT_YYYYMMDD = "yyyyMMdd";
   public static final String TIME_FORMAT_HHMMSS = "HHmmss";
   public static final String DATE_FORMAT_YYYY_MM_DD = "yyyy-MM-dd";
   public static final String DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
+  public static final DateTimeFormatter DATE_FORMAT =
+    DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.forLanguageTag("id-ID"));
 
   public static final String bankName ="Bank Mandiri";
   public static final String accountName="CHANDRA SAKTI UTAMA";
