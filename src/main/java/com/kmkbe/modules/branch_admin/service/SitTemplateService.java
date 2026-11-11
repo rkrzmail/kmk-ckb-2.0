@@ -5,7 +5,6 @@ import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import com.kmkbe.core.domain.dto.AgreementAttributeContentDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementByNoCwrRemoteDto;
 import com.kmkbe.core.domain.entity.Agreement;
-import com.kmkbe.core.domain.entity.Cwr;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
