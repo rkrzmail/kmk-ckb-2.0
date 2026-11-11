@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="surat8" pageWidth="595" pageHeight="842" columnWidth="451" leftMargin="72" rightMargin="72" topMargin="72" bottomMargin="72" uuid="bf12d579-628f-4cde-9321-edd74e8c520d">
+	<parameter name="NoDokumen" class="java.lang.String"/>
+	<parameter name="TempatTanggal" class="java.lang.String"/>
+	<parameter name="NamaGMFinance" class="java.lang.String"/>
+	<parameter name="TotalPembayaran" class="java.lang.String"/>
+	<parameter name="PeriodeBerlaku" class="java.lang.String"/>
+	<parameter name="NamaDebitur" class="java.lang.String"/>
+	<parameter name="NamaGMFinanceCSUL" class="java.lang.String"/>
+	<parameter name="NamaAreaSalesManager" class="java.lang.String"/>
+	<parameter name="NamaKaryawan" class="java.lang.String"/>
+	<parameter name="Jabatan" class="java.lang.String"/>
+	<parameter name="NamaPICFinance" class="java.lang.String"/>
+	<parameter name="bouwheer" class="java.lang.String"/>
+	<parameter name="legalAddress" class="java.lang.String"/>
+	<parameter name="picName" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="32" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="6" width="150" height="20" uuid="1ef2b14a-42ce-4646-a159-be3f45dfbb91"/>
+				<textFieldExpression><![CDATA[$P{NoDokumen}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="280" y="6" width="170" height="20" uuid="959b5c91-a35f-436e-8774-cda709ea7edd"/>
+				<textElement textAlignment="Right"/>
+				<textFieldExpression><![CDATA[$P{TempatTanggal}]]></textFieldExpression>
+			</textField>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="94" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="30" width="300" height="20" uuid="4f24c928-fe69-41ab-8c23-076af7b67e5a">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaGMFinance}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="10" width="200" height="20" uuid="cd66896c-fd84-41ff-a0fc-e00d33ee7c15"/>
+				<text><![CDATA[Kepada Yth.,]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="50" width="300" height="40" uuid="9c1111d7-a9d4-4778-a8c2-8e87ef427c2d">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{legalAddress}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="285" splitType="Stretch">
+			<textField textAdjust="StretchHeight">
+				<reportElement x="0" y="51" width="450" height="138" uuid="971f916e-c9f4-4ab7-ba10-e69a463f3db4"/>
+				<textElement textAlignment="Justified" markup="html">
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Dengan hormat,<br/><br/>Sehubungan dengan Fasilitas Danasakti berdasarkan Perjanjian Pembiayaan Modal Kerja dengan Fasilitas Pembiayaan Anjak Piutang berikut perubahan (-perubahannya), perpanjangan (- perpanjangan), penambahan (-penambahannya) (jika ada) beserta setiap dan seluruh dokumen-dokumen turunannya (<b>\"Fasilitas Danasakti\"</b>) yang diberikan oleh <u>" + $P{NamaGMFinance}  + "</u> selaku <b>\"Factor\"</b> kepada kami selaku <b>\"Klien\"</b> dengan objek pembiayaan berupa invoice (terlampir), maka berdasarkan surat ini mohon agar pembayaran jasa pekerjaan <u><b>Klien</b></u> dengan total sebesar <u>" + $P{TotalPembayaran}  + "</u>, sesuai dengan detail informasi yang tertera pada lampiran dapat dibayarkan/ditransfer kepada Factor sebagai pembayaran kewajiban yang timbul atas Fasilitas Pembiayaan di atas dengan rincian sebagai berikut:"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="10" width="40" height="15" uuid="edd895c8-0a3d-4477-9f82-c8a3dabee558">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="false"/>
+				</textElement>
+				<text><![CDATA[Up. :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="30" y="10" width="420" height="15" uuid="7650a784-7408-47e5-89a9-4e4117f4c956"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{picName}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="31" width="450" height="20" uuid="75909c09-e207-4217-bc13-22060663bce5">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Center">
+					<font isBold="true" isItalic="true" isUnderline="false"/>
+				</textElement>
+				<text><![CDATA[Perihal : Instruksi Transfer]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="201" width="420" height="20" uuid="b342cae2-e793-4542-93fd-69f6040a54d7"/>
+				<text><![CDATA[Bank 		: Mandiri (Persero), Tbk]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="221" width="420" height="20" uuid="e623ec69-00ad-4e70-b299-61c4e1609cca"/>
+				<text><![CDATA[No Rekening 	: 1270088142159]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="241" width="420" height="20" uuid="34587a4c-9ca6-43d0-b1bc-dbd7ae82fb0a"/>
+				<text><![CDATA[Atas Nama 	: PT. CHANDRA SAKTI UTAMA LEASING]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="116" y="261" width="334" height="20" uuid="63271f0b-4e6b-4012-b6f5-3ec908f8eed5"/>
+				<textFieldExpression><![CDATA["Surat keterangan ini berlaku sampai periode " + $P{PeriodeBerlaku}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="30" y="261" width="86" height="20" uuid="7e885e80-1d6d-4977-adee-f3dede08adf1"/>
+				<text><![CDATA[Keterangan	:]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="205" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="6" width="450" height="40" uuid="706052cf-da5d-4afe-9a65-218cd75cd16a"/>
+				<text><![CDATA[Demikian kami sampaikan. Atas perhatian dan kerja samanya, kami ucapkan terima kasih.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="48" width="130" height="20" uuid="94ff0141-ebdf-4ca2-8ec6-c42b7f67d38c"/>
+				<text><![CDATA[Hormat Kami,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="150" y="48" width="90" height="20" uuid="fd8fd8ee-7044-42cf-a716-57f05b783de6"/>
+				<text><![CDATA[Mengetahui,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="333" y="48" width="120" height="20" uuid="36845fe9-851d-4b26-81bd-f85a88402717"/>
+				<text><![CDATA[Menyetujui,]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="0" y="68" width="140" height="20" uuid="a944becc-01b9-45a3-bc6b-6d116fb76098">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaDebitur}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="150" y="68" width="270" height="20" uuid="f2a9166f-6f0e-4a8b-adc1-f0e7b03e3cc0"/>
+				<textElement>
+					<font size="9" isBold="true"/>
+				</textElement>
+				<text><![CDATA[PT. CHANDRA SAKTI UTAMA LEASING]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="333" y="68" width="190" height="20" uuid="40750882-bbe5-4269-9a77-fe8afae5b0f1">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isBold="true" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaGMFinance}]]></textFieldExpression>
+			</textField>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="49" splitType="Stretch">
+			<textField>
+				<reportElement x="150" y="4" width="190" height="20" uuid="18153f2f-a4f4-49be-9cda-fe39862d2723">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isBold="true" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaAreaSalesManager}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="150" y="24" width="130" height="20" uuid="9374e935-6cb5-4283-92c2-885b010a7d1b"/>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[Area Sales Manager]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="333" y="24" width="216" height="20" uuid="9ab80cc2-41f9-411b-b55c-dfb665f9ccdf"/>
+				<textElement>
+					<font size="9"/>
+				</textElement>
+				<text><![CDATA[General Manager Finance]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="4" width="130" height="20" uuid="8a771048-64cf-4a9a-a3e6-0b701f7618d3"/>
+				<textElement>
+					<font size="9" isBold="true" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaKaryawan}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="24" width="130" height="20" uuid="38e79ed9-4bc4-4bc7-ae30-41e95ed38605"/>
+				<textElement>
+					<font size="9" isBold="false" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Jabatan}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="334" y="4" width="190" height="20" uuid="88889407-f51a-407f-828b-68e30d6a07eb">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font size="9" isBold="true" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaPICFinance}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnFooter>
+	<pageFooter>
+		<band splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band splitType="Stretch"/>
+	</summary>
+</jasperReport>

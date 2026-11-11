@@ -633,6 +633,30 @@ public class ReportService {
     if(financingHdrOptional.isEmpty()){
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Financing not found !");
     }
+
+    StringJoiner joiner = new StringJoiner(", ");
+    String street = CommonUtils.getCleanString(data.get("debtor_address"));
+    if (street != null) {
+      joiner.add(street);
+    }
+
+    String rt = CommonUtils.getCleanString(data.get("rt"));
+    String rw = CommonUtils.getCleanString(data.get("rw"));
+    if (rt != null || rw != null) {
+      String rtRwPart = "RT/RW " + (rt != null ? rt : "-") + "/" + (rw != null ? rw : "-");
+      joiner.add(rtRwPart);
+    }
+
+    String[] keys = {"kelurahan", "kecamatan", "city", "province", "zipcode"};
+    for (String key : keys) {
+      String value = CommonUtils.getCleanString(data.get(key));
+      if (value != null) {
+        joiner.add(value);
+      }
+    }
+
+    String alamatDebitur = joiner.length() > 0 ? joiner.toString() : "-";
+
     FinancingHdr financingHdr = financingHdrOptional.get();
     String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"," "};
     Map<String, Object> params = new HashMap<>();
@@ -675,7 +699,7 @@ public class ReportService {
     params.put("JenisDebitur", Objects.toString(data.get("debtor_type"), "-"));
     params.put("TipePerusahaan", Objects.toString(data.get("debtor_model"), "-"));
     params.put("NPWP", Objects.toString(data.get("cust_id_no"), "-"));
-    params.put("Alamat", Objects.toString(data.get("debtor_address"), "-"));
+    params.put("Alamat", alamatDebitur);
     params.put("Email", Objects.toString(data.get("cust_email"), "-"));
     params.put("Telepon", Objects.toString(data.get("phone"), "-"));
 

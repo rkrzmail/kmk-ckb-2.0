@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="surat5" pageWidth="595" pageHeight="842" columnWidth="451" leftMargin="72" rightMargin="72" topMargin="72" bottomMargin="72" uuid="754a17d7-53c5-468e-8c9a-99533b407dfe">
+	<property name="net.sf.jasperreports.text.line.spacing.fixed" value="true"/>
+	<parameter name="AgmtNo" class="java.lang.String"/>
+	<parameter name="TglDokumen" class="java.lang.String"/>
+	<parameter name="NtfAmt" class="java.lang.String"/>
+	<parameter name="DebtorName" class="java.lang.String"/>
+	<parameter name="AppFeeAmtAdministration" class="java.lang.String"/>
+	<parameter name="AppFeeAmtFactoring" class="java.lang.String"/>
+	<parameter name="Administration+Factoring" class="java.lang.String"/>
+	<parameter name="NamaKaryawan" class="java.lang.String"/>
+	<parameter name="Jabatan" class="java.lang.String"/>
+	<parameter name="NamaPerusahaan" class="java.lang.String"/>
+	<parameter name="Alamat" class="java.lang.String"/>
+	<parameter name="NtfAmt-Total" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="35" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="450" height="30" uuid="314c64e5-d6b8-4a12-89cc-699718dad054"/>
+				<textElement textAlignment="Center">
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[SURAT PERNYATAAN]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="120" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="5" width="515" height="15" uuid="18a66a41-bb6d-4d9a-80a3-d4e83a7b3dc3"/>
+				<text><![CDATA[Yang bertanda tangan di bawah ini:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="30" width="200" height="15" uuid="c9a98a50-8510-437e-af34-29e70ec42107"/>
+				<text><![CDATA[Nama 			:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="45" width="200" height="15" uuid="da2aec77-d56b-4d2e-87c4-d362f59cb5fd"/>
+				<text><![CDATA[Jabatan 		:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="60" width="200" height="15" uuid="55a1bd85-eb8c-40fe-a9f0-054ef4bc1b52"/>
+				<text><![CDATA[Nama Perusahaan 	:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="30" y="75" width="160" height="15" uuid="3b324398-155f-449f-acfe-21ee37c74e52"/>
+				<text><![CDATA[Alamat 	              :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="156" y="45" width="200" height="15" uuid="37a84b98-700c-478f-9520-35cc655da964">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="false" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Jabatan}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="156" y="30" width="200" height="15" uuid="f8d7c003-e3ff-489a-bc32-89af26514157">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="false" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaKaryawan}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="156" y="75" width="294" height="45" uuid="c1f10e68-910b-46d0-9f6c-ae1a39f131b8">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="false" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Alamat}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="156" y="60" width="200" height="15" uuid="4f4b0c7a-ae6a-43b9-a72f-6eb546218891">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="false" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaPerusahaan}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="196" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="10" width="450" height="50" uuid="af00974e-342c-4ccb-9255-b84ab22acb46"/>
+				<textElement textAlignment="Justified" markup="html"/>
+				<textFieldExpression><![CDATA["Menunjuk Lampiran Perjanjian Pembiayaan Dengan Fasilitas Anjak Piutang (<i>Factoring</i>) nomor  "+ $P{AgmtNo} +" tanggal "+ $P{TglDokumen} + ", dengan ini menyatakan bahwa pencairan sebesar "+ $P{NtfAmt} + " agar dipotong dengan:"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="30" y="70" width="130" height="15" uuid="72a7f0e7-74ae-4863-a7a2-340e800eb6a7"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Kontrak "+ $P{AgmtNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="68" y="85" width="150" height="15" uuid="6bb1ecb4-6985-4956-8931-97c7d78ac5be"/>
+				<text><![CDATA[Biaya Administrasi Pencairan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="218" y="85" width="20" height="15" uuid="e61b92c7-45a7-44cc-ab8a-064ed7e6a093"/>
+				<text><![CDATA[=]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="238" y="85" width="100" height="15" uuid="543894cd-39bf-47e4-84d2-18b169c22622"/>
+				<textFieldExpression><![CDATA[$P{AppFeeAmtAdministration}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="68" y="100" width="150" height="15" uuid="d107e5f2-f146-4481-8c5e-166fb7693456"/>
+				<text><![CDATA[Biaya Diskonto]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="218" y="100" width="20" height="15" uuid="d9b2cb49-90ba-44cb-8718-cb28dad53989"/>
+				<text><![CDATA[=]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="238" y="100" width="100" height="15" uuid="964054f0-fbc4-4177-af60-721b21e05ebb"/>
+				<textFieldExpression><![CDATA[$P{AppFeeAmtFactoring}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="68" y="115" width="150" height="15" uuid="4c1a80e7-4584-4cf9-84be-e9281a4f8ca6"/>
+				<text><![CDATA[Total]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="218" y="115" width="20" height="15" uuid="824962e8-a859-4f94-bd4f-ce7343ac4704"/>
+				<text><![CDATA[=]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="238" y="115" width="150" height="15" uuid="fef47715-8869-464d-9ac5-9f6b460dc8d3"/>
+				<textFieldExpression><![CDATA[$P{Administration+Factoring}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="150" width="450" height="40" uuid="eb57dfd9-f277-4c1f-84a4-bea433578126"/>
+				<textElement textAlignment="Justified" markup="html"/>
+				<textFieldExpression><![CDATA["Sehingga jumlah pembiayaan akan diterima oleh <b>" +$P{DebtorName} + "</b> adalah sebesar <b>IDR " + $P{NtfAmt-Total} +"</b>"]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="198" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="450" height="30" uuid="05e520be-d4a8-412e-b301-bcd8ee7c3660"/>
+				<text><![CDATA[Demikian surat pernyataan ini dibuat dengan sebenar-benarnya untuk dapat dipergunakan sebagaimana mestinya.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="163" width="47" height="15" uuid="b0377486-e0c7-4828-96bc-902150443f01"/>
+				<text><![CDATA[Nama]]></text>
+			</staticText>
+			<line>
+				<reportElement x="0" y="161" width="200" height="1" uuid="5436dba5-b9e8-44f5-b339-9e9058d165d7"/>
+			</line>
+			<staticText>
+				<reportElement x="0" y="178" width="47" height="15" uuid="d299d58d-79f9-4d5c-903b-4724d9c2c22c"/>
+				<text><![CDATA[Jabatan]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="60" width="100" height="30" uuid="a18246dd-2a9a-4125-890e-33c7551a2aca"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{DebtorName}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="47" y="178" width="200" height="15" uuid="dc74f576-4d13-49fc-bccc-ac5bdb833311">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="false" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Jabatan}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="47" y="163" width="200" height="15" uuid="79ed9c7c-6350-4b53-a5bf-810bcba9f64b">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="false" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaKaryawan}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="43" y="163" width="47" height="15" uuid="e48d66d5-cdca-4449-85b2-2381c5d4c4e4"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="43" y="178" width="47" height="15" uuid="356e7e06-4d35-4775-a5ce-912be18459c3"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="44" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="54" splitType="Stretch"/>
+	</pageFooter>
+	<summary>
+		<band height="42" splitType="Stretch"/>
+	</summary>
+</jasperReport>
