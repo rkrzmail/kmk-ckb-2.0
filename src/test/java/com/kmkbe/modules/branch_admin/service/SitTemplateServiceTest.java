@@ -67,6 +67,7 @@ class SitTemplateServiceTest {
       .dtmCrt(LocalDateTime.of(2026, 10, 26, 9, 0))
       .cwr(Cwr.builder()
         .cwrCode("AGR-1")
+        .cwrStartDate(LocalDateTime.of(2026, 10, 26, 9, 0))
         .dtmCrt(LocalDateTime.of(2026, 10, 20, 8, 0)).build())
       .build();
     when(financingHdrRepository.findByFinancingHdrCode(LEAD)).thenReturn(Optional.of(financing));
@@ -83,7 +84,7 @@ class SitTemplateServiceTest {
     verify(jasperReportRenderer).renderToPdf(eq("/Reports/sit.jasper"), captor.capture());
     assertThat(captor.getValue()).containsEntry("nomorPerjanjian", "AGR-1")
       .containsEntry("tanggalPerjanjian", "26 Oktober 2026")
-      .containsEntry("tanggalCwr", "26 Oktober 2026")
+      .containsEntry("tanggalCwr", "JAKARTA, 26 Oktober 2026")
       .containsEntry("namaDebitur", "Debitur Satu")
       .containsEntry("companyDebitur", "Debitur Satu")
       .containsEntry("namaBouwheer", "Bouwheer Satu")
@@ -118,8 +119,9 @@ class SitTemplateServiceTest {
     FinancingHdr financing = new FinancingHdr();
     financing.setBouwheer(Bouwheer.builder().bouwheerName("Bouwheer Satu")
       .legalAddress("Jakarta").picName("PIC Satu").build());
-    financing.setCustomer(Customer.builder().custName("Debitur Satu").build());
-    financing.setMstBranch(MstBranch.builder().branchCode("407").build());
+    financing.setCustomer(Customer.builder().custName("Debitur Satu")
+      .build());
+    financing.setMstBranch(MstBranch.builder().branchName("JAKARTA ").branchCode("407").build());
     financing.setFinancingDueDate(LocalDateTime.of(2026, 12, 31, 0, 0));
     return financing;
   }
