@@ -87,7 +87,7 @@
 				<textElement textAlignment="Center">
 					<font isBold="true" isItalic="true" isUnderline="false"/>
 				</textElement>
-				<text><![CDATA[Perihal : Instruksi Transfer Invoice s]]></text>
+				<text><![CDATA[Perihal : Instruksi Transfer Invoice]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="30" y="201" width="420" height="20" uuid="b342cae2-e793-4542-93fd-69f6040a54d7"/>
