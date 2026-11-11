@@ -66,6 +66,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class ReportServiceTest {
@@ -97,6 +98,8 @@ class ReportServiceTest {
   void setUp() {
     service = new ReportService();
     injectDependencies(service);
+    lenient().when(externalApiService.getAgreementDate("AGR-CODE"))
+      .thenReturn(LocalDateTime.of(2026, 12, 14, 0, 0));
     financingHdr = FinancingHdr.builder()
       .bouwheer(Bouwheer.builder()
         .legalAddress("TEST")
@@ -359,6 +362,7 @@ class ReportServiceTest {
   @Test
   void generateReportRendersPdfWithRemoteAndRepositoryData() throws Exception {
     Agreement agreement = agreement();
+    agreement.setDtmCrt(LocalDateTime.of(2026, 1, 1, 0, 0));
     agreement.setApplicationCode("APP001");
     agreement.setFinancingAmt(100D);
     when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
@@ -398,6 +402,8 @@ class ReportServiceTest {
     verify(jasperReportRenderer).renderToPdf(eq("/Reports/main_report.jasper"), paramsCaptor.capture());
     assertThat(paramsCaptor.getValue()).containsEntry("NamaBranchManager", "BM");
     assertThat(paramsCaptor.getValue()).containsEntry("AgrmntNo", "AGR-CODE");
+    assertThat(paramsCaptor.getValue()).containsEntry("TglPengalihanPiutang", "JAKARTA, 14 Desember 2026");
+    assertThat(paramsCaptor.getValue()).containsEntry("TglDokumen", "JAKARTA, 01 Januari 2026");
     assertThat(paramsCaptor.getValue()).containsEntry("JenisDebitur", "Badan Usaha");
     assertThat(paramsCaptor.getValue()).containsEntry("TipePerusahaan", "PT");
     assertThat(paramsCaptor.getValue()).containsEntry("Alamat", "Jl. Test");

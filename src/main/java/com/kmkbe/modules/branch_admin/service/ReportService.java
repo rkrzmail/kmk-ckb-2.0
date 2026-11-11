@@ -641,7 +641,9 @@ public class ReportService {
     params.put("JabatanBranchManager", branchManagerData.getJabatan());
     params.put("NamaAreaSalesManager", areaSalesManagerData.getKaryawanName());
     params.put("AppNo", apiResponse.getAppNo());
-    params.put("TglDokumen",CommonUtils.capitalize(CommonUtils.safeRemoveAll(financingHdr.getMstBranch().getBranchName(),removeRBU)).concat(", ").concat(CommonUtils.toDate(agreement.getDtmCrt())));
+    String branchLocation = CommonUtils.capitalize(CommonUtils.safeRemoveAll(financingHdr.getMstBranch().getBranchName(), removeRBU));
+    params.put("TglDokumen", branchLocation.concat(", ").concat(CommonUtils.toDate(agreement.getDtmCrt())));
+    params.put("TglPengalihanPiutang", branchLocation.concat(", ").concat(CommonUtils.toDate(externalApiService.getAgreementDate(agrmntCode))));
     params.put("DebtorName", debtorName);
     params.put("Cwr", Cdata.getOrDefault("cwr_code", "-").toString());
     params.put("Cwr-Date",formattedCwrDate);
