@@ -82,8 +82,9 @@ public class SitTemplateService {
   }
 
   private Map<String, Object> parameters(FinancingHdr financing, Agreement agreement) {
+    String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"," "};
     Map<String, Object> params = new HashMap<>();
-    params.put("tanggalCwr", CommonUtils.toDate(agreement.getDtmCrt()));
+    params.put("tanggalCwr", CommonUtils.capitalize(CommonUtils.safeRemoveAll(financing.getMstBranch().getBranchName(),removeRBU)).concat(", ").concat(CommonUtils.toDate(agreement.getDtmCrt())));
     params.put("namaBouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
     params.put("periodeBerlaku", CommonUtils.toDate(financing.getFinancingDueDate()));
     params.put("namaDebitur", CommonUtils.nullValue(financing.getCustomer().getCustName()));
@@ -93,7 +94,7 @@ public class SitTemplateService {
     params.put("bouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
     params.put("legalAddress", CommonUtils.nullValue(financing.getBouwheer().getLegalAddress()));
     params.put("picName", CommonUtils.nullValue(financing.getBouwheer().getPicName()));
-    params.put("tanggalPerjanjian", CommonUtils.toDate(agreement.getDtmCrt()));
+    params.put("tanggalPerjanjian", CommonUtils.toDate(agreement.getCwr().getCwrStartDate()));
     params.put("nomorPerjanjian", CommonUtils.nullValue(agreement.getCwr().getCwrCode()));
     return params;
   }
@@ -105,8 +106,6 @@ public class SitTemplateService {
       MailPositionDto response = configRemoteService.getEmailByPosition("", branchCode, "RM");
       if (response == null || response.getData() == null) return "";
       return response.getData().stream()
-        .filter(person -> person.getBranchCode() == null
-          || branchCode.equalsIgnoreCase(person.getBranchCode()))
         .map(MailDataDto::getEmployeeName)
         .filter(name -> name != null && !name.isBlank())
         .findFirst().orElse("");

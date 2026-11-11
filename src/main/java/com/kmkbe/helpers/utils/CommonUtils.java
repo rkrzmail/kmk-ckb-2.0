@@ -56,4 +56,44 @@ public class CommonUtils {
   public static String toDate(LocalDateTime value) {
     return value == null ? "" : DATE_FORMAT.format(value);
   }
+
+  public static String capitalize(String str) {
+    if (str == null || str.isEmpty()) {
+      return str;
+    }
+    return str.substring(0, 1).toUpperCase() + str.substring(1);
+  }
+
+  public static String safeReplaceEach(String text, String[] searchList, String[] replacementList) {
+    if (text == null || text.isEmpty() || searchList == null || replacementList == null) {
+      return text;
+    }
+
+    int length = Math.min(searchList.length, replacementList.length);
+    String result = text;
+
+    for (int i = 0; i < length; i++) {
+      String search = searchList[i];
+      String replacement = replacementList[i];
+      if (search != null && !search.isEmpty() && replacement != null) {
+        result = result.replace(search, replacement);
+      }
+    }
+    return result;
+  }
+
+  public static String safeRemoveAll(String text, String[] targets) {
+    if (text == null || text.isEmpty() || targets == null) {
+      return text;
+    }
+
+    String result = text;
+    for (String target : targets) {
+      if (target != null && !target.isEmpty()) {
+        result = result.replace(target, "");
+      }
+    }
+    return result;
+  }
+
 }

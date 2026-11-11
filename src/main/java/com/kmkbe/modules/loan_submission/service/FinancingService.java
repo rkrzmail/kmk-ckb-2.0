@@ -59,7 +59,7 @@ public class FinancingService {
           log.info("Process update agreement Golive {} ", agreement);
           updateFinStatusLiveIfGoLive(agreement);
 
-          //stop bila saudha disbur(di log disb ada)
+          //stop bila sudah disbur(di log disb ada)
           log.info("Process update agreement {} ", agreement);
           List<DisbursementLog> disbursementLogs = disbursementLogRepository.findAllByAgreement(agreement);
           if (disbursementLogs.isEmpty()) {

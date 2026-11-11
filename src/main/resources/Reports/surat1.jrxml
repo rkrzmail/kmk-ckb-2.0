@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="surat1" pageWidth="595" pageHeight="842" columnWidth="451" leftMargin="72" rightMargin="72" topMargin="72" bottomMargin="72" uuid="bf12d579-628f-4cde-9321-edd74e8c520d">
+	<property name="net.sf.jasperreports.export.page.break.after" value="true"/>
+	<parameter name="AppNo" class="java.lang.String"/>
+	<parameter name="TglDokumen" class="java.lang.String"/>
+	<parameter name="Cwr" class="java.lang.String"/>
+	<parameter name="Cwr-Date" class="java.lang.String"/>
+	<parameter name="DebtorName" class="java.lang.String"/>
+	<parameter name="BankName" class="java.lang.String"/>
+	<parameter name="BankAccNo" class="java.lang.String"/>
+	<parameter name="BankAccName" class="java.lang.String"/>
+	<parameter name="NamaKaryawan" class="java.lang.String"/>
+	<parameter name="Jabatan" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[SELECT 1 AS dummy FROM DUAL WHERE 1=0]]>
+	</queryString>
+	<background>
+		<band height="3"/>
+	</background>
+	<title>
+		<band height="32" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="450" height="30" uuid="a934d113-03d8-44eb-be66-3c2145fc20fb">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement textAlignment="Left" verticalAlignment="Middle">
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Surat Penawaran Pengalihan Piutang (Anjak Piutang/Factoring)]]></text>
+			</staticText>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="100" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="71" width="200" height="20" uuid="a130ad54-6af7-4e65-8670-d10f597cd817"/>
+				<text><![CDATA[di Jakarta]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="50" width="300" height="20" uuid="bee59eb2-95bf-4e18-821e-41709c990c0d">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[PT Chandra Sakti Utama Leasing]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="10" width="80" height="20" uuid="6ee6cd1c-9ac0-49ba-b5b6-579251f684bc"/>
+				<text><![CDATA[Nomor :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="40" y="10" width="150" height="20" uuid="1ef2b14a-42ce-4646-a159-be3f45dfbb91"/>
+				<textFieldExpression><![CDATA[$P{AppNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="30" width="200" height="20" uuid="cd66896c-fd84-41ff-a0fc-e00d33ee7c15"/>
+				<text><![CDATA[Kepada Yth.,]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="290" y="10" width="160" height="61" uuid="959b5c91-a35f-436e-8774-cda709ea7edd"/>
+				<textElement textAlignment="Right">
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TglDokumen}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="201" splitType="Stretch">
+			<textField textAdjust="StretchHeight">
+				<reportElement x="0" y="39" width="450" height="74" uuid="64d8dfc3-cbbb-4c6b-9fad-612b1b3d6c5d"/>
+				<textElement textAlignment="Justified" markup="html">
+					<paragraph lineSpacing="Single"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Dengan hormat,<br/>Sehubungan dengan telah ditandatanganinya Perjanjian Pembiayaan dengan Fasilitas Pembiayaan Anjak Piutang Dengan Jaminan (<i>With Recourse</i>) nomor "+ $P{Cwr} +" tanggal "+ $P{Cwr-Date} + " beserta setiap dan seluruh dokumen-dokumen turunannya (“<b>Perjanjian Pembiayaan</b>”) antara <b>PT Chandra Sakti Utama Leasing</b> selaku <b>Factor</b> dan <b>" + $P{DebtorName} + "</b> selaku <b>Klien</b>,"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="9" width="80" height="20" uuid="395b67d2-f899-478f-990d-6617da5309b0">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Perihal :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="40" y="9" width="410" height="20" uuid="d1b605f7-fa43-4b5f-a163-697cc7167def">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[Penawaran Pengalihan Piutang (Anjak Piutang/Factoring)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="106" width="450" height="40" uuid="6118018a-ffd6-49a4-922a-57a808cfb8a7"/>
+				<textElement textAlignment="Justified" markup="html"/>
+				<text><![CDATA[Untuk memenuhi dokumen-dokumen yang disyaratkan dalam Perjanjian, bersama ini <b>Klien</b> melampirkan Dokumen Piutang sebagaimana disyaratkan dalam Perjanjian sesuai dengan rincian daftar piutang yang kami tawarkan sebagaimana diatur dalam lampiran.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="154" width="450" height="40" uuid="a2692302-7023-4a8a-a04f-a1b54f33129c"/>
+				<textElement textAlignment="Justified" markup="html"/>
+				<text><![CDATA[Apabila penawaran kami disetujui oleh <b>Factor</b>, mohon kiranya atas pembayaran pengalihan piutang tersebut dapat ditransfer ke rekening <b>Klien</b>, sebagai berikut:]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="172" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="4" width="90" height="20" uuid="d1f3055f-503c-45f2-92db-9f0771f4ec87"/>
+				<text><![CDATA[Bank 		:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="90" y="4" width="300" height="20" uuid="77922b7b-ccd0-4943-ae09-2f24b5bf976a"/>
+				<textFieldExpression><![CDATA[$P{BankName}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="24" width="90" height="20" uuid="cbe1a677-f29e-4d77-af48-916050451f95"/>
+				<text><![CDATA[No Rekening 	:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="90" y="24" width="300" height="20" uuid="06fc412a-a157-4e01-b00a-b6dd88cef659"/>
+				<textFieldExpression><![CDATA[$P{BankAccNo}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="44" width="90" height="20" uuid="bc4d992e-4021-4d8e-bcdf-d2cb952834b7"/>
+				<text><![CDATA[Atas Nama 	:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="90" y="44" width="300" height="20" uuid="e9d29164-585f-45fa-a54b-8ab696e41da4"/>
+				<textFieldExpression><![CDATA[$P{BankAccName}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="70" width="450" height="40" uuid="7605cc34-a489-4dda-882b-689b2fea2e38"/>
+				<text><![CDATA[Demikian kami sampaikan. Atas perhatian dan kerja samanya, kami ucapkan terima kasih.]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="0" y="148" width="200" height="20" uuid="43d385bf-86e6-4e97-8b09-652de806e81c">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{DebtorName}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="128" width="200" height="20" uuid="55dfa24b-077c-4987-a930-9376f92c6c6c">
+					<property name="com.jaspersoft.studio.unit.height" value="pixel"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Klien,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="108" width="200" height="20" uuid="e1023382-d7e3-4e39-a05e-c3e0b2ef60f3"/>
+				<text><![CDATA[Hormat Kami,]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="31" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="98" splitType="Stretch">
+			<textField>
+				<reportElement x="0" y="55" width="200" height="20" uuid="c136f927-dcf0-44c8-ac74-c29f49fa513f"/>
+				<textElement>
+					<font isBold="true" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaKaryawan}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="75" width="200" height="20" uuid="8c9ea36a-6dd5-453c-991d-256a5694b7fd"/>
+				<textElement>
+					<font isBold="true" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Jabatan}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="8" splitType="Stretch"/>
+	</summary>
+</jasperReport>

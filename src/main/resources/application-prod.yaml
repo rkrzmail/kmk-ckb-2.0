@@ -1,25 +1,18 @@
 #ENV
 env: prod
-
+# Non-prod: exposure penuh untuk troubleshooting (security issue #8)
 management:
   endpoints:
     web:
       exposure:
-        # Security issue #8: prod hanya info & health (logfile juga memicu
-        # unduhan log via /api/monitoring/logfile yang di-whitelist)
         include: info, health
       base-path: /api/monitoring
-  endpoint:
-    health:
-      show-components: always
-      show-details: never
-    logfile:
-      external-file: admin.log
+
 spring:
   flyway:
     enabled: 'true'
     schemas: public
-    locations: classpath:db/migration/prod/{vendor}
+    locations: classpath:db/migration/dev/{vendor}
     baseline-on-migrate: 'true'
     out-of-order: true
   data:
@@ -42,82 +35,106 @@ spring:
   jpa:
     hibernate:
       ddl-auto: none
-    show-sql: 'false'
-  servlet:
-    multipart:
-      enabled: 'true'
-      max-request-size: 100MB
-      max-file-size: 100MB
+    show-sql: 'true'
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
   cache:
     type: redis
-  application:
-    name: kmkbe
   boot:
     admin:
       client:
         url: http://localhost:9000
-        username: vandikalvandi@gmail.com
+        username: csul@nikita.co.id
         instance:
           name: Kmk-Digital-2.0
-        password: ${BOOT_ADMIN_PASSWORD:}
+        password: 'csul@nikita'
   datasource:
-    # Security issue #2: kredensial via env var - WAJIB diset saat deploy prod
-    password: ${SPRING_DATASOURCE_PASSWORD:}
+    password: Csultmt10
     url: jdbc:postgresql://aurora-kmkprod.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified
     username: postgres
-  jackson:
-    deserialization:
-      adjust-dates-to-context-time-zone: 'true'
-  mvc:
-    static-path-pattern: /static/**
+  mail:
+    host: srv150.niagahoster.com
+    port: 465
+    protocol: smtp
+    username: csul@nikita.co.id
+    password: DArS!OP#csul6?6Uu
+    properties:
+      mail.smtp.ssl.trust: '*'
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+
 logging:
   level:
     org:
       hibernate:
         orm:
           jdbc:
-            bind: info
-        stat: info
-        type: info
+            bind: trace
+        stat: debug
+        type: trace
+    feign: DEBUG                             # Enables basic Feign engine debug logs
+    org.springframework.cloud.openfeign: DEBUG # Enables Spring integration logs
+
+  logback:
+    rollingpolicy:
+      clean-history-on-start: 'true'
+      max-file-size: 10MB
   file:
     name: ./logs/log-file.log
-springdoc:
+
+spring-doc:
+  version: '3.0'
   api-docs:
-    path: /api/v1/api-docs
-    enabled: 'false'
-  paths-to-match: /api/v1/**
+    path: /api-docs
   swagger-ui:
-    path: /api/v1/swagger-ui.html
-    enabled: 'false'
+    path: /swagger-ui.html
+
 rsa:
   public-key: classpath:certs/public-key.pem
   private-key: classpath:certs/pkcs8.pem
 testing:
   mail:
-    password: ${TESTING_MAIL_PASSWORD:}
+    password: 06a7234e57cee8
     port: '587'
-    host: smtp.gmail.com
-    username: khesa.oto@gmail.com
+    host: sandbox.smtp.mailtrap.io
+    username: 88f3d615426584
+server:
+  error:
+    whitelabel:
+      enabled: 'false'
+app:
+  api:
+    key: YiByHB@CSUL_DEV
+aspect:
+  enabled: 'true'
+
+# Keep your custom collection property anywhere you like
+custom:
+  mongodb:
+    collection: event
+
+# API
 csul:
   confins:
+    mou:
+      v1: https://confinsr3.csulfinance.com/api/mou/v1
+    los:
+      v1: https://confinsr3.csulfinance.com/api/los/v1
+    corelos:
+      v1: https://confinsr3.csulfinance.com/api/corelos/v1
     ap:
       v1: https://confinsr3.csulfinance.com/api/ap/v1
     fou:
       v1: https://confinsr3.csulfinance.com/api/fou/v1
     payment:
       v1: https://confinsr3.csulfinance.com/api/payment/v1
-    adinskey: ${CONFINS_ADINS_KEY:}
-    mou:
-      v1: https://confinsr3.csulfinance.com/api/mou/v1
+    adinskey: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
     ar:
       v1: https://confinsr3.csulfinance.com/api/ar/v1
-    los:
-      v1: https://confinsr3.csulfinance.com/api/los/v1
   sisca:
     v1:
       auth:
         username: KMKDigital
-        password: ${SISCA_PASSWORD:}
+        password: CSUljkt#2024
       white-list: http://10.30.15.160:8185/SISCAConnect/api/v1
       internal: http://10.30.15.160:8185/SISCAConnect/api/v1
     mail-position:
@@ -127,39 +144,16 @@ csul:
       area-sales-manager: "RM"
   mst:
     v1: https://16.78.161.115/v1
-security:
-  api:
-    key: ${SECURITY_API_KEY:}
-  jwt:
-    secret-key: ${SECURITY_JWT_SECRET_KEY:}
-    expiration-time: '3000000'
-  secret-key: ${SECURITY_SECRET_KEY:}
-jwt:
-  refreshExpirationDateInMs: '9000000'
-server:
-  error:
-    whitelabel:
-      enabled: 'false'
-  port: '8443'
 
-aspect:
-  enabled: 'true'
-
-# Keep your custom collection property anywhere you like
-custom:
-  mongodb:
-    collection: event
-
+# Feign Configuration
 feign:
   csul:
     ckb:
-      url: https://api-ckbvendorportal.dipstrategy.co.id
-      api-key:
+      url: "http://10.144.250.13:5000"
+      username: ramco
+      password: RamcoVDC2026!
+      client-secret: SecretRamco2026!
 
   confins:
-    url: https://uat-confinsr3.csulfinance.com
-    adins-key: ${CONFINS_ADINS_KEY:}
-    secret:
-    api-key:
-    fou: "${feign.confins.url}/api/fou"
-    ap: "${feign.confins.url}/api/ap"
+    url: https://confinsr3.csulfinance.com
+    adins-key: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=

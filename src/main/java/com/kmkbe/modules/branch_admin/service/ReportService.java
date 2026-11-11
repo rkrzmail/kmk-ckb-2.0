@@ -7,6 +7,8 @@ import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.*;
 import com.kmkbe.core.domain.request.PaginationRequest;
+import com.kmkbe.exception.BusinessException;
+import com.kmkbe.helpers.constant.ErrorConstant;
 import com.kmkbe.helpers.utils.CommonUtils;
 import com.kmkbe.helpers.utils.PaginationRequests;
 import com.kmkbe.helpers.utils.PaginationSort;
@@ -26,6 +28,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -33,6 +36,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -44,6 +48,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.sf.jasperreports.engine.JRException;
+
+import static org.thymeleaf.util.StringUtils.concat;
 
 @Service
 public class ReportService {
@@ -564,16 +570,16 @@ public class ReportService {
 
     Optional<Map<String, Object>> cwrData = agreementRepo.findCwrCodeAndDate(UUID.fromString(financingHdrCode), agreementCode);
     Map<String, Object> Cdata = cwrData.orElseGet(Collections::emptyMap);
-//    SimpleDateFormat Csdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("id", "ID"));
-//    String formattedCwrDate = cwrData
-//      .map(data -> {
-//        Object rawDate = data.get("cwr_start_date");
-//        if (rawDate instanceof Date) {
-//          return Csdf.format((Date) rawDate);
-//        }
-//        return "-";
-//      })
-//      .orElse("-");
+    SimpleDateFormat Csdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("id", "ID"));
+    String formattedCwrDate = cwrData
+      .map(data -> {
+        Object rawDate = data.get("cwr_start_date");
+        if (rawDate instanceof Date) {
+          return Csdf.format((Date) rawDate);
+        }
+        return "-";
+      })
+      .orElse("-");
 
     // 7. Bouwheer List
     CompletableFuture<CwrListBwhrResponse> bouwheerFuture = CompletableFuture.supplyAsync(() ->
@@ -622,16 +628,23 @@ public class ReportService {
     Optional<Map<String, Object>> debtorData = agreementRepo.finddetailDebtor(UUID.fromString(financingHdrCode), agreementCode);
     Map<String, Object> data = debtorData.orElseGet(Collections::emptyMap);
 
+    //Find Customer City
+    Optional<FinancingHdr>financingHdrOptional = financingHdrRepository.findByFinancingHdrCode(financingHdrUuid);
+    if(financingHdrOptional.isEmpty()){
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Financing not found !");
+    }
+    FinancingHdr financingHdr = financingHdrOptional.get();
+    String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"," "};
     Map<String, Object> params = new HashMap<>();
     params.put("SUBREPORT_DIR",Objects.requireNonNull(getClass().getResource("/Reports/")).toString());
     params.put("NamaBranchManager", branchManagerData.getKaryawanName());
     params.put("JabatanBranchManager", branchManagerData.getJabatan());
     params.put("NamaAreaSalesManager", areaSalesManagerData.getKaryawanName());
     params.put("AppNo", apiResponse.getAppNo());
-    params.put("TglDokumen", CommonUtils.toDate(agreement.getDtmCrt()));
+    params.put("TglDokumen",CommonUtils.capitalize(CommonUtils.safeRemoveAll(financingHdr.getMstBranch().getBranchName(),removeRBU)).concat(", ").concat(CommonUtils.toDate(agreement.getDtmCrt())));
     params.put("DebtorName", debtorName);
     params.put("Cwr", Cdata.getOrDefault("cwr_code", "-").toString());
-    params.put("Cwr-Date", CommonUtils.toDate(agreement.getDtmCrt()));
+    params.put("Cwr-Date",formattedCwrDate);
     params.put("BankName", dataRekening.getBankName());
     params.put("BankAccNo", dataRekening.getAccNo());
     params.put("BankAccName", dataRekening.getAccName());
@@ -731,9 +744,6 @@ public class ReportService {
     params.put("PengikatanJaminan", "IDR 0.00");
     params.put("Provisi", "IDR 0.00");
     params.put("Survey", "IDR 0.00");
-
-
-    FinancingHdr financingHdr = financingHdrService.findByCode(financingHdrCode);
 
     CommonResult<SitDto> sitData = agreementCodeService.getAgreementsByFinancingHdrCode(UUID.fromString(financingHdrCode));
     if (sitData.getCode() == 200 && sitData.getData() != null) {
