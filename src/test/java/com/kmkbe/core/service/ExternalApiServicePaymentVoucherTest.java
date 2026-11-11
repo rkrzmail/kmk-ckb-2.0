@@ -1,8 +1,7 @@
 package com.kmkbe.core.service;
 
 import com.kmkbe.core.domain.dto.PaymentVoucherRemote;
-import com.kmkbe.core.domain.dto.InquiryDataAgreementDto;
-import com.kmkbe.core.domain.dto.InquiryDataAgreementDtoAgrmntObj;
+import com.kmkbe.core.domain.dto.AgreementByNumberResponse;
 import com.kmkbe.feign.client.ConfinsR3FeignClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -25,14 +24,21 @@ class ExternalApiServicePaymentVoucherTest {
     private final ExternalApiService service = new ExternalApiService(mock(RestTemplate.class), client);
 
     @Test
-    void rejectsAgreementWithoutAgrmntDt() {
-        InquiryDataAgreementDto response = new InquiryDataAgreementDto();
-        response.setStatusCode("200");
-        response.setAgrmntObj(new InquiryDataAgreementDtoAgrmntObj());
-        when(client.getAgreementByAgrmntNo(any())).thenReturn(response);
+    void rejectsAgreementWithoutAgrmntCreatedDt() {
+        when(client.getAgreementByAgrmntNo(any()))
+            .thenReturn(new AgreementByNumberResponse("AGR001", null, "200"));
 
         assertThatThrownBy(() -> service.getAgreementDate("AGR001"))
-            .isInstanceOf(IllegalStateException.class).hasMessageContaining("AgrmntDt");
+            .isInstanceOf(IllegalStateException.class).hasMessageContaining("AgrmntCreatedDt");
+    }
+
+    @Test
+    void rejectsAgreementDateForAnotherAgreement() {
+        when(client.getAgreementByAgrmntNo(any()))
+            .thenReturn(new AgreementByNumberResponse("AGR002", LocalDateTime.of(2027, 5, 13, 0, 0), "200"));
+
+        assertThatThrownBy(() -> service.getAgreementDate("AGR001"))
+            .isInstanceOf(IllegalStateException.class).hasMessageContaining("AGR001");
     }
 
     @Test

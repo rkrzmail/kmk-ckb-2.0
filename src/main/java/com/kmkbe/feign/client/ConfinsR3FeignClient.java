@@ -112,8 +112,8 @@ public interface ConfinsR3FeignClient {
   @PostMapping(value = "/api/corelos/v1/AppAttrContent/GetListAppAttrContentForView", consumes = "application/json", produces = "application/json")
   BaseMstRemoteResponseDto<List<AgreementAttributeContentDto>> getAgreementAttributeContent(@RequestBody Map<String, Object> request);
 
-  @PostMapping(value = "/api/ar/v1/Agrmnt/GetAgrmntByAgrmntNo", consumes = "application/json", produces = "application/json")
-  InquiryDataAgreementDto getAgreementByAgrmntNo(@RequestBody Map<String, Object> request);
+  @PostMapping(value = "/api/los/v1/Agrmnt/GetAgrmntByAgrmntNo", consumes = "application/json", produces = "application/json")
+  AgreementByNumberResponse getAgreementByAgrmntNo(@RequestBody Map<String, Object> request);
 
   @PostMapping(value = "/api/fou/v1/Generic/GetPagingObjectBySQL", consumes = "application/json", produces = "application/json")
   BaseMstRemoteResponseDto<List<AreaRemoteDto>> areaQuery(@RequestBody AreaCriteriaRemoteRequest request);
