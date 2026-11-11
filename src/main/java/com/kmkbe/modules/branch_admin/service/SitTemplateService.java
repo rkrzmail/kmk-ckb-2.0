@@ -3,14 +3,11 @@ package com.kmkbe.modules.branch_admin.service;
 import com.kmkbe.core.domain.dto.email.MailDataDto;
 import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import com.kmkbe.core.domain.entity.Agreement;
-import com.kmkbe.core.domain.entity.Cwr;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.utils.CommonUtils;
-import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
-import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,13 +15,9 @@ import net.sf.jasperreports.engine.JRException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
