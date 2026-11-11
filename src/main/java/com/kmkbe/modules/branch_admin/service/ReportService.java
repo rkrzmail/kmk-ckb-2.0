@@ -117,7 +117,7 @@ public class ReportService {
 
   @Autowired
   private AgreementService agreementService;
-
+  
   private void ensureJwtToken() {
     jwtToken = authRemoteService.fetchAuthJwt().getData();
   }
