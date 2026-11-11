@@ -105,8 +105,6 @@ public class SitTemplateService {
       MailPositionDto response = configRemoteService.getEmailByPosition("", branchCode, "RM");
       if (response == null || response.getData() == null) return "";
       return response.getData().stream()
-        .filter(person -> person.getBranchCode() == null
-          || branchCode.equalsIgnoreCase(person.getBranchCode()))
         .map(MailDataDto::getEmployeeName)
         .filter(name -> name != null && !name.isBlank())
         .findFirst().orElse("");
