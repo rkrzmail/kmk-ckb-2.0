@@ -9,6 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -117,6 +120,59 @@ public class ExternalApiService {
                 + agreementCode + "; ditemukan " + debtorAccounts.size());
         }
         return debtorAccounts.getFirst();
+    }
+
+    public LocalDateTime getDisbursementExecutionDate(String apNo, String officeCode) {
+        if (apNo == null || apNo.isBlank() || officeCode == null || officeCode.isBlank()) {
+            throw new IllegalArgumentException("APNo dan OfficeCode wajib tersedia untuk mencari tanggal pencairan");
+        }
+
+        String requestDate = LocalDate.now().toString();
+        String apNoArrayExpression = "CASE WHEN AP.ACC_PAYABLE_NO IS NULL THEN '-' ELSE "
+            + "(SELECT string_agg(AP2.ACC_PAYABLE_NO, ',') FROM PAY_VOUCHER_H PVH2 "
+            + "LEFT JOIN PAY_VOUCHER_D PVD2 ON PVH2.PAY_VOUCHER_H_ID = PVD2.PAY_VOUCHER_H_ID "
+            + "JOIN ACC_PAYABLE AP2 ON PVD2.ACC_PAYABLE_ID = AP2.ACC_PAYABLE_ID "
+            + "WHERE PVH2.PAY_VOUCHER_H_ID = PVH.PAY_VOUCHER_H_ID GROUP BY PVH2.PAY_VOUCHER_H_ID) END";
+        PaymentVoucherRemote.PagingRequest pagingRequest = new PaymentVoucherRemote.PagingRequest(
+            true, true, true,
+            new PaymentVoucherRemote.QueryString("searchPayVoucherInquiry"),
+            "", null, "INNER", 1, 10,
+            new PaymentVoucherRemote.OrderBy("PVH.PAY_VOUCHER_H_ID", "false"),
+            List.of(
+                new PaymentVoucherRemote.Criterion(0, 0, "text", false, "Eq", "AP.REF_ACC_PAYABLE_TYPE_ID", "10009"),
+                new PaymentVoucherRemote.Criterion(0, 0, "text", false, "Eq", "AP.OFFICE_CODE", officeCode),
+                new PaymentVoucherRemote.Criterion(0, 0, "text", false, "Eq", "PVH.CURR_CODE", "IDR"),
+                new PaymentVoucherRemote.Criterion(0, 0, "", false, "Eq", apNoArrayExpression, apNo)
+            ), requestDate
+        );
+
+        PaymentVoucherRemote.PagingResponse paging = confinsR3FeignClient.getPaymentVouchers(pagingRequest);
+        if (paging == null || paging.header() == null || !"200".equals(paging.header().statusCode())
+            || !"200".equals(paging.statusCode()) || paging.data() == null) {
+            throw new IllegalStateException("Respons pencarian Payment Voucher Confins tidak valid untuk AP " + apNo);
+        }
+        if (paging.count() != null && paging.count() > paging.data().size()) {
+            throw new IllegalStateException("Hasil Payment Voucher melebihi halaman pertama untuk AP " + apNo);
+        }
+        List<PaymentVoucherRemote.PagingRow> paidVouchers = paging.data().stream()
+            .filter(row -> "PAID".equalsIgnoreCase(row.statusCode()))
+            .filter(row -> row.payVoucherNo() != null && !row.payVoucherNo().isBlank())
+            .filter(row -> apNo.equals(row.apNo()) || row.apNoArray() != null
+                && Arrays.stream(row.apNoArray().split(",")).map(String::trim).anyMatch(apNo::equals))
+            .toList();
+        if (paidVouchers.size() != 1) {
+            throw new IllegalStateException("Diperlukan tepat satu Payment Voucher PAID untuk AP " + apNo
+                + "; ditemukan " + paidVouchers.size());
+        }
+
+        String voucherNo = paidVouchers.getFirst().payVoucherNo();
+        PaymentVoucherRemote.DetailResponse detail = confinsR3FeignClient.getPaymentVoucher(
+            new PaymentVoucherRemote.DetailRequest(voucherNo, requestDate));
+        if (detail == null || !voucherNo.equals(detail.payVoucherNo())
+            || !"PAID".equalsIgnoreCase(detail.statusCode()) || detail.executionValueDt() == null) {
+            throw new IllegalStateException("ExecutionValueDt Payment Voucher tidak valid untuk " + voucherNo);
+        }
+        return detail.executionValueDt();
     }
 
     public CwrBwhrResponse getCwrBwhr(String CwrCode) {

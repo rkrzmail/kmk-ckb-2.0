@@ -158,6 +158,17 @@ public class InquiryDisburseService {
         if (l.isEmpty()) {
           DisbursementAccountResponse.DisbInfo debtorAccount =
             externalApiService.getDebtorDisbursementAccount(aggrNo);
+          List<InquiryDisburseDatum> paidApRows = inquiryDisburseResult.getData().stream()
+            .filter(row -> aggrNo.equalsIgnoreCase(row.getAgreementNo()))
+            .filter(row -> "P".equalsIgnoreCase(row.getAPStatCode()))
+            .toList();
+          if (paidApRows.size() != 1) {
+            throw new IllegalStateException("Diperlukan tepat satu AP dibayar untuk agreement " + aggrNo
+              + "; ditemukan " + paidApRows.size());
+          }
+          InquiryDisburseDatum paidAp = paidApRows.getFirst();
+          String disbursementDate = DateTimeUtils.formatToDate(
+            externalApiService.getDisbursementExecutionDate(paidAp.getAPNo(), paidAp.getOfficeCode()));
 
           //send B to mst
           UpdateFinancingStatusRequest.builder()
@@ -225,7 +236,7 @@ public class InquiryDisburseService {
                   .format(debtorAccount.getNominal()))
                 .bankName(debtorAccount.getBankName())
                 .accountNo(debtorAccount.getAccNo())
-                .disbursementDate(DateTimeUtils.formatToDate(DateTimeUtils.nowLocal()))
+                .disbursementDate(disbursementDate)
                 .invoices(invoices)
                 .build()
             );

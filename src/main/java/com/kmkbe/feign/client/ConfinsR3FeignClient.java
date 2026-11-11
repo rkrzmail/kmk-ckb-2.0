@@ -76,6 +76,12 @@ public interface ConfinsR3FeignClient {
   @PostMapping(value = "/api/ar/v1/AgrmntCardView/GetDisburseListByAgrmntNo", consumes = "application/json", produces = "application/json")
   DisbursementAccountResponse getDisbursementAccounts(@RequestBody DisbursementAccountRequest request);
 
+  @PostMapping(value = "/api/ap/v2/Generic/GetPagingObjectBySQL", consumes = "application/json", produces = "application/json")
+  PaymentVoucherRemote.PagingResponse getPaymentVouchers(@RequestBody PaymentVoucherRemote.PagingRequest request);
+
+  @PostMapping(value = "/api/ap/v1/PayVoucherH/GetPayVoucherHByPayVoucherHNo", consumes = "application/json", produces = "application/json")
+  PaymentVoucherRemote.DetailResponse getPaymentVoucher(@RequestBody PaymentVoucherRemote.DetailRequest request);
+
   @PostMapping(value = "/api/corelos/v1/AppFctr/GetAppFctrByAppId", consumes = "application/json", produces = "application/json")
   AppFactoringResponse getAppFactoringData(@RequestBody AppFactoringRequest request);
 
