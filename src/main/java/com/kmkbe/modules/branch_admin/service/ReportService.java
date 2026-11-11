@@ -49,6 +49,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.sf.jasperreports.engine.JRException;
 
+import static org.thymeleaf.util.StringUtils.concat;
+
 @Service
 public class ReportService {
 
@@ -632,13 +634,14 @@ public class ReportService {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Financing not found !");
     }
     FinancingHdr financingHdr = financingHdrOptional.get();
+    String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"};
     Map<String, Object> params = new HashMap<>();
     params.put("SUBREPORT_DIR",Objects.requireNonNull(getClass().getResource("/Reports/")).toString());
     params.put("NamaBranchManager", branchManagerData.getKaryawanName());
     params.put("JabatanBranchManager", branchManagerData.getJabatan());
     params.put("NamaAreaSalesManager", areaSalesManagerData.getKaryawanName());
     params.put("AppNo", apiResponse.getAppNo());
-    params.put("TglDokumen",CommonUtils.capitalize(financingHdr.getMstBranch().getCity()).concat(",").concat(CommonUtils.toDate(agreement.getDtmCrt())));
+    params.put("TglDokumen",CommonUtils.capitalize(CommonUtils.safeRemoveAll(financingHdr.getMstBranch().getBranchName(),removeRBU)).concat(", ").concat(CommonUtils.toDate(agreement.getDtmCrt())));
     params.put("DebtorName", debtorName);
     params.put("Cwr", Cdata.getOrDefault("cwr_code", "-").toString());
     params.put("Cwr-Date",formattedCwrDate);

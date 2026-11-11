@@ -59,7 +59,10 @@
 				<text><![CDATA[Kepada Yth.,]]></text>
 			</staticText>
 			<textField>
-				<reportElement x="290" y="10" width="160" height="20" uuid="959b5c91-a35f-436e-8774-cda709ea7edd"/>
+				<reportElement x="290" y="10" width="160" height="61" uuid="959b5c91-a35f-436e-8774-cda709ea7edd"/>
+				<textElement textAlignment="Right">
+					<font fontName="SansSerif" size="10"/>
+				</textElement>
 				<textFieldExpression><![CDATA[$P{TglDokumen}]]></textFieldExpression>
 			</textField>
 		</band>

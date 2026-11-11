@@ -39,7 +39,8 @@
 				<textFieldExpression><![CDATA[$P{AgrmntNo}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="290" y="9" width="160" height="20" uuid="959b5c91-a35f-436e-8774-cda709ea7edd"/>
+				<reportElement x="290" y="9" width="160" height="51" uuid="959b5c91-a35f-436e-8774-cda709ea7edd"/>
+				<textElement textAlignment="Right"/>
 				<textFieldExpression><![CDATA[$P{TglDokumen}]]></textFieldExpression>
 			</textField>
 			<staticText>
