@@ -33,7 +33,7 @@ public class ExternalApiService {
             "RequestDateTime", LocalDate.now().toString()
         ));
         if (response == null || !"200".equals(response.getStatusCode())
-            || response.getAgrmntObj() == null || response.getAgrmntObj().getAgrmntDt() == null) {
+            || response.getAgrmntObj().getAgrmntDt() == null) {
             throw new IllegalStateException("AgrmntDt Confins untuk perjanjian " + agreementCode + " tidak tersedia");
         }
         return response.getAgrmntObj().getAgrmntDt();
