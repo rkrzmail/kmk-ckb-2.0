@@ -23,9 +23,6 @@ public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID
 
   Optional<FinancingHdr> findFirstByCustomerOrderByFinancingHdrIdDesc(Customer customer);
 
-
-  List<FinancingHdr> findAllByCustomerOrderByDtmCrtDesc(@NotNull Customer customer);
-
   @Query(
     value = """
       select 

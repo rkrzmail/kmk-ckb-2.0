@@ -6,8 +6,7 @@ import com.kmkbe.modules.user.entity.MstBranch;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -18,6 +17,10 @@ import java.util.UUID;
 @Setter
 @Entity
 @Table(name = "financing_hdr", schema = "public")
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class FinancingHdr implements Serializable {
   @Id
   @Column(name = "financing_hdr_code", nullable = false)
