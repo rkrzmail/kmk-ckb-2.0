@@ -1,8 +1,6 @@
 package com.kmkbe.core.service;
 
 import com.kmkbe.core.domain.dto.*;
-import com.kmkbe.exception.BusinessException;
-import com.kmkbe.helpers.constant.ErrorConstant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.kmkbe.feign.client.ConfinsR3FeignClient;
@@ -36,7 +34,7 @@ public class ExternalApiService {
         ));
         if (response == null || !"200".equals(response.getStatusCode())
             || response.getAgrmntObj() == null || response.getAgrmntObj().getAgrmntDt() == null) {
-          throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Invoice Anda masih dalam proses persetujuan!");
+            throw new IllegalStateException("AgrmntDt Confins untuk perjanjian " + agreementCode + " tidak tersedia");
         }
         return response.getAgrmntObj().getAgrmntDt();
     }
