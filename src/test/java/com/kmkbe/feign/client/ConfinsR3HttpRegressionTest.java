@@ -321,6 +321,14 @@ class ConfinsR3HttpRegressionTest {
         assertThat(byCwr.getData().getFirst().getAppNo()).isEqualTo("APP001");
         assertThat(path).isEqualTo("/api/los/v1/Agrmnt/GetListAgrmntDetailForCwrByCwrNo");
         assertThat(request.get("trxNo").asText()).isEqualTo("CWR001");
+
+        response = "{\"ReturnObject\":[{\"AppId\":42,\"RefAttrCode\":\"LIMIT_AGR_DT\",\"AttrValue\":\"2025-10-20\"}]," + HEADER + "}";
+        var attributes = remote.agreementAttributeContent(42);
+        assertThat(attributes.getData().getFirst().attrValue()).isEqualTo("2025-10-20");
+        assertThat(path).isEqualTo("/api/corelos/v1/AppAttrContent/GetListAppAttrContentForView");
+        assertThat(request.get("AppId").asInt()).isEqualTo(42);
+        assertThat(request.get("AttrGroup").asText()).isEqualTo("FCTR");
+        assertThat(request.get("RequestDateTime").asText()).matches("\\d{4}-\\d{2}-\\d{2}");
     }
 
     @Test

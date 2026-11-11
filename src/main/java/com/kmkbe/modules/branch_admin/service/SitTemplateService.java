@@ -2,6 +2,8 @@ package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.email.MailDataDto;
 import com.kmkbe.core.domain.dto.email.MailPositionDto;
+import com.kmkbe.core.domain.dto.AgreementAttributeContentDto;
+import com.kmkbe.core.domain.dto.InquiryAgreementByNoCwrRemoteDto;
 import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.Cwr;
 import com.kmkbe.core.domain.entity.FinancingHdr;
@@ -12,6 +14,7 @@ import com.kmkbe.helpers.utils.CommonUtils;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
+import com.kmkbe.modules.remote.service.CwrRemoteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jasperreports.engine.JRException;
@@ -20,11 +23,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -36,6 +38,7 @@ public class SitTemplateService {
   private final FinancingHdrRepository financingHdrRepository;
   private final AgreementRepository agreementRepository;
   private final ConfigRemoteService configRemoteService;
+  private final CwrRemoteService cwrRemoteService;
   private final JasperReportRenderer jasperReportRenderer;
 
   @Transactional(readOnly = true)
@@ -60,7 +63,41 @@ public class SitTemplateService {
       throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, 422,
         "Data debitur atau pemberi kerja untuk dokumen SIT tidak tersedia.");
     }
-    return jasperReportRenderer.renderToPdf(TEMPLATE_PATH, parameters(financing, agreement));
+    LocalDate limitAgreementDate = limitAgreementDate(agreement);
+    return jasperReportRenderer.renderToPdf(TEMPLATE_PATH, parameters(financing, agreement, limitAgreementDate));
+  }
+
+  private LocalDate limitAgreementDate(Agreement agreement) throws IOException {
+    Cwr cwr = agreement.getCwr();
+    if (cwr == null || cwr.getCwrCode() == null || cwr.getCwrCode().isBlank()) {
+      throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, 422,
+        "Nomor CWR untuk dokumen SIT tidak tersedia.");
+    }
+    var agreements = cwrRemoteService.inquiryAgreementByNoCwr(cwr.getCwrCode());
+    InquiryAgreementByNoCwrRemoteDto selected = agreements == null || agreements.getData() == null
+      ? null : agreements.getData().stream()
+        .filter(item -> agreement.getAgreementCode().equals(item.getAgrmntNo()))
+        .findFirst().orElse(null);
+    if (selected == null || selected.getAppId() == null) {
+      throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, 422,
+        "AppId Confins untuk perjanjian SIT tidak tersedia.");
+    }
+    var attributes = cwrRemoteService.agreementAttributeContent(selected.getAppId());
+    String value = attributes == null || attributes.getData() == null ? null : attributes.getData().stream()
+      .filter(item -> "LIMIT_AGR_DT".equals(item.refAttrCode()))
+      .map(AgreementAttributeContentDto::attrValue)
+      .filter(date -> date != null && !date.isBlank())
+      .findFirst().orElse(null);
+    if (value == null) {
+      throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, 422,
+        "LIMIT_AGR_DT Confins untuk perjanjian SIT tidak tersedia.");
+    }
+    try {
+      return LocalDate.parse(value);
+    } catch (DateTimeParseException e) {
+      throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, 422,
+        "Format LIMIT_AGR_DT Confins untuk perjanjian SIT tidak valid.");
+    }
   }
 
   private Agreement selectAgreement(UUID financingHdrCode, String agreementCode) {
@@ -81,10 +118,10 @@ public class SitTemplateService {
     return agreements.getFirst();
   }
 
-  private Map<String, Object> parameters(FinancingHdr financing, Agreement agreement) {
+  private Map<String, Object> parameters(FinancingHdr financing, Agreement agreement, LocalDate limitAgreementDate) {
     String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"," "};
     Map<String, Object> params = new HashMap<>();
-    params.put("tanggalCwr", CommonUtils.capitalize(CommonUtils.safeRemoveAll(financing.getMstBranch().getBranchName(),removeRBU)).concat(", ").concat(CommonUtils.toDate(agreement.getDtmCrt())));
+    params.put("tanggalCwr", CommonUtils.capitalize(CommonUtils.safeRemoveAll(financing.getMstBranch().getBranchName(),removeRBU)).concat(", ").concat(CommonUtils.toDate(limitAgreementDate.atStartOfDay())));
     params.put("namaBouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
     params.put("periodeBerlaku", CommonUtils.toDate(financing.getFinancingDueDate()));
     params.put("namaDebitur", CommonUtils.nullValue(financing.getCustomer().getCustName()));
@@ -94,7 +131,7 @@ public class SitTemplateService {
     params.put("bouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
     params.put("legalAddress", CommonUtils.nullValue(financing.getBouwheer().getLegalAddress()));
     params.put("picName", CommonUtils.nullValue(financing.getBouwheer().getPicName()));
-    params.put("tanggalPerjanjian", CommonUtils.toDate(agreement.getCwr().getCwrStartDate()));
+    params.put("tanggalPerjanjian", CommonUtils.toDate(limitAgreementDate.atStartOfDay()));
     params.put("nomorPerjanjian", CommonUtils.nullValue(agreement.getCwr().getCwrCode()));
     return params;
   }

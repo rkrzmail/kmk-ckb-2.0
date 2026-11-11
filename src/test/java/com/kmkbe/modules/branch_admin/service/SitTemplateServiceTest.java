@@ -2,6 +2,9 @@ package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.email.MailDataDto;
 import com.kmkbe.core.domain.dto.email.MailPositionDto;
+import com.kmkbe.core.domain.dto.AgreementAttributeContentDto;
+import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
+import com.kmkbe.core.domain.dto.InquiryAgreementByNoCwrRemoteDto;
 import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.Cwr;
 import com.kmkbe.core.domain.entity.FinancingHdr;
@@ -11,6 +14,7 @@ import com.kmkbe.exception.BusinessException;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
+import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.user.entity.MstBranch;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -39,13 +43,14 @@ class SitTemplateServiceTest {
   @Mock FinancingHdrRepository financingHdrRepository;
   @Mock AgreementRepository agreementRepository;
   @Mock ConfigRemoteService configRemoteService;
+  @Mock CwrRemoteService cwrRemoteService;
   @Mock JasperReportRenderer jasperReportRenderer;
   SitTemplateService service;
 
   @BeforeEach
   void setUp() {
     service = new SitTemplateService(financingHdrRepository, agreementRepository,
-      configRemoteService, jasperReportRenderer);
+      configRemoteService, cwrRemoteService, jasperReportRenderer);
   }
 
   @Test
@@ -72,6 +77,12 @@ class SitTemplateServiceTest {
       .build();
     when(financingHdrRepository.findByFinancingHdrCode(LEAD)).thenReturn(Optional.of(financing));
     when(agreementRepository.findByFinancingHdr_FinancingHdrCode(LEAD)).thenReturn(List.of(agreement));
+    when(cwrRemoteService.inquiryAgreementByNoCwr("AGR-1")).thenReturn(response(List.of(
+      InquiryAgreementByNoCwrRemoteDto.builder().agrmntNo("AGR-OTHER").appId(9).build(),
+      InquiryAgreementByNoCwrRemoteDto.builder().agrmntNo("AGR-1").appId(42).build())));
+    when(cwrRemoteService.agreementAttributeContent(42)).thenReturn(response(List.of(
+      new AgreementAttributeContentDto(42, "LIMIT_AGR_NO", "142"),
+      new AgreementAttributeContentDto(42, "LIMIT_AGR_DT", "2025-10-20"))));
     when(configRemoteService.getEmailByPosition("", "407", "RM"))
       .thenReturn(MailPositionDto.builder().data(List.of(MailDataDto.builder()
         .branchCode("407").employeeName("Manajer Regional").build())).build());
@@ -83,14 +94,49 @@ class SitTemplateServiceTest {
     ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
     verify(jasperReportRenderer).renderToPdf(eq("/Reports/sit.jasper"), captor.capture());
     assertThat(captor.getValue()).containsEntry("nomorPerjanjian", "AGR-1")
-      .containsEntry("tanggalPerjanjian", "26 Oktober 2026")
-      .containsEntry("tanggalCwr", "JAKARTA, 26 Oktober 2026")
+      .containsEntry("tanggalPerjanjian", "20 Oktober 2025")
+      .containsEntry("tanggalCwr", "JAKARTA, 20 Oktober 2025")
       .containsEntry("namaDebitur", "Debitur Satu")
       .containsEntry("companyDebitur", "Debitur Satu")
       .containsEntry("namaBouwheer", "Bouwheer Satu")
       .containsEntry("namaRegionalManager", "Manajer Regional")
       .containsEntry("legalAddress", "Jakarta")
       .containsEntry("periodeBerlaku", "31 Desember 2026");
+  }
+
+  @Test
+  void rejectsWhenSelectedAgreementHasNoAppId() throws Exception {
+    when(financingHdrRepository.findByFinancingHdrCode(LEAD)).thenReturn(Optional.of(financing()));
+    when(agreementRepository.findByFinancingHdr_FinancingHdrCode(LEAD)).thenReturn(List.of(agreement()));
+    when(cwrRemoteService.inquiryAgreementByNoCwr("CWR-1")).thenReturn(response(List.of(
+      InquiryAgreementByNoCwrRemoteDto.builder().agrmntNo("AGR-OTHER").appId(42).build())));
+
+    assertThatThrownBy(() -> service.download(LEAD, "AGR-1"))
+      .isInstanceOf(BusinessException.class).hasMessageContaining("AppId Confins");
+  }
+
+  @Test
+  void rejectsWhenLimitAgreementDateIsMissing() throws Exception {
+    when(financingHdrRepository.findByFinancingHdrCode(LEAD)).thenReturn(Optional.of(financing()));
+    when(agreementRepository.findByFinancingHdr_FinancingHdrCode(LEAD)).thenReturn(List.of(agreement()));
+    when(cwrRemoteService.inquiryAgreementByNoCwr("CWR-1")).thenReturn(response(List.of(
+      InquiryAgreementByNoCwrRemoteDto.builder().agrmntNo("AGR-1").appId(42).build())));
+    when(cwrRemoteService.agreementAttributeContent(42)).thenReturn(response(List.of(
+      new AgreementAttributeContentDto(42, "LIMIT_AGR_NO", "142"))));
+
+    assertThatThrownBy(() -> service.download(LEAD, "AGR-1"))
+      .isInstanceOf(BusinessException.class).hasMessageContaining("LIMIT_AGR_DT");
+  }
+
+  private Agreement agreement() {
+    return Agreement.builder().agreementCode("AGR-1")
+      .cwr(Cwr.builder().cwrCode("CWR-1").build()).build();
+  }
+
+  private <T> BaseMstRemoteResponseDto<List<T>> response(List<T> data) {
+    var response = new BaseMstRemoteResponseDto<List<T>>();
+    response.setData(data);
+    return response;
   }
 
   @Test

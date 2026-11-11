@@ -3,6 +3,7 @@ package com.kmkbe.modules.remote.service;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
+import com.kmkbe.core.domain.dto.AgreementAttributeContentDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementByNoCwrRemoteDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementCwrDto;
 import com.kmkbe.core.domain.dto.InquiryCwrRemoteDto;
@@ -32,6 +33,15 @@ public class CwrRemoteService {
   private String confinsUrl;
   private final ObjectMapper objectMapper;
   private final ConfinsR3FeignClient confinsR3FeignClient;
+
+  @Transactional(propagation = Propagation.NOT_SUPPORTED)
+  public BaseMstRemoteResponseDto<List<AgreementAttributeContentDto>> agreementAttributeContent(int appId) {
+    return confinsR3FeignClient.getAgreementAttributeContent(Map.of(
+      "AppId", appId,
+      "AttrGroup", "FCTR",
+      "RequestDateTime", Utils.NowDate()
+    ));
+  }
 
   @Transactional(propagation = Propagation.NOT_SUPPORTED)
   public BaseMstRemoteResponseDto<List<InquiryCwrRemoteDto>> inquiryCwr(
