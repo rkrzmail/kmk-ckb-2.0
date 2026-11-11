@@ -12,6 +12,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @Slf4j
 @Service
@@ -22,6 +23,21 @@ public class ExternalApiService {
     private final ConfinsR3FeignClient confinsR3FeignClient;
 
     private String xapiKey = "YiByHB@CSUL_DEV";
+
+    public LocalDateTime getAgreementDate(String agreementCode) {
+        if (agreementCode == null || agreementCode.isBlank() || "-".equals(agreementCode)) {
+            throw new IllegalArgumentException("Nomor perjanjian untuk tanggal pengalihan piutang tidak tersedia");
+        }
+        InquiryDataAgreementDto response = confinsR3FeignClient.getAgreementByAgrmntNo(Map.of(
+            "TrxNo", agreementCode,
+            "RequestDateTime", LocalDate.now().toString()
+        ));
+        if (response == null || !"200".equals(response.getStatusCode())
+            || response.getAgrmntObj() == null || response.getAgrmntObj().getAgrmntDt() == null) {
+            throw new IllegalStateException("AgrmntDt Confins untuk perjanjian " + agreementCode + " tidak tersedia");
+        }
+        return response.getAgrmntObj().getAgrmntDt();
+    }
 
     public AppResponse getAppByAppNo(String applicationCode) {
         try {

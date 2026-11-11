@@ -332,6 +332,17 @@ class ConfinsR3HttpRegressionTest {
     }
 
     @Test
+    void agreementDateUsesAgrmntDtFromAgreementByNumber() {
+        response = "{\"AgrmntObj\":{\"AgrmntNo\":\"AGR001\",\"AgrmntDt\":\"2026-12-14T00:00:00\"},\"StatusCode\":\"200\"," + HEADER + "}";
+
+        assertThat(service.getAgreementDate("AGR001"))
+            .isEqualTo(java.time.LocalDateTime.of(2026, 12, 14, 0, 0));
+        assertThat(path).isEqualTo("/api/ar/v1/Agrmnt/GetAgrmntByAgrmntNo");
+        assertThat(request.get("TrxNo").asText()).isEqualTo("AGR001");
+        assertThat(request.get("RequestDateTime").asText()).isEqualTo(LocalDate.now().toString());
+    }
+
+    @Test
     void customerZipcodeAndSignerDecodeNonEmptyData() throws Exception {
         response = "{\"CustNo\":\"CUST001\",\"CustName\":\"Customer Test\"}";
         var customerRemote = new CustomerRemoteService(esign, mock(com.kmkbe.core.service.BaseRemoteService.class), mapper, client);

@@ -1,6 +1,8 @@
 package com.kmkbe.core.service;
 
 import com.kmkbe.core.domain.dto.PaymentVoucherRemote;
+import com.kmkbe.core.domain.dto.InquiryDataAgreementDto;
+import com.kmkbe.core.domain.dto.InquiryDataAgreementDtoAgrmntObj;
 import com.kmkbe.feign.client.ConfinsR3FeignClient;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,6 +23,17 @@ import static org.mockito.Mockito.when;
 class ExternalApiServicePaymentVoucherTest {
     private final ConfinsR3FeignClient client = mock(ConfinsR3FeignClient.class);
     private final ExternalApiService service = new ExternalApiService(mock(RestTemplate.class), client);
+
+    @Test
+    void rejectsAgreementWithoutAgrmntDt() {
+        InquiryDataAgreementDto response = new InquiryDataAgreementDto();
+        response.setStatusCode("200");
+        response.setAgrmntObj(new InquiryDataAgreementDtoAgrmntObj());
+        when(client.getAgreementByAgrmntNo(any())).thenReturn(response);
+
+        assertThatThrownBy(() -> service.getAgreementDate("AGR001"))
+            .isInstanceOf(IllegalStateException.class).hasMessageContaining("AgrmntDt");
+    }
 
     @Test
     void findsPaidVoucherByApAndUsesItsExecutionValueDate() {

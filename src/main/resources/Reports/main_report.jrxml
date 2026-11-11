@@ -4,6 +4,7 @@
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="One Empty Record"/>
 	<parameter name="AppNo" class="java.lang.String"/>
 	<parameter name="TglDokumen" class="java.lang.String"/>
+	<parameter name="TglPengalihanPiutang" class="java.lang.String"/>
 	<parameter name="DebtorName" class="java.lang.String"/>
 	<parameter name="BankName" class="java.lang.String"/>
 	<parameter name="BankAccNo" class="java.lang.String"/>
@@ -89,7 +90,7 @@
 					<subreportParameterExpression><![CDATA[$P{AppNo}]]></subreportParameterExpression>
 				</subreportParameter>
 				<subreportParameter name="TglDokumen">
-					<subreportParameterExpression><![CDATA[$P{TglDokumen}]]></subreportParameterExpression>
+					<subreportParameterExpression><![CDATA[$P{TglPengalihanPiutang}]]></subreportParameterExpression>
 				</subreportParameter>
 				<subreportParameter name="DebtorName">
 					<subreportParameterExpression><![CDATA[$P{DebtorName}]]></subreportParameterExpression>
@@ -133,6 +134,9 @@
 				</subreportParameter>
 				<subreportParameter name="TglDokumen">
 					<subreportParameterExpression><![CDATA[$P{TglDokumen}]]></subreportParameterExpression>
+				</subreportParameter>
+				<subreportParameter name="TglPengalihanPiutang">
+					<subreportParameterExpression><![CDATA[$P{TglPengalihanPiutang}]]></subreportParameterExpression>
 				</subreportParameter>
 				<subreportParameter name="DebtorName">
 					<subreportParameterExpression><![CDATA[$P{DebtorName}]]></subreportParameterExpression>
