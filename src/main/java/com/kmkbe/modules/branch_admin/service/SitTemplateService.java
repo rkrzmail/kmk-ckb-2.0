@@ -11,8 +11,6 @@ import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.utils.CommonUtils;
-import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
-import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.service.ConfigRemoteService;
 import com.kmkbe.modules.remote.service.CwrRemoteService;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +19,6 @@ import net.sf.jasperreports.engine.JRException;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
