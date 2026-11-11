@@ -634,7 +634,7 @@ public class ReportService {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Financing not found !");
     }
     FinancingHdr financingHdr = financingHdrOptional.get();
-    String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"};
+    String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"," "};
     Map<String, Object> params = new HashMap<>();
     params.put("SUBREPORT_DIR",Objects.requireNonNull(getClass().getResource("/Reports/")).toString());
     params.put("NamaBranchManager", branchManagerData.getKaryawanName());

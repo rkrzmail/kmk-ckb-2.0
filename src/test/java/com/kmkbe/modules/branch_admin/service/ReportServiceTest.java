@@ -39,6 +39,7 @@ import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
+import com.kmkbe.modules.user.entity.MstBranch;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -104,6 +105,7 @@ class ReportServiceTest {
         .city("TEST")
         .build())
       .financingHdrCode(FINANCING_HDR_CODE)
+      .mstBranch(MstBranch.builder().branchName("JAKARTA ABU 1").branchCode("407").build())
       .customer(Customer.builder()
         .personal(CustomerPersonal.builder()
           .city("TEST")

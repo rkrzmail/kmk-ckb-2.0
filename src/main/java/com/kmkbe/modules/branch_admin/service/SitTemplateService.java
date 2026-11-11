@@ -82,7 +82,7 @@ public class SitTemplateService {
   }
 
   private Map<String, Object> parameters(FinancingHdr financing, Agreement agreement) {
-    String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"};
+    String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"," "};
     Map<String, Object> params = new HashMap<>();
     params.put("tanggalCwr", CommonUtils.capitalize(CommonUtils.safeRemoveAll(financing.getMstBranch().getBranchName(),removeRBU)).concat(", ").concat(CommonUtils.toDate(agreement.getDtmCrt())));
     params.put("namaBouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
