@@ -295,6 +295,11 @@ public class FinancingDtlService {
       .requestDateTime(sToday)
       .build());
 
+    if (!Objects.equals(inquiryDataAgreementDto.statusCode, "200")){
+      log.info("Error Inquiry Data Agreement to Confins, {} ", noAggrNo);
+      throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_80, "Invoice Anda masih dalam proses persetujuan!");
+    }
+
     //Inquiry New Info by Agreement to Confins
     log.info("Inquiry new info Agreement to Confins, Financing HDR code {} ", request.getFinancingCode());
     InquiryNewInfoAgreementDto inquiryNewInfoAgreementDto = inquiryNewInfoAgreement(InquiryNewInfoAgreementRequest.builder()

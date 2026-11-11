@@ -234,12 +234,8 @@ public class InquiryDisburseService {
             throw e;
           }
         }
-      }
 
-      //insert Table
-      try {
-        if (inquiryDisburseResult.getStatusCode().equalsIgnoreCase("200") && isDisbursP) {
-          disbursementLogRepository.deleteAll(disbursementLogRepository.findAllByAgreement(agreement));
+         disbursementLogRepository.deleteAll(disbursementLogRepository.findAllByAgreement(agreement));
           DisbursementLog disbursementLog = DisbursementLog.builder().build();
           disbursementLog.setDisbursementCode(UUID.randomUUID());
           disbursementLog.setAgreement(agreement);
@@ -262,9 +258,7 @@ public class InquiryDisburseService {
           disbursementLog.setDtmUpd(DateTimeUtils.now());
           disbursementLogRepository.save(disbursementLog);
         }
-      } catch (Exception ignored) {
-        ignored.printStackTrace();
-      }
+
     } catch (Exception e) {
       log.error("updatePaid, error {}", e.getMessage());
       throw e;

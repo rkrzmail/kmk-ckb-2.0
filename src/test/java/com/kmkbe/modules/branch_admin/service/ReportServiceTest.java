@@ -11,6 +11,7 @@ import com.kmkbe.core.domain.dto.ExternalSigningResponse;
 import com.kmkbe.core.domain.dto.FinancialDataResponse;
 import com.kmkbe.core.domain.dto.PostedInvoiceDto;
 import com.kmkbe.core.domain.dto.ProyeksiReportDto;
+import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.core.domain.dto.RekDebiturResponse;
 import com.kmkbe.core.domain.dto.ReportDueDateDto;
@@ -21,12 +22,6 @@ import com.kmkbe.core.domain.dto.SummaryByBranchDto;
 import com.kmkbe.core.domain.dto.SummaryDetailDto;
 import com.kmkbe.core.domain.dto.VisitorDto;
 import com.kmkbe.core.domain.model.CommonResult;
-import com.kmkbe.core.domain.entity.Agreement;
-import com.kmkbe.core.domain.entity.AgreementFileSigning;
-import com.kmkbe.core.domain.entity.Cwr;
-import com.kmkbe.core.domain.entity.CsulSigner;
-import com.kmkbe.core.domain.entity.Debtor;
-import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.AgreementFileSigningRepository;
 import com.kmkbe.core.domain.repository.AgreementRepository;
@@ -38,6 +33,7 @@ import com.kmkbe.core.domain.repository.VisitorRepository;
 import com.kmkbe.core.domain.request.PaginationRequest;
 import com.kmkbe.core.service.ExternalApiService;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
+import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
@@ -95,11 +91,25 @@ class ReportServiceTest {
   @Mock private SigningEligibilityService signingEligibilityService;
 
   private ReportService service;
-
+  private FinancingHdr financingHdr;
   @BeforeEach
   void setUp() {
     service = new ReportService();
     injectDependencies(service);
+    financingHdr = FinancingHdr.builder()
+      .bouwheer(Bouwheer.builder()
+        .legalAddress("TEST")
+        .zipcode("1111")
+        .province("TEST")
+        .city("TEST")
+        .build())
+      .financingHdrCode(FINANCING_HDR_CODE)
+      .customer(Customer.builder()
+        .personal(CustomerPersonal.builder()
+          .city("TEST")
+          .build())
+        .build())
+      .build();
   }
 
   @Test
@@ -349,6 +359,7 @@ class ReportServiceTest {
     Agreement agreement = agreement();
     agreement.setApplicationCode("APP001");
     agreement.setFinancingAmt(100D);
+    when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
     when(agreementRepo.findByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of(agreement));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("BM", "Branch Manager")).thenReturn(Optional.of(csulSignerWithJabatan("BM", "Branch Manager")));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("ASM", "Area Sales Manager")).thenReturn(Optional.of(csulSignerWithJabatan("ASM", "Area Sales Manager")));
@@ -376,9 +387,6 @@ class ReportServiceTest {
     when(agreementCodeService.getAgreementsByFinancingHdrCode(FINANCING_HDR_CODE))
         .thenReturn(new CommonResult<SitDto>().success(sitDto()));
     FinancingHdr financingHdr = financingHdr();
-    when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
-    when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class)))
-        .thenReturn(PaginationResult.<PostedInvoiceDto>builder().list(List.of(postedInvoice())).build());
     when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     byte[] result = service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM");
@@ -450,6 +458,7 @@ class ReportServiceTest {
   void generateReportUsesFallbackRowsWhenRemoteAndInvoiceDataEmpty() throws Exception {
     Agreement agreement = agreement();
     agreement.setApplicationCode("APP001");
+    when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
     when(agreementRepo.findByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of(agreement));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("BM", "Branch Manager")).thenReturn(Optional.of(csulSignerWithJabatan("BM", "Branch Manager")));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("ASM", "Area Sales Manager")).thenReturn(Optional.of(csulSignerWithJabatan("ASM", "Area Sales Manager")));
@@ -469,9 +478,7 @@ class ReportServiceTest {
     when(agreementRepo.finddetailDebtor(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.empty());
     when(agreementCodeService.getAgreementsByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(new CommonResult<SitDto>().success(sitDto()));
     FinancingHdr financingHdr = financingHdr();
-    when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
-    when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class)))
-        .thenReturn(PaginationResult.<PostedInvoiceDto>builder().list(List.of()).build());
+
     when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     byte[] result = service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM");
@@ -480,9 +487,10 @@ class ReportServiceTest {
   }
 
   @Test
-  void generateReportThrowsWhenAgreementDataCommonResultFails() throws Exception {
+  void generateReportThrowsWhenAgreementDataCommonResultFails() {
     Agreement agreement = agreement();
     agreement.setApplicationCode("APP001");
+    when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
     when(agreementRepo.findByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of(agreement));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("BM", "Branch Manager")).thenReturn(Optional.of(csulSignerWithJabatan("BM", "Branch Manager")));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("ASM", "Area Sales Manager")).thenReturn(Optional.of(csulSignerWithJabatan("ASM", "Area Sales Manager")));
@@ -508,9 +516,10 @@ class ReportServiceTest {
   }
 
   @Test
-  void generateReportThrowsWhenAgreementDataFailsWithoutMessage() throws Exception {
+  void generateReportThrowsWhenAgreementDataFailsWithoutMessage(){
     Agreement agreement = agreement();
     agreement.setApplicationCode("APP001");
+    when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
     when(agreementRepo.findByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of(agreement));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("BM", "Branch Manager")).thenReturn(Optional.of(csulSignerWithJabatan("BM", "Branch Manager")));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("ASM", "Area Sales Manager")).thenReturn(Optional.of(csulSignerWithJabatan("ASM", "Area Sales Manager")));
@@ -539,6 +548,7 @@ class ReportServiceTest {
   void generateReportCoversNullInvoiceFieldsSignerFallbackAndDueDateFallback() throws Exception {
     Agreement agreement = agreement();
     agreement.setApplicationCode("APP001");
+    when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
     when(agreementRepo.findByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of(agreement));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("BM", "Branch Manager")).thenReturn(Optional.of(csulSignerWithJabatan("BM", "Branch Manager")));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("ASM", "Area Sales Manager")).thenReturn(Optional.of(csulSignerWithJabatan("ASM", "Area Sales Manager")));
@@ -559,9 +569,6 @@ class ReportServiceTest {
     when(agreementCodeService.getAgreementsByFinancingHdrCode(FINANCING_HDR_CODE))
         .thenReturn(new CommonResult<SitDto>().success(sitDtoWithoutDueDate()));
     FinancingHdr financingHdr = financingHdr();
-    when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
-    when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class)))
-        .thenReturn(PaginationResult.<PostedInvoiceDto>builder().list(List.of(postedInvoiceWithNullFields())).build());
     when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     assertThat(service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM")).isEqualTo("pdf".getBytes());
@@ -571,6 +578,7 @@ class ReportServiceTest {
   void generateReportCoversAdditionalFallbackBranches() throws Exception {
     Agreement agreement = agreement();
     agreement.setApplicationCode("APP001");
+    when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
     when(agreementRepo.findByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of(agreement));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("BM", "Branch Manager")).thenReturn(Optional.of(csulSignerWithJabatan("BM", "Branch Manager")));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("ASM", "Area Sales Manager")).thenReturn(Optional.of(csulSignerWithJabatan("ASM", "Area Sales Manager")));
@@ -591,9 +599,6 @@ class ReportServiceTest {
     when(agreementCodeService.getAgreementsByFinancingHdrCode(FINANCING_HDR_CODE))
         .thenReturn(new CommonResult<SitDto>().success(sitDto()));
     FinancingHdr financingHdr = financingHdr();
-    when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
-    when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class)))
-        .thenReturn(PaginationResult.<PostedInvoiceDto>builder().list(null).build());
     when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     assertThat(service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM")).isEqualTo("pdf".getBytes());
@@ -603,12 +608,13 @@ class ReportServiceTest {
   void generateReportCoversEmptyCollectionFallbackBranches() throws Exception {
     Agreement agreement = agreement();
     agreement.setApplicationCode("APP001");
-    when(agreementRepo.findByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of(agreement));
+    when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("BM", "Branch Manager")).thenReturn(Optional.of(csulSignerWithJabatan("BM", "Branch Manager")));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("ASM", "Area Sales Manager")).thenReturn(Optional.of(csulSignerWithJabatan("ASM", "Area Sales Manager")));
     when(externalApiService.getAppByAppNo("APP001")).thenReturn(appResponse());
     when(externalApiService.getRekDebitur("APP001")).thenReturn(rekDebiturResponseWithEmptyAccounts());
     when(externalApiService.getAppFactoringData(123)).thenReturn(appFactoringResponse());
+    when(agreementRepo.findByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of(agreement));
     when(agreementRepo.findAgreementCodeByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of("AGR-CODE"));
     when(externalApiService.getFinancialData("AGR-CODE")).thenReturn(financialDataWithNullFeeList());
     when(agreementRepo.findCwrCodeByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of("CWR001"));
@@ -623,17 +629,16 @@ class ReportServiceTest {
     when(agreementCodeService.getAgreementsByFinancingHdrCode(FINANCING_HDR_CODE))
         .thenReturn(new CommonResult<SitDto>().success(sitDto()));
     FinancingHdr financingHdr = financingHdr();
-    when(financingHdrService.findByCode(FINANCING_HDR_CODE.toString())).thenReturn(financingHdr);
-    when(invoiceService.invoiceSubmissionByFinancingHdr(eq(financingHdr), any(PaginationRequest.class))).thenReturn(null);
     when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     assertThat(service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM")).isEqualTo("pdf".getBytes());
   }
 
   @Test
-  void generateReportThrowsWhenAgreementDataSuccessHasNullPayload() throws Exception {
+  void generateReportThrowsWhenAgreementDataSuccessHasNullPayload() {
     Agreement agreement = agreement();
     agreement.setApplicationCode("APP001");
+    when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
     when(agreementRepo.findByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.of(agreement));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("BM", "Branch Manager")).thenReturn(Optional.of(csulSignerWithJabatan("BM", "Branch Manager")));
     when(csulSignerRepository.findByKaryawanNameAndJabatan("ASM", "Area Sales Manager")).thenReturn(Optional.of(csulSignerWithJabatan("ASM", "Area Sales Manager")));
