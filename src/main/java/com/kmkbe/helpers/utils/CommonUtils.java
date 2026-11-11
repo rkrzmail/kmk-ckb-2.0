@@ -96,4 +96,12 @@ public class CommonUtils {
     return result;
   }
 
+  public static String getCleanString(Object obj) {
+    if (obj == null) {
+      return null;
+    }
+    String str = obj.toString().trim();
+    return str.isEmpty() ? null : str;
+  }
+
 }
