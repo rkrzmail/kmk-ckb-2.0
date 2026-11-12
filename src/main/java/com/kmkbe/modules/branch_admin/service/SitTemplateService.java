@@ -88,13 +88,13 @@ public class SitTemplateService {
 
     if (value == null) {
       throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, 422,
-        "LIMIT_AGR_DT Confins untuk perjanjian SIT tidak tersedia.");
+        "Limit Agreement Date Confins untuk perjanjian SIT tidak tersedia.");
     }
     try {
       return LocalDate.parse(value);
     } catch (DateTimeParseException e) {
       throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, 422,
-        "Format LIMIT_AGR_DT Confins untuk perjanjian SIT tidak valid.");
+        "Format Tanggal Confins untuk perjanjian SIT tidak valid.");
     }
   }
 
