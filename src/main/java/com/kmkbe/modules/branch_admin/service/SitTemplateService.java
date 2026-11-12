@@ -63,7 +63,7 @@ public class SitTemplateService {
     return jasperReportRenderer.renderToPdf(TEMPLATE_PATH, parameters(financing, agreement,limitAgreementDate(agreement)));
   }
 
-  private LocalDate limitAgreementDate(Agreement agreement) throws IOException {
+  public LocalDate limitAgreementDate(Agreement agreement) throws IOException {
     Cwr cwr = agreement.getCwr();
     if (cwr == null || cwr.getCwrCode() == null || cwr.getCwrCode().isBlank()) {
       throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, 422,
