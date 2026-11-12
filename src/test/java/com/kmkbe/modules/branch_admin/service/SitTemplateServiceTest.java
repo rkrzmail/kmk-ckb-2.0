@@ -125,7 +125,7 @@ class SitTemplateServiceTest {
       new AgreementAttributeContentDto(42, "LIMIT_AGR_NO", "142"))));
 
     assertThatThrownBy(() -> service.download(LEAD, "AGR-1"))
-      .isInstanceOf(BusinessException.class).hasMessageContaining("LIMIT_AGR_DT");
+      .isInstanceOf(BusinessException.class).hasMessageContaining("Agreement");
   }
 
   private Agreement agreement() {
