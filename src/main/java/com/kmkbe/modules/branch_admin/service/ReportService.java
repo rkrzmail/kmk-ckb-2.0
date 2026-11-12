@@ -37,6 +37,7 @@ import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -117,6 +118,9 @@ public class ReportService {
 
   @Autowired
   private AgreementService agreementService;
+
+  @Autowired
+  private SitTemplateService sitTemplateService;
   
   private void ensureJwtToken() {
     jwtToken = authRemoteService.fetchAuthJwt().getData();
@@ -657,6 +661,9 @@ public class ReportService {
 
     String alamatDebitur = joiner.length() > 0 ? joiner.toString() : "-";
 
+    //Get Limit Agreement Date
+    LocalDate limitAgreementDate = sitTemplateService.limitAgreementDate(agreement);
+
     FinancingHdr financingHdr = financingHdrOptional.get();
     String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"," "};
     Map<String, Object> params = new HashMap<>();
@@ -670,7 +677,7 @@ public class ReportService {
     params.put("TglPengalihanPiutang", branchLocation.concat(", ").concat(CommonUtils.toDate(externalApiService.getAgreementDate(agrmntCode))));
     params.put("DebtorName", debtorName);
     params.put("Cwr", Cdata.getOrDefault("cwr_code", "-").toString());
-    params.put("Cwr-Date",formattedCwrDate);
+    params.put("Cwr-Date",limitAgreementDate==null?"..., ........., .....":CommonUtils.toDate(limitAgreementDate.atStartOfDay()));
     params.put("BankName", dataRekening.getBankName());
     params.put("BankAccNo", dataRekening.getAccNo());
     params.put("BankAccName", dataRekening.getAccName());
