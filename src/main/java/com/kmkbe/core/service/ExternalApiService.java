@@ -28,15 +28,16 @@ public class ExternalApiService {
         if (agreementCode == null || agreementCode.isBlank() || "-".equals(agreementCode)) {
             throw new IllegalArgumentException("Nomor perjanjian untuk tanggal pengalihan piutang tidak tersedia");
         }
-        InquiryDataAgreementDto response = confinsR3FeignClient.getAgreementByAgrmntNo(Map.of(
+        AgreementByNumberResponse response = confinsR3FeignClient.getAgreementByAgrmntNo(Map.of(
             "TrxNo", agreementCode,
             "RequestDateTime", LocalDate.now().toString()
         ));
-        if (response == null || !"200".equals(response.getStatusCode())
-            || response.getAgrmntObj() == null || response.getAgrmntObj().getAgrmntDt() == null) {
-            throw new IllegalStateException("AgrmntDt Confins untuk perjanjian " + agreementCode + " tidak tersedia");
+        if (response == null || !"200".equals(response.statusCode())
+            || !agreementCode.equals(response.agreementNumber())
+            || response.agreementCreatedDate() == null) {
+            throw new IllegalStateException("AgrmntCreatedDt Confins untuk perjanjian " + agreementCode + " tidak tersedia");
         }
-        return response.getAgrmntObj().getAgrmntDt();
+        return response.agreementCreatedDate();
     }
 
     public AppResponse getAppByAppNo(String applicationCode) {

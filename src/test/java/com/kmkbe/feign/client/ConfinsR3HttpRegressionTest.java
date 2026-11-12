@@ -332,12 +332,12 @@ class ConfinsR3HttpRegressionTest {
     }
 
     @Test
-    void agreementDateUsesAgrmntDtFromAgreementByNumber() {
-        response = "{\"AgrmntObj\":{\"AgrmntNo\":\"AGR001\",\"AgrmntDt\":\"2026-12-14T00:00:00\"},\"StatusCode\":\"200\"," + HEADER + "}";
+    void agreementDateUsesAgrmntCreatedDtFromLosAgreementByNumber() {
+        response = "{\"AgrmntNo\":\"AGR001\",\"AgrmntCreatedDt\":\"2027-05-13T00:00:00\",\"AppId\":5500,\"StatusCode\":\"200\"," + HEADER + "}";
 
         assertThat(service.getAgreementDate("AGR001"))
-            .isEqualTo(java.time.LocalDateTime.of(2026, 12, 14, 0, 0));
-        assertThat(path).isEqualTo("/api/ar/v1/Agrmnt/GetAgrmntByAgrmntNo");
+            .isEqualTo(java.time.LocalDateTime.of(2027, 5, 13, 0, 0));
+        assertThat(path).isEqualTo("/api/los/v1/Agrmnt/GetAgrmntByAgrmntNo");
         assertThat(request.get("TrxNo").asText()).isEqualTo("AGR001");
         assertThat(request.get("RequestDateTime").asText()).isEqualTo(LocalDate.now().toString());
     }
