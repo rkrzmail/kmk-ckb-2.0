@@ -60,8 +60,7 @@ public class SitTemplateService {
       throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, 422,
         "Data debitur atau pemberi kerja untuk dokumen SIT tidak tersedia.");
     }
-    LocalDate limitAgreementDate = limitAgreementDate(agreement);
-    return jasperReportRenderer.renderToPdf(TEMPLATE_PATH, parameters(financing, agreement, limitAgreementDate));
+    return jasperReportRenderer.renderToPdf(TEMPLATE_PATH, parameters(financing, agreement,limitAgreementDate(agreement)));
   }
 
   private LocalDate limitAgreementDate(Agreement agreement) throws IOException {
@@ -87,15 +86,17 @@ public class SitTemplateService {
       .findFirst().orElse(null);
 
     if (value == null) {
-      throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, 422,
-        "Limit Agreement Date Confins untuk perjanjian SIT tidak tersedia.");
+      log.info("Limit Agreement Date  Confins untuk perjanjian SIT tidak tersedia.");
+      return null;
     }
+
     try {
       return LocalDate.parse(value);
     } catch (DateTimeParseException e) {
-      throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, 422,
-        "Format Tanggal Confins untuk perjanjian SIT tidak valid.");
+        log.info("Format Tanggal Confins untuk perjanjian SIT tidak valid.");
     }
+
+    return null;
   }
 
   private Agreement selectAgreement(UUID financingHdrCode, String agreementCode) {
@@ -119,7 +120,7 @@ public class SitTemplateService {
   private Map<String, Object> parameters(FinancingHdr financing, Agreement agreement, LocalDate limitAgreementDate) {
     String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"," "};
     Map<String, Object> params = new HashMap<>();
-    params.put("tanggalCwr", CommonUtils.capitalize(CommonUtils.safeRemoveAll(financing.getMstBranch().getBranchName(),removeRBU)).concat(", ").concat(CommonUtils.toDate(limitAgreementDate.atStartOfDay())));
+    params.put("tanggalCwr", CommonUtils.capitalize(CommonUtils.safeRemoveAll(financing.getMstBranch().getBranchName(),removeRBU)).concat(", ").concat(limitAgreementDate==null?"..., ........., .....":CommonUtils.toDate(limitAgreementDate.atStartOfDay())));
     params.put("namaBouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
     params.put("periodeBerlaku", CommonUtils.toDate(financing.getFinancingDueDate()));
     params.put("namaDebitur", CommonUtils.nullValue(financing.getCustomer().getCustName()));
@@ -129,7 +130,7 @@ public class SitTemplateService {
     params.put("bouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
     params.put("legalAddress", CommonUtils.nullValue(financing.getBouwheer().getLegalAddress()));
     params.put("picName", CommonUtils.nullValue(financing.getBouwheer().getPicName()));
-    params.put("tanggalPerjanjian", CommonUtils.toDate(limitAgreementDate.atStartOfDay()));
+    params.put("tanggalPerjanjian", limitAgreementDate==null?"..., ........., .....":CommonUtils.toDate(limitAgreementDate.atStartOfDay()));
     params.put("nomorPerjanjian", CommonUtils.nullValue(agreement.getCwr().getCwrCode()));
     return params;
   }
