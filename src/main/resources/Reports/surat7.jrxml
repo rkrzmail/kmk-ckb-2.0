@@ -161,19 +161,19 @@ CORPORATE BUSINESS UNIT - DANA SAKTI]]></text>
 				<textFieldExpression><![CDATA["Pemohon dengan ini menyatakan, tanpa dapat dibatalkan, dicabut kembali atau diubah dengan alasan apapun dan dalam keadaan apapun, bahwa Pemohon tidak pernah dan/atau tidak akan pernah memberikan dan/atau janji memberikan suatu imbalan tidak resmi, baik secara langsung maupun tidak langsung, baik tersirat maupun tersurat, antara lain tetapi tidak terbatas pada pemberian dalam bentuk uang, barang, hak-hak, fasilitas-fasilitas dan/atau segala sesuatu yang dapat ditafsirkan sebagai imbalan yang menguntungkan dan/atau dapat menyebabkan keuntungan pribadi kepada Komisaris, Direksi, Karyawan CSUL yang diduga dan/atau dapat diduga berkaitan dengan pembiayaan yang diberikan oleh CSUL kepada Pemohon."]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="233" y="281" width="220" height="15" uuid="28ab5a12-759e-4c94-80da-677e9f76831b"/>
+				<reportElement x="230" y="310" width="220" height="15" uuid="28ab5a12-759e-4c94-80da-677e9f76831b"/>
 				<text><![CDATA[Tempat/Tanggal]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="233" y="301" width="220" height="15" uuid="6dad02ab-9359-492b-aac5-7f706a40d559"/>
+				<reportElement x="230" y="330" width="220" height="15" uuid="6dad02ab-9359-492b-aac5-7f706a40d559"/>
 				<text><![CDATA[Diajukan oleh :]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="233" y="321" width="220" height="15" uuid="64c3ebb3-71ac-4927-b2fa-7d15c0ca0950"/>
+				<reportElement x="230" y="350" width="220" height="15" uuid="64c3ebb3-71ac-4927-b2fa-7d15c0ca0950"/>
 				<text><![CDATA[Pemohon]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="230" y="420" width="47" height="15" uuid="c58ecfdd-e29d-4ec0-9a7d-79d6a29bf197"/>
+				<reportElement x="230" y="439" width="47" height="15" uuid="c58ecfdd-e29d-4ec0-9a7d-79d6a29bf197"/>
 				<text><![CDATA[Nama 	]]></text>
 			</staticText>
 			<textField>
@@ -200,7 +200,7 @@ CORPORATE BUSINESS UNIT - DANA SAKTI]]></text>
 				<text><![CDATA[Telepon			:]]></text>
 			</staticText>
 			<textField>
-				<reportElement x="277" y="420" width="200" height="15" uuid="2b041605-15df-41d0-bbaf-6797d80f4bff">
+				<reportElement x="277" y="439" width="200" height="15" uuid="2b041605-15df-41d0-bbaf-6797d80f4bff">
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
 				<textElement>
@@ -209,7 +209,7 @@ CORPORATE BUSINESS UNIT - DANA SAKTI]]></text>
 				<textFieldExpression><![CDATA[$P{NamaKaryawan}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="277" y="440" width="200" height="15" uuid="e518aba6-cd69-4be0-a0df-e051feb0c621">
+				<reportElement x="277" y="459" width="200" height="15" uuid="e518aba6-cd69-4be0-a0df-e051feb0c621">
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
 				<textElement>
@@ -218,15 +218,15 @@ CORPORATE BUSINESS UNIT - DANA SAKTI]]></text>
 				<textFieldExpression><![CDATA[$P{Jabatan}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="272" y="420" width="47" height="15" uuid="f4f7991c-a8a8-49a6-9b5c-0d96eaac2008"/>
+				<reportElement x="272" y="439" width="47" height="15" uuid="f4f7991c-a8a8-49a6-9b5c-0d96eaac2008"/>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="272" y="440" width="47" height="15" uuid="d1db4bd0-9810-4d3c-8b9d-19c3968a2b0a"/>
+				<reportElement x="272" y="459" width="47" height="15" uuid="d1db4bd0-9810-4d3c-8b9d-19c3968a2b0a"/>
 				<text><![CDATA[:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="230" y="440" width="110" height="15" uuid="223a79a4-7a5d-41dc-a9fe-26cd75f866ec"/>
+				<reportElement x="230" y="459" width="110" height="15" uuid="223a79a4-7a5d-41dc-a9fe-26cd75f866ec"/>
 				<text><![CDATA[Jabatan]]></text>
 			</staticText>
 		</band>
@@ -237,7 +237,4 @@ CORPORATE BUSINESS UNIT - DANA SAKTI]]></text>
 	<pageFooter>
 		<band height="50" splitType="Stretch"/>
 	</pageFooter>
-	<summary>
-		<band height="42" splitType="Stretch"/>
-	</summary>
 </jasperReport>
