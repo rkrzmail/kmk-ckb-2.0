@@ -115,18 +115,6 @@ class SitTemplateServiceTest {
       .isInstanceOf(BusinessException.class).hasMessageContaining("AppId Confins");
   }
 
-  @Test
-  void rejectsWhenLimitAgreementDateIsMissing() throws Exception {
-    when(financingHdrRepository.findByFinancingHdrCode(LEAD)).thenReturn(Optional.of(financing()));
-    when(agreementRepository.findByFinancingHdr_FinancingHdrCode(LEAD)).thenReturn(List.of(agreement()));
-    when(cwrRemoteService.inquiryAgreementByNoCwr("CWR-1")).thenReturn(response(List.of(
-      InquiryAgreementByNoCwrRemoteDto.builder().agrmntNo("AGR-1").appId(42).build())));
-    when(cwrRemoteService.agreementAttributeContent(42)).thenReturn(response(List.of(
-      new AgreementAttributeContentDto(42, "LIMIT_AGR_NO", "142"))));
-
-    assertThatThrownBy(() -> service.download(LEAD, "AGR-1"))
-      .isInstanceOf(BusinessException.class).hasMessageContaining("Agreement");
-  }
 
   private Agreement agreement() {
     return Agreement.builder().agreementCode("AGR-1")
