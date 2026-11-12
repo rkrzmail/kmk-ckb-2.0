@@ -85,6 +85,7 @@ public class SitTemplateService {
       .map(AgreementAttributeContentDto::attrValue)
       .filter(date -> date != null && !date.isBlank())
       .findFirst().orElse(null);
+
     if (value == null) {
       throw new BusinessException(HttpStatus.UNPROCESSABLE_ENTITY, 422,
         "LIMIT_AGR_DT Confins untuk perjanjian SIT tidak tersedia.");

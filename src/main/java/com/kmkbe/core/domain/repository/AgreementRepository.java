@@ -148,7 +148,7 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         COALESCE(cc.kecamatan, concat(cp.kecamatan)) AS kecamatan,
         COALESCE(cc.city, concat(cp.city)) AS city,
         COALESCE(cc.province, concat(cp.province)) as province,
-        COALESCE(cc.zipcode, concat(cp.rt)) AS zipcode,
+        COALESCE(cc.zipcode, concat(cp.zipcode)) AS zipcode,
         COALESCE(cc.phone, cp.phone, c.cust_mobile_phone) AS phone
     FROM agreement a
     JOIN financing_hdr fh ON a.financing_hdr_code = fh.financing_hdr_code
