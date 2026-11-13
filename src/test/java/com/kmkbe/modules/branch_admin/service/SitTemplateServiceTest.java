@@ -23,6 +23,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.sql.Date;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +78,8 @@ class SitTemplateServiceTest {
       .build();
     when(financingHdrRepository.findByFinancingHdrCode(LEAD)).thenReturn(Optional.of(financing));
     when(agreementRepository.findByFinancingHdr_FinancingHdrCode(LEAD)).thenReturn(List.of(agreement));
+    when(agreementRepository.findCwrCodeAndDate(LEAD, "AGR-1"))
+      .thenReturn(Optional.of(Map.of("cwr_end_date", Date.valueOf("2025-10-20"))));
     when(cwrRemoteService.inquiryAgreementByNoCwr("AGR-1")).thenReturn(response(List.of(
       InquiryAgreementByNoCwrRemoteDto.builder().agrmntNo("AGR-OTHER").appId(9).build(),
       InquiryAgreementByNoCwrRemoteDto.builder().agrmntNo("AGR-1").appId(42).build())));
@@ -100,7 +103,7 @@ class SitTemplateServiceTest {
       .containsEntry("companyDebitur", "Debitur Satu")
       .containsEntry("namaBouwheer", "Bouwheer Satu")
       .containsEntry("namaRegionalManager", "Manajer Regional")
-      .containsEntry("legalAddress", "Jakarta")
+      .containsEntry("legalAddress", "Jakarta\n\nDKI Jakarta - 12345")
       .containsEntry("periodeBerlaku", "31 Desember 2026");
   }
 
@@ -151,8 +154,10 @@ class SitTemplateServiceTest {
 
   private FinancingHdr financing() {
     FinancingHdr financing = new FinancingHdr();
+    financing.setFinancingHdrCode(LEAD);
     financing.setBouwheer(Bouwheer.builder().bouwheerName("Bouwheer Satu")
-      .legalAddress("Jakarta").picName("PIC Satu").build());
+      .legalAddress("Jakarta").province("DKI Jakarta").zipcode("12345")
+      .picName("PIC Satu").build());
     financing.setCustomer(Customer.builder().custName("Debitur Satu")
       .build());
     financing.setMstBranch(MstBranch.builder().branchName("JAKARTA ").branchCode("407").build());

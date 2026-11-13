@@ -62,7 +62,7 @@
 				<textElement textAlignment="Justified" markup="html">
 					<paragraph lineSpacing="Single"/>
 				</textElement>
-				<textFieldExpression><![CDATA["Dengan hormat,<br/><br/>Sehubungan dengan telah ditandatanganinya Perjanjian Pembiayaan Modal Kerja dengan Fasilitas Pembiayaan Anjak Piutang (With Recourse) nomor <u>"+ $P{nomorPerjanjian} +"</u> tanggal <u>"+$P{tanggalPerjanjian}+"</u> berikut perubahan (-perubahannya), perpanjangan (- perpanjangan), penambahan (-penambahannya) (jika ada) beserta setiap dan seluruh dokumen-dokumen turunannya (<b>\"Perjanjian Pembiayaan\"</b>) antara <b>PT. Chandra Sakti Utama Leasing</b>  selaku <b>\"Factor\"</b> dan <u>"+$P{companyDebitur}+"</u> selaku <b>\"Klien\"</b> maka berdasarkan surat ini mohon agar pembayaran jasa pekerjaan <u>"+$P{companyDebitur}+ "</u>,  dapat dibayarkan/ditransfer kepada <b>Factor</b> sebagai pembayaran kewajiban sebagaimana tercantum dalam Perjanjian Pembiayaan di atas rekening dengan rincian sebagai berikut:"]]></textFieldExpression>
+				<textFieldExpression><![CDATA["Dengan hormat,<br/><br/>Sehubungan dengan telah ditandatanganinya Perjanjian Pembiayaan Modal Kerja dengan Fasilitas Pembiayaan Anjak Piutang (<i>\"With Recourse\"</i>) nomor <b>" + $P{nomorPerjanjian} + "</b> tanggal <b>" + $P{tanggalPerjanjian} + "</b> berikut perubahan (-perubahannya), perpanjangan (-perpanjangan), penambahan (-penambahannya) (jika ada) beserta setiap dan seluruh dokumen-dokumen turunannya (<b>\"Perjanjian Pembiayaan\"</b>) antara <b>PT. Chandra Sakti Utama Leasing</b> selaku <b>\"Factor\"</b> dan <b>" + $P{companyDebitur} + "</b> selaku <b>\"Klien\"</b> maka berdasarkan surat ini mohon agar pembayaran jasa pekerjaan <b>" + $P{companyDebitur} + "</b>, dapat dibayarkan/ditransfer kepada <b>Factor</b> sebagai pembayaran kewajiban sebagaimana tercantum dalam Perjanjian Pembiayaan di atas ke rekening dengan rincian sebagai berikut:"]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="0" y="10" width="40" height="15" uuid="edd895c8-0a3d-4477-9f82-c8a3dabee558">
@@ -103,7 +103,7 @@
 			</staticText>
 			<textField>
 				<reportElement x="116" y="261" width="334" height="59" uuid="63271f0b-4e6b-4012-b6f5-3ec908f8eed5"/>
-				<textFieldExpression><![CDATA["Surat keterangan ini berlaku sampai periode " + $P{periodeBerlaku} + "atau sampai dengan tanggal jatuh tempo pengembalian Fasilitas Pembiayaan berdasarkan surat persetujuan pencairan Perjanjian Pembiayaan, mana yang terjadi lebih akhir"]]></textFieldExpression>
+				<textFieldExpression><![CDATA["Surat Intruksi Transfer ini berlaku sampai periode " + $P{periodeBerlaku} + " atau sampai dengan tanggal jatuh tempo pengembalian Fasilitas Pembiayaan berdasarkan surat persetujuan pencairan Perjanjian Pembiayaan, mana yang terjadi lebih akhir"]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="30" y="261" width="86" height="20" uuid="7e885e80-1d6d-4977-adee-f3dede08adf1"/>
@@ -150,7 +150,7 @@
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
 				<textElement>
-					<font size="9" isBold="true" isUnderline="true"/>
+					<font size="9" isBold="true" isUnderline="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{namaBouwheer}]]></textFieldExpression>
 			</textField>
@@ -166,7 +166,7 @@
 				<textElement>
 					<font isBold="true"/>
 				</textElement>
-				<text><![CDATA[Faktor]]></text>
+				<text><![CDATA[Factor]]></text>
 			</staticText>
 			<staticText>
 				<reportElement x="333" y="-55" width="120" height="20" uuid="d7e1c84d-2ab1-409f-808e-32610e49c6f0"/>
@@ -180,48 +180,48 @@
 	<columnFooter>
 		<band height="49" splitType="Stretch">
 			<textField>
-				<reportElement x="0" y="4" width="150" height="20" uuid="18153f2f-a4f4-49be-9cda-fe39862d2723">
+				<reportElement x="0" y="-10" width="150" height="34" uuid="18153f2f-a4f4-49be-9cda-fe39862d2723">
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
 				<textElement>
-					<font size="9" isBold="true" isUnderline="true"/>
+					<font size="9" isBold="true" isUnderline="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{namaRegionalManager}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="0" y="24" width="130" height="20" uuid="9374e935-6cb5-4283-92c2-885b010a7d1b"/>
+				<reportElement x="0" y="29" width="130" height="20" uuid="9374e935-6cb5-4283-92c2-885b010a7d1b"/>
 				<textElement>
 					<font size="9"/>
 				</textElement>
 				<text><![CDATA[Regional Manager]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="333" y="24" width="216" height="20" uuid="9ab80cc2-41f9-411b-b55c-dfb665f9ccdf"/>
+				<reportElement x="333" y="29" width="116" height="20" uuid="9ab80cc2-41f9-411b-b55c-dfb665f9ccdf"/>
 				<textElement>
 					<font size="9"/>
 				</textElement>
 				<text><![CDATA[Direktur Finance]]></text>
 			</staticText>
 			<textField>
-				<reportElement x="160" y="4" width="130" height="20" uuid="8a771048-64cf-4a9a-a3e6-0b701f7618d3"/>
+				<reportElement x="160" y="-10" width="160" height="34" uuid="8a771048-64cf-4a9a-a3e6-0b701f7618d3"/>
 				<textElement>
-					<font size="9" isBold="true" isUnderline="true"/>
+					<font size="9" isBold="true" isUnderline="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{namaDebitur}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="160" y="24" width="130" height="20" uuid="a502084a-e2bb-4366-a45a-a54669a5274e"/>
+				<reportElement x="160" y="29" width="130" height="20" uuid="a502084a-e2bb-4366-a45a-a54669a5274e"/>
 				<textElement>
 					<font size="9" isBold="false" isUnderline="false"/>
 				</textElement>
 				<text><![CDATA[Direktur Utama/Direktur]]></text>
 			</staticText>
 			<textField>
-				<reportElement x="334" y="4" width="119" height="20" uuid="88889407-f51a-407f-828b-68e30d6a07eb">
+				<reportElement x="334" y="-10" width="119" height="34" uuid="88889407-f51a-407f-828b-68e30d6a07eb">
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
 				<textElement>
-					<font size="9" isBold="true" isUnderline="true"/>
+					<font size="9" isBold="true" isUnderline="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{namaPicFinance}]]></textFieldExpression>
 			</textField>

@@ -16,16 +16,15 @@ import com.kmkbe.modules.remote.service.CwrRemoteService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import net.sf.jasperreports.engine.JRException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -118,6 +117,19 @@ public class SitTemplateService {
   }
 
   private Map<String, Object> parameters(FinancingHdr financing, Agreement agreement, LocalDate limitAgreementDate) {
+    Optional<Map<String, Object>> cwrData = agreementRepository.findCwrCodeAndDate(financing.getFinancingHdrCode(), agreement.getAgreementCode());
+    SimpleDateFormat Csdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("id", "ID"));
+    String formattedCwrDate = cwrData
+      .map(data -> {
+        Object rawDate = data.get("cwr_end_date");
+        if (rawDate instanceof Date) {
+          return Csdf.format((Date) rawDate);
+        }
+        return "-";
+      })
+      .orElse("-");
+
+
     String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"," "};
     Map<String, Object> params = new HashMap<>();
     params.put("tanggalCwr", CommonUtils.capitalize(CommonUtils.safeRemoveAll(financing.getMstBranch().getBranchName(),removeRBU)).concat(", ").concat(limitAgreementDate==null?"..., ........., .....":CommonUtils.toDate(limitAgreementDate.atStartOfDay())));
@@ -128,9 +140,9 @@ public class SitTemplateService {
     params.put("namaRegionalManager", regionalManager(financing));
     params.put("namaPicFinance", CommonUtils.nullValue(financing.getBouwheer().getPicName()));
     params.put("bouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
-    params.put("legalAddress", CommonUtils.nullValue(financing.getBouwheer().getLegalAddress()));
+    params.put("legalAddress",financing.getBouwheer().getLegalAddress().concat("\n\n").concat(financing.getBouwheer().getProvince()).concat(" - ").concat(financing.getBouwheer().getZipcode()));
     params.put("picName", CommonUtils.nullValue(financing.getBouwheer().getPicName()));
-    params.put("tanggalPerjanjian", limitAgreementDate==null?"..., ........., .....":CommonUtils.toDate(limitAgreementDate.atStartOfDay()));
+    params.put("tanggalPerjanjian", limitAgreementDate==null?"..., ........., .....":formattedCwrDate);
     params.put("nomorPerjanjian", CommonUtils.nullValue(agreement.getCwr().getCwrCode()));
     return params;
   }
