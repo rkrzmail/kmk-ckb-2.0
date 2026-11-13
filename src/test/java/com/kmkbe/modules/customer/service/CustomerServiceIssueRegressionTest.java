@@ -383,10 +383,10 @@ class CustomerServiceIssueRegressionTest {
   }
 
   private static FinancingHdr financing(UUID financingCode, Customer customer) {
-    return FinancingHdr.builder()
-      .financingHdrCode(financingCode)
-      .customer(customer)
-      .build();
+    FinancingHdr financingHdr = new FinancingHdr();
+    financingHdr.setFinancingHdrCode(financingCode);
+    financingHdr.setCustomer(customer);
+    return financingHdr;
   }
 
   private static Customer openCustomer() {
