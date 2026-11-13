@@ -125,7 +125,8 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
   @Query(value = """
     SELECT 
         w.cwr_code,
-        w.cwr_start_date
+        w.cwr_start_date,
+        w.cwr_end_date
     FROM agreement a
     JOIN cwr w ON a.cwr_code = w.cwr_code
     WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
