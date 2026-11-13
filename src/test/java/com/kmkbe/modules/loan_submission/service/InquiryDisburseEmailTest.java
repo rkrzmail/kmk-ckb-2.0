@@ -53,7 +53,7 @@ class InquiryDisburseEmailTest {
   void confirmedDisbursementUsesConfinsAccountAndKeepsExistingRecipients() throws Exception {
     Agreement agreement = confirmedAgreement();
     FinancingHdr header = agreement.getFinancingHdr();
-    when(headers.findByFinancingHdrCode(header.getFinancingHdrCode())).thenReturn(Optional.of(header));
+    when(headers.findByCodeWithDetails(header.getFinancingHdrCode())).thenReturn(Optional.of(header));
     when(headerService.dtoFromEntity(header)).thenReturn(FinancingHdrDto.builder().details(List.of()).build());
     when(logs.findAllByAgreement(agreement)).thenReturn(List.of());
     DisbursementAccountResponse.DisbInfo account = new DisbursementAccountResponse.DisbInfo();

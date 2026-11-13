@@ -15,17 +15,18 @@ import java.util.UUID;
 
 @Getter
 @Setter
+@NoArgsConstructor
+@ToString(onlyExplicitlyIncluded = true)
 @Entity
 @Table(name = "financing_hdr", schema = "public")
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class FinancingHdr implements Serializable {
+
   @Id
+  @ToString.Include
   @Column(name = "financing_hdr_code", nullable = false)
   private UUID financingHdrCode;
 
+  @ToString.Include
   @Column(
     name = "financing_hdr_id",
     columnDefinition = "serial",
@@ -55,6 +56,7 @@ public class FinancingHdr implements Serializable {
   private Bouwheer bouwheer;
 
   @NotNull
+  @ToString.Include
   @Column(name = "financing_date", nullable = false)
   private LocalDateTime financingDate;
 
@@ -77,11 +79,11 @@ public class FinancingHdr implements Serializable {
   private Long tenor;
 
   @NotNull
-  @Column(name = "effective_rate", nullable = false) // , precision = 5, scale = 2
+  @Column(name = "effective_rate", nullable = false)
   private Double effectiveRate;
 
   @NotNull
-  @Column(name = "interest_amt", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "interest_amt", nullable = false)
   private Double interestAmt;
 
   @NotNull
@@ -97,67 +99,67 @@ public class FinancingHdr implements Serializable {
   private Double retention;
 
   @NotNull
-  @Column(name = "total_invoice_amt", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "total_invoice_amt", nullable = false)
   private Double totalInvoiceAmt;
 
   @NotNull
-  @Column(name = "provision_fee_percentage", nullable = false) // , precision = 5, scale = 2
+  @Column(name = "provision_fee_percentage", nullable = false)
   private Double provisionFeePercentage;
 
   @NotNull
-  @Column(name = "provision_fee_amt", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "provision_fee_amt", nullable = false)
   private Double provisionFeeAmt;
 
   @NotNull
-  @Column(name = "survey_fee_amt", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "survey_fee_amt", nullable = false)
   private Double surveyFeeAmt;
 
   @NotNull
-  @Column(name = "survey_fee_amt_nett", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "survey_fee_amt_nett", nullable = false)
   private Double surveyFeeAmtNett;
 
   @NotNull
-  @Column(name = "legal_fee_amt", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "legal_fee_amt", nullable = false)
   private Double legalFeeAmt;
 
   @NotNull
-  @Column(name = "legal_fee_amt_nett", nullable = false) //  precision = 17, scale = 2
+  @Column(name = "legal_fee_amt_nett", nullable = false)
   private Double legalFeeAmtNett;
 
   @NotNull
-  @Column(name = "admin_limit_amt", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "admin_limit_amt", nullable = false)
   private Double adminLimitAmt = 0.0;
 
   @NotNull
-  @Column(name = "admin_fee_percentage", nullable = false) // , precision = 5, scale = 2
+  @Column(name = "admin_fee_percentage", nullable = false)
   private Double adminFeePercentage = 0.0;
 
   @NotNull
-  @Column(name = "admin_fee_amt", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "admin_fee_amt", nullable = false)
   private Double adminFeeAmt = 0.0;
 
   @NotNull
-  @Column(name = "insurance_fee_percentage", nullable = false) // , precision = 5, scale = 2
+  @Column(name = "insurance_fee_percentage", nullable = false)
   private Double insuranceFeePercentage = 0.0;
 
   @NotNull
-  @Column(name = "insurance_fee_amt", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "insurance_fee_amt", nullable = false)
   private Double insuranceFeeAmt = 0.0;
 
   @NotNull
-  @Column(name = "others_fee_amt", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "others_fee_amt", nullable = false)
   private Double othersFeeAmt;
 
   @NotNull
-  @Column(name = "financing_amt", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "financing_amt", nullable = false)
   private Double financingAmt;
 
   @NotNull
-  @Column(name = "disburse_amt", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "disburse_amt", nullable = false)
   private Double disburseAmt;
 
   @NotNull
-  @Column(name = "disburse_date", nullable = false) // , precision = 17, scale = 2
+  @Column(name = "disburse_date", nullable = false)
   private LocalDateTime disburseDate;
 
   @NotNull
@@ -165,10 +167,12 @@ public class FinancingHdr implements Serializable {
   private LocalDateTime financingDueDate;
 
   @NotNull
+  @ToString.Include
   @Column(name = "financing_status", nullable = false)
   private String financingStatus;
 
   @NotNull
+  @ToString.Include
   @Column(name = "financing_step", nullable = false)
   private String financingStep;
 
@@ -192,7 +196,7 @@ public class FinancingHdr implements Serializable {
   @OneToMany(mappedBy = "financingHdr", fetch = FetchType.LAZY)
   private Set<FinancingDtl> financingDtls;
 
-  @OneToMany(mappedBy = "financingHdr")
+  @OneToMany(mappedBy = "financingHdr", fetch = FetchType.LAZY)
   private Set<SimulationHist> simulationHistories;
 
   @Size(max = 50)
@@ -211,7 +215,7 @@ public class FinancingHdr implements Serializable {
   @Column(name = "dtm_upd")
   private LocalDateTime dtmUpd;
 
-  @OneToMany(mappedBy = "financingHdr")
+  @OneToMany(mappedBy = "financingHdr", fetch = FetchType.LAZY)
   private Set<Agreement> agreement;
 
   @Column(name = "fap_date")

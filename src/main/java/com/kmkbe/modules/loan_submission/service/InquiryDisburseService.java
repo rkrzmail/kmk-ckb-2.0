@@ -130,7 +130,7 @@ public class InquiryDisburseService {
       inquiryDisburseRequest.setRequestDateTime(sToday);
       inquiryDisburseRequest.setCriteria(inquiryDisburseCriterias);
       InquiryDisburseResult inquiryDisburseResult = inquiryDisburse(inquiryDisburseRequest);//CALL API
-      try {
+
         if (inquiryDisburseResult.getStatusCode().equalsIgnoreCase("200")) {
           for (int i = 0; i < inquiryDisburseResult.getData().size(); i++) {
             InquiryDisburseDatum inquiryDisburseDatum = inquiryDisburseResult.getData().get(i);
@@ -149,9 +149,6 @@ public class InquiryDisburseService {
             }
           }
         }
-      } catch (Exception ignored) {
-        ignored.printStackTrace();
-      }
 
       if (inquiryDisburseResult.getStatusCode().equalsIgnoreCase("200") && isDisbursP) {
         List<DisbursementLog> l = disbursementLogRepository.findAllByAgreement(agreement);
@@ -170,22 +167,23 @@ public class InquiryDisburseService {
           String disbursementDate = DateTimeUtils.formatToDate(
             externalApiService.getDisbursementExecutionDate(paidAp.getAPNo(), paidAp.getOfficeCode()));
 
-          //send B to mst
-          UpdateFinancingStatusRequest.builder()
-              .vendorCode(agreement.getFinancingHdr().getCustomer().getCustExternalCode())
-              .financingCode(agreement.getFinancingHdr().getFinancingHdrCode().toString())
-              .status(UpdateFinancingStatusRequest.Status.Disburse)
-              .build();
             /**
              * For TU
              */
-//         financingRemoteService.updateFinancingStatus(updateFinancingStatusRequest);
+//         financingRemoteService.updateFinancingStatus(UpdateFinancingStatusRequest.builder()
+//              .vendorCode(agreement.getFinancingHdr().getCustomer().getCustExternalCode())
+//              .financingCode(agreement.getFinancingHdr().getFinancingHdrCode().toString())
+//              .status(UpdateFinancingStatusRequest.Status.Disburse)
+//              .build());
 
           //send email sendNotification Pencairan
-          try {
-            FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(agreement.getFinancingHdr().getFinancingHdrCode()).get();
+           Optional<FinancingHdr> financingHdrOptional = financingHdrRepository.findByCodeWithDetails(agreement.getFinancingHdr().getFinancingHdrCode());
+           if (financingHdrOptional.isEmpty()){
+             log.error("Financing not found Agreement {} ",agreement.getAgreementCode());
+             throw new IllegalStateException("Financing not found Agreement {} "+agreement.getAgreementCode());
+           }
+           FinancingHdr financingHdr = financingHdrOptional.get();
             final FinancingHdrDto createdFinancing = financingHdrService.dtoFromEntity(financingHdr);
-
             final List<InvoiceEmailPayload> invoices = createdFinancing.getDetails()
               .stream()
               .map((item) ->
@@ -240,10 +238,6 @@ public class InquiryDisburseService {
                 .invoices(invoices)
                 .build()
             );
-          } catch (Exception e) {
-            log.error("Failed to prepare disbursement email for agreement {}", aggrNo, e);
-            throw e;
-          }
         }
 
          disbursementLogRepository.deleteAll(disbursementLogRepository.findAllByAgreement(agreement));
@@ -271,7 +265,7 @@ public class InquiryDisburseService {
         }
 
     } catch (Exception e) {
-      log.error("updatePaid, error {}", e.getMessage());
+      log.error("Update Paid, error {}", e.getMessage());
       throw e;
     }
     return result;
