@@ -104,7 +104,7 @@ class SitTemplateServiceTest {
       .containsEntry("namaBouwheer", "Bouwheer Satu")
       .containsEntry("namaRegionalManager", "Manajer Regional")
       .containsEntry("legalAddress", "Jakarta\n\nDKI Jakarta - 12345")
-      .containsEntry("periodeBerlaku", "31 Desember 2026");
+      .containsEntry("periodeBerlaku", "20 Oktober 2025");
   }
 
   @Test
@@ -159,7 +159,7 @@ class SitTemplateServiceTest {
       .legalAddress("Jakarta").province("DKI Jakarta").zipcode("12345")
       .picName("PIC Satu").build());
     financing.setCustomer(Customer.builder().custName("Debitur Satu")
-      .build());
+      .custTypeCode("Company").build());
     financing.setMstBranch(MstBranch.builder().branchName("JAKARTA ").branchCode("407").build());
     financing.setFinancingDueDate(LocalDateTime.of(2026, 12, 31, 0, 0));
     return financing;
