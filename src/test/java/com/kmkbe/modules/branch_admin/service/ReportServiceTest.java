@@ -89,21 +89,27 @@ class ReportServiceTest {
     injectDependencies(service);
     lenient().when(externalApiService.getAgreementDate("AGR-CODE"))
       .thenReturn(LocalDateTime.of(2026, 12, 14, 0, 0));
-    financingHdr = FinancingHdr.builder()
-      .bouwheer(Bouwheer.builder()
-        .legalAddress("TEST")
-        .zipcode("1111")
-        .province("TEST")
-        .city("TEST")
-        .build())
-      .financingHdrCode(FINANCING_HDR_CODE)
-      .mstBranch(MstBranch.builder().branchName("JAKARTA ABU 1").branchCode("407").build())
-      .customer(Customer.builder()
-        .personal(CustomerPersonal.builder()
-          .city("TEST")
-          .build())
-        .build())
-      .build();
+    Bouwheer bouwheer = new Bouwheer();
+    bouwheer.setLegalAddress("TEST");
+    bouwheer.setZipcode("1111");
+    bouwheer.setProvince("TEST");
+    bouwheer.setCity("TEST");
+
+    MstBranch mstBranch = new MstBranch();
+    mstBranch.setBranchName("JAKARTA ABU 1");
+    mstBranch.setBranchCode("407");
+
+    CustomerPersonal personal = new CustomerPersonal();
+    personal.setCity("TEST");
+
+    Customer customer = new Customer();
+    customer.setPersonal(personal);
+
+    financingHdr = new FinancingHdr();
+    financingHdr.setBouwheer(bouwheer);
+    financingHdr.setFinancingHdrCode(FINANCING_HDR_CODE);
+    financingHdr.setMstBranch(mstBranch);
+    financingHdr.setCustomer(customer);
   }
 
   @Test

@@ -19,6 +19,14 @@ import java.util.*;
 public interface FinancingHdrRepository extends JpaRepository<FinancingHdr, UUID>, JpaSpecificationExecutor<FinancingHdr> {
   Optional<FinancingHdr> findByFinancingHdrCode(UUID code);
 
+  @Query("SELECT f FROM FinancingHdr f " +
+    "JOIN FETCH f.bouwheer " +
+    "JOIN FETCH f.customer " +
+    "JOIN FETCH f.mstBranch " +
+    "WHERE f.financingHdrCode = :code")
+  Optional<FinancingHdr> findByCodeWithDetails(@Param("code") UUID code);
+
+
   Optional<FinancingHdr> findByFinancingHdrCodeAndMstBranch_BranchCode(UUID code, String branchCode);
 
   Optional<FinancingHdr> findFirstByCustomerOrderByFinancingHdrIdDesc(Customer customer);

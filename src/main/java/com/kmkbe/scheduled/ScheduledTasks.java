@@ -20,7 +20,7 @@ public class ScheduledTasks {
     this.logRepository = logRepository;
   }
 
-  @Scheduled(fixedDelayString = "PT1H", initialDelayString = "PT1H")
+  @Scheduled(fixedDelayString = "PT1M", initialDelayString = "PT1M")
   public void updateStatusAgreement() {
     String jobName = "UPDATE_STATUS_AGREEMENT";
     SchedulerLog history = new SchedulerLog();
