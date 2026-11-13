@@ -189,7 +189,6 @@ public class InvoiceService {
       }
 
 
-      log.info("Invoice Details :  {} ", financingDtls.stream().toList());
       return paginateInvoice(
         financingDtls,
         pageNo
