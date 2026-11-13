@@ -125,7 +125,8 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
   @Query(value = """
     SELECT 
         w.cwr_code,
-        w.cwr_start_date
+        w.cwr_start_date,
+        w.cwr_end_date
     FROM agreement a
     JOIN cwr w ON a.cwr_code = w.cwr_code
     WHERE a.financing_hdr_code = :financingHdrCode AND a.agreement_code = :agreementCode
@@ -141,7 +142,14 @@ public interface AgreementRepository extends JpaRepository<Agreement, String>, J
         c.cust_email,
         CASE WHEN cp.cust_code IS NOT NULL THEN 'Personal' ELSE 'Badan Usaha' END AS debtor_type,
         COALESCE(cc.cust_company_type, cp.cust_model) AS debtor_model,
-        COALESCE(cc.company_address, cp.legal_address) AS debtor_address,
+        COALESCE(cc.company_address, concat(cp.legal_address)) AS debtor_address,
+        COALESCE(cc.rt, concat(cp.rt)) AS rt,
+        COALESCE(cc.rw, concat(cp.rw)) AS rw,
+        COALESCE(cc.kelurahan, concat(cp.kelurahan)) AS kelurahan,
+        COALESCE(cc.kecamatan, concat(cp.kecamatan)) AS kecamatan,
+        COALESCE(cc.city, concat(cp.city)) AS city,
+        COALESCE(cc.province, concat(cp.province)) as province,
+        COALESCE(cc.zipcode, concat(cp.zipcode)) AS zipcode,
         COALESCE(cc.phone, cp.phone, c.cust_mobile_phone) AS phone
     FROM agreement a
     JOIN financing_hdr fh ON a.financing_hdr_code = fh.financing_hdr_code

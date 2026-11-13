@@ -62,6 +62,8 @@ class InquiryDisburseEmailTest {
     account.setAccNo("3245678000");
     account.setNominal(new BigDecimal("483367500"));
     when(confins.getDebtorDisbursementAccount("41250270017")).thenReturn(account);
+    when(confins.getDisbursementExecutionDate("412AP20270200006", "412"))
+      .thenReturn(LocalDateTime.of(2027, 5, 12, 0, 0));
 
     service.inquiryDisburseAuto(agreement);
 
@@ -72,7 +74,7 @@ class InquiryDisburseEmailTest {
     assertThat(payload.getValue().getBankName()).isEqualTo("BANK CENTRAL ASIA");
     assertThat(payload.getValue().getAccountNo()).isEqualTo("3245678000");
     assertThat(payload.getValue().getDisburseAmt()).isEqualTo("483,367,500");
-    assertThat(payload.getValue().getDisbursementDate()).isNotBlank();
+    assertThat(payload.getValue().getDisbursementDate()).isEqualTo("12/05/2027");
   }
 
   @Test
@@ -85,6 +87,21 @@ class InquiryDisburseEmailTest {
     assertThatThrownBy(() -> service.inquiryDisburseAuto(agreement))
       .isInstanceOf(IllegalStateException.class);
 
+    verify(emails, never()).sendNotificationPencairan(any(), any(), any(), any(), any());
+    verify(logs, never()).save(any());
+  }
+
+  @Test
+  void missingVoucherDateDoesNotSendDisbursementEmail() throws Exception {
+    Agreement agreement = confirmedAgreement();
+    when(logs.findAllByAgreement(agreement)).thenReturn(List.of());
+    DisbursementAccountResponse.DisbInfo account = new DisbursementAccountResponse.DisbInfo();
+    when(confins.getDebtorDisbursementAccount("41250270017")).thenReturn(account);
+    when(confins.getDisbursementExecutionDate("412AP20270200006", "412"))
+      .thenThrow(new IllegalStateException("ExecutionValueDt tidak tersedia"));
+
+    assertThatThrownBy(() -> service.inquiryDisburseAuto(agreement))
+      .isInstanceOf(IllegalStateException.class).hasMessageContaining("ExecutionValueDt");
     verify(emails, never()).sendNotificationPencairan(any(), any(), any(), any(), any());
     verify(logs, never()).save(any());
   }
@@ -124,6 +141,8 @@ class InquiryDisburseEmailTest {
     InquiryDisburseDatum row = new InquiryDisburseDatum();
     row.setAgreementNo(agreement.getAgreementCode());
     row.setAPStatCode("P");
+    row.setAPNo("412AP20270200006");
+    row.setOfficeCode("412");
     InquiryDisburseResult result = new InquiryDisburseResult();
     result.setStatusCode("200");
     result.setData(new ArrayList<>(List.of(row)));

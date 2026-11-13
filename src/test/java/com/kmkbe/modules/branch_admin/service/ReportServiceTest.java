@@ -1,26 +1,9 @@
 package com.kmkbe.modules.branch_admin.service;
 
-import com.kmkbe.core.domain.dto.BaseLdapRemoteResponseDto;
-import com.kmkbe.core.domain.dto.BranchDto;
-import com.kmkbe.core.domain.dto.AppFactoringResponse;
-import com.kmkbe.core.domain.dto.AppResponse;
-import com.kmkbe.core.domain.dto.CwrBwhrResponse;
-import com.kmkbe.core.domain.dto.CwrListBwhrResponse;
-import com.kmkbe.core.domain.dto.ExternalSigningRequest;
-import com.kmkbe.core.domain.dto.ExternalSigningResponse;
-import com.kmkbe.core.domain.dto.FinancialDataResponse;
-import com.kmkbe.core.domain.dto.PostedInvoiceDto;
-import com.kmkbe.core.domain.dto.ProyeksiReportDto;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.kmkbe.core.domain.dto.*;
 import com.kmkbe.core.domain.entity.*;
 import com.kmkbe.helpers.base.BasePaginationRequest;
-import com.kmkbe.core.domain.dto.RekDebiturResponse;
-import com.kmkbe.core.domain.dto.ReportDueDateDto;
-import com.kmkbe.core.domain.dto.SigningResponse;
-import com.kmkbe.core.domain.dto.SitDto;
-import com.kmkbe.core.domain.dto.SummaryByAODto;
-import com.kmkbe.core.domain.dto.SummaryByBranchDto;
-import com.kmkbe.core.domain.dto.SummaryDetailDto;
-import com.kmkbe.core.domain.dto.VisitorDto;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.core.domain.repository.AgreementFileSigningRepository;
@@ -38,6 +21,8 @@ import com.kmkbe.modules.loan_submission.service.FinancingHdrService;
 import com.kmkbe.modules.loan_submission.service.InvoiceService;
 import com.kmkbe.modules.major_account.service.MstBranchService;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
+import com.kmkbe.modules.remote.service.ConfigRemoteService;
+import com.kmkbe.modules.remote.service.CwrRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
 import com.kmkbe.modules.user.entity.MstBranch;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,6 +51,7 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 @ExtendWith(MockitoExtension.class)
 class ReportServiceTest {
@@ -90,6 +76,10 @@ class ReportServiceTest {
   @Mock private SigningClient signingClient;
   @Mock private AgreementFileSigningService agreementFileSigningService;
   @Mock private SigningEligibilityService signingEligibilityService;
+  @Mock
+  ConfigRemoteService configRemoteService;
+  @Mock CwrRemoteService cwrRemoteService;
+  @Mock SitTemplateService sitTemplateService;
 
   private ReportService service;
   private FinancingHdr financingHdr;
@@ -97,6 +87,8 @@ class ReportServiceTest {
   void setUp() {
     service = new ReportService();
     injectDependencies(service);
+    lenient().when(externalApiService.getAgreementDate("AGR-CODE"))
+      .thenReturn(LocalDateTime.of(2026, 12, 14, 0, 0));
     financingHdr = FinancingHdr.builder()
       .bouwheer(Bouwheer.builder()
         .legalAddress("TEST")
@@ -359,6 +351,7 @@ class ReportServiceTest {
   @Test
   void generateReportRendersPdfWithRemoteAndRepositoryData() throws Exception {
     Agreement agreement = agreement();
+    agreement.setDtmCrt(LocalDateTime.of(2026, 1, 1, 0, 0));
     agreement.setApplicationCode("APP001");
     agreement.setFinancingAmt(100D);
     when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
@@ -398,6 +391,8 @@ class ReportServiceTest {
     verify(jasperReportRenderer).renderToPdf(eq("/Reports/main_report.jasper"), paramsCaptor.capture());
     assertThat(paramsCaptor.getValue()).containsEntry("NamaBranchManager", "BM");
     assertThat(paramsCaptor.getValue()).containsEntry("AgrmntNo", "AGR-CODE");
+    assertThat(paramsCaptor.getValue()).containsEntry("TglPengalihanPiutang", "JAKARTA, 14 Desember 2026");
+    assertThat(paramsCaptor.getValue()).containsEntry("TglDokumen", "JAKARTA, 01 Januari 2026");
     assertThat(paramsCaptor.getValue()).containsEntry("JenisDebitur", "Badan Usaha");
     assertThat(paramsCaptor.getValue()).containsEntry("TipePerusahaan", "PT");
     assertThat(paramsCaptor.getValue()).containsEntry("Alamat", "Jl. Test");
@@ -479,7 +474,6 @@ class ReportServiceTest {
     when(agreementRepo.findFaciltyByFinancingHdrCode(FINANCING_HDR_CODE, "AGR001")).thenReturn("Factoring");
     when(agreementRepo.finddetailDebtor(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.empty());
     when(agreementCodeService.getAgreementsByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(new CommonResult<SitDto>().success(sitDto()));
-    FinancingHdr financingHdr = financingHdr();
 
     when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
@@ -489,7 +483,7 @@ class ReportServiceTest {
   }
 
   @Test
-  void generateReportThrowsWhenAgreementDataCommonResultFails() {
+  void generateReportThrowsWhenAgreementDataCommonResultFails() throws JsonProcessingException {
     Agreement agreement = agreement();
     agreement.setApplicationCode("APP001");
     when(financingHdrRepository.findByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn(Optional.of(financingHdr));
@@ -630,7 +624,7 @@ class ReportServiceTest {
     when(agreementRepo.finddetailDebtor(FINANCING_HDR_CODE, "AGR001")).thenReturn(Optional.empty());
     when(agreementCodeService.getAgreementsByFinancingHdrCode(FINANCING_HDR_CODE))
         .thenReturn(new CommonResult<SitDto>().success(sitDto()));
-    FinancingHdr financingHdr = financingHdr();
+
     when(jasperReportRenderer.renderToPdf(eq("/Reports/main_report.jasper"), any(Map.class))).thenReturn("pdf".getBytes());
 
     assertThat(service.generateReport(FINANCING_HDR_CODE.toString(), "AGR001", "BM", "ASM")).isEqualTo("pdf".getBytes());
@@ -810,6 +804,7 @@ class ReportServiceTest {
     ReflectionTestUtils.setField(target, "signingClient", signingClient);
     ReflectionTestUtils.setField(target, "agreementFileSigningService", agreementFileSigningService);
     ReflectionTestUtils.setField(target, "signingEligibilityService", signingEligibilityService);
+    ReflectionTestUtils.setField(target, "sitTemplateService", sitTemplateService);
   }
 
   private static PaginationRequest reportRequest() {

@@ -267,6 +267,34 @@ class ConfinsR3HttpRegressionTest {
     }
 
     @Test
+    void paymentVoucherEndpointsUseCollectionPathsAndDecodeExecutionDate() {
+        response = "{\"Data\":[{\"APNo\":\"412AP20270200006\",\"PayVoucherNo\":\"999PVC20270500004\","
+            + "\"PayVoucherStatCode\":\"PAID\"}],\"Count\":1,\"StatusCode\":\"200\"," + HEADER + "}";
+        var paging = client.getPaymentVouchers(new PaymentVoucherRemote.PagingRequest(
+            true, true, true, new PaymentVoucherRemote.QueryString("searchPayVoucherInquiry"),
+            "", null, "INNER", 1, 10,
+            new PaymentVoucherRemote.OrderBy("PVH.PAY_VOUCHER_H_ID", "false"),
+            List.of(new PaymentVoucherRemote.Criterion(0, 0, "text", false, "Eq", "AP.OFFICE_CODE", "412")),
+            LocalDate.now().toString()));
+
+        assertThat(path).isEqualTo("/api/ap/v2/Generic/GetPagingObjectBySQL");
+        assertThat(apiKey).isEqualTo("test-key");
+        assertThat(request.at("/queryString/name").asText()).isEqualTo("searchPayVoucherInquiry");
+        assertThat(request.at("/criteria/0/DataType").asText()).isEqualTo("text");
+        assertThat(request.get("RequestDateTime").asText()).isEqualTo(LocalDate.now().toString());
+        assertThat(paging.data().getFirst().payVoucherNo()).isEqualTo("999PVC20270500004");
+
+        response = "{\"PayVoucherNo\":\"999PVC20270500004\",\"PayVoucherStatCode\":\"PAID\","
+            + "\"ExecutionValueDt\":\"2027-05-12T00:00:00\"}";
+        var detail = client.getPaymentVoucher(new PaymentVoucherRemote.DetailRequest(
+            paging.data().getFirst().payVoucherNo(), LocalDate.now().toString()));
+
+        assertThat(path).isEqualTo("/api/ap/v1/PayVoucherH/GetPayVoucherHByPayVoucherHNo");
+        assertThat(request.get("PayVoucherNo").asText()).isEqualTo("999PVC20270500004");
+        assertThat(detail.executionValueDt()).isEqualTo(java.time.LocalDateTime.of(2027, 5, 12, 0, 0));
+    }
+
+    @Test
     void inquiryServicesPreserveTypedRowsAndCriteria() throws Exception {
         var remote = new CwrRemoteService(mapper, client);
         ReflectionTestUtils.setField(remote, "confinsUrl", baseUrl);
@@ -293,6 +321,25 @@ class ConfinsR3HttpRegressionTest {
         assertThat(byCwr.getData().getFirst().getAppNo()).isEqualTo("APP001");
         assertThat(path).isEqualTo("/api/los/v1/Agrmnt/GetListAgrmntDetailForCwrByCwrNo");
         assertThat(request.get("trxNo").asText()).isEqualTo("CWR001");
+
+        response = "{\"ReturnObject\":[{\"AppId\":42,\"RefAttrCode\":\"LIMIT_AGR_DT\",\"AttrValue\":\"2025-10-20\"}]," + HEADER + "}";
+        var attributes = remote.agreementAttributeContent(42);
+        assertThat(attributes.getData().getFirst().attrValue()).isEqualTo("2025-10-20");
+        assertThat(path).isEqualTo("/api/corelos/v1/AppAttrContent/GetListAppAttrContentForView");
+        assertThat(request.get("AppId").asInt()).isEqualTo(42);
+        assertThat(request.get("AttrGroup").asText()).isEqualTo("FCTR");
+        assertThat(request.get("RequestDateTime").asText()).matches("\\d{4}-\\d{2}-\\d{2}");
+    }
+
+    @Test
+    void agreementDateUsesAgrmntCreatedDtFromLosAgreementByNumber() {
+        response = "{\"AgrmntNo\":\"AGR001\",\"AgrmntCreatedDt\":\"2027-05-13T00:00:00\",\"AppId\":5500,\"StatusCode\":\"200\"," + HEADER + "}";
+
+        assertThat(service.getAgreementDate("AGR001"))
+            .isEqualTo(java.time.LocalDateTime.of(2027, 5, 13, 0, 0));
+        assertThat(path).isEqualTo("/api/los/v1/Agrmnt/GetAgrmntByAgrmntNo");
+        assertThat(request.get("TrxNo").asText()).isEqualTo("AGR001");
+        assertThat(request.get("RequestDateTime").asText()).isEqualTo(LocalDate.now().toString());
     }
 
     @Test

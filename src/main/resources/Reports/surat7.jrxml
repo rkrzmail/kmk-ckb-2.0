@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="surat7" pageWidth="595" pageHeight="842" columnWidth="451" leftMargin="72" rightMargin="72" topMargin="72" bottomMargin="5" uuid="6f133ca4-5996-4402-bef5-9e9fc38dc9b8">
+	<property name="net.sf.jasperreports.text.line.spacing.fixed" value="true"/>
+	<parameter name="JenisDebitur" class="java.lang.String"/>
+	<parameter name="NamaDebitur" class="java.lang.String"/>
+	<parameter name="TipePerusahaan" class="java.lang.String"/>
+	<parameter name="NPWP" class="java.lang.String"/>
+	<parameter name="Alamat" class="java.lang.String"/>
+	<parameter name="Email" class="java.lang.String"/>
+	<parameter name="Telepon" class="java.lang.String"/>
+	<parameter name="NamaKaryawan" class="java.lang.String"/>
+	<parameter name="Jabatan" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="10" splitType="Stretch">
+			<image>
+				<reportElement x="-36" y="-60" width="140" height="60" uuid="62b5c48f-a6a8-45df-b6e0-a23e14e6b36f"/>
+				<imageExpression><![CDATA["https://www.csulfinance.com/cfind/source/images/logo.png"]]></imageExpression>
+			</image>
+			<staticText>
+				<reportElement x="130" y="-45" width="319" height="30" uuid="4f352357-6289-48ec-aa16-34fa1cde16f2"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[APLIKASI PEMBIAYAAN
+CORPORATE BUSINESS UNIT - DANA SAKTI]]></text>
+			</staticText>
+			<line>
+				<reportElement x="130" y="-50" width="319" height="1" uuid="d3498070-f4e3-40d0-bfbb-f3e6839e1d34"/>
+			</line>
+			<line>
+				<reportElement x="130" y="-20" width="319" height="1" uuid="a4b4fdda-46c9-4b76-93d4-9241c331a662"/>
+			</line>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="47" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="130" height="20" uuid="16f06303-5745-403c-a763-45a2d61cfc42"/>
+				<textElement textAlignment="Left">
+					<font size="10" isBold="false"/>
+				</textElement>
+				<text><![CDATA[Permohonan Pembiayaan :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="60" y="23" width="30" height="15" uuid="d58d3fde-5ce9-40fa-8e04-48b270b4a56a"/>
+				<textElement textAlignment="Left"/>
+				<text><![CDATA[Baru]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="210" y="23" width="70" height="15" uuid="51a6dcda-85ed-4fb5-9132-bb3a140f134e"/>
+				<textElement textAlignment="Left"/>
+				<text><![CDATA[Repeat Order]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="360" y="23" width="90" height="15" uuid="82bd3c7a-03a2-4457-8213-58aaf7b47f64"/>
+				<textElement textAlignment="Left"/>
+				<text><![CDATA[Additional Order]]></text>
+			</staticText>
+			<rectangle>
+				<reportElement x="30" y="20" width="21" height="21" backcolor="#000066" uuid="77331d49-b4b7-4282-8c8d-4df3bd39806f"/>
+			</rectangle>
+			<rectangle>
+				<reportElement x="180" y="20" width="21" height="21" uuid="4ae42e2d-8612-4f4b-a89e-3919e7fa22e7"/>
+			</rectangle>
+			<rectangle>
+				<reportElement x="330" y="20" width="21" height="21" uuid="1a33b9cf-af34-43bb-b460-2f407fdd168b"/>
+			</rectangle>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="112" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="330" height="20" uuid="65aec794-2566-49e5-bd8b-237000befca0"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[I. 	Identitas Pemohon]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="130" y="20" width="200" height="15" uuid="be540e42-1c67-4e8a-a628-927c98792ddb"/>
+				<textFieldExpression><![CDATA[$P{JenisDebitur}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="130" y="35" width="200" height="15" uuid="7b9e2f01-0c1a-4917-992a-2ac3ca06eec8"/>
+				<textFieldExpression><![CDATA[$P{NamaDebitur}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="130" y="50" width="200" height="15" uuid="454f20e0-a6ad-452d-bd91-ef6b7ab3f88f"/>
+				<textFieldExpression><![CDATA[$P{TipePerusahaan}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="130" y="65" width="200" height="15" uuid="7f07a001-8557-4206-b60c-062e1416bcf7"/>
+				<textFieldExpression><![CDATA[$P{NPWP}]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement stretchType="ContainerBottom" x="130" y="80" width="318" height="32" uuid="b55395e0-013d-43ec-ae39-79f35b56e4ff"/>
+				<textFieldExpression><![CDATA[$P{Alamat}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="20" width="130" height="15" uuid="09943c94-8b92-4233-9df0-2e97e4aa4351">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Jenis Debitur		:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="35" width="130" height="15" uuid="863070fe-9f62-414c-97fd-4e52fffd27d5">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Nama			:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="50" width="120" height="15" uuid="896864fc-ed67-4b43-9501-f824a57934a6">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Tipe Perusahaan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="65" width="130" height="15" uuid="9b17af4f-daf4-4408-ba65-9528be90dce6">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[NPWP			:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="80" width="130" height="15" uuid="7559b537-d164-4eb6-be9d-17f15c58060c">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Alamat			:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="120" y="50" width="20" height="15" uuid="10c9eed2-4440-4f7c-9c2c-e1d7b1cef642">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="480" splitType="Stretch">
+			<staticText>
+				<reportElement x="3" y="59" width="450" height="20" uuid="10333d2b-9d21-472e-9c68-e14066767509"/>
+				<textElement>
+					<font size="12" isBold="true"/>
+				</textElement>
+				<text><![CDATA[II. 	Pernyataan]]></text>
+			</staticText>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="3" y="79" width="450" height="80" uuid="23c7cf9f-b526-465d-ad1e-3d569d4cd2c0"/>
+				<textElement textAlignment="Justified"/>
+				<textFieldExpression><![CDATA["Saya/Kami dengan ini menyatakan bahwa semua informasi di atas bersama dokumen penunjang sehubungan dengan keterangan-keterangan tersebut di atas adalah benar, lengkap, serta sesuai dengan aslinya dan dengan ini memberikan kuasa kepada CSUL untuk melakukan pengecekan terhadap pihak-pihak yang tercantum dalam Formulir Aplikasi Pembiayaan, pemeriksaan informasi Debitur berikut pelaporan ke dalam Sistem Layanan Informasi Keuangan, termasuk tetapi tidak terbatas pada pelaporan-pelaporan lainnya yang diwajibkan oleh Regulator."]]></textFieldExpression>
+			</textField>
+			<textField textAdjust="StretchHeight">
+				<reportElement x="3" y="159" width="450" height="120" uuid="6257d86c-731f-4b53-8299-c67771a3c964"/>
+				<textElement textAlignment="Justified"/>
+				<textFieldExpression><![CDATA["Pemohon dengan ini menyatakan, tanpa dapat dibatalkan, dicabut kembali atau diubah dengan alasan apapun dan dalam keadaan apapun, bahwa Pemohon tidak pernah dan/atau tidak akan pernah memberikan dan/atau janji memberikan suatu imbalan tidak resmi, baik secara langsung maupun tidak langsung, baik tersirat maupun tersurat, antara lain tetapi tidak terbatas pada pemberian dalam bentuk uang, barang, hak-hak, fasilitas-fasilitas dan/atau segala sesuatu yang dapat ditafsirkan sebagai imbalan yang menguntungkan dan/atau dapat menyebabkan keuntungan pribadi kepada Komisaris, Direksi, Karyawan CSUL yang diduga dan/atau dapat diduga berkaitan dengan pembiayaan yang diberikan oleh CSUL kepada Pemohon."]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="230" y="310" width="220" height="15" uuid="28ab5a12-759e-4c94-80da-677e9f76831b"/>
+				<text><![CDATA[Tempat/Tanggal]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="230" y="330" width="220" height="15" uuid="6dad02ab-9359-492b-aac5-7f706a40d559"/>
+				<text><![CDATA[Diajukan oleh :]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="230" y="350" width="220" height="15" uuid="64c3ebb3-71ac-4927-b2fa-7d15c0ca0950"/>
+				<text><![CDATA[Pemohon]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="230" y="439" width="47" height="15" uuid="c58ecfdd-e29d-4ec0-9a7d-79d6a29bf197"/>
+				<text><![CDATA[Nama 	]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="130" y="0" width="200" height="15" forecolor="#080CFF" uuid="1b45a195-edf4-43d6-9465-de1f0d4d8984"/>
+				<textElement>
+					<font isItalic="false" isUnderline="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Email}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="130" y="15" width="200" height="15" uuid="3cd656bb-948a-42ac-b4c0-c15399667b45"/>
+				<textFieldExpression><![CDATA[$P{Telepon}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="0" width="130" height="15" uuid="88fbda81-26e3-4186-9939-ceb77df1d379">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Email			:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="15" width="130" height="15" uuid="e16bb95b-e956-457b-b5a5-5273a2bcc5f2">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Telepon			:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="277" y="439" width="200" height="15" uuid="2b041605-15df-41d0-bbaf-6797d80f4bff">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="false" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaKaryawan}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="277" y="459" width="200" height="15" uuid="e518aba6-cd69-4be0-a0df-e051feb0c621">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="false" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Jabatan}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="272" y="439" width="47" height="15" uuid="f4f7991c-a8a8-49a6-9b5c-0d96eaac2008"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="272" y="459" width="47" height="15" uuid="d1db4bd0-9810-4d3c-8b9d-19c3968a2b0a"/>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="230" y="459" width="110" height="15" uuid="223a79a4-7a5d-41dc-a9fe-26cd75f866ec"/>
+				<text><![CDATA[Jabatan]]></text>
+			</staticText>
+		</band>
+	</detail>
+	<columnFooter>
+		<band height="22" splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="50" splitType="Stretch"/>
+	</pageFooter>
+</jasperReport>
