@@ -149,6 +149,88 @@ class DocumentServiceIssueRegressionTest {
   }
 
   @Test
+  void documentRequirementFiltersSortsAndPagesOnBackend() {
+    UUID bouwheerCode = UUID.randomUUID();
+    Customer customer = Customer.builder().bouwheer(bouwheerCode.toString()).build();
+    MstFileType first = MstFileType.builder().fileTypeCode("DOC-A")
+      .fileTypeName("A.pdf").fileTypeDesc("Dokumen A").build();
+    MstFileType second = MstFileType.builder().fileTypeCode("DOC-B")
+      .fileTypeName("B.pdf").fileTypeDesc("Dokumen B").build();
+    MstFileType other = MstFileType.builder().fileTypeCode("DOC-C")
+      .fileTypeName("C.txt").fileTypeDesc("Dokumen C").build();
+    when(mstFileTypeRepository.findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(
+      List.of("Legal", "Financing"), bouwheerCode)).thenReturn(List.of(first, second, other));
+
+    PaginationRequest request = new PaginationRequest();
+    request.setPageNo(2);
+    request.setPageSize(1);
+    request.setSearchBy("fileTypeName");
+    request.setSearchValue(".PDF");
+    request.setSortBy("fileTypeName");
+    request.setSortType("desc");
+    MockHttpServletRequest httpRequest = new MockHttpServletRequest();
+    httpRequest.setParameter("owner", "debitur");
+
+    var result = service.fetchAllLoanDocumentRequirement(httpRequest, customer, request, false);
+
+    assertThat(result.getCurrentPage()).isEqualTo(2);
+    assertThat(result.getTotalData()).isEqualTo(2);
+    assertThat(result.getTotalPage()).isEqualTo(2);
+    assertThat(result.getList()).singleElement()
+      .extracting(MstFileTypeDto::getFileTypeCode).isEqualTo("DOC-A");
+  }
+
+  @Test
+  void documentDebiturFiltersUploadedFileNameBeforePaging() {
+    UUID code = UUID.randomUUID();
+    UUID bouwheerCode = UUID.randomUUID();
+    Customer customer = Customer.builder().custCode(UUID.randomUUID()).build();
+    FinancingHdr header = new FinancingHdr();
+    header.setFinancingHdrCode(code);
+    header.setCustomer(customer);
+    header.setBouwheer(com.kmkbe.modules.bouwheer.model.entity.Bouwheer.builder()
+      .bouwheerCode(bouwheerCode).build());
+    MstFileType first = MstFileType.builder().fileTypeCode("DOC-A")
+      .fileTypeName("A.pdf").fileTypeDesc("KTP A").build();
+    MstFileType second = MstFileType.builder().fileTypeCode("DOC-B")
+      .fileTypeName("B.pdf").fileTypeDesc("KTP B").build();
+    MstFileType other = MstFileType.builder().fileTypeCode("DOC-C")
+      .fileTypeName("C.pdf").fileTypeDesc("NPWP").build();
+    DokumentHistoryUpload firstUpload = new DokumentHistoryUpload();
+    firstUpload.setId(1L);
+    firstUpload.setFileName("ktp-eddy.pdf");
+    DokumentHistoryUpload secondUpload = new DokumentHistoryUpload();
+    secondUpload.setId(2L);
+    secondUpload.setFileName("KTP-manager.pdf");
+    when(financingHdrRepository.findByFinancingHdrCode(code)).thenReturn(Optional.of(header));
+    when(mstFileTypeRepository.findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(
+      List.of("Internal", "Legal", "Financing"), bouwheerCode))
+      .thenReturn(List.of(first, second, other));
+    when(dokumentHistoryUploadRepository.findTopByFinancingHdr_FinancingHdrCodeAndFileTypeCodeOrderByUploadedAtDescIdDesc(
+      code, "DOC-A")).thenReturn(Optional.of(firstUpload));
+    when(dokumentHistoryUploadRepository.findTopByFinancingHdr_FinancingHdrCodeAndFileTypeCodeOrderByUploadedAtDescIdDesc(
+      code, "DOC-B")).thenReturn(Optional.of(secondUpload));
+    PaginationRequest request = new PaginationRequest();
+    request.setPageNo(2);
+    request.setPageSize(1);
+    request.setSearchBy("legalFile.fileName");
+    request.setSearchValue("KTP");
+    request.setSortBy("fileTypeDesc");
+    request.setSortType("desc");
+
+    var result = service.fetchAllLoanDocumentDebitur(
+      new MockHttpServletRequest(), request, code.toString());
+
+    assertThat(result.getCurrentPage()).isEqualTo(2);
+    assertThat(result.getTotalData()).isEqualTo(2);
+    assertThat(result.getTotalPage()).isEqualTo(2);
+    assertThat(result.getList()).singleElement()
+      .extracting(MstFileTypeDto::getFileTypeCode).isEqualTo("DOC-A");
+    verify(mstFileTypeRepository, never()).findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(
+      any(), eq(bouwheerCode), any(Pageable.class));
+  }
+
+  @Test
   void sitDocumentUsesActiveLegalFileForLeadNotCustomerFile() {
     UUID code = UUID.randomUUID();
     UUID bouwheerCode = UUID.randomUUID();
