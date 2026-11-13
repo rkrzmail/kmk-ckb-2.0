@@ -129,20 +129,20 @@ public class SitTemplateService {
       })
       .orElse("-");
 
-
     String[] removeRBU = {"1", "2", "3", "4", "5", "ABU"," "};
     Map<String, Object> params = new HashMap<>();
     params.put("tanggalCwr", CommonUtils.capitalize(CommonUtils.safeRemoveAll(financing.getMstBranch().getBranchName(),removeRBU)).concat(", ").concat(limitAgreementDate==null?"..., ........., .....":CommonUtils.toDate(limitAgreementDate.atStartOfDay())));
     params.put("namaBouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
-    params.put("periodeBerlaku", CommonUtils.toDate(financing.getFinancingDueDate()));
+    params.put("periodeBerlaku",formattedCwrDate);
     params.put("namaDebitur", CommonUtils.nullValue(financing.getCustomer().getCustName()));
     params.put("companyDebitur", CommonUtils.nullValue(financing.getCustomer().getCustName()));
+    params.put("jabatan", CommonUtils.nullValue(financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")?"Direktur Utama/Direktur":""));
     params.put("namaRegionalManager", regionalManager(financing));
     params.put("namaPicFinance", CommonUtils.nullValue(financing.getBouwheer().getPicName()));
     params.put("bouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
     params.put("legalAddress",financing.getBouwheer().getLegalAddress().concat("\n\n").concat(financing.getBouwheer().getProvince()).concat(" - ").concat(financing.getBouwheer().getZipcode()));
     params.put("picName", CommonUtils.nullValue(financing.getBouwheer().getPicName()));
-    params.put("tanggalPerjanjian", limitAgreementDate==null?"..., ........., .....":formattedCwrDate);
+    params.put("tanggalPerjanjian", limitAgreementDate==null?"..., ........., .....":CommonUtils.toDate(limitAgreementDate.atStartOfDay()));
     params.put("nomorPerjanjian", CommonUtils.nullValue(agreement.getCwr().getCwrCode()));
     return params;
   }

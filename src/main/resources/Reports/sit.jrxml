@@ -6,7 +6,7 @@
 	<parameter name="periodeBerlaku" class="java.lang.String"/>
 	<parameter name="namaDebitur" class="java.lang.String"/>
 	<parameter name="namaRegionalManager" class="java.lang.String"/>
-	<parameter name="Jabatan" class="java.lang.String"/>
+	<parameter name="jabatan" class="java.lang.String"/>
 	<parameter name="namaPicFinance" class="java.lang.String"/>
 	<parameter name="bouwheer" class="java.lang.String"/>
 	<parameter name="legalAddress" class="java.lang.String"/>
@@ -62,7 +62,7 @@
 				<textElement textAlignment="Justified" markup="html">
 					<paragraph lineSpacing="Single"/>
 				</textElement>
-				<textFieldExpression><![CDATA["Dengan hormat,<br/><br/>Sehubungan dengan telah ditandatanganinya Perjanjian Pembiayaan Modal Kerja dengan Fasilitas Pembiayaan Anjak Piutang (<i>\"With Recourse\"</i>) nomor <b>" + $P{nomorPerjanjian} + "</b> tanggal <b>" + $P{tanggalPerjanjian} + "</b> berikut perubahan (-perubahannya), perpanjangan (-perpanjangan), penambahan (-penambahannya) (jika ada) beserta setiap dan seluruh dokumen-dokumen turunannya (<b>\"Perjanjian Pembiayaan\"</b>) antara <b>PT. Chandra Sakti Utama Leasing</b> selaku <b>\"Factor\"</b> dan <b>" + $P{companyDebitur} + "</b> selaku <b>\"Klien\"</b> maka berdasarkan surat ini mohon agar pembayaran jasa pekerjaan <b>" + $P{companyDebitur} + "</b>, dapat dibayarkan/ditransfer kepada <b>Factor</b> sebagai pembayaran kewajiban sebagaimana tercantum dalam Perjanjian Pembiayaan di atas ke rekening dengan rincian sebagai berikut:"]]></textFieldExpression>
+				<textFieldExpression><![CDATA["Dengan hormat,<br/><br/>Sehubungan dengan telah ditandatanganinya Perjanjian Pembiayaan Modal Kerja dengan Fasilitas Pembiayaan Anjak Piutang (<i>\"With Recourse\"</i>) nomor <b>" + $P{nomorPerjanjian} + "</b> tanggal <b>" + $P{tanggalPerjanjian} + "</b> berikut perubahan (-perubahannya), perpanjangan (-perpanjangan), penambahan (-penambahannya) (jika ada) beserta setiap dan seluruh dokumen-dokumen turunannya (<b>\"Perjanjian Pembiayaan\"</b>) antara <b>PT. Chandra Sakti Utama Leasing</b> selaku <b>\"Factor\"</b> dan <b>" + $P{companyDebitur} + "</b> selaku <b>\"Klien\"</b>, maka berdasarkan surat ini mohon agar pembayaran jasa pekerjaan <b>" + $P{companyDebitur} + "</b>, dapat dibayarkan/ditransfer kepada <b>Factor</b> sebagai pembayaran kewajiban sebagaimana tercantum dalam Perjanjian Pembiayaan di atas ke rekening dengan rincian sebagai berikut:"]]></textFieldExpression>
 			</textField>
 			<staticText>
 				<reportElement x="0" y="10" width="40" height="15" uuid="edd895c8-0a3d-4477-9f82-c8a3dabee558">
@@ -130,7 +130,7 @@
 				<text><![CDATA[Menyetujui,]]></text>
 			</staticText>
 			<textField textAdjust="StretchHeight">
-				<reportElement x="160" y="-36" width="140" height="20" uuid="a944becc-01b9-45a3-bc6b-6d116fb76098">
+				<reportElement x="160" y="-36" width="140" height="36" uuid="a944becc-01b9-45a3-bc6b-6d116fb76098">
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
 				<textElement>
@@ -139,14 +139,14 @@
 				<textFieldExpression><![CDATA[$P{companyDebitur}]]></textFieldExpression>
 			</textField>
 			<staticText>
-				<reportElement x="0" y="-36" width="150" height="20" uuid="f2a9166f-6f0e-4a8b-adc1-f0e7b03e3cc0"/>
+				<reportElement x="0" y="-36" width="150" height="36" uuid="f2a9166f-6f0e-4a8b-adc1-f0e7b03e3cc0"/>
 				<textElement>
 					<font size="9" isBold="true"/>
 				</textElement>
 				<text><![CDATA[PT. CHANDRA SAKTI UTAMA LEASING]]></text>
 			</staticText>
 			<textField textAdjust="StretchHeight">
-				<reportElement x="333" y="-36" width="120" height="20" uuid="40750882-bbe5-4269-9a77-fe8afae5b0f1">
+				<reportElement x="333" y="-36" width="120" height="36" uuid="40750882-bbe5-4269-9a77-fe8afae5b0f1">
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
 				</reportElement>
 				<textElement>
@@ -209,13 +209,13 @@
 				</textElement>
 				<textFieldExpression><![CDATA[$P{namaDebitur}]]></textFieldExpression>
 			</textField>
-			<staticText>
-				<reportElement x="160" y="29" width="130" height="20" uuid="a502084a-e2bb-4366-a45a-a54669a5274e"/>
+			<textField>
+				<reportElement x="160" y="29" width="130" height="20" uuid="02711250-4e87-4172-a8c9-401fcb67d084"/>
 				<textElement>
 					<font size="9" isBold="false" isUnderline="false"/>
 				</textElement>
-				<text><![CDATA[Direktur Utama/Direktur]]></text>
-			</staticText>
+				<textFieldExpression><![CDATA[$P{jabatan}]]></textFieldExpression>
+			</textField>
 			<textField>
 				<reportElement x="334" y="-10" width="119" height="34" uuid="88889407-f51a-407f-828b-68e30d6a07eb">
 					<property name="com.jaspersoft.studio.unit.height" value="px"/>
