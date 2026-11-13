@@ -20,7 +20,6 @@ import com.kmkbe.modules.common.service.AuditTrailService;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.customer.repository.CustomerRepository;
 import com.kmkbe.modules.remote.service.CustomerRemoteService;
-import com.kmkbe.helpers.utils.SpecPagination;
 import com.kmkbe.modules.user.entity.MstUser;
 import io.netty.util.internal.StringUtil;
 import jakarta.servlet.http.HttpServletRequest;
@@ -141,28 +140,93 @@ public class DocumentService {
         })
         .toList();
 
-      // Baru lakukan filtering + pagination di SpecPagination
-      return SpecPagination.paginationData(new SpecPagination<MstFileTypeDto, MstFileTypeDto>(result, request) {
-        @Override
-        public MstFileTypeDto search(MstFileTypeDto data) {
-          if (isSearchBy("fileTypeDesc") && like(data.getFileTypeDesc())) {
-            return data;
-          } else if (isSearchBy("legalFile.fileName") && data.getLegalFile() != null && like(data.getLegalFile().getFileName())) {
-            return data;
-          }
-          return null;
-        }
-
-        @Override
-        public MstFileTypeDto eval(MstFileTypeDto data) {
-          return data;
-        }
-      });
+      return paginateDocuments(result, request);
 
     } catch (Exception e) {
       log.error("getAllLoanDocumentRequirement: {}", e.getMessage(), e);
       throw e;
     }
+  }
+
+  private static boolean hasDocumentQuery(PaginationRequest request) {
+    return request.getSearchValue() != null && !request.getSearchValue().isBlank()
+      || request.getSortBy() != null && !request.getSortBy().isBlank()
+      || request.getSortType() != null && !request.getSortType().isBlank();
+  }
+
+  private static PaginationResult<MstFileTypeDto> paginateDocuments(
+    List<MstFileTypeDto> documents, PaginationRequest request) {
+    int pageNo = request.getPageNo() == null ? 1 : request.getPageNo();
+    int pageSize = request.getPageSize() == null ? 10 : request.getPageSize();
+    if (pageNo < 1 || pageSize < 1) {
+      throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "pageNo dan pageSize harus minimal 1.");
+    }
+
+    List<MstFileTypeDto> matching = documents;
+    if (request.getSearchValue() != null && !request.getSearchValue().isBlank()) {
+      String field = request.getSearchBy() == null ? "" : request.getSearchBy().trim().toLowerCase(Locale.ROOT);
+      if (!List.of("filetypecode", "filetypename", "filetypedesc", "legalfile.filename").contains(field)) {
+        throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "searchBy dokumen tidak didukung.");
+      }
+      String needle = request.getSearchValue().trim().toLowerCase(Locale.ROOT);
+      matching = documents.stream().filter(document -> {
+        String value = switch (field) {
+          case "filetypecode" -> document.getFileTypeCode();
+          case "filetypename" -> document.getFileTypeName();
+          case "filetypedesc" -> document.getFileTypeDesc();
+          default -> document.getLegalFile() == null ? null : document.getLegalFile().getFileName();
+        };
+        return value != null && value.toLowerCase(Locale.ROOT).contains(needle);
+      }).toList();
+    }
+
+    String sortBy = request.getSortBy();
+    String sortType = request.getSortType();
+    if (sortType != null && !sortType.isBlank() && (sortBy == null || sortBy.isBlank())) {
+      throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "sortBy wajib diisi jika sortType digunakan.");
+    }
+    if (sortBy != null && !sortBy.isBlank()) {
+      Sort.Direction direction;
+      try {
+        direction = sortType == null || sortType.isBlank()
+          ? Sort.Direction.ASC : Sort.Direction.fromString(sortType.trim());
+      } catch (IllegalArgumentException exception) {
+        throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "sortType harus asc atau desc.");
+      }
+      Comparator<String> textOrder = direction == Sort.Direction.DESC
+        ? String.CASE_INSENSITIVE_ORDER.reversed() : String.CASE_INSENSITIVE_ORDER;
+      Comparator<java.time.LocalDateTime> dateOrder = direction == Sort.Direction.DESC
+        ? Comparator.reverseOrder() : Comparator.naturalOrder();
+      Comparator<Boolean> statusOrder = direction == Sort.Direction.DESC
+        ? Comparator.reverseOrder() : Comparator.naturalOrder();
+      Comparator<MstFileTypeDto> comparator = switch (sortBy.trim()) {
+        case "fileTypeCode" -> Comparator.comparing(MstFileTypeDto::getFileTypeCode, Comparator.nullsLast(textOrder));
+        case "fileTypeName" -> Comparator.comparing(MstFileTypeDto::getFileTypeName, Comparator.nullsLast(textOrder));
+        case "fileTypeDesc" -> Comparator.comparing(MstFileTypeDto::getFileTypeDesc, Comparator.nullsLast(textOrder));
+        case "legalFile.fileName" -> Comparator.comparing(
+          document -> document.getLegalFile() == null ? null : document.getLegalFile().getFileName(),
+          Comparator.nullsLast(textOrder));
+        case "legalFile.uploadedDate" -> Comparator.comparing(
+          document -> document.getLegalFile() == null ? null : document.getLegalFile().getUploadedDate(),
+          Comparator.nullsLast(dateOrder));
+        case "legalFile" -> Comparator.comparing(
+          document -> document.getLegalFile() != null && document.getLegalFile().getUploadedDate() != null,
+          statusOrder);
+        default -> throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "sortBy dokumen tidak didukung.");
+      };
+      matching = matching.stream().sorted(comparator.thenComparing(
+        MstFileTypeDto::getFileTypeCode, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER))).toList();
+    }
+
+    long offset = (long) (pageNo - 1) * pageSize;
+    int start = (int) Math.min(offset, matching.size());
+    int end = (int) Math.min(offset + pageSize, matching.size());
+    return PaginationResult.<MstFileTypeDto>builder()
+      .currentPage(pageNo)
+      .totalData((long) matching.size())
+      .totalPage((int) (((long) matching.size() + pageSize - 1) / pageSize))
+      .list(matching.subList(start, end))
+      .build();
   }
 
 
@@ -963,6 +1027,10 @@ public class DocumentService {
     String financingHdrCode
   ) {
     try {
+      if (request.getPageNo() != null && request.getPageNo() < 1
+        || request.getPageSize() != null && request.getPageSize() < 1) {
+        throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "pageNo dan pageSize harus minimal 1.");
+      }
       Optional<FinancingHdr> financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(financingHdrCode));
       if (financingHdr.isEmpty()){
         log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", financingHdrCode);
@@ -982,20 +1050,17 @@ public class DocumentService {
         pageNo = pageNo - 1;
       }
 
-      Page<MstFileType> page = mstFileTypeRepository.findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(
-        List.of("Internal",
-          "Legal",
-          "Financing"
-        ),
-        financingHdr.get().getBouwheer().getBouwheerCode(),
-        PageRequest.of(
-          pageNo,
-          pageSize,
-          Sort.by("fileTypeId").descending()
-        )
-      );
+      List<String> allocations = List.of("Internal", "Legal", "Financing");
+      UUID bouwheerCode = financingHdr.get().getBouwheer().getBouwheerCode();
+      boolean customQuery = hasDocumentQuery(request);
+      Page<MstFileType> page = customQuery ? null : mstFileTypeRepository
+        .findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(
+          allocations, bouwheerCode, PageRequest.of(pageNo, pageSize, Sort.by("fileTypeId").descending()));
+      List<MstFileType> files = customQuery
+        ? mstFileTypeRepository.findAllByFileAllocationInAndBouwheerCodeOrderByFileTypeIdDesc(allocations, bouwheerCode)
+        : page.getContent();
 
-      List<MstFileTypeDto> result = page.map((file) -> {
+      List<MstFileTypeDto> result = files.stream().map((file) -> {
           MstFileTypeDto dto = FileTypeMapper.INSTANCE.mstFileToDto(file);
           if ("DOC006".equals(file.getFileTypeCode())) {
             legalFileRepository
@@ -1057,6 +1122,10 @@ public class DocumentService {
           return dto;
         })
         .toList();
+
+      if (customQuery) {
+        return paginateDocuments(result, request);
+      }
 
       return PaginationResult.<MstFileTypeDto>builder()
         .currentPage(pageNo + 1)
