@@ -149,11 +149,14 @@ csul:
 feign:
   csul:
     ckb:
-      url: "http://10.144.250.13:5000"
+      url: https://api-ckbvendorportal.dipstrategy.co.id
       username: ramco
       password: RamcoVDC2026!
       client-secret: SecretRamco2026!
-
   confins:
-    url: https://confinsr3.csulfinance.com
+    url: https://uat-confinsr3.csulfinance.com
     adins-key: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
+  esign:
+    base-url: ${FEIGN_ESIGN_BASE_URL:https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external}
+    url: ${FEIGN_ESIGN_URL:${feign.esign.base-url}/document/sendDocumentSigning}
+    key: YiByHB@CSUL_DEV

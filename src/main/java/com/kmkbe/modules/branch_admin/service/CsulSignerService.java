@@ -17,6 +17,7 @@ import com.kmkbe.modules.user.repository.MstBranchRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -39,8 +40,13 @@ public class CsulSignerService {
   private final AuthRemoteService authRemoteService;
   private final EmailAo emailAo;
   private final AuditTrailService auditTrailService;
-  private final String apiKey = "YiByHB@CSUL_DEV";
-  private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
+  @Value("${feign.esign.key}")
+  private String apiKey;
+
+  @Value("${feign.esign.base-url}")
+  private String esignBaseUrl;
+
+  private String registerUrl() { return esignBaseUrl + "/user/checkRegistration"; }
 
   private String jwtToken;
 
@@ -223,7 +229,7 @@ public class CsulSignerService {
     );
 
     ResponseEntity<Map> response = restTemplate.postForEntity(
-      registerUrl,
+      registerUrl(),
       new HttpEntity<>(requestBody, headers),
       Map.class
     );
