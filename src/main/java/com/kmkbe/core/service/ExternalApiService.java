@@ -21,12 +21,14 @@ public class ExternalApiService {
 
     private final ConfinsR3FeignClient confinsR3FeignClient;
 
-    @Value("${feign.esign.url}")
-    private String esignUrl;
-    @Value("${feign.esign.key}")
-    private String esignApiKey;
+    private final String esignUrl;
+    private final String esignApiKey;
 
-  public ExternalApiService(RestTemplate restTemplate, ConfinsR3FeignClient confinsR3FeignClient, String esignUrl, String esignApiKey) {
+  public ExternalApiService(
+      RestTemplate restTemplate,
+      ConfinsR3FeignClient confinsR3FeignClient,
+      @Value("${feign.esign.url}") String esignUrl,
+      @Value("${feign.esign.key}") String esignApiKey) {
     this.restTemplate = restTemplate;
     this.confinsR3FeignClient = confinsR3FeignClient;
     this.esignUrl = esignUrl;
