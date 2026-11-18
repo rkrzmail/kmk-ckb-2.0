@@ -1,5 +1,6 @@
 package com.kmkbe.feign.model.response;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.kmkbe.helpers.base.BaseResponse;
 import lombok.*;
@@ -16,6 +17,7 @@ public class ConfinsR3ApiResponseWrapper<T> extends BaseResponse {
   private String message;             // User-friendly confirmation/error text.
 
   /** The primary container for data (the list of records). */
+  @JsonAlias("ReturnObject")
   @JsonProperty("Data")
   private List<T> data;
 

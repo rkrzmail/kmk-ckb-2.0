@@ -3,6 +3,7 @@ package com.kmkbe.modules.confinsr3.service;
 
 import com.kmkbe.adapter.ApiConfinsR3Adapter;
 import com.kmkbe.core.domain.dto.CustomerRemoteDto;
+import com.kmkbe.core.domain.model.PaginationResult;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.feign.model.dto.*;
 import com.kmkbe.feign.model.request.ConfinsR3GetCustomerNoRequest;
@@ -94,7 +95,7 @@ public class ConfinsR3Service {
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, recordResponseList);
   }
 
-  public BaseResponseBuilder<List<GetZipCodeResponse>> pageZipcode(AreaPageRequest request) {
+  public BaseResponseBuilder<PaginationResult<GetZipCodeResponse>> pageZipcode(AreaPageRequest request) {
     var pagination = PaginationRequests.from(request);
     if (pagination.getPageNo() == null || pagination.getPageSize() == null) {
       throw new BusinessException(HttpStatus.BAD_REQUEST, 400, "pageNo dan pageSize wajib diisi.");
@@ -153,14 +154,21 @@ public class ConfinsR3Service {
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81);
     }
 
-    log.info("Get by Zipcode from Confins {} ",response.getData().stream().toList());
     List<GetZipCodeResponse> recordResponseList = response.getData().stream().map(item -> {
       GetZipCodeResponse cwrRecordResponse = new GetZipCodeResponse();
       BeanUtils.copyProperties(item, cwrRecordResponse);
       return cwrRecordResponse;
     }).toList();
 
-    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, recordResponseList);
+    long totalData = response.getCount();
+    int pageSize = pagination.getPageSize();
+    PaginationResult<GetZipCodeResponse> result = PaginationResult.<GetZipCodeResponse>builder()
+      .currentPage(pagination.getPageNo())
+      .totalPage((int) ((totalData + pageSize - 1) / pageSize))
+      .totalData(totalData)
+      .list(recordResponseList)
+      .build();
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY, result);
   }
 
   private ConfinsR3GetPagingObjectBySQLRequest.CriterionDto areaCriterion(String field, String value) {
