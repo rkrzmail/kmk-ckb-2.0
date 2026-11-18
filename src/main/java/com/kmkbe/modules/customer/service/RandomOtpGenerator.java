@@ -9,14 +9,13 @@ import java.text.DecimalFormat;
 public class RandomOtpGenerator implements OtpGenerator {
     /**
      * Security issue #7 (SECURITY.md): java.util.Random predictable - OTP wajib
-     * memakai SecureRandom. Panjang dinaikkan 4 -> 6 digit; VerifyOtpRequest.otp
-     * hanya @NotNull sehingga tidak breaking.
+     * memakai SecureRandom. Panjang 4 digit (sesuai FE).
      */
     private final SecureRandom random = new SecureRandom();
-    private final DecimalFormat formatter = new DecimalFormat("000000");
+    private final DecimalFormat formatter = new DecimalFormat("0000");
 
     @Override
     public String generate() {
-        return formatter.format(random.nextInt(1_000_000));
+        return formatter.format(random.nextInt(10_000));
     }
 }
