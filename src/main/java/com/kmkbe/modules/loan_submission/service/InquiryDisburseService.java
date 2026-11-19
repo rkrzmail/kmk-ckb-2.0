@@ -125,7 +125,7 @@ public class InquiryDisburseService {
       inquiryDisburseCriterion.setCriteriaDataTable(false);
       inquiryDisburseCriterion.setRestriction("Eq");
       inquiryDisburseCriterion.setPropName("AP.CURR_CODE");
-      inquiryDisburseCriterion.setValue("IDR");
+      inquiryDisburseCriterion.setValue(agreement.getFinancingHdr().getCurrencyCode());
       inquiryDisburseCriterias.add(inquiryDisburseCriterion);
       inquiryDisburseRequest.setRequestDateTime(sToday);
       inquiryDisburseRequest.setCriteria(inquiryDisburseCriterias);
