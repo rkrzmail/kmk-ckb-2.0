@@ -67,11 +67,16 @@ public class SignerService {
   private final Map<String, List<String>> signerCache = new ConcurrentHashMap<>();
   private final FileStorageService fileStorageService;
 
-  private final String apiKey = "YiByHB@CSUL_DEV";
-  private final String registerUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration";
-  private final String generateLinkUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/generateInvLink";
-  private final String downloadDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/downloadDocument";
-  private final String checkDoc = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/checkStatusSigning";
+  @Value("${feign.esign.key}")
+  private String apiKey;
+
+  @Value("${feign.esign.base-url}")
+  private String esignBaseUrl;
+
+  private String registerUrl() { return esignBaseUrl + "/user/checkRegistration"; }
+  private String generateLinkUrl() { return esignBaseUrl + "/user/generateInvLink"; }
+  private String downloadDoc() { return esignBaseUrl + "/document/downloadDocument"; }
+  private String checkDoc() { return esignBaseUrl + "/document/checkStatusSigning"; }
   private final ConfinsR3FeignClient confinsR3FeignClient;
 
   public PaginationResult<AssignmentDto> assignmentListGroupByCustomer(
@@ -224,7 +229,7 @@ public class SignerService {
       HttpEntity<Map<String, Object>> entity = new HttpEntity<>(requestBody, headers);
 
       ResponseEntity<Map> response = restTemplate.exchange(
-        registerUrl,
+        registerUrl(),
         HttpMethod.POST,
         entity,
         Map.class
@@ -414,7 +419,7 @@ public class SignerService {
     );
 
     ResponseEntity<Map> response = restTemplate.postForEntity(
-      registerUrl,
+      registerUrl(),
       new HttpEntity<>(requestBody, headers),
       Map.class
     );
@@ -457,7 +462,7 @@ public class SignerService {
     requestBody.put("audit", Map.of("callerId", username));
 
     ResponseEntity<Map> response = restTemplate.postForEntity(
-      generateLinkUrl,
+      generateLinkUrl(),
       new HttpEntity<>(requestBody, headers),
       Map.class
     );
@@ -832,7 +837,7 @@ public class SignerService {
 
       try {
         response = restTemplate.exchange(
-          downloadDoc,
+          downloadDoc(),
           HttpMethod.POST,
           requestEntity,
           ExternalDownloadResponse.class);
@@ -980,7 +985,7 @@ public class SignerService {
         headers.set("x-api-key", apiKey);
 
         ResponseEntity<Map> response = restTemplate.exchange(
-          checkDoc,
+          checkDoc(),
           HttpMethod.POST,
           new HttpEntity<>(request, headers),
           Map.class

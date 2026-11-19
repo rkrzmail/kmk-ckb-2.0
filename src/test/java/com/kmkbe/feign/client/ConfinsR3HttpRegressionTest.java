@@ -119,7 +119,7 @@ class ConfinsR3HttpRegressionTest {
             .retryer(Retryer.NEVER_RETRY).requestInterceptor(auth)
             .target(ConfinsR3FeignClient.class, baseUrl);
         esign = mock(RestTemplate.class);
-        service = new ExternalApiService(esign, client);
+        service = new ExternalApiService(esign, client, baseUrl, "test-esign-key");
     }
 
     @AfterEach

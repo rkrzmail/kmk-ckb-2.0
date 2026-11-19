@@ -21,7 +21,7 @@ import static org.mockito.Mockito.when;
 
 class ExternalApiServicePaymentVoucherTest {
     private final ConfinsR3FeignClient client = mock(ConfinsR3FeignClient.class);
-    private final ExternalApiService service = new ExternalApiService(mock(RestTemplate.class), client);
+    private final ExternalApiService service = new ExternalApiService(mock(RestTemplate.class), client, null, null);
 
     @Test
     void rejectsAgreementWithoutAgrmntCreatedDt() {

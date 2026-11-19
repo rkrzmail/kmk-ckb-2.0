@@ -1,9 +1,9 @@
 package com.kmkbe.core.service;
 
 import com.kmkbe.core.domain.dto.*;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import com.kmkbe.feign.client.ConfinsR3FeignClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
@@ -16,15 +16,26 @@ import java.util.Map;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class ExternalApiService {
     private final RestTemplate restTemplate;
 
     private final ConfinsR3FeignClient confinsR3FeignClient;
 
-    private String xapiKey = "YiByHB@CSUL_DEV";
+    private final String esignUrl;
+    private final String esignApiKey;
 
-    public LocalDateTime getAgreementDate(String agreementCode) {
+  public ExternalApiService(
+      RestTemplate restTemplate,
+      ConfinsR3FeignClient confinsR3FeignClient,
+      @Value("${feign.esign.url}") String esignUrl,
+      @Value("${feign.esign.key}") String esignApiKey) {
+    this.restTemplate = restTemplate;
+    this.confinsR3FeignClient = confinsR3FeignClient;
+    this.esignUrl = esignUrl;
+    this.esignApiKey = esignApiKey;
+  }
+
+  public LocalDateTime getAgreementDate(String agreementCode) {
         if (agreementCode == null || agreementCode.isBlank() || "-".equals(agreementCode)) {
             throw new IllegalArgumentException("Nomor perjanjian untuk tanggal pengalihan piutang tidak tersedia");
         }
@@ -249,10 +260,8 @@ public class ExternalApiService {
     }
 
     public ExternalSigningResponse callEsignApi(ExternalSigningRequest request) {
-        String esignUrl = "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/document/sendDocumentSigning";
-
         HttpHeaders headers = new HttpHeaders();
-        headers.set("x-api-key", xapiKey);
+        headers.set("x-api-key", esignApiKey);
         headers.setContentType(MediaType.APPLICATION_JSON);
 
         HttpEntity<ExternalSigningRequest> httpEntity = new HttpEntity<>(request, headers);
