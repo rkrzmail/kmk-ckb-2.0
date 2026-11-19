@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.core.env.Environment;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -61,7 +62,8 @@ class InvoicePaidNotificationTest {
     ApplicationEventPublisher publisher = mock(ApplicationEventPublisher.class);
     FinancingDtlService service = new FinancingDtlService(details,
       mock(PaymentReceiveHistoryRepository.class), mock(FinancingHdrRepository.class),
-      mock(BaseRemoteService.class), new ObjectMapper(), mock(RestTemplate.class), publisher);
+      mock(BaseRemoteService.class), new ObjectMapper(), mock(RestTemplate.class), publisher,
+      mock(Environment.class));
     FinancingHdr financing = new FinancingHdr();
     financing.setFinancingHdrCode(financingCode);
     financing.setTotalInvoiceAmt(100.0);
@@ -90,7 +92,8 @@ class InvoicePaidNotificationTest {
     ApplicationEventPublisher publisher = mock(ApplicationEventPublisher.class);
     FinancingDtlService service = new FinancingDtlService(details,
       mock(PaymentReceiveHistoryRepository.class), mock(FinancingHdrRepository.class),
-      mock(BaseRemoteService.class), new ObjectMapper(), mock(RestTemplate.class), publisher);
+      mock(BaseRemoteService.class), new ObjectMapper(), mock(RestTemplate.class), publisher,
+      mock(Environment.class));
     FinancingHdr financing = new FinancingHdr();
     financing.setFinancingHdrCode(financingCode);
     Invoice invoice = Invoice.builder().custInvNo("INV-1").invoiceAmt(100.0).status("UNPAID").build();
