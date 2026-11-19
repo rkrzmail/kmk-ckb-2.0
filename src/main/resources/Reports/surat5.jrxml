@@ -46,12 +46,8 @@
 				<text><![CDATA[Jabatan 		:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="30" y="60" width="200" height="15" uuid="55a1bd85-eb8c-40fe-a9f0-054ef4bc1b52"/>
+				<reportElement x="30" y="60" width="126" height="15" uuid="55a1bd85-eb8c-40fe-a9f0-054ef4bc1b52"/>
 				<text><![CDATA[Nama Perusahaan 	:]]></text>
-			</staticText>
-			<staticText>
-				<reportElement x="30" y="75" width="230" height="15" uuid="3b324398-155f-449f-acfe-21ee37c74e52"/>
-				<text><![CDATA[Alamat 	                  :]]></text>
 			</staticText>
 			<textField>
 				<reportElement x="156" y="45" width="200" height="15" uuid="37a84b98-700c-478f-9520-35cc655da964">
@@ -89,6 +85,10 @@
 				</textElement>
 				<textFieldExpression><![CDATA[$P{NamaPerusahaan}]]></textFieldExpression>
 			</textField>
+			<staticText>
+				<reportElement x="30" y="75" width="126" height="15" uuid="50541540-3a27-4caf-b223-a8e52e53b626"/>
+				<text><![CDATA[Alamat                      	:]]></text>
+			</staticText>
 		</band>
 	</pageHeader>
 	<columnHeader>
