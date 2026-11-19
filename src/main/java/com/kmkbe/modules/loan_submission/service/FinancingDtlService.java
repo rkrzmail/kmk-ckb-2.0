@@ -420,7 +420,7 @@ public class FinancingDtlService {
     listPayRcvDApiObj.rcvAmt = financingHdr.getTotalInvoiceAmt();
 
     listPayRcvDApiObj.isAutoAlloc = true;
-    listPayRcvDApiObj.allocCurrCode = "IDR";
+    listPayRcvDApiObj.allocCurrCode = financingHdr.getCurrencyCode();
     listPayRcvDApiObj.rcvTrxType = "AGR";
     listPayRcvDApiObj.refNo = noCode;
     listPayRcvDApiObj.exchangeRateAmt = 1;
