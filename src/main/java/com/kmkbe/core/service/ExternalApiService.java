@@ -150,7 +150,7 @@ public class ExternalApiService {
         return debtorAccounts.getFirst();
     }
 
-    public LocalDateTime getDisbursementExecutionDate(String apNo, String officeCode) {
+    public LocalDateTime getDisbursementExecutionDate(String apNo, String officeCode,String currCode) {
         if (apNo == null || apNo.isBlank() || officeCode == null || officeCode.isBlank()) {
             throw new IllegalArgumentException("APNo dan OfficeCode wajib tersedia untuk mencari tanggal pencairan");
         }
@@ -169,7 +169,7 @@ public class ExternalApiService {
             List.of(
                 new PaymentVoucherRemote.Criterion(0, 0, "text", false, "Eq", "AP.REF_ACC_PAYABLE_TYPE_ID", "10009"),
                 new PaymentVoucherRemote.Criterion(0, 0, "text", false, "Eq", "AP.OFFICE_CODE", officeCode),
-                new PaymentVoucherRemote.Criterion(0, 0, "text", false, "Eq", "PVH.CURR_CODE", "IDR"),
+                new PaymentVoucherRemote.Criterion(0, 0, "text", false, "Eq", "PVH.CURR_CODE", currCode),
                 new PaymentVoucherRemote.Criterion(0, 0, "", false, "Eq", apNoArrayExpression, apNo)
             ), requestDate
         );
