@@ -45,6 +45,7 @@ public class ConfinsR3Service {
    */
   public BaseResponseBuilder<GetZipCodeResponse> findZipcode(String zipcode) {
     ConfinsR3GetZipCodeDto response = apiConfinsR3Adapter.getZipcode(zipcode.trim());
+    
     if (response == null) {
       log.info(ErrorConstant.ERROR_MESSAGE_81 + "{}", zipcode);
       throw new BusinessException(HttpStatus.CONFLICT, ErrorConstant.ERROR_CODE_81, ErrorConstant.ERROR_MESSAGE_81);
