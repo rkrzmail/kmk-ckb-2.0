@@ -1,7 +1,9 @@
 package com.kmkbe.support;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import java.net.URI;
 import java.net.URL;
 import java.util.Scanner;
 
@@ -40,18 +42,29 @@ class OutboundTlsVerificationTest {
   }
 
   @Test
+  @EnabledIfEnvironmentVariable(named = "RUN_OUTBOUND_TLS_TESTS", matches = "true")
   void confinsR3HandshakeIsVerifiedByDefaultTruststore() {
     assertThatCode(() -> openVerified("https://confinsr3.csulfinance.com/"))
       .doesNotThrowAnyException();
   }
 
   @Test
+  @EnabledIfEnvironmentVariable(named = "RUN_OUTBOUND_TLS_TESTS", matches = "true")
   void adInsEsignHandshakeIsVerifiedByDefaultTruststore() {
-    assertThatCode(() -> openVerified("https://gdkwebserver.ad-ins.com/"))
-      .doesNotThrowAnyException();
+    String base = System.getenv("FEIGN_ESIGN_BASE_URL");
+    String resolved = "https://gdkwebserver.ad-ins.com/";
+    if (base != null && !base.isBlank()) {
+      try {
+        java.net.URI u = java.net.URI.create(base);
+        resolved = u.getScheme() + "://" + u.getHost() + "/";
+      } catch (Exception ignored) {}
+    }
+    final String url = resolved;
+    assertThatCode(() -> openVerified(url)).doesNotThrowAnyException();
   }
 
   @Test
+  @EnabledIfEnvironmentVariable(named = "RUN_OUTBOUND_TLS_TESTS", matches = "true")
   void selfSignedCertificateMustBeRejected() {
     // kontrol negatif: gagal jika trust-all aktif kembali
     assertThatThrownBy(() -> openVerified("https://self-signed.badssl.com/"))
@@ -59,6 +72,7 @@ class OutboundTlsVerificationTest {
   }
 
   @Test
+  @EnabledIfEnvironmentVariable(named = "RUN_OUTBOUND_TLS_TESTS", matches = "true")
   void wrongHostnameCertificateMustBeRejected() {
     // kontrol negatif hostname verification: gagal jika promiscuous verifier aktif
     assertThatThrownBy(() -> openVerified("https://wrong.host.badssl.com/"))

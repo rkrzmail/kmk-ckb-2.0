@@ -62,6 +62,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SignerServiceTest {
 
+  private static final String ESIGN_BASE_URL = System.getenv().getOrDefault("FEIGN_ESIGN_BASE_URL", "https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external");
+
   private static final UUID FINANCING_HDR_CODE = UUID.fromString("11111111-1111-1111-1111-111111111111");
   private static final UUID CUSTOMER_CODE = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
@@ -99,6 +101,8 @@ class SignerServiceTest {
         signingEligibilityService,
         currentUserService,fileStorageService,confinsR3FeignClient
     );
+    org.springframework.test.util.ReflectionTestUtils.setField(service, "esignBaseUrl", ESIGN_BASE_URL);
+    org.springframework.test.util.ReflectionTestUtils.setField(service, "apiKey", "YiByHB@CSUL_DEV");
     lenient().when(financingHdrRepository.save(any(FinancingHdr.class))).thenAnswer(invocation -> invocation.getArgument(0));
   }
 
@@ -178,7 +182,7 @@ class SignerServiceTest {
     signer.setFinancingHdrCode(FINANCING_HDR_CODE.toString());
     when(financingHdrRepository.findDebtorNameByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn("Debtor");
     when(debtorRepository.findByDebtorName("Debtor")).thenReturn(List.of(signer));
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(signhubRegistrationStatus("2", "Vida")));
     when(agreementRepository.findCwr(FINANCING_HDR_CODE)).thenReturn(Optional.of(agreement()));
     when(confinsR3FeignClient.getSigners(any()))
@@ -197,7 +201,7 @@ class SignerServiceTest {
     signer.setFinancingHdrCode(FINANCING_HDR_CODE.toString());
     when(financingHdrRepository.findDebtorNameByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn("Debtor");
     when(debtorRepository.findByDebtorName("Debtor")).thenReturn(List.of(signer));
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(signhubRegistrationStatus("0", "Vida")));
     when(agreementRepository.findCwr(FINANCING_HDR_CODE)).thenReturn(Optional.empty());
     when(debtorRepository.findById(1L)).thenReturn(Optional.empty());
@@ -247,7 +251,7 @@ class SignerServiceTest {
     signer.setFinancingHdrCode(FINANCING_HDR_CODE.toString());
     when(financingHdrRepository.findDebtorNameByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn("Debtor");
     when(debtorRepository.findByDebtorName("Debtor")).thenReturn(List.of(signer));
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(signhubRegistrationStatus("9", "Vida")));
     when(agreementRepository.findCwr(FINANCING_HDR_CODE)).thenReturn(Optional.of(agreement()));
     when(confinsR3FeignClient.getSigners(any()))
@@ -259,7 +263,7 @@ class SignerServiceTest {
     assertThat(noReturnObject.get(0).getSignhubStatus()).isEqualTo("active");
     assertThat(noReturnObject.get(0).getSignerStatus()).isEqualTo("active");
 
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(new ResponseEntity<>(Map.of("status", Map.of("code", 1)), HttpStatus.BAD_REQUEST));
     when(confinsR3FeignClient.getSigners(any()))
         .thenThrow(new IllegalStateException("Confins rejected request"));
@@ -280,36 +284,36 @@ class SignerServiceTest {
     when(debtorRepository.findById(1L)).thenReturn(Optional.of(signer));
     when(agreementRepository.findCwr(FINANCING_HDR_CODE)).thenReturn(Optional.of(agreement()));
 
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(null));
     when(confinsR3FeignClient.getSigners(any())).thenReturn(null);
     assertThat(service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker").get(0).getSignerStatus()).isEqualTo("active");
 
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(Map.of("status", Map.of("code", 0))));
     when(confinsR3FeignClient.getSigners(any()))
         .thenReturn(externalSignerResponse("Signer One"));
     service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker");
 
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(Map.of("status", Map.of("code", 0), "registrationData", List.of())));
     when(confinsR3FeignClient.getSigners(any()))
         .thenReturn(externalSignerResponse("Signer One"));
     service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker");
 
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(Map.of("status", Map.of("code", 0), "registrationData", List.of(Map.of("vendor", "Other", "registrationStatus", "2")))));
     when(confinsR3FeignClient.getSigners(any()))
         .thenReturn(externalSignerResponse("Signer One"));
     service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker");
 
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(Map.of()));
     when(confinsR3FeignClient.getSigners(any()))
         .thenReturn(externalSignerResponse("Signer One"));
     service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker");
 
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(new java.util.HashMap<String, Object>() {{
           put("status", new java.util.HashMap<String, Object>() {{
             put("code", null);
@@ -319,13 +323,13 @@ class SignerServiceTest {
         .thenReturn(externalSignerResponse("Signer One"));
     service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker");
 
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(Map.of("status", Map.of("code", 1), "registrationData", List.of(Map.of("vendor", "Vida", "registrationStatus", "2")))));
     when(confinsR3FeignClient.getSigners(any()))
         .thenReturn(externalSignerResponse("Signer One"));
     service.signerPersonList(FINANCING_HDR_CODE.toString(), "maker");
 
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenReturn(ResponseEntity.ok(new java.util.HashMap<String, Object>() {{
           put("status", Map.of("code", 0));
           put("registrationData", null);
@@ -341,7 +345,7 @@ class SignerServiceTest {
     signer.setFinancingHdrCode(FINANCING_HDR_CODE.toString());
     when(financingHdrRepository.findDebtorNameByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn("Debtor");
     when(debtorRepository.findByDebtorName("Debtor")).thenReturn(List.of(signer));
-    when(restTemplate.exchange(eq("https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
+    when(restTemplate.exchange(eq(ESIGN_BASE_URL + "/user/checkRegistration"), eq(HttpMethod.POST), any(), eq(Map.class)))
         .thenThrow(new RuntimeException("registration down"));
     when(debtorRepository.findById(1L)).thenReturn(Optional.of(signer));
 
