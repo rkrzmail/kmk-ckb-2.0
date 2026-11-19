@@ -165,7 +165,7 @@ public class InquiryDisburseService {
           }
           InquiryDisburseDatum paidAp = paidApRows.getFirst();
           String disbursementDate = DateTimeUtils.formatToDate(
-            externalApiService.getDisbursementExecutionDate(paidAp.getAPNo(), paidAp.getOfficeCode()));
+            externalApiService.getDisbursementExecutionDate(paidAp.getAPNo(), paidAp.getOfficeCode(),agreement.getFinancingHdr().getCurrencyCode()));
 
             /**
              * For TU

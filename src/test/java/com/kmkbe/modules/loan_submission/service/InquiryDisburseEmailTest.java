@@ -53,6 +53,7 @@ class InquiryDisburseEmailTest {
   void confirmedDisbursementUsesConfinsAccountAndKeepsExistingRecipients() throws Exception {
     Agreement agreement = confirmedAgreement();
     FinancingHdr header = agreement.getFinancingHdr();
+    header.setCurrencyCode("IDR");
     when(headers.findByCodeWithDetails(header.getFinancingHdrCode())).thenReturn(Optional.of(header));
     when(headerService.dtoFromEntity(header)).thenReturn(FinancingHdrDto.builder().details(List.of()).build());
     when(logs.findAllByAgreement(agreement)).thenReturn(List.of());
@@ -62,7 +63,7 @@ class InquiryDisburseEmailTest {
     account.setAccNo("3245678000");
     account.setNominal(new BigDecimal("483367500"));
     when(confins.getDebtorDisbursementAccount("41250270017")).thenReturn(account);
-    when(confins.getDisbursementExecutionDate("412AP20270200006", "412"))
+    when(confins.getDisbursementExecutionDate("412AP20270200006", "412","IDR"))
       .thenReturn(LocalDateTime.of(2027, 5, 12, 0, 0));
 
     service.inquiryDisburseAuto(agreement);
@@ -97,7 +98,7 @@ class InquiryDisburseEmailTest {
     when(logs.findAllByAgreement(agreement)).thenReturn(List.of());
     DisbursementAccountResponse.DisbInfo account = new DisbursementAccountResponse.DisbInfo();
     when(confins.getDebtorDisbursementAccount("41250270017")).thenReturn(account);
-    when(confins.getDisbursementExecutionDate("412AP20270200006", "412"))
+    when(confins.getDisbursementExecutionDate("412AP20270200006", "412","IDR"))
       .thenThrow(new IllegalStateException("ExecutionValueDt tidak tersedia"));
 
     assertThatThrownBy(() -> service.inquiryDisburseAuto(agreement))
@@ -135,6 +136,7 @@ class InquiryDisburseEmailTest {
     header.setRetention(0.0);
     header.setFinancingAmt(500000000.0);
     header.setTotalInvoiceAmt(500000000.0);
+    header.setCurrencyCode("IDR");
     Agreement agreement = new Agreement();
     agreement.setAgreementCode("41250270017");
     agreement.setFinancingHdr(header);
