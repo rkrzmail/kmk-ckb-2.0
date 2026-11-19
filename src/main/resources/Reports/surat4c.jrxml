@@ -1,0 +1,245 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="surat4c" pageWidth="595" pageHeight="842" columnWidth="451" leftMargin="72" rightMargin="72" topMargin="72" bottomMargin="5" uuid="6f133ca4-5996-4402-bef5-9e9fc38dc9b8">
+	<property name="net.sf.jasperreports.text.line.spacing.fixed" value="true"/>
+	<parameter name="NamaKaryawan" class="java.lang.String"/>
+	<parameter name="Jabatan" class="java.lang.String"/>
+	<parameter name="NamaBranchManager" class="java.lang.String"/>
+	<parameter name="JabatanBranchManager" class="java.lang.String"/>
+	<parameter name="TglDokumen" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="10" splitType="Stretch">
+			<image>
+				<reportElement x="-36" y="-60" width="140" height="60" uuid="62b5c48f-a6a8-45df-b6e0-a23e14e6b36f"/>
+				<imageExpression><![CDATA["https://www.csulfinance.com/cfind/source/images/logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="242" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="450" height="20" uuid="4f352357-6289-48ec-aa16-34fa1cde16f2"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[INFORMASI TAMBAHAN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="20" width="430" height="40" uuid="3dea2d83-84cf-47be-a1be-402492de63bd"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Apabila Klien lalai melakukan pembayaran, maka Factor akan mengirimkan surat peringatan kepada Klien sampai dengan angsuran diterima Factor (SP 1, SP 2, SP 3).]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="50" width="430" height="30" uuid="97b507ea-d6a9-4084-a984-be4123e050a2"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Jangka waktu pengembalian dan/atau pengambilan Barang dan/atau Jaminan adalah sejak 30 (tiga puluh) hari dilakukannya pelunasan.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="80" width="430" height="40" uuid="b955f080-4ef4-455b-9b24-f63eb085cb8f"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Klien akan menyerahkan salinan Perjanjian Pembiayaan serta dokumen pertanggungan asuransi kepada Klien dengan tata cara dan tempat pengembalian sesuai dengan ketentuan yang disepakati dalam Perjanjian Pembiayaan.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="120" width="430" height="55" uuid="aa166684-5071-4a79-94f6-fa7cb109a580">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Klien akan menginformasikan segala perubahan atas manfaat, biaya, risiko, syarat dan ketentuan Produk dan Layanan ini melalui surat atau melalui cara-cara lainnya sesuai dengan syarat dan ketentuan yang berlaku. Pemberitahuan tersebut akan diinformasikan 30 (tiga puluh) hari sebelum efektif berlakunya perubahan.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="175" width="430" height="30" uuid="f02017e4-8b0f-48ee-b140-b3d49a818dbb">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Klien akan menerima penawaran produk lain dari pihak ketiga apabila menyetujui untuk membagikan data pribadi.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="205" width="430" height="34" uuid="a356cc74-b716-4b98-a42a-e4a9a1906e75"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Informasi lain mengenai biaya, manfaat dan risiko dapat diakses melalui website resmi CSULfinance.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="20" width="14" height="14" uuid="f953d3e0-a038-43d4-82a6-171b799b8277"/>
+				<text><![CDATA[1.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="50" width="14" height="14" uuid="42db58b9-4ed3-418f-941a-4fa3436f6286"/>
+				<text><![CDATA[2.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="80" width="14" height="14" uuid="0883623a-14a8-447f-ab90-8033f415d3f6"/>
+				<text><![CDATA[3.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="120" width="14" height="14" uuid="15fff186-4cff-41fa-9bc3-d85b29e6648c"/>
+				<text><![CDATA[4.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="175" width="14" height="14" uuid="d4fca11e-f0af-4b8b-b283-bd0a8ef1b9f4"/>
+				<text><![CDATA[5.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="205" width="14" height="14" uuid="9f96b53a-1873-4443-8ac2-d599da781eab"/>
+				<text><![CDATA[6.]]></text>
+			</staticText>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="216" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="450" height="20" uuid="3a490fe6-95aa-4e7c-9c0e-76f3b6aa5f21"/>
+				<textElement>
+					<font isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Disclaimer:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="20" width="430" height="30" uuid="5db9d401-7ab4-412d-86dc-3611ec59a8f2"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Klien dapat menolak permohonan Anda apabila tidak memenuhi persyaratan dan peraturan yang berlaku.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="50" width="430" height="30" uuid="cf9ff605-be78-4ca0-8cd8-efeb2b83444a"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Ringkasan Informasi Produk dan Layanan bukan merupakan jaminan bahwa fasilitas pembiayaan akan disetujui oleh Klien.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="80" width="430" height="40" uuid="d5d68e20-9805-4f13-819c-23ce54e0352b"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Anda harus membaca dengan teliti Ringkasan Informasi Produk dan Layanan ini dan berhak bertanya kepada pegawai perusahaan pembiayaan terkait Ringkasan Informasi Produk dan Layanan ini.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="20" y="120" width="430" height="40" uuid="f402c07b-76b8-4dbe-bdc8-ff43a2e90d47"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Segala kesepakatan yang tercantum dalam Ringkasan Informasi Produk dan Layanan ini akan gugur dan digantikan dengan Perjanjian Pembiayaan apabila fasilitas pembiayaan Anda disetujui.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="170" width="380" height="40" uuid="ac71b1a1-c4ec-4c82-9500-9027c9c785f8"/>
+				<textElement textAlignment="Justified"/>
+				<text><![CDATA[Apakah anda telah membaca dan memahami isi ketentuan diatas khususnya yang meliputi rincian biaya, manfaat, risiko serta hak dan kewajiban pada Ringkasan Informasi Produk dan Layanan ini?]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="390" y="170" width="20" height="20" uuid="12e97428-58b8-445e-9467-30a2d0646851"/>
+				<textElement textAlignment="Center"/>
+				<text><![CDATA[YA]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="420" y="170" width="40" height="20" uuid="9f337f9d-fc6e-40f7-afc8-613ba17eda09"/>
+				<textElement textAlignment="Left"/>
+				<text><![CDATA[TIDAK]]></text>
+			</staticText>
+			<rectangle>
+				<reportElement x="390" y="187" width="21" height="21" uuid="20ad6905-c1db-45e7-98b3-cb8d1c79cf9b"/>
+			</rectangle>
+			<rectangle>
+				<reportElement x="424" y="187" width="21" height="21" uuid="0d8cbf60-0036-4e6a-b703-302dc33b9f28"/>
+			</rectangle>
+			<staticText>
+				<reportElement x="0" y="20" width="14" height="14" uuid="53ca0e33-aec8-4b40-98e3-23eb330b57d7"/>
+				<text><![CDATA[1.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="50" width="14" height="14" uuid="d6e8e152-4c47-4742-a27c-c82b6bd2538b"/>
+				<text><![CDATA[2.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="80" width="14" height="14" uuid="23b1fac9-8bd1-4e81-98f6-9498a82e5f7e"/>
+				<text><![CDATA[3.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="120" width="14" height="14" uuid="ae995b9e-2f91-4858-84ca-69c660ea5ab4"/>
+				<text><![CDATA[4.]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band height="15" splitType="Stretch"/>
+	</detail>
+	<columnFooter>
+		<band height="223" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="192" width="220" height="20" forecolor="#4F4F4F" uuid="a6a1c31e-b422-4fef-96a5-f51123562abe"/>
+				<textElement>
+					<font size="8" isItalic="true"/>
+				</textElement>
+				<text><![CDATA[Form 01/I-MK-FAC/RIPLAY/2025]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="30" width="230" height="20" uuid="40e634eb-6bf2-4bbd-a190-253cf22f4f04"/>
+				<text><![CDATA[Pegawai yang menjelaskan,]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="230" y="30" width="220" height="20" uuid="c3eada67-023b-49ca-a9ca-61a69b4054f1"/>
+				<text><![CDATA[Klien,]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="231" y="152" width="200" height="20" uuid="66269c51-7027-4ba0-939b-b3ad009bf5ad"/>
+				<textElement>
+					<font isBold="true" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{Jabatan}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="231" y="132" width="200" height="20" uuid="896fb976-56c5-4613-a99e-df0e44932985"/>
+				<textElement>
+					<font isBold="true" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaKaryawan}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="1" y="152" width="250" height="20" uuid="281ad8bb-5ce6-4afb-9a49-a74bc3a0fb10"/>
+				<textElement markup="html"/>
+				<text><![CDATA[Jabatan	:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="1" y="132" width="250" height="20" uuid="50ad4d5b-226d-4234-9f18-2b73c8d53f2a"/>
+				<text><![CDATA[Nama 	:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="46" y="152" width="200" height="20" uuid="6f4ef3eb-3952-4343-ab66-efd3e0e4af48"/>
+				<textElement>
+					<font isBold="true" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{JabatanBranchManager}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="46" y="132" width="200" height="20" uuid="fd12db9c-047f-420d-90c2-02775a29d286"/>
+				<textElement>
+					<font isBold="true" isUnderline="false"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{NamaBranchManager}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="231" y="10" width="200" height="20" uuid="eecddeaf-58d2-48ff-b36e-b87368ca02d6"/>
+				<textFieldExpression><![CDATA["Jakarta Selatan, " + $P{TglDokumen}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="0" y="172" width="231" height="20" uuid="79c90218-d6ce-4981-b40b-791c06cd0798"/>
+				<textFieldExpression><![CDATA["Tanggal Cetak Dokumen, " + $P{TglDokumen}]]></textFieldExpression>
+			</textField>
+		</band>
+	</columnFooter>
+	<pageFooter>
+		<band height="50" splitType="Stretch">
+			<staticText>
+				<reportElement x="35" y="-1" width="380" height="47" uuid="3df3b45a-00a5-4375-8e69-d2ccdcfdb622"/>
+				<textElement textAlignment="Center" markup="html">
+					<font fontName="SansSerif" size="6"/>
+				</textElement>
+				<text><![CDATA[<b>PT Chandra Sakti Utama Leasing</b><br/>
+Gedung TMT 1, Lantai 6 JIn. Cilandak KKO No. 1, Jakarta 12560 - Indonesia Telephone +62-21-2997-6650 Fascimilie +62-2997-6651<br/>
+Customer care: +62-21-4000-0650 email : customer.care@csul.co.id <span style="color:green;">www.csulfinance.com</span><br/><br/>
+<b><i>Berizin dan diawasi oleh Otoritas Jasa Kewangan<i/></b>]]></text>
+			</staticText>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="1" splitType="Stretch"/>
+	</summary>
+</jasperReport>

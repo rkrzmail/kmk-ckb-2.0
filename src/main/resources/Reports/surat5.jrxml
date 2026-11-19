@@ -50,8 +50,8 @@
 				<text><![CDATA[Nama Perusahaan 	:]]></text>
 			</staticText>
 			<staticText>
-				<reportElement x="30" y="75" width="160" height="15" uuid="3b324398-155f-449f-acfe-21ee37c74e52"/>
-				<text><![CDATA[Alamat 	              :]]></text>
+				<reportElement x="30" y="75" width="126" height="15" uuid="3b324398-155f-449f-acfe-21ee37c74e52"/>
+				<text><![CDATA[Alamat 	             :]]></text>
 			</staticText>
 			<textField>
 				<reportElement x="156" y="45" width="200" height="15" uuid="37a84b98-700c-478f-9520-35cc655da964">
