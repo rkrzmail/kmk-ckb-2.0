@@ -48,7 +48,7 @@ class ExternalApiServicePaymentVoucherTest {
         when(client.getPaymentVoucher(any())).thenReturn(new PaymentVoucherRemote.DetailResponse(
             "999PVC20270500004", "PAID", LocalDateTime.of(2027, 5, 12, 0, 0)));
 
-        assertThat(service.getDisbursementExecutionDate("412AP20270200006", "412"))
+        assertThat(service.getDisbursementExecutionDate("412AP20270200006", "412","IDR"))
             .isEqualTo(LocalDateTime.of(2027, 5, 12, 0, 0));
 
         ArgumentCaptor<PaymentVoucherRemote.PagingRequest> pagingRequest =
@@ -70,13 +70,13 @@ class ExternalApiServicePaymentVoucherTest {
     void refusesMissingOrAmbiguousPaidVoucher() {
         when(client.getPaymentVouchers(any())).thenReturn(paging(
             new PaymentVoucherRemote.PagingRow("412AP20270200006", "412AP20270200006", "PV1", "NEW")));
-        assertThatThrownBy(() -> service.getDisbursementExecutionDate("412AP20270200006", "412"))
+        assertThatThrownBy(() -> service.getDisbursementExecutionDate("412AP20270200006", "412","IDR"))
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("ditemukan 0");
 
         when(client.getPaymentVouchers(any())).thenReturn(paging(
             new PaymentVoucherRemote.PagingRow("412AP20270200006", "412AP20270200006", "PV1", "PAID"),
             new PaymentVoucherRemote.PagingRow("412AP20270200006", "412AP20270200006", "PV2", "PAID")));
-        assertThatThrownBy(() -> service.getDisbursementExecutionDate("412AP20270200006", "412"))
+        assertThatThrownBy(() -> service.getDisbursementExecutionDate("412AP20270200006", "412","IDR"))
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("ditemukan 2");
         verify(client, never()).getPaymentVoucher(any());
     }
@@ -87,7 +87,7 @@ class ExternalApiServicePaymentVoucherTest {
             new PaymentVoucherRemote.PagingRow("412AP20270200006", "412AP20270200006", "PV1", "PAID")));
         when(client.getPaymentVoucher(any())).thenReturn(new PaymentVoucherRemote.DetailResponse("PV1", "PAID", null));
 
-        assertThatThrownBy(() -> service.getDisbursementExecutionDate("412AP20270200006", "412"))
+        assertThatThrownBy(() -> service.getDisbursementExecutionDate("412AP20270200006", "412","IDR"))
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("ExecutionValueDt");
     }
 
@@ -96,7 +96,7 @@ class ExternalApiServicePaymentVoucherTest {
         when(client.getPaymentVouchers(any())).thenReturn(paging(
             new PaymentVoucherRemote.PagingRow("OTHER-AP", "OTHER-AP", "PV1", "PAID")));
 
-        assertThatThrownBy(() -> service.getDisbursementExecutionDate("412AP20270200006", "412"))
+        assertThatThrownBy(() -> service.getDisbursementExecutionDate("412AP20270200006", "412","IDR"))
             .isInstanceOf(IllegalStateException.class).hasMessageContaining("ditemukan 0");
         verify(client, never()).getPaymentVoucher(any());
     }
