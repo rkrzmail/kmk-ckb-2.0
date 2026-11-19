@@ -1,11 +1,13 @@
 package com.kmkbe.modules.confinsr3.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.kmkbe.adapter.ApiConfinsR3Adapter;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.feign.model.dto.ConfinsR3GetZipCodeDto;
 import com.kmkbe.feign.model.request.ConfinsR3GetPagingObjectBySQLRequest;
 import com.kmkbe.feign.model.response.ConfinsR3ApiResponseWrapper;
+import com.kmkbe.modules.confinsr3.model.response.GetZipCodeResponse;
 import com.kmkbe.modules.confinsr3.model.request.ConfinsR3ZipcodeCriteriaRequest;
 import com.kmkbe.modules.master.request.AreaPageRequest;
 import org.junit.jupiter.api.Test;
@@ -49,6 +51,42 @@ class ConfinsR3ServiceAreaPageTest {
     assertThat(captor.getValue().getCriteria()).hasSize(1);
     assertThat(captor.getValue().getCriteria().getFirst().getPropName()).isEqualTo("RZ.AREA_CODE_1");
     assertThat(captor.getValue().getCriteria().getFirst().getValue()).isEqualTo("%JAKARTA%");
+  }
+
+  @Test
+  void areaPageUsesConfinsCountAndReturnObjectForPagination() throws Exception {
+    String confinsJson = """
+      {
+        "StatusCode": "200",
+        "Count": 83748,
+        "ReturnObject": [{
+          "kecamatan": "2 X 11 ENAM LINGKUANG",
+          "kelurahan": "SICINCIN",
+          "zipcode": "25584",
+          "city": "KABUPATEN PADANG PARIAMAN",
+          "province": "SUMATERA BARAT",
+          "refZipcodeId": 213025,
+          "subZipcode": "",
+          "phnArea": ""
+        }]
+      }
+      """;
+    ObjectMapper mapper = new ObjectMapper();
+    ConfinsR3ApiResponseWrapper<ConfinsR3GetZipCodeDto> confinsResponse = mapper.readValue(
+      confinsJson, new TypeReference<ConfinsR3ApiResponseWrapper<ConfinsR3GetZipCodeDto>>() {});
+    when(adapter.getAllZipcode(any())).thenReturn(confinsResponse);
+
+    var result = service.pageZipcode(pageRequest());
+    var pagination = result.getData();
+
+    assertThat(pagination.getCurrentPage()).isEqualTo(1);
+    assertThat(pagination.getTotalData()).isEqualTo(83748);
+    assertThat(pagination.getTotalPage()).isEqualTo(8375);
+    assertThat(pagination.getList()).singleElement()
+      .extracting(GetZipCodeResponse::getAreaCode2).isEqualTo("SICINCIN");
+    assertThat(pagination.getList().getFirst().getCity()).isEqualTo("KABUPATEN PADANG PARIAMAN");
+    assertThat(mapper.readTree(mapper.writeValueAsString(result)).path("data").path("totalPage").asInt())
+      .isEqualTo(8375);
   }
 
   @Test
