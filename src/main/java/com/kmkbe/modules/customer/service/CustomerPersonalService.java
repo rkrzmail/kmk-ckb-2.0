@@ -87,7 +87,7 @@ public class CustomerPersonalService {
       personal.setPhone(request.getPhone());
       personal.setOwnershipStatus(request.getOwnershipStatus());
       personal.setStaySince(Utils.toInstant(request.getStaySince()));
-      personal.setStayLength(CustomerUtils.calculateStayLength(Utils.toInstant(request.getStaySince())));
+      personal.setStayLength(request.getStaySince()!=null?CustomerUtils.calculateStayLength(Utils.toInstant(request.getStaySince())):0);
       return customerPersonalRepository.save(personal);
     } catch (Exception e) {
       log.error("update: {}", e.getMessage());

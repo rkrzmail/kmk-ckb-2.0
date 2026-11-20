@@ -111,7 +111,7 @@ public class CustomerCompanyService {
     company.setPhone(request.getPhone());
     company.setOwnershipStatus(request.getOwnershipStatus());
     company.setStaySince(Utils.toInstant(request.getStaySince()));
-    company.setStayLength(CustomerUtils.calculateStayLength(Utils.toInstant(request.getStaySince())));
+    company.setStayLength(request.getStaySince()!=null?CustomerUtils.calculateStayLength(Utils.toInstant(request.getStaySince())):0);
     company.setDirectorName(request.getDirectorName());
     company.setDirectorPhone(request.getDirectorPhone());
     company.setDtmUpd(LocalDateTime.now());
