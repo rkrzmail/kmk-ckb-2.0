@@ -76,6 +76,7 @@ class InvoicePaidNotificationTest {
     paid.setInvoiceNo("INV-1");
     paid.setInvoiceAmount(BigDecimal.valueOf(100));
     paid.setPostingDate(new Date());
+    paid.setClearingDate(new Date());
     FinancingInvoicePaidRequest request = new FinancingInvoicePaidRequest();
     request.setFinancingCode(financingCode.toString());
     request.setInvoicePaid(List.of(paid));
