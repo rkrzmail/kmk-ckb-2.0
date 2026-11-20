@@ -13,7 +13,8 @@ public class AuthRemoteServiceTest extends BaseRemoteServicesTest {
         super.setupBeforeEach();
         authRemoteService = new AuthRemoteService(
                 ldapUrlService,
-                restTemplate
+                restTemplate,
+                objectMapper
         );
     }
 
