@@ -15,6 +15,15 @@ public interface DebtorRepository extends JpaRepository<Debtor, Long> {
 
   List<Debtor> findByFinancingHdrCode(String financingHdrCode);
 
+  @Query(value = """
+    SELECT * FROM public.debtors
+    WHERE financing_hdr_code = :financingHdrCode
+    ORDER BY dtm_crt DESC NULLS LAST, debtor_id DESC
+    LIMIT 1
+    """, nativeQuery = true)
+  Optional<Debtor> findFirstByFinancingHdrCodeOrderByDtmCrtDescDebtorIdDesc(
+    @Param("financingHdrCode") String financingHdrCode);
+
   List<Debtor> findByDebtorName(String debtorName);
 
   @Query("SELECT d FROM Debtor d WHERE d.debtorName = :debtorName AND d.signerStatus = 'active' ORDER BY d.dtmCrt DESC")
