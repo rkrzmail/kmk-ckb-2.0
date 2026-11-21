@@ -20,6 +20,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.core.env.Environment;
 import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
@@ -51,6 +52,7 @@ class FinancingDtlServiceCreateBulkTest {
   @Mock BaseRemoteService baseRemoteService;
   @Mock RestTemplate restTemplate;
   @Mock ApplicationEventPublisher eventPublisher;
+  @Mock Environment environment;
 
   private FinancingDtlService service;
   private Customer customer;
@@ -66,7 +68,8 @@ class FinancingDtlServiceCreateBulkTest {
       baseRemoteService,
       new ObjectMapper(),
       restTemplate,
-      eventPublisher
+      eventPublisher,
+      environment
     );
     customer = Customer.builder().custName("PT Debitur").build();
     bouwheer = Bouwheer.builder().bouwheerName("PT Bouwheer").build();

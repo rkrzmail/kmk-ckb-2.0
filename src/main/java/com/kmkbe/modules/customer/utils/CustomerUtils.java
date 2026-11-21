@@ -31,12 +31,18 @@ public class CustomerUtils {
   }
 
   public static double calculateStayLength(LocalDateTime staySince) {
+    if (staySince == null) {
+      return 0.0;
+    }
+
     return BigDecimal.valueOf(Duration.between(
         staySince,
         DateTimeUtils.now()
-      ).toMinutes() / (double) CommonConstants.MONTH_IN_MINUTES).setScale(1, RoundingMode.CEILING)
+      ).toMinutes() / (double) CommonConstants.MONTH_IN_MINUTES)
+      .setScale(1, RoundingMode.CEILING)
       .doubleValue();
   }
+
 
   public static void clearCustomerInactiveData(JdbcTemplate jdbcTemplate, Customer customer) {
     jdbcTemplate.update("DELETE FROM public.legal_file WHERE cust_code = ?", customer.getCustCode());

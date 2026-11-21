@@ -1,0 +1,473 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created with Jaspersoft Studio version 6.21.5.final using JasperReports Library version 6.21.5-74d586df47b25dbd05bd0957999819196e59934a  -->
+<jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="surat4" pageWidth="595" pageHeight="842" columnWidth="451" leftMargin="72" rightMargin="72" topMargin="72" bottomMargin="5" uuid="263e7523-d2c5-4e25-aec0-92418117fd19">
+	<parameter name="LobCode" class="java.lang.String"/>
+	<parameter name="ProdOfferingName" class="java.lang.String"/>
+	<parameter name="NtfAmt" class="java.lang.String"/>
+	<parameter name="EffectiveRatePrcnt" class="java.lang.String"/>
+	<parameter name="Tenor" class="java.lang.String"/>
+	<parameter name="TotalFeeAmt" class="java.lang.String"/>
+	<parameter name="AppFeeAmtFactoring" class="java.lang.String"/>
+	<parameter name="AppFeeAmtAdministration" class="java.lang.String"/>
+	<parameter name="AppFeeInsurance" class="java.lang.String"/>
+	<parameter name="AppFeeCreditInsurance" class="java.lang.String"/>
+	<parameter name="TotalInsurance" class="java.lang.String"/>
+	<parameter name="Limit" class="java.lang.String"/>
+	<parameter name="Notaris" class="java.lang.String"/>
+	<parameter name="PengikatanJaminan" class="java.lang.String"/>
+	<parameter name="Provisi" class="java.lang.String"/>
+	<parameter name="Survey" class="java.lang.String"/>
+	<queryString>
+		<![CDATA[]]>
+	</queryString>
+	<background>
+		<band splitType="Stretch"/>
+	</background>
+	<title>
+		<band height="111" splitType="Stretch">
+			<rectangle radius="10">
+				<reportElement x="-5" y="22" width="460" height="85" forecolor="#380EAD" backcolor="rgba(255, 255, 255, 0.0)" uuid="bc0ffa35-a8b4-4448-898a-f0834ce6a240">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="0" y="0" width="450" height="30" uuid="0da835a6-2be1-4852-ab73-924411889a91"/>
+				<textElement textAlignment="Center" markup="html">
+					<font size="11"/>
+				</textElement>
+				<text><![CDATA[RINGKASAN INFORMASI PRODUK DAN LAYANAN <b>(RIPLAY) – KORPORASI</b>]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="40" width="200" height="20" uuid="3586f5a9-50c3-4091-a379-d70d05aac827"/>
+				<textElement markup="html"/>
+				<text><![CDATA[Name Penerbit : <b>CSULfinance</b>]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="230" y="40" width="190" height="20" uuid="c5e3cea2-7ecc-43d9-8e34-239512eb07f6"/>
+				<textFieldExpression><![CDATA["Jenis Produk : " + $P{LobCode}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="60" width="300" height="20" uuid="f9ee5c23-aefe-4c06-a6dd-83998a4fb24e"/>
+				<text><![CDATA[(PT Chandra Sakti Utama Leasing)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="80" width="300" height="20" uuid="a13c77ac-d3f7-416c-9115-eadb23202830"/>
+				<textElement markup="html"/>
+				<text><![CDATA[Nama Produk : <b>Fasilitas Anjak Piutang</b>]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="230" y="60" width="220" height="40" uuid="5f6fbae1-c220-4cb4-a584-509287bd81b5">
+					<property name="com.jaspersoft.studio.unit.spacingAfter" value="px"/>
+				</reportElement>
+				<textElement>
+					<paragraph lineSpacing="Double" spacingAfter="0"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Deskripsi Produk : " + $P{ProdOfferingName}]]></textFieldExpression>
+			</textField>
+			<image>
+				<reportElement x="-36" y="-60" width="140" height="92" uuid="8e1e8d49-ddfb-44f5-b934-95562c46691f"/>
+				<imageExpression><![CDATA["https://www.csulfinance.com/cfind/source/images/logo.png"]]></imageExpression>
+			</image>
+		</band>
+	</title>
+	<pageHeader>
+		<band height="136" splitType="Stretch">
+			<staticText>
+				<reportElement x="0" y="0" width="330" height="20" uuid="352fdc6c-ddf3-414c-9a6f-5ecb815ae086"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[FITUR UTAMA PEMBIAYAAN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="20" width="230" height="20" uuid="e4f7f04b-f773-4c18-ae61-3c7089170479"/>
+				<text><![CDATA[Nilai Pembiayaan :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="90" y="20" width="140" height="20" uuid="a4137c3a-bbb3-4aa5-8647-5fae591f1c58"/>
+				<textFieldExpression><![CDATA["IDR " + $P{NtfAmt}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="40" width="229" height="20" uuid="3b2a7abc-2a27-47eb-bf8f-c2dc5919c1ca"/>
+				<text><![CDATA[Suku Bunga/Diskonto :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="110" y="40" width="305" height="20" uuid="4e2736a4-a18a-445c-89e3-729f04e97eb0"/>
+				<textFieldExpression><![CDATA[$P{EffectiveRatePrcnt} + " per tahun"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="60" width="230" height="20" uuid="564d3d79-c336-4ec2-bf26-a36f15fc03a7"/>
+				<text><![CDATA[Jangka Waktu/Tenor :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="104" y="60" width="126" height="20" uuid="8eec7603-7405-4015-b829-943bc637ef3c"/>
+				<textFieldExpression><![CDATA[$P{Tenor} + " hari"]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="80" width="230" height="20" uuid="b63dd28b-2d07-441f-9ad2-2acf6ad459d9"/>
+				<text><![CDATA[Piutang yang Dialihkan : Invoice]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="230" y="20" width="220" height="20" uuid="7b48694f-6b37-4d31-a076-2afc4cc680b0"/>
+				<text><![CDATA[Total Biaya :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="290" y="20" width="160" height="20" uuid="2fbb4758-7dbd-44e0-860b-15e08ea90e1a"/>
+				<textFieldExpression><![CDATA["IDR " + $P{TotalFeeAmt}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="230" y="40" width="219" height="20" uuid="a9fbf5e1-fd30-4828-9af5-a5937fe957a4"/>
+				<text><![CDATA[Total yang dibayarkan Klien :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="363" y="40" width="87" height="20" uuid="4ae3df7a-f50a-4ec8-9621-96d7d90452c1"/>
+				<textFieldExpression><![CDATA["IDR " + $P{TotalFeeAmt}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="230" y="60" width="200" height="20" uuid="99df473c-9407-40cc-b8dc-a78ab0d1a19a"/>
+				<text><![CDATA[Asuransi & Jenis Pertanggungannya :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="230" y="80" width="218" height="56" uuid="94142a41-9587-4093-a4a7-e6c18447be8c">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<paragraph lineSpacing="1_1_2"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{TotalInsurance}]]></textFieldExpression>
+			</textField>
+		</band>
+	</pageHeader>
+	<columnHeader>
+		<band height="430" splitType="Stretch">
+			<rectangle radius="10">
+				<reportElement x="-5" y="8" width="460" height="62" forecolor="#380EAD" backcolor="rgba(255, 255, 255, 0.0)" uuid="5aae9128-30a6-4fd3-975f-a62d9d7e8497">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+				</reportElement>
+			</rectangle>
+			<staticText>
+				<reportElement x="0" y="10" width="450" height="20" uuid="888b940b-10ea-4d44-9caf-7f1393b09e01"/>
+				<textElement textAlignment="Center">
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[MANFAAT]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="30" width="450" height="40" uuid="01dca173-34eb-4b24-8720-20ae6df6ee7d"/>
+				<textElement textAlignment="Left"/>
+				<text><![CDATA[Dengan memperoleh fasilitas pembiayaan, Anda dapat menerima pembayaran terlebih dahulu sebelum jatuh tempo piutang tersebut sesuai dengan harga yang disepakati dengan Factor.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="80" width="220" height="20" uuid="cd6fe235-5cc9-4d7b-9488-6903d6eafa18"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[BIAYA PENGAJUAN]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="100" width="200" height="15" uuid="5ffc037a-d064-48ed-af7d-a12d5d2e5d16">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Biaya Administrasi Limit]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="115" width="200" height="15" uuid="5c662116-d3e7-43c9-8d55-6d090bebcc56">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Biaya Administrasi Pencairan :]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="140" y="130" width="100" height="15" uuid="96006a66-2078-49d0-b7ba-eae35a0559a2">
+					<property name="com.jaspersoft.studio.unit.height"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$P{AppFeeAmtFactoring}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="-1" y="326" width="230" height="20" uuid="9a31be0e-95ce-4747-9cca-5a24d6ebd2ed"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[HOTLINE CSULfinance]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="-1" y="376" width="231" height="15" uuid="1f762d28-8355-4c4c-a203-f376d16dd5b0">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Jam Layanan mulai dari]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="260" y="80" width="189" height="20" uuid="3ef90c79-776a-48d0-bd56-27b311c770d3"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[RISIKO]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="100" width="20" height="23" uuid="b01d4005-117d-4ab6-b136-39ede5cd5589"/>
+				<text><![CDATA[1.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="140" width="20" height="23" uuid="f8220ffd-81dd-422f-8a19-b4421b29a641"/>
+				<text><![CDATA[2.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="195" width="20" height="23" uuid="d7d4083a-3d95-4503-85f6-405b6bf426db"/>
+				<text><![CDATA[3.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="235" width="20" height="23" uuid="3274699a-b5ee-4292-92b2-34dd1c440310"/>
+				<text><![CDATA[4.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="263" width="20" height="23" uuid="c7c47fb0-c6ac-4e19-a550-959c3cf90807"/>
+				<text><![CDATA[5.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="240" y="317" width="20" height="23" uuid="a0d51c89-cec5-4a38-9383-0a3dba9453cd"/>
+				<text><![CDATA[6.]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="-1" y="340" width="230" height="46" uuid="599c4a9c-7198-452f-8436-04b98b459ec3"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[No. Telp: (+62)21 – 4000 – 0650
+Email: 
+WA Official: 0812 – 4000 – 6650]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="-1" y="390" width="232" height="15" uuid="8619f84a-f0c2-4576-bc0d-23c629ca86c6">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[Senin – Jumat Pkl. 08.00 – 17.00 WIB]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="130" width="120" height="15" uuid="ae6d2e76-6a47-44a7-be53-6ba02e6b943a">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Biaya Factoring]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="145" width="120" height="15" uuid="35c99fca-fc04-42fa-96a0-2cc6093bfcc1">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Biaya Notaris]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="160" width="180" height="15" uuid="a135528c-d55e-42b3-b21d-76b0131fb2b9">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Biaya Pengikatan Jaminan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="175" width="120" height="15" uuid="a5176b06-80ec-4b55-a013-c99f06316e71">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Biaya Provisi]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="190" width="120" height="15" uuid="ab653740-edf8-440f-9b54-6278f4c55a2f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Biaya Survey]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="140" y="115" width="100" height="15" uuid="603da69d-593e-4499-a32f-8e1918aae397">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$P{AppFeeAmtAdministration}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="0" y="217" width="220" height="20" uuid="a736509e-98d5-49a3-933b-eb2c5a83ff3e"/>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[BIAYA YANG TIMBUL INSIDENTAL]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="237" width="200" height="15" uuid="3c0ecd1b-4ca4-48ed-9f4a-ef5aefffd713">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Biaya Asuransi Jaminan	:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="252" width="200" height="15" uuid="1bf2aa4e-95d4-4117-8d52-aade1848213b">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Biaya Asuransi Kredit	:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="267" width="260" height="13" uuid="bf1d7db0-b90b-4e34-883c-7a45b7aca7f2">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Biaya Penagihan & Eksekusi Barang dan/atau ]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="294" width="88" height="15" uuid="4c56760a-0299-4f8e-8fe3-7ed56f35f9ee">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Biaya Denda	:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="88" y="280" width="232" height="15" uuid="e9b83e7f-f96d-4e47-b577-bbc85d2cc312">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[± 20% dari nilai pembiayaan]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="88" y="294" width="140" height="26" uuid="3a447335-dd28-4296-a665-a16bdd3b3558">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textElement>
+					<font isBold="true"/>
+				</textElement>
+				<text><![CDATA[8%/Bulan (IDR)]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="133" y="100" width="50" height="15" uuid="cfd9dc4c-4394-4063-ac33-6955ad439fa5">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="0" y="281" width="180" height="13" uuid="2e35bf3a-a08d-4af9-bcc7-65c18d141502">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[Jaminan	:]]></text>
+			</staticText>
+			<textField>
+				<reportElement x="131" y="237" width="109" height="15" uuid="d33e6d6c-ea28-46f8-b3ae-6bf2da04dd2e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$P{AppFeeInsurance}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="131" y="252" width="109" height="15" uuid="495746a4-4ac0-4485-b7c5-8edbde550f49">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$P{AppFeeCreditInsurance}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="260" y="100" width="200" height="330" uuid="3c9fe189-b8ad-4888-b63d-b64de1265d78">
+					<property name="com.jaspersoft.studio.unit.width" value="px"/>
+					<property name="net.sf.jasperreports.text.adjust.spacedJustify" value="false"/>
+				</reportElement>
+				<textElement textAlignment="Justified" verticalAlignment="Top" markup="none">
+					<font size="10"/>
+					<paragraph lineSpacing="Proportional" lineSpacingSize="1.1"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Klien akan membayar denda keterlambatan jika tidak membayar pembayaran sesuai dengan tanggal jatuh tempo;\n" +
+"Apabila Klien melakukan cidera janji terhadap Perjanjian Pembiayaan (menungg-\n"+
+"ak), maka Klien harus menyerahkan Barang dan/atau Jaminan kepada Factor;\n" +
+"Jika Klien tidak menyerahkan, maka Factor akan melakukan eksekusi terhadap Barang dan/atau Jaminan;\n" +
+"Klien akan dibebankan biaya eksekusi jika terjadi eksekusi Barang dan/atau Jaminan;\n" +
+"Data atau informasi Klien akan digunakan penawaran produk atau keperluan lainnya sepanjang diperbolehkan oleh undang-undang;\n" +
+"Apabila Klien melakukan cidera janji terhadap Perjanjian Pembiayaan (menungg-\n"+
+"ak) akan mempengaruhi status kolektabilitas Klien pada data SLIK OJK."]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="140" y="100" width="100" height="15" uuid="84a1f309-22f4-424f-8b83-a5a12ed1af0f">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$P{Limit}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="140" y="145" width="100" height="15" uuid="3f4bf84f-dc78-4488-93e2-92b1e37ea509">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$P{Notaris}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="140" y="160" width="100" height="15" uuid="e72803f7-bcb0-4753-aa72-00356374666a">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$P{PengikatanJaminan}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="140" y="175" width="100" height="15" uuid="122d5c70-6326-4e41-b70b-330297475a5e">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$P{Provisi}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="140" y="190" width="100" height="15" uuid="845b981a-1f2a-4b41-8c99-20d3ff7bc1fa">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<textFieldExpression><![CDATA[$P{Survey}]]></textFieldExpression>
+			</textField>
+			<staticText>
+				<reportElement x="32" y="352" width="196" height="26" forecolor="#0814FF" uuid="23b44409-19e5-4dd9-8797-aa01f5880ad1"/>
+				<box>
+					<pen lineColor="#3D1FFF"/>
+				</box>
+				<textElement>
+					<font isBold="true" isUnderline="true"/>
+				</textElement>
+				<text><![CDATA[customer.care@csul.co.id]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="133" y="130" width="50" height="15" uuid="d5b55bda-a9eb-4dd2-9104-03afe530954d">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="133" y="145" width="50" height="15" uuid="7046c4c5-8ad7-4df6-b532-154ad10c3458">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="133" y="160" width="50" height="15" uuid="bf58501a-0449-4eed-adbf-2878751081a7">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="133" y="175" width="50" height="15" uuid="3363cd58-9b40-47bc-a903-c5a8b8e28ce3">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+			<staticText>
+				<reportElement x="133" y="190" width="50" height="15" uuid="5057efe4-8934-4ebd-b0d0-13b570cf1816">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
+				<text><![CDATA[:]]></text>
+			</staticText>
+		</band>
+	</columnHeader>
+	<detail>
+		<band splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="px"/>
+		</band>
+	</detail>
+	<columnFooter>
+		<band splitType="Stretch"/>
+	</columnFooter>
+	<pageFooter>
+		<band height="48" splitType="Stretch">
+			<staticText>
+				<reportElement x="35" y="-1" width="380" height="47" uuid="5ca2b271-f01c-48c4-9b85-7f54eec75084"/>
+				<textElement textAlignment="Center" markup="html">
+					<font fontName="SansSerif" size="6"/>
+				</textElement>
+				<text><![CDATA[<b>PT Chandra Sakti Utama Leasing</b><br/>
+Gedung TMT 1, Lantai 6 JIn. Cilandak KKO No. 1, Jakarta 12560 - Indonesia Telephone +62-21-2997-6650 Fascimilie +62-2997-6651<br/>
+Customer care: +62-21-4000-0650 email : customer.care@csul.co.id <span style="color:green;">www.csulfinance.com</span><br/><br/>
+<b><i>Berizin dan diawasi oleh Otoritas Jasa Kewangan<i/></b>]]></text>
+			</staticText>
+		</band>
+	</pageFooter>
+	<summary>
+		<band height="9" splitType="Stretch"/>
+	</summary>
+</jasperReport>

@@ -22,6 +22,7 @@ import jakarta.annotation.Nullable;
 import jakarta.transaction.Transactional;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
+import org.springframework.core.env.Environment;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.context.ApplicationEventPublisher;
@@ -44,6 +45,7 @@ public class FinancingDtlService {
   private final ObjectMapper objectMapper;
   private final RestTemplate restTemplate;
   private final ApplicationEventPublisher eventPublisher;
+  private final Environment environment;
 
   public FinancingDtlService(FinancingDtlRepository financingDtlRepository,
                              PaymentReceiveHistoryRepository paymentReceiveHistoryRepository,
@@ -51,7 +53,8 @@ public class FinancingDtlService {
                              BaseRemoteService baseRemoteService,
                              ObjectMapper objectMapper,
                              RestTemplate restTemplate,
-                             ApplicationEventPublisher eventPublisher) {
+                             ApplicationEventPublisher eventPublisher,
+                             Environment environment) {
     this.financingDtlRepository = financingDtlRepository;
     this.paymentReceiveHistoryRepository = paymentReceiveHistoryRepository;
     this.financingHdrRepository = financingHdrRepository;
@@ -59,6 +62,7 @@ public class FinancingDtlService {
     this.objectMapper = objectMapper;
     this.restTemplate = restTemplate;
     this.eventPublisher = eventPublisher;
+    this.environment = environment;
   }
 
   /**
@@ -236,7 +240,7 @@ public class FinancingDtlService {
         financingDtl.getInvoice().setStatus("PAID");
         financingDtl.getInvoice().setUsrUpd(updater);
         financingDtl.getInvoice().setDtmUpd(LocalDateTime.now());
-        financingDtl.setBouwheerPaidDate(Utils.toInstant(reqInvoice.getPostingDate()));
+        financingDtl.setBouwheerPaidDate(Utils.toInstant(reqInvoice.getClearingDate()));
         financingDtl.setUsrUpd(updater);
         financingDtl.setDtmUpd(LocalDateTime.now());
         financingDtlRepository.save(financingDtl);
@@ -271,14 +275,13 @@ public class FinancingDtlService {
     String noAggrNo = financingHdr.getAgreement().isEmpty() ? "" : financingHdr.getAgreement().iterator().next().getAgreementCode();
     LocalDateTime settlementDate = request.getInvoicePaid().isEmpty() ? DateTimeUtils.now() : Utils.toInstant(request.getInvoicePaid().getFirst().getClearingDate());
 
-    /** For Dev only
+    /** For Dev only (non-prod)
      *
      */
-    if ("dev".equalsIgnoreCase(System.getenv("ENV")) || "dev".equalsIgnoreCase(System.getenv("APP_ENV")) || "local".equalsIgnoreCase(System.getenv("ENV")) || "local".equalsIgnoreCase(System.getenv("APP_ENV"))) {
+    if (!isProdProfile()) {
       log.info("Confins Backdate");
       DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
-        settlementDate = LocalDate.parse("13-05-2027", formatter).
-          atStartOfDay();
+      settlementDate = LocalDate.parse("13-05-2027", formatter).atStartOfDay();
     }
 
     String sToday = DateTimeUtils.SDF_STANDARD_DATE.format(new Date());
@@ -361,6 +364,16 @@ public class FinancingDtlService {
     paymentReceiveSubmitUpdate(financingHdr, settlementDate);
   }
 
+  private boolean isProdProfile() {
+    boolean prodProfile = environment != null && environment.getActiveProfiles() != null
+      && Arrays.stream(environment.getActiveProfiles()).anyMatch(p -> "prod".equalsIgnoreCase(p));
+    String env = System.getenv("ENV");
+    String appEnv = System.getenv("APP_ENV");
+    String active = System.getProperty("spring.profiles.active");
+    boolean prodEnv = "prod".equalsIgnoreCase(env) || "prod".equalsIgnoreCase(appEnv) || "prod".equalsIgnoreCase(active);
+    return prodProfile || prodEnv;
+  }
+
   @Transactional
   public void paymentReceiveSubmitUpdate(FinancingHdr financingHdr, LocalDateTime settelmanetDate) throws Exception {
 
@@ -420,7 +433,7 @@ public class FinancingDtlService {
     listPayRcvDApiObj.rcvAmt = financingHdr.getTotalInvoiceAmt();
 
     listPayRcvDApiObj.isAutoAlloc = true;
-    listPayRcvDApiObj.allocCurrCode = "IDR";
+    listPayRcvDApiObj.allocCurrCode = financingHdr.getCurrencyCode();
     listPayRcvDApiObj.rcvTrxType = "AGR";
     listPayRcvDApiObj.refNo = noCode;
     listPayRcvDApiObj.exchangeRateAmt = 1;

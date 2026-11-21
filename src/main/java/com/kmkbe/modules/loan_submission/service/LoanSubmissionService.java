@@ -1030,17 +1030,6 @@ public class LoanSubmissionService {
 
     /**
      * Insert Financing finalFinancingHdr
-     *
-     * BUG FIX: header TIDAK boleh selalu dibuat baru. Sebelumnya lookup
-     * existing detail dibatasi pada "header terakhir milik customer", sehingga
-     * invoice yang sudah pernah disimpan pada header lain tidak ditemukan dan
-     * financing_hdr baru selalu dibuat.
-     *
-     * Sekarang: cari invoice existing (customer + bouwheerInvNo + custInvNo),
-     * lalu cari financing detail GLOBAL berdasarkan invoice tersebut
-     * (relasi Invoice -> FinancingDtl adalah @OneToOne). Jika detail sudah ada,
-     * pakai header milik detail itu dan lakukan UPDATE; hanya jika benar-benar
-     * belum ada yang membuat header baru.
      */
     FinancingHdr finalFinancingHdr = resolveFinancingHdr(
       customer, bouwheer, request, simulationDisburseResult, totalInvoiceAmount
