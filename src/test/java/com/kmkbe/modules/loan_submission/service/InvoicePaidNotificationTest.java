@@ -1,6 +1,7 @@
 package com.kmkbe.modules.loan_submission.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kmkbe.config.ObjectMapperConfig;
 import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.FinancingDtl;
 import com.kmkbe.core.domain.entity.FinancingHdr;
@@ -27,6 +28,7 @@ import org.springframework.web.client.RestTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -44,6 +46,43 @@ import static org.mockito.Mockito.when;
 
 class InvoicePaidNotificationTest {
   private final UUID financingCode = UUID.randomUUID();
+
+  @Test
+  void clearingDateKeepsTimeWhenInvoicePaidIsSaved() throws Exception {
+    FinancingDtlRepository details = mock(FinancingDtlRepository.class);
+    FinancingHdr financing = new FinancingHdr();
+    financing.setFinancingHdrCode(financingCode);
+    financing.setTotalInvoiceSubmittedAmt(100.0);
+    Invoice invoice = Invoice.builder().custInvNo("INV-1").invoiceAmt(100.0).build();
+    FinancingDtl detail = FinancingDtl.builder().invoice(invoice).build();
+    when(details.findAllByFinancingHdrForUpdate(financing)).thenReturn(List.of(detail));
+
+    String payload = """
+      {
+        "financingCode": "%s",
+        "invoicePaid": [{
+          "invoiceNo": "INV-1",
+          "clearingDate": "2026-11-19T00:12:18.123Z",
+          "postingDate": "2026-11-19T19:48:16.000Z",
+          "invoiceAmount": 100
+        }]
+      }
+      """.formatted(financingCode);
+    FinancingInvoicePaidRequest request = new ObjectMapperConfig().objectMapper()
+      .readValue(payload, FinancingInvoicePaidRequest.class);
+    assertThat(request.getInvoicePaid().getFirst().getClearingDate().toInstant())
+      .isEqualTo(Instant.parse("2026-11-19T00:12:18.123Z"));
+
+    FinancingDtlService service = new FinancingDtlService(details,
+      mock(PaymentReceiveHistoryRepository.class), mock(FinancingHdrRepository.class),
+      mock(BaseRemoteService.class), new ObjectMapper(), mock(RestTemplate.class),
+      mock(ApplicationEventPublisher.class), mock(Environment.class));
+    service.updatePaid(request, financing);
+
+    assertThat(detail.getBouwheerPaidDate())
+      .isEqualTo(LocalDateTime.of(2026, 11, 19, 0, 12, 18, 123_000_000));
+    verify(details).save(detail);
+  }
 
   @Test
   void financeNotificationRunsAfterCommitInWritableTransaction() throws Exception {
