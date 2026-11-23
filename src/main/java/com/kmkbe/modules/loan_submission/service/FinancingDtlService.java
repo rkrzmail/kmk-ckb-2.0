@@ -569,7 +569,12 @@ public class FinancingDtlService {
       }
     );
 
-    String responseBody = String.valueOf(response.getBody());
+    String responseBody = response.getBody();
+    if (responseBody == null || responseBody.isBlank()) {
+      log.error("postRemote empty response from url={}", url);
+      throw new BusinessException(HttpStatus.BAD_GATEWAY, ErrorConstant.ERROR_CODE_80,
+        "Layanan eksternal tidak memberikan respons yang valid. Silakan coba kembali beberapa saat lagi.");
+    }
     return objectMapper.readValue(responseBody, responseType);
   }
 

@@ -356,6 +356,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         new AntPathRequestMatcher("/api/monitoring/**")
       ).matches(request)
     ) {
+      if (new OrRequestMatcher(
+        new AntPathRequestMatcher("/api/monitoring/health"),
+        new AntPathRequestMatcher("/api/monitoring/health/**"),
+        new AntPathRequestMatcher("/api/monitoring/info")
+      ).matches(request)) {
+        return false;
+      }
       if (apiKeyValidation(request, response)) {
         filterChain.doFilter(request, response);
       }

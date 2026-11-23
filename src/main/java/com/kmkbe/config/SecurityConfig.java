@@ -82,6 +82,9 @@ public class SecurityConfig {
     return (web) -> web.ignoring().requestMatchers(
       "/api/v*/auth/**",
       "/actuator/**",
+      "/api/monitoring/health",
+      "/api/monitoring/health/**",
+      "/api/monitoring/info",
       "/api-docs/**",
       "/swagger-ui/**",
       "/v3/api-docs/**",
