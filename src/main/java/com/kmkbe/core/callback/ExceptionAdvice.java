@@ -7,6 +7,8 @@ import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.exception.IllegalApiKeyException;
 import com.kmkbe.core.utils.ExceptionUtils;
 import com.kmkbe.core.utils.ObjectUtils;
+import feign.FeignException;
+import feign.RetryableException;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import jakarta.mail.MessagingException;
@@ -65,12 +67,18 @@ public class ExceptionAdvice {
       }
     }
 
+    StackTraceElement[] stackTrace = exception.getStackTrace();
+    String errorLine = stackTrace != null && stackTrace.length > 0
+      ? String.valueOf(stackTrace[0].getLineNumber()) : "0";
+    String methodName = stackTrace != null && stackTrace.length > 0
+      ? stackTrace[0].getMethodName() : "unknown";
+
     ErrorLog errorLog = ErrorLog.builder()
       .errorType(exception.getClass().getCanonicalName())
-      .errorLine(String.valueOf(exception.getStackTrace()[0].getLineNumber()))
+      .errorLine(errorLine)
       .errorMsg(exception.getMessage())
       .pageUrl(pageUrl)
-      .methodName(exception.getStackTrace()[0].getMethodName())
+      .methodName(methodName)
       .requestParam(jsonRequest)
       .build();
 
@@ -219,6 +227,22 @@ public class ExceptionAdvice {
     WebRequest request
   ) {
     return ExceptionUtils.handleException(exception, request);
+  }
+
+  @ExceptionHandler(RetryableException.class)
+  public ResponseEntity<CommonResult<Object>> handleRetryable(
+    RetryableException exception,
+    WebRequest request
+  ) {
+    return handle(exception, request);
+  }
+
+  @ExceptionHandler(FeignException.class)
+  public ResponseEntity<CommonResult<Object>> handleFeign(
+    FeignException exception,
+    WebRequest request
+  ) {
+    return handle(exception, request);
   }
 
 }

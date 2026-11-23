@@ -120,8 +120,12 @@ public class SitTemplateService {
   }
 
   private Map<String, Object> parameters(FinancingHdr financing, Agreement agreement, LocalDate limitAgreementDate) {
-    Debtor debtor = debtorRepository.findFirstByFinancingHdrCodeOrderByDtmCrtDescDebtorIdDesc(
-      financing.getFinancingHdrCode().toString()).orElse(null);
+    String code = financing.getCustomer() != null && financing.getCustomer().getCustCode() != null
+      ? financing.getCustomer().getCustCode().toString()
+      : (financing.getFinancingHdrCode() != null ? financing.getFinancingHdrCode().toString() : null);
+    Debtor debtor = code != null
+      ? debtorRepository.findFirstByFinancingHdrCodeOrderByDtmCrtDescDebtorIdDesc(code).orElse(null)
+      : null;
     Optional<Map<String, Object>> cwrData = agreementRepository.findCwrCodeAndDate(financing.getFinancingHdrCode(), agreement.getAgreementCode());
     SimpleDateFormat Csdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("id", "ID"));
     String formattedCwrDate = cwrData
