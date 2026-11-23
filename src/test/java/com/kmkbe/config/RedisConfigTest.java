@@ -92,4 +92,10 @@ class RedisConfigTest {
     // kontrak yang mungkin dirujuk service lain
     assertThat(RedisConfig.CSUL_CACHE_NAME).isEqualTo("kmk");
   }
+
+  @Test
+  void valueAndListOperationsCreated() {
+    assertThat(config.valueOperations()).isNotNull();
+    assertThat(config.listOperations()).isNotNull();
+  }
 }

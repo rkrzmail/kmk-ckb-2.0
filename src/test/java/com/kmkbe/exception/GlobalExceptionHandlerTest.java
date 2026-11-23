@@ -1,5 +1,6 @@
 package com.kmkbe.exception;
 
+import com.kmkbe.core.exception.CommonInvalidException;
 import com.kmkbe.core.exception.LoanDocMandatoryException;
 import feign.FeignException;
 import feign.Request;
@@ -14,6 +15,12 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.HttpServerErrorException;
+
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
+import java.util.concurrent.TimeoutException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -54,14 +61,42 @@ class GlobalExceptionHandlerTest {
       .andExpect(jsonPath("validations[0].errorMessage").value("fieldA is required"));
   }
 
-//  @Test
-//  void testHandleDataIntegrityViolationException() {
-//    var response = handler.handleDataIntegrityViolationException(new DataIntegrityViolationException("Duplicate key constraint"));
-//    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
-//    assertThat(response.getBody()).isNotNull();
-//    assertThat(response.getBody().getValidations()).isNull();
-//    assertThat(response.getBody().getMessage()).isEqualTo("Something went wrong. Please try again later.");
-//  }
+  @Test
+  void testHandleCommonInvalidException() {
+    var response = handler.handleLoginException(CommonInvalidException.invalidEmail());
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().isSuccess()).isFalse();
+    assertThat(response.getBody().getCode()).isEqualTo(400);
+    assertThat(response.getBody().getMessage()).isEqualTo("Email is invalid");
+  }
+
+  @Test
+  void testHandleDataIntegrityViolationException() {
+    var response = handler.handleDataIntegrityViolationException(new DataIntegrityViolationException("Duplicate key constraint"));
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.CONFLICT);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getCode()).isEqualTo(409);
+    assertThat(response.getBody().getMessage()).isEqualTo("Something went wrong. Please try again later.");
+  }
+
+  @Test
+  void testHandleTimeoutException() {
+    var response = handler.handleTimeoutException(new TimeoutException("timeout"));
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.REQUEST_TIMEOUT);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getCode()).isEqualTo(503);
+    assertThat(response.getBody().getMessage()).isEqualTo("Something went wrong. Please try again later.");
+  }
+
+  @Test
+  void testHandleHttpServerErrorException() {
+    var response = handler.handleHttpServerErrorException(new HttpServerErrorException(HttpStatus.BAD_GATEWAY));
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getCode()).isEqualTo(500);
+    assertThat(response.getBody().getMessage()).isEqualTo("Something went wrong. Please try again later.");
+  }
 
   @Test
   void testHandleRetryableException_returnsHumanReadableTimeout() {
@@ -122,6 +157,67 @@ class GlobalExceptionHandlerTest {
     assertThat(response.getBody()).isNotNull();
     assertThat(response.getBody().getTitle()).isEqualTo("Layanan Eksternal Error");
     assertThat(response.getBody().getMessage()).isEqualTo("Terjadi kendala komunikasi dengan layanan eksternal. Silakan coba kembali beberapa saat lagi.");
+  }
+
+  @Test
+  void testHandleFeignException_clientError_returnsServiceUnavailable() {
+    Request request = Request.create(Request.HttpMethod.GET, "https://example.com/api",
+      java.util.Collections.emptyMap(), null, java.nio.charset.StandardCharsets.UTF_8, null);
+    FeignException feignException = new FeignException.BadRequest("Bad Request", request, null, null);
+
+    var response = handler.handleFeignException(feignException);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.SERVICE_UNAVAILABLE);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getCode()).isEqualTo(503);
+  }
+
+  @Test
+  void testHandleRuntimeException_default() {
+    var response = handler.handleRuntimeException(new RuntimeException("boom"));
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getTitle()).isEqualTo("System Error");
+    assertThat(response.getBody().getCode()).isEqualTo(500);
+  }
+
+  @Test
+  void testHandleGeneralException_default() {
+    var response = handler.handleGeneralException(new Exception("boom"));
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getCode()).isEqualTo(500);
+  }
+
+  @Test
+  void testHandleGeneralException_withTimeoutCause_returnsGatewayTimeout() {
+    Exception wrapped = new Exception("wrapper", new SocketTimeoutException("Read timed out"));
+    var response = handler.handleGeneralException(wrapped);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.GATEWAY_TIMEOUT);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getTitle()).isEqualTo("Layanan Eksternal Timeout");
+  }
+
+  @Test
+  void testHandleRuntimeException_withConnectException_returnsGatewayTimeout() {
+    RuntimeException wrapped = new RuntimeException("wrapper", new ConnectException("Connection refused"));
+    var response = handler.handleRuntimeException(wrapped);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.GATEWAY_TIMEOUT);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getCode()).isEqualTo(504);
+  }
+
+  @Test
+  void testHandleGeneralException_withUnknownHost_returnsGatewayTimeout() {
+    Exception wrapped = new Exception("wrapper", new UnknownHostException("host"));
+    var response = handler.handleGeneralException(wrapped);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.GATEWAY_TIMEOUT);
+  }
+
+  @Test
+  void testHandleGeneralException_withMessagePattern_returnsGatewayTimeout() {
+    Exception wrapped = new Exception(new RuntimeException("Connect timed out while calling"));
+    var response = handler.handleGeneralException(wrapped);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.GATEWAY_TIMEOUT);
   }
 
   @RestController
