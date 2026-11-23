@@ -87,4 +87,28 @@ class JwtAuthenticationFilterApiKeyValidationTest {
 
     assertThat(validate()).isFalse();
   }
+
+  @Test
+  void monitoringHealthEndpointsSkipApiKeyValidation() throws Exception {
+    var method = JwtAuthenticationFilter.class.getDeclaredMethod(
+      "shouldValidateApiKey",
+      jakarta.servlet.http.HttpServletRequest.class,
+      jakarta.servlet.http.HttpServletResponse.class,
+      jakarta.servlet.FilterChain.class);
+    method.setAccessible(true);
+
+    for (String path : new String[]{"/api/monitoring/health", "/api/monitoring/health/liveness", "/api/monitoring/info"}) {
+      MockHttpServletRequest req = new MockHttpServletRequest("GET", path);
+      req.setServletPath(path);
+      org.springframework.mock.web.MockFilterChain chain = new org.springframework.mock.web.MockFilterChain();
+      boolean handled = (boolean) method.invoke(filter, req, new MockHttpServletResponse(), chain);
+      assertThat(handled).as(path).isFalse();
+    }
+
+    MockHttpServletRequest protectedReq = new MockHttpServletRequest("GET", "/api/monitoring/env");
+    protectedReq.setServletPath("/api/monitoring/env");
+    org.springframework.mock.web.MockFilterChain chain = new org.springframework.mock.web.MockFilterChain();
+    boolean handled = (boolean) method.invoke(filter, protectedReq, new MockHttpServletResponse(), chain);
+    assertThat(handled).as("/api/monitoring/env").isTrue();
+  }
 }
