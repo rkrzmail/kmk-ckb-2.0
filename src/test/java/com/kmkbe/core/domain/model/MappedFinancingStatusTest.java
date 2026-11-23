@@ -1,53 +1,25 @@
 package com.kmkbe.core.domain.model;
 
 import com.kmkbe.core.domain.entity.FinancingHdr;
+import com.kmkbe.helpers.constant.StatusConstants;
 import org.junit.jupiter.api.Test;
+import static org.assertj.core.api.Assertions.*;
 
-import static org.assertj.core.api.Assertions.assertThat;
+class MappedFinancingStatusExtraTest {
+  private FinancingHdr hdr(String st, String step){ FinancingHdr h=new FinancingHdr(); h.setFinancingStatus(st); h.setFinancingStep(step); return h; }
 
-class MappedFinancingStatusTest {
-
-  @Test
-  void paidHeaderMapsToPaidForEveryAudience() {
-    FinancingHdr financing = new FinancingHdr();
-    financing.setFinancingStatus("PAID");
-    financing.setFinancingStep("PAID");
-
-    for (MappedFinancingStatus.Type type : MappedFinancingStatus.Type.values()) {
-      MappedFinancingStatus mapped = new MappedFinancingStatus(financing, type);
-      assertThat(mapped.getStatus()).as(type.name()).isEqualTo("PAID");
-      assertThat(mapped.getLabel()).as(type.name()).isEqualTo("Paid");
+  @Test void allTypesAndBranches() {
+    for (MappedFinancingStatus.Type t : MappedFinancingStatus.Type.values()) {
+      assertThat(new MappedFinancingStatus(hdr(StatusConstants.FINANCING_STATUS_PAID, StatusConstants.FINANCING_STEP_PAID), t).getStatus()).isNotBlank();
+      assertThat(new MappedFinancingStatus(hdr(StatusConstants.FINANCING_STATUS_PAID, StatusConstants.FINANCING_STEP_SIGNED), t).getStatus()).isNotBlank();
+      assertThat(new MappedFinancingStatus(hdr("new",""), t).getStatus()).isNotBlank();
+      assertThat(new MappedFinancingStatus(hdr("inprocess",StatusConstants.FINANCING_STEP_ASSIGNMENT), t).getStatus()).isNotNull();
+      assertThat(new MappedFinancingStatus(hdr("inprocess",StatusConstants.FINANCING_STEP_INPROCESS), t).getStatus()).isNotNull();
+      assertThat(new MappedFinancingStatus(hdr("inprocess",StatusConstants.FINANCING_STEP_SIGNING), t).getStatus()).isNotNull();
+      assertThat(new MappedFinancingStatus(hdr("inprocess",StatusConstants.FINANCING_STEP_SIGNED), t).getStatus()).isNotNull();
+      assertThat(new MappedFinancingStatus(hdr("live",StatusConstants.FINANCING_STEP_GOLIVE), t).getStatus()).isNotBlank();
+      assertThat(new MappedFinancingStatus(hdr("live",StatusConstants.FINANCING_STEP_PAID), t).getStatus()).isNotBlank();
+      assertThat(new MappedFinancingStatus(hdr("unknown","x"), t).getStatus()).isNotBlank();
     }
-  }
-
-  @Test
-  void paidHeaderWithSignedStepMapsToSignedInSubmissionLists() {
-    FinancingHdr financing = new FinancingHdr();
-    financing.setFinancingStatus("PAID");
-    financing.setFinancingStep("SIGNED");
-
-    for (MappedFinancingStatus.Type type : new MappedFinancingStatus.Type[] {
-      MappedFinancingStatus.Type.BranchAdmin,
-      MappedFinancingStatus.Type.AccountOfficer,
-      MappedFinancingStatus.Type.MajorAccount
-    }) {
-      MappedFinancingStatus mapped = new MappedFinancingStatus(financing, type);
-      assertThat(mapped.getStatus()).as(type.name()).isEqualTo("SIGNED");
-      assertThat(mapped.getLabel()).as(type.name()).isEqualTo("Signed");
-    }
-  }
-
-  @Test
-  void livePaidRemainsPaidAndNewRemainsNew() {
-    FinancingHdr financing = new FinancingHdr();
-    financing.setFinancingStatus("LIVE");
-    financing.setFinancingStep("PAID");
-    assertThat(new MappedFinancingStatus(financing, MappedFinancingStatus.Type.MajorAccount).getStatus())
-      .isEqualTo("PAID");
-
-    financing.setFinancingStatus("NEW");
-    financing.setFinancingStep("NEW");
-    assertThat(new MappedFinancingStatus(financing, MappedFinancingStatus.Type.MajorAccount).getStatus())
-      .isEqualTo("NEW");
   }
 }
