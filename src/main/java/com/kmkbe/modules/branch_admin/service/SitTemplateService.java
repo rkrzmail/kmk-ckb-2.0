@@ -6,8 +6,10 @@ import com.kmkbe.core.domain.dto.AgreementAttributeContentDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementByNoCwrRemoteDto;
 import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.Cwr;
+import com.kmkbe.core.domain.entity.Debtor;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.repository.AgreementRepository;
+import com.kmkbe.core.domain.repository.DebtorRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.utils.CommonUtils;
@@ -33,6 +35,7 @@ public class SitTemplateService {
   private static final String TEMPLATE_PATH = "/Reports/sit.jasper";
   private final FinancingHdrRepository financingHdrRepository;
   private final AgreementRepository agreementRepository;
+  private final DebtorRepository debtorRepository;
   private final ConfigRemoteService configRemoteService;
   private final CwrRemoteService cwrRemoteService;
   private final JasperReportRenderer jasperReportRenderer;
@@ -117,6 +120,8 @@ public class SitTemplateService {
   }
 
   private Map<String, Object> parameters(FinancingHdr financing, Agreement agreement, LocalDate limitAgreementDate) {
+    Debtor debtor = debtorRepository.findFirstByFinancingHdrCodeOrderByDtmCrtDescDebtorIdDesc(
+      financing.getFinancingHdrCode().toString()).orElse(null);
     Optional<Map<String, Object>> cwrData = agreementRepository.findCwrCodeAndDate(financing.getFinancingHdrCode(), agreement.getAgreementCode());
     SimpleDateFormat Csdf = new SimpleDateFormat("dd MMMM yyyy", new Locale("id", "ID"));
     String formattedCwrDate = cwrData
@@ -134,9 +139,13 @@ public class SitTemplateService {
     params.put("tanggalCwr", CommonUtils.capitalize(CommonUtils.safeRemoveAll(financing.getMstBranch().getBranchName(),removeRBU)).concat(", ").concat(limitAgreementDate==null?"..., ........., .....":CommonUtils.toDate(limitAgreementDate.atStartOfDay())));
     params.put("namaBouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));
     params.put("periodeBerlaku",formattedCwrDate);
-    params.put("namaDebitur", CommonUtils.nullValue(financing.getCustomer().getCustName()));
+    params.put("namaDebitur", debtor == null
+      ? CommonUtils.nullValue(financing.getCustomer().getCustName())
+      : CommonUtils.nullValue(debtor.getKaryawanName()));
     params.put("companyDebitur", CommonUtils.nullValue(financing.getCustomer().getCustName()));
-    params.put("jabatan", CommonUtils.nullValue(financing.getCustomer().getCustTypeCode().equalsIgnoreCase("Company")?"Direktur Utama/Direktur":""));
+    params.put("jabatan", debtor == null
+      ? ("Company".equalsIgnoreCase(financing.getCustomer().getCustTypeCode()) ? "Direktur Utama/Direktur" : "")
+      : CommonUtils.nullValue(debtor.getJabatan()));
     params.put("namaRegionalManager", regionalManager(financing));
     params.put("namaPicFinance", CommonUtils.nullValue(financing.getBouwheer().getPicName()));
     params.put("bouwheer", CommonUtils.nullValue(financing.getBouwheer().getBouwheerName()));

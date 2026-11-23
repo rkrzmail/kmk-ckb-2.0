@@ -7,8 +7,10 @@ import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementByNoCwrRemoteDto;
 import com.kmkbe.core.domain.entity.Agreement;
 import com.kmkbe.core.domain.entity.Cwr;
+import com.kmkbe.core.domain.entity.Debtor;
 import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.repository.AgreementRepository;
+import com.kmkbe.core.domain.repository.DebtorRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
@@ -43,6 +45,7 @@ class SitTemplateServiceTest {
 
   @Mock FinancingHdrRepository financingHdrRepository;
   @Mock AgreementRepository agreementRepository;
+  @Mock DebtorRepository debtorRepository;
   @Mock ConfigRemoteService configRemoteService;
   @Mock CwrRemoteService cwrRemoteService;
   @Mock JasperReportRenderer jasperReportRenderer;
@@ -50,7 +53,7 @@ class SitTemplateServiceTest {
 
   @BeforeEach
   void setUp() {
-    service = new SitTemplateService(financingHdrRepository, agreementRepository,
+    service = new SitTemplateService(financingHdrRepository, agreementRepository, debtorRepository,
       configRemoteService, cwrRemoteService, jasperReportRenderer);
   }
 
@@ -116,6 +119,26 @@ class SitTemplateServiceTest {
 
     assertThatThrownBy(() -> service.download(LEAD, "AGR-1"))
       .isInstanceOf(BusinessException.class).hasMessageContaining("AppId Confins");
+  }
+
+  @Test
+  void usesFirstDebtorSignerForSitSignature() throws Exception {
+    when(financingHdrRepository.findByFinancingHdrCode(LEAD)).thenReturn(Optional.of(financing()));
+    when(agreementRepository.findByFinancingHdr_FinancingHdrCode(LEAD)).thenReturn(List.of(agreement()));
+    when(cwrRemoteService.inquiryAgreementByNoCwr("CWR-1")).thenReturn(response(List.of(
+      InquiryAgreementByNoCwrRemoteDto.builder().agrmntNo("AGR-1").appId(42).build())));
+    when(debtorRepository.findFirstByFinancingHdrCodeOrderByDtmCrtDescDebtorIdDesc(LEAD.toString()))
+      .thenReturn(Optional.of(Debtor.builder().karyawanName("Penandatangan Pertama")
+        .jabatan("Direktur Operasional").build()));
+
+    service.download(LEAD, "AGR-1");
+
+    @SuppressWarnings("unchecked")
+    ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.forClass(Map.class);
+    verify(jasperReportRenderer).renderToPdf(eq("/Reports/sit.jasper"), captor.capture());
+    assertThat(captor.getValue()).containsEntry("namaDebitur", "Penandatangan Pertama")
+      .containsEntry("jabatan", "Direktur Operasional")
+      .containsEntry("companyDebitur", "Debitur Satu");
   }
 
 
