@@ -1,6 +1,9 @@
 package com.kmkbe.exception;
 
 import com.kmkbe.core.exception.LoanDocMandatoryException;
+import feign.FeignException;
+import feign.Request;
+import feign.RetryableException;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
@@ -59,6 +62,67 @@ class GlobalExceptionHandlerTest {
 //    assertThat(response.getBody().getValidations()).isNull();
 //    assertThat(response.getBody().getMessage()).isEqualTo("Something went wrong. Please try again later.");
 //  }
+
+  @Test
+  void testHandleRetryableException_returnsHumanReadableTimeout() {
+    Request request = Request.create(Request.HttpMethod.POST, "https://uat-confinsr3.csulfinance.com/api/fou/v1/Generic/GetPagingObjectBySQL",
+      java.util.Collections.emptyMap(), null, java.nio.charset.StandardCharsets.UTF_8, null);
+    RetryableException retryable = new RetryableException(
+      504,
+      "Connect timed out executing POST https://uat-confinsr3.csulfinance.com/api/fou/v1/Generic/GetPagingObjectBySQL",
+      Request.HttpMethod.POST,
+      new java.net.SocketTimeoutException("Connect timed out"),
+      1000L,
+      request
+    );
+
+    var response = handler.handleRetryableException(retryable);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.GATEWAY_TIMEOUT);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getTitle()).isEqualTo("Layanan Eksternal Timeout");
+    assertThat(response.getBody().getCode()).isEqualTo(504);
+    assertThat(response.getBody().getMessage()).contains("Koneksi ke layanan eksternal (Confins) sedang mengalami gangguan atau timeout");
+    assertThat(response.getBody().getMessage()).doesNotContain("https://");
+  }
+
+  @Test
+  void testHandleRuntimeException_withWrappedRetryableException_returnsHumanReadableTimeout() {
+    Request request = Request.create(Request.HttpMethod.POST, "https://uat-confinsr3.csulfinance.com/api/fou/v1/Generic/GetPagingObjectBySQL",
+      java.util.Collections.emptyMap(), null, java.nio.charset.StandardCharsets.UTF_8, null);
+    RetryableException retryable = new RetryableException(
+      504,
+      "Connect timed out executing POST https://uat-confinsr3.csulfinance.com/api/fou/v1/Generic/GetPagingObjectBySQL",
+      Request.HttpMethod.POST,
+      new java.net.SocketTimeoutException("Connect timed out"),
+      1000L,
+      request
+    );
+    RuntimeException wrapped = new RuntimeException("Failed to call Confins API", retryable);
+
+    var response = handler.handleRuntimeException(wrapped);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.GATEWAY_TIMEOUT);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getCode()).isEqualTo(504);
+    assertThat(response.getBody().getMessage()).contains("Koneksi ke layanan eksternal (Confins) sedang mengalami gangguan atau timeout");
+  }
+
+  @Test
+  void testHandleFeignException_returnsHumanReadableError() {
+    Request request = Request.create(Request.HttpMethod.POST, "https://uat-confinsr3.csulfinance.com/api/fou/v1/Generic/GetPagingObjectBySQL",
+      java.util.Collections.emptyMap(), null, java.nio.charset.StandardCharsets.UTF_8, null);
+    FeignException feignException = new FeignException.InternalServerError(
+      "Internal Server Error",
+      request,
+      null,
+      null
+    );
+
+    var response = handler.handleFeignException(feignException);
+    assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_GATEWAY);
+    assertThat(response.getBody()).isNotNull();
+    assertThat(response.getBody().getTitle()).isEqualTo("Layanan Eksternal Error");
+    assertThat(response.getBody().getMessage()).isEqualTo("Terjadi kendala komunikasi dengan layanan eksternal. Silakan coba kembali beberapa saat lagi.");
+  }
 
   @RestController
   static class ValidationController {

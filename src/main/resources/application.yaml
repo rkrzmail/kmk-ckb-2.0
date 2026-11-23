@@ -34,8 +34,8 @@ spring:
       client:
         config:
           default:
-            connectTimeout: 10000
-            readTimeout: 60000
+            connectTimeout: ${FEIGN_CONNECT_TIMEOUT:10000}
+            readTimeout: ${FEIGN_READ_TIMEOUT:60000}
             loggerLevel: ${FEIGN_LOGGER_LEVEL:BASIC}
             errorDecoder: com.kmkbe.feign.config.FeignErrorDecoder
             decodeSlash: false

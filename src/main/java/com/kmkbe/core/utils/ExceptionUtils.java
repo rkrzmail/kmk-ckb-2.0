@@ -142,8 +142,48 @@ public class ExceptionUtils {
         }
 
         if (detail == null) {
-            detail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
-            detail.setProperty("description", exception.getMessage());
+            Throwable cause = exception;
+            boolean isTimeout = false;
+            boolean isFeignError = false;
+            feign.FeignException feignException = null;
+
+            while (cause != null) {
+                if (cause instanceof feign.RetryableException
+                        || cause instanceof java.net.SocketTimeoutException
+                        || cause instanceof java.net.ConnectException
+                        || cause instanceof java.net.UnknownHostException
+                        || cause instanceof org.apache.hc.client5.http.ConnectTimeoutException
+                        || (cause.getMessage() != null && (
+                            cause.getMessage().contains("Connect timed out")
+                            || cause.getMessage().contains("Read timed out")
+                            || cause.getMessage().contains("Connection refused")
+                            || cause.getMessage().contains("feign.RetryableException")
+                        ))) {
+                    isTimeout = true;
+                    break;
+                }
+                if (cause instanceof feign.FeignException fe) {
+                    isFeignError = true;
+                    feignException = fe;
+                }
+                cause = cause.getCause();
+            }
+
+            if (isTimeout) {
+                String humanMessage = "Koneksi ke layanan eksternal (Confins) sedang mengalami gangguan atau timeout. Silakan coba kembali beberapa saat lagi.";
+                detail = ProblemDetail.forStatusAndDetail(HttpStatus.GATEWAY_TIMEOUT, humanMessage);
+                detail.setProperty("description", humanMessage);
+                detail.setDetail("Layanan eksternal tidak merespons dalam batas waktu yang ditentukan.");
+            } else if (isFeignError && feignException != null) {
+                String humanMessage = "Terjadi kendala komunikasi dengan layanan eksternal. Silakan coba kembali beberapa saat lagi.";
+                HttpStatus status = feignException.status() >= 500 ? HttpStatus.BAD_GATEWAY : HttpStatus.SERVICE_UNAVAILABLE;
+                detail = ProblemDetail.forStatusAndDetail(status, humanMessage);
+                detail.setProperty("description", humanMessage);
+                detail.setDetail("Layanan eksternal mengembalikan respon error.");
+            } else {
+                detail = ProblemDetail.forStatusAndDetail(HttpStatus.INTERNAL_SERVER_ERROR, exception.getMessage());
+                detail.setProperty("description", exception.getMessage());
+            }
         }
 
         String desc = exception.getMessage();

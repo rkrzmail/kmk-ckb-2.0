@@ -181,7 +181,7 @@ class SitTemplateServiceTest {
     financing.setBouwheer(Bouwheer.builder().bouwheerName("Bouwheer Satu")
       .legalAddress("Jakarta").province("DKI Jakarta").zipcode("12345")
       .picName("PIC Satu").build());
-    financing.setCustomer(Customer.builder().custName("Debitur Satu")
+    financing.setCustomer(Customer.builder().custCode(LEAD).custName("Debitur Satu")
       .custTypeCode("Company").build());
     financing.setMstBranch(MstBranch.builder().branchName("JAKARTA ").branchCode("407").build());
     financing.setFinancingDueDate(LocalDateTime.of(2026, 12, 31, 0, 0));
