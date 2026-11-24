@@ -22,6 +22,7 @@ import java.math.RoundingMode;
 import java.text.ParseException;
 import java.time.Duration;
 import java.time.temporal.ChronoUnit;
+import java.time.ZoneId;
 import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
@@ -172,7 +173,7 @@ public class CustomerSeederService  {//implements CommandLineRunner
 
         final double differenceDays = Duration.between(
                 staySince.toInstant(),
-                DateTimeUtils.now()
+                DateTimeUtils.now().atZone(ZoneId.systemDefault()).toInstant()
         ).toMinutes() / (double) CommonConstants.MONTH_IN_MINUTES;
 
         return Map.of("staySince", staySince, "stayLength", differenceDays);

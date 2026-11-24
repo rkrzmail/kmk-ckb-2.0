@@ -137,6 +137,27 @@ class EmailDeliveryServiceTest {
     assertThat(skipped.getStatus()).isEqualTo(EmailDeliveryLog.Status.FAILED);
   }
 
+  @Test
+  void nullRecipientsAndNullFailureReasonsUseDefaults() {
+    UUID code = UUID.randomUUID();
+    when(repository.save(any())).thenAnswer(call -> call.getArgument(0));
+
+    EmailDeliveryLog noRecipient = service.recordFinanceInvoicePaid(code, null,
+      new EmailService.DeliveryResult(false, "SMTP rejected"));
+    assertThat(noRecipient.getRecipient()).isEmpty();
+    assertThat(noRecipient.getAttemptCount()).isZero();
+
+    EmailDeliveryLog noReason = service.recordFinanceInvoicePaid(code, "finance@example.com",
+      new EmailService.DeliveryResult(false, null));
+    assertThat(noReason.getErrorMessage()).isEqualTo("Pengiriman email gagal tanpa detail dari SMTP.");
+
+    Customer customer = customer("REJECTED");
+    when(emailService.sendCustomerApprovalNotification(customer, "REJECTED", null))
+      .thenReturn(new EmailService.DeliveryResult(false, null));
+    EmailDeliveryLog retryFailure = service.sendApproval(customer, "REJECTED", null);
+    assertThat(retryFailure.getErrorMessage()).isEqualTo("Pengiriman email gagal tanpa detail dari SMTP.");
+  }
+
   private static Customer customer(String status) {
     return Customer.builder().custCode(UUID.randomUUID()).custEmail("customer@example.com")
       .approvalStatus(status).build();

@@ -70,7 +70,7 @@ public class DbRefreshTokenServices implements IRefreshTokenServices {
             String expiredDtStr = DateTimeUtils.SDF_STANDARD_DATE_TIME.format(expiredDt.getTimeInMillis());
             String nowStr = DateTimeUtils.SDF_STANDARD_DATE_TIME.format(now.getTime());
 
-            if (expiredDt.before(now)) {
+            if (expiredDt.getTime().before(now)) {
                 throw new IllegalStateException("Refresh token are expired or invalid, try to login again");
             }
 
