@@ -6,7 +6,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.RejectedExecutionHandler;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;

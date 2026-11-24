@@ -37,7 +37,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -231,7 +230,7 @@ class ApiSbuCkbServiceTest {
 
   @Test
   @DisplayName("submission: bouwheer tidak ditemukan -> BusinessException")
-  void submissionBouwheerNotFoundThrows() throws Exception {
+  void submissionBouwheerNotFoundThrows(){
     when(bouwheerRepository.findByBouwheerCode(BOUWHEER_UUID)).thenReturn(Optional.empty());
 
     assertThatThrownBy(() -> service.submission(submissionRequest()))
@@ -289,7 +288,7 @@ class ApiSbuCkbServiceTest {
 
   @Test
   @DisplayName("simulation: customer tidak ditemukan -> BusinessException")
-  void simulationCustomerNotFoundThrows() throws Exception {
+  void simulationCustomerNotFoundThrows(){
     CalculateSimulationRequest request = new CalculateSimulationRequest();
     request.setBouwheerCode(BOUWHEER_UUID.toString());
     when(customerRepository.findFirstByBouwheer(BOUWHEER_UUID.toString())).thenReturn(Optional.empty());
