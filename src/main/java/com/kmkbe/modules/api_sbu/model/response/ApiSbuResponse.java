@@ -2,7 +2,6 @@ package com.kmkbe.modules.api_sbu.model.response;
 
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.kmkbe.helpers.base.BaseRequest;
 import com.kmkbe.helpers.base.BaseResponse;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
