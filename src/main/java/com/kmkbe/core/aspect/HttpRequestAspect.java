@@ -6,7 +6,6 @@ import com.kmkbe.core.domain.entity.ApiIntegrationLog;
 import com.kmkbe.core.domain.repository.ApiIntegrationLogRepository;
 import com.kmkbe.core.middleware.HttpServletRequestCopier;
 import com.kmkbe.core.utils.DateTimeUtils;
-import com.kmkbe.core.utils.ObjectUtils;
 import com.kmkbe.modules.loan_submission.request.FinancingInvoicePaidRequest;
 import io.netty.util.internal.StringUtil;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +14,6 @@ import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Propagation;
@@ -23,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.client.HttpStatusCodeException;
 import org.thymeleaf.util.StringUtils;
 
-import java.util.Map;
 
 @Aspect
 @Component
@@ -57,21 +54,14 @@ public class HttpRequestAspect {
         }
       }
     } catch (HttpStatusCodeException httpStatusCodeException) {
-      String message = "Unknown error";
-
       statusCode = httpStatusCodeException.getStatusCode().value();
       responseStr = httpStatusCodeException.getResponseBodyAsString();
-      Map<String, Object> errorObj = ObjectUtils.strToJson(httpStatusCodeException.getResponseBodyAsString());
-      if (errorObj != null) {
-        message = errorObj.get("message") != null ? (String) errorObj.get("message") : message;
-      }
-
-      response = new ResponseEntity<String>(responseStr, HttpStatusCode.valueOf(statusCode));
-      //throw new RuntimeException("Error while perform action. Detail:" + message);
+      throw httpStatusCodeException;
     } catch (Exception e) {
       log.error("Error while executing RestTemplate call {}", e.getMessage());
-      response = null;
-      //throw e;
+      statusCode = 500;
+      responseStr = e.getClass().getSimpleName();
+      throw e;
     } finally {
       long executionTime = System.currentTimeMillis() - startTime;
 
@@ -86,6 +76,10 @@ public class HttpRequestAspect {
             requestStr = objectMapper.writeValueAsString(requestEntity.getBody());
           }
         }
+      }
+
+      if (url.contains("/auth/req-jwt") || url.contains("/authconfig/mail/")) {
+        responseStr = "[REDACTED]";
       }
 
       ApiIntegrationLog apiIntegrationLog = ApiIntegrationLog.builder()

@@ -20,6 +20,7 @@ import org.springframework.web.client.HttpStatusCodeException;
 import java.nio.charset.StandardCharsets;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -57,7 +58,7 @@ class HttpRequestAspectTest {
   }
 
   @Test
-  void logsHttpStatusCodeExceptionAndReturnsResponseEntity() throws Throwable {
+  void logsHttpStatusCodeExceptionAndRethrowsIt() throws Throwable {
     ObjectMapper mapper = new ObjectMapper();
     HttpRequestAspect aspect = new HttpRequestAspect(apiIntegrationLogRepository, mapper);
 
@@ -69,19 +70,15 @@ class HttpRequestAspectTest {
     when(joinPoint.proceed()).thenThrow(ex);
     when(apiIntegrationLogRepository.save(any(ApiIntegrationLog.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    Object result = aspect.logRestTemplateCalls(joinPoint);
-
-    assertThat(result).isInstanceOf(ResponseEntity.class);
-    ResponseEntity<?> entity = (ResponseEntity<?>) result;
-    assertThat(entity.getStatusCode().value()).isEqualTo(400);
-    assertThat(entity.getBody()).isEqualTo("{\"message\":\"bad\"}");
+    assertThatThrownBy(() -> aspect.logRestTemplateCalls(joinPoint)).isSameAs(ex);
     ArgumentCaptor<ApiIntegrationLog> captor = ArgumentCaptor.forClass(ApiIntegrationLog.class);
     verify(apiIntegrationLogRepository).save(captor.capture());
     assertThat(captor.getValue().getResponseStatus()).isEqualTo("400");
+    assertThat(captor.getValue().getResponseJson()).contains("bad");
   }
 
   @Test
-  void returnsNullOnGenericException() throws Throwable {
+  void rethrowsGenericExceptionAfterLogging() throws Throwable {
     ObjectMapper mapper = new ObjectMapper();
     HttpRequestAspect aspect = new HttpRequestAspect(apiIntegrationLogRepository, mapper);
 
@@ -89,10 +86,33 @@ class HttpRequestAspectTest {
     when(joinPoint.proceed()).thenThrow(new RuntimeException("network"));
     when(apiIntegrationLogRepository.save(any(ApiIntegrationLog.class))).thenAnswer(inv -> inv.getArgument(0));
 
-    Object result = aspect.logRestTemplateCalls(joinPoint);
+    assertThatThrownBy(() -> aspect.logRestTemplateCalls(joinPoint))
+      .isInstanceOf(RuntimeException.class)
+      .hasMessage("network");
+    ArgumentCaptor<ApiIntegrationLog> captor = ArgumentCaptor.forClass(ApiIntegrationLog.class);
+    verify(apiIntegrationLogRepository).save(captor.capture());
+    assertThat(captor.getValue().getResponseStatus()).isEqualTo("500");
+  }
 
-    assertThat(result).isNull();
-    verify(apiIntegrationLogRepository).save(any(ApiIntegrationLog.class));
+  @Test
+  void doesNotLogMailCredentialsOrJwtTokens() throws Throwable {
+    HttpRequestAspect aspect = new HttpRequestAspect(apiIntegrationLogRepository, new ObjectMapper());
+    when(joinPoint.getArgs()).thenReturn(
+      new Object[]{"http://sisca/authconfig/mail/danasakti-mail"},
+      new Object[]{"http://sisca/auth/req-jwt"}
+    );
+    when(joinPoint.proceed()).thenReturn(
+      ResponseEntity.ok("{\"password\":\"smtp-secret\"}"),
+      ResponseEntity.ok("{\"data\":\"jwt-secret\"}")
+    );
+
+    aspect.logRestTemplateCalls(joinPoint);
+    aspect.logRestTemplateCalls(joinPoint);
+
+    ArgumentCaptor<ApiIntegrationLog> captor = ArgumentCaptor.forClass(ApiIntegrationLog.class);
+    verify(apiIntegrationLogRepository, times(2)).save(captor.capture());
+    assertThat(captor.getAllValues()).allSatisfy(entry ->
+      assertThat(entry.getResponseJson()).isEqualTo("[REDACTED]"));
   }
 
   @Test

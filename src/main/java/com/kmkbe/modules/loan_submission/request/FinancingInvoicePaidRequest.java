@@ -2,6 +2,8 @@ package com.kmkbe.modules.loan_submission.request;
 
 import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
+import com.kmkbe.core.converter.ClearingDateDeserializer;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
@@ -65,6 +67,7 @@ public class FinancingInvoicePaidRequest {
     @NotNull(message = "ClearingDate in InvoicePaid is required")
     @JsonProperty("clearingDate")
     @JsonAlias("ClearingDate")
+    @JsonDeserialize(using = ClearingDateDeserializer.class)
     private Date clearingDate;
 
     @NotNull(message = "PostingDate in InvoicePaid is required")
