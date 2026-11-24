@@ -34,10 +34,12 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -685,6 +687,122 @@ class EmailServiceTest {
     verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(false));
     assertThat(captor.getValue().getSubjectMail()).isEqualTo("Verifikasi Akun Dana Sakti");
     assertThat(captor.getValue().getBodyMail()).contains("Company").contains("KTP001").contains("9999");
+  }
+
+  @Test
+  void approvalAndRejectionNotesFallBackToDash() throws Exception {
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_ACTIVE", true))
+      .thenReturn(template("M_CUST_ACTIVE", "{approval_note}"))
+      .thenReturn(template("M_CUST_ACTIVE", "{approval_note}"));
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_REJECTED", true))
+      .thenReturn(template("M_CUST_REJECTED", "{approval_note}"))
+      .thenReturn(template("M_CUST_REJECTED", "{approval_note}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(false));
+
+    service.sendCustomerApprovalNotification(customer(), "APPROVED", null);
+    service.sendCustomerApprovalNotification(customer(), "APPROVED", "  ");
+    service.sendNotificationRejected(customer(), null);
+    service.sendNotificationRejected(customer(), "");
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig, org.mockito.Mockito.times(4))
+      .sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(false));
+    assertThat(captor.getAllValues()).extracting(EmailTemplate::getBodyMail)
+      .containsExactly("-", "-", "-", "-");
+  }
+
+  @Test
+  void customerVerificationFallsBackForNullFields() throws Exception {
+    Customer customer = new Customer();
+    customer.setCustExternalCode(null);
+    customer.setCustTypeCode(null);
+    customer.setCustMobilePhone(null);
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_VERIFY_MJR", true))
+      .thenReturn(template("M_CUST_VERIFY_MJR", "{vendor_name}|{vendor_code}|{customer_type}|{phone}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(false));
+
+    service.sendNotificationCustomerVerification("to@example.com", customer, null);
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(false));
+    assertThat(captor.getValue().getBodyMail()).isEqualTo("-|-|-|-");
+  }
+
+  @Test
+  void customerVerificationWithNullCustomerIsSwallowed() {
+    assertThatCode(() -> service.sendNotificationCustomerVerification("to@example.com", null, "Bouwheer"))
+      .doesNotThrowAnyException();
+    verifyNoInteractions(mailConfig);
+  }
+
+  @Test
+  void branchAssignWithNullRecipientsUsesEmptyRecipient() throws Exception {
+    LoanDisburseEmailPayload payload = LoanDisburseEmailPayload.builder()
+      .email(null).toEmail(null).ccEmail(null).invoices(List.of()).build();
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_BRANCH_ASSIGN", true))
+      .thenReturn(template("M_BRANCH_ASSIGN", "Assigned to {bouwheerName}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(false));
+    when(emailDeliveryLogRepository.save(any(EmailDeliveryLog.class)))
+      .thenAnswer(call -> call.getArgument(0));
+
+    service.sendNotificationBranchAssign(UUID.randomUUID(), null, "Bouwheer", "Area", payload);
+
+    ArgumentCaptor<EmailDeliveryLog> captor = ArgumentCaptor.forClass(EmailDeliveryLog.class);
+    verify(emailDeliveryLogRepository, org.mockito.Mockito.times(2)).save(captor.capture());
+    assertThat(captor.getAllValues()).allSatisfy(log -> assertThat(log.getRecipient()).isEmpty());
+  }
+
+  @Test
+  void contractUploadRequiredWithNullPayloadIsSwallowed() {
+    assertThatCode(() -> service.sendNotificationContractUploadRequired("admin@example.com", null))
+      .doesNotThrowAnyException();
+  }
+
+  @Test
+  void registrationUserSendsAndSwallowsTemplateFailure() throws Exception {
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_NEW_REGISTER", true))
+      .thenReturn(template("M_NEW_REGISTER", "Welcome {name}"))
+      .thenReturn(null);
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(false));
+
+    service.sendRegistrationUser(customer(), "user@example.com");
+    assertThatCode(() -> service.sendRegistrationUser(customer(), "user@example.com"))
+      .doesNotThrowAnyException();
+
+    ArgumentCaptor<EmailTemplate> captor = ArgumentCaptor.forClass(EmailTemplate.class);
+    verify(mailConfig).sendHtmlEmail(any(MailRemoteDto.class), captor.capture(), eq(false));
+    assertThat(captor.getValue().getBodyMail()).isEqualTo("Welcome Customer");
+  }
+
+  @Test
+  void remoteMailConfigSelectedForProductionAndDevelopmentValues() throws Exception {
+    assertUsesRemoteConfig(new MockEnvironment().withProperty("env", "production"));
+    assertUsesRemoteConfig(new MockEnvironment().withProperty("env", "development"));
+  }
+
+  @Test
+  void remoteMailConfigSelectedForProductionAndDevelopmentProfiles() throws Exception {
+    MockEnvironment productionProfile = new MockEnvironment();
+    productionProfile.setActiveProfiles("production");
+    assertUsesRemoteConfig(productionProfile);
+
+    MockEnvironment developmentProfile = new MockEnvironment();
+    developmentProfile.setActiveProfiles("development");
+    assertUsesRemoteConfig(developmentProfile);
+  }
+
+  private void assertUsesRemoteConfig(MockEnvironment environment) throws Exception {
+    EmailService local = new EmailService(
+      emailTemplateRepository, configRemoteService, mailConfig, errorLogRepository,
+      emailDeliveryLogRepository, environment);
+    when(emailTemplateRepository.findByEmailTemplateCodeAndIsActive("M_CUST_VERIFY", true))
+      .thenReturn(template("M_CUST_VERIFY", "{email}:{otp_code}"));
+    when(configRemoteService.fetchEmailInfo()).thenReturn(mailRemote(false));
+
+    local.sendOtp2("user@example.com", "9999");
+
+    verify(mailConfig, org.mockito.Mockito.atLeastOnce())
+      .sendHtmlEmail(any(MailRemoteDto.class), any(EmailTemplate.class), eq(false));
   }
 
   private static EmailTemplate template(String code, String body) {

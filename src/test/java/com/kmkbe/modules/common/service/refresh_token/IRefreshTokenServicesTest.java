@@ -31,6 +31,19 @@ class IRefreshTokenServicesTest {
     };
 
     @Test
+    void defaultPayloadUsesSystemClockWhenClockOmitted() {
+        UUID userCode = UUID.randomUUID();
+
+        RefreshToken payload = service.defaultPayload(
+                IRefreshTokenServices.User.builder().userCode(userCode).build());
+
+        assertThat(payload.getUserCode()).isEqualTo(userCode);
+        assertThat(payload.getRefreshToken()).isNotNull();
+        assertThat(payload.getIssuedDate()).isNotNull();
+        assertThat(payload.getExpiredDate()).isAfter(payload.getIssuedDate());
+    }
+
+    @Test
     void defaultPayloadUsesProvidedClockForIssuedAndExpiredDate() {
         UUID userCode = UUID.randomUUID();
         Clock clock = Clock.fixed(Instant.parse("2026-08-12T03:00:00Z"), ZoneId.of("Asia/Jakarta"));
