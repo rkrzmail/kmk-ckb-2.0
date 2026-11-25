@@ -47,7 +47,7 @@ class ManagementEndpointsConfigTest {
     Map<String, Object> spring = (Map<String, Object>) yaml.get("spring");
     Map<String, Object> profiles = (Map<String, Object>) spring.get("profiles");
 
-    assertThat(profiles.get("active")).isIn("local", "dev", "brahma");
+    assertThat(profiles.get("active")).isIn("local", "dev","prod");
   }
 
   @Test
