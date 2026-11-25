@@ -1,16 +1,6 @@
-management:
-  endpoints:
-    web:
-      exposure:
-        include: ${MANAGEMENT_ENDPOINTS_INCLUDE:info,health}
-      base-path: /api/monitoring
-  endpoint:
-    health:
-      show-details: never
-      show-components: always
-    logfile:
-      external-file: admin.log
 spring:
+  profiles:
+    active: prod
   jackson:
     deserialization:
       adjust-dates-to-context-time-zone: 'true'
@@ -23,8 +13,19 @@ spring:
       max-file-size: 80MB
       enabled: 'true'
       max-request-size: 80MB
-  profiles:
-    active: dev
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: ${MANAGEMENT_ENDPOINTS_INCLUDE:info,health}
+      base-path: /api/monitoring
+  endpoint:
+    health:
+      show-details: never
+      show-components: always
+    logfile:
+      external-file: admin.log
 
   # Feign Configuration
   cloud:

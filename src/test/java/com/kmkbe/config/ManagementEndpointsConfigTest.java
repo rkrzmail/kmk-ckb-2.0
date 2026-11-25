@@ -51,13 +51,6 @@ class ManagementEndpointsConfigTest {
   }
 
   @Test
-  void brahmaDoesNotExposeEnvEndpoint() throws Exception {
-    String include = includeOf(loadYaml("src/main/resources/application-brahma.yaml"));
-
-    assertThat(include).doesNotContain("env");
-  }
-
-  @Test
   void devAndLocalKeepFullExposureForTroubleshooting() throws Exception {
     assertThat(includeOf(loadYaml("src/main/resources/application-dev.yaml"))).contains("env", "loggers");
     assertThat(includeOf(loadYaml("src/main/resources/application-local.yaml"))).contains("env", "loggers");

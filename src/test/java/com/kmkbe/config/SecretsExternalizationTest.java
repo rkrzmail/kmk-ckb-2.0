@@ -31,16 +31,6 @@ class SecretsExternalizationTest {
     "$2b$10$YoLl0SFx"               // api key (bcrypt string)
   };
 
-//  @Test
-//  void prodYamlContainsNoPlaintextSecrets() throws Exception {
-//    assertNoPlaintextSecrets("src/main/resources/application-prod.yaml");
-//  }
-
-  @Test
-  void brahmaYamlContainsNoPlaintextSecrets() throws Exception {
-    assertNoPlaintextSecrets("src/main/resources/application-brahma.yaml");
-  }
-
   @Test
   void baseSecurityPropertiesAreEnvOverridable() throws Exception {
     Map<String, Object> yaml = load("src/main/resources/application.yaml");

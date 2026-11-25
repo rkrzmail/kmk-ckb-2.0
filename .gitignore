@@ -38,7 +38,6 @@ build/
 src/main/resources/application-prod.yaml
 .continue
 SECURITY.md
-.continue
 
 *.env
 .env.*
