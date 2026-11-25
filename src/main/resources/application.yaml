@@ -1,6 +1,6 @@
 spring:
   profiles:
-    active: prod
+    active: local
   jackson:
     deserialization:
       adjust-dates-to-context-time-zone: 'true'
