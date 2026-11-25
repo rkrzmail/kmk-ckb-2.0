@@ -37,7 +37,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import java.util.Date;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,6 +65,7 @@ class ApiSbuCkbServiceTest {
   private static final String API_KEY = "app-key-1";
   private static final String APP_SECRET = "secret-1";
   private static final UUID BOUWHEER_UUID = UUID.fromString("11111111-1111-1111-1111-111111111111");
+  private static final Clock CLOCK = Clock.fixed(Instant.parse("2026-01-01T00:00:00Z"), ZoneOffset.UTC);
 
   @Mock private ApiCsulAdapter apiCsulAdapter;
   @Mock private ApiSbuRepository apiSbuRepository;
@@ -83,7 +86,7 @@ class ApiSbuCkbServiceTest {
     service = new ApiSbuCkbService(
       apiCsulAdapter, apiSbuRepository, jwtValidatorService, customerRepository,
       loanSubmissionService, bouwheerRepository, jwtGeneratorService,
-      financingService, financingHdrService, financingDtlService, customerCompanyService
+      financingService, financingHdrService, financingDtlService, customerCompanyService, CLOCK
     );
   }
 
@@ -121,7 +124,7 @@ class ApiSbuCkbServiceTest {
   @DisplayName("createToken: valid -> token, bouwheer, expired_at tersedia")
   void createTokenSuccess() {
     when(apiSbuRepository.findByAppKey(API_KEY)).thenReturn(Optional.of(apiSbu()));
-    when(jwtGeneratorService.generateToken(eq(APP_SECRET), eq(BOUWHEER_UUID.toString()), any(Date.class)))
+    when(jwtGeneratorService.generateToken(eq(APP_SECRET), eq(BOUWHEER_UUID.toString()), any(Instant.class)))
       .thenReturn("jwt-token-1");
 
     CommonResult<Map<String, Object>> result = service.createToken(API_KEY);
@@ -131,13 +134,14 @@ class ApiSbuCkbServiceTest {
     assertThat(result.getData()).containsKeys("token", "bouwheer", "expired_at");
     assertThat(result.getData().get("token")).isEqualTo("jwt-token-1");
     assertThat(result.getData().get("bouwheer")).isEqualTo(BOUWHEER_UUID.toString());
+    assertThat(result.getData().get("expired_at")).isEqualTo("2026-01-01 07:30:00");
   }
 
   @Test
   @DisplayName("createToken: generator gagal (IllegalArgumentException) -> fail 401")
   void createTokenGeneratorFailureReturnsFail() {
     when(apiSbuRepository.findByAppKey(API_KEY)).thenReturn(Optional.of(apiSbu()));
-    when(jwtGeneratorService.generateToken(anyString(), anyString(), any(Date.class)))
+    when(jwtGeneratorService.generateToken(anyString(), anyString(), any(Instant.class)))
       .thenThrow(new IllegalArgumentException("bad secret"));
 
     CommonResult<Map<String, Object>> result = service.createToken(API_KEY);

@@ -232,7 +232,7 @@ public class AssignmentSubmissionService {
             .verifDate(agreementFileSigning
               .map(AgreementFileSigning::getVerifDate)
               .orElse(null))
-            .dueDate(Utils.fromInstant(e.getFinancingDueDate()))
+            .dueDate(e.getFinancingDueDate())
             .financingAmount(BigDecimal.valueOf(e.getFinancingAmt()))
             .totalInvoiceAmount(e.getTotalInvoiceAmt() == null ? null : BigDecimal.valueOf(e.getTotalInvoiceAmt()))
             .invoiceQty(e.getInvoiceQty())

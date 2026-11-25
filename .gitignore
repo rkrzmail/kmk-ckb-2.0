@@ -35,7 +35,7 @@ build/
 **.log
 /uploads
 
-src/main/resources/application-prod-old.properties
+src/main/resources/application-prod.yaml
 .continue
 SECURITY.md
 .continue

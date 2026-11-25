@@ -1,6 +1,7 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.kmkbe.core.domain.dto.AgreementDto;
 import com.kmkbe.core.domain.dto.BaseMstRemoteResponseDto;
 import com.kmkbe.core.domain.dto.BaseSimpleRemoteResponseDto;
 import com.kmkbe.core.domain.dto.InquiryAgreementCwrDto;
@@ -230,6 +231,8 @@ class AgreementServiceTest {
         assertThat(result.getCurrentPage()).isEqualTo(1);
         assertThat(result.getTotalData()).isEqualTo(2);
         assertThat(result.getList()).hasSize(2);
+        AgreementDto agreementDto = (AgreementDto) result.getList().getFirst();
+        assertThat(agreementDto.getDisburseDate()).isEqualTo(java.time.LocalDate.of(2026, 8, 12));
     }
 
     @Test
@@ -358,7 +361,7 @@ class AgreementServiceTest {
         response.setData(List.of(inquiryAgreement("CWR001", "AGR001")));
         when(cwrRemoteService.inquiryAgreementByNoAgreement(any())).thenReturn(response);
 
-        InquiryAgreementDto result = service.inquiryAgreementCwr("CWR001", "AGR001");
+        InquiryAgreementDto result = service.inquiryAgreementCwr("AGR001");
 
         assertThat(result.getBankName()).isEqualTo("Bank Mandiri");
         assertThat(result.getRekeningNo()).isEqualTo("127");
@@ -369,26 +372,26 @@ class AgreementServiceTest {
     @Test
     void inquiryAgreementCwrThrowsWhenAgreementExistsRemoteThrowsOrDataEmpty() throws Exception {
         when(agreementRepository.findById("AGR001")).thenReturn(Optional.of(Agreement.builder().build()));
-        assertThatThrownBy(() -> service.inquiryAgreementCwr("CWR001", "AGR001"))
+        assertThatThrownBy(() -> service.inquiryAgreementCwr("AGR001"))
                 .isInstanceOf(IllegalStateException.class);
 
         when(agreementRepository.findById("AGR002")).thenReturn(Optional.empty());
         doThrow(new RuntimeException("remote down")).when(cwrRemoteService).inquiryAgreementByNoAgreement(any());
-        assertThatThrownBy(() -> service.inquiryAgreementCwr("CWR001", "AGR002"))
+        assertThatThrownBy(() -> service.inquiryAgreementCwr("AGR002"))
                 .isInstanceOf(CommonInvalidException.class);
 
         BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> emptyResponse = new BaseMstRemoteResponseDto<>();
         emptyResponse.setData(List.of());
         when(agreementRepository.findById("AGR003")).thenReturn(Optional.empty());
         doReturn(emptyResponse).when(cwrRemoteService).inquiryAgreementByNoAgreement(any());
-        assertThatThrownBy(() -> service.inquiryAgreementCwr("CWR001", "AGR003"))
+        assertThatThrownBy(() -> service.inquiryAgreementCwr("AGR003"))
                 .isInstanceOf(CommonInvalidException.class);
 
         BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> nullResponse = new BaseMstRemoteResponseDto<>();
         nullResponse.setData(null);
         when(agreementRepository.findById("AGR004")).thenReturn(Optional.empty());
         doReturn(nullResponse).when(cwrRemoteService).inquiryAgreementByNoAgreement(any());
-        assertThatThrownBy(() -> service.inquiryAgreementCwr("CWR001", "AGR004"))
+        assertThatThrownBy(() -> service.inquiryAgreementCwr("AGR004"))
                 .isInstanceOf(CommonInvalidException.class);
     }
 

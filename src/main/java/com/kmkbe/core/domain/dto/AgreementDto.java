@@ -1,11 +1,17 @@
 package com.kmkbe.core.domain.dto;
 
+import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.databind.JsonSerializer;
+import com.fasterxml.jackson.databind.SerializerProvider;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.Builder;
 import lombok.Getter;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.util.Date;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.UUID;
 
 @Builder
@@ -22,7 +28,17 @@ public class AgreementDto implements Serializable {
     private String bankName;
     private String rekeningNo;
     private BigDecimal financingAmt;
-    private Date disburseDate;
+    @JsonSerialize(using = DisburseDateSerializer.class)
+    private LocalDate disburseDate;
     private BigDecimal disburseAmt;
     private String currency;
+
+    private static class DisburseDateSerializer extends JsonSerializer<LocalDate> {
+        private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+        @Override
+        public void serialize(LocalDate value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
+            gen.writeString(FORMATTER.format(value));
+        }
+    }
 }

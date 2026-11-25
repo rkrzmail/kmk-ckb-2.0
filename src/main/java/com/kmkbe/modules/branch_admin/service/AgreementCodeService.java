@@ -1,7 +1,9 @@
 package com.kmkbe.modules.branch_admin.service;
 
 import com.kmkbe.core.domain.dto.SitDto;
-import com.kmkbe.core.domain.entity.*;
+import com.kmkbe.core.domain.entity.Agreement;
+import com.kmkbe.core.domain.entity.Debtor;
+import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.CommonResult;
 import com.kmkbe.core.domain.repository.AgreementRepository;
 import com.kmkbe.core.domain.repository.DebtorRepository;
@@ -11,7 +13,7 @@ import com.kmkbe.modules.bouwheer.model.entity.Bouwheer;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.remote.service.AuthRemoteService;
 import com.kmkbe.modules.remote.service.EmailAo;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -20,31 +22,21 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class AgreementCodeService {
 
-  @Autowired
-  private AgreementRepository agreementRepository;
+  private final AgreementRepository agreementRepository;
+  private final FinancingHdrRepository financingHdrRepository;
+  private final EmailAo emailAo;
+  private final DebtorRepository debtorRepository;
+  private final AuthRemoteService authRemoteService;
 
-  @Autowired
-  private FinancingHdrRepository financingHdrRepository;
-
-  @Autowired
-  private EmailAo emailAo;
-
-  @Autowired
-  private DebtorRepository debtorRepository;
-
-  @Autowired
-  private AuthRemoteService authRemoteService;
-
-  private String jwtToken;
-
-  private void ensureJwtToken() {
-    jwtToken = authRemoteService.fetchAuthJwt().getData();
+  private String fetchJwtToken() {
+    return authRemoteService.fetchAuthJwt().getData();
   }
 
   public CommonResult<SitDto> getAgreementsByFinancingHdrCode(UUID financingHdrCode) {
-    ensureJwtToken();
+    String jwtToken = fetchJwtToken();
 
     List<Agreement> agreements = agreementRepository.findByFinancingHdr_FinancingHdrCode(financingHdrCode);
 
@@ -84,9 +76,9 @@ public class AgreementCodeService {
         .zipcode(financingHdr.getBouwheer().getZipcode())
         .area(financingHdr.getBouwheer().getArea())
         .picName(financingHdr.getBouwheer().getPicName())
-        .bankName(AppConstants.bankName)
-        .accountName(AppConstants.accountName)
-        .accountNo(AppConstants.accountNo)
+        .bankName(AppConstants.BANK_NAME)
+        .accountName(AppConstants.ACCOUNT_NAME)
+        .accountNo(AppConstants.ACCOUNT_NO)
         .build();
 
       return new CommonResult<SitDto>().success(sitDto);
@@ -107,9 +99,9 @@ public class AgreementCodeService {
 
       String signerName = signerList.isEmpty() ? "-" : signerList.getFirst().getKaryawanName();
       String jabatan = signerList.isEmpty() ? "-" : signerList.getFirst().getJabatan();
-      String bankName = AppConstants.bankName;
-      String accountName = AppConstants.accountName;
-      String accountNo = AppConstants.accountNo;
+      String bankName = AppConstants.BANK_NAME;
+      String accountName = AppConstants.ACCOUNT_NAME;
+      String accountNo = AppConstants.ACCOUNT_NO;
 
       return SitDto.builder()
         .agreementCode(agreement.getAgreementCode())

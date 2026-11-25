@@ -9,6 +9,7 @@ import com.kmkbe.core.domain.entity.FinancingHdr;
 import com.kmkbe.core.domain.model.MappedFinancingStatus;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.service.JwtGeneratorService;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.helpers.base.BaseResponse;
 import com.kmkbe.helpers.base.BaseResponseBuilder;
 import com.kmkbe.helpers.constant.AppConstants;
@@ -39,13 +40,18 @@ import org.springframework.stereotype.Service;
 
 import java.security.SignatureException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
+import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 
 @Slf4j
 @Service
 public class ApiSbuCkbService {
+
+  private static final String SUCCESS_SUBMITTED = "Success Submitted";
 
   private final ApiCsulAdapter apiCsulAdapter;
   private final ApiSbuRepository apiSbuRepository;
@@ -58,6 +64,7 @@ public class ApiSbuCkbService {
   private final FinancingHdrService financingHdrService;
   private final FinancingDtlService financingDtlService;
   private final CustomerCompanyService customerCompanyService;
+  private final Clock clock;
 
   public ApiSbuCkbService(ApiCsulAdapter apiCsulAdapter,
                           ApiSbuRepository apiSbuRepository,
@@ -69,7 +76,8 @@ public class ApiSbuCkbService {
                           FinancingService financingService,
                           FinancingHdrService financingHdrService,
                           FinancingDtlService financingDtlService,
-                          CustomerCompanyService customerCompanyService
+                          CustomerCompanyService customerCompanyService,
+                          Clock clock
   ) {
     this.apiCsulAdapter = apiCsulAdapter;
     this.apiSbuRepository = apiSbuRepository;
@@ -82,6 +90,7 @@ public class ApiSbuCkbService {
     this.financingHdrService = financingHdrService;
     this.financingDtlService = financingDtlService;
     this.customerCompanyService = customerCompanyService;
+    this.clock = clock;
   }
 
 
@@ -102,8 +111,7 @@ public class ApiSbuCkbService {
     String strSecret = apiSbu.get().getAppSecret();
     String bouwheerCode = apiSbu.get().getBouwheerCode().toString();
 
-    Date now = new Date();
-    Date expireDate = new Date(now.getTime() + (30 * 60 * 1000)); // now + 30 menit
+    Instant expireDate = clock.instant().plus(30, ChronoUnit.MINUTES);
 
     Map<String, Object> response;
     try {
@@ -113,8 +121,9 @@ public class ApiSbuCkbService {
         expireDate
       );
 
-      SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-      String expireDateFormatted = sdf.format(expireDate);
+      String expireDateFormatted = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")
+        .withZone(DateTimeUtils.JAKARTA_ZONE)
+        .format(expireDate);
 
       response = new HashMap<>();
       response.put("token", token);
@@ -210,7 +219,7 @@ public class ApiSbuCkbService {
         .usrCrt(AppConstants.CREATOR)
         .custIdTypeCode("NPWP")
         .custTypeCode("Company")
-        .dtmCrt(LocalDateTime.now())
+        .dtmCrt(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE))
         .build());
       /**
        * Insert temp customer company
@@ -278,7 +287,7 @@ public class ApiSbuCkbService {
 
     financingService.recallApprovalStatus();
 
-    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, "Success Submitted");
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, SUCCESS_SUBMITTED);
   }
 
   /**
@@ -309,7 +318,7 @@ public class ApiSbuCkbService {
 
     log.info("Payment Financing Financing Header Code {} ,  Step {} , Status {}, ", request.getFinancingCode(), financingHdr.getFinancingStep(), financingHdr.getFinancingStatus());
     financingDtlService.paymentReceive(request, financingHdr);
-    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, "Success Submitted");
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, SUCCESS_SUBMITTED);
   }
 
   /**
@@ -332,7 +341,7 @@ public class ApiSbuCkbService {
       request
     );
 
-    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, "Success Submitted");
+    return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, SUCCESS_SUBMITTED);
   }
 
   /**

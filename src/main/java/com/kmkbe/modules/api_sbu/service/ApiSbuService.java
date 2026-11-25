@@ -3,6 +3,7 @@ package com.kmkbe.modules.api_sbu.service;
 
 import com.kmkbe.core.service.JwtGeneratorService;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
@@ -28,8 +29,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -171,6 +172,10 @@ public class ApiSbuService {
    * @param request
    * @return
    */
+  private Instant toExpireInstant(ApiSbuRequest request) {
+    return request.getExpiredDate().atStartOfDay(DateTimeUtils.JAKARTA_ZONE).toInstant();
+  }
+
   public BaseResponseBuilder<ApiSbuResponse> create(ApiSbuRequest request) {
     /**
      * Find Bouwheer Code
@@ -200,16 +205,14 @@ public class ApiSbuService {
       .tokenJwt(jwtGeneratorService.generateToken(
         appSecret,
         request.getBouwheerCode(),
-        request.getExpiredDate()
+        toExpireInstant(request)
       ))
       .sesStatus("ACTIVE")
       .appPath(request.getAppPath())
       .appName(request.getAppName())
-      .expiredDate(request.getExpiredDate().toInstant()
-        .atZone(ZoneId.systemDefault())
-        .toLocalDate().atStartOfDay())
+      .expiredDate(request.getExpiredDate().atStartOfDay())
       .usrCrt(currentUserService.usernameOrDefault(AppConstants.CREATOR))
-      .dtmCrt(LocalDateTime.now())
+      .dtmCrt(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE))
       .build()
     );
 

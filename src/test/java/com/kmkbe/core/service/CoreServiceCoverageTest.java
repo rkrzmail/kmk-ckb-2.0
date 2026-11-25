@@ -29,6 +29,9 @@ class CoreServiceCoverageTest {
     assertThat(unauth.getPrincipal()).isEqualTo("key");
     assertThat(unauth.getCredentials()).isEqualTo("key");
     assertThat(unauth.isAuthenticated()).isFalse();
+    assertThat(unauth).isEqualTo(new ApiKeyAuthenticationService("key"));
+    assertThat(unauth).hasSameHashCodeAs(new ApiKeyAuthenticationService("key"));
+    assertThat(unauth).isNotEqualTo(new ApiKeyAuthenticationService("other"));
     unauth.eraseCredentials();
 
     ApiKeyAuthenticationService auth = new ApiKeyAuthenticationService(

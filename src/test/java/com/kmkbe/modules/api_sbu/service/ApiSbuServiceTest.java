@@ -32,9 +32,10 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -53,11 +54,8 @@ import static org.mockito.Mockito.when;
 class ApiSbuServiceTest {
 
   private static final UUID BOUWHEER_CODE = UUID.fromString("11111111-1111-1111-1111-111111111111");
-  private static final Date EXPIRED_DATE = Date.from(
-      LocalDateTime.of(2099, 8, 12, 0, 0)
-          .atZone(ZoneId.systemDefault())
-          .toInstant()
-  );
+  private static final LocalDate EXPIRED_DATE = LocalDate.of(2099, 8, 12);
+  private static final Instant EXPIRED_INSTANT = EXPIRED_DATE.atStartOfDay(ZoneId.systemDefault()).toInstant();
 
   @Mock
   private ApiSbuRepository apiSbuRepository;
@@ -187,7 +185,7 @@ class ApiSbuServiceTest {
     ApiSbuRequest request = apiSbuRequest("Created App");
     when(bouwheerRepository.findByBouwheerCode(BOUWHEER_CODE)).thenReturn(Optional.of(Bouwheer.builder().build()));
     when(apiSbuRepository.findByBouwheerCodeAndAppName(BOUWHEER_CODE, request.getAppName())).thenReturn(Optional.empty());
-    when(jwtGeneratorService.generateToken(anyString(), eq(BOUWHEER_CODE.toString()), eq(EXPIRED_DATE)))
+    when(jwtGeneratorService.generateToken(anyString(), eq(BOUWHEER_CODE.toString()), eq(EXPIRED_INSTANT)))
         .thenReturn("jwt-token");
     when(currentUserService.usernameOrDefault(AppConstants.CREATOR)).thenReturn(AppConstants.CREATOR);
     when(apiSbuRepository.save(any(ApiSbu.class))).thenAnswer(invocation -> {
@@ -214,7 +212,7 @@ class ApiSbuServiceTest {
     when(bouwheerRepository.findByBouwheerCode(BOUWHEER_CODE)).thenReturn(Optional.of(Bouwheer.builder().build()));
     when(apiSbuRepository.findByBouwheerCodeAndAppName(BOUWHEER_CODE, request.getAppName()))
         .thenReturn(Optional.of(existingDifferentApp));
-    when(jwtGeneratorService.generateToken(anyString(), eq(BOUWHEER_CODE.toString()), eq(EXPIRED_DATE)))
+    when(jwtGeneratorService.generateToken(anyString(), eq(BOUWHEER_CODE.toString()), eq(EXPIRED_INSTANT)))
         .thenReturn("jwt-token");
     when(currentUserService.usernameOrDefault(AppConstants.CREATOR)).thenReturn(AppConstants.CREATOR);
     when(apiSbuRepository.save(any(ApiSbu.class))).thenAnswer(invocation -> invocation.getArgument(0));

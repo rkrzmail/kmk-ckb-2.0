@@ -31,6 +31,10 @@ public class JwtGeneratorService {
    * @param expireDate - durasi token valid (contoh: 3600 = 1 jam)
    * @return JWT string siap pakai
    */
+  public String generateToken(String appSecret, String bouwheer, Instant expireInstant) {
+    return generateToken(appSecret, bouwheer, Date.from(expireInstant));
+  }
+
   public String generateToken(String appSecret, String bouwheer, Date expireDate) {
     Date now = Date.from(clock.instant());
     return Jwts.builder()

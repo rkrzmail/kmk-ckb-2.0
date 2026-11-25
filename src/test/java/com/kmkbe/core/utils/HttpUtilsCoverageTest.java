@@ -17,7 +17,6 @@ class HttpUtilsCoverageTest {
     assertThat(new HttpUtils()).isNotNull();
     assertThat(new ExceptionUtils()).isNotNull();
     assertThat(new ObjectUtils()).isNotNull();
-    assertThat(new AESUtils()).isNotNull();
     assertThat(new FileUtils()).isNotNull();
     assertThat(new CommonFormattingUtils()).isNotNull();
     assertThat(new UriUtils()).isNotNull();

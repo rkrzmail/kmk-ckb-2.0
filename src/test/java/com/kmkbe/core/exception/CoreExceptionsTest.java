@@ -6,7 +6,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 class CoreExceptionsTest {
   @Test void apiBusinessException() {
-    var ex = new ApiBusinessException(400, "msg", Map.of("k","v"), Map.of("r","1"));
+    var ex = new ApiBusinessException(400, "msg");
     assertThat(ex.getCode()).isEqualTo(400);
     assertThat(ex.getMessage()).isEqualTo("msg");
   }

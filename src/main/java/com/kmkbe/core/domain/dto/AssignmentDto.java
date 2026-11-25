@@ -4,7 +4,6 @@ import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.UUID;
 
 @Getter
@@ -20,7 +19,7 @@ public class AssignmentDto {
     private UUID bouwheerCode;
     private String bouwheerName;
     private LocalDateTime verifDate;
-    private Date dueDate;
+    private LocalDateTime dueDate;
     private BigDecimal financingAmount;
     private BigDecimal totalInvoiceAmount;
     private Long invoiceQty;

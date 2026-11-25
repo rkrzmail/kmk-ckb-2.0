@@ -42,10 +42,10 @@ public class AppConstants {
   public static final String DATE_FORMAT_YYYY_MM_DD = "yyyy-MM-dd";
   public static final String DATE_FORMAT_YYYYMMDDT_HHMMSSSSSZ = "yyyy-MM-dd'T'HH:mm:ss.SSSZ";
   public static final DateTimeFormatter DATE_FORMAT =
-    DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.forLanguageTag("id-ID"));
+    DateTimeFormatter.ofPattern("dd MMMM yyyy", Locale.forLanguageTag(LANG_ID));
 
-  public static final String bankName ="Bank Mandiri";
-  public static final String accountName="CHANDRA SAKTI UTAMA";
-  public static final String accountNo = "1270098142159";
+  public static final String BANK_NAME = "Bank Mandiri";
+  public static final String ACCOUNT_NAME = "CHANDRA SAKTI UTAMA";
+  public static final String ACCOUNT_NO = "1270098142159";
 
 }

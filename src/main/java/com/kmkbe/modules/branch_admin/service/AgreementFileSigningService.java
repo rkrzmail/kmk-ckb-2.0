@@ -11,6 +11,7 @@ import com.kmkbe.core.domain.repository.DebtorRepository;
 import com.kmkbe.core.domain.repository.FinancingHdrRepository;
 import com.kmkbe.core.domain.repository.NotifDebtorRepository;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.constant.AppConstants;
 import com.kmkbe.modules.common.service.AuditTrailService;
@@ -28,13 +29,17 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class AgreementFileSigningService {
 
+  private static final String FILE_TYPE_E_SIGN_DOC = "E_SIGN_DOC";
+  private static final String AUDIT_AGREEMENT_SIGNING = "AGREEMENT_SIGNING";
+  private static final String SAVE_AUDIT_TRAIL_MESSAGE = "Save Audit Trail !";
+
   private final AgreementFileSigningRepository agreementFileSigningRepository;
   private final FinancingHdrRepository financingHdrRepository;
   private final DebtorRepository debtorRepository;
   private final NotifDebtorRepository notifDebtorRepository;
   private final AuditTrailService auditTrailService;
   private final CurrentUserService currentUserService;
-  private final AgreementFileSigningMapper agreementFileSigningMapper = AgreementFileSigningMapper.INSTANCE;
+  private static final AgreementFileSigningMapper AGREEMENT_FILE_SIGNING_MAPPER = AgreementFileSigningMapper.INSTANCE;
 
   public void saveSigningResult(
     String agreementCode,
@@ -65,27 +70,27 @@ public class AgreementFileSigningService {
 
       entity.setFileTypeCode(fileTypeCode);
       entity.setStamp("signed");
-      entity.setVerifDate(LocalDateTime.now());
+      entity.setVerifDate(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE));
       entity.setSigner(debtor.getKaryawanName());
       entity.setEmailSigner(debtor.getEmail());
       entity.setIdentityNo(debtor.getIdentityNo());
       entity.setDocumentId(documentId);
       entity.setFinancingHdrCode(financingHdrCode);
       entity.setUsrUpd(username);
-      entity.setDtmUpd(LocalDateTime.now());
+      entity.setDtmUpd(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE));
       AgreementFileSigning saveDoc = agreementFileSigningRepository.save(entity);
 
-      log.info("Save Audit Trail !");
-      auditTrailService.record("AGREEMENT_SIGNING", AuditAction.UPDATE, "AgreementFileSigning", saveDoc.getAgreementFileId(), before, toAuditData(saveDoc));
+      log.info(SAVE_AUDIT_TRAIL_MESSAGE);
+      auditTrailService.record(AUDIT_AGREEMENT_SIGNING, AuditAction.UPDATE, "AgreementFileSigning", saveDoc.getAgreementFileId(), before, toAuditData(saveDoc));
 
       log.info("Update financing Step");
       updateFinancingStep(financingHdrCode);
 
-      if(fileTypeCode.equals("E_SIGN_DOC")) {
+      if(fileTypeCode.equals(FILE_TYPE_E_SIGN_DOC)) {
         log.info("Create signing notification !");
         createSigningNotification(financingHdrCode, username, debtor);
       }
-      agreementFileSigningMapper.entityToDto(saveDoc);
+      AGREEMENT_FILE_SIGNING_MAPPER.entityToDto(saveDoc);
       return;
     } else {
       entity = AgreementFileSigning.builder()
@@ -93,34 +98,34 @@ public class AgreementFileSigningService {
         .fileTypeCode(fileTypeCode)
         .fileName("PERJANJIAN_1A_" + agreementCode + ".pdf")
         .usrCrt(username)
-        .dtmCrt(LocalDateTime.now())
+        .dtmCrt(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE))
         .build();
     }
 
-    entity.setStamp(fileTypeCode.equals("E_SIGN_DOC") ? "Not Signed" : "signed");
-    entity.setVerifDate(fileTypeCode.equals("E_SIGN_DOC") ? null : LocalDateTime.now());
+    entity.setStamp(fileTypeCode.equals(FILE_TYPE_E_SIGN_DOC) ? "Not Signed" : "signed");
+    entity.setVerifDate(fileTypeCode.equals(FILE_TYPE_E_SIGN_DOC) ? null : LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE));
     entity.setSigner(debtor.getKaryawanName());
     entity.setEmailSigner(debtor.getEmail());
     entity.setIdentityNo(debtor.getIdentityNo());
     entity.setDocumentId(documentId);
     entity.setFinancingHdrCode(financingHdrCode);
     entity.setUsrUpd(username);
-    entity.setSignProgress(fileTypeCode.equals("E_SIGN_DOC") ? null:"1/1");
-    entity.setDtmUpd(LocalDateTime.now());
+    entity.setSignProgress(fileTypeCode.equals(FILE_TYPE_E_SIGN_DOC) ? null:"1/1");
+    entity.setDtmUpd(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE));
     AgreementFileSigning saveDoc = agreementFileSigningRepository.save(entity);
 
-    log.info("Save Audit Trail !");
-    auditTrailService.record("AGREEMENT_SIGNING", AuditAction.CREATE, "AgreementFileSigning", saveDoc.getAgreementFileId(), null, toAuditData(saveDoc));
+    log.info(SAVE_AUDIT_TRAIL_MESSAGE);
+    auditTrailService.record(AUDIT_AGREEMENT_SIGNING, AuditAction.CREATE, "AgreementFileSigning", saveDoc.getAgreementFileId(), null, toAuditData(saveDoc));
 
     log.info("Update financing Step");
     updateFinancingStep(financingHdrCode);
 
-    if(fileTypeCode.equals("E_SIGN_DOC")){
+    if(fileTypeCode.equals(FILE_TYPE_E_SIGN_DOC)){
       log.info("Create signing notification !");
       createSigningNotification(financingHdrCode, username, debtor);
 
     }
-    agreementFileSigningMapper.entityToDto(saveDoc);
+    AGREEMENT_FILE_SIGNING_MAPPER.entityToDto(saveDoc);
   }
 
   private void updateFinancingStep(String financingHdrCode) {
@@ -129,11 +134,11 @@ public class AgreementFileSigningService {
         FinancingStepAuditData before = toFinancingStepAuditData(finHdr);
         finHdr.setFinancingStep(finHdr.getFinancingStep().equals("GOLIVE")?finHdr.getFinancingStep():"SIGNING");
         finHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
-        finHdr.setDtmUpd(LocalDateTime.now());
+        finHdr.setDtmUpd(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE));
         FinancingHdr saved = financingHdrRepository.save(finHdr);
 
-        log.info("Save Audit Trail !");
-        auditTrailService.record("AGREEMENT_SIGNING", AuditAction.UPDATE, "FinancingHdr", saved.getFinancingHdrCode(), before, toFinancingStepAuditData(saved));
+        log.info(SAVE_AUDIT_TRAIL_MESSAGE);
+        auditTrailService.record(AUDIT_AGREEMENT_SIGNING, AuditAction.UPDATE, "FinancingHdr", saved.getFinancingHdrCode(), before, toFinancingStepAuditData(saved));
 
       });
   }
@@ -150,7 +155,7 @@ public class AgreementFileSigningService {
       .financingHdrCode(financingHdrCode)
       .custCode(custCode)
       .usrCrt(username)
-      .dtmCrt(LocalDateTime.now())
+      .dtmCrt(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE))
       .build());
   }
 

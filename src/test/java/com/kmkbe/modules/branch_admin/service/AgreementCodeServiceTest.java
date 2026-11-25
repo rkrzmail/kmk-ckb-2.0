@@ -19,7 +19,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -30,6 +29,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,15 +56,35 @@ class AgreementCodeServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new AgreementCodeService();
-        ReflectionTestUtils.setField(service, "agreementRepository", agreementRepository);
-        ReflectionTestUtils.setField(service, "financingHdrRepository", financingHdrRepository);
-        ReflectionTestUtils.setField(service, "emailAo", emailAo);
-        ReflectionTestUtils.setField(service, "debtorRepository", debtorRepository);
-        ReflectionTestUtils.setField(service, "authRemoteService", authRemoteService);
+        service = new AgreementCodeService(agreementRepository, financingHdrRepository, emailAo,
+                debtorRepository, authRemoteService);
         BaseLdapRemoteResponseDto<String> jwtResponse = new BaseLdapRemoteResponseDto<>();
         jwtResponse.setData("jwt-token");
         when(authRemoteService.fetchAuthJwt()).thenReturn(jwtResponse);
+    }
+
+    @Test
+    void getAgreementsByFinancingHdrCodeUsesFreshJwtTokenForEveryRequest() {
+        FinancingHdr financingHdr = financingHdr(customer("Agreement Customer"), bouwheer());
+        Agreement agreement = Agreement.builder().agreementCode("AGR-TOKEN").financingHdr(financingHdr).build();
+        when(agreementRepository.findByFinancingHdr_FinancingHdrCode(FINANCING_HDR_CODE))
+                .thenReturn(List.of(agreement));
+        when(financingHdrRepository.findBranchCodeByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn("BDG");
+        when(financingHdrRepository.findDebtorNameByFinancingHdrCode(FINANCING_HDR_CODE)).thenReturn("Debtor Name");
+        when(debtorRepository.findActiveSignerByDebtorName("Debtor Name")).thenReturn(List.of());
+        BaseLdapRemoteResponseDto<String> firstToken = new BaseLdapRemoteResponseDto<>();
+        firstToken.setData("jwt-one");
+        BaseLdapRemoteResponseDto<String> secondToken = new BaseLdapRemoteResponseDto<>();
+        secondToken.setData("jwt-two");
+        when(authRemoteService.fetchAuthJwt()).thenReturn(firstToken, secondToken);
+        when(emailAo.getEmailByPosition("BDG", "RM", "jwt-one")).thenReturn(List.of());
+        when(emailAo.getEmailByPosition("BDG", "RM", "jwt-two")).thenReturn(List.of());
+
+        service.getAgreementsByFinancingHdrCode(FINANCING_HDR_CODE);
+        service.getAgreementsByFinancingHdrCode(FINANCING_HDR_CODE);
+
+        verify(emailAo).getEmailByPosition("BDG", "RM", "jwt-one");
+        verify(emailAo).getEmailByPosition("BDG", "RM", "jwt-two");
     }
 
     @Test

@@ -31,7 +31,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Collections;
-import java.util.Date;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
+import java.time.LocalDate;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
@@ -162,9 +164,9 @@ class ApiSbuControllerTest {
     // When & Then
     mockMvc.perform(post("/api/v1/api-sbu")
         .contentType(MediaType.APPLICATION_JSON)
-        .content(new ObjectMapper().writeValueAsString(ApiSbuRequest.builder()
+        .content(new ObjectMapper().registerModule(new JavaTimeModule()).writeValueAsString(ApiSbuRequest.builder()
           .bouwheerCode("TEST")
-          .expiredDate(new Date())
+          .expiredDate(LocalDate.now())
           .sesStatus("ACTIVE")
           .appPath("/TEST")
           .appName("/TEST")
@@ -185,9 +187,9 @@ class ApiSbuControllerTest {
     // When & Then
     mockMvc.perform(put("/api/v1/api-sbu/" + mockID)
         .contentType(MediaType.APPLICATION_JSON)
-        .content(new ObjectMapper().writeValueAsString(ApiSbuRequest.builder()
+        .content(new ObjectMapper().registerModule(new JavaTimeModule()).writeValueAsString(ApiSbuRequest.builder()
           .bouwheerCode("TEST")
-          .expiredDate(new Date())
+          .expiredDate(LocalDate.now())
           .sesStatus("ACTIVE")
           .appPath("/TEST")
           .appName("/TEST")

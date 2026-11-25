@@ -26,11 +26,13 @@ spring:
           max-wait: '10000'
           max-idle: '10'
       port: '6379'
-      password: ''
-      host: localhost
+      password: 'D4nAsaKt1@2o26'
+      host: 172.21.10.76
     mongodb:
       port: '27017'
-      host: localhost
+      host: 172.21.10.76
+      username: danasakti
+      password: D4nAsaKt1@2o26
       database: kmklog
   jpa:
     hibernate:
@@ -42,7 +44,7 @@ spring:
   boot:
     admin:
       client:
-        url: http://localhost:9000
+        url: http://localhost:9999
         username: csul@nikita.co.id
         instance:
           name: Kmk-Digital-2.0
@@ -154,7 +156,7 @@ feign:
       password: RamcoVDC2026!
       client-secret: SecretRamco2026!
   confins:
-    url: https://uat-confinsr3.csulfinance.com
+    url: https://confinsr3.csulfinance.com
     adins-key: VlBJZllVQTZyUk5acW9FQVg3Yk9oSTlLT1lsRWUzMkllU1ZlZVZtaTExZ1NZUz0=
   esign:
     base-url: ${FEIGN_ESIGN_BASE_URL:https://gdkwebserver.ad-ins.com/adimobile/demo/esign/services/external}

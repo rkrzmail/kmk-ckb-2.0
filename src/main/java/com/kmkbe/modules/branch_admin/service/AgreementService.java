@@ -48,19 +48,23 @@ import org.springframework.web.multipart.MultipartFile;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.text.NumberFormat;
-import java.sql.Timestamp;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Locale;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class AgreementService {
+  private static final String AGREEMENT_AUDIT_MODULE = "AGREEMENT";
+  private static final String FINANCING_INVOICE_NOT_FOUND_MESSAGE = "Financing Invoice not found or not valid";
+  private static final String BANK_NAME_KEY = "bankName";
+  private static final String BANK_ACCOUNT_NO_KEY = "accountNo";
+
   private final MstFileTypeRepository mstFileTypeRepository;
   private final AgreementFileRepository agreementFileRepository;
   private final AgreementRepository agreementRepository;
@@ -120,54 +124,17 @@ public class AgreementService {
     PaginationRequest request
   ) throws JsonProcessingException {
     try {
-      int pageNo = 0, pageSize = 10;
-
-      if (request.getPageNo() != null) {
-        pageNo = request.getPageNo();
-      }
-      if (request.getPageSize() != null) {
-        pageSize = request.getPageSize();
-      }
-
+      int pageNo = request.getPageNo() != null ? request.getPageNo() : 0;
+      int pageSize = request.getPageSize() != null ? request.getPageSize() : 10;
       if (pageNo > 0) {
         pageNo = pageNo - 1;
       }
 
-      boolean searching = request.getSearchBy() != null && request.getSearchValue() != null
-        && !request.getSearchValue().isBlank();
-      Page<Map<String, Object>> page = searching
-        ? agreementRepository.findAllListByCwrAndFinancingSearch(
-          cwrCode, financingHdrCode, request.getSearchBy().toLowerCase(java.util.Locale.ROOT),
-          request.getSearchValue().trim(), PageRequest.of(pageNo, pageSize, PaginationSort.agreements(request)))
-        : agreementRepository.findAllListByCwrAndFinancingRaw(
-        cwrCode,
-        financingHdrCode,
-        PageRequest.of(pageNo, pageSize, PaginationSort.agreements(request))
-      );
-
-      Map<String, Object> obj = findCsulBank();
-
-      List<AgreementDto> result = page
-        .stream()
-        .map((e) ->
-          AgreementDto.builder()
-            .no(e.get("no") != null ? Integer.parseInt(e.get("no").toString()) : 0)
-            .cwrCode(cwrCode)
-            .agreementNo(e.get("agreement_code") != null ? e.get("agreement_code").toString() : null)
-            .financingHdrCode(e.get("financing_hdr_code") != null ? UUID.fromString(e.get("financing_hdr_code").toString()) : null)
-            .bouwheerCode(e.get("bouwheer_code") != null ? UUID.fromString(e.get("bouwheer_code").toString()) : null)
-            .custCode(e.get("cust_code") != null ? UUID.fromString(e.get("cust_code").toString()) : null)
-            .bouwheerName(e.get("bouwheer_name") != null ? e.get("bouwheer_name").toString() : null)
-            .custName(e.get("cust_name") != null ? e.get("cust_name").toString() : null)
-            .bankName(obj.get("bankName").toString())
-            .rekeningNo(obj.get("accountNo").toString())
-            .financingAmt(new BigDecimal(e.get("financing_amt") != null ? Double.parseDouble(e.get("financing_amt").toString()) : 0, MathContext.DECIMAL64))
-            .disburseDate(e.get("disburse_date") != null ? Timestamp.valueOf(e.get("disburse_date").toString()) : null)
-            .disburseAmt(new BigDecimal(e.get("disburse_amt") != null ? Double.parseDouble(e.get("disburse_amt").toString()) : 0, MathContext.DECIMAL64))
-            .currency(e.get("currency") != null ? e.get("currency").toString() : null)
-            .build()
-        )
-        .collect(Collectors.toList());
+      Page<Map<String, Object>> page = findAgreementPage(cwrCode, financingHdrCode, request, pageNo, pageSize);
+      Map<String, Object> bank = findCsulBank();
+      List<AgreementDto> result = page.stream()
+        .map(row -> toAgreementDto(row, cwrCode, bank))
+        .toList();
 
       return PaginationResult.<AgreementDto>builder()
         .currentPage(pageNo + 1)
@@ -179,6 +146,51 @@ public class AgreementService {
       log.error("list, error {}", e.getMessage());
       throw e;
     }
+  }
+
+  private Page<Map<String, Object>> findAgreementPage(
+    String cwrCode,
+    String financingHdrCode,
+    PaginationRequest request,
+    int pageNo,
+    int pageSize
+  ) {
+    boolean searching = request.getSearchBy() != null && request.getSearchValue() != null
+      && !request.getSearchValue().isBlank();
+    PageRequest pageable = PageRequest.of(pageNo, pageSize, PaginationSort.agreements(request));
+    if (searching) {
+      return agreementRepository.findAllListByCwrAndFinancingSearch(
+        cwrCode, financingHdrCode, request.getSearchBy().toLowerCase(Locale.ROOT),
+        request.getSearchValue().trim(), pageable);
+    }
+    return agreementRepository.findAllListByCwrAndFinancingRaw(cwrCode, financingHdrCode, pageable);
+  }
+
+  private AgreementDto toAgreementDto(Map<String, Object> row, String cwrCode, Map<String, Object> bank) {
+    return AgreementDto.builder()
+      .no(row.get("no") != null ? Integer.parseInt(row.get("no").toString()) : 0)
+      .cwrCode(cwrCode)
+      .agreementNo(row.get("agreement_code") != null ? row.get("agreement_code").toString() : null)
+      .financingHdrCode(row.get("financing_hdr_code") != null ? UUID.fromString(row.get("financing_hdr_code").toString()) : null)
+      .bouwheerCode(row.get("bouwheer_code") != null ? UUID.fromString(row.get("bouwheer_code").toString()) : null)
+      .custCode(row.get("cust_code") != null ? UUID.fromString(row.get("cust_code").toString()) : null)
+      .bouwheerName(row.get("bouwheer_name") != null ? row.get("bouwheer_name").toString() : null)
+      .custName(row.get("cust_name") != null ? row.get("cust_name").toString() : null)
+      .bankName(bank.get(BANK_NAME_KEY).toString())
+      .rekeningNo(bank.get(BANK_ACCOUNT_NO_KEY).toString())
+      .financingAmt(toDecimal(row.get("financing_amt")))
+      .disburseDate(toLocalDate(row.get("disburse_date")))
+      .disburseAmt(toDecimal(row.get("disburse_amt")))
+      .currency(row.get("currency") != null ? row.get("currency").toString() : null)
+      .build();
+  }
+
+  private LocalDate toLocalDate(Object value) {
+    return value == null ? null : LocalDateTime.parse(value.toString().replace(' ', 'T')).toLocalDate();
+  }
+
+  private static BigDecimal toDecimal(Object value) {
+    return new BigDecimal(value == null ? "0" : value.toString(), MathContext.DECIMAL64);
   }
 
   public String upload(
@@ -225,19 +237,19 @@ public class AgreementService {
           .filePath(FileUtils.getFilePathFromFullPath(uploadedPath))
           .contentType(multipartFile.getContentType())
           .usrCrt(user.getUsername())
-          .dtmCrt(LocalDateTime.now())
+          .dtmCrt(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE))
           .build();
 
         AgreementFile savedAgreementFile = agreementFileRepository.save(agreementFile);
-        auditTrailService.record("AGREEMENT", AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), null, toAgreementFileAuditData(savedAgreementFile));
+        auditTrailService.record(AGREEMENT_AUDIT_MODULE, AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), null, toAgreementFileAuditData(savedAgreementFile));
 
       } else {
         agreementFile.setFileName(uploadName);
         agreementFile.setFilePath(FileUtils.getFilePathFromFullPath(uploadedPath));
-        agreementFile.setDtmUpd(LocalDateTime.now());
+        agreementFile.setDtmUpd(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE));
         agreementFile.setUsrUpd(user.getUsername());
         AgreementFile savedAgreementFile = agreementFileRepository.save(agreementFile);
-        auditTrailService.record("AGREEMENT", AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), before, toAgreementFileAuditData(savedAgreementFile));
+        auditTrailService.record(AGREEMENT_AUDIT_MODULE, AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), before, toAgreementFileAuditData(savedAgreementFile));
       }
 
       // Split the URL by the '/' delimiter
@@ -251,138 +263,147 @@ public class AgreementService {
     }
   }
 
-  public InquiryAgreementDto inquiryAgreementCwr(
-    String cwrCode,
-    String agreementNo
-  ) throws JsonProcessingException {
+  public InquiryAgreementDto inquiryAgreementCwr(String agreementNo) throws JsonProcessingException {
     try {
       validateAgreement(agreementNo);
-      CommonInvalidException ex = CommonInvalidException.builder()
-        .title("Peringatan")
-        .message("Tidak bisa mencari Agreement, terjadi kesalahan")
-        .build();
-
-      final List<InquiryAgreementCwrDto> data;
-      try {
-        BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreementByNoAgreement(
-          InquiryAgreementRemoteRequest.builder()
-            .agreementNo(agreementNo)
-            .build()
-        );
-
-        data = response.getData();
-      } catch (Exception e) {
-        ex.setMessage(String.valueOf(e.getMessage()));
-        throw ex;
-      }
-
+      List<InquiryAgreementCwrDto> data = fetchInquiryAgreement(agreementNo, null, true);
       if (data != null && !data.isEmpty()) {
-        Map<String, Object> obj = findCsulBank();
+        Map<String, Object> bank = findCsulBank();
         return InquiryAgreementDto.builder()
-          .bankName(obj.get("bankName").toString())
-          .rekeningNo(obj.get("accountNo").toString())
+          .bankName(bank.get(BANK_NAME_KEY).toString())
+          .rekeningNo(bank.get(BANK_ACCOUNT_NO_KEY).toString())
           .currency(data.getFirst().getCurrency())
-          .disburseAmt(new BigDecimal(data.getFirst().getNtfAmt(), MathContext.DECIMAL64))
+          .disburseAmt(toDecimal(data.getFirst().getNtfAmt()))
           .build();
-      } else {
-        ex.setMessage("Failed to inquiry Agreement result null ");
       }
 
-      throw ex;
+      throw CommonInvalidException.builder()
+        .title("Peringatan")
+        .message("Failed to inquiry Agreement result null ")
+        .build();
     } catch (Exception e) {
       log.error("inquiryAgreementCwr: error {}", e.getMessage());
       throw e;
     }
   }
 
-  @Transactional
+  @Transactional(rollbackFor = Exception.class)
   public void createInquiryAgreement(
     MstUser user,
     CreateInquiryAgreementRequest request
   ) throws Exception {
     try {
       validateAgreement(request.getAgreementNo());
-      final List<InquiryAgreementCwrDto> data;
-      try {
-        BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreementByNoAgreement(
-          InquiryAgreementRemoteRequest.builder()
-            .agreementNo(request.getAgreementNo())
-            .build()
-        );
+      List<InquiryAgreementCwrDto> data = fetchInquiryAgreement(
+        request.getAgreementNo(),
+        "Tidak bisa mencari Data Pencairan, Pastikan No. Pencairan benar",
+        false
+      );
 
-        data = response.getData();
-      } catch (Exception e) {
-        throw CommonInvalidException.builder()
-          .title("Peringatan")
-          .message("Tidak bisa mencari Data Pencairan, Pastikan No. Pencairan benar")
-          .build();
-      }
-
-      final FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(request.getFinancingHdrCode()))
+      FinancingHdr financingHdr = financingHdrRepository.findByFinancingHdrCode(UUID.fromString(request.getFinancingHdrCode()))
         .orElseThrow(() -> new IllegalStateException("Financing not found or not valid"));
-      final Customer customer = financingHdr.getCustomer();
+      Customer customer = financingHdr.getCustomer();
       if (customer == null) {
         throw new IllegalStateException("Customer not found or not valid");
       }
 
-      List<Agreement> agreements = new ArrayList<>();
-      if (!data.isEmpty()) {
-        for (InquiryAgreementCwrDto inquiryAgreement : data) {
-          String cwrCode = inquiryAgreement.getCwrNo();
-          final Cwr cwr = cwrRepository.findTopByCwrCode(cwrCode)
-            .orElseThrow(() -> new IllegalStateException("Nomor CWR tidak ditemukan, pastikan nomor CWR benar"));
-
-          if (!inquiryAgreement.getCwrNo().equalsIgnoreCase(request.getCwrCode())) {
-            throw new IllegalStateException("Nomor CWR tidak sesuai dengan Nomor Pencairan, pastikan Nomor Pencairan benar");
-          }
-
-          agreements.add(
-            Agreement.builder()
-              .agreementCode(inquiryAgreement.getAgrmntNo())
-              .cwr(cwr)
-              .applicationCode(inquiryAgreement.getAppNo())
-              .financingHdr(financingHdr)
-              .facility(inquiryAgreement.getFacility())
-              .currency(inquiryAgreement.getCurrency())
-              .financingAmt(inquiryAgreement.getNtfAmt())
-              .status(inquiryAgreement.getStatus())
-              .productOffering(inquiryAgreement.getProductOffering())
-              .usrCrt(user.getUsrCrt())
-              .dtmCrt(DateTimeUtils.now())//DateTimeUtils.now()
-              .build()
-          );
-        }
-      }
-
-      if (!agreements.isEmpty()) {
-        Iterable<Agreement> savedAgreements = agreementRepository.saveAll(agreements);
-        auditTrailService.record(
-          "AGREEMENT",
-          AuditAction.CREATE,
-          "Agreement",
-          request.getAgreementNo(),
-          null,
-          agreementsAuditData(savedAgreements)
-        );
-      }
+      List<Agreement> agreements = buildAgreements(user, request, financingHdr, data);
+      saveAgreements(agreements, request.getAgreementNo());
 
       FinancingAgreementAuditData before = toFinancingAgreementAuditData(financingHdr);
-      proceedFinancing(
-        financingHdr,
-        request,
-        customer
-      );
+      proceedFinancing(financingHdr, request, customer);
+      setFinancingInProcess(financingHdr);
 
-      // Branch admin melakukan singkron agreement
-      financingHdr.setFinancingStatus(financingHdr.getFinancingStatus().equalsIgnoreCase("LIVE")?financingHdr.getFinancingStatus():"INPROCESS");
-      financingHdr.setFinancingStep(financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")?financingHdr.getFinancingStep():"INPROCESS");
       FinancingHdr savedFinancing = financingHdrRepository.save(financingHdr);
-      auditTrailService.record("AGREEMENT", AuditAction.UPDATE, "FinancingHdr", savedFinancing.getFinancingHdrCode(), before, toFinancingAgreementAuditData(savedFinancing));
+      auditTrailService.record(AGREEMENT_AUDIT_MODULE, AuditAction.UPDATE, "FinancingHdr", savedFinancing.getFinancingHdrCode(), before, toFinancingAgreementAuditData(savedFinancing));
       sendContractUploadRequiredNotification(savedFinancing, request.getAgreementNo(), request.getCwrCode());
     } catch (Exception e) {
       log.error("createAgreement: error {}", e.getMessage());
       throw e;
     }
+  }
+
+  private List<InquiryAgreementCwrDto> fetchInquiryAgreement(
+    String agreementNo,
+    String fallbackMessage,
+    boolean useCauseMessage
+  ) throws JsonProcessingException {
+    try {
+      BaseMstRemoteResponseDto<List<InquiryAgreementCwrDto>> response = cwrRemoteService.inquiryAgreementByNoAgreement(
+        InquiryAgreementRemoteRequest.builder()
+          .agreementNo(agreementNo)
+          .build()
+      );
+      return response.getData();
+    } catch (Exception e) {
+      throw CommonInvalidException.builder()
+        .title("Peringatan")
+        .message(useCauseMessage ? String.valueOf(e.getMessage()) : fallbackMessage)
+        .build();
+    }
+  }
+
+  private List<Agreement> buildAgreements(
+    MstUser user,
+    CreateInquiryAgreementRequest request,
+    FinancingHdr financingHdr,
+    List<InquiryAgreementCwrDto> data
+  ) {
+    if (data.isEmpty()) {
+      return List.of();
+    }
+
+    List<Agreement> agreements = new ArrayList<>();
+    for (InquiryAgreementCwrDto inquiryAgreement : data) {
+      Cwr cwr = cwrRepository.findTopByCwrCode(inquiryAgreement.getCwrNo())
+        .orElseThrow(() -> new IllegalStateException("Nomor CWR tidak ditemukan, pastikan nomor CWR benar"));
+
+      if (!inquiryAgreement.getCwrNo().equalsIgnoreCase(request.getCwrCode())) {
+        throw new IllegalStateException("Nomor CWR tidak sesuai dengan Nomor Pencairan, pastikan Nomor Pencairan benar");
+      }
+
+      agreements.add(
+        Agreement.builder()
+          .agreementCode(inquiryAgreement.getAgrmntNo())
+          .cwr(cwr)
+          .applicationCode(inquiryAgreement.getAppNo())
+          .financingHdr(financingHdr)
+          .facility(inquiryAgreement.getFacility())
+          .currency(inquiryAgreement.getCurrency())
+          .financingAmt(inquiryAgreement.getNtfAmt())
+          .status(inquiryAgreement.getStatus())
+          .productOffering(inquiryAgreement.getProductOffering())
+          .usrCrt(user.getUsrCrt())
+          .dtmCrt(DateTimeUtils.now())
+          .build()
+      );
+    }
+    return agreements;
+  }
+
+  private void saveAgreements(List<Agreement> agreements, String agreementNo) {
+    if (agreements.isEmpty()) {
+      return;
+    }
+
+    Iterable<Agreement> savedAgreements = agreementRepository.saveAll(agreements);
+    auditTrailService.record(
+      AGREEMENT_AUDIT_MODULE,
+      AuditAction.CREATE,
+      "Agreement",
+      agreementNo,
+      null,
+      agreementsAuditData(savedAgreements)
+    );
+  }
+
+  private void setFinancingInProcess(FinancingHdr financingHdr) {
+    financingHdr.setFinancingStatus(financingHdr.getFinancingStatus().equalsIgnoreCase("LIVE")
+      ? financingHdr.getFinancingStatus()
+      : "INPROCESS");
+    financingHdr.setFinancingStep(financingHdr.getFinancingStep().equalsIgnoreCase("GOLIVE")
+      ? financingHdr.getFinancingStep()
+      : "INPROCESS");
   }
 
   private void proceedFinancing(
@@ -391,12 +412,12 @@ public class AgreementService {
     Customer customer
   ) throws Exception {
     List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
-      .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
+      .orElseThrow(() -> new IllegalStateException(FINANCING_INVOICE_NOT_FOUND_MESSAGE));
 
     List<FinancingSubmissionRequest.FinancingInvoice> financingInvoices = financingDtls.stream()
-      .filter((e) -> e.getInvoice() != null && !StringUtil.isNullOrEmpty(e.getInvoice().getPoNumber()))
-      .map((e) -> FinancingSubmissionRequest.FinancingInvoice.builder()
-        .invoiceAmount(new BigDecimal(e.getInvoice().getInvoiceAmt(), MathContext.DECIMAL64).toString())
+      .filter(e -> e.getInvoice() != null && !StringUtil.isNullOrEmpty(e.getInvoice().getPoNumber()))
+      .map(e -> FinancingSubmissionRequest.FinancingInvoice.builder()
+        .invoiceAmount(toDecimal(e.getInvoice().getInvoiceAmt()).toString())
         .poNumber(e.getInvoice().getPoNumber())
         .reference(e.getInvoice().getCustInvNo())
         .accountingDocument(e.getInvoice().getBouwheerInvNo())
@@ -414,12 +435,12 @@ public class AgreementService {
       financingRemoteService.postedSubmission(
         FinancingSubmissionRequest.builder()
           .vendorCode(customer.getCustExternalCode())
-          .accountNo(obj.get("accountNo").toString())
+          .accountNo(obj.get(BANK_ACCOUNT_NO_KEY).toString())
           .accountName(obj.get("accountName").toString())
-          .bankName(obj.get("bankName").toString())
+          .bankName(obj.get(BANK_NAME_KEY).toString())
           .bankKey(obj.get("bankKey").toString())
           .financingCode(request.getFinancingHdrCode())
-          .financingAmount(new BigDecimal(financingHdr.getFinancingAmt(), MathContext.DECIMAL64).toString())
+          .financingAmount(toDecimal(financingHdr.getFinancingAmt()).toString())
           .financingInvoices(financingInvoices)
           .build()
       );
@@ -429,7 +450,7 @@ public class AgreementService {
   public void sendBouwheerPaymentNotification(FinancingHdr financingHdr) {
     try {
       List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
-        .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
+        .orElseThrow(() -> new IllegalStateException(FINANCING_INVOICE_NOT_FOUND_MESSAGE));
       Map<String, Object> bank = findCsulBank();
 
       emailService.sendNotificationBouwheerPayment(
@@ -438,9 +459,9 @@ public class AgreementService {
           .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
           .vendorCode(financingHdr.getCustomer().getCustExternalCode())
           .vendorName(financingHdr.getCustomer().getCustName())
-          .accountNo(bank.get("accountNo").toString())
+          .accountNo(bank.get(BANK_ACCOUNT_NO_KEY).toString())
           .bankAccount(bank.get("accountName").toString())
-          .bankName(bank.get("bankName").toString())
+          .bankName(bank.get(BANK_NAME_KEY).toString())
           .bankKey(bank.get("bankKey").toString())
           .tglPengajuan(DateTimeUtils.formatToDate(financingHdr.getDtmCrt()))
           .invoices(toInvoiceEmailPayloads(financingHdr, financingDtls))
@@ -459,7 +480,7 @@ public class AgreementService {
   public void sendDebtorDisbursementNotification(FinancingHdr financingHdr) {
     try {
       List<FinancingDtl> financingDtls = financingDtlRepository.findAllByFinancingHdr(financingHdr)
-        .orElseThrow(() -> new IllegalStateException("Financing Invoice not found or not valid"));
+        .orElseThrow(() -> new IllegalStateException(FINANCING_INVOICE_NOT_FOUND_MESSAGE));
       Customer customer = financingHdr.getCustomer();
       String phoneNumber = customer.getCustMobilePhone();
 
@@ -473,12 +494,7 @@ public class AgreementService {
         phoneNumber = customer.getPersonal().getPhone();
       }
 
-      double totalFeeAmount = valueOrZero(financingHdr.getAdminFeeAmt())
-        + valueOrZero(financingHdr.getLegalFeeAmtNett())
-        + valueOrZero(financingHdr.getInsuranceFeeAmt())
-        + valueOrZero(financingHdr.getOthersFeeAmt())
-        + valueOrZero(financingHdr.getProvisionFeeAmt())
-        + valueOrZero(financingHdr.getSurveyFeeAmtNett());
+      double totalFeeAmount = totalFeeAmount(financingHdr);
 
       emailService.sendNotificationLoanDisbursement(
         customer,
@@ -521,12 +537,7 @@ public class AgreementService {
       }
 
       String branchCode = financingHdr.getMstBranch().getBranchCode();
-      List<String> emails = mstAppRoleFormUserRepository.findActiveBranchAdminEmails(branchCode);
-      List<String> recipients = emails == null ? List.of() : emails.stream()
-        .filter(email -> email != null && !email.isBlank())
-        .map(String::trim)
-        .distinct()
-        .toList();
+      List<String> recipients = resolveBranchAdminRecipients(branchCode);
       if (recipients.isEmpty()) {
         log.warn(
           "Contract upload notification skipped: no active Branch Admin email in DB. financingHdrCode={}, agreementCode={}, branchCode={}",
@@ -546,63 +557,19 @@ public class AgreementService {
         return;
       }
 
-      double totalFeeAmount = valueOrZero(financingHdr.getAdminFeeAmt())
-        + valueOrZero(financingHdr.getLegalFeeAmtNett())
-        + valueOrZero(financingHdr.getInsuranceFeeAmt())
-        + valueOrZero(financingHdr.getOthersFeeAmt())
-        + valueOrZero(financingHdr.getProvisionFeeAmt())
-        + valueOrZero(financingHdr.getSurveyFeeAmtNett());
+      double totalFeeAmount = totalFeeAmount(financingHdr);
       NumberFormat numberFormat = NumberFormat.getNumberInstance(Locale.forLanguageTag("id-ID"));
       numberFormat.setMaximumFractionDigits(2);
-      List<InvoiceEmailPayload> invoices = details.stream()
-        .filter(detail -> detail.getInvoice() != null)
-        .map(detail -> InvoiceEmailPayload.builder()
-          .invoiceNo(detail.getInvoice().getCustInvNo())
-          .description(detail.getInvoice().getInvoiceDescription())
-          .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
-          .invoiceDate(DateTimeUtils.formatToDate(detail.getInvoice().getInvoiceDate()))
-          .invoiceDueDate(DateTimeUtils.formatToDate(detail.getInvoice().getInvoiceDueDate()))
-          .invoiceAmt(numberFormat.format(detail.getInvoice().getInvoiceAmt()))
-          .build())
-        .toList();
+      List<InvoiceEmailPayload> invoices = toContractInvoicePayloads(financingHdr, details, numberFormat);
       if (invoices.isEmpty()) {
         log.warn("Contract upload notification skipped: no valid invoice for financingHdrCode={}", financingHdr.getFinancingHdrCode());
         return;
       }
 
-      Customer customer = financingHdr.getCustomer();
-      AgreementContractEmailPayload payload = AgreementContractEmailPayload.builder()
-          .agreementCode(agreementCode)
-          .financingCode(financingHdr.getFinancingHdrCode().toString())
-          .vendorCode(customer.getCustExternalCode())
-          .vendorName(customer.getCustName())
-          .vendorEmail(customer.getCustEmail())
-          .vendorPhone(customer.getCustMobilePhone())
-          .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
-          .bouwheerPicEmails(financingHdr.getBouwheer().getPicEmail())
-          .branchName(financingHdr.getMstBranch().getBranchName())
-          .submissionDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
-          .cwrCode(cwrCode)
-          .totalInvoiceAmt("Rp " + numberFormat.format(valueOrZero(financingHdr.getTotalInvoiceAmt())))
-          .retention(numberFormat.format(valueOrZero(financingHdr.getRetention())) + "%")
-          .financingAmt("Rp " + numberFormat.format(valueOrZero(financingHdr.getFinancingAmt())))
-          .totalFeeAmt("Rp " + numberFormat.format(totalFeeAmount))
-          .tenor(financingHdr.getTenor() == null ? "-" : financingHdr.getTenor() + " hari")
-          .disburseAmt("Rp " + numberFormat.format(valueOrZero(financingHdr.getDisburseAmt())))
-          .invoices(InvoiceEmailPayload.toHtmlListBody(invoices))
-          .build();
-      String recipientList = String.join(";", recipients);
-      if (TransactionSynchronizationManager.isSynchronizationActive()
-        && TransactionSynchronizationManager.isActualTransactionActive()) {
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-          @Override
-          public void afterCommit() {
-            emailService.sendNotificationContractUploadRequired(recipientList, payload);
-          }
-        });
-      } else {
-        emailService.sendNotificationContractUploadRequired(recipientList, payload);
-      }
+      AgreementContractEmailPayload payload = buildContractEmailPayload(
+        financingHdr, agreementCode, cwrCode, totalFeeAmount, numberFormat, invoices
+      );
+      sendContractNotification(recipients, payload);
     } catch (Exception e) {
       log.error(
         "Contract upload notification failed while resolving Branch Admin emails from DB. financingHdrCode={}, agreementCode={}, branchCode={}",
@@ -612,6 +579,91 @@ public class AgreementService {
         e
       );
     }
+  }
+
+  private List<String> resolveBranchAdminRecipients(String branchCode) {
+    List<String> emails = mstAppRoleFormUserRepository.findActiveBranchAdminEmails(branchCode);
+    if (emails == null) {
+      return List.of();
+    }
+    return emails.stream()
+      .filter(email -> email != null && !email.isBlank())
+      .map(String::trim)
+      .distinct()
+      .toList();
+  }
+
+  private List<InvoiceEmailPayload> toContractInvoicePayloads(
+    FinancingHdr financingHdr,
+    List<FinancingDtl> details,
+    NumberFormat numberFormat
+  ) {
+    return details.stream()
+      .filter(detail -> detail.getInvoice() != null)
+      .map(detail -> InvoiceEmailPayload.builder()
+        .invoiceNo(detail.getInvoice().getCustInvNo())
+        .description(detail.getInvoice().getInvoiceDescription())
+        .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+        .invoiceDate(DateTimeUtils.formatToDate(detail.getInvoice().getInvoiceDate()))
+        .invoiceDueDate(DateTimeUtils.formatToDate(detail.getInvoice().getInvoiceDueDate()))
+        .invoiceAmt(numberFormat.format(detail.getInvoice().getInvoiceAmt()))
+        .build())
+      .toList();
+  }
+
+  private AgreementContractEmailPayload buildContractEmailPayload(
+    FinancingHdr financingHdr,
+    String agreementCode,
+    String cwrCode,
+    double totalFeeAmount,
+    NumberFormat numberFormat,
+    List<InvoiceEmailPayload> invoices
+  ) {
+    Customer customer = financingHdr.getCustomer();
+    return AgreementContractEmailPayload.builder()
+      .agreementCode(agreementCode)
+      .financingCode(financingHdr.getFinancingHdrCode().toString())
+      .vendorCode(customer.getCustExternalCode())
+      .vendorName(customer.getCustName())
+      .vendorEmail(customer.getCustEmail())
+      .vendorPhone(customer.getCustMobilePhone())
+      .bouwheerName(financingHdr.getBouwheer().getBouwheerName())
+      .bouwheerPicEmails(financingHdr.getBouwheer().getPicEmail())
+      .branchName(financingHdr.getMstBranch().getBranchName())
+      .submissionDate(DateTimeUtils.formatToDate(financingHdr.getFinancingDate()))
+      .cwrCode(cwrCode)
+      .totalInvoiceAmt("Rp " + numberFormat.format(valueOrZero(financingHdr.getTotalInvoiceAmt())))
+      .retention(numberFormat.format(valueOrZero(financingHdr.getRetention())) + "%")
+      .financingAmt("Rp " + numberFormat.format(valueOrZero(financingHdr.getFinancingAmt())))
+      .totalFeeAmt("Rp " + numberFormat.format(totalFeeAmount))
+      .tenor(financingHdr.getTenor() == null ? "-" : financingHdr.getTenor() + " hari")
+      .disburseAmt("Rp " + numberFormat.format(valueOrZero(financingHdr.getDisburseAmt())))
+      .invoices(InvoiceEmailPayload.toHtmlListBody(invoices))
+      .build();
+  }
+
+  private void sendContractNotification(List<String> recipients, AgreementContractEmailPayload payload) {
+    String recipientList = String.join(";", recipients);
+    if (TransactionSynchronizationManager.isSynchronizationActive()
+      && TransactionSynchronizationManager.isActualTransactionActive()) {
+      TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+        @Override
+        public void afterCommit() {
+          emailService.sendNotificationContractUploadRequired(recipientList, payload);
+        }
+      });
+    } else {
+      emailService.sendNotificationContractUploadRequired(recipientList, payload);
+    }
+  }
+
+  private double totalFeeAmount(FinancingHdr financingHdr) {
+    return valueOrZero(financingHdr.getAdminFeeAmt())
+      + valueOrZero(financingHdr.getLegalFeeAmtNett())
+      + valueOrZero(financingHdr.getInsuranceFeeAmt())
+      + valueOrZero(financingHdr.getOthersFeeAmt())
+      + valueOrZero(financingHdr.getProvisionFeeAmt())
+      + valueOrZero(financingHdr.getSurveyFeeAmtNett());
   }
 
   private List<InvoiceEmailPayload> toInvoiceEmailPayloads(

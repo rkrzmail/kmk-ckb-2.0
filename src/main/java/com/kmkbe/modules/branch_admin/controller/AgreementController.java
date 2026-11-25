@@ -30,6 +30,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.security.SignatureException;
+import com.kmkbe.core.utils.DateTimeUtils;
+
 import java.time.LocalDateTime;
 
 @Validated
@@ -67,15 +69,11 @@ public class AgreementController {
 
   @GetMapping("/inquiry")
   public CommonResult<InquiryAgreementDto> getInquiryAgreement(
-    @RequestParam("agreementNo") String agreementNo,
-    String cwrCode
+    @RequestParam("agreementNo") String agreementNo
   ) throws JsonProcessingException, SignatureException {
     currentUserService.authenticatedInternalUser();
     return new CommonResult<InquiryAgreementDto>().success(
-      agreementService.inquiryAgreementCwr(
-        cwrCode,
-        agreementNo
-      )
+      agreementService.inquiryAgreementCwr(agreementNo)
     );
   }
 
@@ -167,7 +165,7 @@ public class AgreementController {
     financingHdr.setFinancingStatus(FinancingStatus.IN_PROCESS.getValue());
     financingHdr.setFinancingStep(FinancingStatus.SIGNED.getValue());
     financingHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
-    financingHdr.setDtmUpd(LocalDateTime.now());
+    financingHdr.setDtmUpd(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE));
     financingHdrRepository.save(financingHdr);
 
     /**

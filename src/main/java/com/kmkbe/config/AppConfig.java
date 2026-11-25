@@ -33,14 +33,6 @@ public class AppConfig {
         TimeZone.setDefault(TimeZone.getTimeZone("Asia/Jakarta"));
     }
 
-   /* @Bean
-    @Lazy
-    public RestTemplate restTemplate(ObjectMapper objectMapper) {
-        RestTemplate restTemplate = new RestTemplate();
-        restTemplate.getMessageConverters().add(new ObjectToUrlEncodedConverter(objectMapper));
-        return restTemplate;
-    }*/
-
     // Security issue #4 (SECURITY.md): bean restTemplateByPassSSL dihapus —
     // tidak pernah di-inject komponen produksi dan memakai trust-all SSL.
 

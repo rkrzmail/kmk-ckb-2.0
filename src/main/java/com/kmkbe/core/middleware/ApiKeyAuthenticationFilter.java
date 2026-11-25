@@ -15,14 +15,7 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import java.io.IOException;
 
 public class ApiKeyAuthenticationFilter extends AbstractAuthenticationProcessingFilter {
-    /*@Value("${security.api.key}")
-    private String apiKey;*/
-
     private static final String API_KEY_HEADER = "ApiKey";
-
-    /*public ApiKeyAuthenticationFilter() {
-        super(new RequestHeaderRequestMatcher("ApiKey"));
-    }*/
 
     public ApiKeyAuthenticationFilter(String defaultFilterProcessesUrl) {
         super(defaultFilterProcessesUrl);
@@ -48,12 +41,7 @@ public class ApiKeyAuthenticationFilter extends AbstractAuthenticationProcessing
             throw new IllegalApiKeyException();
         }
 
-       /* if (!provideApiKey.equals(apiKey)) {
-            throw new IllegalApiKeyException();
-        }*/
-
         Authentication auth = new ApiKeyAuthenticationService(provideApiKey);
-        //auth.setAuthenticated(true);
         return getAuthenticationManager().authenticate(auth);
     }
 

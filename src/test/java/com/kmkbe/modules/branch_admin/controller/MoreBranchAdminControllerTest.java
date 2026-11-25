@@ -62,7 +62,7 @@ class MoreBranchAdminControllerTest {
   @Test
   void agreementControllerListInquiry() throws Exception {
     when(agreementService.list(eq("CWR"), eq("F"), any(BasePaginationRequest.class))).thenReturn(PaginationResult.empty(1));
-    when(agreementService.inquiryAgreementCwr("CWR","A")).thenReturn(new InquiryAgreementDto());
+    when(agreementService.inquiryAgreementCwr("A")).thenReturn(new InquiryAgreementDto());
     MockMvc m = mvc(new AgreementController(agreementService, mock(com.kmkbe.modules.remote.service.FinancingRemoteService.class),
       financingHdrService, mock(com.kmkbe.core.domain.repository.FinancingHdrRepository.class), currentUserService, mock(AgreementFileSigningService.class)));
     m.perform(get("/api/v1/cwr/agreement/list/CWR/F")).andExpect(status().isOk());

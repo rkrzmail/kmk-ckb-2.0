@@ -4,13 +4,14 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import com.fasterxml.jackson.databind.PropertyNamingStrategies;
 import com.fasterxml.jackson.databind.annotation.JsonNaming;
-import lombok.*;
+import lombok.Builder;
+import lombok.Getter;
 
 @Getter
 @Builder
 @JsonPropertyOrder({"LoginID", "Password", "ApplicationScheme"})
 @JsonNaming(PropertyNamingStrategies.UpperCamelCaseStrategy.class)
-public class ActiveDirectoryRemoteRequest {
+public final class ActiveDirectoryRemoteRequest {
     @Builder.Default
     @JsonProperty("LoginID")
     private String loginID = "csul.staging";

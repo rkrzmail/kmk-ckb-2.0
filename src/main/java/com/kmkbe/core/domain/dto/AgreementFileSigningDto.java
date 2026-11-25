@@ -11,7 +11,6 @@ import java.io.Serializable;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-//@NoArgsConstructor
 public class AgreementFileSigningDto implements Serializable {
     private Long agreementFileId;
     private String agreementCode;
@@ -20,8 +19,6 @@ public class AgreementFileSigningDto implements Serializable {
     private String stamp;
     private String usrCrt;
     private String dtmCrt;
-//    private String usrUpd;
-//    private String dtmUpd;
     private String documentId;
     private String identityNo;
     private String financingHdrCode;

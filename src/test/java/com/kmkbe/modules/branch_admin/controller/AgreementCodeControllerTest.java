@@ -10,6 +10,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -18,12 +19,24 @@ class AgreementCodeControllerTest {
   @Test
   void getAgreements() throws Exception {
     AgreementCodeService svc = mock(AgreementCodeService.class);
-    AgreementCodeController c = new AgreementCodeController();
-    var f = AgreementCodeController.class.getDeclaredField("agreementCodeService"); f.setAccessible(true); f.set(c, svc);
+    AgreementCodeController c = new AgreementCodeController(svc);
     UUID code = UUID.randomUUID();
     SitDto dto = SitDto.builder().agreementCode("A").build();
     when(svc.getAgreementsByFinancingHdrCode(code)).thenReturn(new CommonResult<SitDto>().success(dto));
     MockMvc mvc = MockMvcBuilders.standaloneSetup(c).setMessageConverters(new MappingJackson2HttpMessageConverter()).build();
     mvc.perform(get("/api/v1/sit/agreement/{c}", code)).andExpect(status().isOk()).andExpect(jsonPath("$.isSuccess").value(true));
+    verify(svc).getAgreementsByFinancingHdrCode(code);
+  }
+
+  @Test
+  void getAgreementsByFinancingHdrCodeDelegatesToService() {
+    AgreementCodeService svc = mock(AgreementCodeService.class);
+    AgreementCodeController controller = new AgreementCodeController(svc);
+    UUID code = UUID.randomUUID();
+    CommonResult<SitDto> result = new CommonResult<SitDto>().success(SitDto.builder().agreementCode("A").build());
+    when(svc.getAgreementsByFinancingHdrCode(code)).thenReturn(result);
+
+    assertEquals(result, controller.getAgreementsByFinancingHdrCode(code));
+    verify(svc).getAgreementsByFinancingHdrCode(code);
   }
 }
