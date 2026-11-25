@@ -1,12 +1,5 @@
 #ENV
 env: prod
-# Non-prod: exposure penuh untuk troubleshooting (security issue #8)
-management:
-  endpoints:
-    web:
-      exposure:
-        include: info, health
-      base-path: /api/monitoring
 
 spring:
   flyway:
@@ -54,16 +47,25 @@ spring:
     url: jdbc:postgresql://aurora-kmkprod.cluster-cc6z1g8cfqcv.ap-southeast-3.rds.amazonaws.com:5432/kmkds?stringtype=unspecified
     username: postgres
   mail:
-    host: srv150.niagahoster.com
-    port: 465
+    host: smtp.gmail.com
+    port: 587
     protocol: smtp
-    username: csul@nikita.co.id
-    password: DArS!OP#csul6?6Uu
+    username: dana-sakti@csulfinance.id
+    password: ixsm iudk cvzj aotp
     properties:
       mail.smtp.ssl.trust: '*'
       mail.smtp.auth: true
       mail.smtp.starttls.enable: true
 
+# Non-prod: exposure penuh untuk troubleshooting (security issue #8)
+management:
+  endpoints:
+    web:
+      exposure:
+        include: info, health
+      base-path: /api/monitoring
+
+# Logging
 logging:
   level:
     org:
@@ -114,7 +116,7 @@ custom:
   mongodb:
     collection: event
 
-# API
+# CSUL API
 csul:
   confins:
     mou:
@@ -151,7 +153,7 @@ csul:
 feign:
   csul:
     ckb:
-      url: https://api-ckbvendorportal.dipstrategy.co.id
+      url: "http://10.144.250.16:5000"
       username: ramco
       password: RamcoVDC2026!
       client-secret: SecretRamco2026!
