@@ -745,7 +745,7 @@ public class LoanSubmissionService {
           }
           finHdr.setFinancingAmt(simulationHist.getFinancingAmt());
           FinancingHdr savedFinancing = financingHdrRepository.save(finHdr);
-          auditTrailService.record(
+          auditTrailService.recordEvent(
             "LOAN_SUBMISSION",
             AuditAction.UPDATE,
             "FinancingHdr",
@@ -835,7 +835,7 @@ public class LoanSubmissionService {
         }
       }
       SimulationHist savedSimulation = simulationHistRepository.save(simulationHist);
-      auditTrailService.record(
+      auditTrailService.recordEvent(
         "LOAN_SUBMISSION_SIMULATION",
         beforeSimulation == null ? AuditAction.GENERATE : AuditAction.UPDATE,
         "SimulationHist",
@@ -844,7 +844,7 @@ public class LoanSubmissionService {
         toSimulationAuditData(savedSimulation)
       );
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("Failed to save simulation", e);
       throw new Exception(e.getMessage());
     }
 
@@ -1068,7 +1068,7 @@ public class LoanSubmissionService {
     /**
      * Insert Audit trail
      */
-    auditTrailService.record(
+    auditTrailService.recordEvent(
       "LOAN_SUBMISSION_SIMULATION",
       AuditAction.CREATE,
       "FinancingHdr",
@@ -1346,7 +1346,7 @@ public class LoanSubmissionService {
       log.info("Save financing finalFinancingHdr {} ", financing.getFinancingHdrCode());
       financingHdrRepository.save(financing);
 
-      auditTrailService.record(
+      auditTrailService.recordEvent(
         "LOAN_SUBMISSION",
         AuditAction.SUBMIT,
         "FinancingHdr",

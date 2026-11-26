@@ -1,5 +1,6 @@
 package com.kmkbe.scheduled;
 
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.loan_submission.service.FinancingService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,7 @@ public class ScheduledTasks {
     String jobName = "UPDATE_STATUS_AGREEMENT";
     SchedulerLog history = new SchedulerLog();
     history.setJobName(jobName);
-    history.setStartTime(LocalDateTime.now());
+    history.setStartTime(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE));
     history.setStatus("RUNNING");
     history = logRepository.save(history);
 
@@ -34,14 +35,14 @@ public class ScheduledTasks {
     try {
 
       financingService.recallApprovalStatus();
-      history.setEndTime(LocalDateTime.now());
+      history.setEndTime(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE));
       history.setStatus("SUCCESS");
       logRepository.save(history);
 
       log.info("Job {} completed successfully.", jobName);
 
     } catch (Exception e) {
-      history.setEndTime(LocalDateTime.now());
+      history.setEndTime(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE));
       history.setStatus("FAILED");
       history.setErrorMessage(e.getMessage());
       logRepository.save(history);

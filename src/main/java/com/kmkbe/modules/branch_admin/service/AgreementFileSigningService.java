@@ -81,7 +81,7 @@ public class AgreementFileSigningService {
       AgreementFileSigning saveDoc = agreementFileSigningRepository.save(entity);
 
       log.info(SAVE_AUDIT_TRAIL_MESSAGE);
-      auditTrailService.record(AUDIT_AGREEMENT_SIGNING, AuditAction.UPDATE, "AgreementFileSigning", saveDoc.getAgreementFileId(), before, toAuditData(saveDoc));
+      auditTrailService.recordEvent(AUDIT_AGREEMENT_SIGNING, AuditAction.UPDATE, "AgreementFileSigning", saveDoc.getAgreementFileId(), before, toAuditData(saveDoc));
 
       log.info("Update financing Step");
       updateFinancingStep(financingHdrCode);
@@ -115,7 +115,7 @@ public class AgreementFileSigningService {
     AgreementFileSigning saveDoc = agreementFileSigningRepository.save(entity);
 
     log.info(SAVE_AUDIT_TRAIL_MESSAGE);
-    auditTrailService.record(AUDIT_AGREEMENT_SIGNING, AuditAction.CREATE, "AgreementFileSigning", saveDoc.getAgreementFileId(), null, toAuditData(saveDoc));
+    auditTrailService.recordEvent(AUDIT_AGREEMENT_SIGNING, AuditAction.CREATE, "AgreementFileSigning", saveDoc.getAgreementFileId(), null, toAuditData(saveDoc));
 
     log.info("Update financing Step");
     updateFinancingStep(financingHdrCode);
@@ -138,7 +138,7 @@ public class AgreementFileSigningService {
         FinancingHdr saved = financingHdrRepository.save(finHdr);
 
         log.info(SAVE_AUDIT_TRAIL_MESSAGE);
-        auditTrailService.record(AUDIT_AGREEMENT_SIGNING, AuditAction.UPDATE, "FinancingHdr", saved.getFinancingHdrCode(), before, toFinancingStepAuditData(saved));
+        auditTrailService.recordEvent(AUDIT_AGREEMENT_SIGNING, AuditAction.UPDATE, "FinancingHdr", saved.getFinancingHdrCode(), before, toFinancingStepAuditData(saved));
 
       });
   }

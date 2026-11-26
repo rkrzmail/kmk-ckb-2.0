@@ -5,7 +5,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
@@ -14,12 +17,12 @@ import lombok.*;
 public class BouwheerRequest extends BaseRequest {
 
   @NotNull(message = "Bouwheer Name Code is required")
-  @NotBlank(message = "Bouwheer Name cannot be empty") // Changed message for clarity
+  @NotBlank(message = "Bouwheer Name cannot be empty")
   @Size(min = 1, max = 100, message = "Must be between 1 and 100 characters")
   private String bouwheerName;
 
   @NotNull(message = "Legal Address is required")
-  @NotBlank(message = "Legal Address cannot be empty") // Changed message for clarity
+  @NotBlank(message = "Legal Address cannot be empty")
   @Size(min = 3, max = 1000, message = "Must be between 3 and 1000 characters")
   private String legalAddress;
 
@@ -27,7 +30,7 @@ public class BouwheerRequest extends BaseRequest {
   private String rt;
 
   @Size(min = 0, max = 3, message = "RW Must be between 0 and 3 characters")
-  private String rw; // Assuming RW is short if provided
+  private String rw;
 
   @Size(min = 0, max = 100, message = "Kelurahan Must be between 0 and 100 characters")
   private String kelurahan;
@@ -74,7 +77,6 @@ public class BouwheerRequest extends BaseRequest {
 
   private String interestScheme;
 
-  // Long types usually don't need validation unless range constraints are known
   private Long termOfPayment;
   private Long gracePeriod;
   private String aesKey;

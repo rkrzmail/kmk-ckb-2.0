@@ -280,7 +280,7 @@ public class CsulSignerService {
       .build();
 
     CsulSigner savedSigner = csulSignerRepository.save(entity);
-    auditTrailService.record("CSUL_SIGNER", AuditAction.CREATE, "CsulSigner", savedSigner.getSignerId(), null, toAuditData(savedSigner));
+    auditTrailService.recordEvent("CSUL_SIGNER", AuditAction.CREATE, "CsulSigner", savedSigner.getSignerId(), null, toAuditData(savedSigner));
 
     return csulSignerMapper.entityToDto(savedSigner);
   }
@@ -351,7 +351,7 @@ public class CsulSignerService {
       entity.setSignhubStatus(signhubStatus); // kalau ada field ini di entity-mu
 
       CsulSigner saved = csulSignerRepository.save(entity);
-      auditTrailService.record("CSUL_SIGNER", AuditAction.UPDATE, "CsulSigner", saved.getSignerId(), before, toAuditData(saved));
+      auditTrailService.recordEvent("CSUL_SIGNER", AuditAction.UPDATE, "CsulSigner", saved.getSignerId(), before, toAuditData(saved));
 
       // Response object
       SignerCsulRequest response = request;
@@ -422,7 +422,7 @@ public class CsulSignerService {
       signer.setUsrUpd(username);
       signer.setDtmUpd(LocalDateTime.now());
       CsulSigner saved = csulSignerRepository.save(signer);
-      auditTrailService.record("CSUL_SIGNER", AuditAction.UPDATE, "CsulSigner", saved.getSignerId(), before, toAuditData(saved));
+      auditTrailService.recordEvent("CSUL_SIGNER", AuditAction.UPDATE, "CsulSigner", saved.getSignerId(), before, toAuditData(saved));
       return "Signer sudah register dan aktivasi";
     } else {
       return "Signer masih belum terdaftar";

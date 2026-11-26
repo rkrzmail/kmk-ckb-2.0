@@ -11,6 +11,10 @@ import java.util.Map;
 @Getter
 @Builder
 public class CommonInvalidException extends RuntimeException {
+    private static final String ACTION_TITLE_BACK = "Kembali";
+    private static final String SIGN_IN_URI = "/auth/sign-in";
+    private static final String USER_NOT_FOUND = "User not found";
+
     private String title;
     private String headerMessage;
 
@@ -49,16 +53,16 @@ public class CommonInvalidException extends RuntimeException {
         return CommonInvalidException.builder()
                 .title("Terdeteksi kesalahan berulang")
                 .message("Anda sudah mencoba lebih dari 5, silahkan mengulang 15 menit lagi")
-                .action(CommonInvalidException.Action.builder().title("Kembali").uri("/auth/sign-in").build())
-                .headerMessage("User not found")
+                .action(CommonInvalidException.Action.builder().title(ACTION_TITLE_BACK).uri(SIGN_IN_URI).build())
+                .headerMessage(USER_NOT_FOUND)
                 .build();
     }
     public static CommonInvalidException invalidEmailOrPin() {
         return CommonInvalidException.builder()
                 .title("Email atau Pin tidak valid")
                 .message("Email atau Pin salah, silahkan masukkan email dan pin yang valid")
-                .action(CommonInvalidException.Action.builder().title("Kembali").uri("/auth/sign-in").build())
-                .headerMessage("User not found")
+                .action(CommonInvalidException.Action.builder().title(ACTION_TITLE_BACK).uri(SIGN_IN_URI).build())
+                .headerMessage(USER_NOT_FOUND)
                 .build();
     }
 
@@ -66,7 +70,7 @@ public class CommonInvalidException extends RuntimeException {
         return CommonInvalidException.builder()
                 .title("Format Email tidak valid")
                 .message("Masukkan email dengan format yg valid")
-                .action(CommonInvalidException.Action.builder().title("Kembali").uri("/auth/sign-in").build())
+                .action(CommonInvalidException.Action.builder().title(ACTION_TITLE_BACK).uri(SIGN_IN_URI).build())
                 .headerMessage("Email is invalid")
                 .build();
     }
@@ -76,7 +80,7 @@ public class CommonInvalidException extends RuntimeException {
                 .title("Email anda belum terdaftar")
                 .message("Saat ini email anda belum terdaftar, silahkan lakukan daftar untuk melanjutkan proses")
                 .action(Action.builder().title("Daftar").uri("/auth/sign-up").build())
-                .headerMessage("User not found")
+                .headerMessage(USER_NOT_FOUND)
                 .build();
     }
 
@@ -84,7 +88,7 @@ public class CommonInvalidException extends RuntimeException {
         return CommonInvalidException.builder()
                 .title("Email anda telah terdaftar")
                 .message("Saat ini email anda sudah terdaftar, silahkan Login untuk melanjutkan proses")
-                .action(Action.builder().title("Login").uri("/auth/sign-in").build())
+                .action(Action.builder().title("Login").uri(SIGN_IN_URI).build())
                 .headerMessage("User already exists")
                 .build();
     }
@@ -93,7 +97,7 @@ public class CommonInvalidException extends RuntimeException {
         return CommonInvalidException.builder()
                 .title("Email atau Pin tidak valid")
                 .message("Email atau Pin salah, silahkan masukkan email dan pin yang valid")
-                .action(Action.builder().title("Kembali").uri("/auth/sign-in").build())
+                .action(Action.builder().title(ACTION_TITLE_BACK).uri(SIGN_IN_URI).build())
                 .headerMessage("Invalid Email or Pin")
                 .build();
     }
@@ -102,7 +106,7 @@ public class CommonInvalidException extends RuntimeException {
         return CommonInvalidException.builder()
                 .title("Username Role tidak valid/aktif")
                 .message("Username Role tidak valid/aktif")
-                .action(Action.builder().title("Kembali").uri("/internal/auth/sign-in").build())
+                .action(Action.builder().title(ACTION_TITLE_BACK).uri("/internal/auth/sign-in").build())
                 .headerMessage("Invalid Username and Password")
                 .build();
     }
@@ -111,7 +115,7 @@ public class CommonInvalidException extends RuntimeException {
         return CommonInvalidException.builder()
                 .title("Username atau Password tidak valid")
                 .message("Username atau Password salah, silahkan masukkan username dan password yang valid")
-                .action(Action.builder().title("Kembali").uri("/internal/auth/sign-in").build())
+                .action(Action.builder().title(ACTION_TITLE_BACK).uri("/internal/auth/sign-in").build())
                 .headerMessage("Invalid Username and Password")
                 .build();
     }
@@ -129,7 +133,7 @@ public class CommonInvalidException extends RuntimeException {
         return CommonInvalidException.builder()
                 .title("Email atau Password tidak valid")
                 .message("Email atau Password salah, silahkan masukkan email dan password yang valid")
-                .action(Action.builder().title("Kembali").uri("/internal/auth/sign-in").build())
+                .action(Action.builder().title(ACTION_TITLE_BACK).uri("/internal/auth/sign-in").build())
                 .headerMessage("Invalid Email or Password")
                 .build();
     }
@@ -138,7 +142,7 @@ public class CommonInvalidException extends RuntimeException {
         return CommonInvalidException.builder()
                 .title("Data Karyawan Tidak Valid")
                 .message("LDAP tervalidasi tapi, tidak ditemukan data karyawan, silahkan hubungi admin atau developer")
-                .action(Action.builder().title("Kembali").uri("/internal/auth/sign-in").build())
+                .action(Action.builder().title(ACTION_TITLE_BACK).uri("/internal/auth/sign-in").build())
                 .headerMessage("Invalid Email or Password")
                 .build();
     }

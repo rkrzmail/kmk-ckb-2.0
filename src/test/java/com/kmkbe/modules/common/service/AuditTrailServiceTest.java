@@ -65,7 +65,7 @@ class AuditTrailServiceTest {
     request.addHeader("User-Agent", "JUnit");
     RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(request));
 
-    service.record("AGREEMENT", AuditAction.CREATE, "Agreement", 42L,
+    service.recordEvent("AGREEMENT", AuditAction.CREATE, "Agreement", 42L,
       Map.of("password", "secret", "note", "before"), Map.of("api_key", "secret", "note", "after"));
 
     AuditTrailEvent event = capture();
@@ -93,7 +93,7 @@ class AuditTrailServiceTest {
     SecurityContextHolder.getContext().setAuthentication(
       new UsernamePasswordAuthenticationToken(customer, null, List.of(new SimpleGrantedAuthority("CUSTOMER"))));
 
-    service.record("CUSTOMER", AuditAction.UPDATE, "Customer", null, null, null);
+    service.recordEvent("CUSTOMER", AuditAction.UPDATE, "Customer", null, null, null);
 
     AuditTrailEvent event = capture();
     assertThat(event.actorType()).isEqualTo(AuditActorType.CUSTOMER);
@@ -112,16 +112,16 @@ class AuditTrailServiceTest {
   void recordAnonymousAndUnauthenticatedActorsAreUnknown() {
     SecurityContextHolder.getContext().setAuthentication(new AnonymousAuthenticationToken(
       "key", "anonymousUser", List.of(new SimpleGrantedAuthority("ROLE_ANONYMOUS"))));
-    service.record("A", AuditAction.VIEW, "E", "1", null, null);
+    service.recordEvent("A", AuditAction.VIEW, "E", "1", null, null);
     assertThat(capture().actorType()).isEqualTo(AuditActorType.UNKNOWN);
     assertThat(capture().actorUsername()).isEqualTo("UNKNOWN");
 
     SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken("user", "pass"));
-    service.record("A", AuditAction.VIEW, "E", "1", null, null);
+    service.recordEvent("A", AuditAction.VIEW, "E", "1", null, null);
     assertThat(capture().actorType()).isEqualTo(AuditActorType.UNKNOWN);
 
     SecurityContextHolder.clearContext();
-    service.record("A", AuditAction.VIEW, "E", "1", null, null);
+    service.recordEvent("A", AuditAction.VIEW, "E", "1", null, null);
     assertThat(capture().actorType()).isEqualTo(AuditActorType.UNKNOWN);
   }
 
@@ -130,7 +130,7 @@ class AuditTrailServiceTest {
     SecurityContextHolder.getContext().setAuthentication(
       new UsernamePasswordAuthenticationToken("", null, List.of(new SimpleGrantedAuthority("API"))));
 
-    service.record("API", AuditAction.DOWNLOAD, "Document", "D1", null, null);
+    service.recordEvent("API", AuditAction.DOWNLOAD, "Document", "D1", null, null);
 
     AuditTrailEvent event = capture();
     assertThat(event.actorType()).isEqualTo(AuditActorType.UNKNOWN);
@@ -183,7 +183,7 @@ class AuditTrailServiceTest {
   void publisherFailuresAreSwallowed() {
     doThrow(new RuntimeException("publisher down")).when(eventPublisher).publishEvent(any(AuditTrailEvent.class));
 
-    assertThatCode(() -> service.record("A", AuditAction.CREATE, "E", "1", null, null)).doesNotThrowAnyException();
+    assertThatCode(() -> service.recordEvent("A", AuditAction.CREATE, "E", "1", null, null)).doesNotThrowAnyException();
     assertThatCode(() -> service.recordAuthentication("AUTH", AuditActorType.SYSTEM, "sys", null, false, "x"))
       .doesNotThrowAnyException();
   }

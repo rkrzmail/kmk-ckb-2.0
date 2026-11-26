@@ -72,10 +72,6 @@ public class Utils {
         return str.matches("-?\\d+");
     }
 
-
-    public static void main(String[] args) {
-        System.out.println(formatNoExponent(3.14159E6));
-    }
     public static String Now() {
         Calendar calendar = Calendar.getInstance();
 

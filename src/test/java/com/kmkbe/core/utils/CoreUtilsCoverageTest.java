@@ -30,6 +30,10 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class CoreUtilsCoverageTest {
+  static {
+    System.setProperty("security.aes.key", "0".repeat(32));
+  }
+
 
   @Test void aesRoundTripAndInvalid() {
     String enc = AESUtils.encrypt("secret");

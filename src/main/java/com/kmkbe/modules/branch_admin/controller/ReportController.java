@@ -9,6 +9,7 @@ import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.modules.branch_admin.service.ReportService;
 import jakarta.servlet.ServletOutputStream;
+import lombok.extern.slf4j.Slf4j;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
@@ -20,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.NoSuchElementException;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/v1/report")
 public class ReportController {
@@ -142,7 +144,7 @@ public class ReportController {
       return ResponseEntity.badRequest()
         .body(e.getMessage().getBytes());
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("Failed to generate report", e);
       return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
         .body(("Error generating report: " + e.getMessage()).getBytes(StandardCharsets.UTF_8));
     }
@@ -165,7 +167,7 @@ public class ReportController {
       outputStream.flush();
       outputStream.close();
     } catch (Exception e) {
-      e.printStackTrace();
+      log.error("Failed to generate report", e);
       response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
     }
   }

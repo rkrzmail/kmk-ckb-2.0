@@ -6,6 +6,7 @@ import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.domain.constant.AuditActorType;
 import com.kmkbe.core.domain.event.AuditTrailEvent;
 import com.kmkbe.core.utils.AuditMaskingUtils;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.modules.customer.model.entity.Customer;
 import com.kmkbe.modules.user.entity.MstUser;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,7 +32,7 @@ public class AuditTrailService {
   private final ApplicationEventPublisher eventPublisher;
   private final ObjectMapper objectMapper;
 
-  public void record(String moduleName,
+  public void recordEvent(String moduleName,
                      AuditAction action,
                      String entityName,
                      Object entityId,
@@ -60,7 +61,7 @@ public class AuditTrailService {
         200,
         true,
         null,
-        LocalDateTime.now()
+        LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE)
       ));
     } catch (Exception e) {
       log.warn("Failed to publish audit trail for module={}, action={}, entityName={}, entityId={}: {}",
@@ -96,7 +97,7 @@ public class AuditTrailService {
         success ? 200 : 401,
         success,
         errorMessage,
-        LocalDateTime.now()
+        LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE)
       ));
     } catch (Exception e) {
       log.warn("Failed to publish authentication audit trail for module={}, username={}: {}",

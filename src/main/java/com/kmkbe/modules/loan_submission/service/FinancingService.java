@@ -69,8 +69,7 @@ public class FinancingService {
           log.info("Update agreement {} ", agreement);
           agreementRepository.save(agreement);
         } catch (Exception ignored) {
-          log.info("Error process updatebn to confins {} ", agreement);
-          ignored.printStackTrace();
+          log.warn("Error process updatebn to confins {}", agreement, ignored);
         }
       }
     }

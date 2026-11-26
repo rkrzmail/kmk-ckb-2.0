@@ -1,7 +1,6 @@
 package com.kmkbe.core.utils;
 
 import io.netty.util.internal.StringUtil;
-import org.hibernate.query.sqm.TemporalUnit;
 
 import java.text.SimpleDateFormat;
 import java.time.*;
@@ -39,7 +38,7 @@ public class DateTimeUtils {
     .withZone(ZoneId.of("Asia/Jakarta"));
 
   public static LocalDateTime nowLocal() {
-    return LocalDateTime.now();
+    return LocalDateTime.now(JAKARTA_ZONE);
   }
 
   public static Date nowDate() {
@@ -47,36 +46,15 @@ public class DateTimeUtils {
   }
 
   public static long plusWIB() {
-    return LocalDateTime.now().toEpochSecond(ZoneOffset.ofHours(7));
+    return LocalDateTime.now(JAKARTA_ZONE).toEpochSecond(ZoneOffset.ofHours(7));
   }
 
   public static LocalDateTime now() {
-    //return toZone(LocalDateTime.now().plusSeconds( 7*60 * 60), JAKARTA_ZONE);
-    return LocalDateTime.now();
+    return LocalDateTime.now(JAKARTA_ZONE);
   }
-
-  private static int addTimeZoneCount = 0;
 
   public static void envMode(String env) {
-    if (env != null && env.equalsIgnoreCase("pro")) {
-      addTimeZoneCount = 0;
-    } else {
-      addTimeZoneCount = 7 * 60 * 60;//7jam
-    }
   }
-
-  public static void main(String[] args) {
-    System.out.println(nowDate().getTime());
-    System.out.println(plusWIB());
-  }
-
-/*    public static Long nowMilliSeconds() {
-        return toMilliSeconds(now(), true);
-    }*/
-
-   /* public static LocalDateTime toZone(LocalDateTime LocalDateTime, ZoneId zoneId) {
-        return LocalDateTime.atZone(zoneId).toInstant();
-    }*/
 
   public static OffsetDateTime toStandardDate(OffsetDateTime offsetDateTime) {
     return OffsetDateTime.parse(
@@ -208,7 +186,7 @@ public class DateTimeUtils {
       return LocalDate.parse(strDate, DateTimeFormatter.ofPattern(DATE_RESPONSE_STANDARD_PATTERN)).atStartOfDay();
     } catch (Exception e) {
     }
-    return LocalDateTime.now();//kalo format slaha
+    return now();
   }
 
   public static String formatToDateTime(LocalDateTime LocalDateTime) {

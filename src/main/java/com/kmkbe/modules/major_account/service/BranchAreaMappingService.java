@@ -114,7 +114,7 @@ public class BranchAreaMappingService {
 
         try {
             branchAreaMappingRepository.saveAll(dataEntities);
-            auditTrailService.record(
+            auditTrailService.recordEvent(
                     "BRANCH_AREA_MAPPING",
                     AuditAction.IMPORT,
                     "BranchAreaMapping",

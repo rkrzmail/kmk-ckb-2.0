@@ -23,7 +23,6 @@ class DateTimeUtilsCoverageTest {
     DateTimeUtils.envMode("pro");
     DateTimeUtils.envMode("dev");
     DateTimeUtils.envMode(null);
-    assertThatCode(() -> DateTimeUtils.main(new String[0])).doesNotThrowAnyException();
   }
 
   @Test void conversions() {

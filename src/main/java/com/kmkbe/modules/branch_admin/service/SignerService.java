@@ -278,7 +278,7 @@ public class SignerService {
       debtor.setSignerStatus(debtorDto.getSignerStatus());
 
       Debtor savedDebtor = debtorRepository.save(debtor);
-      auditTrailService.record("SIGNER", AuditAction.UPDATE, "Debtor", savedDebtor.getDebtorId(), before, toDebtorAuditData(savedDebtor));
+      auditTrailService.recordEvent("SIGNER", AuditAction.UPDATE, "Debtor", savedDebtor.getDebtorId(), before, toDebtorAuditData(savedDebtor));
 
     } catch (Exception e) {
       log.warn("Unable to refresh signer status for debtorId={}: {}", debtorDto.getDebtorId(), e.getMessage());
@@ -510,7 +510,7 @@ public class SignerService {
       .build();
 
     Debtor savedDebtor = debtorRepository.save(debtor);
-    auditTrailService.record("SIGNER", AuditAction.CREATE, "Debtor", savedDebtor.getDebtorId(), null, toDebtorAuditData(savedDebtor));
+    auditTrailService.recordEvent("SIGNER", AuditAction.CREATE, "Debtor", savedDebtor.getDebtorId(), null, toDebtorAuditData(savedDebtor));
 
     String custCode = String.valueOf(financingHdrRepository.findByFinancingHdrCode(UUID.fromString(debtorDto.getFinancingHdrCode()))
       .map(finHdr -> finHdr.getCustomer().getCustCode())
@@ -1045,7 +1045,7 @@ public class SignerService {
         signing.setStamp("Menunggu TTD");
       } finally {
         AgreementFileSigning updated = agreementFileSigningRepository.save(signing);
-        auditTrailService.record("SIGNING_STATUS", AuditAction.UPDATE, "AgreementFileSigning", updated.getAgreementFileId(), before, toAgreementFileSigningAuditData(updated));
+        auditTrailService.recordEvent("SIGNING_STATUS", AuditAction.UPDATE, "AgreementFileSigning", updated.getAgreementFileId(), before, toAgreementFileSigningAuditData(updated));
       }
     }
   }
@@ -1064,7 +1064,7 @@ public class SignerService {
         finHdr.setDtmUpd(LocalDateTime.now());
         finHdr.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
         FinancingHdr saved = financingHdrRepository.save(finHdr);
-        auditTrailService.record("SIGNING_STATUS", AuditAction.UPDATE, "FinancingHdr", saved.getFinancingHdrCode(), before, toFinancingSigningAuditData(saved));
+        auditTrailService.recordEvent("SIGNING_STATUS", AuditAction.UPDATE, "FinancingHdr", saved.getFinancingHdrCode(), before, toFinancingSigningAuditData(saved));
       });
   }
 

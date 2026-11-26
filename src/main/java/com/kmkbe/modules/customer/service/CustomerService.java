@@ -219,7 +219,7 @@ public class CustomerService {
     customer.setDtmCrt(DateTimeUtils.now());
     Customer newCustomer = customerRepository.save(customer);
 
-    auditTrailService.record(
+    auditTrailService.recordEvent(
       "CUSTOMER",
       before == null ? AuditAction.CREATE : AuditAction.UPDATE,
       "Customer",
@@ -246,7 +246,7 @@ public class CustomerService {
     customer.setUsrUpd(customer.getCustName());
     customer.setDtmUpd(DateTimeUtils.now());
     Customer saved = customerRepository.save(customer);
-    auditTrailService.record("CUSTOMER", AuditAction.UPDATE, "Customer", saved.getCustCode(), before, toAuditData(saved));
+    auditTrailService.recordEvent("CUSTOMER", AuditAction.UPDATE, "Customer", saved.getCustCode(), before, toAuditData(saved));
   }
 
   @Transactional
@@ -280,7 +280,7 @@ public class CustomerService {
     /**
      * Insert Audit trail
      */
-    auditTrailService.record("CUSTOMER", AuditAction.UPDATE, "Customer", customer.getCustCode(), before, toAuditData(customer));
+    auditTrailService.recordEvent("CUSTOMER", AuditAction.UPDATE, "Customer", customer.getCustCode(), before, toAuditData(customer));
 
     /**
      * Force logout
@@ -332,7 +332,7 @@ public class CustomerService {
     financingHdr.setDtmUpd(DateTimeUtils.now());
 
     FinancingHdr saved = financingHdrRepository.save(financingHdr);
-    auditTrailService.record(
+    auditTrailService.recordEvent(
       "LOAN_SUBMISSION",
       AuditAction.UPDATE,
       "FinancingHdr",
@@ -524,7 +524,7 @@ public class CustomerService {
     customer.setApprovalBy(username);
     customer.setApprovalAt(DateTimeUtils.now());
     Customer saved = customerRepository.save(customer);
-    auditTrailService.record(
+    auditTrailService.recordEvent(
       "CUSTOMER",
       "APPROVED".equals(approvalStatus) ? AuditAction.APPROVE : AuditAction.REJECT,
       "Customer",

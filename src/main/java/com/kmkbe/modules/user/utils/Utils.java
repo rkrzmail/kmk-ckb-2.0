@@ -2,6 +2,8 @@ package com.kmkbe.modules.user.utils;
 
 
 
+import lombok.extern.slf4j.Slf4j;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -15,6 +17,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+@Slf4j
 public class Utils {
     public static final char SPACE =' ';
     public static final char DOUBLE_QUOTE ='"';
@@ -470,7 +473,7 @@ public class Utils {
         try {
             return Long.toString(Long.valueOf(str), 36).toUpperCase();
         } catch (NumberFormatException | NullPointerException ex) {
-            ex.printStackTrace();
+            log.debug("toBase36 failed", ex);
         }
         return null;
     }
@@ -479,7 +482,7 @@ public class Utils {
             BigInteger base = new BigInteger( b36, 36);
             return base.toString(10);
         }catch (Exception e){
-            e.printStackTrace();
+            log.debug("fromBase36 failed", e);
         }
         return null;
     }
@@ -513,12 +516,6 @@ public class Utils {
             return original.substring(0,length);
         }
     }
-    public static void main(String[] args) {
-
-        System.out.println(SHA256( "uij aa aa   ss   d d"));
-
-    }
-
     public static void each(List l, Consumer consumer){
         l.forEach(o -> {
             consumer.accept(o);

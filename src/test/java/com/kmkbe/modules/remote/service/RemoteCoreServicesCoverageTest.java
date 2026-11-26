@@ -48,6 +48,10 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class RemoteCoreServicesCoverageTest {
+  static {
+    System.setProperty("security.aes.key", "0".repeat(32));
+  }
+
   @Mock RestTemplate restTemplate;
   @Mock BaseRemoteService baseRemoteService;
   @Mock LdapUrlService ldapUrlService;

@@ -261,7 +261,7 @@ public class DocumentService {
         uploadedPath,
         uploadName
       );
-      auditTrailService.record(
+      auditTrailService.recordEvent(
         "DOCUMENT",
         AuditAction.UPLOAD,
         "LegalFile",
@@ -299,7 +299,7 @@ public class DocumentService {
     try {
       LegalFile legalFile = legalFileService.findByFileId(id);
       legalFileService.delete(id);
-      auditTrailService.record("DOCUMENT", AuditAction.DELETE, "LegalFile", id, toLegalFileAuditData(legalFile), null);
+      auditTrailService.recordEvent("DOCUMENT", AuditAction.DELETE, "LegalFile", id, toLegalFileAuditData(legalFile), null);
     } catch (Exception e) {
       log.error("deteleLegalFile, error {}", e.getMessage());
       throw e;
@@ -351,7 +351,7 @@ public class DocumentService {
       }
       if (legalFile.getFilePath().contains("http")) {
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "LegalFile", legalFile.getFileId(), null, toLegalFileAuditData(legalFile));
+        auditTrailService.recordEvent("DOCUMENT", AuditAction.DOWNLOAD, "LegalFile", legalFile.getFileId(), null, toLegalFileAuditData(legalFile));
         return new ResponseEntity<>(null, headers, HttpStatus.OK);
       }
 
@@ -361,7 +361,7 @@ public class DocumentService {
         legalFile.getFileName(),
         String.valueOf(httpServletRequest.getParameter("cd"))
       );
-      auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "LegalFile", legalFile.getFileId(), null, toLegalFileAuditData(legalFile));
+      auditTrailService.recordEvent("DOCUMENT", AuditAction.DOWNLOAD, "LegalFile", legalFile.getFileId(), null, toLegalFileAuditData(legalFile));
       return response;
     } catch (Exception e) {
       log.error("documentByLegalFileId, error {}", e.getMessage());
@@ -416,7 +416,7 @@ public class DocumentService {
       authorizeAgreementDownload(agreementFile);
       if (agreementFile.getFilePath().contains("http")) {
         headers.setContentType(MediaType.APPLICATION_OCTET_STREAM);
-        auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "AgreementFile", agreementFile.getAgreementFileId(), null, toAgreementFileAuditData(agreementFile));
+        auditTrailService.recordEvent("DOCUMENT", AuditAction.DOWNLOAD, "AgreementFile", agreementFile.getAgreementFileId(), null, toAgreementFileAuditData(agreementFile));
         return new ResponseEntity<>(null, headers, HttpStatus.OK);
       }
 
@@ -425,7 +425,7 @@ public class DocumentService {
         agreementFile.getFilePath(),
         agreementFile.getFileName(), ""
       );
-      auditTrailService.record("DOCUMENT", AuditAction.DOWNLOAD, "AgreementFile", agreementFile.getAgreementFileId(), null, toAgreementFileAuditData(agreementFile));
+      auditTrailService.recordEvent("DOCUMENT", AuditAction.DOWNLOAD, "AgreementFile", agreementFile.getAgreementFileId(), null, toAgreementFileAuditData(agreementFile));
       return response;
     } catch (Exception e) {
       log.error("agreementDocByAgreementId, error {}", e.getMessage());

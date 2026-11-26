@@ -270,7 +270,7 @@ public class FinancingHdrService {
           financingDtl = financingDtls.getFirst();
 
         } catch (Exception e2) {
-          e2.printStackTrace();
+          log.debug("No financing detail found", e2);
         }
 
 

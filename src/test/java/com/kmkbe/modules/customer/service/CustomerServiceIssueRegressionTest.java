@@ -324,7 +324,7 @@ class CustomerServiceIssueRegressionTest {
     assertThat(financing.getUsrUpd()).isEqualTo(customer.getCustName());
     assertThat(financing.getDtmUpd()).isNotNull();
     verify(financingHdrRepository).save(financing);
-    verify(auditTrailService).record(
+    verify(auditTrailService).recordEvent(
       org.mockito.ArgumentMatchers.eq("LOAN_SUBMISSION"),
       org.mockito.ArgumentMatchers.eq(AuditAction.UPDATE),
       org.mockito.ArgumentMatchers.eq("FinancingHdr"),

@@ -81,12 +81,8 @@ public class JwtValidatorService {
     String base64Payload = parts[1];
     String base64Signature = parts[2];
 
-    // === STEP 3: Decode header & payload untuk logging/inspect ===
     String headerJson = decodeBase64Url(base64Header);
     String payloadJson = decodeBase64Url(base64Payload);
-
-    System.out.println("[JWT] Header  : " + headerJson);
-    System.out.println("[JWT] Payload : " + payloadJson);
 
     // === STEP 4: Verifikasi signature menggunakan JJWT library ===
     // JJWT akan otomatis: rebuild signature → bandingkan → throw jika beda

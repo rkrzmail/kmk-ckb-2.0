@@ -82,7 +82,7 @@ class BranchAreaMappingServiceCoverageTest {
     when(branchRepository.findByBranchCode("B1"))
       .thenReturn(Optional.of(MstBranch.builder().branchCode("B1").build()));
     assertThat(service.updateBranch(new MockHttpServletRequest(), file)).isNull();
-    verify(auditTrailService).record(anyString(), any(), anyString(), any(), any(), any());
+    verify(auditTrailService).recordEvent(anyString(), any(), anyString(), any(), any(), any());
 
     org.mockito.Mockito.doThrow(new RuntimeException("bad file")).when(parser).parse(file);
     assertThatThrownBy(() -> service.updateBranch(new MockHttpServletRequest(), file))

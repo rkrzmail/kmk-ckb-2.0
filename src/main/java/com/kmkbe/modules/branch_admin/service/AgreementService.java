@@ -241,7 +241,7 @@ public class AgreementService {
           .build();
 
         AgreementFile savedAgreementFile = agreementFileRepository.save(agreementFile);
-        auditTrailService.record(AGREEMENT_AUDIT_MODULE, AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), null, toAgreementFileAuditData(savedAgreementFile));
+        auditTrailService.recordEvent(AGREEMENT_AUDIT_MODULE, AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), null, toAgreementFileAuditData(savedAgreementFile));
 
       } else {
         agreementFile.setFileName(uploadName);
@@ -249,7 +249,7 @@ public class AgreementService {
         agreementFile.setDtmUpd(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE));
         agreementFile.setUsrUpd(user.getUsername());
         AgreementFile savedAgreementFile = agreementFileRepository.save(agreementFile);
-        auditTrailService.record(AGREEMENT_AUDIT_MODULE, AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), before, toAgreementFileAuditData(savedAgreementFile));
+        auditTrailService.recordEvent(AGREEMENT_AUDIT_MODULE, AuditAction.UPLOAD, "AgreementFile", savedAgreementFile.getAgreementFileId(), before, toAgreementFileAuditData(savedAgreementFile));
       }
 
       // Split the URL by the '/' delimiter
@@ -315,7 +315,7 @@ public class AgreementService {
       setFinancingInProcess(financingHdr);
 
       FinancingHdr savedFinancing = financingHdrRepository.save(financingHdr);
-      auditTrailService.record(AGREEMENT_AUDIT_MODULE, AuditAction.UPDATE, "FinancingHdr", savedFinancing.getFinancingHdrCode(), before, toFinancingAgreementAuditData(savedFinancing));
+      auditTrailService.recordEvent(AGREEMENT_AUDIT_MODULE, AuditAction.UPDATE, "FinancingHdr", savedFinancing.getFinancingHdrCode(), before, toFinancingAgreementAuditData(savedFinancing));
       sendContractUploadRequiredNotification(savedFinancing, request.getAgreementNo(), request.getCwrCode());
     } catch (Exception e) {
       log.error("createAgreement: error {}", e.getMessage());
@@ -387,7 +387,7 @@ public class AgreementService {
     }
 
     Iterable<Agreement> savedAgreements = agreementRepository.saveAll(agreements);
-    auditTrailService.record(
+    auditTrailService.recordEvent(
       AGREEMENT_AUDIT_MODULE,
       AuditAction.CREATE,
       "Agreement",

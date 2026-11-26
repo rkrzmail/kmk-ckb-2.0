@@ -106,7 +106,6 @@ class UserUtilsCoverageTest {
     Utils.forEach(List.of("a"), (value, list) -> list.add(value), deleted::add);
     Utils.forEach(List.of("b"), value -> value, deleted::add);
     assertThat(deleted).containsExactly("a");
-    Utils.main(new String[0]);
   }
 
   @Test

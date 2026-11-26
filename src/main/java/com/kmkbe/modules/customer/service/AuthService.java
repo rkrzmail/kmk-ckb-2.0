@@ -400,7 +400,7 @@ public class AuthService {
       cust.setCustPin(newPin);
       Customer saved = customerRepository.save(cust);
       changePasswordLogService.create(cust, oldPin, newPin);
-      auditTrailService.record(
+      auditTrailService.recordEvent(
         "CUSTOMER",
         AuditAction.UPDATE,
         "Customer",

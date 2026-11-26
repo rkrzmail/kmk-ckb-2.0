@@ -303,7 +303,7 @@ public class CwrService {
         }
       }
     } catch (Exception e) {
-      e.printStackTrace();
+      log.warn("Failed to collect agreement numbers", e);
     }
     return list;
   }

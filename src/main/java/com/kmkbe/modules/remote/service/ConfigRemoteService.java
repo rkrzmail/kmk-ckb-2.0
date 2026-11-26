@@ -6,7 +6,11 @@ import com.kmkbe.core.domain.dto.email.MailPositionDto;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.*;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientResponseException;
 import org.springframework.web.client.RestTemplate;
@@ -18,9 +22,6 @@ import java.util.Map;
 @Service
 @Slf4j
 public class ConfigRemoteService {
-    @Value("${csul.sisca.v1.internal}")
-    private String siscaUrlInternal;
-
     @Value("${csul.sisca.v1.white-list}")
     private String siscaUrlWhiteList;
 
@@ -29,7 +30,6 @@ public class ConfigRemoteService {
 
     public ConfigRemoteService(RestTemplate restTemplate, AuthRemoteService authRemoteService) {
         this.restTemplate = restTemplate;
-        //this.cacheManager = cacheManager;
         this.authRemoteService = authRemoteService;
     }
 
@@ -53,7 +53,7 @@ public class ConfigRemoteService {
                     MailRemoteDto.class
             );
 
-            System.out.println("Successfully get email config");
+            log.info("Successfully get email config");
 
             return response.getBody();
         } catch (Exception e) {

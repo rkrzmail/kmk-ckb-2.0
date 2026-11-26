@@ -48,7 +48,7 @@ public class MD5Test {
     @Test
     @DisplayName("Should return valid jwt payload")
     public void decodeJwtPayloadTest() {
-        String jsonPayload = null, encodedPayload = null, encodedSecret = null;
+        String jsonPayload = null, encodedPayload = null;
 
         List<String> encodedPayloads = new ArrayList<>();
 
@@ -59,7 +59,6 @@ public class MD5Test {
                 String hashSecret = MD5Utils.hash(encodedPayload + "." + SECRET);
                 String result = encodedPayload + "." + hashSecret;
                 encodedPayloads.add(result);
-                System.out.println(result);
             } catch (Exception ignored) {
             }
         }
@@ -67,10 +66,6 @@ public class MD5Test {
         String result = String.join("\n", encodedPayloads);
         Assertions.assertNotNull(result);
         Assertions.assertFalse(result.isEmpty());
-
-        /*Assertions.assertNotNull(jsonPayload);
-        Assertions.assertNotNull(encodedPayload);
-        Assertions.assertNotNull(encodedSecret);*/
     }
 
     @Test

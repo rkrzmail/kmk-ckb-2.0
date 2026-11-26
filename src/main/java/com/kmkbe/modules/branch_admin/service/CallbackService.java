@@ -16,6 +16,8 @@ import java.util.List;
 @RequiredArgsConstructor
 @Slf4j
 public class CallbackService {
+    private static final String STAMP_SIGNED = "signed";
+
     private final DebtorRepository debtorRepository;
     private final AgreementFileSigningRepository agreementFileSigningRepository;
 
@@ -46,14 +48,13 @@ public class CallbackService {
                 .orElseThrow(() -> new RuntimeException("Debtor not found with email: " + email));
 
         debtor.setSignhubStatus("active");
-//        debtor.setSignerStatus("active");
         debtorRepository.save(debtor);
     }
 
     private void handleDocumentSignComplete(CallbackRequest request) {
         String documentId = request.getData().getDocumentId();
         agreementFileSigningRepository.findByDocumentId(documentId).ifPresent(agreementFileSigning -> {
-            agreementFileSigning.setStamp("signed");
+            agreementFileSigning.setStamp(STAMP_SIGNED);
             agreementFileSigningRepository.save(agreementFileSigning);
         });
 
@@ -70,7 +71,7 @@ public class CallbackService {
             return;
         }
 
-        files.forEach(file -> file.setStamp("signed"));
+        files.forEach(file -> file.setStamp(STAMP_SIGNED));
         agreementFileSigningRepository.saveAll(files);
 
     }
@@ -79,7 +80,7 @@ public class CallbackService {
         String email = request.getData().getEmail();
         String documentId = request.getData().getDocumentId();
         agreementFileSigningRepository.findByDocumentIdAndEmailSigner(documentId, email).ifPresent(agreementFileSigning -> {
-            agreementFileSigning.setStamp("signed");
+            agreementFileSigning.setStamp(STAMP_SIGNED);
             agreementFileSigningRepository.save(agreementFileSigning);
         });
     }

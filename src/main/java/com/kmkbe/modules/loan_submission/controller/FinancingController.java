@@ -17,6 +17,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -25,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SignatureException;
 
+@Slf4j
 @Validated
 @RestController
 @RequestMapping("/api/v1/financing")
@@ -112,8 +114,8 @@ public class FinancingController {
     }
     try {
       financingService.recallApprovalStatus();
-    } catch (Exception ignored) {
-      ignored.printStackTrace();
+    } catch (Exception e) {
+      log.warn("Scheduled status update failed", e);
     }
 
     return new CommonResult<>().success(null);
@@ -128,8 +130,8 @@ public class FinancingController {
     }
     try {
       financingService.recallCWRStatus();
-    } catch (Exception ignored) {
-      ignored.printStackTrace();
+    } catch (Exception e) {
+      log.warn("Scheduled status update failed", e);
     }
 
     return new CommonResult<>().success(null);

@@ -1,6 +1,7 @@
 package com.kmkbe.core.utils;
 
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -8,6 +9,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Locale;
 
+@Slf4j
 public class FormatingUtils {
     public static final long SERIBU = 1_000;
     public static final long SERATUS_RIBU = 100_000;
@@ -217,7 +219,7 @@ public class FormatingUtils {
 
             return String.valueOf(valueArr);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Formatting failed", e);
             return "";
         }
     }
@@ -247,7 +249,7 @@ public class FormatingUtils {
             final DecimalFormat df = new DecimalFormat("#.##");
             return Double.parseDouble(df.format(value).replaceAll(",", "."));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Formatting failed", e);
             return value;
         }
     }
@@ -264,7 +266,7 @@ public class FormatingUtils {
             int d = (int) Math.pow((double) 10, (double) len);
             return (src + (d - 1)) / d * d;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Formatting failed", e);
             return src;
         }
     }
@@ -275,7 +277,7 @@ public class FormatingUtils {
             BigDecimal r = new BigDecimal(value);
             return r.divide(precision, 0, mode).multiply(precision).intValue();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Formatting failed", e);
             return value.intValue();
         }
     }
@@ -286,7 +288,7 @@ public class FormatingUtils {
             BigDecimal r = new BigDecimal(value);
             return r.divide(precision, 0, RoundingMode.UP).multiply(precision).intValue();
         } catch (Exception e) {
-            e.printStackTrace();
+            log.warn("Formatting failed", e);
             return value.intValue();
         }
     }

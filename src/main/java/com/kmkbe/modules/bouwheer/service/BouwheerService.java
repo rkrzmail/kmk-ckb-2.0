@@ -2,6 +2,7 @@ package com.kmkbe.modules.bouwheer.service;
 
 import com.kmkbe.core.domain.constant.AuditAction;
 import com.kmkbe.core.security.CurrentUserService;
+import com.kmkbe.core.utils.DateTimeUtils;
 import com.kmkbe.exception.BusinessException;
 import com.kmkbe.helpers.base.BasePaginationRequest;
 import com.kmkbe.helpers.base.BaseResponse;
@@ -143,9 +144,9 @@ public class BouwheerService {
       .apiKey(request.getApiKey())
       .minRetention(request.getMinRetention())
       .interestScheme(request.getInterestScheme()==null?"D":request.getInterestScheme())
-      .dtmCrt(LocalDateTime.now())
+      .dtmCrt(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE))
       .build());
-    auditTrailService.record("BOUWHEER", AuditAction.CREATE, "Bouwheer", saved.getBouwheerCode(), null, toResponse(saved));
+    auditTrailService.recordEvent("BOUWHEER", AuditAction.CREATE, "Bouwheer", saved.getBouwheerCode(), null, toResponse(saved));
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
   }
@@ -165,9 +166,9 @@ public class BouwheerService {
     BouwheerResponse before = toResponse(bouwheer);
     BeanUtils.copyProperties(request, bouwheer);
     bouwheer.setUsrUpd(currentUserService.usernameOrDefault(AppConstants.CREATOR));
-    bouwheer.setDtmUpd(LocalDateTime.now());
+    bouwheer.setDtmUpd(LocalDateTime.now(DateTimeUtils.JAKARTA_ZONE));
     Bouwheer saved = bouwheerRepository.save(bouwheer);
-    auditTrailService.record("BOUWHEER", AuditAction.UPDATE, "Bouwheer", saved.getBouwheerCode(), before, toResponse(saved));
+    auditTrailService.recordEvent("BOUWHEER", AuditAction.UPDATE, "Bouwheer", saved.getBouwheerCode(), before, toResponse(saved));
 
     return new BaseResponseBuilder<>(true, AppConstants.CODE_OK, AppConstants.PROCESS_SUCCESSFULLY);
   }
